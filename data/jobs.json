@@ -1,0 +1,27 @@
+{
+  "tiers": [
+    {"name": "Novice", "min": 0},
+    {"name": "Apprentice", "min": 20},
+    {"name": "Journeyman", "min": 45},
+    {"name": "Expert", "min": 70},
+    {"name": "Master", "min": 90}
+  ],
+  "standing_rules": {
+    "calling":  {"pay": 1.25, "xp": 1.00, "failure": 0.00, "perks": true},
+    "sideline": {"pay": 1.00, "xp": 0.80, "failure": 0.05, "perks": "reduced"},
+    "dabble":   {"pay": 0.60, "xp": 0.50, "failure": 0.25, "perks": false}
+  },
+  "jobs": {
+    "hunter":    {"name": "Hunter",    "kind": "combat",   "leans": ["might", "vigor", "insight"]},
+    "knight":    {"name": "Knight",    "kind": "combat",   "leans": ["ward", "might", "light"]},
+    "rogue":     {"name": "Rogue",     "kind": "stealth",  "leans": ["swiftness", "veil", "dark"]},
+    "bandit":    {"name": "Bandit",    "kind": "combat",   "leans": ["might", "swiftness", "dark"]},
+    "merchant":  {"name": "Merchant",  "kind": "trade",    "leans": ["insight", "vigor"]},
+    "smith":     {"name": "Smith",     "kind": "craft",    "leans": []},
+    "alchemist": {"name": "Alchemist", "kind": "craft",    "leans": []},
+    "cook":      {"name": "Cook",      "kind": "craft",    "leans": []},
+    "enchanter": {"name": "Enchanter", "kind": "craft",    "leans": []},
+    "tailor":    {"name": "Tailor",    "kind": "craft",    "leans": []},
+    "gatherer":  {"name": "Gatherer",  "kind": "gather",   "leans": []}
+  }
+}

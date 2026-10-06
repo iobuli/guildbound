@@ -1,0 +1,404 @@
+{
+  "gold_values": {
+    "attack_damage": {
+      "flat": 35
+    },
+    "attack_speed": {
+      "add_pct": 2500
+    },
+    "armor": {
+      "flat": 20
+    },
+    "magic_resist": {
+      "flat": 18
+    },
+    "max_hp": {
+      "flat": 2.7
+    },
+    "max_mana": {
+      "flat": 1.4
+    },
+    "move_speed": {
+      "add_pct": 4000
+    },
+    "crit_chance": {
+      "flat": 4000
+    },
+    "cdr": {
+      "flat": 3000
+    },
+    "spell_power": {
+      "flat": 30
+    },
+    "hp_regen": {
+      "flat": 36
+    },
+    "stamina": {
+      "flat": 4
+    },
+    "tenacity": {
+      "flat": 2500
+    }
+  },
+  "items": {
+    "iron_sword": {
+      "name": "Iron Sword",
+      "slot": "weapon",
+      "tier": 1,
+      "weight": 3.0,
+      "weapon": {
+        "base_damage": 22,
+        "aps": 1.0,
+        "scales": "str"
+      },
+      "mods": [],
+      "icon": "W_Sword001"
+    },
+    "steel_longsword": {
+      "name": "Steel Longsword",
+      "slot": "weapon",
+      "tier": 3,
+      "weight": 4.5,
+      "weapon": {
+        "base_damage": 34,
+        "aps": 1.0,
+        "scales": "str"
+      },
+      "mods": [
+        {
+          "stat": "crit_chance",
+          "op": "flat",
+          "value": 0.05
+        }
+      ],
+      "icon": "W_Sword008"
+    },
+    "windfang_daggers": {
+      "name": "Windfang Daggers",
+      "slot": "weapon",
+      "tier": 3,
+      "weight": 1.8,
+      "weapon": {
+        "base_damage": 17,
+        "aps": 1.5,
+        "scales": "agi"
+      },
+      "mods": [
+        {
+          "stat": "move_speed",
+          "op": "add_pct",
+          "value": 0.05
+        }
+      ],
+      "icon": "W_Dagger005"
+    },
+    "oak_buckler": {
+      "name": "Oak Buckler",
+      "slot": "offhand",
+      "tier": 1,
+      "weight": 2.5,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 8
+        }
+      ],
+      "icon": "E_Wood01"
+    },
+    "leather_cap": {
+      "name": "Leather Cap",
+      "slot": "head",
+      "tier": 1,
+      "weight": 0.6,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 6
+        }
+      ],
+      "icon": "C_Elm01"
+    },
+    "hunter_jerkin": {
+      "name": "Hunter's Jerkin",
+      "slot": "body",
+      "tier": 2,
+      "weight": 5.0,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 14
+        },
+        {
+          "stat": "max_hp",
+          "op": "flat",
+          "value": 60
+        }
+      ],
+      "icon": "A_Armour01"
+    },
+    "wolfhide_gloves": {
+      "name": "Wolfhide Gloves",
+      "slot": "hands",
+      "tier": 2,
+      "weight": 0.5,
+      "mods": [
+        {
+          "stat": "attack_speed",
+          "op": "add_pct",
+          "value": 0.15
+        },
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 3
+        }
+      ],
+      "icon": "W_Fist001"
+    },
+    "swift_boots": {
+      "name": "Swift Boots",
+      "slot": "feet",
+      "tier": 2,
+      "weight": 1.2,
+      "mods": [
+        {
+          "stat": "move_speed",
+          "op": "add_pct",
+          "value": 0.2
+        },
+        {
+          "stat": "stamina",
+          "op": "flat",
+          "value": 20
+        }
+      ],
+      "icon": "A_Shoes03"
+    },
+    "ring_tempest": {
+      "name": "Ring of the Tempest",
+      "slot": "accessory",
+      "tier": 4,
+      "weight": 0.1,
+      "premium": 1500,
+      "passive": "Unique: Attack Speed x1.15",
+      "mods": [
+        {
+          "stat": "attack_speed",
+          "op": "more",
+          "value": 1.15,
+          "group": "unique.tempest"
+        }
+      ],
+      "icon": "Ac_Ring02"
+    },
+    "amulet_vigil": {
+      "name": "Amulet of the Vigil",
+      "slot": "accessory",
+      "tier": 3,
+      "weight": 0.2,
+      "mods": [
+        {
+          "stat": "max_mana",
+          "op": "flat",
+          "value": 80
+        },
+        {
+          "stat": "spell_power",
+          "op": "flat",
+          "value": 15
+        },
+        {
+          "stat": "hp_regen",
+          "op": "flat",
+          "value": 2
+        }
+      ],
+      "icon": "Ac_Necklace03"
+    },
+    "hide_bundle": {
+      "name": "Bundle of Raw Hides",
+      "slot": null,
+      "tier": 1,
+      "weight": 14.0,
+      "mods": [],
+      "icon": "I_WolfFur"
+    },
+    "iron_helm": {
+      "name": "Iron Helm",
+      "slot": "head",
+      "tier": 2,
+      "weight": 2.5,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 14
+        },
+        {
+          "stat": "tenacity",
+          "op": "flat",
+          "value": 0.05
+        }
+      ],
+      "icon": "C_Elm03"
+    },
+    "chain_vest": {
+      "name": "Chain Vest",
+      "slot": "body",
+      "tier": 3,
+      "weight": 9.0,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 30
+        },
+        {
+          "stat": "max_hp",
+          "op": "flat",
+          "value": 90
+        },
+        {
+          "stat": "move_speed",
+          "op": "add_pct",
+          "value": -0.06
+        }
+      ],
+      "icon": "A_Armor04"
+    },
+    "brawler_wraps": {
+      "name": "Brawler's Wraps",
+      "slot": "hands",
+      "tier": 2,
+      "weight": 0.3,
+      "mods": [
+        {
+          "stat": "attack_damage",
+          "op": "flat",
+          "value": 8
+        },
+        {
+          "stat": "power",
+          "op": "add_pct",
+          "value": 0.15
+        }
+      ],
+      "icon": "W_Fist004"
+    },
+    "sprinter_greaves": {
+      "name": "Sprinter's Greaves",
+      "slot": "feet",
+      "tier": 3,
+      "weight": 1.6,
+      "mods": [
+        {
+          "stat": "move_speed",
+          "op": "add_pct",
+          "value": 0.12
+        },
+        {
+          "stat": "jump_height",
+          "op": "flat",
+          "value": 0.3
+        },
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 4
+        }
+      ],
+      "icon": "A_Shoes05"
+    },
+    "ring_ogre": {
+      "name": "Ogre-Knuckle Ring",
+      "slot": "accessory",
+      "tier": 3,
+      "weight": 0.1,
+      "mods": [
+        {
+          "stat": "power",
+          "op": "add_pct",
+          "value": 0.25
+        },
+        {
+          "stat": "carry",
+          "op": "flat",
+          "value": 15
+        },
+        {
+          "stat": "attack_speed",
+          "op": "add_pct",
+          "value": -0.05
+        }
+      ],
+      "icon": "Ac_Ring01"
+    }
+  },
+  "consumables": {
+    "hearty_stew": {
+      "name": "Hearty Stew",
+      "duration": 600,
+      "weight": 0.5,
+      "mods": [
+        {
+          "stat": "max_hp",
+          "op": "flat",
+          "value": 100,
+          "group": "food.hp"
+        },
+        {
+          "stat": "hp_regen",
+          "op": "flat",
+          "value": 2,
+          "group": "food.regen"
+        }
+      ],
+      "icon": "I_C_Pie"
+    },
+    "swift_tonic": {
+      "name": "Swift Tonic",
+      "duration": 120,
+      "weight": 0.3,
+      "mods": [
+        {
+          "stat": "move_speed",
+          "op": "add_pct",
+          "value": 0.2,
+          "group": "swiftness.move_speed"
+        }
+      ],
+      "icon": "P_Green02"
+    },
+    "keen_eye_tea": {
+      "name": "Keen-Eye Tea",
+      "duration": 300,
+      "weight": 0.2,
+      "mods": [
+        {
+          "stat": "perception",
+          "op": "flat",
+          "value": 6,
+          "group": "food.perception"
+        }
+      ],
+      "icon": "P_Yellow03"
+    },
+    "ironbark_draught": {
+      "name": "Ironbark Draught",
+      "duration": 180,
+      "weight": 0.3,
+      "mods": [
+        {
+          "stat": "armor",
+          "op": "flat",
+          "value": 18,
+          "group": "ward.armor"
+        }
+      ],
+      "icon": "P_Orange03"
+    }
+  }
+}
