@@ -1,5 +1,5 @@
 {
- "_note": "PvE monsters. Loot follows the OSRS style: 'always' drops, then 'rolls' picks on a weighted table out of 'denom' (entries [item, count, weight]; 'nothing' = no drop), then each Magic Core rolls 1 in N on its own. Gold is a [min, max] range paid straight to the killer. Slimes are lightweight blobs (game/slime.gd); goblins are full fighters (same body and combat as the player) at a smaller scale.",
+ "_note": "PvE monsters. Loot follows the OSRS style: 'always' drops, then 'rolls' picks on a weighted table out of 'denom' (entries [item, count, weight]; 'nothing' = no drop), then each Magic Core rolls 1 in N on its own. Gold is a [min, max] range paid straight to the killer. Slimes are lightweight blobs (game/slime.gd); goblins are full fighters (same body and combat as the player) at a smaller scale. rank: the monster's guild rank (power x2 per letter, game/rank.gd) - it scales its health and damage and sets the XP it gives.",
  "slime": {
   "name": "Slime",
   "hp": 120,
@@ -56,7 +56,8 @@
      128
     ]
    ]
-  }
+  },
+  "rank": "F-"
  },
  "goblin": {
   "name": "Goblin",
@@ -126,6 +127,7 @@
      512
     ]
    ]
-  }
+  },
+  "rank": "E-"
  }
 }

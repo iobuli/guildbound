@@ -185,7 +185,7 @@ func _signature() -> String:
 	var s := player.sheet
 	var parts := [tab, str(s.bag), str(s.equipment), s.gold, s.effects.size()]
 	if player.quests != null:
-		parts.append(str(player.quests.active) + str(player.quests.kills) + str(player.quests.rank_points))
+		parts.append(str(player.quests.active) + str(player.quests.kills) + str(player.sheet.xp))
 	if tab == 1:
 		for st in STAT_GRID:
 			parts.append(_stat_value(st))
@@ -250,9 +250,14 @@ func _card() -> void:
 	if q == null:
 		_content.add_child(_label("Not registered with the guild.", 12, TEXT))
 		return
-	_content.add_child(_label("%s   -   Rank %s" % [player.sheet.display_name, q.rank()], int(18 * _k), YELLOW, false))
+	var s := player.sheet
+	_content.add_child(_label("%s   -   Rank %s" % [s.display_name, q.rank()], int(18 * _k), YELLOW, false))
+	_content.add_child(_label(Rank.title(s, player.combat), int(14 * _k), TEXT, false))
 	var nr := q.next_rank()
-	_content.add_child(_label(("%d / %d rank points to %s" % [q.rank_points, nr[1], nr[2]]) if not nr.is_empty() else "%d rank points (top rank)" % q.rank_points, int(12 * _k), TEXT))
+	_content.add_child(_label(("%d / %d XP to %s   (rank power x%s)" % [s.xp, nr[1], nr[2], Stats._g(Rank.power(s.rank_step()))]) if not nr.is_empty() else "%d XP (top rank)" % s.xp, int(12 * _k), TEXT))
+	var nu := Rank.next_unlock(s.rank_step())
+	if not nu.is_empty():
+		_content.add_child(_label("Next: %s opens %s" % [nu[0], nu[1]], int(11 * _k), TEXT.darkened(0.2)))
 	_content.add_child(_label("Quests", int(14 * _k), ORANGE, false))
 	if q.active.is_empty():
 		_content.add_child(_label("None - the Quest Board is on the plaza.", 11, TEXT.darkened(0.3)))

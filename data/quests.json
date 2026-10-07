@@ -1,36 +1,6 @@
 {
- "_note": "Guild quests (the board on the plaza). rank: the lowest rank that may take it. Objectives: kill <target> x count (credited when the player lands the killing blow), collect <item> x count (handed over at turn-in). Rewards: gold, rank points (rank F..S from 'ranks'), items (into the backpack, or at your feet if it is full). Up to 'max_active' quests at once. Rank thresholds and the F-S letters follow docs/REBUILD_PLAN.md (Hunter's Card). Repeatable quests rest for 'cooldown' seconds after you turn them in.",
+ "_note": "Guild quests (the board on the plaza). rank: the lowest rank that may take it. Objectives: kill <target> x count (credited when the player lands the killing blow), collect <item> x count (handed over at turn-in). Rewards: gold, XP (your guild rank comes from XP: data/ranks.json), items (into the backpack, or at your feet if it is full). Up to 'max_active' quests at once. rank: the lowest letter that may take it (any step of it). Repeatable quests rest for 'cooldown' seconds after you turn them in.",
  "max_active": 3,
- "ranks": [
-  [
-   "F",
-   0
-  ],
-  [
-   "E",
-   40
-  ],
-  [
-   "D",
-   120
-  ],
-  [
-   "C",
-   260
-  ],
-  [
-   "B",
-   480
-  ],
-  [
-   "A",
-   800
-  ],
-  [
-   "S",
-   1300
-  ]
- ],
  "quests": {
   "slime_cull": {
    "name": "Slime Cull",
@@ -47,13 +17,13 @@
    ],
    "rewards": {
     "gold": 60,
-    "rank_points": 20,
     "items": [
      [
       "core_common",
       1
      ]
-    ]
+    ],
+    "xp": 60
    },
    "cooldown": 180
   },
@@ -72,13 +42,13 @@
    ],
    "rewards": {
     "gold": 45,
-    "rank_points": 12,
     "items": [
      [
       "swift_tonic",
       1
      ]
-    ]
+    ],
+    "xp": 40
    },
    "cooldown": 180
   },
@@ -97,13 +67,13 @@
    ],
    "rewards": {
     "gold": 150,
-    "rank_points": 40,
     "items": [
      [
       "core_uncommon",
       1
      ]
-    ]
+    ],
+    "xp": 250
    },
    "cooldown": 300
   },
@@ -122,8 +92,8 @@
    ],
    "rewards": {
     "gold": 120,
-    "rank_points": 30,
-    "items": []
+    "items": [],
+    "xp": 180
    },
    "cooldown": 300
   }

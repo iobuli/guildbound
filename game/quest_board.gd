@@ -20,7 +20,7 @@ func refresh() -> void:
 	var q := player.quests
 	clear_list()
 	var nr := q.next_rank()
-	_head.text = "Rank %s   -   %d rank points%s   -   %d gold" % [q.rank(), q.rank_points,
+	_head.text = "%s, rank %s   -   %d XP%s   -   %d gold" % [Rank.title(player.sheet, player.combat), q.rank(), player.sheet.xp,
 		("   (%s at %d)" % [nr[2], nr[1]]) if not nr.is_empty() else "   (top rank)", player.sheet.gold]
 	section("Your quests  (%d / %d)" % [q.active.size(), int(q.data.get("max_active", 3))])
 	if q.active.is_empty():
@@ -78,6 +78,6 @@ func _quest_card(id: String) -> VBoxContainer:
 	var items := ""
 	for it in r.get("items", []):
 		items += ", %s x%d" % [player.sheet.item_data(str(it[0])).get("name", it[0]), int(it[1])]
-	txt += "[color=#ffd95a]Reward: %d gold, %d rank points%s[/color]" % [int(r.get("gold", 0)), int(r.get("rank_points", 0)), items]
+	txt += "[color=#ffd95a]Reward: %d gold, %d XP%s[/color]" % [int(r.get("gold", 0)), int(r.get("xp", 0)), items]
 	rich(col, txt).custom_minimum_size = Vector2(560, 0)
 	return col

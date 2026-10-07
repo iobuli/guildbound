@@ -19,6 +19,7 @@ var max_hp := 100.0
 var radius := 0.55
 var height := 1.0
 var dead := false
+var power := 1.0           # its rank's power (Rank): health and lunge damage
 var _respawn_t := 0.0
 var _hop_t := 0.0
 var _lunge := false
@@ -44,7 +45,8 @@ func _ready() -> void:
 	all.append(self)
 	radius = float(data.get("radius", 0.55))
 	height = radius * 1.8
-	max_hp = float(data.get("hp", 100.0))
+	power = Rank.power(Rank.parse(str(data.get("rank", "F-"))))
+	max_hp = float(data.get("hp", 100.0)) * power
 	hp = max_hp
 	collision_layer = Layers.PLAYER
 	collision_mask = Layers.WORLD | Layers.PROPS | Layers.PLAYER
@@ -129,7 +131,7 @@ func _physics_process(delta: float) -> void:
 		for f in Player.fighters:
 			if not f.is_ai and LockOn.alive(f) and f.global_position.distance_to(global_position) < radius + 0.55:
 				_lunge_hit = true
-				f.combat.receive_monster(self, float(data.get("damage", 12)), float(data.get("poise", 10)), global_position + Vector3.UP * radius)
+				f.combat.receive_monster(self, float(data.get("damage", 12)) * power, float(data.get("poise", 10)), global_position + Vector3.UP * radius)
 				velocity = -velocity * 0.3 + Vector3.UP * 3.0
 				break
 	move_and_slide()

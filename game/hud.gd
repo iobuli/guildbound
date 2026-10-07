@@ -198,7 +198,7 @@ func _vitals(s: CharModel) -> void:
 	draw_arc(bc, 30.0, 0.0, TAU, 40, GOLD, 2.5, true)
 	_text_c(bc.x, bc.y - 6.0, "LV", 10, GOLD, true)
 	_text_c(bc.x, bc.y + 14.0, str(s.level), 20, Color.WHITE, true)
-	_text(Vector2(92, 34), s.display_name, 14, GOLD, true)
+	_text(Vector2(92, 34), "%s  [%s]" % [s.display_name, s.rank_name()], 14, GOLD, true)
 	_text(Vector2(248, 34), "%d gold" % s.gold, 12, GOLD)
 	var max_hp := s.v("max_hp")
 	var max_mp := s.v("max_mana")

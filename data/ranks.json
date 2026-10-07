@@ -1,0 +1,76 @@
+{
+ "_note": "Guild rank from XP (game/rank.gd). Letters F..S, each split into X-, X, X+, X++ at 0/25/50/75% of the way to the next letter. letter_xp: XP to reach each letter (~8x per letter; S's steps span last_letter_span x its threshold). kill_xp: XP for a monster of each letter (x4 per letter, +power_per_sub per step) - so each letter takes about twice as long as the one before. Monsters below your letter pay lower_rank_xp per letter of difference. Power: power_per_letter per letter (x2), +power_per_sub per step, on health, attack damage and spell power. Titles: the noun, plus the first adjective whose measure is an outlier for your rank (1.0 = the norm).",
+ "letters": [
+  "F",
+  "E",
+  "D",
+  "C",
+  "B",
+  "A",
+  "S"
+ ],
+ "subs": [
+  "-",
+  "",
+  "+",
+  "++"
+ ],
+ "letter_xp": [
+  0,
+  500,
+  4000,
+  30000,
+  250000,
+  2000000,
+  16000000
+ ],
+ "last_letter_span": 8.0,
+ "kill_xp": [
+  10,
+  40,
+  160,
+  640,
+  2560,
+  10240,
+  40960
+ ],
+ "lower_rank_xp": 0.25,
+ "power_per_letter": 2.0,
+ "power_per_sub": 0.15,
+ "titles": {
+  "noun": "Adventurer",
+  "expected_gold": 150,
+  "expected_gold_per_letter": 4.0,
+  "adjectives": [
+   {
+    "title": "Rich",
+    "measure": "gold",
+    "above": 4.0
+   },
+   {
+    "title": "Mighty",
+    "measure": "power",
+    "above": 1.6
+   },
+   {
+    "title": "Weak",
+    "measure": "power",
+    "below": 0.6
+   },
+   {
+    "title": "Clumsy",
+    "measure": "hits_taken_per_landed",
+    "above": 2.0,
+    "min_events": 20
+   }
+  ]
+ },
+ "unlocks": {
+  "E-": "rank E quests (goblins)",
+  "D-": "a class specialisation",
+  "C-": "your first racial evolution",
+  "B-": "a second specialisation",
+  "A-": "your second racial evolution",
+  "S-": "a legend's title of your own"
+ }
+}

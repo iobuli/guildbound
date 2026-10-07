@@ -61,6 +61,8 @@ var mana := 0.0
 var bag := {}        # item id -> count (gear and consumables you carry but are not wearing)
 var grid := GridBag.new()   # where each of those sits in the backpack (Tarkov-style; bag stays the count)
 var gold := 0
+var xp := 0                 # experience: the guild rank comes from it (Rank)
+var rank_override := ""     # a fixed rank for monsters and NPCs ("E-"); "" = from xp
 
 var _cache := {}
 var _races: Dictionary
@@ -76,6 +78,31 @@ func _init(p_name: String, p_race: String, p_level: int) -> void:
 	_items = DataStore.items()
 	_spells = DataStore.spells()
 	restore()
+
+
+func rank_step() -> int:
+	return Rank.parse(rank_override) if rank_override != "" else Rank.step_for_xp(xp)
+
+
+func rank_name() -> String:
+	return Rank.name(rank_step())
+
+
+## Gain experience; returns [rank before, rank after] (steps). XP only grows, so the rank never
+## drops. Health and mana keep their share of the maximum when a rank up raises it.
+func gain_xp(n: int) -> Array:
+	var before := rank_step()
+	if n <= 0:
+		return [before, before]
+	var hp_f := hp / maxf(1.0, v("max_hp"))
+	var mp_f := mana / maxf(1.0, v("max_mana"))
+	xp += n
+	var after := rank_step()
+	if after != before:
+		invalidate()
+		hp = hp_f * v("max_hp")
+		mana = mp_f * v("max_mana")
+	return [before, after]
 
 
 func invalidate() -> void:
@@ -265,6 +292,11 @@ func _modifiers() -> Array:
 			mods.append(Stats.make_mod("Item: " + item["name"], m["stat"], m["op"], m["value"], m.get("group")))
 	for e in effects:
 		mods.append_array(e["mods"])
+	var step := rank_step()
+	var pw := Rank.power(step)
+	if pw != 1.0:  # rank is power: x2 per letter, +15% per step (Rank)
+		for st in ["max_hp", "attack_damage", "spell_power"]:
+			mods.append(Stats.make_mod("Rank " + Rank.name(step), st, "more", pw))
 	_cache["_mods"] = mods
 	return mods
 

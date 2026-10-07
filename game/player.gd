@@ -467,3 +467,15 @@ func _sync_auras() -> void:
 			a.position = Vector3.UP * 1.1
 			add_child(a)
 			_auras[k] = a
+
+
+## Experience (kills, quests). A rank up is announced: the new rank and title, a ring of light.
+## `quiet`: the caller has already told the player about the XP itself.
+func gain_xp(n: int, quiet: bool = false) -> void:
+	var r := sheet.gain_xp(n)
+	if n > 0 and not quiet:
+		toast.emit("+%d XP" % n)
+	if r[1] != r[0]:
+		toast.emit("RANK UP: %s -> %s   (%s)" % [Rank.name(r[0]), Rank.name(r[1]), Rank.title(sheet, combat)])
+		Vfx.ring(self, global_position + Vector3.UP * 0.2, Color(1.0, 0.85, 0.35), 1.4)
+		Sfx.at(self, global_position, "parry", 0.8)

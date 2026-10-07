@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank]
 
 var m: Node
 var p: Player
@@ -38,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -395,10 +395,11 @@ func t_quests() -> void:
 	var mobs: Mobs = m.mobs
 	q.active.clear()
 	q.finished.clear()
-	q.rank_points = 0
+	p.sheet.xp = 0
+	p.sheet.invalidate()
 	q.ready_at.clear()
 	var offer := q.available()
-	check("a new hunter (rank F) sees the F quests, not the E ones", q.rank() == "F" and offer.has("slime_cull") and not offer.has("goblin_trouble"), str(offer))
+	check("a new hunter (rank F-) sees the F quests, not the E ones", q.rank() == "F-" and offer.has("slime_cull") and not offer.has("goblin_trouble"), str(offer))
 	q.accept("slime_cull")
 	var spot: Vector3 = m.arena.spots["run_lane"]
 	await put(spot)
@@ -408,10 +409,11 @@ func t_quests() -> void:
 	var four: bool = int(q.progress("slime_cull")[0][1]) == 4 and not q.complete("slime_cull")
 	mobs.reward("slime", spot + Vector3(0, 0, -30), p)
 	var gold0 := p.sheet.gold
+	var xp0 := p.sheet.xp
 	var cores0 := int(p.sheet.bag.get("core_common", 0))
 	var r := q.turn_in("slime_cull")
-	check("Slime Cull: 5 slime kills by the player complete it; turning in pays gold, rank points and a core",
-		four and bool(r[0]) and p.sheet.gold == gold0 + 60 and q.rank_points == 20 and int(p.sheet.bag.get("core_common", 0)) == cores0 + 1, str(r[1]))
+	check("Slime Cull: 5 slime kills by the player complete it; turning in pays gold, XP and a core",
+		four and bool(r[0]) and p.sheet.gold == gold0 + 60 and p.sheet.xp == xp0 + 60 and int(p.sheet.bag.get("core_common", 0)) == cores0 + 1, str(r[1]))
 	q.accept("sticky_business")
 	var not_yet := not q.complete("sticky_business")
 	var gel0 := int(p.sheet.bag.get("slime_gel", 0))
@@ -420,10 +422,12 @@ func t_quests() -> void:
 	var r2 := q.turn_in("sticky_business")
 	check("a collect quest takes the items from the backpack when turned in",
 		not_yet and bool(r2[0]) and int(p.sheet.bag.get("slime_gel", 0)) == gel0 + added - 6, str(r2[1]))
-	q.rank_points = 39
-	var still_f := q.rank() == "F"
-	q.rank_points = 40
-	check("40 rank points make rank E and open the goblin quests", still_f and q.rank() == "E" and q.available().has("goblin_trouble"))
+	p.sheet.xp = 499
+	p.sheet.invalidate()
+	var still_f := q.rank() == "F++" and not q.available().has("goblin_trouble")
+	p.sheet.xp = 500
+	p.sheet.invalidate()
+	check("500 XP makes rank E- and opens the goblin quests", still_f and q.rank() == "E-" and q.available().has("goblin_trouble"))
 	# the board on the plaza: E opens it (the game pauses), it lists your quests and the offers
 	q.accept("goblin_trouble")
 	await put(m.arena.spots["board"])
@@ -437,6 +441,9 @@ func t_quests() -> void:
 	await get_tree().process_frame
 	check("E at the Quest Board opens it (paused) with your quests and the offers", shown)
 	q.active.clear()
+	p.sheet.xp = 0
+	p.sheet.invalidate()
+	p.sheet.restore()
 
 
 func t_shop() -> void:
@@ -509,3 +516,42 @@ func t_shop() -> void:
 	q.clock += float(q.quest("slime_cull").get("cooldown", 0)) + 1.0
 	check("a repeatable quest rests after you turn it in, then comes back", resting and q.available().has("slime_cull"))
 	q.active.clear()
+
+
+func t_rank() -> void:
+	print("-- guild rank: XP, power per letter, titles, kill XP")
+	var names: Array = []
+	for x in [0, 125, 250, 375, 500, 4000, 30000]:
+		names.append(Rank.name(Rank.step_for_xp(x)))
+	check("XP sets the rank: F- F F+ F++, then E- at 500, D- at 4000, C- at 30000", names == ["F-", "F", "F+", "F++", "E-", "D-", "C-"], str(names))
+	check("each letter doubles power, each step inside a letter adds 15% (F++ x1.45, E- x2, D- x4, S++ ~x93)",
+		is_equal_approx(Rank.power(Rank.parse("F++")), 1.45) and is_equal_approx(Rank.power(Rank.parse("E-")), 2.0)
+		and is_equal_approx(Rank.power(Rank.parse("D-")), 4.0) and is_equal_approx(Rank.power(Rank.parse("S++")), 64.0 * 1.45))
+	var s := CharModel.new("Recruit", "human", 5)
+	var hp0 := s.v("max_hp")
+	var ad0 := s.v("attack_damage")
+	var r := s.gain_xp(500)
+	check("reaching E- doubles health and damage; health keeps its share of the new maximum",
+		Rank.name(r[1]) == "E-" and is_equal_approx(s.v("max_hp"), hp0 * 2.0) and is_equal_approx(s.v("attack_damage"), ad0 * 2.0) and is_equal_approx(s.hp, s.v("max_hp")),
+		"hp %.0f -> %.0f, ad %.1f -> %.1f" % [hp0, s.v("max_hp"), ad0, s.v("attack_damage")])
+	s.gain_xp(-400)
+	check("XP is never lost, so the rank never drops (no smurfing)", s.xp == 500 and s.rank_name() == "E-")
+	check("monsters pay XP by their rank; below your letter, a quarter per letter",
+		Rank.kill_xp(Rank.parse("F-"), Rank.parse("F-")) == 10 and Rank.kill_xp(Rank.parse("E-"), Rank.parse("F-")) == 40
+		and Rank.kill_xp(Rank.parse("F-"), Rank.parse("E-")) == 3 and Rank.kill_xp(Rank.parse("F-"), Rank.parse("D-")) == 1)
+	var k: CharModel = m.build_kaelen()
+	var t0 := Rank.title(k)
+	k.gold = 100000
+	var t1 := Rank.title(k)
+	check("titles: a hunter near the norm for their rank is an Adventurer; far richer is a Rich Adventurer", t0 == "Adventurer" and t1 == "Rich Adventurer", "%s / %s" % [t0, t1])
+	var xp0 := p.sheet.xp
+	m.mobs.reward("slime", Vector3(0, 0, -80), p)
+	check("a slime killed by the player gives XP", p.sheet.xp == xp0 + 10, "xp %d -> %d" % [xp0, p.sheet.xp])
+	var gob: Player = _goblins()[0]
+	check("goblins are rank E-: double the health and damage of the same fighter at F-",
+		gob.sheet.rank_name() == "E-" and is_equal_approx(Rank.power(gob.sheet.rank_step()), 2.0))
+	var nu := Rank.next_unlock(Rank.parse("E"))
+	check("ranks open things up (D- opens a class specialisation)", nu.size() == 2 and nu[0] == "D-", str(nu))
+	p.sheet.xp = 0
+	p.sheet.invalidate()
+	p.sheet.restore()

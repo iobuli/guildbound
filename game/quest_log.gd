@@ -11,7 +11,6 @@ var player: Player
 var data := {}
 var active := {}          # quest id -> Array of progress counts (one per objective)
 var finished := {}        # quest id -> times completed
-var rank_points := 0
 var kills := {}           # monster kind -> count
 var clock := 0.0          # seconds of play (quest cooldowns)
 var ready_at := {}        # quest id -> clock time it is back on the board
@@ -32,27 +31,17 @@ func quest(id: String) -> Dictionary:
 	return data["quests"].get(id, {})
 
 
+## The player's guild rank ("F-" .. "S++"), from their XP (Rank).
 func rank() -> String:
-	var r := "F"
-	for step in data["ranks"]:
-		if rank_points >= int(step[1]):
-			r = str(step[0])
-	return r
+	return player.sheet.rank_name()
 
 
-func rank_index(letter: String) -> int:
-	for i in data["ranks"].size():
-		if data["ranks"][i][0] == letter:
-			return i
-	return 0
-
-
-## Points needed for the next rank ([have, need]), or [] at the top.
+## XP for the next rank step: [have, need, its name], or [] at the top.
 func next_rank() -> Array:
-	var i := rank_index(rank())
-	if i + 1 >= data["ranks"].size():
+	var st := player.sheet.rank_step()
+	if st + 1 >= Rank.steps():
 		return []
-	return [rank_points, int(data["ranks"][i + 1][1]), str(data["ranks"][i + 1][0])]
+	return [player.sheet.xp, Rank.threshold(st + 1), Rank.name(st + 1)]
 
 
 ## Quests the board offers you now: your rank allows them, not already taken, repeatable or new.
@@ -64,7 +53,7 @@ func available() -> Array:
 			continue
 		if clock < float(ready_at.get(id, 0.0)):
 			continue
-		if rank_index(str(q.get("rank", "F"))) <= rank_index(rank()):
+		if Rank.letter_index(str(q.get("rank", "F"))) <= Rank.letter_of(player.sheet.rank_step()):
 			out.append(id)
 	return out
 
@@ -119,7 +108,6 @@ func turn_in(id: String) -> Array:
 	var r: Dictionary = q.get("rewards", {})
 	var before := rank()
 	player.sheet.gold += int(r.get("gold", 0))
-	rank_points += int(r.get("rank_points", 0))
 	for it in r.get("items", []):
 		if not player.sheet.add_item(str(it[0]), int(it[1])):
 			var pk := ItemPickup.make(str(it[0]), int(it[1]))
@@ -129,7 +117,8 @@ func turn_in(id: String) -> Array:
 	finished[id] = int(finished.get(id, 0)) + 1
 	if bool(q.get("repeatable", false)):
 		ready_at[id] = clock + float(q.get("cooldown", 0))
-	var msg := "%s complete: +%d gold, +%d rank points" % [q["name"], int(r.get("gold", 0)), int(r.get("rank_points", 0))]
+	player.gain_xp(int(r.get("xp", 0)), true)
+	var msg := "%s complete: +%d gold, +%d XP" % [q["name"], int(r.get("gold", 0)), int(r.get("xp", 0))]
 	if rank() != before:
 		msg += "   RANK UP: %s" % rank()
 	changed.emit()

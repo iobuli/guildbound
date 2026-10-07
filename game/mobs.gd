@@ -50,6 +50,9 @@ func spawn_goblins(center: Vector3, n: int = -1) -> Array[Player]:
 		var a := TAU * i / maxf(1.0, n) + 0.5
 		var pos := center + Vector3(cos(a) * 4.0, 0.1, sin(a) * 4.0)
 		var sheet := CharModel.new(str(d["name"]), str(d.get("race", "human")), int(d.get("level", 3)))
+		sheet.rank_override = str(d.get("rank", ""))
+		sheet.invalidate()
+		sheet.restore()
 		var ai := FighterAI.new("spar")
 		ai.home = pos
 		var g: Player = main.spawn_fighter(sheet, pos, ai, "Superhero_Male_FullBody", str(d.get("stance", "dagger")), str(d.get("hair", "")))
@@ -102,8 +105,12 @@ func reward(kind: String, at: Vector3, killer: Player) -> Dictionary:
 		main.add_child(pk)
 		var a := TAU * i / maxf(1.0, items.size())
 		pk.global_position = Vector3(at.x + cos(a) * 0.5, maxf(at.y, 0.0), at.z + sin(a) * 0.5)
-	if killer != null and is_instance_valid(killer) and int(r["gold"]) > 0:
+	r["xp"] = 0
+	if killer != null and is_instance_valid(killer):
 		killer.sheet.gold += int(r["gold"])
-		killer.toast.emit("+%d gold" % int(r["gold"]))
+		if not killer.is_ai:
+			r["xp"] = Rank.kill_xp(Rank.parse(str(data[kind].get("rank", "F-"))), killer.sheet.rank_step())
+		killer.toast.emit("+%d gold   +%d XP" % [int(r["gold"]), int(r["xp"])])
+		killer.gain_xp(int(r["xp"]), true)
 	killed.emit(kind, killer)
 	return r
