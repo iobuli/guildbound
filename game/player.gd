@@ -481,6 +481,7 @@ func _update_model(delta: float) -> void:
 		mode = "air"
 	elif crouching:
 		mode = "crouch"
+	model.grounded = (state == State.GROUND or state == State.DODGE) and is_on_floor()
 	model.set_motion(Vector2(local.x, -local.z), sprinting, mode, delta)
 	_sync_auras()
 

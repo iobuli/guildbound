@@ -6,7 +6,8 @@ extends SceneTree
 ##
 ##   xvfb-run -a -s "-screen 0 1280x720x24" Godot --rendering-driver opengl3 --audio-driver Dummy \
 ##       --path <guildbound> --resolution 960x540 --fixed-fps 144 --script res://tools/motion_lab.gd \
-##       [-- --only=run,startstop,turn,strafe,combo,dodge --csv=<file.csv> --label=<name>]
+##       [-- --only=run,startstop,turn,strafe,combo,dodge --csv=<file.csv> --label=<name> --verbose
+##           --trace=<scenario> --trace-every=N --shots=<dir> --shot-every=N]
 ##
 ## --fixed-fps 144 makes every frame advance exactly 1/144 s of game time while physics ticks at 60 Hz (the
 ## 144 Hz monitor case: 2.4 frames per tick), so the numbers do not depend on how fast the machine renders.
@@ -46,8 +47,15 @@ var csv_rows: PackedStringArray = []
 var label := ""
 var headless := false
 var trace := ""            # --trace=<scenario>: print the locomotion drive every 6th frame of it
+var trace_every := 6       # --trace-every=N
 var cur := ""
 var verbose := false
+var shots := ""            # --shots=<dir>: save the screen every --shot-every frames while recording (windowed)
+var shot_every := 12
+var side := false          # --side: the camera looks at the hero from the side (view only)
+var _wall_us := 0          # real time between recorded frames (the machine's cost of a frame at fixed fps)
+var _wall_n := 0
+var _last_us := 0
 var _drawn := {}           # bone -> skeleton-space position as last drawn (after the skeleton's modifiers)
 
 
@@ -70,6 +78,14 @@ func _run() -> void:
 			csv = a.substr(6)
 		elif a.begins_with("--label="):
 			label = a.substr(8)
+		elif a.begins_with("--trace-every="):
+			trace_every = maxi(1, int(a.substr(14)))
+		elif a.begins_with("--shots="):
+			shots = a.substr(8)
+		elif a.begins_with("--shot-every="):
+			shot_every = maxi(1, int(a.substr(13)))
+		elif a == "--side":
+			side = true
 		elif a == "--verbose":
 			verbose = true
 		elif a.begins_with("--trace="):
@@ -89,6 +105,12 @@ func _run() -> void:
 	# the pose that is drawn includes the skeleton modifiers (lean, foot grounding), which the skeleton
 	# undoes again before the next frame's animation: capture it when the skeleton has just updated
 	p.model.skeleton.skeleton_updated.connect(_capture_pose)
+	if shots != "":
+		for c in main.get_children():
+			if c is CanvasLayer:
+				(c as CanvasLayer).visible = false  # the HUD would cover the hero
+		if p.cam != null:
+			p.cam.zoom = 2.6
 	if headless:
 		process_frame.connect(_sample)
 	else:
@@ -131,6 +153,7 @@ func _put(pos: Vector3, face: Vector3 = Vector3(0, 0, -1)) -> void:
 	if p.cam != null:
 		p.cam.yaw = ai.puppet.view_yaw
 		p.cam.pitch = -0.25
+		p.cam.view_offset = PI * 0.5 if side else 0.0
 	await _ticks(45)
 
 
@@ -250,7 +273,15 @@ func _sample() -> void:
 		f["cam"] = Vector3.ZERO
 		f["head_px"] = Vector2.ZERO
 	frames.append(f)
-	if cur == trace and frames.size() % 6 == 0:
+	var now := Time.get_ticks_usec()
+	if _last_us > 0 and frames.size() > 1:
+		_wall_us += now - _last_us
+		_wall_n += 1
+	_last_us = now
+	if shots != "" and not headless and frames.size() % shot_every == 0:
+		DirAccess.make_dir_recursive_absolute(shots)
+		root.get_viewport().get_texture().get_image().save_png("%s/%s_%03d.png" % [shots, cur, frames.size()])
+	if cur == trace and frames.size() % trace_every == 0:
 		var m := p.model
 		print("  f%3d v=%s bp=%s move=%.2f rate=%.2f act=%.2f lean=(%.3f, %.3f) state=%d" % [frames.size(), str(Vector2(p.velocity.x, p.velocity.z).length()).pad_decimals(2),
 			str(m.get("_bp")), float(m.get("_move")), float(m.get("_rate")), float(m.get("_act_w")), float(m._lean.roll) if m.get("_lean") != null else 0.0,
@@ -380,6 +411,7 @@ func _analyse(name: String) -> void:
 func _print_table() -> void:
 	print("\n=== MOTION LAB %s (%s, %.0f Hz frames, %d Hz physics) ===" % [label, "headless" if headless else "windowed", 1.0 / DT, Engine.physics_ticks_per_second])
 	print("%-10s %5s %9s %10s %8s %8s %8s %7s %6s %6s %5s %9s %9s %6s" % ["scenario", "frames", "cam-stall", "pose-stall", "scr-jit", "body-jit", "hand-jit", "pop", "slide", "plant", "dip", "turn-jit", "max-turn", "dist"])
+	print("cost per frame: %.2f ms real time (whole scene%s, %d frames)" % [_wall_us / 1000.0 / maxf(1.0, _wall_n), "" if headless else " incl. drawing", _wall_n])
 	for r: Dictionary in results:
 		if int(r["n"]) < 4:
 			print("%-10s (no frames recorded)" % r["name"])

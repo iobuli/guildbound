@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel,magic,flow,sound]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel,magic,flow,anim,sound]
 
 var m: Node
 var p: Player
@@ -38,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["sound", t_sound]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["anim", t_anim], ["sound", t_sound]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -723,6 +723,58 @@ func t_flow() -> void:
 	check("no pops: no hand, foot or head moves faster than 28 m/s through a combo", worst < 28.0, "fastest %.1f m/s (%s)" % [worst, worst_at])
 	p.lock.target = null
 	await frames(60)
+
+
+func t_anim() -> void:
+	print("-- animation core: every frame drawn, feet planted, upper-body one-shots")
+	await put(m.arena.spots["run_lane"])
+	ai.puppet.move = Vector2(0, 1)
+	await frames(50)
+	# sample the pose as drawn (after the skeleton modifiers), once per rendered frame
+	var sk: Skeleton3D = p.model.skeleton
+	var samples: Array = []
+	var grab := func() -> void:
+		var x := sk.get_global_transform_interpolated()
+		var body := p.model.get_global_transform_interpolated()
+		samples.append({"t": Time.get_ticks_usec(), "fl": x * sk.get_bone_global_pose(sk.find_bone("foot_l")).origin,
+			"fr": x * sk.get_bone_global_pose(sk.find_bone("foot_r")).origin,
+			"hand": body.affine_inverse() * (x * sk.get_bone_global_pose(sk.find_bone("hand_r")).origin)})
+	sk.skeleton_updated.connect(grab)
+	await frames(40)
+	sk.skeleton_updated.disconnect(grab)
+	var still := 0
+	var slide := 0.0
+	var planted := 0
+	var low := {"fl": INF, "fr": INF}
+	for sm: Dictionary in samples:
+		for k: String in ["fl", "fr"]:
+			low[k] = minf(float(low[k]), (sm[k] as Vector3).y)
+	for i in range(1, samples.size()):
+		var a: Dictionary = samples[i - 1]
+		var b: Dictionary = samples[i]
+		var dt := maxf(0.0005, (int(b["t"]) - int(a["t"])) / 1000000.0)
+		if (b["hand"] as Vector3).is_equal_approx(a["hand"]):
+			still += 1
+		for k: String in ["fl", "fr"]:
+			var pa: Vector3 = a[k]
+			var pb: Vector3 = b[k]
+			if pb.y < float(low[k]) + 0.02 and absf(pb.y - pa.y) / dt < 0.15:
+				slide += Vector2(pb.x - pa.x, pb.z - pa.z).length() / dt
+				planted += 1
+	var plant := slide / maxf(1.0, planted)
+	var frames_n := samples.size()
+	check("running: the pose changes on every drawn frame (%d frames over 40 ticks)" % frames_n, frames_n >= 40 and still <= frames_n / 20, "%d frames without a change" % still)
+	check("running: planted feet hold still (stride matched to the ground speed)", planted > 5 and plant < 0.35, "planted-foot speed %.2f m/s over %d samples" % [plant, planted])
+	# an upper-body one-shot over the running legs
+	var dur := p.model.play_upper(str(HeroAnim.data["magic"]["art"]), 1.4)
+	await frames(15)
+	var uw: float = p.model.tree.get("parameters/uact/blend_amount")
+	var legs_on: float = p.model.tree.get("parameters/move/blend_amount")
+	check("play_upper: a one-shot over the upper body while the legs keep running", dur > 0.2 and uw > 0.9 and legs_on > 0.9 and p.model.act_clip == "",
+		"duration %.2f s, upper weight %.2f, legs %.2f" % [dur, uw, legs_on])
+	ai.puppet.move = Vector2.ZERO
+	await frames(int(dur * 60.0) + 30)
+	check("play_upper fades out when done", float(p.model.tree.get("parameters/uact/blend_amount")) < 0.01 and p.model.upper_clip == "")
 
 
 func t_sound() -> void:

@@ -70,8 +70,11 @@ var _want_prev := Vector2.ZERO     # ... the tick before (drawn frames sit betwe
 var _sprinting := false
 var _mode := "ground"
 var _ring := {}                    # loco point name -> [feet speed m/s, clip length s]
-var _bp := Vector2.ZERO            # damped loco blend position
-var _bp_v := Vector2.ZERO
+var _bp := Vector2(0, 1)           # loco blend position (from _dir and _gait)
+var _dir := 0.0                    # its direction: 0 ahead, + to the right (rad)
+var _gait := 1.0                   # its ring: 1 walk, 2 run, 3 sprint
+var _gait_v := 0.0
+var grounded := true               # set by the controller: feet may plant (not in the air)
 var _move := 0.0                   # idle -> moving mix (damped)
 var _move_v := 0.0
 var _rate := 1.0
@@ -80,6 +83,11 @@ var _rm_acc := Vector3.ZERO
 var _rm_t := 0.0
 var _rm_v := Vector3.ZERO
 var _rm_tick := -1
+var _eval_dt := 0.0                # the time the tree's next evaluation covers
+# level of detail
+const FAR_LOD := 32.0              # m from the camera: beyond, ~30 Hz animation and no foot planting
+var _far := false
+var _far_t := 0.0
 # lean
 var _lean: PoseMod
 var _yaw_prev := NAN      # NAN until the first frame
@@ -551,17 +559,26 @@ func _process(delta: float) -> void:
 	_drive_loco(delta)
 	_drive_layers(delta)
 	_drive_lean(delta)
+	# level of detail: far from the camera the tree is stepped at ~30 Hz and the pose modifier rests
+	var cam := get_viewport().get_camera_3d()
+	var far := cam != null and cam.global_position.distance_squared_to(global_position) > FAR_LOD * FAR_LOD
+	if far != _far:
+		_far = far
+		tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_MANUAL if far else AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
+		_lean.active = not far
+		_far_t = 0.0
+	if far:
+		_far_t += delta
+		if _far_t >= 1.0 / 30.0:
+			_eval_dt = _far_t
+			_far_t = 0.0
+			tree.advance(_eval_dt)
+	else:
+		_eval_dt = delta
 
 
 func _physics_process(_delta: float) -> void:
 	_take_root_motion()  # a new tick: what the frames since the last one produced is this tick's share
-
-
-## The point on the walk ring (unit diamond) in the direction of `p`: where the blend waits while standing,
-## so a start always goes idle -> walk -> run.
-static func _on_ring(p: Vector2) -> Vector2:
-	var l1 := absf(p.x) + absf(p.y)
-	return p / l1 if l1 > 0.05 else Vector2(0, 1)
 
 
 ## Speed of a loco point's clip (feet) or a fallback.
@@ -596,17 +613,32 @@ func _drive_loco(delta: float) -> void:
 	var sp := want.length()
 	var tgt := _loco_target(want, _sprinting)
 	var g := absf(tgt.x) + absf(tgt.y)  # the target sits on the diamond of radius g
-	# the blend position: a critically damped spring (no lurch when the speed steps, no overshoot);
-	# below walking pace it rests on the walk ring (in the stick's direction) and `move` fades it out
-	var ring_tgt := tgt / g * maxf(g, 1.0) if g > 0.001 else _on_ring(_bp)
+	# the blend position in polar form: a direction that swings round the rings (never across the middle,
+	# where a left and a right strafe would be mixed) - quickly when nearly stopped - and a gait on a
+	# critically damped spring (no lurch when the speed steps, no overshoot). Below walking pace it rests on
+	# the walk ring and `move` fades it out.
+	var align := 1.0
+	if g > 0.05:
+		var dd := wrapf(atan2(tgt.x, tgt.y) - _dir, -PI, PI)
+		if absf(dd) > 1.75 and _move > 0.25:
+			# reversed (a strafe from right to left): the legs gather to the idle first and the direction
+			# swaps under cover of it, instead of mixing a left-leading with a right-leading stride
+			align = 0.0
+		elif absf(dd) > 1.75:
+			_dir = atan2(tgt.x, tgt.y)
+		else:
+			var turn := lerpf(40.0, 10.0, _move * _move) * delta
+			_dir = wrapf(_dir + clampf(dd * (1.0 - exp(-delta * 30.0)), -turn, turn), -PI, PI)
 	var k := BLEND_HZ
-	_bp_v += ((ring_tgt - _bp) * k * k - _bp_v * 2.0 * k) * delta
-	_bp += _bp_v * delta
+	_gait_v += ((maxf(g, 1.0) - _gait) * k * k - _gait_v * 2.0 * k) * delta
+	_gait = maxf(1.0, _gait + _gait_v * delta)
+	var d := Vector2(sin(_dir), cos(_dir))
+	_bp = d / (absf(d.x) + absf(d.y)) * _gait
 	# idle <-> moving follows the (already acceleration-limited, interpolated) speed closely: a lagging mix
 	# would make the legs spin up to cover the ground with too little weight; a stiff spring only rounds
 	# off corners and steps (root motion handing over to the stick)
 	var mk := MOVE_HZ
-	_move_v += ((clampf(g, 0.0, 1.0) - _move) * mk * mk - _move_v * 2.0 * mk) * delta
+	_move_v += ((clampf(g, 0.0, 1.0) * align - _move) * mk * mk - _move_v * 2.0 * mk) * delta
 	_move = clampf(_move + _move_v * delta, 0.0, 1.0)
 	tree.set("parameters/loco/blend_position", _bp)
 	tree.set("parameters/move/blend_amount", _move)
@@ -713,7 +745,7 @@ func _drive_lean(delta: float) -> void:
 	if is_nan(_yaw_prev):
 		_yaw_prev = 0.0
 		_lean_pos = pos
-	var f := 1.0 - exp(-delta * 12.0)
+	var f := 1.0 - exp(-delta * 18.0)
 	var v := (pos - _lean_pos) / maxf(delta, 0.0001)
 	v.y = 0.0
 	if v.length() > 25.0:  # a teleport
@@ -728,9 +760,11 @@ func _drive_lean(delta: float) -> void:
 	var on := (1.0 - _act_w) * (1.0 if _mode == "ground" else 0.0)
 	var roll := clampf(-_lean_acc.dot(right) * 0.011, -0.15, 0.15) * on
 	var pitch := clampf(_lean_acc.dot(fwd) * 0.006, -0.07, 0.08) * on
-	var g := 1.0 - exp(-delta * 9.0)
+	var g := 1.0 - exp(-delta * 12.0)
 	_lean.roll = lerpf(_lean.roll, roll, g)
 	_lean.pitch = lerpf(_lean.pitch, pitch, g)
+	# feet plant on the ground only, and not while an action carries the body fast (rolls, lunges)
+	_lean.feet_lock = grounded and _mode != "air" and (_act_w < 0.5 or _rm_v.length() < 1.5)
 
 
 ## Play a whole-body action; returns how long it lasts at that speed. `fade` = blend out at the end.
@@ -819,7 +853,7 @@ func hold(clip: String) -> void:
 ## Every evaluation of the tree (once per rendered frame) adds its root motion, in world space.
 func _on_mixer_applied() -> void:
 	_rm_acc += inst.global_basis * tree.get_root_motion_position()
-	_rm_t += get_process_delta_time()
+	_rm_t += _eval_dt
 
 
 ## Start of a physics tick: the frames since the last tick give the root motion's current velocity.
