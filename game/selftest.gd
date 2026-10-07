@@ -41,6 +41,7 @@ func run(main: Node) -> void:
 		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["anim", t_anim], ["sound", t_sound]]
 	tests.append_array([["pack", t_pack], ["mix", t_mix]])
 	tests.append_array([["body", t_body]])
+	tests.append_array([["cast", t_cast], ["parry", t_parry], ["sparparry", t_spar_parry], ["framedata", t_framedata]])
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -1027,3 +1028,269 @@ func t_body() -> void:
 	check("armour appears when equipped (iron helm, chain vest, leather gloves, boots) and vanishes when removed",
 		helm_ok and brown and not counts.has(0) and after == base,
 		"pieces head/body/hands/feet %s, helm metal %s, gloves brown %s, before %d after %d" % [str(counts), str(helm_ok), str(brown), base, after])
+
+
+## Magic for everyone: no staff in the weapon cycle; F casts the element's spell with any weapon, as an
+## upper-body cast over moving legs, from the casting hand.
+func t_cast() -> void:
+	print("-- F: magic for everyone (no staff)")
+	var cb := p.combat
+	var order: Array = HeroAnim.data["_order"]
+	cb.set_stance("sword_shield")
+	var seen: Array = []
+	for k in order.size() + 1:
+		cb.next_stance()
+		seen.append(cb.stance_id)
+	check("the staff is gone from the weapon cycle (Q)", not order.has("magic") and not seen.has("magic") and seen.has("unarmed"), str(seen))
+	cb.set_stance("sword_shield")
+	var dm: Player = m.dummy
+	(dm.get_node("ai") as FighterAI).mode = "dummy"
+	dm.teleport(m.DUMMY_POS)
+	await put(m.DUMMY_POS + Vector3(0, 0.1, 7.0))
+	p.lock.target = dm
+	cb.element = "fire"
+	cb.cast_cd = {"light": 0.0, "heavy": 0.0}
+	p.sheet.mana = p.sheet.v("max_mana")
+	cb.last_cast_from = Vector3.ZERO
+	var mana0 := p.sheet.mana
+	var landed := cb.hits_landed
+	var n0 := cb.casts
+	ai.puppet.move = Vector2(1.0, 0.0)  # strafe round the dummy while casting
+	await frames(20)
+	await press("just_spell")
+	var upper := ""
+	var moving := false
+	var hand_d := 9.0
+	var never_attack := true
+	for k in 100:
+		await frames(1)
+		if p.model.upper_clip != "":
+			upper = p.model.upper_clip
+			moving = moving or p.last_h_speed > 1.0
+		never_attack = never_attack and cb.state != Combat.S.ATTACK
+		if hand_d > 8.0 and cb.last_cast_from != Vector3.ZERO:
+			hand_d = minf(cb.last_cast_from.distance_to(p.model.bone_pos("hand_l")), cb.last_cast_from.distance_to(p.model.bone_pos("hand_r")))
+	check("F with a sword while strafing: an upper-body cast over moving legs, the spell leaves the casting hand and hits",
+		cb.casts == n0 + 1 and upper == str(cb.stance["cast"]) and moving and never_attack and hand_d < 0.3 and cb.hits_landed > landed
+		and cb.stance_id == "sword_shield" and mana0 - p.sheet.mana > 2.0,
+		"casts %d, clip %s, moving %s, hand %.2f m, hits %d, mana -%.0f" % [cb.casts - n0, upper, moving, hand_d, cb.hits_landed - landed, mana0 - p.sheet.mana])
+	# hold F: the heavy spell, with its own (longer) cooldown
+	mana0 = p.sheet.mana
+	ai.puppet.just_spell = true
+	ai.puppet.spell = true
+	await frames(1)
+	ai.puppet.just_spell = false
+	await frames(30)
+	ai.puppet.spell = false
+	await frames(80)
+	check("hold F casts the heavy spell (more mana, a cooldown the hotbar sweeps)", cb.casts == n0 + 2 and float(cb.cast_cd["heavy"]) > 0.0
+		and mana0 - p.sheet.mana > 12.0 and str(cb.cast_info("heavy")["sid"]) == "meteor",
+		"casts %d, heavy cd %.1f, mana -%.0f" % [cb.casts - n0, float(cb.cast_cd["heavy"]), mana0 - p.sheet.mana])
+	ai.puppet.move = Vector2.ZERO
+	p.lock.target = null
+	await frames(30)
+
+
+## Guard pressed within the window before a blow parries it; a perfect parry staggers long. Parried
+## projectiles fly back only with a shield (or strong magic), else they are just blocked.
+func t_parry() -> void:
+	print("-- parry everything: perfect parries and deflections")
+	var cb := p.combat
+	var sp: Player = m.spar
+	var sb := sp.get_node("ai") as FighterAI
+	sp.teleport(m.SPAR_POS)
+	await put(m.SPAR_POS + Vector3(0, 0.1, 1.8))
+	cb.set_stance("sword_shield")
+	p.lock.target = sp
+	sb.mode = "puppet"
+	sp.lock.target = p
+	await frames(20)
+	var st := -1
+	var tries: Array = []
+	# the blade meets the body somewhere in its window: tap a little later each try until it is perfect
+	for lead: float in [-0.02, 0.04, 0.1, 0.16]:
+		sb.puppet.just_attack = true
+		await frames(1)
+		sb.puppet.just_attack = false
+		for k in 120:
+			await frames(1)
+			if sp.combat.attacking() and sp.combat.t >= sp.combat.window.x + lead:
+				break
+		cb.last_parry = ""
+		ai.puppet.just_guard = true
+		ai.puppet.guard = true
+		await frames(1)
+		ai.puppet.just_guard = false
+		for k in 30:
+			await frames(1)
+			if cb.last_parry != "":
+				break
+		st = sp.combat.state
+		tries.append("%+.2f:%s" % [lead, cb.last_parry if cb.last_parry != "" else cb.last_result])
+		await frames(10)
+		ai.puppet.guard = false
+		await frames(130)
+		if cb.last_parry == "perfect":
+			break
+	check("PERFECT parry (guard in the last 0.1 s before a blow): the attacker staggers long", cb.last_parry == "perfect" and st == Combat.S.STAGGER
+		and is_equal_approx(cb.last_parry_stagger, Combat.PERFECT_PARRIED_TIME), "tries %s, attacker state %d, stagger %.1f" % [str(tries), st, cb.last_parry_stagger])
+	p.sheet.restore()
+	# a fireball parried with a shield on the arm goes back and burns its caster
+	sp.teleport(m.SPAR_POS)
+	await put(m.SPAR_POS + Vector3(0, 0.1, 6.0))
+	var sp0 := sp.sheet.hp
+	var hp0 := p.sheet.hp
+	var d0 := cb.deflects
+	await _parry_shot(sp)
+	await frames(40)
+	check("PERFECT parry with a shield deflects a projectile: it is the defender's now and hits its caster",
+		cb.deflects == d0 + 1 and cb.last_parry == "perfect" and sp.sheet.hp < sp0 and p.sheet.hp >= hp0 - 0.5,
+		"deflects %d, parry '%s', caster -%.0f, defender -%.0f" % [cb.deflects - d0, cb.last_parry, sp0 - sp.sheet.hp, hp0 - p.sheet.hp])
+	# no shield, little magic: the same parry only blocks it
+	cb.set_stance("greatsword")
+	var off: Variant = p.sheet.equipment.get("offhand")
+	p.sheet.equipment.erase("offhand")
+	await frames(20)
+	sp0 = sp.sheet.hp
+	hp0 = p.sheet.hp
+	d0 = cb.deflects
+	var can := cb.can_deflect()
+	var pr: Projectile = await _parry_shot(sp)
+	var gone := not is_instance_valid(pr)
+	check("no shield and low spell power: a parried projectile is only blocked (chip damage, nothing sent back)",
+		not can and cb.deflects == d0 and cb.last_result == "guard" and gone and hp0 - p.sheet.hp > 0.0,
+		"can deflect %s, result %s, spent %s, defender -%.1f" % [can, cb.last_result, gone, hp0 - p.sheet.hp])
+	if off != null:
+		p.sheet.equipment["offhand"] = off
+	check("sparring AI parries more often the higher its rank", FighterAI.parry_chance(0) < FighterAI.parry_chance(8) and FighterAI.parry_chance(40) <= 0.7)
+	cb.set_stance("sword_shield")
+	ai.puppet.guard = false
+	p.lock.target = null
+	sb.mode = "dummy"
+	sp.sheet.restore()
+	p.sheet.restore()
+	await frames(30)
+
+
+## Guard, then a fireball from `shooter` straight at our chest from 1.5 m: it meets the guard ~0.05 s later.
+func _parry_shot(shooter: Player) -> Projectile:
+	p.combat.last_parry = ""
+	p.combat.last_result = ""
+	ai.puppet.just_guard = true
+	ai.puppet.guard = true
+	await frames(1)
+	ai.puppet.just_guard = false
+	var fb: Dictionary = HeroAnim.data["_spells"]["fireball"]
+	var pr := Projectile.make(shooter, "fireball", p.model.chest_position() + p.facing * 1.5, -p.facing * 24.0, 0.0, 1.0, 10.0, float(fb["radius"]))
+	pr.configure(fb)
+	pr.element = "fire"
+	pr.color = Color(1.0, 0.5, 0.2)
+	m.add_child(pr)
+	await frames(12)
+	ai.puppet.guard = false
+	return pr
+
+
+## Frame data from the clips (startup / active / recovery in 60 fps frames at attack speed 1.5): every
+## move's blow lies inside its clip. With --write-framedata it regenerates docs/COMBAT_FRAME_DATA.md.
+func t_framedata() -> void:
+	print("-- frame data")
+	var rows: Array[String] = []
+	var bad: Array[String] = []
+	for sid: String in HeroAnim.data["_order"]:
+		var st: Dictionary = HeroAnim.data[sid]
+		var moves: Array = []
+		var lights: Array = st["light"]
+		for k in lights.size():
+			moves.append(["light %d" % (k + 1), lights[k]])
+		for kind: String in ["heavy", "special", "sprint_attack"]:
+			if st.get(kind) is Dictionary:
+				moves.append([kind, st[kind]])
+		for mv: Array in moves:
+			var md: Dictionary = mv[1]
+			var clip := str(md["clip"])
+			var spd := float(md.get("speed", 1.0))
+			var w := p.model.swing_window(clip, str(md.get("limb", "hand_" + str(st.get("hand", "r")))))
+			var length := p.model.tree.get_animation(clip).length
+			if w.x < 0.0 or w.y <= w.x or w.y > length + 0.01:
+				bad.append("%s %s" % [sid, mv[0]])
+				continue
+			var f0 := roundi(w.x / spd * 60.0)
+			var f1 := roundi(w.y / spd * 60.0)
+			var f2 := roundi(length / spd * 60.0)
+			rows.append("| %s | %s | %s | %d | %d | %d | %d |" % [sid, mv[0], clip, f0, f1 - f0, f2 - f1, f2])
+	var cast_clips: Array[String] = []
+	for sid: String in HeroAnim.data["_order"]:
+		var cc := str(HeroAnim.data[sid].get("cast", HeroAnim.data["_cast"]["light"]["clip"]))
+		if cast_clips.has(cc):
+			continue
+		cast_clips.append(cc)
+		for kind: String in ["light", "heavy"]:
+			var c: Dictionary = HeroAnim.data["_cast"][kind]
+			var total := roundi(p.model.tree.get_animation(cc).length / float(c["speed"]) * 60.0)
+			var rel := roundi(total * float(c["release"]))
+			rows.append("| %s (F) | %s spell | %s (upper body) | %d | 1 | %d | %d |" % [sid, kind, cc, rel, total - rel - 1, total])
+	check("frame data: every move's blow lies inside its clip (%d rows)" % rows.size(), bad.is_empty() and rows.size() > 20, ", ".join(bad))
+	if "--write-framedata" in OS.get_cmdline_user_args():
+		var fa := FileAccess.open("res://docs/COMBAT_FRAME_DATA.md", FileAccess.WRITE)
+		fa.store_string("# Combat frame data\n\nGenerated from the clips by `HeroAnim.swing_window` (the striking limb's fast stretch) with\n"
+			+ "`godot --headless --path . -- --selftest --only=framedata --write-framedata`. Frames at 60 fps at each move's\n"
+			+ "clip speed with attack speed 1.5 (neutral: the attack-speed factor, clamped to x0.75..x1.4, divides every\n"
+			+ "column). A chained light hit rushes its wind-up (clip time up to 0.22 s before the blow plays\n"
+			+ "`HeroAnim.WARP` x faster), so its real startup is shorter. Spell rows (F, any weapon, upper body only):\n"
+			+ "startup = frames until the spell leaves the hand, then the rest of the clip; the legs stay free throughout.\n\n"
+			+ "Parry: guard pressed within 15 frames (0.25 s) before any blow lands parries it (attacker staggered\n"
+			+ "0.9 s); within the last 6 frames (0.10 s) it is a PERFECT parry (1.8 s stagger, slow motion). A held\n"
+			+ "guard blocks (chip damage). Parried projectiles are deflected only with a shield or enough spell power.\n\n"
+			+ "| style | move | clip | startup | active | recovery | total |\n|---|---|---|---|---|---|---|\n"
+			+ "\n".join(rows) + "\n")
+		fa.close()
+		print("   wrote docs/COMBAT_FRAME_DATA.md")
+
+
+## Spar mode: a sparring partner of high rank, between its own swings, times parries against our blows.
+func t_spar_parry() -> void:
+	print("-- the sparring partner parries")
+	var sp: Player = m.spar
+	var sb := sp.get_node("ai") as FighterAI
+	var cb := p.combat
+	cb.set_stance("sword_shield")
+	var rank0 := sp.sheet.rank_override
+	sp.sheet.rank_override = "S"
+	sp.teleport(m.SPAR_POS)
+	sb.mode = "spar"
+	await put(m.SPAR_POS + Vector3(0, 0.1, 2.0))
+	p.lock.target = sp
+	var n0 := sp.combat.parries
+	var landed := cb.hits_landed
+	var swings := 0
+	var st := -1
+	for k in 1200:
+		sb._attack_in = 9.0  # it holds its own swings (a fighter mid-swing cannot parry)
+		sb._combo_left = 0
+		p.invuln_t = 0.5
+		p.sheet.hp = p.sheet.v("max_hp")
+		sp.sheet.hp = sp.sheet.v("max_hp")
+		p.stamina = 100.0
+		var d := sp.global_position.distance_to(p.global_position)
+		ai.puppet.move = Vector2(0.0, 1.0) if d > 1.9 else Vector2.ZERO
+		var swing := cb.state == Combat.S.IDLE and d < 2.6 and k % 12 == 0
+		ai.puppet.just_attack = swing
+		swings += 1 if swing else 0
+		await frames(1)
+		ai.puppet.just_attack = false
+		if sp.combat.parries > n0:
+			await frames(2)
+			st = cb.state
+			break
+	check("spar mode: a rank-S sparring partner parries our blows (chance %.2f) and staggers us" % FighterAI.parry_chance(sp.sheet.rank_step()),
+		sp.combat.parries > n0 and st == Combat.S.STAGGER, "swings %d (landed %d), its parries %d ('%s'), our state %d"
+		% [swings, cb.hits_landed - landed, sp.combat.parries - n0, sp.combat.last_parry, st])
+	ai.puppet.move = Vector2.ZERO
+	sb.mode = "dummy"
+	sp.sheet.rank_override = rank0
+	p.lock.target = null
+	p.invuln_t = 0.0
+	sp.sheet.restore()
+	p.sheet.restore()
+	await frames(60)

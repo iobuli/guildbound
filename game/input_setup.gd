@@ -27,6 +27,7 @@ const KEYS := {
 	"weapon_next": [KEY_Q],
 	"element_next": [KEY_X],
 	"awaken": [KEY_R],
+	"spell": [KEY_F],
 }
 
 

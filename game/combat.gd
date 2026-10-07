@@ -16,7 +16,8 @@ enum S { IDLE, ATTACK, GUARD, AIM, STAGGER, DEAD }
 const BUFFER := 0.3
 const HEAVY_HOLD := 0.32
 const COMBO_RESET := 1.0
-const PARRY_WINDOW := 0.3
+const PARRY_WINDOW := 0.25        # guard pressed this long before a blow (any blow) lands: parry
+const PARRY_PERFECT := 0.10       # ... this long: PERFECT parry (long stagger, slow motion, deflects fly faster)
 const GUARD_COS := 0.34          # cos 70 deg: blows from inside this arc in front are guarded
 const BODY_RADIUS := 0.42
 const BLADE_RADIUS := 0.12        # generous on purpose: a blow that looks like it lands, lands
@@ -24,11 +25,14 @@ const HURT_PAD := 0.3             # ... and more against a fighter's slim capsul
 const POISE_REGEN := 25.0        # per second, after 1.5 s without being hit
 const PLAYER_POISE_MULT := 2.5
 const STAGGER_TIME := 0.7
-const PARRIED_TIME := 1.1
+const PARRIED_TIME := 0.9
+const PERFECT_PARRIED_TIME := 1.8
+const SLOW_SCALE := 0.3           # the world's speed during a perfect parry's slow motion
 const PVP_DAMAGE := 0.6
 
 static var _stop_until := 0
 static var log_events := false
+static var _slow_until := 0
 
 var p: Player
 var state: int = S.IDLE
@@ -62,12 +66,28 @@ var assist_v := Vector3.ZERO      # a short step toward the target while winding
 var last_damage := 0.0
 var _cast_done := false
 var crits := true
-var element := "fire"           # the magic element (X): staff spells and the Awakening's touch
+var element := "fire"           # the magic element (X): F spells (and the old staff) and the Awakening's touch
 var awaken := 0.0               # Awakening meter, 0..100: landing and taking hits fill it
 var awaken_t := 0.0             # seconds of Awakening left
 var last_dealt := 0.0           # the raw damage of our last blow (lifesteal)
 var last_zone := ""             # where our last blow landed on a fighter: head / torso / arm / leg
 var rng := RandomNumberGenerator.new()
+# magic for everyone (F, any weapon): tap = the element's light spell, hold = its heavy one
+var cast_cd := {"light": 0.0, "heavy": 0.0}   # seconds of cooldown left
+var cast_press := -1.0
+var cast_held := false
+var cast_left := 0.0            # seconds of the upper-body cast clip still playing
+var casts := 0
+var last_cast_from := Vector3.ZERO  # where the last spell left (the casting hand, or the staff tip)
+var _cast_release := -1.0       # seconds until the spell leaves the hand (-1: nothing pending)
+var _cast_kind := ""
+# parry
+var last_parry := ""            # "perfect" / "parry": how the last parried blow was met
+var last_parry_stagger := 0.0   # how long that attacker was staggered
+var parries := 0
+var deflects := 0
+var _clock := 0.0
+var _hand_hist: Array = []      # [time, world position] of the guarding hand over the last frames
 
 
 ## Everything a blow can land on: the fighters and the monsters (slimes).
@@ -165,6 +185,9 @@ func move_scale() -> float:
 
 func tick(delta: float) -> void:
 	var i := p.intent
+	_clock += delta
+	_sample_hand()
+	_tick_cast(delta, i)
 	guard_t += delta
 	poise_t += delta
 	since_attack += delta
@@ -214,7 +237,7 @@ func tick(delta: float) -> void:
 			elif not ranged() and i.guard and not p.exhausted:
 				state = S.GUARD
 				p.model.hold(str(stance.get("guard", "")))
-			elif buffered != "":
+			elif buffered != "" and cast_left <= 0.05:
 				_start(buffered)
 			elif ranged() and i.just_attack:
 				_fire_ranged(false)
@@ -420,7 +443,7 @@ static func hurt_test(f: Node3D, pa: Vector3, pb: Vector3, a: Vector3, b: Vector
 
 
 ## Deal a blow to `f` (from a swing or a projectile). Returns what happened.
-func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_break: bool = false, spell: bool = false) -> String:
+func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_break: bool = false, spell: bool = false, ranged_hit: bool = false) -> String:
 	var raw := p.sheet.v("attack_damage") * mult
 	if spell:
 		raw = (p.sheet.v("attack_damage") * 0.6 + p.sheet.v("spell_power")) * mult
@@ -435,7 +458,7 @@ func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_brea
 	if f is Slime:
 		res = (f as Slime).receive_hit(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit)
 	else:
-		res = (f as Player).combat.receive(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit, guard_break)
+		res = (f as Player).combat.receive(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit, guard_break, ranged_hit)
 	last_given = res
 	if res == "hit" or res == "stagger" or res == "dead" or res == "guard":
 		hits_landed += 1
@@ -457,10 +480,6 @@ func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_brea
 			p.cam.shake(0.06 if heavy else 0.035)
 		if f is Player and (f as Player).cam != null:
 			(f as Player).cam.shake(0.08 if heavy else 0.04, Vector2(-dir.x, 0.3))
-	elif res == "parry":
-		hitstop(140)
-		Sfx.at(p, at, "clang", 1.25)
-		Vfx.ring(f, at, Color(0.6, 0.9, 1.0), 0.7)
 	if log_events:
 		print("   [%s] %s %s -> %s %s" % [p.sheet.display_name, move_kind, str(move.get("clip", "")), f.sheet.display_name, res])
 	return res
@@ -495,7 +514,10 @@ func _fire_ranged(aimed: bool) -> void:
 
 ## Where an arrow / spell goes: at the locked target's chest, else along the camera's aim.
 func _aim_dir() -> Vector3:
-	var from := p.model.weapon_tip()
+	return _aim_from(p.model.weapon_tip())
+
+
+func _aim_from(from: Vector3) -> Vector3:
 	var who := p.lock.current() if p.lock != null else null
 	if who != null:
 		return (who.model.chest_position() - from).normalized()
@@ -515,10 +537,16 @@ func _cast_check() -> void:
 	if _cast_done or not move.has("spell") or t < window.x:
 		return
 	_cast_done = true
-	var sid := spell_id(str(move["spell"]))
+	_launch(spell_id(str(move["spell"])), p.model.weapon_tip())
+
+
+## Send spell `sid` on its way from `from` (the staff tip or a casting hand): at the locked target, else
+## along the aim.
+func _launch(sid: String, from: Vector3) -> void:
 	var sp: Dictionary = HeroAnim.data["_spells"][sid]
 	var col: Array = sp["color"]
 	var c := Color(col[0], col[1], col[2])
+	last_cast_from = from
 	if sid == "nova":
 		var r := float(sp["radius"])
 		Vfx.ring(p, p.global_position + Vector3.UP * 0.2, c, r * 0.5)
@@ -527,14 +555,14 @@ func _cast_check() -> void:
 				apply_hit(f, float(sp["dmg"]), float(sp["poise"]), f.global_position + Vector3.UP * 0.8, false, true)
 		Sfx.at(p, p.global_position, "ice_hit", 0.8)
 		return
-	var dir := _aim_dir()
+	var dir := _aim_from(from)
 	var elem := _element_of(sid)
-	Sfx.at(p, p.model.weapon_tip(), (elem if elem != "" else "arcane") + "_cast")
+	Sfx.at(p, from, (elem if elem != "" else "arcane") + "_cast")
 	var n := int(sp.get("count", 1))
 	for k in n:  # a fan of shots for spells with a count (Daggers of Denak, Crowfeather)
 		var yaw := deg_to_rad(float(sp.get("spread", 0.0)) * (k - (n - 1) * 0.5))
 		var d := dir.rotated(Vector3.UP, yaw)
-		var pr := Projectile.make(p, sid, p.model.weapon_tip() + d * 0.3, d * float(sp["speed"]), 0.0,
+		var pr := Projectile.make(p, sid, from + d * 0.3, d * float(sp["speed"]), 0.0,
 			float(sp["dmg"]), float(sp["poise"]), float(sp["radius"]))
 		pr.configure(sp)
 		pr.element = elem if elem != "" else "arcane"
@@ -544,9 +572,189 @@ func _cast_check() -> void:
 	Vfx.cast_flare(p, "light", "might")
 
 
+# ---- magic for everyone (F) --------------------------------------------------------------------
+
+## F: light spell on release, heavy once held past HEAVY_HOLD (like the attack button).
+func _tick_cast(delta: float, i: Intent) -> void:
+	for k: String in ["light", "heavy"]:
+		cast_cd[k] = maxf(0.0, float(cast_cd[k]) - delta)
+	cast_left = maxf(0.0, cast_left - delta)
+	if _cast_release >= 0.0:
+		_cast_release -= delta
+		if _cast_release < 0.0:
+			_release_spell()
+	if i.just_spell:
+		cast_press = 0.0
+		cast_held = false
+	if cast_press >= 0.0:
+		if i.spell:
+			cast_press += delta
+			if cast_press >= HEAVY_HOLD and not cast_held:
+				cast_held = true
+				cast("heavy")
+		else:
+			if not cast_held:
+				cast("light")
+			cast_press = -1.0
+
+
+## The current element's spell for a tap ("light") or a hold ("heavy") of F: what the hotbar shows.
+func cast_info(kind: String) -> Dictionary:
+	var c: Dictionary = HeroAnim.data["_cast"][kind]
+	var sid := spell_id("@" + kind)
+	var col: Array = HeroAnim.data["_elements"][element]["color"]
+	return {"sid": sid, "name": str(HeroAnim.data["_spells"][sid]["name"]), "mana": float(c["mana"]),
+		"cooldown": float(c["cooldown"]), "left": float(cast_cd[kind]), "color": Color(col[0], col[1], col[2])}
+
+
+## Cast the element's spell with whatever is in hand: the weapon style's cast clip plays on the upper
+## body only (the legs keep walking), and the spell leaves the casting hand at the clip's release point.
+func cast(kind: String) -> bool:
+	if state == S.ATTACK or state == S.STAGGER or state == S.DEAD or _cast_release >= 0.0 or cast_left > 0.1:
+		return false
+	var c: Dictionary = HeroAnim.data["_cast"][kind]
+	if float(cast_cd[kind]) > 0.0:
+		return false
+	var cost := float(c["mana"])
+	if p.sheet.mana < cost:
+		p.toast.emit("Not enough mana")
+		return false
+	p.sheet.mana -= cost
+	cast_cd[kind] = float(c["cooldown"])
+	if state == S.GUARD or state == S.AIM:
+		_end_move()
+	var dur := p.model.play_upper(str(stance.get("cast", c["clip"])), float(c["speed"]))
+	cast_left = dur
+	_cast_kind = kind
+	_cast_release = dur * float(c["release"])
+	casts += 1
+	return true
+
+
+func _release_spell() -> void:
+	_cast_release = -1.0
+	if state == S.DEAD or state == S.STAGGER:
+		return  # knocked out of the cast: the spell fizzles
+	_launch(spell_id("@" + _cast_kind), p.model.bone_pos(cast_hand()))
+
+
+## The hand that throws: whichever is further out in front of the chest at the release.
+func cast_hand() -> String:
+	var c := p.model.chest_position()
+	var l := (p.model.bone_pos("hand_l") - c).dot(p.facing)
+	var r := (p.model.bone_pos("hand_r") - c).dot(p.facing)
+	return "hand_l" if l > r else "hand_r"
+
+
+# ---- parry -------------------------------------------------------------------------------------
+
+## A shield on the arm (an offhand item, or the weapon style's own shield).
+func has_shield() -> bool:
+	var off: Variant = p.sheet.equipment.get("offhand", "")
+	return (off != null and str(off) != "") or str(stance.get("offhand", "")).begins_with("shield")
+
+
+## Can a parry send a projectile back? A shield, or enough magic in the hands.
+func can_deflect() -> bool:
+	return has_shield() or p.sheet.v("spell_power") >= float(HeroAnim.data["_parry"]["deflect_spell_power"])
+
+
+func guard_hand() -> String:
+	return "hand_l" if has_shield() else "hand_" + str(stance.get("hand", "r"))
+
+
+func _sample_hand() -> void:
+	if p.model == null:
+		return
+	_hand_hist.append([_clock, p.model.bone_pos(guard_hand())])
+	while _hand_hist.size() > 8:
+		_hand_hist.pop_front()
+
+
+## World velocity of the guarding hand over the last ~0.1 s (m/s).
+func hand_velocity() -> Vector3:
+	if _hand_hist.size() < 2:
+		return Vector3.ZERO
+	var b: Array = _hand_hist[_hand_hist.size() - 1]
+	var a: Array = b
+	for h: Array in _hand_hist:  # the oldest sample at most 0.12 s back
+		if float(b[0]) - float(h[0]) <= 0.12:
+			a = h
+			break
+	var dt := float(b[0]) - float(a[0])
+	return ((b[1] as Vector3) - (a[1] as Vector3)) / dt if dt > 0.001 else Vector3.ZERO
+
+
+## What our guard makes of a blow arriving now from `from_dir` (pointing at its source): "perfect" or
+## "parry" when guard was pressed within PARRY_PERFECT / PARRY_WINDOW before it (held or just tapped),
+## "block" when it is merely held, "" when there is no guard or it comes from the side or behind.
+func guard_vs(from_dir: Vector3) -> String:
+	from_dir.y = 0.0
+	var frontal := from_dir.length() < 0.01 or p.facing.dot(from_dir.normalized()) >= GUARD_COS
+	if not frontal or not (state == S.GUARD or (state == S.IDLE and not ranged())):
+		return ""
+	if guard_t <= PARRY_PERFECT:
+		return "perfect"
+	if guard_t <= PARRY_WINDOW:
+		return "parry"
+	return "block" if state == S.GUARD else ""
+
+
+## A parried blow: sparks and a clang; a PERFECT one rings the parry cue, toasts and slows the world.
+func _on_parry(perfect: bool, at: Vector3, msg: String = "") -> void:
+	last_parry = "perfect" if perfect else "parry"
+	parries += 1
+	var col := Color(1.0, 0.92, 0.55) if perfect else Color(0.6, 0.9, 1.0)
+	Vfx.spark(p, at, p.facing, col, 36 if perfect else 18)
+	Vfx.ring(p, at, col, 1.0 if perfect else 0.7)
+	if perfect:
+		p.toast.emit("PERFECT PARRY" if msg == "" else "PERFECT PARRY - " + msg)
+		Sfx.at(p, at, "parry")
+		gain_awaken(float(HeroAnim.data["_awakening"]["per_hit"]))
+		hitstop(80)
+		slowmo(450)
+	else:
+		p.toast.emit("Parry!" if msg == "" else msg)
+		Sfx.at(p, at, "clang", 1.25)
+		hitstop(140)
+	if p.cam != null:
+		p.cam.shake(0.05)
+
+
+## A projectile reaching us. Parried in time with a shield on the arm (or enough spell power) it is
+## DEFLECTED: sent along the guarding hand's swing, pulled toward its shooter the better the timing
+## (perfect: mostly straight back, homing, faster), and it is ours now - it can hit whoever cast it.
+## Returns "deflect", or "" to let it strike (receive() then blocks it if the guard is up).
+func receive_projectile(pr: Projectile, at: Vector3) -> String:
+	if state == S.DEAD or p.invuln_t > 0.0:
+		return ""
+	var g := guard_vs(-pr.vel)
+	if (g != "perfect" and g != "parry") or not can_deflect():
+		return ""
+	var perfect := g == "perfect"
+	var pd: Dictionary = HeroAnim.data["_parry"]
+	var old := pr.shooter
+	var back := -pr.vel.normalized()
+	if is_instance_valid(old) and old != p:
+		back = (old.model.chest_position() - at).normalized()
+	var hv := hand_velocity()
+	var swing := hv.normalized() if hv.length() > 0.6 else p.facing
+	swing.y *= 0.35
+	swing = swing.normalized()
+	var dir := swing.lerp(back, float(pd["perfect_aim" if perfect else "aim"]))
+	dir = dir.normalized() if dir.length() > 0.05 else back
+	var spd := pr.vel.length() * (float(pd["perfect_speed"]) if perfect else 1.0)
+	pr.deflect(p, dir * spd, old if perfect and is_instance_valid(old) else null)
+	deflects += 1
+	_on_parry(perfect, at, "Deflected!")
+	Sfx.at(p, at, "deflect")
+	last_result = "deflect"
+	return "deflect"
+
+
 # ---- being hit -------------------------------------------------------------------------------
 
-func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector3, crit: bool, guard_break: bool) -> String:
+func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector3, crit: bool, guard_break: bool, ranged_hit: bool = false) -> String:
 	if state == S.DEAD:
 		return "none"
 	if p.invuln_t > 0.0:
@@ -559,15 +767,17 @@ func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector
 		raw *= PVP_DAMAGE
 	var from_dir := att.p.global_position - p.global_position
 	from_dir.y = 0.0
-	var frontal := from_dir.length() < 0.01 or p.facing.dot(from_dir.normalized()) >= GUARD_COS
-	if state == S.GUARD and frontal and not guard_break:
-		# parry: guard tapped just before the blow, or while it was already swinging at you
-		var swinging := att.state == S.ATTACK and guard_t <= att.t - att.window.x + 0.05
-		if guard_t <= PARRY_WINDOW or swinging:
-			att.stagger(PARRIED_TIME, true)
-			p.toast.emit("Parry!")
-			last_result = "parry"
-			return "parry"
+	var g := guard_vs(from_dir)
+	# parry: guard pressed within PARRY_WINDOW before the blow (even a guard-breaker); the last
+	# PARRY_PERFECT of it is a perfect parry that leaves the attacker reeling twice as long
+	if not ranged_hit and (g == "perfect" or g == "parry"):
+		last_parry_stagger = PERFECT_PARRIED_TIME if g == "perfect" else PARRIED_TIME
+		att.stagger(last_parry_stagger, true)
+		_on_parry(g == "perfect", at)
+		last_result = "parry"
+		return "parry"
+	# a held guard (or a parried projectile we cannot send back) blocks: chip damage
+	if g != "" and (ranged_hit or not guard_break):
 		var taken := p.sheet.take_physical(raw * (1.0 - float(stance.get("block", 0.6))))
 		last_damage = taken
 		p._spend_once(raw * 0.25)
@@ -617,13 +827,17 @@ func receive_monster(src: Node3D, raw: float, poise_dmg: float, at: Vector3) -> 
 	var dir := p.global_position - src.global_position
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length() > 0.01 else -p.facing
-	if state == S.GUARD and p.facing.dot(-dir) >= GUARD_COS:
-		if guard_t <= PARRY_WINDOW:
-			if src.has_method("parried"):
-				src.call("parried", p)
-			p.toast.emit("Parry!")
-			last_result = "parry"
-			return "parry"
+	var g := guard_vs(-dir)
+	if g == "perfect" or g == "parry":
+		if src.has_method("parried"):
+			src.call("parried", p)
+		if g == "perfect" and src.get("_stun") != null:
+			src.set("_stun", PERFECT_PARRIED_TIME + 0.6)  # knocked silly: a free hit or two
+		last_parry_stagger = PERFECT_PARRIED_TIME if g == "perfect" else PARRIED_TIME
+		_on_parry(g == "perfect", at)
+		last_result = "parry"
+		return "parry"
+	if g == "block":
 		var taken := p.sheet.take_physical(raw * (1.0 - float(stance.get("block", 0.6))))
 		last_damage = taken
 		p.model.play(str(stance.get("guard_hit", "")), 1.4, 0.1)
@@ -690,10 +904,20 @@ static func hitstop(ms: int) -> void:
 	Engine.time_scale = 0.06
 
 
+## A moment of slow motion (a perfect parry), on the real-time clock like hitstop.
+static func slowmo(ms: int) -> void:
+	_slow_until = maxi(_slow_until, Time.get_ticks_msec() + ms)
+	Engine.time_scale = minf(Engine.time_scale, SLOW_SCALE)
+
+
 func _process(_delta: float) -> void:
-	if Engine.time_scale < 1.0 and _stop_until > 0 and Time.get_ticks_msec() >= _stop_until:
-		Engine.time_scale = 1.0
+	var now := Time.get_ticks_msec()
+	if _stop_until > 0 and now >= _stop_until:
 		_stop_until = 0
+		Engine.time_scale = SLOW_SCALE if now < _slow_until else 1.0
+	elif _stop_until == 0 and _slow_until > 0 and now >= _slow_until:
+		_slow_until = 0
+		Engine.time_scale = 1.0
 
 
 func reset() -> void:

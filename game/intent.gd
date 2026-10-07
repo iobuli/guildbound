@@ -15,6 +15,7 @@ var attack := false
 var jump := false            # variable jump height, swim up
 var interact := false        # carrying is hold-to-carry
 var alt_page := false        # Ctrl: casts use the second hotbar page
+var spell := false           # F held: the element's heavy spell once held long enough
 
 # one frame
 var just_jump := false
@@ -32,6 +33,7 @@ var just_switch := false     # next weapon style (Q)
 var just_element := false    # next magic element (X)
 var just_awaken := false     # Awakening, when the meter is full (R)
 var just_special := false    # the weapon's special attack (E with nothing to pick up)
+var just_spell := false      # F: cast the element's spell (tap light, hold heavy), any weapon
 var just_cast := [false, false, false, false]  # cast_1..4
 
 static var menu_focus := false  # a menu (the side panel) has the mouse: its buttons click it, not the fists
@@ -69,6 +71,8 @@ static func from_input(cam: CameraRig) -> Intent:
 	i.just_awaken = Input.is_action_just_pressed("awaken")
 	i.just_crouch = Input.is_action_just_pressed("crouch")
 	i.just_switch = Input.is_action_just_pressed("weapon_next")
+	i.spell = Input.is_action_pressed("spell")
+	i.just_spell = Input.is_action_just_pressed("spell")
 	for k in 4:
 		i.just_cast[k] = Input.is_action_just_pressed("cast_%d" % (k + 1))
 	if menu_focus:
@@ -103,4 +107,5 @@ func clear_once() -> void:
 	just_crouch = false
 	just_switch = false
 	just_special = false
+	just_spell = false
 	just_cast = [false, false, false, false]
