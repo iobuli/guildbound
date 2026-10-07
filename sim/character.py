@@ -2,6 +2,8 @@
 from them through the modifier stack in stats.py, recomputed on demand."""
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -365,16 +367,47 @@ class Character:
         return "\n".join([head] + ["  " + ln for ln in r.lines])
 
 
+def _half_up(x: float) -> int:
+    return int(math.floor(x + 0.5))
+
+
+def item_category(item_id: str) -> str:
+    """'gear', 'consumable', 'core' or 'material' (what a merchant files it under)."""
+    if item_id in data.consumables():
+        return "consumable"
+    if data.items().get(item_id, {}).get("slot") is not None:
+        return "gear"
+    return "core" if item_id.startswith("core_") else "material"
+
+
 def item_price(item_id: str) -> int:
-    item = data.items()[item_id]
+    """What an item is worth (mirrors game/economy.gd Economy.value, to the gold piece).
+
+    Gear: the gold value of its stats + weapon damage + premium; penalties count against it, but never
+    below a quarter of its bonuses (or 10). Consumables: 10 + premium + stat value x duration / 1 h.
+    Materials: their premium. Rounded half up."""
     gv = data.gold_values()
-    total = float(item.get("premium", 0))
+    cons = data.consumables()
+    if item_id in cons:
+        c = cons[item_id]
+        t = 10.0 + float(c.get("premium", 0))
+        for m in c["mods"]:
+            t += float(gv.get(m["stat"], {}).get(m["op"], 0)) * float(m["value"]) * float(c.get("duration", 0)) / 3600.0
+        return _half_up(t)
+    item = data.items()[item_id]
+    pos = float(item.get("premium", 0))
+    neg = 0.0
     for m in item["mods"]:
         if m["op"] == "more":
             continue
-        total += gv.get(m["stat"], {}).get(m["op"], 0) * m["value"]
+        v = float(gv.get(m["stat"], {}).get(m["op"], 0)) * float(m["value"])
+        if v >= 0.0:
+            pos += v
+        else:
+            neg += v
     w = item.get("weapon")
     if w:
-        total += w["base_damage"] * gv["attack_damage"]["flat"]
-        total += (w["aps"] - 1.0) * gv["attack_speed"]["add_pct"]
-    return int(round(total))
+        pos += float(w["base_damage"]) * float(gv["attack_damage"]["flat"]) + (float(w["aps"]) - 1.0) * float(gv["attack_speed"]["add_pct"])
+    if item_category(item_id) == "gear":
+        return _half_up(max(pos + neg, max(0.25 * pos, 10.0)))
+    return _half_up(pos + neg)

@@ -6,7 +6,7 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from sim import data
-from sim.character import Character, STOMACH_LIMIT
+from sim.character import Character, STOMACH_LIMIT, item_category, item_price
 from sim.stats import Modifier, damage_taken_fraction, resolve
 
 
@@ -225,3 +225,27 @@ class DesignRules(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class EconomyValues(unittest.TestCase):
+    """Item values. The game checks the same numbers (game/selftest.gd EXPECTED_VALUES)."""
+
+    EXPECTED = {"ring_ogre": 495, "brawler_wraps": 580, "sprinter_greaves": 650, "hearty_stew": 67, "swift_tonic": 37, "keen_eye_tea": 18, "ironbark_draught": 28, "slime_gel": 6, "hide_bundle": 30, "core_common": 40, "leather_cap": 120, "iron_sword": 770}
+
+    def test_values_match_the_game(self):
+        for item_id, want in self.EXPECTED.items():
+            self.assertEqual(item_price(item_id), want, item_id)
+
+    def test_every_item_is_worth_something(self):
+        for item_id in data.items():
+            self.assertGreater(item_price(item_id), 0, item_id)
+
+    def test_consumables_cost_at_least_ten(self):
+        for item_id in data.consumables():
+            self.assertGreaterEqual(item_price(item_id), 10, item_id)
+
+    def test_categories(self):
+        self.assertEqual(item_category("chain_vest"), "gear")
+        self.assertEqual(item_category("hearty_stew"), "consumable")
+        self.assertEqual(item_category("slime_gel"), "material")
+        self.assertEqual(item_category("core_rare"), "core")

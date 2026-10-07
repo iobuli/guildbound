@@ -1,5 +1,5 @@
 {
- "_note": "Guild quests (the board on the plaza). rank: the lowest rank that may take it. Objectives: kill <target> x count (credited when the player lands the killing blow), collect <item> x count (handed over at turn-in). Rewards: gold, rank points (rank F..S from 'ranks'), items (into the backpack, or at your feet if it is full). Up to 'max_active' quests at once. Rank thresholds and the F-S letters follow docs/REBUILD_PLAN.md (Hunter's Card).",
+ "_note": "Guild quests (the board on the plaza). rank: the lowest rank that may take it. Objectives: kill <target> x count (credited when the player lands the killing blow), collect <item> x count (handed over at turn-in). Rewards: gold, rank points (rank F..S from 'ranks'), items (into the backpack, or at your feet if it is full). Up to 'max_active' quests at once. Rank thresholds and the F-S letters follow docs/REBUILD_PLAN.md (Hunter's Card). Repeatable quests rest for 'cooldown' seconds after you turn them in.",
  "max_active": 3,
  "ranks": [
   [
@@ -54,7 +54,8 @@
       1
      ]
     ]
-   }
+   },
+   "cooldown": 180
   },
   "sticky_business": {
    "name": "Sticky Business",
@@ -78,7 +79,8 @@
       1
      ]
     ]
-   }
+   },
+   "cooldown": 180
   },
   "goblin_trouble": {
    "name": "Goblin Trouble",
@@ -102,7 +104,8 @@
       1
      ]
     ]
-   }
+   },
+   "cooldown": 300
   },
   "ear_bounty": {
    "name": "Ear Bounty",
@@ -121,7 +124,8 @@
     "gold": 120,
     "rank_points": 30,
     "items": []
-   }
+   },
+   "cooldown": 300
   }
  }
 }

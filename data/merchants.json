@@ -1,0 +1,28 @@
+{
+ "_note": "Shops. A merchant sells its stock at the item's value (game/economy.gd Economy.value, sim item_price) x markup, and buys what you carry at value x buy_ratio for the item's kind (gear, consumable, material, core). Sold-out goods come back one of each every restock_s seconds.",
+ "general": {
+  "name": "Merchant Bryn",
+  "markup": 1.0,
+  "restock_s": 90,
+  "buy_ratio": {
+   "gear": 0.4,
+   "consumable": 0.3,
+   "material": 0.6,
+   "core": 0.8
+  },
+  "stock": {
+   "hearty_stew": 8,
+   "swift_tonic": 6,
+   "keen_eye_tea": 5,
+   "ironbark_draught": 5,
+   "leather_cap": 2,
+   "brawler_wraps": 1,
+   "iron_helm": 1,
+   "sprinter_greaves": 1,
+   "chain_vest": 1,
+   "ring_ogre": 1,
+   "steel_longsword": 1,
+   "windfang_daggers": 1
+  }
+ }
+}

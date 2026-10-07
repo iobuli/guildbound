@@ -230,6 +230,14 @@ func set_stance(id: String) -> void:
 	_equip_models()
 
 
+## An NPC standing about: the locomotion idle becomes `clip` (a looping library clip).
+func set_idle(clip: String) -> void:
+	var loco: AnimationNodeBlendSpace2D = bt.get_node("loco")
+	for i in loco.get_blend_point_count():
+		if loco.get_blend_point_position(i) == Vector2.ZERO:
+			(loco.get_blend_point_node(i) as AnimationNodeAnimation).animation = clip
+
+
 func _fill_crouch(cs: AnimationNodeBlendSpace2D) -> void:
 	var pre := str(data["_crouch"])
 	var pts := {"idle": Vector2.ZERO, "walk_forward": Vector2(0, 1), "walk_back": Vector2(0, -1), "walk_left": Vector2(-1, 0), "walk_right": Vector2(1, 0)}

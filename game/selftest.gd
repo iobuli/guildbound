@@ -2,12 +2,14 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop]
 
 var m: Node
 var p: Player
 var ai: FighterAI
 var results: Array[bool] = []
+## Item values (the Python sim checks the same numbers: tests/test_stats.py EconomyValues).
+const EXPECTED_VALUES := {"ring_ogre": 495, "brawler_wraps": 580, "sprinter_greaves": 650, "hearty_stew": 67, "swift_tonic": 37, "keen_eye_tea": 18, "ironbark_draught": 28, "slime_gel": 6, "hide_bundle": 30, "core_common": 40, "leather_cap": 120, "iron_sword": 770}
 
 
 func check(name: String, ok: bool, detail: String = "") -> void:
@@ -36,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -394,6 +396,7 @@ func t_quests() -> void:
 	q.active.clear()
 	q.finished.clear()
 	q.rank_points = 0
+	q.ready_at.clear()
 	var offer := q.available()
 	check("a new hunter (rank F) sees the F quests, not the E ones", q.rank() == "F" and offer.has("slime_cull") and not offer.has("goblin_trouble"), str(offer))
 	q.accept("slime_cull")
@@ -433,4 +436,76 @@ func t_quests() -> void:
 	board.close_board()
 	await get_tree().process_frame
 	check("E at the Quest Board opens it (paused) with your quests and the offers", shown)
+	q.active.clear()
+
+
+func t_shop() -> void:
+	print("-- economy: item values, the merchant, quest cooldowns")
+	var got := {}
+	var same := true
+	for id: String in EXPECTED_VALUES:
+		got[id] = Economy.value(id)
+		same = same and int(got[id]) == int(EXPECTED_VALUES[id])
+	check("item values follow the gold-value table (same numbers as the Python sim)", same, str(got))
+	var worthless: Array = []
+	for id: String in DataStore.items():
+		if Economy.value(id) <= 0:
+			worthless.append(id)
+	check("every item is worth something (trade-off gear is never negative)", worthless.is_empty(), str(worthless))
+	var shop: Merchant = m.merchant
+	var s := p.sheet
+	var saved_gold := s.gold
+	var saved_grid := s.grid.duplicate_bag()
+	var saved_bag := s.bag.duplicate()
+	var saved_stock := shop.stock.duplicate()
+	s.gold = 0
+	var broke := shop.buy(s, "chain_vest")
+	s.gold = 5000
+	var left0 := int(shop.stock["chain_vest"])
+	var cost := shop.price("chain_vest")
+	var bought := shop.buy(s, "chain_vest")
+	check("buying: refused without the gold; with it the price is paid, the item is in the backpack, one fewer on the shelf",
+		not bool(broke[0]) and bool(bought[0]) and s.gold == 5000 - cost and int(s.bag.get("chain_vest", 0)) >= 1 and int(shop.stock["chain_vest"]) == left0 - 1,
+		"%s / %s" % [broke[1], bought[1]])
+	s.add_item("slime_gel", 5)
+	var g0 := s.gold
+	var sold := shop.sell(s, "slime_gel", 5)
+	var each := shop.offer("slime_gel")
+	check("selling: monster materials fetch 60%% of their value (5 slime gel = 5 x %d g)" % each,
+		bool(sold[0]) and s.gold == g0 + 5 * each and each == Economy.round_half_up(Economy.value("slime_gel") * 0.6), str(sold[1]))
+	while s.add_item("ring_ogre"):
+		pass
+	var g1 := s.gold
+	var full := shop.buy(s, "iron_helm")
+	check("a full backpack refuses a purchase and keeps your gold", not bool(full[0]) and s.gold == g1, str(full[1]))
+	shop.stock["iron_helm"] = 0
+	shop._restock_t = 9999.0
+	shop._process(0.0)
+	check("sold-out goods come back on the shelf over time", int(shop.stock["iron_helm"]) == 1)
+	s.grid = saved_grid
+	s.bag = saved_bag
+	s.gold = saved_gold
+	shop.stock = saved_stock
+	s.invalidate()
+	# the stall: E at the counter opens the shop
+	await put(m.arena.spots["merchant"] + Vector3(-2.9, 0.1, 0.0), Vector3(1, 0, 0))
+	await press("just_interact")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var win: ShopWindow = m.shop
+	var shown := win.visible and get_tree().paused and win._list.get_child_count() >= 4
+	win.close_window()
+	await get_tree().process_frame
+	check("E at the merchant's counter opens the shop (paused) with the wares and your backpack", shown)
+	# repeatable quests rest after you turn them in, then come back
+	var q := p.quests
+	q.active.clear()
+	q.ready_at.clear()
+	q.accept("slime_cull")
+	for i in 5:
+		m.mobs.reward("slime", Vector3(0, 0, -80), p)
+	var r := q.turn_in("slime_cull")
+	var resting := bool(r[0]) and not q.available().has("slime_cull") and q.cooling().size() == 1
+	q.clock += float(q.quest("slime_cull").get("cooldown", 0)) + 1.0
+	check("a repeatable quest rests after you turn it in, then comes back", resting and q.available().has("slime_cull"))
 	q.active.clear()

@@ -13,6 +13,8 @@ var active := {}          # quest id -> Array of progress counts (one per object
 var finished := {}        # quest id -> times completed
 var rank_points := 0
 var kills := {}           # monster kind -> count
+var clock := 0.0          # seconds of play (quest cooldowns)
+var ready_at := {}        # quest id -> clock time it is back on the board
 
 
 func setup(p: Player, mobs: Mobs) -> void:
@@ -20,6 +22,10 @@ func setup(p: Player, mobs: Mobs) -> void:
 	data = DataStore.load_json("quests.json")
 	if mobs != null:
 		mobs.killed.connect(_on_killed)
+
+
+func _process(delta: float) -> void:
+	clock += delta
 
 
 func quest(id: String) -> Dictionary:
@@ -55,6 +61,8 @@ func available() -> Array:
 	for id: String in data["quests"]:
 		var q: Dictionary = data["quests"][id]
 		if active.has(id) or (finished.has(id) and not bool(q.get("repeatable", false))):
+			continue
+		if clock < float(ready_at.get(id, 0.0)):
 			continue
 		if rank_index(str(q.get("rank", "F"))) <= rank_index(rank()):
 			out.append(id)
@@ -119,11 +127,23 @@ func turn_in(id: String) -> Array:
 			pk.global_position = player.global_position + player.facing * 0.8
 	active.erase(id)
 	finished[id] = int(finished.get(id, 0)) + 1
+	if bool(q.get("repeatable", false)):
+		ready_at[id] = clock + float(q.get("cooldown", 0))
 	var msg := "%s complete: +%d gold, +%d rank points" % [q["name"], int(r.get("gold", 0)), int(r.get("rank_points", 0))]
 	if rank() != before:
 		msg += "   RANK UP: %s" % rank()
 	changed.emit()
 	return [true, msg]
+
+
+## Repeatable quests resting before they come back: [[id, seconds left], ...].
+func cooling() -> Array:
+	var out: Array = []
+	for id: String in ready_at:
+		var left := float(ready_at[id]) - clock
+		if left > 0.0:
+			out.append([id, left])
+	return out
 
 
 func abandon(id: String) -> void:

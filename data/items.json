@@ -1,5 +1,17 @@
 {
   "gold_values": {
+	"power": {
+	  "add_pct": 2000
+	},
+	"carry": {
+	  "flat": 8
+	},
+	"jump_height": {
+	  "flat": 300
+	},
+	"perception": {
+	  "flat": 15
+	},
 	"attack_damage": {
 	  "flat": 35
 	},
@@ -292,6 +304,7 @@
 		"icon": "S_Shadow07"
 	},
 	"hide_bundle": {
+		"premium": 30,
 		"size": [2, 2],
 		"max_stack": 5,
 	  "name": "Bundle of Raw Hides",

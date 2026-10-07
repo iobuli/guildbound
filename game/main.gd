@@ -10,6 +10,8 @@ var dummy: Player
 var spar: Player
 var mobs: Mobs
 var board: QuestBoard
+var merchant: Merchant
+var shop: ShopWindow
 var DUMMY_POS := Vector3.ZERO   # from arena.spots once the map is built
 var SPAR_POS := Vector3.ZERO
 
@@ -76,6 +78,25 @@ func _ready() -> void:
 	board.player = player
 	layer.add_child(board)
 	arena.add_interaction(arena.spots["board"], "Quest Board", board.open_board)
+	# the merchant's stall: Bryn behind the counter, her stock and the shop window
+	merchant = Merchant.new()
+	merchant.name = "Merchant"
+	add_child(merchant)
+	merchant.setup("general")
+	var bryn := HeroAnim.new()
+	bryn.name = "MerchantNPC"
+	add_child(bryn)
+	bryn.build("Superhero_Female_FullBody", "Hair_Buns")
+	bryn.set_stance("unarmed")
+	bryn.set_idle("FEM_idle")
+	bryn.position = arena.spots["merchant"] - Vector3(0.0, 0.1, 0.0)
+	bryn.rotation.y = PI * 0.5  # faces the plaza (-X)
+	shop = ShopWindow.new()
+	shop.player = player
+	shop.merchant = merchant
+	shop.status = status
+	layer.add_child(shop)
+	arena.add_interaction(arena.spots["merchant"] + Vector3(-1.9, 0.0, 0.0), "Merchant", shop.open_shop, 2.4)
 	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
