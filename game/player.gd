@@ -313,7 +313,14 @@ func _tick_move(delta: float, in_dir: Vector3, water: float) -> void:
 	free_move = false
 	if (combat.busy() or _land_lock > 0.0) and model.acting():
 		var rm := model.root_motion_world() / maxf(delta, 0.0001)
-		h = Vector3(rm.x, 0.0, rm.z) + combat.assist_v
+		rm.y = 0.0
+		# mocap strikes drift sideways and back with the performer: keep only the step into the blow
+		if combat.state == Combat.S.ATTACK and str(combat.move.get("root", combat.stance.get("root", "full"))) == "forward":
+			var fwd := -model.global_basis.z
+			fwd.y = 0.0
+			fwd = fwd.normalized()
+			rm = fwd * maxf(0.0, rm.dot(fwd))
+		h = rm + combat.assist_v
 	elif on_floor and state == State.GROUND and not careful:
 		h = _free_ground(h, in_dir, speed, run, delta)
 		free_move = true

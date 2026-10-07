@@ -317,7 +317,7 @@ func _start(kind: String) -> void:
 	_prev_seg = []
 	_cast_done = false
 	p.model.hold("")
-	speed = float(m.get("speed", 1.0)) * clampf(p.sheet.v("attack_speed") / 1.5, 0.75, 1.4)
+	speed = float(m.get("speed", 1.0)) * clampf(p.sheet.v("attack_speed") / 1.1, 0.8, 1.5)  # a fresh hero (~1.1) plays the clip as authored
 	var w := p.model.swing_window(str(m["clip"]), _limb())
 	# a chained hit flows out of the last one: it rushes through most of its wind-up (to ~0.22 s before
 	# the blow) and cross-fades in, instead of restarting the whole swing from a standstill

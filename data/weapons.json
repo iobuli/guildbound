@@ -290,6 +290,7 @@
  },
  "unarmed": {
   "name": "Fists",
+  "root": "forward",
   "loco": "SS_",
   "hand": "r",
   "guard": "MAG_block_idle",
@@ -302,7 +303,7 @@
   "light": [
    {
     "clip": "FIST_jab",
-    "speed": 1.3,
+    "speed": 1.75,
     "dmg": 0.6,
     "poise": 12,
     "stamina": 5,
@@ -311,7 +312,7 @@
    },
    {
     "clip": "FIST_cross",
-    "speed": 1.3,
+    "speed": 1.65,
     "dmg": 0.75,
     "poise": 15,
     "stamina": 6,
@@ -320,7 +321,7 @@
    },
    {
     "clip": "FIST_hook",
-    "speed": 1.3,
+    "speed": 1.55,
     "dmg": 0.9,
     "poise": 22,
     "stamina": 7,
@@ -329,7 +330,7 @@
    },
    {
     "clip": "FIST_front_kick",
-    "speed": 1.25,
+    "speed": 1.4,
     "dmg": 1.2,
     "poise": 35,
     "stamina": 8,
@@ -339,7 +340,7 @@
   ],
   "heavy": {
    "clip": "FIST_roundhouse",
-   "speed": 1.2,
+   "speed": 1.3,
    "dmg": 1.4,
    "poise": 45,
    "stamina": 12,
@@ -348,7 +349,7 @@
   },
   "special": {
    "clip": "FIST_uppercut",
-   "speed": 1.2,
+   "speed": 1.45,
    "dmg": 1.2,
    "poise": 60,
    "stamina": 10,
