@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel,magic,flow]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel,magic,flow,sound]
 
 var m: Node
 var p: Player
@@ -38,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["sound", t_sound]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -723,3 +723,31 @@ func t_flow() -> void:
 	check("no pops: no hand, foot or head moves faster than 28 m/s through a combo", worst < 28.0, "fastest %.1f m/s (%s)" % [worst, worst_at])
 	p.lock.target = null
 	await frames(60)
+
+
+func t_sound() -> void:
+	print("-- sound: every cue has its files; buses; weapon and element sounds")
+	var missing: Array = []
+	for cue: String in Sfx.CUES:
+		for n: String in Sfx.CUES[cue][0]:
+			if not ResourceLoader.exists(Sfx.DIR + n + ".ogg") and not ResourceLoader.exists(Sfx.DIR + n + ".wav"):
+				missing.append(n)
+	check("every sound cue's files exist (recorded + synthesized)", missing.is_empty(), str(missing.slice(0, 6)))
+	check("buses: SFX, UI and Ambience, a limiter on Master", AudioServer.get_bus_index("SFX") > 0 and AudioServer.get_bus_index("UI") > 0
+		and AudioServer.get_bus_index("Ambience") > 0 and AudioServer.get_bus_effect_count(0) > 0)
+	var cb := p.combat
+	var cues := {}
+	for st in ["unarmed", "sword_shield", "greatsword", "dagger"]:
+		cb.set_stance(st)
+		cb.move = (cb.stance["light"] as Array)[0]
+		cues[st] = cb._swing_cue()
+		cb.move = cb.stance["heavy"]
+		cues[st + "_heavy"] = cb._swing_cue()
+	cb.move = {}
+	cb.set_stance("sword_shield")
+	check("each weapon swings with its own sound (fists, kicks, sword, great sword)", cues["unarmed"] == "swish_light" and cues["unarmed_heavy"] == "swing_kick"
+		and cues["sword_shield"] == "swish_blade" and cues["greatsword"] == "swish_heavy", str(cues))
+	var elems_ok := true
+	for e: String in HeroAnim.data["_elements"]:
+		elems_ok = elems_ok and Sfx.CUES.has(e + "_cast") and Sfx.CUES.has(e + "_hit") and cb._element_of(str(HeroAnim.data["_elements"][e]["light"])) == e
+	check("every element has a cast and an impact sound", elems_ok)

@@ -140,6 +140,8 @@ func rich(parent: Node, txt: String) -> RichTextLabel:
 
 ## Show what an action said (toast + sound) and redraw.
 func act(r: Array) -> void:
-	player.toast.emit(str(r[1]))
-	Sfx.ui(self, "equip" if bool(r[0]) else "drop")
+	var msg := str(r[1])
+	player.toast.emit(msg)
+	var paid := bool(r[0]) and (msg.begins_with("Bought") or msg.begins_with("Sold") or msg.contains("complete"))
+	Sfx.ui(self, "coins" if paid else ("equip" if bool(r[0]) else "drop"))
 	refresh()

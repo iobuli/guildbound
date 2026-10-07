@@ -62,6 +62,7 @@ var respawn_after := RESPAWN_AFTER
 var team := ""                 # fighters on the same team cannot hurt each other ("" = everyone's foe)
 var last_hit_by: Player = null  # who landed the killing blow (kill credit, loot)
 var quests: QuestLog           # the player's guild record (set by main; null for AI)
+var _stride := 0.0             # metres walked since the last footstep
 var stamina := 100.0
 var stamina_delay := 0.0
 var exhausted := false
@@ -219,6 +220,7 @@ func _physics_process(delta: float) -> void:
 			_tick_dodge(delta)
 	_update_model(delta)
 	last_h_speed = Vector2(velocity.x, velocity.z).length()
+	_footsteps(delta)
 	if cam != null:
 		cam.lock_target = lock.target
 		cam.speed = last_h_speed
@@ -478,4 +480,17 @@ func gain_xp(n: int, quiet: bool = false) -> void:
 	if r[1] != r[0]:
 		toast.emit("RANK UP: %s -> %s   (%s)" % [Rank.name(r[0]), Rank.name(r[1]), Rank.title(sheet, combat)])
 		Vfx.ring(self, global_position + Vector3.UP * 0.2, Color(1.0, 0.85, 0.35), 1.4)
-		Sfx.at(self, global_position, "parry", 0.8)
+		if not is_ai:
+			Sfx.ui(self, "rank_up")
+
+
+## A footstep every stride on the ground: stone on the plaza, grass elsewhere.
+func _footsteps(delta: float) -> void:
+	if state != State.GROUND or not is_on_floor() or last_h_speed < 0.6:
+		_stride = 0.0
+		return
+	_stride += last_h_speed * delta
+	if _stride >= 0.7 + 0.11 * last_h_speed:
+		_stride = 0.0
+		var stone := arena != null and arena.surface_at(global_position) == "stone"
+		Sfx.at(self, global_position, "step_stone" if stone else "step", clampf(0.9 + last_h_speed * 0.03, 0.9, 1.15), 0.0 if not is_ai else -4.0)

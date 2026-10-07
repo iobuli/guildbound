@@ -307,7 +307,7 @@ func _start(kind: String) -> void:
 	if log_events:
 		print("   [%s] start %s %s: dur %.2f window %.2f-%.2f, target %s at %.2f m" % [p.sheet.display_name, kind, str(m["clip"]), dur,
 			window.x, window.y, target.sheet.display_name if target else "-", target.global_position.distance_to(p.global_position) if target else -1.0])
-	Sfx.at(p, p.model.chest_position(), "swing_kick" if _limb().begins_with("foot") else "swing", 1.0 + 0.1 * combo_i)
+	Sfx.at(p, p.model.chest_position(), _swing_cue(), 1.0 + 0.05 * combo_i)
 
 
 func _limb() -> String:
@@ -431,14 +431,20 @@ func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_brea
 		hitstop(95 if heavy else 60)
 		var col := Color(0.55, 0.75, 1.0) if res == "guard" else (Color(1.0, 0.85, 0.3) if crit else Color(1.0, 0.55, 0.25))
 		Vfx.spark(p, at, -dir, col, 22 if heavy else 12)
-		Sfx.at(p, at, "block" if res == "guard" else ("hit_heavy" if heavy else "hit"))
+		var blade := _blade() and not spell
+		if res == "guard":
+			Sfx.at(p, at, "clang" if blade else "block")
+		else:
+			Sfx.at(p, at, "hit_blade" if blade else ("hit_heavy" if heavy else "hit"))
+			if blade and heavy:
+				Sfx.at(p, at, "hit_heavy", 0.9, -4.0)
 		if p.cam != null:
 			p.cam.shake(0.06 if heavy else 0.035)
 		if f is Player and (f as Player).cam != null:
 			(f as Player).cam.shake(0.08 if heavy else 0.04, Vector2(-dir.x, 0.3))
 	elif res == "parry":
 		hitstop(140)
-		Sfx.at(p, at, "parry")
+		Sfx.at(p, at, "clang", 1.25)
 		Vfx.ring(f, at, Color(0.6, 0.9, 1.0), 0.7)
 	if log_events:
 		print("   [%s] %s %s -> %s %s" % [p.sheet.display_name, move_kind, str(move.get("clip", "")), f.sheet.display_name, res])
@@ -504,9 +510,11 @@ func _cast_check() -> void:
 		for f: Node3D in targets():
 			if is_foe(f) and f.global_position.distance_to(p.global_position) <= r:
 				apply_hit(f, float(sp["dmg"]), float(sp["poise"]), f.global_position + Vector3.UP * 0.8, false, true)
-		Sfx.at(p, p.global_position, "parry", 0.6)
+		Sfx.at(p, p.global_position, "ice_hit", 0.8)
 		return
 	var dir := _aim_dir()
+	var elem := _element_of(sid)
+	Sfx.at(p, p.model.weapon_tip(), (elem if elem != "" else "arcane") + "_cast")
 	var n := int(sp.get("count", 1))
 	for k in n:  # a fan of shots for spells with a count (Daggers of Denak, Crowfeather)
 		var yaw := deg_to_rad(float(sp.get("spread", 0.0)) * (k - (n - 1) * 0.5))
@@ -514,6 +522,7 @@ func _cast_check() -> void:
 		var pr := Projectile.make(p, sid, p.model.weapon_tip() + d * 0.3, d * float(sp["speed"]), 0.0,
 			float(sp["dmg"]), float(sp["poise"]), float(sp["radius"]))
 		pr.configure(sp)
+		pr.element = elem if elem != "" else "arcane"
 		pr.color = c
 		pr.homing_target = p.lock.current() if p.lock != null else null
 		p.get_parent().add_child(pr)
@@ -686,6 +695,30 @@ func reset() -> void:
 
 # ---- elements and Awakening ----------------------------------------------------------------
 
+## Which element a spell belongs to ("" for the old staff spells).
+func _element_of(sid: String) -> String:
+	for e: String in HeroAnim.data["_elements"]:
+		var d: Dictionary = HeroAnim.data["_elements"][e]
+		if d["light"] == sid or d["heavy"] == sid:
+			return e
+	return ""
+
+
+## Is this blow struck with an edge (sword, dagger) rather than a fist, foot or staff?
+func _blade() -> bool:
+	var w := str(stance.get("weapon", ""))
+	return (w.begins_with("sword") or w == "dagger" or w.begins_with("axe")) and _limb() == "hand_" + str(stance.get("hand", "r"))
+
+
+## The sound of the swing: fists whoosh, kicks thump, swords swish, the great sword roars.
+func _swing_cue() -> String:
+	if _limb().begins_with("foot"):
+		return "swing_kick"
+	if not _blade():
+		return "swish_light"
+	return "swish_heavy" if stance_id == "greatsword" else ("swish_light" if stance_id == "dagger" else "swish_blade")
+
+
 ## "@light" / "@heavy" -> the current element's spell; anything else is a spell id already.
 func spell_id(s: String) -> String:
 	if s.begins_with("@"):
@@ -730,7 +763,7 @@ func start_awakening() -> bool:
 	s.invalidate()
 	var col: Array = e["color"]
 	Vfx.ring(p, p.global_position + Vector3.UP * 0.2, Color(col[0], col[1], col[2]), 2.2)
-	Sfx.at(p, p.global_position, "parry", 0.7)
+	Sfx.at(p, p.global_position, "awaken")
 	p.toast.emit("AWAKENING: %s" % e["awaken"])
 	return true
 

@@ -20,6 +20,11 @@ func add_interaction(pos: Vector3, label_name: String, action: Callable, radius:
 	interactions.append({"pos": pos, "radius": radius, "label_name": label_name, "action": action})
 
 
+## What the ground is made of at a point (footsteps): the paved plaza, or grass.
+func surface_at(pos: Vector3) -> String:
+	return "stone" if absf(pos.x) < 14.0 and pos.z > -12.0 and pos.z < 14.0 else "grass"
+
+
 func interaction_near(pos: Vector3) -> Dictionary:
 	var best := {}
 	var best_d := INF

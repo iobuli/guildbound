@@ -27,6 +27,7 @@ static func build_kaelen() -> CharModel:
 
 func _ready() -> void:
 	InputSetup.apply()
+	Sfx.setup_buses()
 	_build_environment()
 	arena = Arena.new()
 	add_child(arena)
@@ -63,6 +64,7 @@ func _ready() -> void:
 	(spar.get_node("ai") as FighterAI).home = SPAR_POS
 	dummy.facing = Vector3(0.0, 0.0, -1.0)
 	add_child(StatusFx.new())
+	add_child(Ambience.new())
 	# monsters: slimes in the meadow, goblins in their camp (data/monsters.json)
 	mobs = Mobs.new()
 	mobs.name = "Mobs"

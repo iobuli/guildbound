@@ -176,6 +176,7 @@ func _hop() -> void:
 		look_at(global_position + dir, Vector3.UP)
 	velocity = dir * speed + Vector3.UP * up
 	_squash = -0.2
+	Sfx.at(self, global_position, "slime_hop", randf_range(0.9, 1.2))
 
 
 ## A blow from a fighter (Combat.apply_hit). Returns what it did, like Combat.receive.
@@ -187,6 +188,7 @@ func receive_hit(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Ve
 	hp -= dmg
 	Vfx.number(att.p, at + Vector3.UP * 0.2, ("%d!" if crit else "%d") % roundi(dmg), Color(1.0, 0.4, 0.3) if crit else Color.WHITE)
 	_squash = 0.45
+	Sfx.at(self, global_position, "slime_hit")
 	velocity = dir * (2.0 + poise_dmg * 0.04) + Vector3.UP * 2.5
 	_stun = 0.4
 	_lunge = false
@@ -218,6 +220,7 @@ func _die(killer: Player) -> void:
 	dead = true
 	Vfx.ring(get_parent(), global_position + Vector3.UP * 0.2, _mat.albedo_color, 0.8)  # not on us: we hide
 	visible = false
+	Sfx.at(get_parent(), global_position, "slime_die")
 	collision_layer = 0
 	velocity = Vector3.ZERO
 	_respawn_t = float(data.get("respawn", 15.0))

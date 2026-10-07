@@ -21,6 +21,7 @@ var chain := 0                # jumps to this many more foes (lightning)
 var pierce := false           # flies through bodies (wind)
 var knockback := 0.0
 var lifesteal := 0.0          # share of the damage healed back
+var element := ""             # its impact sound ("fire" -> fire_hit)
 var _hit := {}                # bodies already struck (pierce)
 var life := 4.0
 var _stuck := false
@@ -172,6 +173,8 @@ func _impact(at: Vector3, victim: Node3D) -> void:
 		for f: Node3D in Combat.targets():
 			if f != victim and shooter.combat.is_foe(f) and f.global_position.distance_to(at) <= blast:
 				shooter.combat.apply_hit(f, dmg * 0.6, poise * 0.6, f.global_position + Vector3.UP * 0.8, false, true)
+	if element != "":
+		Sfx.at(self, at, element + "_hit")
 	if kind == "arrow" and victim == null:
 		_stuck = true  # it stays in the wall for a moment
 		life = 3.0
