@@ -43,6 +43,9 @@ var _hits_seen := 0
 var _idle_t := 0.0
 var _chase_from := Vector3.ZERO  # where this chase began (the leash is measured from here)
 var _giving_up := false        # leashed: heading home, deaf to everyone until there
+var _stuck_t := 0.0            # walking home but not getting anywhere (a rock in the way)
+var _detour_t := 0.0           # sidestepping round it
+var _detour_side := 1.0
 
 var mode := "dummy"
 var home := Vector3.ZERO
@@ -82,8 +85,7 @@ func think(p: Player, delta: float) -> Intent:
 		var back := home - p.global_position
 		back.y = 0.0
 		if back.length() > 1.0:
-			i.view_yaw = atan2(-back.x, -back.z)
-			i.move = Vector2(0.0, 1.0)
+			_walk_home(p, i, back, 1.0, delta)
 		if p.combat.poise_t > 6.0:
 			p.sheet.hp = minf(p.sheet.v("max_hp"), p.sheet.hp + p.sheet.v("max_hp") * 0.2 * delta)
 		return i
@@ -188,8 +190,7 @@ func _think_pack(p: Player, delta: float, i: Intent) -> Intent:
 		var back := home - p.global_position
 		back.y = 0.0
 		if back.length() > 1.0:
-			i.view_yaw = atan2(-back.x, -back.z)
-			i.move = Vector2(0.0, 1.0 if back.length() > 2.0 else 0.5)
+			_walk_home(p, i, back, 1.0 if back.length() > 2.0 else 0.5, delta)
 		if p.combat.poise_t > 6.0:
 			p.sheet.hp = minf(p.sheet.v("max_hp"), p.sheet.hp + p.sheet.v("max_hp") * 0.2 * delta)
 		return i
@@ -313,6 +314,25 @@ func _out(i: Intent) -> void:
 	if rng.randf() < 0.35:
 		i.just_dodge = true
 		i.move = Vector2(0.0, -1.0)
+
+
+## Head for home; when something is in the way (pushing at it, barely moving) sidestep round it,
+## trying the other side the next time.
+func _walk_home(p: Player, i: Intent, back: Vector3, pace: float, delta: float) -> void:
+	i.view_yaw = atan2(-back.x, -back.z)
+	i.move = Vector2(0.0, pace)
+	if _detour_t > 0.0:
+		_detour_t -= delta
+		i.view_yaw += _detour_side * 1.25
+		return
+	if Vector2(p.velocity.x, p.velocity.z).length() < 0.4:
+		_stuck_t += delta
+		if _stuck_t > 0.7:
+			_stuck_t = 0.0
+			_detour_t = 0.8
+			_detour_side = -_detour_side
+	else:
+		_stuck_t = 0.0
 
 
 ## The pack's foe: my own sighting, or a packmate's call. Nobody chases a foe more than `leash` m

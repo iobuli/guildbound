@@ -848,15 +848,20 @@ func t_pack() -> void:
 			p.sheet.hp = p.sheet.v("max_hp")
 		for g: Player in gobs:
 			followed = maxf(followed, g.global_position.distance_to(g.respawn_pos))
-	await frames(60 * 10)
 	var home_n := 0
 	var still: Array = []
-	for g: Player in gobs:
-		var b := g.get_node("ai") as FighterAI
-		if g.global_position.distance_to(b.home) < 3.0 and b._foe == null:
-			home_n += 1
-		else:
-			still.append("%.1f m" % g.global_position.distance_to(b.home))
+	for t in 20:     # up to 20 s for the last one to get back
+		await frames(60)
+		home_n = 0
+		still = []
+		for g: Player in gobs:
+			var b := g.get_node("ai") as FighterAI
+			if g.global_position.distance_to(b.home) < 3.0 and b._foe == null:
+				home_n += 1
+			else:
+				still.append("%.1f m (foe %s, giving up %s, %.1f m/s)" % [g.global_position.distance_to(b.home), b._foe != null, b._giving_up, g.velocity.length()])
+		if home_n == gobs.size():
+			break
 	check("led past the leash, the pack gives up and walks home (and does not chase forever)", followed > 12.0 and home_n == gobs.size(),
 		"followed %.0f m from home, %d/%d back home, still out %s" % [followed, home_n, gobs.size(), str(still)])
 	for g: Player in gobs:
