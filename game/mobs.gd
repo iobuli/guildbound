@@ -2,7 +2,9 @@ class_name Mobs
 extends Node
 ## PvE monsters (data/monsters.json): spawns them, rolls their loot when they die and tells the rest
 ## of the game about the kill (`killed`, for quests). Slimes are Slime nodes; goblins are full
-## fighters (Player + FighterAI "spar") on the "goblin" team, smaller and tinted green.
+## fighters (Player + FighterAI "pack") on the "goblin" team, smaller and tinted green. They hunt as
+## a pack: each wears the "Goblin frame" (light and quick: far less health, lighter blows, faster feet
+## and hands) and the pack shares its attack tokens, so alone a goblin is easy, six of them are not.
 ## Loot is OSRS-style: the "always" drops, then weighted rolls out of "denom", then each Magic Core
 ## rolls 1 in N on its own. Items land on the ground at the body; gold goes straight to the killer.
 
@@ -46,15 +48,22 @@ func spawn_goblins(center: Vector3, n: int = -1) -> Array[Player]:
 	var out: Array[Player] = []
 	if n < 0:
 		n = int(d.get("count", 3))
+	var pk: Dictionary = d.get("pack", {})
 	for i in n:
 		var a := TAU * i / maxf(1.0, n) + 0.5
-		var pos := center + Vector3(cos(a) * 4.0, 0.1, sin(a) * 4.0)
+		var r := 4.0 + 1.3 * (i % 2)  # two loose rings around the fire
+		var pos := center + Vector3(cos(a) * r, 0.1, sin(a) * r)
 		var sheet := CharModel.new(str(d["name"]), str(d.get("race", "human")), int(d.get("level", 3)))
 		sheet.rank_override = str(d.get("rank", ""))
-		sheet.invalidate()
+		apply_frame(sheet, d)
 		sheet.restore()
-		var ai := FighterAI.new("spar")
+		var ai := FighterAI.new("pack")
 		ai.home = pos
+		ai.pack = "goblin"
+		ai.max_attackers = int(pk.get("attackers", 2))
+		ai.ring = float(pk.get("ring", 3.6))
+		ai.leash = float(pk.get("leash", 30.0))
+		ai.rng.seed = 9001 + i * 31
 		var g: Player = main.spawn_fighter(sheet, pos, ai, "Superhero_Male_FullBody", str(d.get("stance", "dagger")), str(d.get("hair", "")))
 		g.team = "goblin"
 		g.respawn_after = float(d.get("respawn", 20.0))
@@ -65,6 +74,21 @@ func spawn_goblins(center: Vector3, n: int = -1) -> Array[Player]:
 		g.died.connect(_on_fighter_died)
 		out.append(g)
 	return out
+
+
+## A monster's build on top of its level and rank: a permanent effect on its sheet ("frame" in
+## data/monsters.json; for goblins: far less health, lighter blows, more move and attack speed).
+static func apply_frame(sheet: CharModel, d: Dictionary) -> void:
+	sheet.effects = sheet.effects.filter(func(e: Dictionary) -> bool: return e["kind"] != "frame")
+	var fr: Dictionary = d.get("frame", {})
+	if not fr.is_empty():
+		var nm := str(fr.get("name", "Frame"))
+		var mods: Array = []
+		for m: Dictionary in fr.get("mods", []):
+			mods.append(Stats.make_mod(nm, str(m["stat"]), str(m["op"]), float(m["value"])))
+		sheet.effects.append({"key": "frame", "name": nm, "kind": "frame", "icon": str(fr.get("icon", "S_Buff01")), "expires_at": null,
+			"slots": 0, "upkeep": 0.0, "hp_drain": 0.0, "mods": mods, "backlash": null, "aspect": "", "family": "frame"})
+	sheet.invalidate()
 
 
 func _on_fighter_died(victim: Player, killer: Player) -> void:

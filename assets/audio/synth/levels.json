@@ -1,0 +1,1095 @@
+{
+ "target_lufs": -16.0,
+ "ceiling_db": -1.0,
+ "files": {
+  "swish_light_0": {
+   "lufs": -16.02,
+   "peak_db": -1.0,
+   "seconds": 0.3955,
+   "limited_db": 2.1,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "swish_light_1": {
+   "lufs": -16.0,
+   "peak_db": -2.25,
+   "seconds": 0.4825,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "swish_light_2": {
+   "lufs": -16.12,
+   "peak_db": -1.0,
+   "seconds": 0.3974,
+   "limited_db": 1.4,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "swish_blade_0": {
+   "lufs": -16.0,
+   "peak_db": -2.82,
+   "seconds": 0.4852,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth3",
+    "cloth4",
+    "impactMetal_light_000",
+    "impactMetal_light_001"
+   ]
+  },
+  "swish_blade_1": {
+   "lufs": -16.0,
+   "peak_db": -3.06,
+   "seconds": 0.4783,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth3",
+    "cloth4",
+    "impactMetal_light_000",
+    "impactMetal_light_001"
+   ]
+  },
+  "swish_blade_2": {
+   "lufs": -16.0,
+   "peak_db": -2.71,
+   "seconds": 0.4765,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth3",
+    "cloth4",
+    "impactMetal_light_000",
+    "impactMetal_light_001"
+   ]
+  },
+  "swish_heavy_0": {
+   "lufs": -16.01,
+   "peak_db": -1.0,
+   "seconds": 0.597,
+   "limited_db": 2.4,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "impactMetal_light_000",
+    "impactMetal_light_002"
+   ]
+  },
+  "swish_heavy_1": {
+   "lufs": -16.19,
+   "peak_db": -1.0,
+   "seconds": 0.6039,
+   "limited_db": 2.9,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "impactMetal_light_000",
+    "impactMetal_light_002"
+   ]
+  },
+  "swish_heavy_2": {
+   "lufs": -16.05,
+   "peak_db": -1.0,
+   "seconds": 0.5938,
+   "limited_db": 3.6,
+   "sources": [
+    "cloth1",
+    "cloth3",
+    "impactMetal_light_000",
+    "impactMetal_light_002"
+   ]
+  },
+  "swish_kick_0": {
+   "lufs": -16.0,
+   "peak_db": -1.0,
+   "seconds": 0.4291,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "swish_kick_1": {
+   "lufs": -16.17,
+   "peak_db": -1.0,
+   "seconds": 0.4176,
+   "limited_db": 1.9,
+   "sources": [
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "swish_kick_2": {
+   "lufs": -16.18,
+   "peak_db": -1.0,
+   "seconds": 0.4362,
+   "limited_db": 1.9,
+   "sources": [
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "hit_blade_0": {
+   "lufs": -16.0,
+   "peak_db": -2.76,
+   "seconds": 0.3878,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPunch_medium_000",
+    "impactPunch_medium_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "hit_blade_1": {
+   "lufs": -16.0,
+   "peak_db": -2.12,
+   "seconds": 0.358,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPunch_medium_000",
+    "impactPunch_medium_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "hit_blade_2": {
+   "lufs": -16.0,
+   "peak_db": -1.95,
+   "seconds": 0.4029,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPunch_medium_000",
+    "impactPunch_medium_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "clang_0": {
+   "lufs": -16.43,
+   "peak_db": -1.0,
+   "seconds": 0.8571,
+   "limited_db": 4.0,
+   "sources": [
+    "beltHandle2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "clang_1": {
+   "lufs": -16.29,
+   "peak_db": -1.0,
+   "seconds": 0.824,
+   "limited_db": 4.0,
+   "sources": [
+    "beltHandle2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "clang_2": {
+   "lufs": -16.25,
+   "peak_db": -1.0,
+   "seconds": 0.8913,
+   "limited_db": 4.0,
+   "sources": [
+    "beltHandle2",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "parry_0": {
+   "lufs": -16.06,
+   "peak_db": -1.0,
+   "seconds": 1.2634,
+   "limited_db": 4.0,
+   "sources": [
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "metalLatch"
+   ]
+  },
+  "parry_1": {
+   "lufs": -16.13,
+   "peak_db": -1.0,
+   "seconds": 1.4027,
+   "limited_db": 3.2,
+   "sources": [
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "metalLatch"
+   ]
+  },
+  "parry_2": {
+   "lufs": -16.04,
+   "peak_db": -1.0,
+   "seconds": 1.3022,
+   "limited_db": 2.9,
+   "sources": [
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "metalLatch"
+   ]
+  },
+  "block_0": {
+   "lufs": -16.23,
+   "peak_db": -1.0,
+   "seconds": 0.5561,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "impactPlate_light_002",
+    "impactPunch_medium_002",
+    "impactPunch_medium_003",
+    "impactPunch_medium_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "block_1": {
+   "lufs": -16.12,
+   "peak_db": -1.0,
+   "seconds": 0.4765,
+   "limited_db": 0.5,
+   "sources": [
+    "bookClose",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "impactPlate_light_002",
+    "impactPunch_medium_002",
+    "impactPunch_medium_003",
+    "impactPunch_medium_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "block_2": {
+   "lufs": -16.3,
+   "peak_db": -1.0,
+   "seconds": 0.4785,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "impactPlate_light_002",
+    "impactPunch_medium_002",
+    "impactPunch_medium_003",
+    "impactPunch_medium_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "fire_cast_0": {
+   "lufs": -16.0,
+   "peak_db": -2.85,
+   "seconds": 0.8754,
+   "limited_db": 0.0,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth2",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "fire_cast_1": {
+   "lufs": -16.02,
+   "peak_db": -1.0,
+   "seconds": 0.8234,
+   "limited_db": 3.2,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth2",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "fire_cast_2": {
+   "lufs": -16.06,
+   "peak_db": -1.0,
+   "seconds": 1.452,
+   "limited_db": 3.2,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth2",
+    "cloth3",
+    "cloth4"
+   ]
+  },
+  "fire_hit_0": {
+   "lufs": -16.05,
+   "peak_db": -1.0,
+   "seconds": 1.2572,
+   "limited_db": 0.3,
+   "sources": [
+    "bookFlip2",
+    "bookFlip3",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "fire_hit_1": {
+   "lufs": -16.02,
+   "peak_db": -1.0,
+   "seconds": 1.3803,
+   "limited_db": 0.6,
+   "sources": [
+    "bookFlip2",
+    "bookFlip3",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "fire_hit_2": {
+   "lufs": -16.12,
+   "peak_db": -1.0,
+   "seconds": 1.3283,
+   "limited_db": 1.5,
+   "sources": [
+    "bookFlip2",
+    "bookFlip3",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "ice_cast_0": {
+   "lufs": -16.0,
+   "peak_db": -1.0,
+   "seconds": 1.1,
+   "limited_db": 0.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "metalClick"
+   ]
+  },
+  "ice_cast_1": {
+   "lufs": -16.0,
+   "peak_db": -2.7,
+   "seconds": 1.148,
+   "limited_db": 0.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "metalClick"
+   ]
+  },
+  "ice_cast_2": {
+   "lufs": -16.0,
+   "peak_db": -2.9,
+   "seconds": 1.1019,
+   "limited_db": 0.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "metalClick"
+   ]
+  },
+  "ice_hit_0": {
+   "lufs": -16.53,
+   "peak_db": -1.0,
+   "seconds": 0.584,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "ice_hit_1": {
+   "lufs": -16.78,
+   "peak_db": -1.0,
+   "seconds": 0.6135,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "ice_hit_2": {
+   "lufs": -17.06,
+   "peak_db": -1.0,
+   "seconds": 0.6306,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "lightning_cast_0": {
+   "lufs": -16.03,
+   "peak_db": -1.0,
+   "seconds": 0.621,
+   "limited_db": 0.3,
+   "sources": [
+    "beltHandle2",
+    "bookFlip2",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "lightning_cast_1": {
+   "lufs": -16.07,
+   "peak_db": -1.0,
+   "seconds": 0.6238,
+   "limited_db": 1.1,
+   "sources": [
+    "beltHandle2",
+    "bookFlip2",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "lightning_cast_2": {
+   "lufs": -16.08,
+   "peak_db": -1.0,
+   "seconds": 0.6076,
+   "limited_db": 2.8,
+   "sources": [
+    "beltHandle2",
+    "bookFlip2",
+    "metalClick",
+    "metalLatch"
+   ]
+  },
+  "lightning_hit_0": {
+   "lufs": -16.1,
+   "peak_db": -1.0,
+   "seconds": 1.4603,
+   "limited_db": 1.4,
+   "sources": [
+    "beltHandle1",
+    "beltHandle2",
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "impactMetal_light_000",
+    "impactMetal_light_002",
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_002",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_001",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004",
+    "metalClick"
+   ]
+  },
+  "lightning_hit_1": {
+   "lufs": -16.11,
+   "peak_db": -1.0,
+   "seconds": 1.7838,
+   "limited_db": 1.3,
+   "sources": [
+    "beltHandle1",
+    "beltHandle2",
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "impactMetal_light_000",
+    "impactMetal_light_002",
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_002",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_001",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004",
+    "metalClick"
+   ]
+  },
+  "lightning_hit_2": {
+   "lufs": -16.04,
+   "peak_db": -1.0,
+   "seconds": 1.6156,
+   "limited_db": 0.6,
+   "sources": [
+    "beltHandle1",
+    "beltHandle2",
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "impactMetal_light_000",
+    "impactMetal_light_002",
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_002",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_001",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004",
+    "metalClick"
+   ]
+  },
+  "wind_cast_0": {
+   "lufs": -16.0,
+   "peak_db": -3.21,
+   "seconds": 0.8396,
+   "limited_db": 0.0,
+   "sources": [
+    "bookFlip1",
+    "bookFlip3",
+    "cloth2",
+    "cloth3"
+   ]
+  },
+  "wind_cast_1": {
+   "lufs": -16.0,
+   "peak_db": -2.31,
+   "seconds": 0.8425,
+   "limited_db": 0.0,
+   "sources": [
+    "bookFlip1",
+    "bookFlip3",
+    "cloth2",
+    "cloth3"
+   ]
+  },
+  "wind_cast_2": {
+   "lufs": -16.0,
+   "peak_db": -3.7,
+   "seconds": 0.9053,
+   "limited_db": 0.0,
+   "sources": [
+    "bookFlip1",
+    "bookFlip3",
+    "cloth2",
+    "cloth3"
+   ]
+  },
+  "wind_hit_0": {
+   "lufs": -16.12,
+   "peak_db": -1.0,
+   "seconds": 0.6577,
+   "limited_db": 4.0,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth1",
+    "cloth3",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "wind_hit_1": {
+   "lufs": -16.04,
+   "peak_db": -1.0,
+   "seconds": 0.683,
+   "limited_db": 3.5,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth1",
+    "cloth3",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "wind_hit_2": {
+   "lufs": -16.07,
+   "peak_db": -1.0,
+   "seconds": 0.6625,
+   "limited_db": 3.2,
+   "sources": [
+    "bookFlip1",
+    "bookFlip2",
+    "bookFlip3",
+    "cloth1",
+    "cloth3",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "arcane_cast_0": {
+   "lufs": -16.08,
+   "peak_db": -1.0,
+   "seconds": 1.0216,
+   "limited_db": 2.7,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactPlate_light_000",
+    "impactPlate_light_001"
+   ]
+  },
+  "arcane_cast_1": {
+   "lufs": -16.11,
+   "peak_db": -1.0,
+   "seconds": 1.0573,
+   "limited_db": 2.5,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactPlate_light_000",
+    "impactPlate_light_001"
+   ]
+  },
+  "arcane_cast_2": {
+   "lufs": -16.2,
+   "peak_db": -1.0,
+   "seconds": 1.0069,
+   "limited_db": 2.7,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactPlate_light_000",
+    "impactPlate_light_001"
+   ]
+  },
+  "arcane_hit_0": {
+   "lufs": -16.15,
+   "peak_db": -1.0,
+   "seconds": 1.0345,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "arcane_hit_1": {
+   "lufs": -16.1,
+   "peak_db": -1.0,
+   "seconds": 1.1246,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "arcane_hit_2": {
+   "lufs": -16.11,
+   "peak_db": -1.0,
+   "seconds": 1.0338,
+   "limited_db": 4.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactMetal_light_000",
+    "impactMetal_light_001",
+    "impactMetal_light_002",
+    "impactPlate_light_000",
+    "impactPlate_light_002",
+    "impactSoft_medium_001",
+    "impactSoft_medium_002"
+   ]
+  },
+  "shadow_cast_0": {
+   "lufs": -16.0,
+   "peak_db": -2.5,
+   "seconds": 1.3272,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth2",
+    "cloth3",
+    "cloth4",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "shadow_cast_1": {
+   "lufs": -16.1,
+   "peak_db": -1.0,
+   "seconds": 1.2584,
+   "limited_db": 1.0,
+   "sources": [
+    "cloth2",
+    "cloth3",
+    "cloth4",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "shadow_cast_2": {
+   "lufs": -16.0,
+   "peak_db": -1.77,
+   "seconds": 1.3132,
+   "limited_db": 0.0,
+   "sources": [
+    "cloth2",
+    "cloth3",
+    "cloth4",
+    "impactSoft_heavy_002",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "shadow_hit_0": {
+   "lufs": -16.0,
+   "peak_db": -1.17,
+   "seconds": 1.2606,
+   "limited_db": 0.0,
+   "sources": [
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "shadow_hit_1": {
+   "lufs": -16.01,
+   "peak_db": -1.0,
+   "seconds": 0.9661,
+   "limited_db": 2.5,
+   "sources": [
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "shadow_hit_2": {
+   "lufs": -16.04,
+   "peak_db": -1.0,
+   "seconds": 0.993,
+   "limited_db": 1.5,
+   "sources": [
+    "impactPunch_heavy_000",
+    "impactPunch_heavy_003",
+    "impactPunch_heavy_004",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_003",
+    "impactSoft_heavy_004"
+   ]
+  },
+  "awaken_0": {
+   "lufs": -16.0,
+   "peak_db": -2.53,
+   "seconds": 3.3034,
+   "limited_db": 0.0,
+   "sources": [
+    "handleCoins",
+    "handleCoins2",
+    "impactPlate_light_000",
+    "impactPlate_light_001",
+    "impactPunch_heavy_000",
+    "impactSoft_heavy_003"
+   ]
+  },
+  "rank_up_0": {
+   "lufs": -16.0,
+   "peak_db": -4.24,
+   "seconds": 2.0044,
+   "limited_db": 0.0,
+   "sources": [
+    "handleCoins",
+    "impactMetal_light_000"
+   ]
+  },
+  "slime_hop_0": {
+   "lufs": -16.11,
+   "peak_db": -1.0,
+   "seconds": 0.22,
+   "limited_db": 1.8,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002"
+   ]
+  },
+  "slime_hop_1": {
+   "lufs": -16.05,
+   "peak_db": -1.0,
+   "seconds": 0.22,
+   "limited_db": 1.3,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002"
+   ]
+  },
+  "slime_hop_2": {
+   "lufs": -16.0,
+   "peak_db": -1.01,
+   "seconds": 0.22,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactSoft_medium_000",
+    "impactSoft_medium_002"
+   ]
+  },
+  "slime_hit_0": {
+   "lufs": -16.0,
+   "peak_db": -2.56,
+   "seconds": 0.9353,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactPunch_medium_000",
+    "impactPunch_medium_003"
+   ]
+  },
+  "slime_hit_1": {
+   "lufs": -16.0,
+   "peak_db": -2.18,
+   "seconds": 0.8967,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactPunch_medium_000",
+    "impactPunch_medium_003"
+   ]
+  },
+  "slime_hit_2": {
+   "lufs": -16.0,
+   "peak_db": -1.1,
+   "seconds": 0.5721,
+   "limited_db": 0.0,
+   "sources": [
+    "handleSmallLeather",
+    "handleSmallLeather2",
+    "impactPunch_medium_000",
+    "impactPunch_medium_003"
+   ]
+  },
+  "slime_die_0": {
+   "lufs": -16.02,
+   "peak_db": -1.0,
+   "seconds": 0.6259,
+   "limited_db": 0.2,
+   "sources": [
+    "dropLeather",
+    "handleSmallLeather",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002"
+   ]
+  },
+  "slime_die_1": {
+   "lufs": -16.0,
+   "peak_db": -1.0,
+   "seconds": 0.6016,
+   "limited_db": 0.1,
+   "sources": [
+    "dropLeather",
+    "handleSmallLeather",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002"
+   ]
+  },
+  "slime_die_2": {
+   "lufs": -16.0,
+   "peak_db": -1.0,
+   "seconds": 0.5833,
+   "limited_db": 0.0,
+   "sources": [
+    "dropLeather",
+    "handleSmallLeather",
+    "impactSoft_heavy_000",
+    "impactSoft_heavy_002"
+   ]
+  },
+  "step_stone_0": {
+   "lufs": -16.49,
+   "peak_db": -1.0,
+   "seconds": 0.1689,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "footstep_grass_000",
+    "footstep_grass_002",
+    "footstep_grass_003",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "step_stone_1": {
+   "lufs": -16.48,
+   "peak_db": -1.0,
+   "seconds": 0.1738,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "footstep_grass_000",
+    "footstep_grass_002",
+    "footstep_grass_003",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "step_stone_2": {
+   "lufs": -16.36,
+   "peak_db": -1.0,
+   "seconds": 0.1742,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "footstep_grass_000",
+    "footstep_grass_002",
+    "footstep_grass_003",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "step_stone_3": {
+   "lufs": -16.38,
+   "peak_db": -1.0,
+   "seconds": 0.1765,
+   "limited_db": 4.0,
+   "sources": [
+    "bookClose",
+    "footstep_grass_000",
+    "footstep_grass_002",
+    "footstep_grass_003",
+    "impactSoft_medium_000",
+    "impactSoft_medium_001"
+   ]
+  },
+  "bird_0": {
+   "lufs": -16.0,
+   "peak_db": -9.47,
+   "seconds": 1.0695,
+   "limited_db": 0.0,
+   "sources": []
+  },
+  "bird_1": {
+   "lufs": -16.0,
+   "peak_db": -8.05,
+   "seconds": 0.9765,
+   "limited_db": 0.0,
+   "sources": []
+  },
+  "bird_2": {
+   "lufs": -16.0,
+   "peak_db": -8.15,
+   "seconds": 1.0125,
+   "limited_db": 0.0,
+   "sources": []
+  },
+  "bird_3": {
+   "lufs": -16.0,
+   "peak_db": -8.56,
+   "seconds": 1.172,
+   "limited_db": 0.0,
+   "sources": []
+  },
+  "ambience_wind": {
+   "lufs": -14.0,
+   "peak_db": -2.34,
+   "seconds": 16.0,
+   "limited_db": 0.0,
+   "sources": [
+    "bookFlip2",
+    "bookFlip3",
+    "cloth2",
+    "cloth4"
+   ]
+  }
+ }
+}
