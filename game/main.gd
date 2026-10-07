@@ -1,5 +1,5 @@
 extends Node3D
-## Test arena entry point.  Run:  Godot --path <guildbound>      (add -- --selftest for the automated check)
+## Game entry point (the Guild outskirts map).  Run:  Godot --path <guildbound>      (add -- --selftest for the automated check)
 
 var arena: Arena
 var player: Player
@@ -8,8 +8,8 @@ var status: StatusWindow
 var panel: SidePanel
 var dummy: Player
 var spar: Player
-const DUMMY_POS := Vector3(24.0, 0.1, 25.0)
-const SPAR_POS := Vector3(36.0, 0.1, 30.0)
+var DUMMY_POS := Vector3.ZERO   # from arena.spots once the map is built
+var SPAR_POS := Vector3.ZERO
 
 
 static func build_kaelen() -> CharModel:
@@ -26,11 +26,14 @@ func _ready() -> void:
 	arena = Arena.new()
 	add_child(arena)
 	arena.build()
+	DUMMY_POS = arena.spots["yard_dummy"]
+	SPAR_POS = arena.spots["yard_spar"]
 
 	player = Player.new()
 	add_child(player)
 	player.setup(arena, build_kaelen())
-	player.global_position = player.respawn_pos
+	player.respawn_pos = arena.spots["spawn"]
+	player.teleport(player.respawn_pos)
 
 	var layer := CanvasLayer.new()
 	add_child(layer)
@@ -49,7 +52,7 @@ func _ready() -> void:
 	player.sheet.add_item("swift_tonic")
 	player.sheet.gold = 120
 
-	# sparring ring: a training dummy and a sparring partner (same bodies and code as the player)
+	# training yard: a training dummy and a sparring partner (same bodies and code as the player)
 	dummy = spawn_fighter(CharModel.new("Training Dummy", "human", 10), DUMMY_POS, FighterAI.new("dummy"), "Superhero_Female_FullBody", "unarmed", "Hair_Long")
 	spar = spawn_fighter(CharModel.new("Sparring Partner", "human", 8), SPAR_POS, FighterAI.new("spar"), "Superhero_Male_FullBody", "greatsword", "Hair_Buzzed")
 	(spar.get_node("ai") as FighterAI).home = SPAR_POS

@@ -60,7 +60,7 @@ func press(field: String, n: int = 1) -> void:
 
 func t_move() -> void:
 	print("-- movement")
-	await put(Vector3(0, 0.2, 10))
+	await put(m.arena.spots["run_lane"])
 	var a := p.global_position
 	ai.puppet.move = Vector2(0, 1)
 	await frames(60)
@@ -89,7 +89,7 @@ func t_move() -> void:
 
 func t_dodge() -> void:
 	print("-- dodge")
-	await put(Vector3(0, 0.2, 10))
+	await put(m.arena.spots["run_lane"])
 	var a := p.global_position
 	ai.puppet.move = Vector2(0, 1)
 	await frames(10)
