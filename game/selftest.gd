@@ -235,6 +235,10 @@ func t_ui() -> void:
 	await get_tree().process_frame
 	var view := sp._content.find_child("BagView", true, false) as BagView
 	check("Tab panel opens with the backpack grid", sp.visible and view != null and view.bag == p.sheet.grid)
+	var tips_ok := true
+	for id: String in DataStore.items().keys() + DataStore.consumables().keys():
+		tips_ok = tips_ok and m.status.item_tip(id, true).length() > 0 and sp._item_tip(id).length() > 0
+	check("every item's tooltip builds (gear, food, monster materials, cores)", tips_ok)
 	var ok := true
 	for k in SidePanel.TABS.size():
 		sp.show_tab(k)

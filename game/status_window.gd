@@ -285,7 +285,8 @@ func item_tip(id: String, appraise: bool) -> String:
 	if CharModel.is_consumable(id):
 		t += "   consumable, %d s\n" % int(d.get("duration", 0))
 	else:
-		t += "   %s, tier %d, %.1f kg\n" % [String(d.get("slot", "")).capitalize(), int(d.get("tier", 1)), float(d.get("weight", 0.0))]
+		var kind := str(d["slot"]).capitalize() if d.get("slot") != null else Economy.category(id).capitalize()
+		t += "   %s, tier %d, %.1f kg, worth %d g\n" % [kind, int(d.get("tier", 1)), float(d.get("weight", 0.0)), Economy.value(id)]
 	var w: Dictionary = d.get("weapon", {})
 	if not w.is_empty():
 		t += "Weapon: %d damage, %.2f attacks/s, scales with %s\n" % [int(w["base_damage"]), float(w["aps"]), String(w["scales"]).to_upper()]
