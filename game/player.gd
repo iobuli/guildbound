@@ -12,6 +12,7 @@ extends CharacterBody3D
 ##   dead    the death clip; the player comes back at the spawn point, an AI gets back up
 
 signal toast(text: String)
+signal died(victim: Player, killer: Player)
 
 enum State { GROUND, AIR, SWIM, DODGE, DEAD }
 
@@ -57,6 +58,9 @@ var hair_id := "Hair_SimpleParted"
 var stance_id := "sword_shield"
 var facing := Vector3(0.0, 0.0, -1.0)
 var respawn_pos := Vector3.ZERO
+var respawn_after := RESPAWN_AFTER
+var team := ""                 # fighters on the same team cannot hurt each other ("" = everyone's foe)
+var last_hit_by: Player = null  # who landed the killing blow (kill credit, loot)
 var stamina := 100.0
 var stamina_delay := 0.0
 var exhausted := false
@@ -175,6 +179,7 @@ func on_death() -> void:
 	dead_t = 0.0
 	velocity = Vector3.ZERO
 	toast.emit("%s is down" % sheet.display_name)
+	died.emit(self, last_hit_by)
 
 
 # ---- main loop -------------------------------------------------------------------------------
@@ -389,7 +394,7 @@ func _tick_dead(delta: float) -> void:
 	velocity.y = maxf(velocity.y - GRAVITY * delta, -TERMINAL)
 	move_and_slide()
 	_update_model(delta)
-	if dead_t >= RESPAWN_AFTER:
+	if dead_t >= respawn_after:
 		if is_ai:
 			teleport(respawn_pos)
 		else:

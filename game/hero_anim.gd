@@ -65,6 +65,21 @@ func build(body: String = "Superhero_Male_FullBody", hair: String = "Hair_Simple
 	_build_tree()
 
 
+## Tint the body and hair (goblins: green). Each surface gets its own copy of its material.
+func tint(c: Color) -> void:
+	for mi in inst.find_children("*", "MeshInstance3D", true, false):
+		var m3 := mi as MeshInstance3D
+		if m3.mesh == null:
+			continue
+		for k in m3.mesh.get_surface_count():
+			var base := m3.get_active_material(k) as BaseMaterial3D
+			if base == null:
+				continue
+			var own := base.duplicate() as BaseMaterial3D
+			own.albedo_color = base.albedo_color * c
+			m3.set_surface_override_material(k, own)
+
+
 func _attach_hair(hair: String) -> void:
 	var h: Node3D = (load(BASE + hair + ".gltf") as PackedScene).instantiate()
 	for mi in h.find_children("*", "MeshInstance3D", true, false):

@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs]
 
 var m: Node
 var p: Player
@@ -36,7 +36,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid]]
+		["grid", t_grid], ["mobs", t_mobs]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -300,3 +300,88 @@ func t_grid() -> void:
 	sheet.grid = saved
 	sheet.bag = saved_bag
 	sheet.invalidate()
+
+
+func t_mobs() -> void:
+	print("-- monsters: slimes and goblins, loot")
+	var mobs: Mobs = m.mobs
+	check("the meadow has slimes and the camp has goblins", Slime.all.size() >= 3 and _goblins().size() >= 2,
+		"%d slimes, %d goblins" % [Slime.all.size(), _goblins().size()])
+	# a slime in front of the player: swing until it dies, its loot lands, the kill is announced
+	var sl: Slime = Slime.all[0]
+	var spot: Vector3 = m.arena.spots["run_lane"]
+	await put(spot)
+	sl.home = spot + Vector3(0, 0.3, -1.3)
+	sl.global_position = sl.home
+	sl.velocity = Vector3.ZERO
+	var kills := []
+	var on_kill := func(kind: String, _who: Player) -> void: kills.append(kind)
+	mobs.killed.connect(on_kill)
+	var gold0 := p.sheet.gold
+	var picks0 := ItemPickup.all.size()
+	p.combat.set_stance("greatsword")
+	for k in 12:
+		if sl.dead:
+			break
+		p.facing = (sl.global_position - p.global_position) * Vector3(1, 0, 1)
+		p.facing = p.facing.normalized() if p.facing.length() > 0.1 else Vector3(0, 0, -1)
+		await press("just_attack")
+		await frames(int(0.6 * 60))
+	check("swords hit a slime until it dies; it drops loot and pays gold", sl.dead and kills.has("slime") and ItemPickup.all.size() > picks0 and p.sheet.gold > gold0,
+		"dead %s, kills %s, pickups +%d, gold +%d" % [sl.dead, str(kills), ItemPickup.all.size() - picks0, p.sheet.gold - gold0])
+	# a live slime lunges at a player standing still: it hurts
+	var s2: Slime = Slime.all[1]
+	await put(spot)
+	p.combat.set_stance("sword_shield")
+	s2.home = spot + Vector3(0, 0.3, -3.0)
+	s2.global_position = s2.home
+	s2._cool = 0.0
+	var hp0 := p.sheet.hp
+	for i in 240:
+		await frames(1)
+		if p.sheet.hp < hp0:
+			break
+	check("a slime hops over and its lunge hurts", p.sheet.hp < hp0, "hp %.0f -> %.0f" % [hp0, p.sheet.hp])
+	s2.home = m.arena.spots["slime_field"]
+	s2.global_position = s2.home + Vector3(0, 0.3, 0)
+	# a goblin: killed by the player, it drops its loot (always a goblin ear) and comes back later
+	var gob: Player = _goblins()[0]
+	var ears0 := _ground_count("goblin_ear")
+	gob.sheet.hp = 1.0
+	gob.teleport(spot + Vector3(0, 0, -1.4))
+	gob.sheet.hp = 1.0
+	await put(spot)
+	p.lock.target = gob
+	for k in 6:
+		if gob.knocked_out:
+			break
+		await press("just_attack")
+		await frames(int(0.6 * 60))
+	check("a goblin killed by the player drops its ear and counts as a kill", gob.knocked_out and kills.has("goblin") and _ground_count("goblin_ear") > ears0,
+		"down %s, kills %s" % [gob.knocked_out, str(kills)])
+	# loot rolls follow the table: always-drops always, cores rarely
+	var n_core := 0
+	for i in 400:
+		var r := mobs.roll("slime")
+		var has_gel := false
+		for it in r["items"]:
+			has_gel = has_gel or it[0] == "slime_gel"
+			n_core += 1 if str(it[0]).begins_with("core_") else 0
+		if not has_gel:
+			n_core = -9999
+	check("loot table: slime gel every time, Magic Cores now and then (about 1 in 12)", n_core > 10 and n_core < 70, "%d cores in 400 kills" % n_core)
+	mobs.killed.disconnect(on_kill)
+	p.lock.target = null
+	gob.teleport(gob.respawn_pos)
+
+
+func _goblins() -> Array:
+	return Player.fighters.filter(func(f: Player) -> bool: return f.team == "goblin")
+
+
+func _ground_count(id: String) -> int:
+	var n := 0
+	for pk in ItemPickup.all:
+		if is_instance_valid(pk) and pk.item_id == id:
+			n += pk.count
+	return n

@@ -64,6 +64,36 @@ var crits := true
 var rng := RandomNumberGenerator.new()
 
 
+## Everything a blow can land on: the fighters and the monsters (slimes).
+static func targets() -> Array:
+	var out: Array = []
+	out.append_array(Player.fighters)
+	out.append_array(Slime.all)
+	return out
+
+
+static func alive(f: Node3D) -> bool:
+	if f is Player:
+		return LockOn.alive(f)
+	return f is Slime and (f as Slime).alive()
+
+
+## The vertical stretch of a body a blade is checked against, and how thick it is.
+static func body_band(f: Node3D) -> Array:
+	if f is Slime:
+		var sl := f as Slime
+		return [f.global_position + Vector3.UP * 0.15, f.global_position + Vector3.UP * sl.height * 0.95, sl.radius]
+	return [f.global_position + Vector3.UP * 0.35, f.global_position + Vector3.UP * 1.55, BODY_RADIUS]
+
+
+## Can this fighter's blows hurt `f`? (not itself, not the dead, not its own team)
+func is_foe(f: Node3D) -> bool:
+	if f == p or not alive(f):
+		return false
+	var team: String = f.get("team")
+	return p.team == "" or team != p.team
+
+
 func setup(fighter: Player) -> void:
 	p = fighter
 	HeroAnim.load_data()
@@ -298,15 +328,22 @@ func _face_target(k: float) -> void:
 	if who == null:
 		# no lock: the nearest opponent in front within reach gets the swing
 		var best := 3.0
-		for f in Player.fighters:
-			if f == p or not LockOn.alive(f):
+		var face: Node3D = null
+		for f in targets():
+			if not is_foe(f):
 				continue
-			var d := f.global_position.distance_to(p.global_position)
-			var to := (f.global_position - p.global_position).normalized()
+			var d: float = f.global_position.distance_to(p.global_position)
+			var to: Vector3 = (f.global_position - p.global_position).normalized()
 			if d < best and p.facing.dot(to) > 0.3:
 				best = d
-				who = f
-		target = who
+				face = f
+		target = face as Player
+		if face is Slime:  # turn to a monster in front too (it is never the locked target)
+			var ts := face.global_position - p.global_position
+			ts.y = 0.0
+			if ts.length() > 0.05:
+				p.facing = p.facing.slerp(ts.normalized(), k).normalized()
+		who = target
 	if who != null and is_instance_valid(who):
 		var to := who.global_position - p.global_position
 		to.y = 0.0
@@ -326,20 +363,21 @@ func _sweep() -> void:
 	if log_events and target != null:
 		var pts0 := Geometry3D.get_closest_points_between_segments(a, b, target.global_position + Vector3.UP * 0.35, target.global_position + Vector3.UP * 1.55)
 		print("      t %.2f blade %s->%s  gap %.2f" % [t, str(a.snappedf(0.01)), str(b.snappedf(0.01)), (pts0[0] as Vector3).distance_to(pts0[1])])
-	for f in Player.fighters:
-		if f == p or _victims.has(f) or not LockOn.alive(f):
+	for f: Node3D in targets():
+		if _victims.has(f) or not is_foe(f):
 			continue
 		if f.global_position.distance_to(p.global_position) > reach + 2.0:
 			continue
-		var bot := f.global_position + Vector3.UP * 0.35
-		var top := f.global_position + Vector3.UP * 1.55
+		var band := body_band(f)
+		var bot: Vector3 = band[0]
+		var top: Vector3 = band[1]
 		var hit_at := Vector3.INF
 		for k in 4:  # the blade at 4 moments between last frame and this one
 			var u := float(k) / 3.0
 			var s0 := pa.lerp(a, u)
 			var s1 := pb.lerp(b, u)
 			var pts := Geometry3D.get_closest_points_between_segments(s0, s1, bot, top)
-			if (pts[0] as Vector3).distance_to(pts[1]) <= BODY_RADIUS + BLADE_RADIUS:
+			if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + BLADE_RADIUS:
 				hit_at = pts[0]
 				break
 		if hit_at != Vector3.INF:
@@ -348,7 +386,7 @@ func _sweep() -> void:
 
 
 ## Deal a blow to `f` (from a swing or a projectile). Returns what happened.
-func apply_hit(f: Player, mult: float, poise_dmg: float, at: Vector3, guard_break: bool = false, spell: bool = false) -> String:
+func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_break: bool = false, spell: bool = false) -> String:
 	var raw := p.sheet.v("attack_damage") * mult
 	if spell:
 		raw = (p.sheet.v("attack_damage") * 0.6 + p.sheet.v("spell_power")) * mult
@@ -358,7 +396,11 @@ func apply_hit(f: Player, mult: float, poise_dmg: float, at: Vector3, guard_brea
 	var dir := f.global_position - p.global_position
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length() > 0.01 else p.facing
-	var res := f.combat.receive(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit, guard_break)
+	var res: String
+	if f is Slime:
+		res = (f as Slime).receive_hit(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit)
+	else:
+		res = (f as Player).combat.receive(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit, guard_break)
 	last_given = res
 	if res == "hit" or res == "stagger" or res == "dead" or res == "guard":
 		hits_landed += 1
@@ -369,8 +411,8 @@ func apply_hit(f: Player, mult: float, poise_dmg: float, at: Vector3, guard_brea
 		Sfx.at(p, at, "block" if res == "guard" else ("hit_heavy" if heavy else "hit"))
 		if p.cam != null:
 			p.cam.shake(0.06 if heavy else 0.035)
-		if f.cam != null:
-			f.cam.shake(0.08 if heavy else 0.04, Vector2(-dir.x, 0.3))
+		if f is Player and (f as Player).cam != null:
+			(f as Player).cam.shake(0.08 if heavy else 0.04, Vector2(-dir.x, 0.3))
 	elif res == "parry":
 		hitstop(140)
 		Sfx.at(p, at, "parry")
@@ -435,9 +477,9 @@ func _cast_check() -> void:
 	if move["spell"] == "nova":
 		var r := float(sp["radius"])
 		Vfx.ring(p, p.global_position + Vector3.UP * 0.2, c, r * 0.5)
-		for f in Player.fighters:
-			if f != p and LockOn.alive(f) and f.global_position.distance_to(p.global_position) <= r:
-				apply_hit(f, float(sp["dmg"]), float(sp["poise"]), f.model.chest_position(), false, true)
+		for f: Node3D in targets():
+			if is_foe(f) and f.global_position.distance_to(p.global_position) <= r:
+				apply_hit(f, float(sp["dmg"]), float(sp["poise"]), f.global_position + Vector3.UP * 0.8, false, true)
 		Sfx.at(p, p.global_position, "parry", 0.6)
 		return
 	var dir := _aim_dir()
@@ -491,6 +533,7 @@ func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector
 		att.p.sheet.hp = minf(att.p.sheet.v("max_hp"), att.p.sheet.hp + dmg * ls)
 	Vfx.number(p, at + Vector3.UP * 0.3, ("%d!" if crit else "%d") % roundi(dmg), Color(1.0, 0.4, 0.3) if crit else Color.WHITE)
 	if p.sheet.hp <= 0.0:
+		p.last_hit_by = att.p
 		die(dir)
 		last_result = "dead"
 		return "dead"
@@ -503,6 +546,52 @@ func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector
 		last_result = "stagger"
 		return "stagger"
 	if not armoured and state != S.ATTACK:
+		p.model.play(_react_clip(dir, false), 1.5, 0.15)
+	last_result = "hit"
+	return "hit"
+
+
+## A blow from a monster that has no fighter's moves (a slime's hop). Dodging, guarding (a guard tapped
+## just before it parries and knocks the monster back) and poise work as against a fighter.
+func receive_monster(src: Node3D, raw: float, poise_dmg: float, at: Vector3) -> String:
+	if state == S.DEAD:
+		return "none"
+	if p.invuln_t > 0.0:
+		last_result = "dodge"
+		return "dodge"
+	hits_taken += 1
+	poise_t = 0.0
+	var dir := p.global_position - src.global_position
+	dir.y = 0.0
+	dir = dir.normalized() if dir.length() > 0.01 else -p.facing
+	if state == S.GUARD and p.facing.dot(-dir) >= GUARD_COS:
+		if guard_t <= PARRY_WINDOW:
+			if src.has_method("parried"):
+				src.call("parried", p)
+			p.toast.emit("Parry!")
+			last_result = "parry"
+			return "parry"
+		var taken := p.sheet.take_physical(raw * (1.0 - float(stance.get("block", 0.6))))
+		last_damage = taken
+		p.model.play(str(stance.get("guard_hit", "")), 1.4, 0.1)
+		Vfx.number(p, at + Vector3.UP * 0.3, "%d" % roundi(taken), Color(0.6, 0.8, 1.0))
+		last_result = "guard"
+		return "guard"
+	var dmg := p.sheet.take_physical(raw)
+	last_damage = dmg
+	Vfx.number(p, at + Vector3.UP * 0.3, "%d" % roundi(dmg), Color(1.0, 0.75, 0.75))
+	if p.sheet.hp <= 0.0:
+		p.last_hit_by = null
+		die(dir)
+		last_result = "dead"
+		return "dead"
+	poise -= poise_dmg * (1.0 - p.sheet.v("tenacity"))
+	if poise <= 0.0:
+		poise = _poise_max()
+		stagger(STAGGER_TIME * (1.0 if p.is_ai else 0.6), true, dir)
+		last_result = "stagger"
+		return "stagger"
+	if state != S.ATTACK:
 		p.model.play(_react_clip(dir, false), 1.5, 0.15)
 	last_result = "hit"
 	return "hit"

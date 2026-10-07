@@ -1,0 +1,131 @@
+{
+ "_note": "PvE monsters. Loot follows the OSRS style: 'always' drops, then 'rolls' picks on a weighted table out of 'denom' (entries [item, count, weight]; 'nothing' = no drop), then each Magic Core rolls 1 in N on its own. Gold is a [min, max] range paid straight to the killer. Slimes are lightweight blobs (game/slime.gd); goblins are full fighters (same body and combat as the player) at a smaller scale.",
+ "slime": {
+  "name": "Slime",
+  "hp": 120,
+  "armor": 10,
+  "damage": 14,
+  "poise": 12,
+  "speed": 2.4,
+  "aggro": 9.0,
+  "radius": 0.55,
+  "respawn": 15.0,
+  "count": 6,
+  "color": [
+   0.35,
+   0.85,
+   0.45
+  ],
+  "loot": {
+   "always": [
+    [
+     "slime_gel",
+     1
+    ]
+   ],
+   "gold": [
+    2,
+    6
+   ],
+   "rolls": 1,
+   "denom": 128,
+   "table": [
+    [
+     "slime_gel",
+     2,
+     40
+    ],
+    [
+     "swift_tonic",
+     1,
+     6
+    ],
+    [
+     "nothing",
+     0,
+     82
+    ]
+   ],
+   "cores": [
+    [
+     "core_common",
+     12
+    ],
+    [
+     "core_uncommon",
+     128
+    ]
+   ]
+  }
+ },
+ "goblin": {
+  "name": "Goblin",
+  "race": "human",
+  "level": 3,
+  "stance": "dagger",
+  "scale": 0.78,
+  "tint": [
+   0.55,
+   0.85,
+   0.45
+  ],
+  "hair": "",
+  "respawn": 20.0,
+  "count": 3,
+  "loot": {
+   "always": [
+    [
+     "goblin_ear",
+     1
+    ]
+   ],
+   "gold": [
+    6,
+    18
+   ],
+   "rolls": 1,
+   "denom": 128,
+   "table": [
+    [
+     "leather_cap",
+     1,
+     4
+    ],
+    [
+     "wolfhide_gloves",
+     1,
+     4
+    ],
+    [
+     "windfang_daggers",
+     1,
+     2
+    ],
+    [
+     "hearty_stew",
+     1,
+     10
+    ],
+    [
+     "nothing",
+     0,
+     108
+    ]
+   ],
+   "cores": [
+    [
+     "core_common",
+     6
+    ],
+    [
+     "core_uncommon",
+     48
+    ],
+    [
+     "core_rare",
+     512
+    ]
+   ]
+  }
+ }
+}

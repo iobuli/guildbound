@@ -8,6 +8,7 @@ var status: StatusWindow
 var panel: SidePanel
 var dummy: Player
 var spar: Player
+var mobs: Mobs
 var DUMMY_POS := Vector3.ZERO   # from arena.spots once the map is built
 var SPAR_POS := Vector3.ZERO
 
@@ -57,6 +58,13 @@ func _ready() -> void:
 	spar = spawn_fighter(CharModel.new("Sparring Partner", "human", 8), SPAR_POS, FighterAI.new("spar"), "Superhero_Male_FullBody", "greatsword", "Hair_Buzzed")
 	(spar.get_node("ai") as FighterAI).home = SPAR_POS
 	dummy.facing = Vector3(0.0, 0.0, -1.0)
+	# monsters: slimes in the meadow, goblins in their camp (data/monsters.json)
+	mobs = Mobs.new()
+	mobs.name = "Mobs"
+	add_child(mobs)
+	mobs.setup(self)
+	mobs.spawn_slimes(arena.spots["slime_field"])
+	mobs.spawn_goblins(arena.spots["goblin_camp"])
 	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

@@ -103,11 +103,12 @@ func _physics_process(delta: float) -> void:
 	var from := global_position
 	var to := from + vel * delta
 	# fighters first (the body is the target), then the world
-	for f in Player.fighters:
-		if f == shooter or not LockOn.alive(f):
+	for f: Node3D in Combat.targets():
+		if not is_instance_valid(shooter) or not shooter.combat.is_foe(f):
 			continue
-		var pts := Geometry3D.get_closest_points_between_segments(from, to, f.global_position + Vector3.UP * 0.35, f.global_position + Vector3.UP * 1.55)
-		if (pts[0] as Vector3).distance_to(pts[1]) <= Combat.BODY_RADIUS + radius:
+		var band := Combat.body_band(f)
+		var pts := Geometry3D.get_closest_points_between_segments(from, to, band[0], band[1])
+		if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + radius:
 			_impact(pts[0], f)
 			return
 	var q := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD | Layers.PROPS)
@@ -120,14 +121,14 @@ func _physics_process(delta: float) -> void:
 	_orient()
 
 
-func _impact(at: Vector3, victim: Player) -> void:
+func _impact(at: Vector3, victim: Node3D) -> void:
 	if victim != null and is_instance_valid(shooter):
 		shooter.combat.apply_hit(victim, dmg, poise, at, false, kind != "arrow")
 	if blast > 0.0 and is_instance_valid(shooter):
 		Vfx.ring(shooter, at, color, blast * 0.5)
-		for f in Player.fighters:
-			if f != shooter and f != victim and LockOn.alive(f) and f.global_position.distance_to(at) <= blast:
-				shooter.combat.apply_hit(f, dmg * 0.6, poise * 0.6, f.model.chest_position(), false, true)
+		for f: Node3D in Combat.targets():
+			if f != victim and shooter.combat.is_foe(f) and f.global_position.distance_to(at) <= blast:
+				shooter.combat.apply_hit(f, dmg * 0.6, poise * 0.6, f.global_position + Vector3.UP * 0.8, false, true)
 	if kind == "arrow" and victim == null:
 		_stuck = true  # it stays in the wall for a moment
 		life = 3.0
