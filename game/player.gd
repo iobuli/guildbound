@@ -21,10 +21,17 @@ const TERMINAL := 40.0
 const JUMP_SPEED := 7.0
 const COYOTE := 0.12
 const JUMP_BUFFER := 0.12
-const ACCEL := 32.0
-const DECEL := 40.0
+const ACCEL := 22.0            # m/s^2: walk to run in ~0.2 s
+const DECEL := 20.0            # a run stops in ~0.25 s: long enough for the legs to step down to a stand
 const AIR_CONTROL := 0.35
-const TURN_SMOOTH := 12.0
+const TURN_SMOOTH := 12.0      # the body's yaw toward its facing (fighting: the target / the aim)
+const TURN_FOLLOW := 26.0      # ... toward the heading while moving freely (the heading is already smooth)
+const TURN_RATE_SLOW := 13.0   # rad/s the heading may turn at a jog: tight
+const TURN_RATE_RUN := 7.0     # ... at a full run: runs carve arcs (radius ~0.6 m)
+const TURN_RATE_SPRINT := 4.2  # ... sprinting: wider arcs
+const PIVOT_SPEED := 0.8       # below this the heading snaps to the stick (a pivot on the spot)
+const SKID_ANGLE := 2.45       # rad (~140 deg): reversing the stick at speed brakes first, then pivots
+const SKID_DECEL := 30.0
 const RUN_FACTOR := 0.62       # run speed = Move Speed x this (Move Speed 7 -> ~4.3 m/s: the run clips' pace)
 const SPRINT_MULT := 1.45
 const WALK_SPEED := 1.8
@@ -57,6 +64,9 @@ var body_id := "Superhero_Male_FullBody"
 var hair_id := "Hair_SimpleParted"
 var stance_id := "sword_shield"
 var facing := Vector3(0.0, 0.0, -1.0)
+var heading := Vector3(0.0, 0.0, -1.0)   # direction of free travel (turns at a speed-limited rate)
+var free_move := false                   # this tick moved freely (not strafing a target / guarding / aiming)
+var _skid := false
 var respawn_pos := Vector3.ZERO
 var respawn_after := RESPAWN_AFTER
 var team := ""                 # fighters on the same team cannot hurt each other ("" = everyone's foe)
@@ -187,6 +197,7 @@ func on_death() -> void:
 # ---- main loop -------------------------------------------------------------------------------
 
 func _physics_process(delta: float) -> void:
+	free_move = false
 	for e in sheet.tick(delta):
 		toast.emit(e)
 	invuln_t = maxf(0.0, invuln_t - delta)
@@ -299,9 +310,13 @@ func _tick_move(delta: float, in_dir: Vector3, water: float) -> void:
 		speed *= 0.3
 	# horizontal velocity: the attack / reaction clip moves us (root motion), otherwise the stick does
 	var h := Vector3(velocity.x, 0.0, velocity.z)
+	free_move = false
 	if (combat.busy() or _land_lock > 0.0) and model.acting():
 		var rm := model.root_motion_world() / maxf(delta, 0.0001)
 		h = Vector3(rm.x, 0.0, rm.z) + combat.assist_v
+	elif on_floor and state == State.GROUND and not careful:
+		h = _free_ground(h, in_dir, speed, run, delta)
+		free_move = true
 	elif on_floor or state == State.SWIM:
 		var want := in_dir * speed
 		h = h.move_toward(want, (ACCEL if want.length() > h.length() else DECEL) * delta)
@@ -318,8 +333,11 @@ func _tick_move(delta: float, in_dir: Vector3, water: float) -> void:
 			facing = to.normalized()
 	elif (combat.aiming() or combat.guarding()) and cam != null:
 		facing = Vector3(-sin(cam.yaw), 0.0, -cos(cam.yaw))
+	elif free_move and h.length() > 0.05:
+		facing = heading
 	elif not combat.busy() and h.length() > 0.4:
 		facing = h.normalized()
+		heading = facing
 	# vertical
 	if state == State.SWIM:
 		velocity.y = move_toward(velocity.y, clampf((water - 1.3 - global_position.y) * 4.0, -2.0, 2.0), 12.0 * delta)
@@ -340,6 +358,47 @@ func _tick_move(delta: float, in_dir: Vector3, water: float) -> void:
 		_start_dodge(in_dir)
 		return
 	move_and_slide()
+
+
+## Free running on the ground, with momentum: speed and heading are separate. The heading turns toward
+## the stick at a rate that falls with speed (a jog turns on a coin, a run carves an arc, a sprint a wider
+## one), corners shed a little speed, and a stick reversed at speed brakes into a skid before the pivot.
+## Nearly stopped, the heading snaps to the stick and the body spins to it before it really accelerates.
+func _free_ground(h: Vector3, in_dir: Vector3, speed: float, run: float, delta: float) -> Vector3:
+	var s := h.length()
+	if s > 0.3:
+		heading = h / s
+	var stick := minf(1.0, in_dir.length())
+	if stick < 0.05:
+		return heading * move_toward(s, 0.0, DECEL * delta)
+	var want_dir := in_dir / in_dir.length()
+	var ang := heading.signed_angle_to(want_dir, Vector3.UP)
+	var want := speed * stick
+	if absf(ang) > SKID_ANGLE and s > 2.5:
+		_skid = true
+	if _skid and (absf(ang) < SKID_ANGLE * 0.8 or s < 1.2):
+		_skid = false
+	if _skid:
+		return heading * move_toward(s, 0.0, SKID_DECEL * delta)  # brake first; pivot when slow
+	if s < PIVOT_SPEED:
+		heading = want_dir
+		ang = 0.0
+	else:
+		var rate := TURN_RATE_SLOW
+		if s > 1.5:
+			rate = lerpf(TURN_RATE_SLOW, TURN_RATE_RUN, clampf((s - 1.5) / maxf(0.5, run - 1.5), 0.0, 1.0))
+		if s > run:
+			rate = lerpf(TURN_RATE_RUN, TURN_RATE_SPRINT, clampf((s - run) / maxf(0.5, run * (SPRINT_MULT - 1.0)), 0.0, 1.0))
+		var step := clampf(ang, -rate * delta, rate * delta)
+		heading = heading.rotated(Vector3.UP, step)
+		ang -= step
+		# cornering: a sharp turn still to make costs some speed
+		want *= lerpf(1.0, 0.6, clampf((absf(ang) - 0.8) / 1.6, 0.0, 1.0))
+	# from a stand, speed builds as the body comes round to the new heading
+	var body_fwd := Vector3(-sin(model.rotation.y), 0.0, -cos(model.rotation.y))
+	var acc := ACCEL * clampf(body_fwd.dot(heading) * 1.4, 0.2, 1.0) if s < 2.0 else ACCEL
+	s = move_toward(s, want, (acc if want > s else DECEL) * delta)
+	return heading * s
 
 
 func _on_land() -> void:
@@ -409,8 +468,14 @@ func _tick_dead(delta: float) -> void:
 
 func _update_model(delta: float) -> void:
 	var target := atan2(-facing.x, -facing.z)
-	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-delta * TURN_SMOOTH))
+	var running := free_move and Vector2(velocity.x, velocity.z).length() > PIVOT_SPEED
+	model.rotation.y = lerp_angle(model.rotation.y, target, 1.0 - exp(-delta * (TURN_FOLLOW if running else TURN_SMOOTH)))
 	var local := Vector3(velocity.x, 0.0, velocity.z).rotated(Vector3.UP, -model.rotation.y)
+	if free_move:
+		# running freely the legs run where the body faces (it follows the heading closely); a body still
+		# coming round from a pivot shows its speed only as it lines up
+		var sp := Vector2(local.x, local.z).length()
+		local = Vector3(0.0, 0.0, -sp * clampf(-local.z / maxf(sp, 0.001), 0.0, 1.0))
 	var mode := "ground"
 	if state == State.AIR and not is_on_floor() and velocity.y < -1.0:
 		mode = "air"

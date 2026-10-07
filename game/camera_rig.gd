@@ -6,7 +6,10 @@ extends Node3D
 ##   speed      field of view widens and the camera eases back as you run and sprint
 ##   aim        (bow, spells) closer, further over the shoulder, narrower view
 ##   lock-on    the view turns to keep you and the target in frame, the mouse nudges it
-##   collision  a spring arm keeps the camera out of walls, easing back out instead of snapping
+##   collision  a sphere cast keeps the camera out of walls, easing back out instead of snapping
+## Everything runs per RENDERED frame (_process) and follows the body's interpolated transform, so on a
+## 144 Hz screen the camera moves every frame with the body instead of in 60 Hz physics steps. The rig is
+## opted out of physics interpolation: it is placed directly each frame.
 
 var yaw := 0.0
 var pitch := -0.25
@@ -24,9 +27,13 @@ const AIM_SHOULDER := 0.62
 const AIM_ZOOM := 2.0
 const BASE_FOV := 68.0
 const LOCK_EASE := 6.0
+const MARGIN := 0.2
 var target: Node3D
-var arm: SpringArm3D
+var arm: Node3D                  # the boom: shoulder offset; the camera sits `_dist` behind it
 var camera: Camera3D
+var _probe := SphereShape3D.new()
+var _probe_q := PhysicsShapeQueryParameters3D.new()
+var _dist := 4.2                 # current boom length after collision
 var _pivot := Vector3.ZERO
 var _pivot_v := Vector3.ZERO
 var _yaw_s := 0.0
@@ -41,29 +48,33 @@ var _idle_t := 0.0
 func setup(p_target: Node3D, player_rid: RID) -> void:
 	target = p_target
 	top_level = true
-	arm = SpringArm3D.new()
-	arm.spring_length = zoom
-	arm.margin = 0.2
-	var probe := SphereShape3D.new()
-	probe.radius = 0.25
-	arm.shape = probe
-	arm.add_excluded_object(player_rid)
-	arm.collision_mask = Layers.WORLD | Layers.PROPS
+	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	arm = Node3D.new()
 	add_child(arm)
+	_probe.radius = 0.25
+	_probe_q.shape = _probe
+	_probe_q.exclude = [player_rid]
+	_probe_q.collision_mask = Layers.WORLD | Layers.PROPS
 	camera = Camera3D.new()
 	camera.fov = BASE_FOV
 	camera.current = true
 	arm.add_child(camera)
-	_pivot = target.global_position + Vector3.UP * height
+	_pivot = _target_pos() + Vector3.UP * height
 	yaw = target.global_rotation.y
 	_yaw_s = yaw
+
+
+## Where the body is drawn this frame (between physics ticks), not where physics last left it.
+func _target_pos() -> Vector3:
+	return target.get_global_transform_interpolated().origin if target.is_inside_tree() else target.global_position
 
 
 func _process(delta: float) -> void:
 	if target == null:
 		return
 	# follow: a critically damped spring on the pivot (fast, never overshoots)
-	var want := target.global_position + Vector3.UP * height
+	var tpos := _target_pos()
+	var want := tpos + Vector3.UP * height
 	var k := 18.0
 	var acc := (want - _pivot) * k * k - _pivot_v * 2.0 * k
 	_pivot_v += acc * delta
@@ -73,7 +84,7 @@ func _process(delta: float) -> void:
 		_pivot_v = Vector3.ZERO
 	# lock-on: turn to keep the target in view, slightly to the side
 	if lock_target != null and is_instance_valid(lock_target):
-		var to := lock_target.global_position - target.global_position
+		var to := lock_target.get_global_transform_interpolated().origin - tpos
 		to.y = 0.0
 		if to.length() > 0.3:
 			var ty := atan2(-to.x, -to.z) + _nudge
@@ -86,7 +97,7 @@ func _process(delta: float) -> void:
 		_idle_t += delta
 		if _idle_t > 1.2:
 			var mdl := target.get("model") as Node3D
-			var behind: float = mdl.rotation.y if mdl != null else yaw
+			var behind: float = mdl.get_global_transform_interpolated().basis.get_euler().y if mdl != null else yaw
 			yaw = lerp_angle(yaw, behind, 1.0 - exp(-delta * 0.8))
 	_yaw_s = lerp_angle(_yaw_s, yaw, 1.0 - exp(-delta * 25.0))
 	_pitch_s = lerpf(_pitch_s, pitch, 1.0 - exp(-delta * 25.0))
@@ -96,10 +107,20 @@ func _process(delta: float) -> void:
 	_len = lerpf(_len, want_len, 1.0 - exp(-delta * 6.0))
 	_shoulder = lerpf(_shoulder, AIM_SHOULDER if aiming else SHOULDER, 1.0 - exp(-delta * 8.0))
 	camera.fov = lerpf(camera.fov, (52.0 if aiming else BASE_FOV + 10.0 * run_f), 1.0 - exp(-delta * 5.0))
-	arm.spring_length = _len
 	global_position = _pivot
 	global_rotation = Vector3(_pitch_s, _yaw_s + view_offset, 0.0)
 	arm.position = Vector3(_shoulder, 0.0, 0.0)
+	# collision: sweep the probe from the shoulder back to the wanted distance; pull in at once when
+	# something is in the way, ease back out when it clears
+	var reach := _len
+	var from := arm.global_transform
+	_probe_q.transform = from
+	_probe_q.motion = from.basis.z.normalized() * _len
+	var hit := get_world_3d().direct_space_state.cast_motion(_probe_q)
+	if hit.size() == 2 and hit[0] < 1.0:
+		reach = maxf(0.3, _len * hit[0] - MARGIN)
+	_dist = reach if reach < _dist else lerpf(_dist, reach, 1.0 - exp(-delta * 5.0))
+	camera.position = Vector3(0.0, 0.0, _dist)
 	# shake: a decaying kick in the direction of the hit
 	camera.h_offset = _shake.x
 	camera.v_offset = _shake.y

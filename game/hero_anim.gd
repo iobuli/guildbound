@@ -5,22 +5,34 @@ extends Node3D
 ## tools/retarget.gd). Animation drives the skeleton directly; nothing is simulated in between.
 ##
 ## Tree, bottom to top:
-##   loco    BlendSpace2D of the current stance's idle / walk / run / strafe / back loops (picked by
-##           their measured travel direction), the stance's sprint on top
+##   idle    the stance's idle loop, at its own pace
+##   loco    BlendSpace2D of the stance's walk / run / strafe / back loops on two diamond rings (walk at 1,
+##           run at 2, the sprint at 3 ahead), picked by their measured travel direction. Every loop is
+##           normalised to a one-second cycle that starts on its left heel strike and they all advance
+##           together, so blending a walk into a run never crosses the legs; the cycle rate comes from the
+##           ground speed over the blended stride (feet planted, no sliding). `move` mixes idle -> loco.
 ##   crouch  BlendSpace2D of the crouch walk set
 ##   mode    Transition: ground / crouch / air
 ##   upper   Blend2, spine and up: a held pose over the legs (guard, aiming)
-##   action  Blend2 over two cross-faded slots, whole body: attacks, dodges, casts, hits, deaths.
+##   uact    Blend2, spine and up: one-shot upper-body actions over whatever the legs do (play_upper)
+##   action  three cross-faded slots, whole body: attacks, dodges, casts, hits, deaths.
 ##           Their ground travel comes out as root motion (the root bone), for the controller to move by.
+## The tree is evaluated every RENDERED frame (smooth limbs on a 144 Hz screen); its root motion is
+## gathered between physics ticks and handed to the controller as a velocity (root_motion_world).
+## A skeleton modifier leans the body into turns and with acceleration (a few degrees) and keeps the feet
+## from sinking through the floor where two poses are mixed.
 
 const BASE := "res://assets/characters/base/"
 const ANIMS := "res://assets/anims/"
 const WEAPONS := "res://assets/weapons/"
-const RUN_REF := 4.2     # m/s the stance's run clips are blended against (they cover ~3.5-4.5)
+const RUN_REF := 4.2     # m/s the stance's run clips are picked against (they cover ~3.5-4.5)
 const WALK_REF := 1.4
+const BLEND_HZ := 12.0   # how fast the locomotion blend follows the speed (critically damped spring)
+const MOVE_HZ := 34.0    # ... the idle <-> moving mix
 
 static var meta := {}
 static var data := {}
+static var _feet := {}   # clip -> ground speed its planted feet imply (m/s), measured once
 
 var inst: Node3D
 var skeleton: Skeleton3D
@@ -29,6 +41,7 @@ var bt: AnimationNodeBlendTree
 var stance := {}
 var stance_id := ""
 const SLOTS := ["a", "b", "c"]
+const USLOTS := ["a", "b"]
 const ACT_XFADE := 0.2     # seconds a new action takes to blend in over the last one
 const WARP := 3.0          # a chained hit plays its wind-up this much faster (no seeking: no pops)
 var _warp_left := 0.0      # seconds of fast wind-up left on the current slot
@@ -41,11 +54,147 @@ var _act_fade := 0.15
 var act_clip := ""
 var _hold := ""
 var _hold_w := 0.0
+var _uslot := 0
+var _uslot_w := [1.0, 0.0]
+var _u_left := 0.0
+var _u_w := 0.0
+var upper_clip := ""
 var _hands := {}          # "r" / "l" -> BoneAttachment3D
 var _weapon: Node3D
 var _offhand: Node3D
 var _swing := {}          # clip -> [active start, active end] (s at speed 1)
 var _sk_path := ""
+# locomotion state (targets come from the controller at physics rate, everything moves per frame)
+var _want := Vector2.ZERO          # local ground velocity: x right, y forward (m/s), this physics tick
+var _want_prev := Vector2.ZERO     # ... the tick before (drawn frames sit between the two)
+var _sprinting := false
+var _mode := "ground"
+var _ring := {}                    # loco point name -> [feet speed m/s, clip length s]
+var _bp := Vector2.ZERO            # damped loco blend position
+var _bp_v := Vector2.ZERO
+var _move := 0.0                   # idle -> moving mix (damped)
+var _move_v := 0.0
+var _rate := 1.0
+# root motion gathered by the frames since the last physics tick
+var _rm_acc := Vector3.ZERO
+var _rm_t := 0.0
+var _rm_v := Vector3.ZERO
+var _rm_tick := -1
+# lean
+var _lean: PoseMod
+var _yaw_prev := NAN      # NAN until the first frame
+var _lean_pos := Vector3.ZERO
+var _lean_vel := Vector3.ZERO
+var _lean_acc := Vector3.ZERO
+
+
+## Runs after the animation every frame (the skeleton restores the animated pose before the next one, so
+## nothing accumulates):
+##   lean    roll of the whole body about the feet into a turn, pitch of the spine with acceleration
+##   lock    a foot that comes down and holds still stays exactly where it landed in the world until the
+##           clip lifts it (or the body has moved off it): no skating while blends shift or the body turns
+##   ground  no foot below the floor (two poses mixed mid-stride bend a planted leg through it)
+## Feet are placed by bending the leg (two-bone IK; the foot keeps its own rotation).
+## Skeleton space: the clips face +Z, +X is the character's left, the floor is y = 0.
+class PoseMod extends SkeletonModifier3D:
+	const LOCK_SPEED := 0.45     # m/s: an animated foot slower than this near the floor plants
+	const LOCK_REACH := 0.3      # m: a planted foot this far from where the clip has it lets go (safety)
+	const LOCK_BLEND := 0.1      # s to blend into / out of a plant (out: while the clip lifts the foot)
+	var roll := 0.0
+	var pitch := 0.0
+	var floor_y := 0.086     # the ankle bone's lowest allowed height (the clips' contacts: 0.088-0.117)
+	var feet_lock := true
+	var _root := 0
+	var _spine := -1
+	var _legs: Array = []    # [thigh, calf, foot] per side
+	var _last_origin := Vector3.INF
+	var _st: Array = []      # per side: {"on": planted, "w": plant (world), "b": plant weight, "prev": clip's foot last
+	                         # frame (world), "shown": where the foot was drawn last frame (world)}
+
+	func setup(sk: Skeleton3D) -> void:
+		_root = maxi(0, sk.find_bone("root"))
+		_spine = sk.find_bone("spine_01")
+		for side in ["l", "r"]:
+			var leg := [sk.find_bone("thigh_" + side), sk.find_bone("calf_" + side), sk.find_bone("foot_" + side)]
+			if leg.min() >= 0:
+				_legs.append(leg)
+				_st.append({"on": false, "w": Vector3.ZERO, "b": 0.0, "prev": Vector3.INF, "shown": Vector3.ZERO})
+
+	func _process_modification_with_delta(delta: float) -> void:
+		var sk := get_skeleton()
+		if sk == null:
+			return
+		if absf(roll) > 0.0003:
+			sk.set_bone_pose_rotation(_root, Quaternion(Vector3(0, 0, 1), roll) * sk.get_bone_pose_rotation(_root))
+		if absf(pitch) > 0.0003 and _spine >= 0:
+			var pg := sk.get_bone_global_pose(sk.get_bone_parent(_spine)).basis.get_rotation_quaternion()
+			var r := Quaternion(Vector3(1, 0, 0), pitch)
+			sk.set_bone_pose_rotation(_spine, pg.inverse() * r * pg * sk.get_bone_pose_rotation(_spine))
+		var x := sk.get_global_transform_interpolated()
+		var xi := x.affine_inverse()
+		var jumped := x.origin.distance_to(_last_origin) > 1.0  # teleported: drop the plants
+		_last_origin = x.origin
+		for i in _legs.size():
+			var leg: Array = _legs[i]
+			var st: Dictionary = _st[i]
+			var p := sk.get_bone_global_pose(int(leg[2])).origin
+			var w := x * p
+			var prev: Vector3 = st["prev"]
+			var spd := (w - prev).length() / maxf(delta, 0.0001) if prev != Vector3.INF else INF
+			st["prev"] = w
+			var near := p.y < floor_y + 0.025
+			var lw: Vector3 = st["w"]
+			if jumped:
+				st["on"] = false
+				st["b"] = 0.0
+			elif bool(st["on"]):
+				if not near or lw.distance_to(w) > LOCK_REACH:
+					st["on"] = false
+			elif feet_lock and near and spd < LOCK_SPEED:
+				st["on"] = true
+				# still letting go of the last plant: plant where the foot is shown, not where the clip has it
+				st["w"] = (st["shown"] as Vector3) if float(st["b"]) > 0.001 else w
+			st["b"] = move_toward(float(st["b"]), 1.0 if bool(st["on"]) else 0.0, delta / LOCK_BLEND)
+			var t := p
+			if float(st["b"]) > 0.0:
+				var bl := float(st["b"])
+				bl = bl * bl * (3.0 - 2.0 * bl)
+				t = p.lerp(xi * (st["w"] as Vector3), bl)
+			t.y = maxf(t.y, floor_y)
+			st["shown"] = x * t
+			if t.distance_squared_to(p) > 0.0000001:
+				_reach(sk, int(leg[0]), int(leg[1]), int(leg[2]), t)
+
+	## Bend the leg so the ankle lands on `t` (skeleton space); the knee stays on its side.
+	func _reach(sk: Skeleton3D, th: int, ca: int, ft: int, t: Vector3) -> void:
+		var th_g := sk.get_bone_global_pose(th)
+		var ca_g := sk.get_bone_global_pose(ca)
+		var ft_g := sk.get_bone_global_pose(ft)
+		var a := th_g.origin
+		var b := ca_g.origin
+		var c := ft_g.origin
+		var l1 := a.distance_to(b)
+		var l2 := b.distance_to(c)
+		var reach := clampf(a.distance_to(t), absf(l1 - l2) + 0.001, l1 + l2 - 0.001)
+		var u := (t - a).normalized()
+		t = a + u * reach
+		var v := (b - a) - u * (b - a).dot(u)  # the knee keeps its side of the hip -> foot line
+		if v.length() < 0.0001:
+			v = u.cross(Vector3(1, 0, 0))
+		v = v.normalized()
+		var x := (l1 * l1 - l2 * l2 + reach * reach) / (2.0 * reach)
+		var k := a + u * x + v * sqrt(maxf(0.0, l1 * l1 - x * x))
+		var r1 := Quaternion((b - a).normalized(), (k - a).normalized())
+		var r2 := Quaternion((r1 * (c - b)).normalized(), (t - k).normalized())
+		var q_th := th_g.basis.get_rotation_quaternion()
+		var q_ca := ca_g.basis.get_rotation_quaternion()
+		var q_ft := ft_g.basis.get_rotation_quaternion()
+		var pg := sk.get_bone_global_pose(sk.get_bone_parent(th)).basis.get_rotation_quaternion()
+		var th_new := r1 * q_th
+		var ca_new := r2 * r1 * q_ca
+		sk.set_bone_pose_rotation(th, pg.inverse() * th_new)
+		sk.set_bone_pose_rotation(ca, th_new.inverse() * ca_new)
+		sk.set_bone_pose_rotation(ft, ca_new.inverse() * q_ft)
 
 
 static func load_data() -> void:
@@ -105,6 +254,20 @@ func _clip(n: String) -> AnimationNodeAnimation:
 	return a
 
 
+## A locomotion loop on the shared gait timeline: one cycle = one second, starting on the left heel
+## strike, so every loop in a blend space is at the same point of the stride at the same time.
+func _gait_clip(n: String) -> AnimationNodeAnimation:
+	var a := _clip(n)
+	var m: Dictionary = meta.get(n, {})
+	var length := float(m.get("length", 1.0))
+	a.use_custom_timeline = true
+	a.timeline_length = 1.0
+	a.stretch_time_scale = true
+	a.loop_mode = Animation.LOOP_LINEAR
+	a.start_offset = fposmod(float(m.get("lstrike", 0.0)) / maxf(0.01, length), 1.0)
+	return a
+
+
 func _upper_filter(node: AnimationNode) -> void:
 	node.filter_enabled = true
 	var spine := skeleton.find_bone("spine_01")
@@ -116,6 +279,16 @@ func _upper_filter(node: AnimationNode) -> void:
 			node.set_filter_path(NodePath(_sk_path + ":" + skeleton.get_bone_name(i)), true)
 
 
+## A clip slot that restarts on request and plays at a set speed: <id> -> <id>_seek -> <id>_ts.
+func _slot_chain(id: String) -> String:
+	bt.add_node(id, _clip("LOCO_idle"))
+	bt.add_node(id + "_seek", AnimationNodeTimeSeek.new())
+	bt.connect_node(id + "_seek", 0, id)
+	bt.add_node(id + "_ts", AnimationNodeTimeScale.new())
+	bt.connect_node(id + "_ts", 0, id + "_seek")
+	return id + "_ts"
+
+
 func _build_tree() -> void:
 	var lib := AnimationLibrary.new()
 	for n: String in meta:
@@ -123,11 +296,17 @@ func _build_tree() -> void:
 		if a != null:
 			lib.add_animation(n, a)
 	bt = AnimationNodeBlendTree.new()
+	bt.add_node("idle", _clip("LOCO_idle"))
 	var loco := AnimationNodeBlendSpace2D.new()
 	loco.blend_mode = AnimationNodeBlendSpace2D.BLEND_MODE_INTERPOLATED
+	loco.sync = true  # every loop advances, weighted or not: they stay on the shared stride
 	bt.add_node("loco", loco)
 	bt.add_node("loco_ts", AnimationNodeTimeScale.new())
 	bt.connect_node("loco_ts", 0, "loco")
+	var move := AnimationNodeBlend2.new()
+	bt.add_node("move", move)
+	bt.connect_node("move", 0, "idle")
+	bt.connect_node("move", 1, "loco_ts")
 	var crouch := AnimationNodeBlendSpace2D.new()
 	bt.add_node("crouch", crouch)
 	bt.add_node("crouch_ts", AnimationNodeTimeScale.new())
@@ -137,9 +316,10 @@ func _build_tree() -> void:
 	mode.input_count = 3
 	for i in 3:
 		mode.set_input_name(i, ["ground", "crouch", "air"][i])
+		mode.set_input_reset(i, false)  # coming back to the ground keeps the stride where it was
 	mode.xfade_time = 0.2
 	bt.add_node("mode", mode)
-	bt.connect_node("mode", 0, "loco_ts")
+	bt.connect_node("mode", 0, "move")
 	bt.connect_node("mode", 1, "crouch_ts")
 	bt.connect_node("mode", 2, "air")
 	var upper := AnimationNodeBlend2.new()
@@ -148,38 +328,52 @@ func _build_tree() -> void:
 	bt.add_node("hold", _clip("LOCO_idle"))
 	bt.connect_node("upper", 0, "mode")
 	bt.connect_node("upper", 1, "hold")
+	# one-shot upper-body actions (casting on the move): two cross-faded slots over the spine and up
+	bt.add_node("u_x", AnimationNodeBlend2.new())
+	bt.connect_node("u_x", 0, _slot_chain("u_a"))
+	bt.connect_node("u_x", 1, _slot_chain("u_b"))
+	var uact := AnimationNodeBlend2.new()
+	_upper_filter(uact)
+	bt.add_node("uact", uact)
+	bt.connect_node("uact", 0, "upper")
+	bt.connect_node("uact", 1, "u_x")
 	# three action slots mixed by weight: a new action takes the quietest slot and fades in over the
 	# others, so a combo chained faster than the cross-fade never snaps a still-visible pose away
 	bt.add_node("act_ab", AnimationNodeBlend2.new())
 	bt.add_node("act", AnimationNodeBlend2.new())
+	var ts := {}
 	for sl in SLOTS:
-		bt.add_node("act_" + sl, _clip("LOCO_idle"))
-		bt.add_node("act_seek_" + sl, AnimationNodeTimeSeek.new())  # restarts the slot's clip
-		bt.connect_node("act_seek_" + sl, 0, "act_" + sl)
-		bt.add_node("act_ts_" + sl, AnimationNodeTimeScale.new())
-		bt.connect_node("act_ts_" + sl, 0, "act_seek_" + sl)
-	bt.connect_node("act_ab", 0, "act_ts_a")
-	bt.connect_node("act_ab", 1, "act_ts_b")
+		ts[sl] = _slot_chain("act_" + sl)
+	bt.connect_node("act_ab", 0, ts["a"])
+	bt.connect_node("act_ab", 1, ts["b"])
 	bt.connect_node("act", 0, "act_ab")
-	bt.connect_node("act", 1, "act_ts_c")
+	bt.connect_node("act", 1, ts["c"])
 	var action := AnimationNodeBlend2.new()
 	bt.add_node("action", action)
-	bt.connect_node("action", 0, "upper")
+	bt.connect_node("action", 0, "uact")
 	bt.connect_node("action", 1, "act")
 	bt.connect_node("output", 0, "action")
 	tree = AnimationTree.new()
 	inst.add_child(tree)
 	tree.add_animation_library("", lib)
 	tree.tree_root = bt
-	tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_PHYSICS
+	# evaluated every rendered frame, not at the 60 Hz physics rate: limbs move on every frame of a
+	# 144 Hz screen. Root motion is collected per frame and handed to physics (root_motion_world).
+	tree.callback_mode_process = AnimationMixer.ANIMATION_CALLBACK_MODE_PROCESS_IDLE
 	tree.root_motion_track = NodePath(_sk_path + ":root")
+	tree.mixer_applied.connect(_on_mixer_applied)
 	tree.active = true
+	process_priority = -1  # drive the tree's parameters before it evaluates this frame
 	_fill_crouch(crouch)
 	tree.set("parameters/action/blend_amount", 0.0)
 	tree.set("parameters/upper/blend_amount", 0.0)
+	tree.set("parameters/uact/blend_amount", 0.0)
+	tree.set("parameters/move/blend_amount", 0.0)
+	_lean = PoseMod.new()
+	_lean.setup(skeleton)
+	skeleton.add_child(_lean)
 
 
-## The loops whose names start with `prefix`, sorted into idle / directions by their travel.
 static func loco_set(prefix: String) -> Dictionary:
 	var out := {}
 	for n: String in meta:
@@ -227,23 +421,28 @@ func set_stance(id: String) -> void:
 	var loco: AnimationNodeBlendSpace2D = bt.get_node("loco")
 	while loco.get_blend_point_count() > 0:
 		loco.remove_blend_point(0)
-	loco.min_space = Vector2(-2.0, -2.0)
-	loco.max_space = Vector2(2.0, 3.0)
-	var pts := {"idle": Vector2.ZERO, "f_walk": Vector2(0, 1), "f_run": Vector2(0, 2), "b_walk": Vector2(0, -1), "b_run": Vector2(0, -2),
+	loco.min_space = Vector2(-2.5, -2.5)
+	loco.max_space = Vector2(2.5, 3.5)
+	# two diamond rings: walks at 1, runs at 2 (a diagonal sits on the edge between its two neighbours),
+	# the sprint ahead at 3. The idle is not in here: `move` mixes it in below walking pace.
+	var pts := {"f_walk": Vector2(0, 1), "f_run": Vector2(0, 2), "b_walk": Vector2(0, -1), "b_run": Vector2(0, -2),
 		"l_walk": Vector2(-1, 0), "l_run": Vector2(-2, 0), "r_walk": Vector2(1, 0), "r_run": Vector2(2, 0)}
-	for k in pts:
-		if mine.has(k):
-			loco.add_blend_point(_clip(mine[k]), pts[k], -1, k)
-	loco.add_blend_point(_clip(str(data["_sprint"])), Vector2(0, 3), -1, "sprint")
+	_ring.clear()
+	mine["sprint"] = str(data["_sprint"])
+	pts["sprint"] = Vector2(0, 3)
+	for k: String in pts:
+		if not mine.has(k):
+			continue
+		var clip := str(mine[k])
+		loco.add_blend_point(_gait_clip(clip), pts[k], -1, k)
+		_ring[k] = [feet_speed(clip), float(meta[clip]["length"])]
+	(bt.get_node("idle") as AnimationNodeAnimation).animation = str(mine.get("idle", "LOCO_idle"))
 	_equip_models()
 
 
-## An NPC standing about: the locomotion idle becomes `clip` (a looping library clip).
+## An NPC standing about: the idle becomes `clip` (a looping library clip).
 func set_idle(clip: String) -> void:
-	var loco: AnimationNodeBlendSpace2D = bt.get_node("loco")
-	for i in loco.get_blend_point_count():
-		if loco.get_blend_point_position(i) == Vector2.ZERO:
-			(loco.get_blend_point_node(i) as AnimationNodeAnimation).animation = clip
+	(bt.get_node("idle") as AnimationNodeAnimation).animation = clip
 
 
 func _fill_crouch(cs: AnimationNodeBlendSpace2D) -> void:
@@ -337,37 +536,166 @@ func _make_bow() -> Node3D:
 
 # ---- driving -----------------------------------------------------------------------------------
 
-## Locomotion: `local` = velocity in the character's frame (x right, y forward) in m/s.
-func set_motion(local: Vector2, sprinting: bool, mode: String, delta: float) -> void:
+## Locomotion: `local` = velocity in the character's frame (x right, y forward) in m/s. Called at the
+## physics rate; the blend follows it smoothly every rendered frame (_process).
+func set_motion(local: Vector2, sprinting: bool, mode: String, _delta: float = 0.0) -> void:
+	_want_prev = _want
+	_want = local
+	_sprinting = sprinting
+	_mode = mode
+
+
+func _process(delta: float) -> void:
+	if tree == null:
+		return
+	_drive_loco(delta)
+	_drive_layers(delta)
+	_drive_lean(delta)
+
+
+func _physics_process(_delta: float) -> void:
+	_take_root_motion()  # a new tick: what the frames since the last one produced is this tick's share
+
+
+## The point on the walk ring (unit diamond) in the direction of `p`: where the blend waits while standing,
+## so a start always goes idle -> walk -> run.
+static func _on_ring(p: Vector2) -> Vector2:
+	var l1 := absf(p.x) + absf(p.y)
+	return p / l1 if l1 > 0.05 else Vector2(0, 1)
+
+
+## Speed of a loco point's clip (feet) or a fallback.
+func _ring_speed(k: String, fallback: float) -> float:
+	return float(_ring[k][0]) if _ring.has(k) else fallback
+
+
+## Where on the rings a local velocity lands: direction on the unit diamond times the gait (1 = this
+## direction's walk at its own pace, 2 = its run, 3 = the sprint). Each clip sits exactly at its own
+## measured speed, so at that speed it plays at its natural rate.
+func _loco_target(local: Vector2, sprinting: bool) -> Vector2:
 	var sp := local.length()
-	var bx := 0.0
-	var by := 0.0
-	var gait := 0.0
-	if sp > 0.05:
-		gait = sp / WALK_REF if sp <= WALK_REF else 1.0 + clampf((sp - WALK_REF) / (RUN_REF - WALK_REF), 0.0, 1.0)
-		if sprinting and local.y > 0.5 * sp:
-			gait = 3.0
-		var d := local / sp
-		bx = d.x * gait
-		by = d.y * gait
-	var cur: Vector2 = tree.get("parameters/loco/blend_position")
-	var tgt := Vector2(bx, by)
-	tree.set("parameters/loco/blend_position", cur.lerp(tgt, 1.0 - exp(-delta * 10.0)))
-	var nominal := WALK_REF if gait <= 1.0 else (RUN_REF if gait <= 2.0 else 5.6)
-	var ts := clampf(sp / nominal, 0.75, 1.6) if gait > 0.5 else 1.0
-	tree.set("parameters/loco_ts/ts", ts)
-	tree.set("parameters/crouch/blend_position", Vector2(clampf(local.x / 1.3, -1, 1), clampf(local.y / 1.3, -1, 1)))
-	tree.set("parameters/crouch_ts/ts", clampf(sp / 1.3, 0.7, 1.6) if sp > 0.2 else 1.0)
-	if tree.get("parameters/mode/current_state") != mode:
-		tree.set("parameters/mode/transition_request", mode)
-	# held pose over the upper body, and the action layer fading out at the end of its clip
+	if sp < 0.01:
+		return Vector2.ZERO
+	var d := local / sp
+	var l1 := absf(d.x) + absf(d.y)
+	var side := absf(d.x) / l1
+	var fb := "f_" if d.y >= 0.0 else "b_"
+	var lr := "r_" if d.x >= 0.0 else "l_"
+	var walk := lerpf(_ring_speed(fb + "walk", WALK_REF), _ring_speed(lr + "walk", WALK_REF), side)
+	var run := lerpf(_ring_speed(fb + "run", RUN_REF), _ring_speed(lr + "run", RUN_REF), side)
+	var g := sp / walk if sp <= walk else 1.0 + clampf((sp - walk) / maxf(0.2, run - walk), 0.0, 1.0)
+	var sprint := _ring_speed("sprint", 5.6)
+	if sprinting and d.y > 0.7 and sp > run:
+		g = 2.0 + clampf((sp - run) / maxf(0.2, sprint - run), 0.0, 1.0)
+	return d / l1 * g
+
+
+func _drive_loco(delta: float) -> void:
+	# the controller's velocity steps at 60 Hz; the frames in between see it interpolated like the body
+	var want := _want_prev.lerp(_want, Engine.get_physics_interpolation_fraction())
+	var sp := want.length()
+	var tgt := _loco_target(want, _sprinting)
+	var g := absf(tgt.x) + absf(tgt.y)  # the target sits on the diamond of radius g
+	# the blend position: a critically damped spring (no lurch when the speed steps, no overshoot);
+	# below walking pace it rests on the walk ring (in the stick's direction) and `move` fades it out
+	var ring_tgt := tgt / g * maxf(g, 1.0) if g > 0.001 else _on_ring(_bp)
+	var k := BLEND_HZ
+	_bp_v += ((ring_tgt - _bp) * k * k - _bp_v * 2.0 * k) * delta
+	_bp += _bp_v * delta
+	# idle <-> moving follows the (already acceleration-limited, interpolated) speed closely: a lagging mix
+	# would make the legs spin up to cover the ground with too little weight; a stiff spring only rounds
+	# off corners and steps (root motion handing over to the stick)
+	var mk := MOVE_HZ
+	_move_v += ((clampf(g, 0.0, 1.0) - _move) * mk * mk - _move_v * 2.0 * mk) * delta
+	_move = clampf(_move + _move_v * delta, 0.0, 1.0)
+	tree.set("parameters/loco/blend_position", _bp)
+	tree.set("parameters/move/blend_amount", _move)
+	# stride matching: the shared cycle advances at ground speed / blended stride, so planted feet stay
+	# planted whatever the mix (below walking pace the walk keeps its own rate: `move` shortens it)
+	var loco: AnimationNodeBlendSpace2D = bt.get_node("loco")
+	var w := _bs_weights(loco, _bp)
+	var stride := 0.0
+	var nat := 0.0
+	for i in w.size():
+		if w[i] <= 0.0:
+			continue
+		var r: Array = _ring.get(loco.get_blend_point_name(i), [WALK_REF, 1.0])
+		stride += w[i] * float(r[0]) * float(r[1])
+		nat += w[i] / float(r[1])
+	if stride > 0.05:
+		# planted feet move at move x stride x rate (the idle share holds still): solve for the rate.
+		# Slowing faster than the blend can follow, the stride slows with the body instead of skating.
+		_rate = clampf(sp / (maxf(_move, 0.05) * stride), nat * 0.3, nat * 1.4)
+	tree.set("parameters/loco_ts/scale", _rate)
+	# crouch: its own small blend space, rate from speed
+	tree.set("parameters/crouch/blend_position", Vector2(clampf(want.x / 1.3, -1, 1), clampf(want.y / 1.3, -1, 1)))
+	tree.set("parameters/crouch_ts/scale", clampf(sp / 1.3, 0.7, 1.6) if sp > 0.2 else 1.0)
+	if tree.get("parameters/mode/current_state") != _mode:
+		tree.set("parameters/mode/transition_request", _mode)
+
+
+## The blend weights Godot's BlendSpace2D gives `pos` (barycentric in its triangle, or along the nearest
+## edge when outside), per blend point.
+static func _bs_weights(bs: AnimationNodeBlendSpace2D, pos: Vector2) -> PackedFloat32Array:
+	var w := PackedFloat32Array()
+	w.resize(bs.get_blend_point_count())
+	var best := INF
+	var best_w := [0.0, 0.0, 0.0]
+	var best_i := [0, 0, 0]
+	for t in bs.get_triangle_count():
+		var ii := [bs.get_triangle_point(t, 0), bs.get_triangle_point(t, 1), bs.get_triangle_point(t, 2)]
+		var p: Array[Vector2] = [bs.get_blend_point_position(ii[0]), bs.get_blend_point_position(ii[1]), bs.get_blend_point_position(ii[2])]
+		if Geometry2D.point_is_inside_triangle(pos, p[0], p[1], p[2]):
+			var v0 := p[1] - p[0]
+			var v1 := p[2] - p[0]
+			var v2 := pos - p[0]
+			var den := v0.x * v1.y - v1.x * v0.y
+			if absf(den) < 0.000001:
+				continue
+			var b1 := (v2.x * v1.y - v1.x * v2.y) / den
+			var b2 := (v0.x * v2.y - v2.x * v0.y) / den
+			w[ii[0]] = 1.0 - b1 - b2
+			w[ii[1]] = b1
+			w[ii[2]] = b2
+			return w
+		for j in 3:
+			var a: Vector2 = p[j]
+			var b: Vector2 = p[(j + 1) % 3]
+			var c := Geometry2D.get_closest_point_to_segment(pos, a, b)
+			var d := c.distance_to(pos)
+			if d < best:
+				best = d
+				var f := a.distance_to(c) / maxf(0.000001, a.distance_to(b))
+				best_i = [ii[j], ii[(j + 1) % 3], ii[(j + 2) % 3]]
+				best_w = [1.0 - f, f, 0.0]
+	if best < INF:
+		for j in 3:
+			w[best_i[j]] += best_w[j]
+	return w
+
+
+func _drive_layers(delta: float) -> void:
+	# held pose over the upper body
 	_hold_w = move_toward(_hold_w, 1.0 if _hold != "" else 0.0, delta * 8.0)
 	tree.set("parameters/upper/blend_amount", _hold_w)
+	# one-shot upper-body action: in fast, out over its last 0.15 s
+	if _u_left > 0.0:
+		_u_left -= delta
+	var uw := minf(1.0, float(_uslot_w[_uslot]) + delta / 0.12)
+	_uslot_w[_uslot] = uw
+	_uslot_w[1 - _uslot] = 1.0 - uw
+	tree.set("parameters/u_x/blend_amount", float(_uslot_w[1]))
+	var u_want := 1.0 if _u_left > 0.15 else maxf(0.0, _u_left / 0.15)
+	_u_w = move_toward(_u_w, u_want, delta * (12.0 if u_want > _u_w else 7.0))
+	tree.set("parameters/uact/blend_amount", _u_w)
+	if _u_w <= 0.001 and _u_left <= 0.0:
+		upper_clip = ""
+	# the action layer, fading out at the end of its clip
 	_mix_slots(delta)
 	if _warp_left > 0.0:
 		_warp_left -= delta
 		if _warp_left <= 0.0:
-			tree.set("parameters/act_ts_%s/scale" % SLOTS[_slot], _speed)
+			tree.set("parameters/act_%s_ts/scale" % SLOTS[_slot], _speed)
 	if _act_left > 0.0:
 		_act_left -= delta
 	var want := 1.0 if _act_left > _act_fade else maxf(0.0, _act_left / _act_fade)
@@ -375,6 +703,34 @@ func set_motion(local: Vector2, sprinting: bool, mode: String, delta: float) -> 
 	tree.set("parameters/action/blend_amount", _act_w)
 	if _act_w <= 0.001 and _act_left <= 0.0:
 		act_clip = ""
+
+
+## Lean like a runner: into the acceleration (centripetal in a turn, forward when speeding up, back when
+## braking), from the body as it is drawn this frame. A few degrees, about the feet; off in actions.
+func _drive_lean(delta: float) -> void:
+	var xf := get_global_transform_interpolated()
+	var pos := xf.origin
+	if is_nan(_yaw_prev):
+		_yaw_prev = 0.0
+		_lean_pos = pos
+	var f := 1.0 - exp(-delta * 12.0)
+	var v := (pos - _lean_pos) / maxf(delta, 0.0001)
+	v.y = 0.0
+	if v.length() > 25.0:  # a teleport
+		v = _lean_vel
+	_lean_pos = pos
+	var vs := _lean_vel.lerp(v, f)
+	var acc := (vs - _lean_vel) / maxf(delta, 0.0001)
+	_lean_vel = vs
+	_lean_acc = _lean_acc.lerp(acc, f)
+	var right := xf.basis.x.normalized()
+	var fwd := -xf.basis.z.normalized()
+	var on := (1.0 - _act_w) * (1.0 if _mode == "ground" else 0.0)
+	var roll := clampf(-_lean_acc.dot(right) * 0.011, -0.15, 0.15) * on
+	var pitch := clampf(_lean_acc.dot(fwd) * 0.006, -0.07, 0.08) * on
+	var g := 1.0 - exp(-delta * 9.0)
+	_lean.roll = lerpf(_lean.roll, roll, g)
+	_lean.pitch = lerpf(_lean.pitch, pitch, g)
 
 
 ## Play a whole-body action; returns how long it lasts at that speed. `fade` = blend out at the end.
@@ -393,8 +749,8 @@ func play(clip: String, speed: float = 1.0, fade: float = 0.18, from: float = 0.
 	(bt.get_node("act_" + sl) as AnimationNodeAnimation).animation = clip
 	_speed = speed
 	_warp_left = from / (speed * WARP)
-	tree.set("parameters/act_ts_%s/scale" % sl, speed * (WARP if _warp_left > 0.0 else 1.0))
-	tree.set("parameters/act_seek_%s/seek_request" % sl, 0.0)  # always from the start: mid-clip seeks pop
+	tree.set("parameters/act_%s_ts/scale" % sl, speed * (WARP if _warp_left > 0.0 else 1.0))
+	tree.set("parameters/act_%s_seek/seek_request" % sl, 0.0)  # always from the start: mid-clip seeks pop
 	if _act_w <= 0.001:  # nothing showing: no need to blend in over an old action
 		for k in SLOTS.size():
 			_slot_w[k] = 1.0 if k == _slot else 0.0
@@ -403,6 +759,25 @@ func play(clip: String, speed: float = 1.0, fade: float = 0.18, from: float = 0.
 	_act_fade = fade
 	act_clip = clip
 	return _act_left
+
+
+## Play a one-shot over the upper body (spine and up) while the legs keep doing what they do: casting
+## on the move. Returns its duration at that speed.
+func play_upper(clip: String, speed: float = 1.0) -> float:
+	if not tree.has_animation(clip):
+		push_warning("no clip " + clip)
+		return 0.0
+	if _u_w > 0.001:
+		_uslot = 1 - _uslot  # cross-fade from the one still showing
+	else:
+		_uslot_w = [1.0, 0.0] if _uslot == 0 else [0.0, 1.0]
+	var sl: String = USLOTS[_uslot]
+	(bt.get_node("u_" + sl) as AnimationNodeAnimation).animation = clip
+	tree.set("parameters/u_%s_ts/scale" % sl, speed)
+	tree.set("parameters/u_%s_seek/seek_request" % sl, 0.0)
+	_u_left = tree.get_animation(clip).length / maxf(0.01, speed)
+	upper_clip = clip
+	return _u_left
 
 
 ## The current slot rises to full weight over ACT_XFADE; the others share what is left.
@@ -441,10 +816,89 @@ func hold(clip: String) -> void:
 		(bt.get_node("hold") as AnimationNodeAnimation).animation = clip
 
 
-## This physics frame's root motion in world space (the action's own ground travel).
+## Every evaluation of the tree (once per rendered frame) adds its root motion, in world space.
+func _on_mixer_applied() -> void:
+	_rm_acc += inst.global_basis * tree.get_root_motion_position()
+	_rm_t += get_process_delta_time()
+
+
+## Start of a physics tick: the frames since the last tick give the root motion's current velocity.
+func _take_root_motion() -> void:
+	var tick := Engine.get_physics_frames()
+	if tick == _rm_tick:
+		return
+	_rm_tick = tick
+	if _rm_t > 0.0:
+		_rm_v = _rm_acc / _rm_t
+	_rm_acc = Vector3.ZERO
+	_rm_t = 0.0
+
+
+## This physics tick's root motion in world space (the action's own ground travel). Frames and ticks
+## interleave unevenly (2 or 3 frames per tick at 144 Hz), so it is the frames' average velocity times
+## the tick: the body moves at an even pace, and over time exactly as far as the clips travel.
 func root_motion_world() -> Vector3:
-	var rm: Vector3 = tree.get_root_motion_position()
-	return inst.global_basis * rm
+	_take_root_motion()
+	return _rm_v * get_physics_process_delta_time()
+
+
+## The ground speed a loop's planted feet imply (m/s): how fast the body has to travel for the feet to
+## stay put. The root speed in clips.json is the source's travel, which can differ by 5-25 % (foot slip in
+## the source); stride matching uses this. Measured once per clip from the leg chain.
+func feet_speed(clip: String) -> float:
+	if _feet.has(clip):
+		return _feet[clip]
+	var m: Dictionary = meta.get(clip, {})
+	var fallback := float(m.get("speed", 0.0))
+	var a := tree.get_animation(clip) if tree != null and tree.has_animation(clip) else null
+	if a == null or fallback < 0.2:
+		_feet[clip] = fallback
+		return fallback
+	var tracks := {}
+	for ti in a.get_track_count():
+		var bi := skeleton.find_bone(a.track_get_path(ti).get_concatenated_subnames())
+		if bi < 0:
+			continue
+		var e: Array = tracks.get(bi, [-1, -1])
+		if a.track_get_type(ti) == Animation.TYPE_POSITION_3D:
+			e[0] = ti
+		elif a.track_get_type(ti) == Animation.TYPE_ROTATION_3D:
+			e[1] = ti
+		tracks[bi] = e
+	var sum := Vector2.ZERO
+	var n := 0
+	var dt := 1.0 / 60.0
+	var steps := maxi(8, int(a.length / dt))
+	for side in ["l", "r"]:
+		var chain: Array[int] = []
+		var b := skeleton.find_bone("foot_" + side)
+		while b > 0:  # up to (not including) the root: positions relative to the root
+			chain.push_front(b)
+			b = skeleton.get_bone_parent(b)
+		var ps: Array[Vector3] = []
+		var ymin := INF
+		for k in steps:
+			var x := Transform3D.IDENTITY
+			for c in chain:
+				var l := skeleton.get_bone_rest(c)
+				var e: Array = tracks.get(c, [-1, -1])
+				if int(e[0]) >= 0:
+					l.origin = a.position_track_interpolate(int(e[0]), k * dt)
+				if int(e[1]) >= 0:
+					l.basis = Basis(a.rotation_track_interpolate(int(e[1]), k * dt))
+				x = x * l
+			ps.append(x.origin)
+			ymin = minf(ymin, x.origin.y)
+		for k in range(1, steps - 1):
+			var v := (ps[k + 1] - ps[k - 1]) / (2.0 * dt)
+			if ps[k].y < ymin + 0.03 and absf(v.y) < 0.3:
+				sum += Vector2(v.x, v.z)
+				n += 1
+	var fs := sum.length() / n if n > 0 else fallback
+	if fs < fallback * 0.5 or fs > fallback * 1.5:
+		fs = fallback  # no clean contact found: trust the root
+	_feet[clip] = fs
+	return fs
 
 
 # ---- queries -----------------------------------------------------------------------------------
