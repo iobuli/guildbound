@@ -184,6 +184,7 @@ var spots := {
 	"blacksmith": Vector3(-10.5, 0.1, -1.0),
 	"yard_dummy": Vector3(24.0, 0.1, 25.0),
 	"yard_spar": Vector3(36.0, 0.1, 30.0),
+	"referee": Vector3(31.0, 0.1, 21.0),       # the duel referee, by the yard gate
 	"slime_field": Vector3(0.0, 0.1, -58.0),
 	"goblin_camp": Vector3(-58.0, 0.1, 8.0),
 	"pond": Vector3(-30.0, 0.0, 42.0),

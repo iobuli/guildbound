@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel]
 
 var m: Node
 var p: Player
@@ -38,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -552,6 +552,50 @@ func t_rank() -> void:
 		gob.sheet.rank_name() == "E-" and is_equal_approx(Rank.power(gob.sheet.rank_step()), 2.0))
 	var nu := Rank.next_unlock(Rank.parse("E"))
 	check("ranks open things up (D- opens a class specialisation)", nu.size() == 2 and nu[0] == "D-", str(nu))
+	p.sheet.xp = 0
+	p.sheet.invalidate()
+	p.sheet.restore()
+
+
+func t_duel() -> void:
+	print("-- refereed duel: minimum rank, the referee's handicap for the lower rank")
+	var duel: Duel = m.duel
+	var sp: Player = m.spar
+	var sb := sp.get_node("ai") as FighterAI
+	sb.mode = "dummy"
+	p.sheet.xp = 0
+	p.sheet.invalidate()
+	var hp_alone := p.sheet.v("max_hp")
+	var saved_min: String = duel.data["min_rank"]
+	duel.data["min_rank"] = "E-"
+	var r0 := duel.start(p, sp)
+	duel.data["min_rank"] = saved_min
+	check("an arena turns away hunters below its minimum rank", not bool(r0[0]) and not duel.active, str(r0[1]))
+	await put(m.SPAR_POS + Vector3(0, 0.1, 5.0))
+	m.start_yard_duel()
+	var mine := duel.referee_effects(p)
+	var buffs := mine.filter(func(e: Dictionary) -> bool: return e["name"] != "Referee's Vigour")
+	var floor_ok := p.sheet.v("max_hp") >= 0.8 * sp.sheet.v("max_hp") - 0.5
+	check("F- vs an E- opponent: the referee lifts the F-'s health to 80% of the opponent's and grants 3 random buffs (1 + 4 steps / 2)",
+		duel.active and floor_ok and buffs.size() == 3 and duel.referee_effects(sp).is_empty() and is_equal_approx(p.sheet.hp, p.sheet.v("max_hp")),
+		"%s; hp %.0f vs %.0f" % [str(duel.granted), p.sheet.v("max_hp"), sp.sheet.v("max_hp")])
+	var bf: Dictionary = buffs[0] if buffs.size() > 0 else {}
+	var base := {}
+	for b in duel.data["buffs"]:
+		base[b["name"]] = float(b["mods"][0]["value"])
+	check("a letter apart, each buff is 1.5x as strong", not bf.is_empty() and is_equal_approx(float(bf["mods"][0]["value"]), base[bf["name"]] * 1.5))
+	check("the lower rank still hits with its own damage (no free win)", is_equal_approx(p.sheet.v("attack_damage"), m.build_kaelen().v("attack_damage")))
+	var xp0 := p.sheet.xp
+	sp.last_hit_by = p
+	sp.combat.die(Vector3(0, 0, -1))
+	await frames(2)
+	check("the duel ends when one goes down: the referee takes the buffs back, the winner gets the loser's XP",
+		not duel.active and duel.referee_effects(p).is_empty() and is_equal_approx(p.sheet.v("max_hp"), hp_alone) and p.sheet.xp == xp0 + 40 and sp.sheet.rank_override == "",
+		"xp +%d, max hp %.0f" % [p.sheet.xp - xp0, p.sheet.v("max_hp")])
+	await frames(int(Player.RESPAWN_AFTER * 60) + 10)
+	var r2 := duel.start(p, sp)
+	check("equal ranks: no handicap", bool(r2[0]) and duel.referee_effects(p).is_empty() and duel.referee_effects(sp).is_empty(), str(r2[1]))
+	duel.end(null)
 	p.sheet.xp = 0
 	p.sheet.invalidate()
 	p.sheet.restore()

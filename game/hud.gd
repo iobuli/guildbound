@@ -225,8 +225,10 @@ func _buffs(s: CharModel) -> void:
 			col = Color(0.45, 0.85, 0.45)
 		elif e["kind"] == "combat":
 			col = Color(0.5, 1.0, 0.8)
+		elif e["kind"] == "referee":
+			col = Color(0.55, 0.75, 1.0)
 		var key: String = e["key"]
-		var tex: Texture2D = Icons.item(key) if e["kind"] == "consumable" else (Icons.spell(key) if DataStore.spells().has(key) else Icons.tex("S_Wind01" if key == "flurry" else "S_Shadow14"))
+		var tex: Texture2D = Icons.tex(str(e["icon"])) if e.has("icon") else Icons.item(key) if e["kind"] == "consumable" else (Icons.spell(key) if DataStore.spells().has(key) else Icons.tex("S_Wind01" if key == "flurry" else "S_Shadow14"))
 		var box := Rect2(x, y, 40, 40)
 		_panel(box, Color(0.07, 0.06, 0.05, 0.85), col, 4)
 		_icon(tex, box.grow(-4.0))

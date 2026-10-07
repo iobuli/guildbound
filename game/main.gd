@@ -12,6 +12,7 @@ var mobs: Mobs
 var board: QuestBoard
 var merchant: Merchant
 var shop: ShopWindow
+var duel: Duel
 var DUMMY_POS := Vector3.ZERO   # from arena.spots once the map is built
 var SPAR_POS := Vector3.ZERO
 
@@ -97,6 +98,21 @@ func _ready() -> void:
 	shop.status = status
 	layer.add_child(shop)
 	arena.add_interaction(arena.spots["merchant"] + Vector3(-1.9, 0.0, 0.0), "Merchant", shop.open_shop, 2.4)
+	# the training yard's arena: Referee Elowen starts a refereed duel with the sparring partner
+	duel = Duel.new()
+	duel.name = "Duel"
+	add_child(duel)
+	duel.setup("yard")
+	duel.finished.connect(_on_duel_finished)
+	var elowen := HeroAnim.new()
+	elowen.name = "RefereeNPC"
+	add_child(elowen)
+	elowen.build("Superhero_Female_FullBody", "Hair_Long")
+	elowen.set_stance("magic")
+	elowen.set_idle("MAG_idle")
+	elowen.position = arena.spots["referee"] - Vector3(0.0, 0.1, 0.0)
+	elowen.rotation.y = PI  # faces the gate (+Z)
+	arena.add_interaction(arena.spots["referee"], "Duel (Referee Elowen)", start_yard_duel, 2.4)
 	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -111,6 +127,27 @@ func _ready() -> void:
 		var st := SelfTest.new()
 		add_child(st)
 		st.run(self)
+
+
+## E at the referee: a refereed duel with the sparring partner, who fights at the arena's rank.
+func start_yard_duel() -> void:
+	if duel.active:
+		player.toast.emit("A duel is already on")
+		return
+	spar.sheet.rank_override = str(duel.data.get("opponent_rank", ""))
+	spar.sheet.invalidate()
+	spar.teleport(SPAR_POS)
+	player.teleport(SPAR_POS + Vector3(0.0, 0.1, 5.0))
+	player.facing = Vector3(0.0, 0.0, -1.0)
+	var r := duel.start(player, spar)
+	player.toast.emit(str(r[1]))
+	if not bool(r[0]):
+		_on_duel_finished(null, null)
+
+
+func _on_duel_finished(_winner: Player, _loser: Player) -> void:
+	spar.sheet.rank_override = ""
+	spar.sheet.invalidate()
 
 
 ## Another fighter in the arena: same physical body, its own stats, no camera. `brain` (optional) is

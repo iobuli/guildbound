@@ -1,0 +1,82 @@
+{
+ "_note": "Refereed arenas (game/duel.gd). min_rank: lowest rank allowed in. When ranks differ the referee raises the lower rank's health to hp_floor x the opponent's and grants buffs_base + (rank steps apart / buffs_per_steps) random buffs from 'buffs' (at most buffs_max), each x (1 + magnitude_per_letter per letter apart). opponent_rank: the rank the yard's sparring partner fights at.",
+ "yard": {
+  "name": "Training Yard",
+  "referee": "Referee Elowen",
+  "min_rank": "F-",
+  "opponent_rank": "E-",
+  "hp_floor": 0.8,
+  "buffs_base": 1,
+  "buffs_per_steps": 2,
+  "buffs_max": 4,
+  "magnitude_per_letter": 0.5,
+  "buffs": [
+   {
+    "name": "Stoneskin",
+    "icon": "S_Earth05",
+    "mods": [
+     {
+      "stat": "armor",
+      "op": "flat",
+      "value": 40
+     }
+    ]
+   },
+   {
+    "name": "Haste",
+    "icon": "S_Wind03",
+    "mods": [
+     {
+      "stat": "attack_speed",
+      "op": "add_pct",
+      "value": 0.25
+     }
+    ]
+   },
+   {
+    "name": "Fleetfoot",
+    "icon": "S_Wind05",
+    "mods": [
+     {
+      "stat": "move_speed",
+      "op": "add_pct",
+      "value": 0.15
+     }
+    ]
+   },
+   {
+    "name": "Iron Will",
+    "icon": "S_Holy05",
+    "mods": [
+     {
+      "stat": "tenacity",
+      "op": "flat",
+      "value": 0.3
+     }
+    ]
+   },
+   {
+    "name": "Bloodthirst",
+    "icon": "S_Shadow15",
+    "mods": [
+     {
+      "stat": "lifesteal",
+      "op": "flat",
+      "value": 0.08
+     }
+    ]
+   },
+   {
+    "name": "Keen Edge",
+    "icon": "S_Fire05",
+    "mods": [
+     {
+      "stat": "crit_chance",
+      "op": "flat",
+      "value": 0.15
+     }
+    ]
+   }
+  ]
+ }
+}
