@@ -125,7 +125,8 @@ static func at(from: Node, pos: Vector3, cue: String, pitch: float = 1.0, gain_d
 	a.pitch_scale = pitch * randf_range(0.92, 1.08)
 	a.unit_size = 6.0
 	a.max_distance = 60.0
-	from.get_tree().current_scene.add_child(a)
+	var tree := from.get_tree()
+	(tree.current_scene if tree.current_scene != null else tree.root).add_child(a)
 	a.global_position = pos
 	a.finished.connect(a.queue_free)
 	_track(a, cue)
