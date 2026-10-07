@@ -20,6 +20,7 @@ const PARRY_WINDOW := 0.3
 const GUARD_COS := 0.34          # cos 70 deg: blows from inside this arc in front are guarded
 const BODY_RADIUS := 0.42
 const BLADE_RADIUS := 0.12        # generous on purpose: a blow that looks like it lands, lands
+const HURT_PAD := 0.3             # ... and more against a fighter's slim capsules: moves and AI ranges are spaced for the old thick band (tighten after retuning)
 const POISE_REGEN := 25.0        # per second, after 1.5 s without being hit
 const PLAYER_POISE_MULT := 2.5
 const STAGGER_TIME := 0.7
@@ -65,6 +66,7 @@ var element := "fire"           # the magic element (X): staff spells and the Aw
 var awaken := 0.0               # Awakening meter, 0..100: landing and taking hits fill it
 var awaken_t := 0.0             # seconds of Awakening left
 var last_dealt := 0.0           # the raw damage of our last blow (lifesteal)
+var last_zone := ""             # where our last blow landed on a fighter: head / torso / arm / leg
 var rng := RandomNumberGenerator.new()
 
 
@@ -387,21 +389,34 @@ func _sweep() -> void:
 			continue
 		if f.global_position.distance_to(p.global_position) > reach + 2.0:
 			continue
-		var band := body_band(f)
-		var bot: Vector3 = band[0]
-		var top: Vector3 = band[1]
-		var hit_at := Vector3.INF
-		for k in 4:  # the blade at 4 moments between last frame and this one
-			var u := float(k) / 3.0
-			var s0 := pa.lerp(a, u)
-			var s1 := pb.lerp(b, u)
-			var pts := Geometry3D.get_closest_points_between_segments(s0, s1, bot, top)
-			if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + BLADE_RADIUS:
-				hit_at = pts[0]
-				break
-		if hit_at != Vector3.INF:
+		var hit := hurt_test(f, pa, pb, a, b)
+		if not hit.is_empty():
 			_victims[f] = true
-			apply_hit(f, float(move.get("dmg", 1.0)), float(move.get("poise", 20)), hit_at, bool(move.get("guard_break", false)))
+			var zone: String = hit[1]
+			last_zone = zone
+			var mult := float(move.get("dmg", 1.0)) * float(BodyParts.ZONE_MULT.get(zone, 1.0))
+			apply_hit(f, mult, float(move.get("poise", 20)), hit[0], bool(move.get("guard_break", false)))
+
+
+## Does a blade moving from pa-pb (last frame) to a-b (now) touch `f`? Tested at 4 moments in between:
+## a fighter's body capsules (BodyParts: segment-segment distance under the radii), a monster's band.
+## Returns [where on the blade, zone] or [].
+static func hurt_test(f: Node3D, pa: Vector3, pb: Vector3, a: Vector3, b: Vector3) -> Array:
+	var caps: Array = (f as Player).model.hurtboxes() if f is Player and (f as Player).model.hurt.size() > 0 else []
+	var band := body_band(f)
+	for k in 4:
+		var u := float(k) / 3.0
+		var s0 := pa.lerp(a, u)
+		var s1 := pb.lerp(b, u)
+		if caps.is_empty():
+			var pts := Geometry3D.get_closest_points_between_segments(s0, s1, band[0], band[1])
+			if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + BLADE_RADIUS:
+				return [pts[0], "torso"]
+		else:
+			var near: Array = BodyParts.nearest(caps, s0, s1)
+			if float(near[0]) <= BLADE_RADIUS + HURT_PAD:
+				return [near[1], near[2]]
+	return []
 
 
 ## Deal a blow to `f` (from a swing or a projectile). Returns what happened.

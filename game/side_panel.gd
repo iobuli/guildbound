@@ -428,6 +428,7 @@ func _magic() -> void:
 func _use(id: String) -> void:
 	Sfx.ui(self, "consume" if CharModel.is_consumable(id) else "equip")
 	status.use_item(id)
+	player.model.refresh_armour(player.sheet)  # the body wears what was just put on
 	_hide_tip()
 	show_tab(tab)
 
@@ -438,6 +439,7 @@ func _take_off(slot: String) -> void:
 	if id != "" and s.unequip(slot):
 		Sfx.ui(self, "equip")
 		player.toast.emit("Took off " + s.item_data(id).get("name", id))
+		player.model.refresh_armour(s)
 	elif id != "":
 		player.toast.emit("No room in the backpack for " + str(s.item_data(id).get("name", id)))
 	_hide_tip()

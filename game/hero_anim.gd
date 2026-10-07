@@ -64,6 +64,18 @@ var _weapon: Node3D
 var _offhand: Node3D
 var _swing := {}          # clip -> [active start, active end] (s at speed 1)
 var _sk_path := ""
+static var default_body_style := "mannequin"
+var body_style := default_body_style   # "mannequin" (capsules on the bones) or "skinned" (the UBC mesh); set before build()
+var hurt: Array = []                   # BodyParts segments bound to this skeleton (hurtboxes, mannequin, armour)
+var parts := {}                        # segment name -> its mannequin MeshInstance3D
+var _attach := {}                      # bone name -> BoneAttachment3D
+var _armour: Array[MeshInstance3D] = []
+var _armour_sig := -1
+var _mat_body: StandardMaterial3D
+var _mat_joint: StandardMaterial3D
+var _tint := Color.WHITE
+const DUMMY_COL := Color(0.6, 0.6, 0.59)    # matte mid grey (reads light under the sun)
+const JOINT_COL := Color(0.34, 0.34, 0.36)
 # locomotion state (targets come from the controller at physics rate, everything moves per frame)
 var _want := Vector2.ZERO          # local ground velocity: x right, y forward (m/s), this physics tick
 var _want_prev := Vector2.ZERO     # ... the tick before (drawn frames sit between the two)
@@ -218,21 +230,31 @@ func build(body: String = "Superhero_Male_FullBody", hair: String = "Hair_Simple
 	add_child(inst)
 	skeleton = inst.find_child("Skeleton3D", true, false)
 	_sk_path = str(inst.get_path_to(skeleton))
-	if hair != "":
+	if hair != "" and body_style != "mannequin":
 		_attach_hair(hair)
 	for side in ["r", "l"]:
-		var ba := BoneAttachment3D.new()
-		ba.bone_name = "hand_" + side
-		skeleton.add_child(ba)
-		_hands[side] = ba
+		_hands[side] = _bone_attach("hand_" + side)
+	hurt = BodyParts.bind_all(skeleton)
+	if body_style == "mannequin":
+		_build_mannequin()
 	_build_tree()
+	var watch := Timer.new()  # equipment can change from anywhere (bag, shop, quest): look now and then
+	watch.wait_time = 0.25
+	watch.autostart = true
+	watch.timeout.connect(_watch_armour)
+	add_child(watch)
 
 
-## Tint the body and hair (goblins: green). Each surface gets its own copy of its material.
+## Tint the body and hair (goblins: green). Each surface gets its own copy of its material; the
+## mannequin's two materials are this body's own already. Armour keeps its colour.
 func tint(c: Color) -> void:
+	_tint = c
+	if _mat_body != null:
+		_mat_body.albedo_color = DUMMY_COL * c
+		_mat_joint.albedo_color = JOINT_COL * c
 	for mi in inst.find_children("*", "MeshInstance3D", true, false):
 		var m3 := mi as MeshInstance3D
-		if m3.mesh == null:
+		if m3.mesh == null or m3.has_meta("body_part") or m3.has_meta("armour"):
 			continue
 		for k in m3.mesh.get_surface_count():
 			var base := m3.get_active_material(k) as BaseMaterial3D
@@ -540,6 +562,180 @@ func _make_bow() -> Node3D:
 	holder.rotation_degrees = grip_rot
 	holder.position = Vector3(0.0, 0.07, 0.0)
 	return holder
+
+
+# ---- body: mannequin, armour ---------------------------------------------------------------------
+
+func _bone_attach(bone: String) -> BoneAttachment3D:
+	if _attach.has(bone):
+		return _attach[bone]
+	var ba := BoneAttachment3D.new()
+	ba.bone_name = bone
+	skeleton.add_child(ba)
+	_attach[bone] = ba
+	return ba
+
+
+func _seg(n: String) -> Dictionary:
+	for h: Dictionary in hurt:
+		if h["n"] == n:
+			return h
+	return {}
+
+
+## A mesh riding a bone, placed by its rest-space transform. `tag` marks it: "body_part" or "armour".
+func _add_part(bone: int, mesh: Mesh, rest: Transform3D, tag: String, value: String) -> MeshInstance3D:
+	var mi := MeshInstance3D.new()
+	mi.mesh = mesh
+	mi.transform = skeleton.get_bone_global_rest(bone).affine_inverse() * rest
+	mi.set_meta(tag, value)
+	_bone_attach(skeleton.get_bone_name(bone)).add_child(mi)
+	return mi
+
+
+static func _capsule(r: float, length: float, mat: Material) -> CapsuleMesh:
+	var cm := CapsuleMesh.new()
+	cm.radius = r
+	cm.height = length + 2.0 * r
+	cm.radial_segments = 20
+	cm.rings = 6
+	cm.material = mat
+	return cm
+
+
+static func _sphere(r: float, mat: Material, half: bool = false) -> SphereMesh:
+	var sm := SphereMesh.new()
+	sm.radius = r
+	sm.height = r if half else 2.0 * r
+	sm.is_hemisphere = half
+	sm.radial_segments = 20
+	sm.rings = 8 if half else 12
+	sm.material = mat
+	return sm
+
+
+## The prototype body: the skinned mesh hidden, a smooth matte capsule per segment and a darker sphere at
+## each joint, all riding the skeleton (a test dummy: it fits whatever pose the clips put it in).
+func _build_mannequin() -> void:
+	for mi in inst.find_children("*", "MeshInstance3D", true, false):
+		(mi as MeshInstance3D).visible = false
+	_mat_body = StandardMaterial3D.new()
+	_mat_body.albedo_color = DUMMY_COL * _tint
+	_mat_body.roughness = 0.72
+	_mat_body.metallic_specular = 0.35
+	_mat_joint = StandardMaterial3D.new()
+	_mat_joint.albedo_color = JOINT_COL * _tint
+	_mat_joint.roughness = 0.6
+	for h: Dictionary in hurt:
+		var pa: Vector3 = h["rest_a"]
+		var pb: Vector3 = h["rest_b"]
+		parts[h["n"]] = _add_part(int(h["bone"]), _capsule(float(h["r"]), pa.distance_to(pb), _mat_body), BodyParts.along(pa, pb), "body_part", str(h["n"]))
+	for j: Array in BodyParts.joints():
+		var bi := skeleton.find_bone(str(j[0]))
+		var seg := _seg(str(j[1]))
+		if bi < 0 or seg.is_empty():
+			continue
+		var at := Transform3D(Basis(), skeleton.get_bone_global_rest(bi).origin)
+		_add_part(bi, _sphere(float(seg["r"]) * float(j[2]), _mat_joint), at, "body_part", "joint")
+	var head := _seg("head")
+	if not head.is_empty():  # a dark visor band, so the dummy's facing reads at a glance
+		var r := float(head["r"])
+		var c: Vector3 = (head["rest_a"] as Vector3).lerp(head["rest_b"], 0.7) + Vector3(0, 0, r * 0.78)
+		var visor := Transform3D(Basis(Vector3.FORWARD, PI * 0.5), c)
+		_add_part(int(head["bone"]), _capsule(r * 0.3, r * 0.75, _mat_joint), visor, "body_part", "visor")
+
+
+func _watch_armour() -> void:
+	var s: Variant = get_parent().get("sheet") if get_parent() != null else null
+	if s is CharModel and (s as CharModel).equipment.hash() != _armour_sig:
+		refresh_armour(s)
+
+
+## Dress the body in what the sheet wears (head, body, hands, feet). Call after equipping / taking off.
+func refresh_armour(sheet: CharModel) -> void:
+	var gear := {}
+	if sheet != null:
+		_armour_sig = sheet.equipment.hash()
+		for slot in ["head", "body", "hands", "feet"]:
+			var id: String = sheet.equipment.get(slot, "")
+			if id != "":
+				gear[slot] = id + " " + str(sheet.item_data(id).get("name", ""))
+	dress(gear)
+
+
+## Armour shells over the segments: slot -> item text (its id / name tells the material).
+func dress(gear: Dictionary) -> void:
+	for n in _armour:
+		if is_instance_valid(n):
+			n.free()
+	_armour.clear()
+	for slot: String in gear:
+		var kind: String = BodyParts.material_of(str(gear[slot]))
+		var mat: StandardMaterial3D = BodyParts.armour_material(kind)
+		var metal: bool = kind != "leather" and kind != "cloth"
+		match slot:
+			"head":
+				var h := _seg("head")
+				if h.is_empty():
+					continue
+				var R := float(h["r"]) + 0.018
+				var top: Vector3 = (h["rest_b"] as Vector3) - Vector3(0, 0.02, 0)
+				_shell(h, _sphere(R, mat, true), Transform3D(Basis(), top), slot)
+				var rim := CylinderMesh.new()
+				rim.top_radius = R + 0.006
+				rim.bottom_radius = R + 0.008
+				rim.height = 0.032
+				rim.radial_segments = 20
+				rim.material = mat
+				_shell(h, rim, Transform3D(Basis(), top), slot)
+				if metal:  # nose guard
+					var nose := BoxMesh.new()
+					nose.size = Vector3(0.022, 0.075, 0.014)
+					nose.material = mat
+					_shell(h, nose, Transform3D(Basis(), top + Vector3(0, -0.04, R + 0.004)), slot)
+			"body":
+				_cover("chest", 0.022, 0.0, 1.0, mat, slot)
+				_cover("abdomen", 0.018, 0.0, 1.0, mat, slot)
+				for s in ["l", "r"]:
+					var ua := _seg("upperarm_" + s)
+					if ua.is_empty():
+						continue
+					var bi := skeleton.find_bone("clavicle_" + s)  # rides the shoulder, the arm moves under it
+					if bi < 0:
+						bi = int(ua["bone"])
+					var at: Vector3 = (ua["rest_a"] as Vector3) + Vector3(0, 0.008, 0)
+					_armour.append(_add_part(bi, _sphere(float(ua["r"]) + 0.04, mat, true), Transform3D(Basis(), at), "armour", slot))
+			"hands":
+				for s in ["l", "r"]:
+					_cover("forearm_" + s, 0.016, 0.35, 0.92, mat, slot)
+					_cover("hand_" + s, 0.01 if not metal else 0.014, 0.0, 1.0, mat, slot)
+			"feet":
+				for s in ["l", "r"]:
+					_cover("foot_" + s, 0.016, 0.0, 1.0, mat, slot)
+					_cover("shin_" + s, 0.018, 0.58, 1.0, mat, slot)
+
+
+func _shell(h: Dictionary, mesh: Mesh, rest: Transform3D, slot: String) -> void:
+	_armour.append(_add_part(int(h["bone"]), mesh, rest, "armour", slot))
+
+
+## A capsule shell over the stretch [from, to] (0..1) of a segment, `pad` thicker than it.
+func _cover(seg: String, pad: float, from: float, to: float, mat: Material, slot: String) -> void:
+	var h := _seg(seg)
+	if h.is_empty():
+		return
+	var pa: Vector3 = (h["rest_a"] as Vector3).lerp(h["rest_b"], from)
+	var pb: Vector3 = (h["rest_a"] as Vector3).lerp(h["rest_b"], to)
+	_shell(h, _capsule(float(h["r"]) + pad, pa.distance_to(pb), mat), BodyParts.along(pa, pb), slot)
+
+
+## The armour pieces worn now, optionally of one slot.
+func armour_pieces(slot: String = "") -> Array:
+	var out: Array = []
+	for n in _armour:
+		if is_instance_valid(n) and (slot == "" or n.get_meta("armour", "") == slot):
+			out.append(n)
+	return out
 
 
 # ---- driving -----------------------------------------------------------------------------------
@@ -963,6 +1159,14 @@ func strike_segment(limb: String) -> Array:
 	var length := 1.15 if stance_id == "greatsword" else (0.33 if stance_id == "dagger" else (0.95 if stance_id == "magic" else 0.7))
 	var up := g.basis.y.normalized()
 	return [g.origin + up * 0.08, g.origin + up * length]
+
+
+## The body's hurtboxes in the world, posed now: [a, b, radius, zone, name] per segment.
+func hurtboxes() -> Array:
+	var out: Array = []
+	for h: Dictionary in hurt:
+		out.append(BodyParts.to_world(skeleton, h))
+	return out
 
 
 ## A held weapon's tip (staff / wand / bow) in world space - where spells and arrows leave from.

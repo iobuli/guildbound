@@ -40,6 +40,7 @@ func run(main: Node) -> void:
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
 		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["anim", t_anim], ["sound", t_sound]]
 	tests.append_array([["pack", t_pack], ["mix", t_mix]])
+	tests.append_array([["body", t_body]])
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -970,3 +971,59 @@ func t_mix() -> void:
 	var bird: float = lvl.call("bird")
 	check("in the mix blows ride over swishes, footsteps and birds sit underneath", blow > swish + 3.0 and swish > step + 6.0 and bird < swish,
 		"hit_blade %.1f, swish_blade %.1f, step_stone %.1f, bird %.1f (LUFS + cue dB)" % [blow, swish, step, bird])
+
+
+func t_body() -> void:
+	print("-- body: mannequin segments, hurt zones, armour shells")
+	var sp: Player = m.spar
+	var sb := sp.get_node("ai") as FighterAI
+	sb.mode = "dummy"
+	sp.teleport(m.SPAR_POS)
+	await put(m.SPAR_POS + Vector3(0, 0.1, 2.5))
+	var mdl: HeroAnim = sp.model
+	var missing: Array = []
+	for n in BodyParts.names():
+		if not mdl.parts.has(n) or not (mdl.parts[n] as MeshInstance3D).is_visible_in_tree():
+			missing.append(n)
+	var skinned_shown := 0
+	for mi in mdl.inst.find_children("*", "MeshInstance3D", true, false):
+		if (mi as MeshInstance3D).skin != null and (mi as MeshInstance3D).visible:
+			skinned_shown += 1
+	check("the mannequin is built from every body segment (skinned mesh hidden)", mdl.body_style == "mannequin" and missing.is_empty()
+		and skinned_shown == 0 and mdl.hurtboxes().size() == BodyParts.names().size(),
+		"%d segments, missing %s, skinned meshes shown %d" % [mdl.parts.size(), str(missing), skinned_shown])
+	# a blade drawn across each part from the side lands in that part's zone
+	var right := sp.global_basis.x
+	var zones := {}
+	for n in ["head", "chest", "forearm_r", "shin_l"]:
+		var e: Array = BodyParts.endpoints(mdl.skeleton, n)
+		var mid: Vector3 = (e[0] as Vector3).lerp(e[1], 0.5)
+		var hit := Combat.hurt_test(sp, mid + right * 0.6, mid + right * 0.02, mid + right * 0.6, mid + right * 0.02)
+		zones[n] = hit[1] if not hit.is_empty() else "miss"
+	var far := Combat.hurt_test(sp, sp.global_position + Vector3(2, 1, 0), sp.global_position + Vector3(2, 1.5, 0), sp.global_position + Vector3(2, 1, 0), sp.global_position + Vector3(2, 1.5, 0))
+	check("a strike at the head reports zone 'head' (chest torso, forearm arm, shin leg; air misses)",
+		zones["head"] == "head" and zones["chest"] == "torso" and zones["forearm_r"] == "arm" and zones["shin_l"] == "leg" and far.is_empty(),
+		str(zones) + "  far " + str(far))
+	check("head blows hit harder than torso, limbs softer", BodyParts.ZONE_MULT["head"] > BodyParts.ZONE_MULT["torso"] and BodyParts.ZONE_MULT["arm"] < 1.0 and BodyParts.ZONE_MULT["leg"] < 1.0)
+	# armour: the body wears what the sheet does
+	var sh: CharModel = sp.sheet
+	var saved := sh.equipment.duplicate()
+	mdl.refresh_armour(sh)
+	var base := mdl.armour_pieces().size()
+	sh.equip("iron_helm")
+	await frames(30)  # picked up on its own (the body looks at the sheet now and then)
+	var helm := mdl.armour_pieces("head")
+	var helm_ok := helm.size() > 0 and ((helm[0] as MeshInstance3D).mesh.surface_get_material(0) as StandardMaterial3D).metallic > 0.5
+	for id in ["chain_vest", "wolfhide_gloves", "swift_boots"]:
+		sh.equip(id)
+	mdl.refresh_armour(sh)
+	var counts := [mdl.armour_pieces("head").size(), mdl.armour_pieces("body").size(), mdl.armour_pieces("hands").size(), mdl.armour_pieces("feet").size()]
+	var glove := mdl.armour_pieces("hands")
+	var brown := glove.size() > 0 and ((glove[0] as MeshInstance3D).mesh.surface_get_material(0) as StandardMaterial3D).albedo_color.r > ((glove[0] as MeshInstance3D).mesh.surface_get_material(0) as StandardMaterial3D).albedo_color.b + 0.15
+	sh.equipment = saved
+	sh.invalidate()
+	mdl.refresh_armour(sh)
+	var after := mdl.armour_pieces().size()
+	check("armour appears when equipped (iron helm, chain vest, leather gloves, boots) and vanishes when removed",
+		helm_ok and brown and not counts.has(0) and after == base,
+		"pieces head/body/hands/feet %s, helm metal %s, gloves brown %s, before %d after %d" % [str(counts), str(helm_ok), str(brown), base, after])
