@@ -1,86 +1,102 @@
-# Handoff: finish movement fixes + build hand-to-hand combat and lock-on
+# Handoff: combat and animation rebuild (October 2026)
 
-Read this first in a new session. It is the full context of where the project stands and what is next.
+Read this before changing combat, animation or the body. It covers what exists, how to measure it, and what to do next.
 
-## The job ("all or nothing")
+## What is in place
 
-1. **Complete fix** of the physical character:
-   - get-up works from any landing (flat, slopes, stairs, against walls) with no snaps and no clipping
-   - climbing legs press the wall (feet as contacts), natural falling pose
-   - stairs per the user's model (below), foot sliding cut, locomotion pops cut
-2. **New: hand-to-hand melee combat + lock-on fighting system**, built on the same physical body.
+**Animation core** (`game/hero_anim.gd`, `game/camera_rig.gd`, `game/player.gd`)
+- The AnimationTree evaluates every rendered frame, not only the 60 Hz physics tick. Root motion is gathered per frame and
+  handed to physics as an average velocity. Before this, on a 144 Hz screen the pose changed on only half the frames.
+- The camera follows the body's interpolated transform in `_process`. It is opted out of physics interpolation and does its
+  own sphere-cast collision.
+- Locomotion loops share one gait timeline, starting on the left heel strike, so blends never cross the legs. The cycle rate
+  comes from ground speed over the measured stride, so feet do not slide.
+- Controller: turn rate falls with speed, so runs carve arcs. Reversing at speed skids, then pivots. A pivot from a stand
+  turns before accelerating.
+- After the animation: lean into acceleration and turns, two-bone IK foot planting, and no foot below the floor.
+- `play_upper(clip, speed)` plays an upper-body one-shot over the moving legs. Casting uses it.
 
-The design workflow script is in `tools/workflows/guildbound-design.js` (diagnose 4 defect areas in worktrees, three
-independent combat designs, three judges, a synthesis, and a completeness critic). Run it with the Workflow tool, read the
-results, then run an implementation workflow (parallel tracks in worktrees, then integrate and verify with the self-test).
+**Body** (`game/body_parts.gd`, `game/hero_anim.gd`)
+- `HeroAnim.body_style = "mannequin"` is the default; `"skinned"` restores the UBC mesh.
+- The mannequin is 17 capsules between bones, sized from bone lengths. The same capsules are the melee hurtboxes.
+- Hit zones scale damage: head x1.2, torso x1.0, limbs x0.85.
+- Armour shells come from `sheet.equipment`: helmet, chest plate with pauldrons, gauntlets and bracers, boots. They are
+  coloured by material (leather, iron, steel, gold, cloth) and rebuilt when the equipment changes.
 
-## User's non-negotiable direction
+**Combat** (`game/combat.gd`, `game/projectile.gd`, `game/hud.gd`, `game/fighter_ai.gd`)
+- No staff in the weapon cycle (Q). Every character casts with any weapon:
+  - F tap: the light spell. F hold: the heavy spell. X switches element.
+  - Mana costs and cooldowns are in `weapons.json` under `"_cast"`.
+- The hotbar shows the light and heavy spells (key, element colour, mana, cooldown sweep) next to Art slots 1-4.
+- Parry everything: guard pressed within 0.25 s before any blow lands (melee, monster lunge or projectile) parries it.
+  - The last 0.10 s is a PERFECT parry: a 1.8 s stagger, toast, spark and slow motion.
+  - A guard that is simply held blocks for chip damage.
+- Projectile deflection needs a shield in the offhand or `spell_power >= 40` (`"_parry".deflect_spell_power`).
+  - The new direction is the guarding hand's velocity, blended toward the shooter: 45% for a normal parry, 85% for a perfect one.
+  - A perfect deflect flies 1.5x faster and homes. The projectile becomes the defender's.
+- Spar AI parries with a chance from 12% to 70% by rank.
+- `docs/COMBAT_FRAME_DATA.md` holds the startup/active/recovery table, generated from the clips.
 
-- The whole character is a solid physical object: nothing clips through anything (world, props, its own limbs).
-- Prefer maths-driven / procedural motion over a canned clip firing every time. Clips may be a style layer.
-- Joints are fixed pivots (rotation only). Feet have no transform except pivoting at the heel / ball contact.
-- **Stairs**: walk toward a step, the leg lifts and goes ON TOP of the step. If the player stops, that foot stays there.
-  Walking back puts it back on the floor. Body height comes from the planted feet, not a capsule teleport.
-- Ragdoll keeps real momentum. The get-up starts from wherever the body lies, contacts grounded, and is universal
-  (any landing angle, slopes, stairs, walls).
-- Climbing: wide arm spread, palms are the contact points. Gliding is removed.
-- Efficient colliders. Work quietly, verify with numbers, report results not every step.
+**Goblins and sound**
+- Goblins come in packs of 6:
+  - The "Goblin frame" gives health x0.3, movement x1.3 and attack speed x1.3.
+  - Pack AI: at most 2 attack at once (attack tokens). The others circle, feint and dart in.
+  - Hurt goblins back off, and a leash walks them home. The AI sidesteps obstacles when stuck.
+- `tools/make_sfx.py` builds every cue from the Kenney CC0 recordings in `assets/audio`, layered and processed, with
+  synthesis as a sweetener. It needs `pip install numpy scipy soundfile`.
+- Every cue is levelled to about -16 LUFS. `assets/audio/CREDITS.txt` lists the source recordings, and `docs/SOUND_UPGRADES.md`
+  recommends free CC0 packs.
+
+## How to measure
+
+- Self-test: run `Godot --headless --path . -- --selftest [--only=...]`. A full run takes about 10 minutes, and every check passes.
+  - Movement and animation: move, dodge, melee, flow, anim.
+  - Combat: guard, ranged, magic, cast, parry, sparparry, framedata, body.
+  - Monsters: mobs, pack.
+  - Sound: sound, mix.
+  - Other systems: ai, ui, grid, quests, shop, rank, duel.
+- Motion lab: `tools/motion_lab.gd`; usage is at the top of the file. It plays the real game at 144 fps rendering over
+  60 Hz physics and prints, per scenario (run, start/stop, turn, strafe, combo, dodge):
+  - judder: frames where the camera or pose did not change
+  - jitter: screen, body and hand jerk
+  - pops
+  - planted-foot slide
+  - turn smoothness
+
+  Run it before and after any animation change.
+
+## Next steps, in priority order
+
+1. **Play-test feel on a real screen.** The numbers say smooth; only hands on a controller say "good". Note each moment that
+   feels wrong and check it with the motion lab.
+2. **More bespoke clips.** This is the gap to Breath of the Wild. Download these from Mixamo, retarget them with
+   `tools/retarget.gd` and add them to `clips.json`:
+   - run-to-stop, turn 180 / pivot, start-run, walk-to-run
+   - per-weapon attack recoveries and hit reactions (front, back, left, right)
+
+   The locomotion code already measures clip speeds and strides.
+3. **Sound listening pass.** The cues have never been heard on speakers. Adjust the dB values in `game/sfx.gd` CUES; the
+   ones to check first are parry, clang, swish_* and the birds.
+4. **Hurtbox tuning.** `HURT_PAD 0.3` in `combat.gd` adds a margin so existing reach still lands. Tighten it after retuning
+   move ranges.
+5. **Combat gaps:**
+   - Projectiles still use the single body band and always count as torso.
+   - Bow users cannot parry: the bow's guard button aims.
+   - F casts mid-air and mid-dodge. Decide whether that is wanted.
+   - Parries are rare in AI-versus-AI trades, because a fighter mid-swing cannot parry.
+6. **Staff remnants.** The `magic` stance still exists in `weapons.json` because `main.gd` (the referee NPC and the demo tour)
+   uses it. Move those NPCs to a weapon plus F casting, then delete the stance.
+7. **Goblins** still use the human mannequin scaled to 0.78. A hunched goblin silhouette (longer arms, big head) is cheap
+   with the capsule body: scale the segments in `body_parts.gd`.
+
+## Standing direction from the user (carried over from the previous handoff)
+
+These came from an earlier version of the game (the physical-ragdoll body, now replaced by `hero_anim.gd`) but still describe
+what the user wants:
+- The character is a solid object: nothing clips through anything (world, props, its own limbs).
+- Prefer maths-driven, procedural motion over a canned clip firing every time; clips can be a style layer.
+- Stairs: the leg lifts and the foot goes on top of the step and stays there if the player stops. Body height comes from the
+  planted feet, not a capsule teleport.
+- Efficient colliders. Work quietly, verify with numbers, and report results rather than every step.
 - Never buy packs or create accounts. Free downloads are fine.
-
-## Running the game and tests
-
-The project is Godot **4.7.2** (Jolt physics, set in `project.godot`).
-
-Windows (the user's PC): `D:\Godot\Godot_v4.7.2-stable_win64_console.exe`.
-
-Linux / cloud:
-
-```bash
-curl -L -o godot.zip https://github.com/godotengine/godot/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip
-unzip -o godot.zip && export GODOT="$PWD/Godot_v4.7.2-stable_linux.x86_64"
-"$GODOT" --headless --path . --import          # builds the .godot cache (gitignored); also needed after adding a class_name script
-```
-
-- Self-test (headless, 6-10 min for everything): `"$GODOT" --headless --path . -- --selftest [--only=a,b]`
-  Test names: parity, run, slopes, cliff, gap, swim, carry, fall, getup, hotbar, slide, pops, roll, climbanim,
-  stairsanim (gdbg and debug only when asked). Lines are `[PASS]/[FAIL] name - detail`; diagnostics start with three
-  spaces. Filter the harmless Jolt "Cone twist" warnings with `grep -v`.
-- Visual contact sheets need a display: `-- --getupshots` (docs/getup_sheet.png), `-- --animshots` (docs/anim_sheet.png).
-  On Linux try `xvfb-run "$GODOT" --rendering-driver opengl3 --path . -- --getupshots`.
-
-GDScript rules that bite: tabs; typed code; a variable inferred from a Dictionary / Array / Variant element needs an
-explicit type (`var x: float = d["k"]`) or the script will not parse; SkeletonModifier3D already has a property named
-`active`.
-
-## Architecture (game/)
-
-| File | Role |
-|---|---|
-| player.gd | CharacterBody3D kinematic capsule state machine GROUND/AIR/CLIMB/SWIM/RAGDOLL/RECOVER; stamina, step-up teleport + visual easing, dodge, climb/mantle, swim, slide, carry/push, ragdoll, get-up hand-off. Reads only its `intent` (intent.gd: `Intent.from_input(cam)` for the local player, an `ai` child or outside code for others); `Player.fighters` registry; works without camera (`is_ai`). |
-| character_visual.gd | AnimationTree from Quaternius UAL1/UAL2 + CMU clips; drives MotionIK; owns BodyRig, GetUpPose, RagdollPose; `clip_pose()`. |
-| motion_ik.gd | Foot IK + foot locking/stepping, pelvis shift, landing / hit springs, torso lean, push hands, climbing palms. |
-| get_up_pose.gd | Procedural get-up: `plan(face_down, floor_pt, fwd)` builds contact stages (face down: palms, all fours, kneel up, half kneel, stand; face up: sit up on palms, squat, stand); phase one blends from the exact ragdoll pose; limbs are two-bone IK on contacts; terrain fit; knee floor guard; also bends the spine while ragdolled. |
-| body_rig.gd | The physical body: 15 rigid parts (box pelvis/chest/hands/feet, ball head, capsule limbs), pins, velocity drive toward targets with strength 0..1, ragdoll with ConeTwist limits + self collision, `recover(self_collide)`, grandparent collision exceptions, target extrapolation between drawn frames (get-ups only). Layers WORLD 1, PLAYER 2, BODY 4, PROPS 8. |
-| ragdoll_pose.gd | Last skeleton modifier: records the pose as body targets, then draws the skeleton FROM the physics bodies. |
-| camera_rig.gd, hud.gd, input_setup.gd, arena.gd | Orbit camera, HUD, named input actions, test arena (ramps, stairs at x -8, 20 m cliff, pit, pond, props). |
-| stats.gd, char_model.gd | MOBA-style stat engine (flat, add_pct, more, caps, slow): max_hp, attack_damage, attack_speed, armor (taken = 100/(100+armor)), crit_chance, lifesteal, tenacity, carry, stamina... shared with the Python sim in `sim/`. |
-| selftest.gd, anim_probe.gd, anim_shots.gd | Scripted checks, pop/slide metrics, contact sheets. |
-
-Combat controls already specified in `docs/CONTROLS_AND_PHYSICS.md` §2.2 and §4: LMB light combo (hold = charged), RMB guard
-+ 150 ms parry, MMB lock-on + wheel cycles targets, Alt dodge + perfect-dodge Flurry, 60-90 ms hit-stop, knockback reduced
-by Tenacity, strafe-circle while locked, Space side-hop while locked.
-
-Free clips available for combat: Punch_Jab, Punch_Cross, Melee_Hook(+_Rec), Hit_Chest, Hit_Head, Hit_Knockback,
-Idle_Shield, Sword_Block, Shield_Dash, Death01. No kicks in the free packs (CMU mocap can be imported with
-tools/bvh_import.gd).
-
-## Status at handoff
-
-- Full self-test: 105 checks, 94 pass (combat foundation added the `selfcol` checks). All 11 failures are get-up checks.
-- Get-up problems left: phase-one "snaps" when a tangled ragdoll untangles (varies run to run); shin catching step edges
-  on stairs; cliff-wall landings can plan contacts into the wall (and the --getupshots camera ends inside the rock);
-  occasional late foot-landing snaps.
-- Locomotion diagnostics: dodge end pop 0.45-0.78 m, push start 0.6-0.72 m, jump onto wall 0.62 m, swim 0.38-0.52 m,
-  after throw 0.43-0.48 m; planted-foot sliding: slow walk 0.76 m/s, crouch walk 1.0-1.3, push 2.9-6.5, stairs down
-  3.4-4.1, turn in place 1.7-2.6 m over 4 turns.
-- Play-test: climbing legs hang limp; the falling pose is a stiff wide frog.
+- Godot on the user's PC: `D:\Godot\Godot_v4.7.2-stable_win64_console.exe`.
