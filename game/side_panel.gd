@@ -3,7 +3,7 @@ extends Control
 ## RuneScape-style side panel, docked bottom-right: icon tabs along the top, the world keeps running.
 ##   COMBAT     your strings, flick moves, kicks and defence; the next punch / kick string
 ##   STATS      skill-grid of every stat (icon + value); hover = the full breakdown
-##   INVENTORY  28 slots with the real item icons (coins first). Left click: wear / eat / drink;
+##   INVENTORY  a 6 x 8 Tarkov-style grid: items take their size, drag to move, R turns them. Left click: wear / eat / drink;
 ##              right click: Wear / Use / Drop / Examine. Hover = appraisal in your own numbers
 ##   WORN       paper doll of the equipment slots (click to take off) and the gear totals
 ##   MAGIC      spellbook: click to cast / dismiss; hover = cost, upkeep, every modifier
@@ -18,7 +18,6 @@ const SLOT_BG := Color(0.19, 0.17, 0.13, 0.9)
 const ORANGE := Color(1.0, 0.6, 0.1)
 const YELLOW := Color(1.0, 1.0, 0.0)
 const TEXT := Color(0.95, 0.88, 0.7)
-const INV_SIZE := 28
 const DOLL := [["", "head", ""], ["", "accessory1", ""], ["weapon", "body", "offhand"], ["hands", "feet", "accessory2"]]
 const STAT_GRID := ["str", "agi", "int", "attack_damage", "power", "attack_speed", "crit_chance", "crit_damage", "lifesteal",
 	"max_hp", "armor", "tenacity", "hp_regen", "magic_resist", "stamina", "max_mana", "spell_power", "mana_regen",
@@ -36,7 +35,6 @@ var _tip: PanelContainer
 var _tip_text: RichTextLabel
 var _menu: PopupMenu
 var _menu_id := ""
-var _order: Array[String] = []      # inventory slot order (items keep their place, RS-style)
 var _sig := ""
 var _sig_t := 0.0
 
@@ -221,48 +219,24 @@ func show_tab(i: int) -> void:
 
 func _inventory() -> void:
 	var s := player.sheet
-	# keep each item where it was; new ones fill the first free slot
-	var ids: Array[String] = []
-	for id in s.bag:
-		if int(s.bag[id]) > 0:
-			ids.append(str(id))
-	_order = _order.filter(func(x: String) -> bool: return x == "" or ids.has(x))
-	for k in _order.size():
-		if _order[k] != "" and not ids.has(_order[k]):
-			_order[k] = ""
-	for id in ids:
-		if not _order.has(id):
-			var free := _order.find("")
-			if free >= 0:
-				_order[free] = id
-			else:
-				_order.append(id)
-	var grid := GridContainer.new()
-	grid.columns = 4
-	grid.add_theme_constant_override("h_separation", int(4 * _k))
-	grid.add_theme_constant_override("v_separation", int(3 * _k))
-	_content.add_child(grid)
-	var cells: Array = []
-	if s.gold > 0:
-		cells.append("__coins")
-	cells.append_array(_order)
-	for k in INV_SIZE:
-		var id: String = cells[k] if k < cells.size() else ""
-		if id == "__coins":
-			var cb := _slot(Icons.tex(Icons.UI["coins"]), _rs_count(s.gold), false)
-			cb.mouse_entered.connect(func() -> void: _show_tip("[b][color=#ffd95a]Coins[/color][/b]\n%d gold" % s.gold))
-			grid.add_child(cb)
-			continue
-		if id == "":
-			grid.add_child(_slot(null, "", false))
-			continue
-		var n := int(s.bag.get(id, 0))
-		var b := _slot(Icons.item(id), str(n) if n > 1 else "", false)
-		b.mouse_entered.connect(func() -> void: _show_tip(_item_tip(id)))
-		b.pressed.connect(func() -> void: _use(id))
-		b.gui_input.connect(func(e: InputEvent) -> void: _slot_click(e, id))
-		grid.add_child(b)
-	_content.add_child(_label("Left click: wear / eat.  Right click: more.", 11, TEXT.darkened(0.3)))
+	var top := HBoxContainer.new()
+	var coin := TextureRect.new()
+	coin.texture = Icons.tex(Icons.UI["coins"])
+	coin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	coin.custom_minimum_size = Vector2(20, 20) * _k
+	top.add_child(coin)
+	top.add_child(_label("%s gold    %d / %d cells    %.1f kg" % [_rs_count(s.gold), s.grid.cells_used(), s.grid.w * s.grid.h, s.carried_weight()], int(12 * _k), YELLOW, false))
+	_content.add_child(top)
+	var view := BagView.new()
+	view.name = "BagView"
+	view.setup(s.grid, 36.0 * _k)
+	view.hovered.connect(func(id: String) -> void: _show_tip(_item_tip(id)))
+	view.unhovered.connect(_hide_tip)
+	view.clicked.connect(_use)
+	view.menu.connect(_open_menu)
+	view.changed.connect(func() -> void: Sfx.ui(self, "equip"))
+	_content.add_child(view)
+	_content.add_child(_label("Drag to move (R turns it).  Left click: wear / eat.  Right click: more.", 11, TEXT.darkened(0.3)))
 
 
 func _worn() -> void:
@@ -426,21 +400,22 @@ func _take_off(slot: String) -> void:
 	if id != "" and s.unequip(slot):
 		Sfx.ui(self, "equip")
 		player.toast.emit("Took off " + s.item_data(id).get("name", id))
+	elif id != "":
+		player.toast.emit("No room in the backpack for " + str(s.item_data(id).get("name", id)))
 	_hide_tip()
 	show_tab(tab)
 
 
-func _slot_click(e: InputEvent, id: String) -> void:
-	if e is InputEventMouseButton and e.pressed and e.button_index == MOUSE_BUTTON_RIGHT:
-		_menu_id = id
-		_menu.clear()
-		_menu.add_item(("Eat / drink " if CharModel.is_consumable(id) else "Wear ") + str(player.sheet.item_data(id).get("name", id)), 0)
-		_menu.add_item("Drop", 1)
-		_menu.add_item("Examine", 2)
-		_menu.add_item("Cancel", 3)
-		_menu.position = Vector2i(get_viewport().get_mouse_position())
-		_menu.popup()
-		_hide_tip()
+func _open_menu(id: String) -> void:
+	_menu_id = id
+	_menu.clear()
+	_menu.add_item(("Eat / drink " if CharModel.is_consumable(id) else "Wear ") + str(player.sheet.item_data(id).get("name", id)), 0)
+	_menu.add_item("Drop", 1)
+	_menu.add_item("Examine", 2)
+	_menu.add_item("Cancel", 3)
+	_menu.position = Vector2i(get_viewport().get_mouse_position())
+	_menu.popup()
+	_hide_tip()
 
 
 func _on_menu(i: int) -> void:

@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid]
 
 var m: Node
 var p: Player
@@ -35,7 +35,8 @@ func run(main: Node) -> void:
 	for a in OS.get_cmdline_user_args():
 		if a.begins_with("--only="):
 			only = a.substr(7)
-	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui]]
+	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
+		["grid", t_grid]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -230,8 +231,8 @@ func t_ui() -> void:
 	var sp: SidePanel = m.panel
 	sp.open(SidePanel.TABS.find("inventory"))
 	await get_tree().process_frame
-	var grid: GridContainer = sp._content.get_child(0)
-	check("Tab panel opens with the 28-slot inventory", sp.visible and grid.get_child_count() == SidePanel.INV_SIZE)
+	var view := sp._content.find_child("BagView", true, false) as BagView
+	check("Tab panel opens with the backpack grid", sp.visible and view != null and view.bag == p.sheet.grid)
 	var ok := true
 	for k in SidePanel.TABS.size():
 		sp.show_tab(k)
@@ -246,3 +247,56 @@ func t_ui() -> void:
 	sw.close()
 	await get_tree().process_frame
 	process_mode = Node.PROCESS_MODE_INHERIT
+
+
+func t_grid() -> void:
+	print("-- backpack grid (Tarkov-style)")
+	var g := GridBag.new(4, 4)
+	var four := true
+	for i in 4:
+		four = four and g.add("leather_cap")  # 2x2
+	check("a 4x4 grid takes exactly four 2x2 items, the fifth is refused", four and not g.add("leather_cap") and g.cells_used() == 16)
+	g = GridBag.new(4, 2)
+	var turned := g.add("iron_sword")  # 1x4 only fits lying down in a 4x2 bag
+	var e: Dictionary = g.entries[0] if g.entries.size() > 0 else {}
+	check("a long item turns to fit (1x4 sword in a 4x2 bag)", turned and bool(e.get("rot", false)))
+	g = GridBag.new(2, 1)
+	var stacked := g.add("swift_tonic", 7)  # max_stack 5: two cells
+	check("stackables share a cell up to their cap (7 tonics -> 5 + 2)", stacked and g.entries.size() == 2 and g.count("swift_tonic") == 7 and not g.add("swift_tonic", 4))
+	g = GridBag.new(4, 4)
+	g.add("leather_cap")
+	g.add("oak_buckler")
+	var a: Dictionary = g.entries[0]
+	var b: Dictionary = g.entries[1]
+	var blocked := not g.move(a, int(b["x"]), int(b["y"]), false)
+	var moved := g.move(a, 2, 2, false) and int(a["x"]) == 2 and int(a["y"]) == 2
+	check("moving onto another item is refused, onto free cells works", blocked and moved)
+	# the player's backpack through the game: a pickup lands in the grid; a full bag refuses it
+	await put(m.arena.spots["run_lane"])
+	var sheet := p.sheet
+	var before := sheet.grid.count("chain_vest")
+	var pk := ItemPickup.make("chain_vest")
+	m.add_child(pk)
+	pk.global_position = p.global_position + p.facing * 0.6
+	await frames(5)
+	await press("just_interact")
+	await frames(5)
+	var picked := sheet.grid.count("chain_vest") == before + 1 and int(sheet.bag.get("chain_vest", 0)) == before + 1
+	var saved := sheet.grid.duplicate_bag()
+	var saved_bag := sheet.bag.duplicate()
+	while sheet.add_item("chain_vest"):
+		pass
+	var pk2 := ItemPickup.make("chain_vest")
+	m.add_child(pk2)
+	pk2.global_position = p.global_position + p.facing * 0.6
+	await frames(5)
+	await press("just_interact")
+	await frames(5)
+	var refused := is_instance_valid(pk2) and not pk2.is_queued_for_deletion()
+	check("E picks an item up into the grid; with the grid full it stays on the ground", picked and refused,
+		"picked %s, refused %s, %d cells used" % [picked, refused, sheet.grid.cells_used()])
+	if is_instance_valid(pk2):
+		pk2.queue_free()
+	sheet.grid = saved
+	sheet.bag = saved_bag
+	sheet.invalidate()

@@ -270,6 +270,8 @@ func use_item(id: String) -> void:
 		player.toast.emit(r[1])
 	elif s.equip_from_bag(id):
 		player.toast.emit("Equipped " + s.item_data(id).get("name", id))
+	elif s.slot_for(id) != "":
+		player.toast.emit("No room in the backpack for what you are wearing there")
 	_hide_tip()
 	if visible:
 		show_tab(tab)

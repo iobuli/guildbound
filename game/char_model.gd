@@ -59,6 +59,7 @@ var clock := 0.0
 var hp := 0.0
 var mana := 0.0
 var bag := {}        # item id -> count (gear and consumables you carry but are not wearing)
+var grid := GridBag.new()   # where each of those sits in the backpack (Tarkov-style; bag stays the count)
 var gold := 0
 
 var _cache := {}
@@ -108,17 +109,26 @@ func item_data(id: String) -> Dictionary:
 	return DataStore.consumables().get(id, {})
 
 
-func add_item(id: String, n: int = 1) -> void:
+## Put items in the backpack. False (and nothing added) when they do not fit.
+func add_item(id: String, n: int = 1) -> bool:
+	if not grid.add(id, n):
+		return false
 	bag[id] = int(bag.get(id, 0)) + n
+	return true
 
 
 func remove_item(id: String, n: int = 1) -> bool:
-	if int(bag.get(id, 0)) < n:
+	if int(bag.get(id, 0)) < n or not grid.remove(id, n):
 		return false
 	bag[id] = int(bag[id]) - n
 	if int(bag[id]) <= 0:
 		bag.erase(id)
 	return true
+
+
+## Would n of `id` fit in the backpack right now?
+func can_carry(id: String, n: int = 1) -> bool:
+	return grid.duplicate_bag().add(id, n)
 
 
 ## Which slot an item would go into (the second ring slot if the first is taken).
@@ -136,8 +146,9 @@ func equip_from_bag(id: String) -> bool:
 	if not _items.has(id) or slot_for(id) == "" or not remove_item(id):
 		return false
 	var slot := slot_for(id)
-	if equipment.has(slot):
-		add_item(equipment[slot])
+	if equipment.has(slot) and not add_item(equipment[slot]):
+		add_item(id)  # the worn one does not fit where this came from: keep things as they were
+		return false
 	equipment[slot] = id
 	invalidate()
 	hp = minf(hp, v("max_hp"))
@@ -146,9 +157,8 @@ func equip_from_bag(id: String) -> bool:
 
 
 func unequip(slot: String) -> bool:
-	if not equipment.has(slot):
+	if not equipment.has(slot) or not add_item(equipment[slot]):
 		return false
-	add_item(equipment[slot])
 	equipment.erase(slot)
 	invalidate()
 	hp = minf(hp, v("max_hp"))

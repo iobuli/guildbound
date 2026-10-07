@@ -230,11 +230,13 @@ func _read_intent(delta: float) -> void:
 	if intent.just_interact:
 		var pick := ItemPickup.nearest(global_position + facing * 0.4)
 		if pick != null:
-			sheet.add_item(pick.item_id, pick.count)
 			var nm: String = sheet.item_data(pick.item_id).get("name", pick.item_id)
-			toast.emit("Picked up %s%s  (Tab: inventory)" % [nm, " x%d" % pick.count if pick.count > 1 else ""])
-			Sfx.at(self, pick.global_position, "pickup")
-			pick.queue_free()
+			if sheet.add_item(pick.item_id, pick.count):
+				toast.emit("Picked up %s%s  (Tab: inventory)" % [nm, " x%d" % pick.count if pick.count > 1 else ""])
+				Sfx.at(self, pick.global_position, "pickup")
+				pick.queue_free()
+			else:
+				toast.emit("No room in the backpack for %s" % nm)
 		else:
 			intent.just_special = true
 

@@ -42,6 +42,7 @@
   },
   "items": {
 	"iron_sword": {
+		"size": [1, 4],
 	  "name": "Iron Sword",
 	  "slot": "weapon",
 	  "tier": 1,
@@ -55,6 +56,7 @@
 	  "icon": "W_Sword001"
 	},
 	"steel_longsword": {
+		"size": [1, 5],
 	  "name": "Steel Longsword",
 	  "slot": "weapon",
 	  "tier": 3,
@@ -74,6 +76,7 @@
 	  "icon": "W_Sword008"
 	},
 	"windfang_daggers": {
+		"size": [1, 2],
 	  "name": "Windfang Daggers",
 	  "slot": "weapon",
 	  "tier": 3,
@@ -93,6 +96,7 @@
 	  "icon": "W_Dagger005"
 	},
 	"oak_buckler": {
+		"size": [2, 2],
 	  "name": "Oak Buckler",
 	  "slot": "offhand",
 	  "tier": 1,
@@ -107,6 +111,7 @@
 	  "icon": "E_Wood01"
 	},
 	"leather_cap": {
+		"size": [2, 2],
 	  "name": "Leather Cap",
 	  "slot": "head",
 	  "tier": 1,
@@ -121,6 +126,7 @@
 	  "icon": "C_Elm01"
 	},
 	"hunter_jerkin": {
+		"size": [2, 3],
 	  "name": "Hunter's Jerkin",
 	  "slot": "body",
 	  "tier": 2,
@@ -140,6 +146,7 @@
 	  "icon": "A_Armour01"
 	},
 	"wolfhide_gloves": {
+		"size": [1, 2],
 	  "name": "Wolfhide Gloves",
 	  "slot": "hands",
 	  "tier": 2,
@@ -159,6 +166,7 @@
 	  "icon": "W_Fist001"
 	},
 	"swift_boots": {
+		"size": [2, 2],
 	  "name": "Swift Boots",
 	  "slot": "feet",
 	  "tier": 2,
@@ -178,6 +186,7 @@
 	  "icon": "A_Shoes03"
 	},
 	"ring_tempest": {
+		"size": [1, 1],
 	  "name": "Ring of the Tempest",
 	  "slot": "accessory",
 	  "tier": 4,
@@ -195,6 +204,7 @@
 	  "icon": "Ac_Ring02"
 	},
 	"amulet_vigil": {
+		"size": [1, 1],
 	  "name": "Amulet of the Vigil",
 	  "slot": "accessory",
 	  "tier": 3,
@@ -219,6 +229,8 @@
 	  "icon": "Ac_Necklace03"
 	},
 	"hide_bundle": {
+		"size": [2, 2],
+		"max_stack": 5,
 	  "name": "Bundle of Raw Hides",
 	  "slot": null,
 	  "tier": 1,
@@ -227,6 +239,7 @@
 	  "icon": "I_WolfFur"
 	},
 	"iron_helm": {
+		"size": [2, 2],
 	  "name": "Iron Helm",
 	  "slot": "head",
 	  "tier": 2,
@@ -246,6 +259,7 @@
 	  "icon": "C_Elm03"
 	},
 	"chain_vest": {
+		"size": [3, 3],
 	  "name": "Chain Vest",
 	  "slot": "body",
 	  "tier": 3,
@@ -270,6 +284,7 @@
 	  "icon": "A_Armor04"
 	},
 	"brawler_wraps": {
+		"size": [1, 1],
 	  "name": "Brawler's Wraps",
 	  "slot": "hands",
 	  "tier": 2,
@@ -289,6 +304,7 @@
 	  "icon": "W_Fist004"
 	},
 	"sprinter_greaves": {
+		"size": [2, 2],
 	  "name": "Sprinter's Greaves",
 	  "slot": "feet",
 	  "tier": 3,
@@ -313,6 +329,7 @@
 	  "icon": "A_Shoes05"
 	},
 	"ring_ogre": {
+		"size": [1, 1],
 	  "name": "Ogre-Knuckle Ring",
 	  "slot": "accessory",
 	  "tier": 3,
@@ -339,6 +356,8 @@
   },
   "consumables": {
 	"hearty_stew": {
+		"size": [1, 1],
+		"max_stack": 3,
 	  "name": "Hearty Stew",
 	  "duration": 600,
 	  "weight": 0.5,
@@ -359,6 +378,8 @@
 	  "icon": "I_C_Pie"
 	},
 	"swift_tonic": {
+		"size": [1, 1],
+		"max_stack": 5,
 	  "name": "Swift Tonic",
 	  "duration": 120,
 	  "weight": 0.3,
@@ -373,6 +394,8 @@
 	  "icon": "P_Green02"
 	},
 	"keen_eye_tea": {
+		"size": [1, 1],
+		"max_stack": 5,
 	  "name": "Keen-Eye Tea",
 	  "duration": 300,
 	  "weight": 0.2,
@@ -387,6 +410,8 @@
 	  "icon": "P_Yellow03"
 	},
 	"ironbark_draught": {
+		"size": [1, 1],
+		"max_stack": 5,
 	  "name": "Ironbark Draught",
 	  "duration": 180,
 	  "weight": 0.3,
