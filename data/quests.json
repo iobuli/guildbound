@@ -1,0 +1,127 @@
+{
+ "_note": "Guild quests (the board on the plaza). rank: the lowest rank that may take it. Objectives: kill <target> x count (credited when the player lands the killing blow), collect <item> x count (handed over at turn-in). Rewards: gold, rank points (rank F..S from 'ranks'), items (into the backpack, or at your feet if it is full). Up to 'max_active' quests at once. Rank thresholds and the F-S letters follow docs/REBUILD_PLAN.md (Hunter's Card).",
+ "max_active": 3,
+ "ranks": [
+  [
+   "F",
+   0
+  ],
+  [
+   "E",
+   40
+  ],
+  [
+   "D",
+   120
+  ],
+  [
+   "C",
+   260
+  ],
+  [
+   "B",
+   480
+  ],
+  [
+   "A",
+   800
+  ],
+  [
+   "S",
+   1300
+  ]
+ ],
+ "quests": {
+  "slime_cull": {
+   "name": "Slime Cull",
+   "giver": "Guild Clerk Mira",
+   "rank": "F",
+   "repeatable": true,
+   "desc": "Slimes are eating every flower in the north meadow. Thin them out.",
+   "objectives": [
+    {
+     "type": "kill",
+     "target": "slime",
+     "count": 5
+    }
+   ],
+   "rewards": {
+    "gold": 60,
+    "rank_points": 20,
+    "items": [
+     [
+      "core_common",
+      1
+     ]
+    ]
+   }
+  },
+  "sticky_business": {
+   "name": "Sticky Business",
+   "giver": "Alchemist Oren",
+   "rank": "F",
+   "repeatable": true,
+   "desc": "Bring me slime gel. Fresh, if you can manage it.",
+   "objectives": [
+    {
+     "type": "collect",
+     "item": "slime_gel",
+     "count": 6
+    }
+   ],
+   "rewards": {
+    "gold": 45,
+    "rank_points": 12,
+    "items": [
+     [
+      "swift_tonic",
+      1
+     ]
+    ]
+   }
+  },
+  "goblin_trouble": {
+   "name": "Goblin Trouble",
+   "giver": "Guild Clerk Mira",
+   "rank": "E",
+   "repeatable": true,
+   "desc": "Goblins have set up camp west of town. Drive them off.",
+   "objectives": [
+    {
+     "type": "kill",
+     "target": "goblin",
+     "count": 3
+    }
+   ],
+   "rewards": {
+    "gold": 150,
+    "rank_points": 40,
+    "items": [
+     [
+      "core_uncommon",
+      1
+     ]
+    ]
+   }
+  },
+  "ear_bounty": {
+   "name": "Ear Bounty",
+   "giver": "Captain Hale",
+   "rank": "E",
+   "repeatable": true,
+   "desc": "The watch pays for proof. Goblin ears, five of them.",
+   "objectives": [
+    {
+     "type": "collect",
+     "item": "goblin_ear",
+     "count": 5
+    }
+   ],
+   "rewards": {
+    "gold": 120,
+    "rank_points": 30,
+    "items": []
+   }
+  }
+ }
+}

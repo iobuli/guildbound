@@ -12,6 +12,23 @@ extends Node3D
 
 var water_volumes: Array[AABB] = []
 var props := {}
+var interactions: Array = []   # {"pos", "radius", "name", "action": Callable} - E uses the nearest in reach
+
+
+## Something on the map E can use (the quest board, the merchant...).
+func add_interaction(pos: Vector3, name: String, action: Callable, radius: float = 2.6) -> void:
+	interactions.append({"pos": pos, "radius": radius, "name": name, "action": action})
+
+
+func interaction_near(pos: Vector3) -> Dictionary:
+	var best := {}
+	var best_d := INF
+	for it in interactions:
+		var d := Vector2(pos.x - (it["pos"] as Vector3).x, pos.z - (it["pos"] as Vector3).z).length()
+		if d <= float(it["radius"]) and d < best_d:
+			best_d = d
+			best = it
+	return best
 
 
 func _mat(c: Color, rough: float = 0.9, alpha: float = 1.0) -> StandardMaterial3D:
@@ -221,14 +238,14 @@ func build() -> void:
 	box(bp + Vector3(0.0, 1.6, -1.2), Vector3(2.6, 1.4, 0.12), Color(0.60, 0.45, 0.28), "wood")
 	for i in 5:  # pinned notices
 		deco(bp + Vector3(-0.9 + 0.45 * i, 1.6 + 0.2 * (i % 2), -1.13), Vector3(0.32, 0.4, 0.02), Color(0.93, 0.90, 0.80))
-	label("Quest Board", bp + Vector3(0.0, 2.7, -1.2))
+	label("Quest Board  (E)", bp + Vector3(0.0, 2.7, -1.2))
 	var mp: Vector3 = spots["merchant"]
 	box(mp + Vector3(-1.3, 0.55, 0.0), Vector3(0.8, 1.1, 3.6), timber, "wood")             # counter
 	for z in [-1.7, 1.7]:
 		pillar(mp + Vector3(-1.6, 0.0, z), 0.08, 2.8, timber)
 		pillar(mp + Vector3(1.2, 0.0, z), 0.08, 2.8, timber)
 	deco(mp + Vector3(-0.2, 2.9, 0.0), Vector3(3.4, 0.08, 4.2), Color(0.75, 0.25, 0.22), Vector3(0.0, 0.0, 0.12))  # awning
-	label("Merchant", mp + Vector3(-1.3, 3.4, 0.0))
+	label("Merchant  (E)", mp + Vector3(-1.3, 3.4, 0.0))
 	var sp: Vector3 = spots["blacksmith"]
 	box(sp + Vector3(1.0, 0.4, 0.0), Vector3(0.8, 0.8, 0.5), Color(0.25, 0.25, 0.27), "metal")   # anvil
 	box(sp + Vector3(-0.8, 0.8, -1.4), Vector3(1.6, 1.6, 1.4), Color(0.40, 0.36, 0.33), "rock")  # forge

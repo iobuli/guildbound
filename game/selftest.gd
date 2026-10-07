@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests]
 
 var m: Node
 var p: Player
@@ -36,7 +36,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -385,3 +385,52 @@ func _ground_count(id: String) -> int:
 		if is_instance_valid(pk) and pk.item_id == id:
 			n += pk.count
 	return n
+
+
+func t_quests() -> void:
+	print("-- guild quests: board, kill and collect objectives, rewards, rank")
+	var q := p.quests
+	var mobs: Mobs = m.mobs
+	q.active.clear()
+	q.finished.clear()
+	q.rank_points = 0
+	var offer := q.available()
+	check("a new hunter (rank F) sees the F quests, not the E ones", q.rank() == "F" and offer.has("slime_cull") and not offer.has("goblin_trouble"), str(offer))
+	q.accept("slime_cull")
+	var spot: Vector3 = m.arena.spots["run_lane"]
+	await put(spot)
+	for i in 4:
+		mobs.reward("slime", spot + Vector3(0, 0, -30), p)  # kills credited to the player
+	mobs.reward("slime", spot + Vector3(0, 0, -30), null)  # someone else's kill does not count
+	var four: bool = int(q.progress("slime_cull")[0][1]) == 4 and not q.complete("slime_cull")
+	mobs.reward("slime", spot + Vector3(0, 0, -30), p)
+	var gold0 := p.sheet.gold
+	var cores0 := int(p.sheet.bag.get("core_common", 0))
+	var r := q.turn_in("slime_cull")
+	check("Slime Cull: 5 slime kills by the player complete it; turning in pays gold, rank points and a core",
+		four and bool(r[0]) and p.sheet.gold == gold0 + 60 and q.rank_points == 20 and int(p.sheet.bag.get("core_common", 0)) == cores0 + 1, str(r[1]))
+	q.accept("sticky_business")
+	var not_yet := not q.complete("sticky_business")
+	var gel0 := int(p.sheet.bag.get("slime_gel", 0))
+	var added := maxi(0, 6 - gel0)
+	p.sheet.add_item("slime_gel", added)
+	var r2 := q.turn_in("sticky_business")
+	check("a collect quest takes the items from the backpack when turned in",
+		not_yet and bool(r2[0]) and int(p.sheet.bag.get("slime_gel", 0)) == gel0 + added - 6, str(r2[1]))
+	q.rank_points = 39
+	var still_f := q.rank() == "F"
+	q.rank_points = 40
+	check("40 rank points make rank E and open the goblin quests", still_f and q.rank() == "E" and q.available().has("goblin_trouble"))
+	# the board on the plaza: E opens it (the game pauses), it lists your quests and the offers
+	q.accept("goblin_trouble")
+	await put(m.arena.spots["board"])
+	p.facing = Vector3(0, 0, -1)
+	await press("just_interact")
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var board: QuestBoard = m.board
+	var shown := board.visible and get_tree().paused and board._list.get_child_count() >= 3
+	board.close_board()
+	await get_tree().process_frame
+	check("E at the Quest Board opens it (paused) with your quests and the offers", shown)
+	q.active.clear()

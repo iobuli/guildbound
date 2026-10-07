@@ -61,6 +61,7 @@ var respawn_pos := Vector3.ZERO
 var respawn_after := RESPAWN_AFTER
 var team := ""                 # fighters on the same team cannot hurt each other ("" = everyone's foe)
 var last_hit_by: Player = null  # who landed the killing blow (kill credit, loot)
+var quests: QuestLog           # the player's guild record (set by main; null for AI)
 var stamina := 100.0
 var stamina_delay := 0.0
 var exhausted := false
@@ -242,6 +243,8 @@ func _read_intent(delta: float) -> void:
 				pick.queue_free()
 			else:
 				toast.emit("No room in the backpack for %s" % nm)
+		elif not is_ai and not arena.interaction_near(global_position).is_empty():
+			(arena.interaction_near(global_position)["action"] as Callable).call()
 		else:
 			intent.just_special = true
 

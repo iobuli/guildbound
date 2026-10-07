@@ -181,6 +181,9 @@ func _draw() -> void:
 	_hotbar(s, sz)
 	_combo_counter(sz)
 	_toasts(sz)
+	var near: Dictionary = player.arena.interaction_near(player.global_position) if player.arena != null else {}
+	if not near.is_empty():
+		_text_c(sz.x * 0.5, sz.y * 0.62, "E: " + str(near["name"]), 18, Color(1.0, 0.92, 0.6), true)
 	_text(Vector2(16, sz.y - 14.0), "Tab inventory   P character   F3 controls", 12, Color(0.95, 0.88, 0.7, 0.7))
 	if show_debug:
 		_debug(s, sz)

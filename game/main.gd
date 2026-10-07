@@ -9,6 +9,7 @@ var panel: SidePanel
 var dummy: Player
 var spar: Player
 var mobs: Mobs
+var board: QuestBoard
 var DUMMY_POS := Vector3.ZERO   # from arena.spots once the map is built
 var SPAR_POS := Vector3.ZERO
 
@@ -65,6 +66,16 @@ func _ready() -> void:
 	mobs.setup(self)
 	mobs.spawn_slimes(arena.spots["slime_field"])
 	mobs.spawn_goblins(arena.spots["goblin_camp"])
+	# the guild: the player's quest log and the board on the plaza
+	var qlog := QuestLog.new()
+	qlog.name = "QuestLog"
+	add_child(qlog)
+	qlog.setup(player, mobs)
+	player.quests = qlog
+	board = QuestBoard.new()
+	board.player = player
+	layer.add_child(board)
+	arena.add_interaction(arena.spots["board"], "Quest Board", board.open_board)
 	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

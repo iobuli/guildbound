@@ -17,7 +17,7 @@ const STAT := {
 const SLOT := {"weapon": "W_Sword017", "offhand": "E_Wood01", "head": "C_Elm04", "body": "A_Clothing01",
 	"hands": "W_Fist001", "feet": "A_Shoes01", "accessory1": "Ac_Necklace01", "accessory2": "Ac_Ring01"}
 const UI := {"combat": "W_Fist003", "stats": "S_Buff01", "inventory": "I_Chest01", "worn": "A_Armor04",
-	"magic": "W_Book02", "coins": "I_GoldCoin", "help": "I_Scroll"}
+	"magic": "W_Book02", "coins": "I_GoldCoin", "help": "I_Scroll", "card": "I_Clock"}
 
 static var _cache := {}
 

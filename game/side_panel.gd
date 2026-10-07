@@ -7,10 +7,11 @@ extends Control
 ##              right click: Wear / Use / Drop / Examine. Hover = appraisal in your own numbers
 ##   WORN       paper doll of the equipment slots (click to take off) and the gear totals
 ##   MAGIC      spellbook: click to cast / dismiss; hover = cost, upkeep, every modifier
+##   CARD       the Hunter's Card: guild rank, quests carried and their progress, monsters slain
 ## Tab / I toggles it (the mouse is free while it is open; click the world to go back to fighting).
 
-const TABS := ["combat", "stats", "inventory", "worn", "magic"]
-const TAB_NAMES := ["Combat", "Stats", "Inventory", "Worn equipment", "Spellbook"]
+const TABS := ["combat", "stats", "inventory", "worn", "magic", "card"]
+const TAB_NAMES := ["Combat", "Stats", "Inventory", "Worn equipment", "Spellbook", "Hunter's Card"]
 const STONE := Color(0.24, 0.21, 0.17, 0.97)
 const STONE_DARK := Color(0.15, 0.13, 0.10, 0.98)
 const STONE_EDGE := Color(0.47, 0.40, 0.29)
@@ -18,6 +19,7 @@ const SLOT_BG := Color(0.19, 0.17, 0.13, 0.9)
 const ORANGE := Color(1.0, 0.6, 0.1)
 const YELLOW := Color(1.0, 1.0, 0.0)
 const TEXT := Color(0.95, 0.88, 0.7)
+const GOOD := Color(0.55, 0.95, 0.5)
 const DOLL := [["", "head", ""], ["", "accessory1", ""], ["weapon", "body", "offhand"], ["hands", "feet", "accessory2"]]
 const STAT_GRID := ["str", "agi", "int", "attack_damage", "power", "attack_speed", "crit_chance", "crit_damage", "lifesteal",
 	"max_hp", "armor", "tenacity", "hp_regen", "magic_resist", "stamina", "max_mana", "spell_power", "mana_regen",
@@ -72,7 +74,7 @@ func _ready() -> void:
 		b.icon = Icons.tex(Icons.UI[TABS[i]])
 		b.expand_icon = true
 		b.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		b.custom_minimum_size = Vector2(44, 40) * _k
+		b.custom_minimum_size = Vector2(38, 40) * _k
 		b.toggle_mode = true
 		b.tooltip_text = TAB_NAMES[i]
 		b.add_theme_stylebox_override("normal", _box(STONE_DARK, STONE_EDGE.darkened(0.3), 2, 4))
@@ -182,6 +184,8 @@ func _process(delta: float) -> void:
 func _signature() -> String:
 	var s := player.sheet
 	var parts := [tab, str(s.bag), str(s.equipment), s.gold, s.effects.size()]
+	if player.quests != null:
+		parts.append(str(player.quests.active) + str(player.quests.kills) + str(player.quests.rank_points))
 	if tab == 1:
 		for st in STAT_GRID:
 			parts.append(_stat_value(st))
@@ -215,6 +219,8 @@ func show_tab(i: int) -> void:
 			_worn()
 		"magic":
 			_magic()
+		"card":
+			_card()
 
 
 func _inventory() -> void:
@@ -237,6 +243,33 @@ func _inventory() -> void:
 	view.changed.connect(func() -> void: Sfx.ui(self, "equip"))
 	_content.add_child(view)
 	_content.add_child(_label("Drag to move (R turns it).  Left click: wear / eat.  Right click: more.", 11, TEXT.darkened(0.3)))
+
+
+func _card() -> void:
+	var q := player.quests
+	if q == null:
+		_content.add_child(_label("Not registered with the guild.", 12, TEXT))
+		return
+	_content.add_child(_label("%s   -   Rank %s" % [player.sheet.display_name, q.rank()], int(18 * _k), YELLOW, false))
+	var nr := q.next_rank()
+	_content.add_child(_label(("%d / %d rank points to %s" % [q.rank_points, nr[1], nr[2]]) if not nr.is_empty() else "%d rank points (top rank)" % q.rank_points, int(12 * _k), TEXT))
+	_content.add_child(_label("Quests", int(14 * _k), ORANGE, false))
+	if q.active.is_empty():
+		_content.add_child(_label("None - the Quest Board is on the plaza.", 11, TEXT.darkened(0.3)))
+	for id: String in q.active:
+		var lines := str(q.quest(id)["name"]) + (" - DONE, turn it in" if q.complete(id) else "")
+		for row in q.progress(id):
+			lines += "\n   %s  %d / %d" % [row[0], int(row[1]), int(row[2])]
+		_content.add_child(_label(lines, int(12 * _k), GOOD if q.complete(id) else TEXT))
+	_content.add_child(_label("Monsters slain", int(14 * _k), ORANGE, false))
+	if q.kills.is_empty():
+		_content.add_child(_label("None yet.", 11, TEXT.darkened(0.3)))
+	for kind: String in q.kills:
+		_content.add_child(_label("%s  x%d" % [str(kind).capitalize(), int(q.kills[kind])], int(12 * _k), TEXT))
+	var done := 0
+	for id in q.finished:
+		done += int(q.finished[id])
+	_content.add_child(_label("Quests completed: %d" % done, int(12 * _k), TEXT))
 
 
 func _worn() -> void:
