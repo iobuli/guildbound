@@ -347,6 +347,38 @@ func _hotbar(s: CharModel, sz: Vector2) -> void:
 		var cost := "%d" % sp["cost"]
 		_text(Vector2(r.end.x - 6.0 - _font.get_string_size(cost, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x, r.end.y - 4.0), cost, 10, Color(0.6, 0.78, 1.0), true)
 	_text_c(fr.get_center().x, fr.position.y - 6.0, "attunement %d / %d    (Ctrl: page 2)" % [s.slots_used(), s.v("attunement_slots")], 11, Color(0.95, 0.88, 0.7, 0.75))
+	_spell_slots(s, fr, slot, gap)
+
+
+## F, any weapon: the element's light (tap) and heavy (hold) spell beside the Arts, in the element's
+## colour, with the mana cost and a cooldown sweep.
+func _spell_slots(s: CharModel, fr: Rect2, slot: float, gap: float) -> void:
+	var cb := player.combat
+	var pr := Rect2(fr.end.x + 10.0, fr.position.y, 2.0 * slot + gap + 24.0, fr.size.y)
+	_panel(pr)
+	var kinds := ["light", "heavy"]
+	var keys := ["F", "hold F"]
+	var ecol := Color.WHITE
+	for k in 2:
+		var info: Dictionary = cb.cast_info(kinds[k])
+		var col: Color = info["color"]
+		ecol = col
+		var r := Rect2(pr.position.x + 12.0 + k * (slot + gap), pr.position.y + 8.0, slot, slot)
+		var short := s.mana < float(info["mana"])
+		var c := r.get_center()
+		_panel(r, Color(0.05, 0.045, 0.035, 0.95), col.darkened(0.55) if short else col, 4)
+		var orb := col.darkened(0.6) if short else col
+		draw_circle(c, slot * (0.22 if k == 0 else 0.32), Color(orb.r, orb.g, orb.b, 0.85))
+		draw_circle(c, slot * (0.09 if k == 0 else 0.14), orb.lightened(0.6))
+		var left := float(info["left"])
+		if left > 0.0:
+			_sweep(r.grow(-2.0), clampf(left / float(info["cooldown"]), 0.0, 1.0))
+			_text_c(c.x, c.y + 6.0, "%.1f" % left, 15, Color.WHITE, true)
+		_text(r.position + Vector2(4, 14), keys[k], 12, Color(1, 1, 0.55), true)
+		_text_c(c.x, r.end.y + 13.0, String(info["name"]).substr(0, 11), 10, Color(0.95, 0.9, 0.78, 0.9))
+		var cost := "%d" % int(info["mana"])
+		_text(Vector2(r.end.x - 6.0 - _font.get_string_size(cost, HORIZONTAL_ALIGNMENT_LEFT, -1, 10).x, r.end.y - 4.0), cost, 10, Color(0.6, 0.78, 1.0), true)
+	_text_c(pr.get_center().x, pr.position.y - 6.0, "%s magic  (X)" % HeroAnim.data["_elements"][cb.element]["name"], 11, ecol)
 
 
 func _combo_counter(sz: Vector2) -> void:
@@ -389,7 +421,9 @@ func _debug(s: CharModel, sz: Vector2) -> void:
 	lines.append("Alt dodge (roll; a step while locked / guarding / aiming)")
 	lines.append("LMB attack, press again to chain the combo; hold LMB = heavy")
 	lines.append("E special attack (shield kick, leap...) or pick up an item")
-	lines.append("RMB guard (tap as a blow lands = parry); bow / staff: aim, LMB fires")
+	lines.append("RMB guard; tap just before a blow = parry (last 0.1 s: PERFECT)")
+	lines.append("F cast the element's spell with any weapon (hold F = heavy)")
+	lines.append("bow: RMB aims, LMB looses   X element   R Awakening")
 	lines.append("Q switch weapon   MMB lock on, wheel switches target")
 	lines.append("1-4 Arts (Ctrl = page 2)   Tab inventory   P character")
 	lines.append("F1 rain  F2 restore  F3 this help  F5 respawn")
@@ -411,4 +445,4 @@ func _element_bar(sz: Vector2) -> void:
 	var frac := cb.awaken_t / float(HeroAnim.data["_awakening"]["duration"]) if cb.awakened() else cb.awaken / 100.0
 	var cap := ("%s %ds" % [e["awaken"], ceili(cb.awaken_t)]) if cb.awakened() else ("Awakening %d%%" % int(cb.awaken))
 	_bar(r, frac, col.lerp(Color.WHITE, 0.3 if cb.awaken >= 100.0 and fmod(_t, 0.6) < 0.3 else 0.0), cap)
-	_text(Vector2(16, sz.y - 80.0), "Element: %s   (X switch, R awaken)" % e["name"], 12, col)
+	_text(Vector2(16, sz.y - 80.0), "Element: %s   (F cast, X switch, R awaken)" % e["name"], 12, col)

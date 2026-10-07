@@ -2,6 +2,7 @@ class_name Projectile
 extends Node3D
 ## Arrows and spell bolts. Flies with gravity (arrows) or homes in a little (spells), is swept against
 ## the world (arrows stick in walls) and against every other fighter's body each frame; a fire orb bursts.
+## A guard parried in time can deflect it (Combat.receive_projectile): it changes hands and flies back.
 
 var shooter: Player
 var kind := "arrow"
@@ -23,6 +24,7 @@ var knockback := 0.0
 var lifesteal := 0.0          # share of the damage healed back
 var element := ""             # its impact sound ("fire" -> fire_hit)
 var _hit := {}                # bodies already struck (pierce)
+var deflected := 0            # times a parry has sent it back
 var life := 4.0
 var _stuck := false
 var _mesh: MeshInstance3D
@@ -52,6 +54,21 @@ func configure(sp: Dictionary) -> void:
 	pierce = bool(sp.get("pierce", false))
 	knockback = float(sp.get("knockback", 0.0))
 	lifesteal = float(sp.get("lifesteal", 0.0))
+
+
+## Parried and sent back by `by`: now theirs (their foes are its targets, the old shooter among them),
+## on a new course; `seek` (a perfect parry) is homed in on.
+func deflect(by: Player, v: Vector3, seek: Player) -> void:
+	shooter = by
+	vel = v
+	_hit.clear()
+	_hit[by] = true
+	homing_target = seek
+	homing = maxf(homing, 4.0) if seek != null else 0.0
+	gravity *= 0.5
+	life = maxf(life, 3.0)
+	deflected += 1
+	_orient()
 
 
 func _ready() -> void:
@@ -146,10 +163,12 @@ func _physics_process(delta: float) -> void:
 
 func _impact(at: Vector3, victim: Node3D) -> void:
 	if victim != null and is_instance_valid(shooter):
+		if victim is Player and (victim as Player).combat.receive_projectile(self, at) == "deflect":
+			return  # it flies on, the defender's now
 		_hit[victim] = true
 		var sc := shooter.combat
-		sc.apply_hit(victim, dmg, poise, at, false, kind != "arrow")
-		if status != "":
+		var res := sc.apply_hit(victim, dmg, poise, at, false, kind != "arrow", true)
+		if status != "" and res != "guard" and res != "dodge":
 			var pw := status_power * sc.last_dealt if status == "burn" else status_power
 			StatusFx.apply(victim, status, pw, status_dur, shooter)
 		if knockback > 0.0:

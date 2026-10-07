@@ -23,6 +23,7 @@ const PACK_HURT_R := 2.6       # a hurt member backs off this much further out
 const TOKEN_FRAMES := 20       # a token lapses when its holder has not renewed it for this many frames
 const RING_FRAMES := 20        # a member that stopped reporting leaves the ring
 const CALL_FRAMES := 240       # a sighting keeps the pack hunting this long
+const PARRY_LEAD := 0.08       # spar: a parry is tapped this long before the foe's blade gets dangerous
 
 ## pack -> {"id": foe instance id, "until": frame}: whom the pack is hunting
 static var _hunt := {}
@@ -61,11 +62,17 @@ var _breather := 0.0
 var _hp_mark := 1.0
 var _combo_left := 0
 var _heavy_hold := 0.0
+var _parry_key := ""
 
 
 func _init(p_mode: String = "dummy") -> void:
 	mode = p_mode
 	rng.seed = hash(p_mode) + 7
+
+
+## How often a sparring fighter of this rank step times a parry (F- 0 .. S++).
+static func parry_chance(rank: int) -> float:
+	return clampf(0.12 + 0.045 * float(rank), 0.12, 0.7)
 
 
 func think(p: Player, delta: float) -> Intent:
@@ -123,8 +130,18 @@ func think(p: Player, delta: float) -> Intent:
 				i.just_dodge = true
 				i.move = Vector2(_strafe, -0.5)
 			elif r < 0.45 and not p.combat.ranged():
-				_guard_left = 0.6
+				_guard_left = 0.6  # a held guard: it blocks (parries are timed below)
+	# parry: a guard tapped just before the blade arrives, more often the higher the rank
+	if fc.attacking() and d < 3.5 and not p.combat.ranged() and p.combat.state != Combat.S.ATTACK:
+		var pk := "%d:%d:%s" % [fc.get_instance_id(), fc.combo_i, fc.move_kind]
+		var lead := fc.window.x - fc.t
+		if pk != _parry_key and lead <= PARRY_LEAD and lead > -0.03:
+			_parry_key = pk
+			if rng.randf() < parry_chance(p.sheet.rank_step()):
 				i.just_guard = true
+				_guard_left = maxf(_guard_left, 0.45)
+	elif not fc.attacking():
+		_parry_key = ""
 	i.guard = _guard_left > 0.0
 	# attack: combos of 2-4 at reach, a heavy now and then (held past the heavy threshold)
 	_attack_in -= delta

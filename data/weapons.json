@@ -412,7 +412,6 @@
   "greatsword",
   "dagger",
   "bow",
-  "magic",
   "unarmed"
  ],
  "_spells": {
@@ -724,6 +723,19 @@
   "arcane",
   "shadow"
  ],
+ "_cast": {
+  "_note": "F for everyone, whatever the weapon (the staff left the Q cycle): tap = the element's light spell, hold = its heavy one. The weapon style's own 'cast' clip plays on the upper body over the moving legs (fallback: clip below); the spell leaves the casting hand at `release` (fraction of the clip).",
+  "key": "F",
+  "light": {"clip": "MAG_1h_cast_spell_01", "speed": 1.7, "release": 0.4, "mana": 6, "cooldown": 0.7},
+  "heavy": {"clip": "MAG_1h_cast_spell_01", "speed": 1.15, "release": 0.45, "mana": 18, "cooldown": 3.5}
+ },
+ "_parry": {
+  "_note": "Projectiles parried in time (Combat.PARRY_WINDOW / PARRY_PERFECT) are deflected only with a shield in the offhand or spell power >= deflect_spell_power, else blocked. The new course is the guarding hand's swing blended toward the shooter by `aim` (perfect: `perfect_aim`); a perfect deflection flies `perfect_speed` x faster.",
+  "deflect_spell_power": 40,
+  "aim": 0.45,
+  "perfect_aim": 0.85,
+  "perfect_speed": 1.5
+ },
  "_awakening": {
   "per_hit": 8.0,
   "per_hit_taken": 4.0,
