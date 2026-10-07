@@ -56,7 +56,7 @@ func refresh() -> void:
 		var parts: Array = []
 		for r in resting:
 			var secs := int(ceil(float(r[1])))
-			parts.append("%s (%d:%02d)" % [q.quest(str(r[0]))["name"], secs / 60, secs % 60])
+			parts.append("%s (%d:%02d)" % [q.quest(str(r[0]))["name"], floori(secs / 60.0), secs % 60])
 		note("Back on the board soon: " + ", ".join(parts))
 
 

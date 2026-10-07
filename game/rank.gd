@@ -23,7 +23,7 @@ static func steps() -> int:
 
 
 static func letter_of(step: int) -> int:
-	return step / _subs().size()
+	return floori(float(step) / _subs().size())
 
 
 static func sub_of(step: int) -> int:

@@ -61,6 +61,10 @@ var assist_v := Vector3.ZERO      # a short step toward the target while winding
 var last_damage := 0.0
 var _cast_done := false
 var crits := true
+var element := "fire"           # the magic element (X): staff spells and the Awakening's touch
+var awaken := 0.0               # Awakening meter, 0..100: landing and taking hits fill it
+var awaken_t := 0.0             # seconds of Awakening left
+var last_dealt := 0.0           # the raw damage of our last blow (lifesteal)
 var rng := RandomNumberGenerator.new()
 
 
@@ -169,6 +173,14 @@ func tick(delta: float) -> void:
 		poise = minf(_poise_max(), poise + POISE_REGEN * delta)
 	if i.just_switch and state == S.IDLE:
 		next_stance()
+	if i.just_element:
+		next_element()
+	if i.just_awaken:
+		start_awakening()
+	if awaken_t > 0.0:
+		awaken_t -= delta
+		if awaken_t <= 0.0:
+			p.toast.emit("Awakening fades")
 	if i.just_guard:
 		guard_t = 0.0
 	# light on release, heavy when held past HEAVY_HOLD
@@ -272,6 +284,7 @@ func _start(kind: String) -> void:
 	move = m
 	move_kind = kind
 	buffered = ""
+	var chaining := state == S.ATTACK
 	state = S.ATTACK
 	t = 0.0
 	since_attack = 0.0
@@ -280,8 +293,14 @@ func _start(kind: String) -> void:
 	_cast_done = false
 	p.model.hold("")
 	speed = float(m.get("speed", 1.0)) * clampf(p.sheet.v("attack_speed") / 1.5, 0.75, 1.4)
-	dur = p.model.play(str(m["clip"]), speed, 0.2)
 	var w := p.model.swing_window(str(m["clip"]), _limb())
+	# a chained hit flows out of the last one: it rushes through most of its wind-up (to ~0.22 s before
+	# the blow) and cross-fades in, instead of restarting the whole swing from a standstill
+	var from := maxf(0.0, w.x - 0.22) if chaining else 0.0
+	# the wind-up up to `from` plays WARP x faster: combat time starts behind so that it meets the clip
+	# exactly when the wind-up is done (the blow's window is always after it)
+	t = from / speed - from / (speed * HeroAnim.WARP)
+	dur = t + p.model.play(str(m["clip"]), speed, 0.2, from)
 	window = w / speed
 	target = p.lock.current() if p.lock != null else null
 	_face_target(1.0)
@@ -396,6 +415,7 @@ func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_brea
 	var dir := f.global_position - p.global_position
 	dir.y = 0.0
 	dir = dir.normalized() if dir.length() > 0.01 else p.facing
+	last_dealt = raw
 	var res: String
 	if f is Slime:
 		res = (f as Slime).receive_hit(self, raw, poise_dmg * p.sheet.v("power"), dir, at, crit)
@@ -404,6 +424,9 @@ func apply_hit(f: Node3D, mult: float, poise_dmg: float, at: Vector3, guard_brea
 	last_given = res
 	if res == "hit" or res == "stagger" or res == "dead" or res == "guard":
 		hits_landed += 1
+		gain_awaken(float(HeroAnim.data["_awakening"]["per_hit"]))
+		if awakened() and not spell and res != "guard":
+			_awaken_proc(f, raw, at)
 		var heavy := poise_dmg >= 40.0 or res == "stagger" or res == "dead"
 		hitstop(95 if heavy else 60)
 		var col := Color(0.55, 0.75, 1.0) if res == "guard" else (Color(1.0, 0.85, 0.3) if crit else Color(1.0, 0.55, 0.25))
@@ -471,10 +494,11 @@ func _cast_check() -> void:
 	if _cast_done or not move.has("spell") or t < window.x:
 		return
 	_cast_done = true
-	var sp: Dictionary = HeroAnim.data["_spells"][move["spell"]]
+	var sid := spell_id(str(move["spell"]))
+	var sp: Dictionary = HeroAnim.data["_spells"][sid]
 	var col: Array = sp["color"]
 	var c := Color(col[0], col[1], col[2])
-	if move["spell"] == "nova":
+	if sid == "nova":
 		var r := float(sp["radius"])
 		Vfx.ring(p, p.global_position + Vector3.UP * 0.2, c, r * 0.5)
 		for f: Node3D in targets():
@@ -483,13 +507,16 @@ func _cast_check() -> void:
 		Sfx.at(p, p.global_position, "parry", 0.6)
 		return
 	var dir := _aim_dir()
-	var pr := Projectile.make(p, str(move["spell"]), p.model.weapon_tip() + dir * 0.3, dir * float(sp["speed"]), 0.0,
-		float(sp["dmg"]), float(sp["poise"]), float(sp["radius"]))
-	pr.color = c
-	pr.homing = float(sp.get("homing", 0.0))
-	pr.blast = float(sp.get("blast", 0.0))
-	pr.homing_target = p.lock.current() if p.lock != null else null
-	p.get_parent().add_child(pr)
+	var n := int(sp.get("count", 1))
+	for k in n:  # a fan of shots for spells with a count (Daggers of Denak, Crowfeather)
+		var yaw := deg_to_rad(float(sp.get("spread", 0.0)) * (k - (n - 1) * 0.5))
+		var d := dir.rotated(Vector3.UP, yaw)
+		var pr := Projectile.make(p, sid, p.model.weapon_tip() + d * 0.3, d * float(sp["speed"]), 0.0,
+			float(sp["dmg"]), float(sp["poise"]), float(sp["radius"]))
+		pr.configure(sp)
+		pr.color = c
+		pr.homing_target = p.lock.current() if p.lock != null else null
+		p.get_parent().add_child(pr)
 	Vfx.cast_flare(p, "light", "might")
 
 
@@ -502,6 +529,7 @@ func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector
 		last_result = "dodge"
 		return "dodge"
 	hits_taken += 1
+	gain_awaken(float(HeroAnim.data["_awakening"]["per_hit_taken"]))
 	poise_t = 0.0
 	if not p.is_ai and not att.p.is_ai and att.p != p:
 		raw *= PVP_DAMAGE
@@ -560,6 +588,7 @@ func receive_monster(src: Node3D, raw: float, poise_dmg: float, at: Vector3) -> 
 		last_result = "dodge"
 		return "dodge"
 	hits_taken += 1
+	gain_awaken(float(HeroAnim.data["_awakening"]["per_hit_taken"]))
 	poise_t = 0.0
 	var dir := p.global_position - src.global_position
 	dir.y = 0.0
@@ -653,3 +682,101 @@ func reset() -> void:
 	window = Vector2(-1, -1)
 	if p != null and p.model != null:
 		p.model.hold("")
+
+
+# ---- elements and Awakening ----------------------------------------------------------------
+
+## "@light" / "@heavy" -> the current element's spell; anything else is a spell id already.
+func spell_id(s: String) -> String:
+	if s.begins_with("@"):
+		return str(HeroAnim.data["_elements"][element][s.substr(1)])
+	return s
+
+
+func next_element() -> void:
+	var order: Array = HeroAnim.data["_element_order"]
+	element = order[(order.find(element) + 1) % order.size()]
+	var e: Dictionary = HeroAnim.data["_elements"][element]
+	p.toast.emit("Element: %s  (%s / %s)" % [e["name"], HeroAnim.data["_spells"][e["light"]]["name"], HeroAnim.data["_spells"][e["heavy"]]["name"]])
+
+
+func awakened() -> bool:
+	return awaken_t > 0.0
+
+
+func gain_awaken(n: float) -> void:
+	if awaken_t <= 0.0:
+		var was := awaken
+		awaken = minf(100.0, awaken + n)
+		if was < 100.0 and awaken >= 100.0 and not p.is_ai:
+			p.toast.emit("Awakening ready - press R")
+
+
+## R with a full meter: damage and attack speed up, and melee hits carry your element.
+func start_awakening() -> bool:
+	if awaken < 100.0 or awaken_t > 0.0:
+		return false
+	var a: Dictionary = HeroAnim.data["_awakening"]
+	var e: Dictionary = HeroAnim.data["_elements"][element]
+	awaken = 0.0
+	awaken_t = float(a["duration"])
+	var s := p.sheet
+	s.effects = s.effects.filter(func(x: Dictionary) -> bool: return x["kind"] != "awakening")
+	s.effects.append({"key": "awakening", "name": str(e["awaken"]), "kind": "awakening", "icon": "S_Light01",
+		"expires_at": s.clock + float(a["duration"]), "slots": 0, "upkeep": 0.0, "hp_drain": 0.0, "backlash": null,
+		"aspect": "light", "family": "awakening", "mods": [
+			Stats.make_mod("Awakening: " + str(e["awaken"]), "attack_damage", "add_pct", float(a["dmg_pct"])),
+			Stats.make_mod("Awakening: " + str(e["awaken"]), "attack_speed", "add_pct", float(a["aspd_pct"]))]})
+	s.invalidate()
+	var col: Array = e["color"]
+	Vfx.ring(p, p.global_position + Vector3.UP * 0.2, Color(col[0], col[1], col[2]), 2.2)
+	Sfx.at(p, p.global_position, "parry", 0.7)
+	p.toast.emit("AWAKENING: %s" % e["awaken"])
+	return true
+
+
+## An Awakened melee blow carries the element.
+func _awaken_proc(f: Node3D, raw: float, at: Vector3) -> void:
+	var a: Dictionary = HeroAnim.data["_awakening"]
+	match str(HeroAnim.data["_elements"][element]["proc"]):
+		"burn":
+			StatusFx.apply(f, "burn", raw * float(a["proc_burn"]), 3.0, p)
+		"chill":
+			StatusFx.apply(f, "chill", float(a["proc_chill"]), 2.0, p)
+		"hex":
+			StatusFx.apply(f, "hex", float(a["proc_hex"]), 4.0, p)
+		"lifesteal":
+			p.sheet.hp = minf(p.sheet.v("max_hp"), p.sheet.hp + raw * float(a["proc_lifesteal"]))
+		"knockback":
+			push(f, (f.global_position - p.global_position).normalized(), float(a["proc_knockback"]))
+		"chain":
+			var next := nearest_foe(f.global_position, 6.0, [f])
+			if next != null:
+				Vfx.spark(p, at, Vector3.UP, Color(0.75, 0.8, 1.0), 16)
+				apply_hit(next, float(move.get("dmg", 1.0)) * float(a["proc_chain"]), 10.0, next.global_position + Vector3.UP * 0.9, false, true)
+
+
+## The nearest foe of ours within `r` of `from`, skipping `skip`.
+func nearest_foe(from: Vector3, r: float, skip: Array) -> Node3D:
+	var best: Node3D = null
+	var bd := r
+	for f: Node3D in targets():
+		if skip.has(f) or not is_foe(f):
+			continue
+		var d := f.global_position.distance_to(from)
+		if d < bd:
+			bd = d
+			best = f
+	return best
+
+
+## Shove a body away (wind).
+static func push(f: Node3D, dir: Vector3, strength: float) -> void:
+	dir.y = 0.0
+	dir = dir.normalized()
+	if f is Slime:
+		(f as Slime).velocity += dir * strength + Vector3.UP * 3.0
+	elif f is Player:
+		var pl := f as Player
+		pl.velocity += dir * strength + Vector3.UP * 2.5
+		pl.global_position += dir * minf(0.6, strength * 0.06)

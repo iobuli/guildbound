@@ -66,7 +66,7 @@ func _handicap(lo: Player, hi: Player, steps: int, letters: int) -> void:
 		_effect(s, "Referee's Vigour", "S_Holy01", [Stats.make_mod("Referee's Vigour", "max_hp", "more", floor_hp / s.v("max_hp"))])
 		granted.append("Vigour (health to %d)" % int(floor_hp))
 	var pool: Array = (data["buffs"] as Array).duplicate()
-	var n := mini(int(data.get("buffs_max", 4)), int(data.get("buffs_base", 1)) + steps / int(data.get("buffs_per_steps", 2)))
+	var n := mini(int(data.get("buffs_max", 4)), int(data.get("buffs_base", 1)) + floori(float(steps) / int(data.get("buffs_per_steps", 2))))
 	var scale := 1.0 + float(data.get("magnitude_per_letter", 0.5)) * letters
 	for i in mini(n, pool.size()):
 		var bf: Dictionary = pool.pop_at(rng.randi_range(0, pool.size() - 1))

@@ -25,6 +25,8 @@ const KEYS := {
 	"menu": [KEY_TAB, KEY_I],
 	"character": [KEY_P],
 	"weapon_next": [KEY_Q],
+	"element_next": [KEY_X],
+	"awaken": [KEY_R],
 }
 
 

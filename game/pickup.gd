@@ -22,7 +22,11 @@ func _ready() -> void:
 	var consumable := CharModel.is_consumable(id_or_empty())
 	var data: Dictionary = DataStore.items().get(item_id, DataStore.consumables().get(item_id, {}))
 	_gem = MeshInstance3D.new()
-	var m: PrimitiveMesh = BoxMesh.new() if not consumable else SphereMesh.new()
+	var m: PrimitiveMesh
+	if consumable:
+		m = SphereMesh.new()
+	else:
+		m = BoxMesh.new()
 	if m is BoxMesh:
 		(m as BoxMesh).size = Vector3(0.35, 0.22, 0.35)
 	else:

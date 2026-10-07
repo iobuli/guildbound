@@ -103,16 +103,16 @@ func _track(delta: float) -> void:
 
 # ---- drawing helpers -------------------------------------------------------------------------
 
-func _text(pos: Vector2, s: String, size: int = 14, col: Color = Color.WHITE, bold := false) -> void:
+func _text(pos: Vector2, s: String, font_size: int = 14, col: Color = Color.WHITE, bold := false) -> void:
 	var f := _bold if bold else _font
-	draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, 4 if size >= 16 else 2, Color(0, 0, 0, 0.75 * col.a))
-	draw_string(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, size, col)
+	draw_string_outline(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, 4 if font_size >= 16 else 2, Color(0, 0, 0, 0.75 * col.a))
+	draw_string(f, pos, s, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size, col)
 
 
-func _text_c(center_x: float, y: float, s: String, size: int, col: Color, bold := false) -> void:
+func _text_c(center_x: float, y: float, s: String, font_size: int, col: Color, bold := false) -> void:
 	var f := _bold if bold else _font
-	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
-	_text(Vector2(center_x - w * 0.5, y), s, size, col, bold)
+	var w := f.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, font_size).x
+	_text(Vector2(center_x - w * 0.5, y), s, font_size, col, bold)
 
 
 func _panel(r: Rect2, bg: Color = STONE, edge: Color = EDGE, radius := 6) -> void:
@@ -181,6 +181,7 @@ func _draw() -> void:
 	_hotbar(s, sz)
 	_combo_counter(sz)
 	_toasts(sz)
+	_element_bar(sz)
 	var near: Dictionary = player.arena.interaction_near(player.global_position) if player.arena != null else {}
 	if not near.is_empty():
 		_text_c(sz.x * 0.5, sz.y * 0.62, "E: " + str(near["name"]), 18, Color(1.0, 0.92, 0.6), true)
@@ -258,7 +259,7 @@ func _stamina_wheel(s: CharModel, cam: Camera3D) -> void:
 	draw_arc(c, 16.0, -PI / 2.0, -PI / 2.0 + TAU * frac, 32, col, 5.0, true)
 
 
-func _fight(s: CharModel, cam: Camera3D, sz: Vector2) -> void:
+func _fight(_s: CharModel, cam: Camera3D, sz: Vector2) -> void:
 	if cam == null:
 		return
 	var tgt := player.lock.current()
@@ -352,11 +353,11 @@ func _combo_counter(sz: Vector2) -> void:
 	if _combo < 2 or _combo_t <= 0.0:
 		return
 	var a := clampf(_combo_t / 0.4, 0.0, 1.0)
-	var size := int(34.0 + 14.0 * _combo_pop)
+	var font_size := int(34.0 + 14.0 * _combo_pop)
 	var x := sz.x - 200.0
 	var y := sz.y * 0.42
-	_text(Vector2(x, y), "%d" % _combo, size, Color(1.0, 0.85, 0.3, a), true)
-	_text(Vector2(x + 14.0 + size * 0.6 * str(_combo).length(), y), "HITS", 18, Color(1, 1, 1, a), true)
+	_text(Vector2(x, y), "%d" % _combo, font_size, Color(1.0, 0.85, 0.3, a), true)
+	_text(Vector2(x + 14.0 + font_size * 0.6 * str(_combo).length(), y), "HITS", 18, Color(1, 1, 1, a), true)
 	_text(Vector2(x, y + 22.0), " > ".join(_combo_names), 12, Color(0.95, 0.9, 0.78, a * 0.9))
 
 
@@ -399,3 +400,15 @@ func _debug(s: CharModel, sz: Vector2) -> void:
 	for ln in lines:
 		_text(Vector2(r.position.x + 12.0, y), ln, 12, Color(0.92, 0.95, 1.0))
 		y += 17.0
+
+
+## The magic element (X) and the Awakening meter (R when full), bottom-left.
+func _element_bar(sz: Vector2) -> void:
+	var cb := player.combat
+	var e: Dictionary = HeroAnim.data["_elements"][cb.element]
+	var col := Color(e["color"][0], e["color"][1], e["color"][2])
+	var r := Rect2(16, sz.y - 74.0, 228, 12)
+	var frac := cb.awaken_t / float(HeroAnim.data["_awakening"]["duration"]) if cb.awakened() else cb.awaken / 100.0
+	var cap := ("%s %ds" % [e["awaken"], ceili(cb.awaken_t)]) if cb.awakened() else ("Awakening %d%%" % int(cb.awaken))
+	_bar(r, frac, col.lerp(Color.WHITE, 0.3 if cb.awaken >= 100.0 and fmod(_t, 0.6) < 0.3 else 0.0), cap)
+	_text(Vector2(16, sz.y - 80.0), "Element: %s   (X switch, R awaken)" % e["name"], 12, col)

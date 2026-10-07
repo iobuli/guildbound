@@ -28,7 +28,13 @@ var tree: AnimationTree
 var bt: AnimationNodeBlendTree
 var stance := {}
 var stance_id := ""
+const SLOTS := ["a", "b", "c"]
+const ACT_XFADE := 0.2     # seconds a new action takes to blend in over the last one
+const WARP := 3.0          # a chained hit plays its wind-up this much faster (no seeking: no pops)
+var _warp_left := 0.0      # seconds of fast wind-up left on the current slot
+var _speed := 1.0
 var _slot := 0
+var _slot_w := [1.0, 0.0, 0.0]  # weight of each action slot (they sum to 1)
 var _act_left := 0.0
 var _act_w := 0.0
 var _act_fade := 0.15
@@ -142,18 +148,20 @@ func _build_tree() -> void:
 	bt.add_node("hold", _clip("LOCO_idle"))
 	bt.connect_node("upper", 0, "mode")
 	bt.connect_node("upper", 1, "hold")
-	var act := AnimationNodeTransition.new()
-	act.input_count = 2
-	act.set_input_name(0, "a")
-	act.set_input_name(1, "b")
-	act.xfade_time = 0.12
-	bt.add_node("act", act)
-	for sl in ["a", "b"]:
+	# three action slots mixed by weight: a new action takes the quietest slot and fades in over the
+	# others, so a combo chained faster than the cross-fade never snaps a still-visible pose away
+	bt.add_node("act_ab", AnimationNodeBlend2.new())
+	bt.add_node("act", AnimationNodeBlend2.new())
+	for sl in SLOTS:
 		bt.add_node("act_" + sl, _clip("LOCO_idle"))
+		bt.add_node("act_seek_" + sl, AnimationNodeTimeSeek.new())  # restarts the slot's clip
+		bt.connect_node("act_seek_" + sl, 0, "act_" + sl)
 		bt.add_node("act_ts_" + sl, AnimationNodeTimeScale.new())
-		bt.connect_node("act_ts_" + sl, 0, "act_" + sl)
-	bt.connect_node("act", 0, "act_ts_a")
-	bt.connect_node("act", 1, "act_ts_b")
+		bt.connect_node("act_ts_" + sl, 0, "act_seek_" + sl)
+	bt.connect_node("act_ab", 0, "act_ts_a")
+	bt.connect_node("act_ab", 1, "act_ts_b")
+	bt.connect_node("act", 0, "act_ab")
+	bt.connect_node("act", 1, "act_ts_c")
 	var action := AnimationNodeBlend2.new()
 	bt.add_node("action", action)
 	bt.connect_node("action", 0, "upper")
@@ -346,15 +354,20 @@ func set_motion(local: Vector2, sprinting: bool, mode: String, delta: float) -> 
 	var tgt := Vector2(bx, by)
 	tree.set("parameters/loco/blend_position", cur.lerp(tgt, 1.0 - exp(-delta * 10.0)))
 	var nominal := WALK_REF if gait <= 1.0 else (RUN_REF if gait <= 2.0 else 5.6)
-	var scale := clampf(sp / nominal, 0.75, 1.6) if gait > 0.5 else 1.0
-	tree.set("parameters/loco_ts/scale", scale)
+	var ts := clampf(sp / nominal, 0.75, 1.6) if gait > 0.5 else 1.0
+	tree.set("parameters/loco_ts/ts", ts)
 	tree.set("parameters/crouch/blend_position", Vector2(clampf(local.x / 1.3, -1, 1), clampf(local.y / 1.3, -1, 1)))
-	tree.set("parameters/crouch_ts/scale", clampf(sp / 1.3, 0.7, 1.6) if sp > 0.2 else 1.0)
+	tree.set("parameters/crouch_ts/ts", clampf(sp / 1.3, 0.7, 1.6) if sp > 0.2 else 1.0)
 	if tree.get("parameters/mode/current_state") != mode:
 		tree.set("parameters/mode/transition_request", mode)
 	# held pose over the upper body, and the action layer fading out at the end of its clip
 	_hold_w = move_toward(_hold_w, 1.0 if _hold != "" else 0.0, delta * 8.0)
 	tree.set("parameters/upper/blend_amount", _hold_w)
+	_mix_slots(delta)
+	if _warp_left > 0.0:
+		_warp_left -= delta
+		if _warp_left <= 0.0:
+			tree.set("parameters/act_ts_%s/scale" % SLOTS[_slot], _speed)
 	if _act_left > 0.0:
 		_act_left -= delta
 	var want := 1.0 if _act_left > _act_fade else maxf(0.0, _act_left / _act_fade)
@@ -364,20 +377,49 @@ func set_motion(local: Vector2, sprinting: bool, mode: String, delta: float) -> 
 		act_clip = ""
 
 
-## Play a whole-body action; returns its duration at that speed. `fade` = blend out at the end.
-func play(clip: String, speed: float = 1.0, fade: float = 0.18) -> float:
+## Play a whole-body action; returns how long it lasts at that speed. `fade` = blend out at the end.
+## `from` > 0 (chained combo hits): the first `from` seconds of the clip (the wind-up) play WARP times
+## faster, so the blow comes quickly but the motion stays continuous.
+func play(clip: String, speed: float = 1.0, fade: float = 0.18, from: float = 0.0) -> float:
 	if not tree.has_animation(clip):
 		push_warning("no clip " + clip)
 		return 0.0
-	_slot = 1 - _slot
-	var sl: String = ["a", "b"][_slot]
+	var quiet := -1
+	for k in SLOTS.size():
+		if k != _slot and (quiet < 0 or float(_slot_w[k]) < float(_slot_w[quiet])):
+			quiet = k
+	_slot = quiet
+	var sl: String = SLOTS[_slot]
 	(bt.get_node("act_" + sl) as AnimationNodeAnimation).animation = clip
-	tree.set("parameters/act_ts_%s/scale" % sl, speed)
-	tree.set("parameters/act/transition_request", sl)
-	_act_left = tree.get_animation(clip).length / maxf(0.01, speed)
+	_speed = speed
+	_warp_left = from / (speed * WARP)
+	tree.set("parameters/act_ts_%s/scale" % sl, speed * (WARP if _warp_left > 0.0 else 1.0))
+	tree.set("parameters/act_seek_%s/seek_request" % sl, 0.0)  # always from the start: mid-clip seeks pop
+	if _act_w <= 0.001:  # nothing showing: no need to blend in over an old action
+		for k in SLOTS.size():
+			_slot_w[k] = 1.0 if k == _slot else 0.0
+		_mix_slots(0.0)
+	_act_left = _warp_left + maxf(0.05, tree.get_animation(clip).length - from) / maxf(0.01, speed)
 	_act_fade = fade
 	act_clip = clip
 	return _act_left
+
+
+## The current slot rises to full weight over ACT_XFADE; the others share what is left.
+func _mix_slots(delta: float) -> void:
+	var w := minf(1.0, float(_slot_w[_slot]) + delta / ACT_XFADE)
+	var others := 0.0
+	for k in SLOTS.size():
+		if k != _slot:
+			others += float(_slot_w[k])
+	for k in SLOTS.size():
+		if k == _slot:
+			_slot_w[k] = w
+		else:
+			_slot_w[k] = float(_slot_w[k]) * (1.0 - w) / others if others > 0.0001 else 0.0
+	var ab := float(_slot_w[0]) + float(_slot_w[1])
+	tree.set("parameters/act_ab/blend_amount", float(_slot_w[1]) / ab if ab > 0.0001 else 0.0)
+	tree.set("parameters/act/blend_amount", float(_slot_w[2]))
 
 
 ## End the action early (blend back to locomotion over `fade`).
@@ -492,16 +534,16 @@ func _pose_at(a: Animation, t: float) -> Array:
 	var local: Array[Transform3D] = []
 	for i in skeleton.get_bone_count():
 		local.append(skeleton.get_bone_rest(i))
-	for tr in a.get_track_count():
-		var bone := skeleton.find_bone(a.track_get_path(tr).get_concatenated_subnames())
+	for ti in a.get_track_count():
+		var bone := skeleton.find_bone(a.track_get_path(ti).get_concatenated_subnames())
 		if bone < 0:
 			continue
 		var x := local[bone]
-		match a.track_get_type(tr):
+		match a.track_get_type(ti):
 			Animation.TYPE_POSITION_3D:
-				x.origin = a.position_track_interpolate(tr, t)
+				x.origin = a.position_track_interpolate(ti, t)
 			Animation.TYPE_ROTATION_3D:
-				x.basis = Basis(a.rotation_track_interpolate(tr, t))
+				x.basis = Basis(a.rotation_track_interpolate(ti, t))
 		local[bone] = x
 	var glob: Array = []
 	glob.resize(local.size())

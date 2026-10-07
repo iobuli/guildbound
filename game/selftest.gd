@@ -2,7 +2,7 @@ class_name SelfTest
 extends Node
 ## Automated check of the controller, camera-free combat and UI, driving the real player through a
 ## puppet brain (the same Intent the keyboard fills).
-##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel]
+##   Godot --headless --path <guildbound> -- --selftest [--only=move,dodge,melee,guard,ranged,ai,ui,grid,mobs,quests,shop,rank,duel,magic,flow]
 
 var m: Node
 var p: Player
@@ -12,9 +12,9 @@ var results: Array[bool] = []
 const EXPECTED_VALUES := {"ring_ogre": 495, "brawler_wraps": 580, "sprinter_greaves": 650, "hearty_stew": 67, "swift_tonic": 37, "keen_eye_tea": 18, "ironbark_draught": 28, "slime_gel": 6, "hide_bundle": 30, "core_common": 40, "leather_cap": 120, "iron_sword": 770}
 
 
-func check(name: String, ok: bool, detail: String = "") -> void:
+func check(what: String, ok: bool, detail: String = "") -> void:
 	results.append(ok)
-	print("[%s] %s%s" % ["PASS" if ok else "FAIL", name, "  -  " + detail if detail != "" else ""])
+	print("[%s] %s%s" % ["PASS" if ok else "FAIL", what, "  -  " + detail if detail != "" else ""])
 
 
 func frames(n: int) -> void:
@@ -38,7 +38,7 @@ func run(main: Node) -> void:
 		if a.begins_with("--only="):
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
-		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel]]
+		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow]]
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -67,7 +67,7 @@ func t_move() -> void:
 	var a := p.global_position
 	ai.puppet.move = Vector2(0, 1)
 	await frames(60)
-	var run := p.global_position.distance_to(a)
+	var run_m := p.global_position.distance_to(a)
 	var bp: Vector2 = p.model.tree.get("parameters/loco/blend_position")
 	var anim_ok := bp.length() > 1.2
 	ai.puppet.sprint = true
@@ -77,8 +77,8 @@ func t_move() -> void:
 	ai.puppet.sprint = false
 	ai.puppet.move = Vector2.ZERO
 	await frames(30)
-	check("running moves forward at run pace and plays the run blend; sprint is faster", run > 3.0 and sprint > run * 1.2 and anim_ok,
-		"run %.2f m/s, sprint %.2f m/s, blend %s" % [run, sprint, str(p.model.tree.get("parameters/loco/blend_position"))])
+	check("running moves forward at run_m pace and plays the run_m blend; sprint is faster", run_m > 3.0 and sprint > run_m * 1.2 and anim_ok,
+		"run_m %.2f m/s, sprint %.2f m/s, blend %s" % [run_m, sprint, str(p.model.tree.get("parameters/loco/blend_position"))])
 	var y0 := p.global_position.y
 	ai.puppet.just_jump = true
 	await frames(1)
@@ -603,3 +603,123 @@ func t_duel() -> void:
 	p.sheet.xp = 0
 	p.sheet.invalidate()
 	p.sheet.restore()
+
+
+func t_magic() -> void:
+	print("-- elements: spells, statuses, Awakening; fists and kicks")
+	var dm: Player = m.dummy
+	var cb := p.combat
+	var elems: Array = HeroAnim.data["_elements"].keys()
+	var resolved := true
+	for e: String in elems:
+		cb.element = e
+		resolved = resolved and HeroAnim.data["_spells"].has(cb.spell_id("@light")) and HeroAnim.data["_spells"].has(cb.spell_id("@heavy"))
+	cb.element = "fire"
+	check("six elements, each with its own light and heavy spell (staff: LMB / hold)", elems.size() == 6 and resolved, str(elems))
+	var order := []
+	for k in 6:
+		cb.next_element()
+		order.append(cb.element)
+	check("X cycles the element and comes back round", order[5] == "fire" and order[0] == "ice", str(order))
+	# statuses on the dummy
+	(dm.get_node("ai") as FighterAI).mode = "puppet"
+	dm.teleport(m.DUMMY_POS)
+	await frames(5)
+	var hp0 := dm.sheet.hp
+	StatusFx.apply(dm, "burn", 30.0, 1.0, p)
+	await frames(70)
+	check("burn: damage over time (30 a second for a second)", hp0 - dm.sheet.hp > 24.0 and hp0 - dm.sheet.hp < 36.0, "took %.1f" % (hp0 - dm.sheet.hp))
+	var ms0 := dm.sheet.v("move_speed")
+	StatusFx.apply(dm, "chill", 0.4, 2.0, p)
+	check("chill: slower movement", dm.sheet.v("move_speed") < ms0 * 0.7, "%.2f -> %.2f" % [ms0, dm.sheet.v("move_speed")])
+	# a lightning bolt chains from the dummy to the sparring partner next to it
+	var sp: Player = m.spar
+	(sp.get_node("ai") as FighterAI).mode = "dummy"
+	sp.teleport(m.DUMMY_POS + Vector3(2.0, 0, 0))
+	await put(m.DUMMY_POS + Vector3(0, 0.1, 6.0))
+	await frames(5)
+	var sp0 := sp.sheet.hp
+	var d0 := dm.sheet.hp
+	var tb: Dictionary = HeroAnim.data["_spells"]["thunderbolt"]
+	var from: Vector3 = m.DUMMY_POS + Vector3(0, 1.0, 1.5)
+	var pr := Projectile.make(p, "thunderbolt", from, Vector3(0, 0, -30), 0.0, 1.0, 10.0, float(tb["radius"]))
+	pr.configure(tb)
+	m.add_child(pr)
+	await frames(20)
+	check("lightning chains: the bolt hits the dummy, then jumps to the fighter beside it", dm.sheet.hp < d0 and sp.sheet.hp < sp0,
+		"dummy -%.0f, partner -%.0f" % [d0 - dm.sheet.hp, sp0 - sp.sheet.hp])
+	sp.teleport(m.SPAR_POS)
+	# Awakening: full meter + R -> damage up, and a sword blow sets the target alight (fire)
+	cb.element = "fire"
+	cb.awaken = 100.0
+	var ad0 := p.sheet.v("attack_damage")
+	await press("just_awaken")
+	await frames(2)
+	check("R with a full meter Awakens: +30% damage", cb.awakened() and is_equal_approx(p.sheet.v("attack_damage"), ad0 * 1.3), "%.1f -> %.1f" % [ad0, p.sheet.v("attack_damage")])
+	dm.teleport(m.DUMMY_POS)
+	await put(m.DUMMY_POS + Vector3(0, 0.1, 1.25))
+	p.lock.target = dm
+	p.combat.set_stance("sword_shield")
+	for k in 3:
+		if StatusFx.instance.burning(dm):
+			break
+		await press("just_attack")
+		await frames(30)
+	check("an Awakened (fire) sword hit sets the target burning", StatusFx.instance.burning(dm))
+	cb.awaken_t = 0.0
+	p.sheet.effects = p.sheet.effects.filter(func(e: Dictionary) -> bool: return e["kind"] != "awakening")
+	p.sheet.invalidate()
+	var gain0 := cb.awaken
+	cb.gain_awaken(8.0)
+	check("landing hits fills the Awakening meter", cb.awaken > gain0 or cb.awaken >= 100.0)
+	# fists: jab, cross, hook, then a kick
+	p.combat.set_stance("unarmed")
+	var lights: Array = p.combat.stance["light"]
+	check("fists: jab, cross, hook and a front-kick finisher; heavy is a roundhouse kick",
+		lights.size() == 4 and str(lights[3]["clip"]) == "FIST_front_kick" and str(lights[3]["limb"]) == "foot_r" and str(p.combat.stance["heavy"]["limb"]) == "foot_r")
+	p.combat.set_stance("sword_shield")
+	p.lock.target = null
+	(dm.get_node("ai") as FighterAI).mode = "dummy"
+	dm.sheet.effects.clear()
+	dm.sheet.invalidate()
+	dm.sheet.restore()
+
+
+## Combos flow: a chained hit starts past its wind-up, and nothing in the body jumps. Measured as speed
+## over the real time between pose updates (headless runs can take two physics steps per drawn pose),
+## against the library's fastest swings and kicks (~15 m/s x attack speed).
+func t_flow() -> void:
+	print("-- animation flow: chained hits, no pops")
+	var dm: Player = m.dummy
+	dm.teleport(m.DUMMY_POS)
+	await put(m.DUMMY_POS + Vector3(0, 0.1, 1.25))
+	p.lock.target = dm
+	p.combat.set_stance("sword_shield")
+	var worst := 0.0
+	var worst_at := ""
+	var prev := {}
+	var acc := {}
+	var starts: Array = []
+	var last_clip := ""
+	for i in 150:
+		ai.puppet.just_attack = (i % 25) == 0
+		await frames(1)
+		var inv := p.model.inst.global_transform.affine_inverse()
+		for b in ["hand_r", "foot_l", "Head"]:
+			var lp: Vector3 = inv * p.model.bone_pos(b)
+			acc[b] = float(acc.get(b, 0.0)) + 1.0 / 60.0
+			if prev.has(b) and not lp.is_equal_approx(prev[b]):
+				var sp: float = lp.distance_to(prev[b]) / float(acc[b])
+				if sp > worst:
+					worst = sp
+					worst_at = "%s, %s t %.2f" % [b, str(p.combat.move.get("clip", "-")), p.combat.t]
+				acc[b] = 0.0
+			prev[b] = lp
+		if p.combat.attacking() and str(p.combat.move.get("clip", "")) != last_clip:
+			last_clip = str(p.combat.move.get("clip", ""))
+			starts.append(snappedf(p.combat.t, 0.01))
+	ai.puppet.just_attack = false
+	check("chained hits start past their wind-up (the first from 0)", starts.size() >= 2 and starts[0] == 0.0 and float(starts[1]) > 0.0, str(starts))
+	check("no pops: no hand, foot or head moves faster than 28 m/s through a combo", worst < 28.0, "fastest %.1f m/s (%s)" % [worst, worst_at])
+	p.lock.target = null
+	await frames(60)

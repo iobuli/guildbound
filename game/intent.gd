@@ -29,6 +29,8 @@ var just_lock_prev := false
 var just_ragdoll := false
 var just_crouch := false
 var just_switch := false     # next weapon style (Q)
+var just_element := false    # next magic element (X)
+var just_awaken := false     # Awakening, when the meter is full (R)
 var just_special := false    # the weapon's special attack (E with nothing to pick up)
 var just_cast := [false, false, false, false]  # cast_1..4
 
@@ -63,6 +65,8 @@ static func from_input(cam: CameraRig) -> Intent:
 		i.just_lock_prev = cam.wheel_steps < 0
 		cam.wheel_steps = 0
 	i.just_ragdoll = Input.is_action_just_pressed("ragdoll")
+	i.just_element = Input.is_action_just_pressed("element_next")
+	i.just_awaken = Input.is_action_just_pressed("awaken")
 	i.just_crouch = Input.is_action_just_pressed("crouch")
 	i.just_switch = Input.is_action_just_pressed("weapon_next")
 	for k in 4:

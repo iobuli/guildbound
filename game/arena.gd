@@ -16,8 +16,8 @@ var interactions: Array = []   # {"pos", "radius", "name", "action": Callable} -
 
 
 ## Something on the map E can use (the quest board, the merchant...).
-func add_interaction(pos: Vector3, name: String, action: Callable, radius: float = 2.6) -> void:
-	interactions.append({"pos": pos, "radius": radius, "name": name, "action": action})
+func add_interaction(pos: Vector3, label_name: String, action: Callable, radius: float = 2.6) -> void:
+	interactions.append({"pos": pos, "radius": radius, "label_name": label_name, "action": action})
 
 
 func interaction_near(pos: Vector3) -> Dictionary:
@@ -84,7 +84,7 @@ func label(text: String, pos: Vector3) -> void:
 	add_child(l)
 
 
-func prop(label_text: String, pos: Vector3, size: Vector3, mass: float, color: Color, round: bool = false) -> RigidBody3D:
+func prop(label_text: String, pos: Vector3, size: Vector3, mass: float, color: Color, is_round: bool = false) -> RigidBody3D:
 	var rb := RigidBody3D.new()
 	rb.position = pos
 	rb.mass = mass
@@ -97,7 +97,7 @@ func prop(label_text: String, pos: Vector3, size: Vector3, mass: float, color: C
 	rb.physics_material_override = pm
 	var mi := MeshInstance3D.new()
 	var cs := CollisionShape3D.new()
-	if round:
+	if is_round:
 		var sm := SphereMesh.new()
 		sm.radius = size.x * 0.5
 		sm.height = size.x
@@ -169,9 +169,9 @@ func tree(pos: Vector3, size: float) -> void:
 
 func tent(pos: Vector3, yaw: float, color: Color) -> void:
 	# an A-frame: two leaning panels (solid, so the camp has cover)
-	var basis := Basis(Vector3.UP, yaw)
+	var b := Basis(Vector3.UP, yaw)
 	for side in [-1.0, 1.0]:
-		var off := basis * Vector3(side * 0.9, 1.0, 0.0)
+		var off := b * Vector3(side * 0.9, 1.0, 0.0)
 		box(pos + off, Vector3(0.12, 2.3, 3.2), color, "wood", Vector3(0.0, yaw, side * -0.72))
 
 

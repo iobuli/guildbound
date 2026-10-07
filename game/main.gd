@@ -62,6 +62,7 @@ func _ready() -> void:
 	spar = spawn_fighter(CharModel.new("Sparring Partner", "human", 8), SPAR_POS, FighterAI.new("spar"), "Superhero_Male_FullBody", "greatsword", "Hair_Buzzed")
 	(spar.get_node("ai") as FighterAI).home = SPAR_POS
 	dummy.facing = Vector3(0.0, 0.0, -1.0)
+	add_child(StatusFx.new())
 	# monsters: slimes in the meadow, goblins in their camp (data/monsters.json)
 	mobs = Mobs.new()
 	mobs.name = "Mobs"
@@ -305,7 +306,7 @@ func _shots() -> void:
 	for k in cells.size():
 		var c: Image = cells[k]
 		c.convert(Image.FORMAT_RGBA8)
-		sheet.blit_rect(c, Rect2i(0, 0, 640, 360), Vector2i((k % 3) * 640, (k / 3) * 360))
+		sheet.blit_rect(c, Rect2i(0, 0, 640, 360), Vector2i((k % 3) * 640, floori(k / 3.0) * 360))
 	sheet.save_png(ProjectSettings.globalize_path("res://docs/shots.png"))
 	print("shots saved: ", cells.size())
 	get_tree().quit()

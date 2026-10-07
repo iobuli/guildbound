@@ -20,6 +20,8 @@ var radius := 0.55
 var height := 1.0
 var dead := false
 var power := 1.0           # its rank's power (Rank): health and lunge damage
+var slow := 0.0            # chill: share of its speed lost
+var slow_t := 0.0
 var _respawn_t := 0.0
 var _hop_t := 0.0
 var _lunge := false
@@ -114,6 +116,9 @@ func _physics_process(delta: float) -> void:
 		return
 	_cool -= delta
 	_stun -= delta
+	slow_t -= delta
+	if slow_t <= 0.0:
+		slow = 0.0
 	velocity.y -= GRAVITY * delta
 	var on_floor := is_on_floor()
 	if on_floor:
@@ -146,7 +151,7 @@ func _physics_process(delta: float) -> void:
 func _hop() -> void:
 	var foe := _foe()
 	var dir: Vector3
-	var speed := float(data.get("speed", 2.4))
+	var speed := float(data.get("speed", 2.4)) * (1.0 - slow)
 	var up := 5.0
 	_lunge = false
 	if foe != null:
@@ -189,6 +194,15 @@ func receive_hit(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Ve
 		_die(att.p)
 		return "dead"
 	return "stagger" if poise_dmg >= float(data.get("poise", 10)) * 3.0 else "hit"
+
+
+## Damage that is not a blow (a burn). `src` gets the kill.
+func take_damage(d: float, src: Player) -> void:
+	if dead:
+		return
+	hp -= d
+	if hp <= 0.0:
+		_die(src)
 
 
 ## The player's guard was tapped just before the lunge landed: bounced back and dazed.

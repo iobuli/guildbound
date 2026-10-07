@@ -420,22 +420,22 @@ func _stat_button(text: String) -> Button:
 	return b
 
 
-func _label(text: String, size: int, col: Color) -> Label:
+func _label(text: String, font_size: int, col: Color) -> Label:
 	var l := Label.new()
 	l.text = text
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", col)
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	return l
 
 
-func _rich(size: int) -> RichTextLabel:
+func _rich(font_size: int) -> RichTextLabel:
 	var r := RichTextLabel.new()
 	r.bbcode_enabled = true
 	r.scroll_active = false
-	r.add_theme_font_size_override("normal_font_size", size)
-	r.add_theme_font_size_override("bold_font_size", size)
+	r.add_theme_font_size_override("normal_font_size", font_size)
+	r.add_theme_font_size_override("bold_font_size", font_size)
 	r.add_theme_color_override("default_color", TEXT)
 	return r
 

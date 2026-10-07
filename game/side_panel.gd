@@ -557,27 +557,27 @@ func _text_button(t: String) -> Button:
 	return b
 
 
-func _label(t: String, size: int, col: Color, wrap := true) -> Label:
+func _label(t: String, font_size: int, col: Color, wrapped := true) -> Label:
 	var l := Label.new()
 	l.text = t
-	l.add_theme_font_size_override("font_size", size)
+	l.add_theme_font_size_override("font_size", font_size)
 	l.add_theme_color_override("font_color", col)
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	l.add_theme_constant_override("shadow_offset_x", 1)
 	l.add_theme_constant_override("shadow_offset_y", 1)
-	if wrap:
+	if wrapped:
 		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return l
 
 
-func _rich(size: int) -> RichTextLabel:
+func _rich(font_size: int) -> RichTextLabel:
 	var r := RichTextLabel.new()
 	r.bbcode_enabled = true
 	r.fit_content = true
 	r.scroll_active = false
 	r.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	r.add_theme_font_size_override("normal_font_size", int(size * _k))
-	r.add_theme_font_size_override("bold_font_size", int((size + 1) * _k))
+	r.add_theme_font_size_override("normal_font_size", int(font_size * _k))
+	r.add_theme_font_size_override("bold_font_size", int((font_size + 1) * _k))
 	r.add_theme_color_override("default_color", TEXT)
 	return r
 
@@ -595,9 +595,9 @@ static func _box(bg: Color, edge: Color, w: int, radius: int) -> StyleBoxFlat:
 ## RuneScape stack numbers: 9999, 100K, 10M
 static func _rs_count(n: int) -> String:
 	if n >= 10000000:
-		return "%dM" % (n / 1000000)
+		return "%dM" % floori(n / 1000000.0)
 	if n >= 100000:
-		return "%dK" % (n / 1000)
+		return "%dK" % floori(n / 1000.0)
 	return str(n)
 
 

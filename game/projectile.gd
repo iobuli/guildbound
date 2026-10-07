@@ -14,6 +14,14 @@ var color := Color(1, 1, 1)
 var homing := 0.0
 var homing_target: Player = null
 var blast := 0.0
+var status := ""              # burn / chill / hex on hit
+var status_power := 0.0
+var status_dur := 0.0
+var chain := 0                # jumps to this many more foes (lightning)
+var pierce := false           # flies through bodies (wind)
+var knockback := 0.0
+var lifesteal := 0.0          # share of the damage healed back
+var _hit := {}                # bodies already struck (pierce)
 var life := 4.0
 var _stuck := false
 var _mesh: MeshInstance3D
@@ -30,6 +38,19 @@ static func make(from: Player, p_kind: String, at: Vector3, v: Vector3, g: float
 	pr.radius = r
 	pr.position = at
 	return pr
+
+
+## Take a spell's extra rules (data/weapons.json _spells).
+func configure(sp: Dictionary) -> void:
+	homing = float(sp.get("homing", 0.0))
+	blast = float(sp.get("blast", 0.0))
+	status = str(sp.get("status", ""))
+	status_power = float(sp.get("status_power", 0.0))
+	status_dur = float(sp.get("status_dur", 0.0))
+	chain = int(sp.get("chain", 0))
+	pierce = bool(sp.get("pierce", false))
+	knockback = float(sp.get("knockback", 0.0))
+	lifesteal = float(sp.get("lifesteal", 0.0))
 
 
 func _ready() -> void:
@@ -104,13 +125,14 @@ func _physics_process(delta: float) -> void:
 	var to := from + vel * delta
 	# fighters first (the body is the target), then the world
 	for f: Node3D in Combat.targets():
-		if not is_instance_valid(shooter) or not shooter.combat.is_foe(f):
+		if not is_instance_valid(shooter) or not shooter.combat.is_foe(f) or _hit.has(f):
 			continue
 		var band := Combat.body_band(f)
 		var pts := Geometry3D.get_closest_points_between_segments(from, to, band[0], band[1])
 		if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + radius:
 			_impact(pts[0], f)
-			return
+			if not pierce:
+				return
 	var q := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD | Layers.PROPS)
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	if not hit.is_empty():
@@ -123,7 +145,28 @@ func _physics_process(delta: float) -> void:
 
 func _impact(at: Vector3, victim: Node3D) -> void:
 	if victim != null and is_instance_valid(shooter):
-		shooter.combat.apply_hit(victim, dmg, poise, at, false, kind != "arrow")
+		_hit[victim] = true
+		var sc := shooter.combat
+		sc.apply_hit(victim, dmg, poise, at, false, kind != "arrow")
+		if status != "":
+			var pw := status_power * sc.last_dealt if status == "burn" else status_power
+			StatusFx.apply(victim, status, pw, status_dur, shooter)
+		if knockback > 0.0:
+			Combat.push(victim, vel, knockback)
+		if lifesteal > 0.0:
+			shooter.sheet.hp = minf(shooter.sheet.v("max_hp"), shooter.sheet.hp + sc.last_dealt * lifesteal)
+		var from := victim
+		var skip: Array = [victim]
+		for k in chain:  # lightning jumps on, weaker each time
+			var nxt := sc.nearest_foe(from.global_position, 6.0, skip)
+			if nxt == null:
+				break
+			Vfx.spark(shooter, nxt.global_position + Vector3.UP * 1.0, (from.global_position - nxt.global_position).normalized(), color, 18)
+			sc.apply_hit(nxt, dmg * pow(0.7, k + 1), poise * 0.5, nxt.global_position + Vector3.UP * 0.9, false, true)
+			skip.append(nxt)
+			from = nxt
+		if pierce:
+			return
 	if blast > 0.0 and is_instance_valid(shooter):
 		Vfx.ring(shooter, at, color, blast * 0.5)
 		for f: Node3D in Combat.targets():
