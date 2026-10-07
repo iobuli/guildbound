@@ -71,6 +71,9 @@ var respawn_pos := Vector3.ZERO
 var respawn_after := RESPAWN_AFTER
 var team := ""                 # fighters on the same team cannot hurt each other ("" = everyone's foe)
 var last_hit_by: Player = null  # who landed the killing blow (kill credit, loot)
+var death_dir := Vector3.ZERO    # the killing blow: which way it travelled ...
+var death_force := 0.0           # ... how heavy it was (poise damage)
+var death_vel := Vector3.ZERO    # ... and how fast the body was moving (a ragdoll carries it on)
 var quests: QuestLog           # the player's guild record (set by main; null for AI)
 var _stride := 0.0             # metres walked since the last footstep
 var stamina := 100.0
@@ -180,6 +183,8 @@ func teleport(pos: Vector3) -> void:
 	invuln_t = 0.0
 	combat.reset()
 	model.stop_action(0.05)
+	model.visible = true  # a ragdolled monster hid it
+	collision_layer = Layers.PLAYER
 	lock.target = null
 	reset_physics_interpolation()
 
@@ -189,6 +194,7 @@ func on_death() -> void:
 	state = State.DEAD
 	knocked_out = true
 	dead_t = 0.0
+	death_vel = velocity
 	velocity = Vector3.ZERO
 	toast.emit("%s is down" % sheet.display_name)
 	died.emit(self, last_hit_by)

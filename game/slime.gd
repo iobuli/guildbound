@@ -220,12 +220,19 @@ func _die(killer: Player) -> void:
 	dead = true
 	Vfx.ring(get_parent(), global_position + Vector3.UP * 0.2, _mat.albedo_color, 0.8)  # not on us: we hide
 	visible = false
+	var at := global_position
 	Sfx.at(get_parent(), global_position, "slime_die")
 	collision_layer = 0
 	velocity = Vector3.ZERO
 	_respawn_t = float(data.get("respawn", 15.0))
 	if Mobs.instance != null:
-		Mobs.instance.reward(kind, global_position, killer)
+		# credit now; the loot drops once the blob has burst and shrunk away
+		var items: Array = Mobs.instance.reward(kind, at, killer, false)["items"]
+		var mobs := Mobs.instance
+		Ragdoll.burst_slime(get_parent(), at, _body.mesh, _mat.albedo_color, radius,
+			func(where: Vector3) -> void:
+				if is_instance_valid(mobs):
+					mobs.drop_items(items, where))
 
 
 func _revive() -> void:

@@ -94,8 +94,15 @@ static func apply_frame(sheet: CharModel, d: Dictionary) -> void:
 
 func _on_fighter_died(victim: Player, killer: Player) -> void:
 	var kind := str(victim.get_meta("monster", ""))
-	if kind != "":
-		reward(kind, victim.global_position, killer)
+	if kind == "":
+		return
+	# the body ragdolls and burns away; its loot lands where it ends up. XP, quest credit and the
+	# respawn timer do not wait for it.
+	var rd := Ragdoll.spawn(victim)
+	var r := reward(kind, victim.global_position, killer, rd == null)
+	if rd != null:
+		var items: Array = r["items"]
+		rd.finished.connect(func(at: Vector3) -> void: drop_items(items, at))
 
 
 ## What one kill drops: {"gold": int, "items": [[id, n], ...]}.
@@ -121,15 +128,12 @@ func roll(kind: String) -> Dictionary:
 	return {"gold": rng.randi_range(int(g[0]), int(g[1])), "items": items}
 
 
-## A monster died at `at`: drop its loot there, pay the killer, tell everyone.
-func reward(kind: String, at: Vector3, killer: Player) -> Dictionary:
+## A monster died at `at`: drop its loot there (unless `drop` is false: the caller drops r["items"]
+## later, when the body is gone), pay the killer, tell everyone.
+func reward(kind: String, at: Vector3, killer: Player, drop: bool = true) -> Dictionary:
 	var r := roll(kind)
-	var items: Array = r["items"]
-	for i in items.size():
-		var pk := ItemPickup.make(str(items[i][0]), int(items[i][1]))
-		main.add_child(pk)
-		var a := TAU * i / maxf(1.0, items.size())
-		pk.global_position = Vector3(at.x + cos(a) * 0.5, maxf(at.y, 0.0), at.z + sin(a) * 0.5)
+	if drop:
+		drop_items(r["items"], at)
 	r["xp"] = 0
 	if killer != null and is_instance_valid(killer):
 		killer.sheet.gold += int(r["gold"])
@@ -139,3 +143,14 @@ func reward(kind: String, at: Vector3, killer: Player) -> Dictionary:
 		killer.gain_xp(int(r["xp"]), true)
 	killed.emit(kind, killer)
 	return r
+
+
+## Loot ([[id, n], ...]) scattered in a small ring around `at`.
+func drop_items(items: Array, at: Vector3) -> void:
+	if main == null or not is_instance_valid(main):
+		return
+	for i in items.size():
+		var pk := ItemPickup.make(str(items[i][0]), int(items[i][1]))
+		main.add_child(pk)
+		var a := TAU * i / maxf(1.0, items.size())
+		pk.global_position = Vector3(at.x + cos(a) * 0.5, maxf(at.y, 0.0), at.z + sin(a) * 0.5)

@@ -797,6 +797,7 @@ func receive(att: Combat, raw: float, poise_dmg: float, dir: Vector3, at: Vector
 	Vfx.number(p, at + Vector3.UP * 0.3, ("%d!" if crit else "%d") % roundi(dmg), Color(1.0, 0.4, 0.3) if crit else Color.WHITE)
 	if p.sheet.hp <= 0.0:
 		p.last_hit_by = att.p
+		p.death_force = poise_dmg
 		die(dir)
 		last_result = "dead"
 		return "dead"
@@ -850,6 +851,7 @@ func receive_monster(src: Node3D, raw: float, poise_dmg: float, at: Vector3) -> 
 	Vfx.number(p, at + Vector3.UP * 0.3, "%d" % roundi(dmg), Color(1.0, 0.75, 0.75))
 	if p.sheet.hp <= 0.0:
 		p.last_hit_by = null
+		p.death_force = poise_dmg
 		die(dir)
 		last_result = "dead"
 		return "dead"
@@ -891,6 +893,7 @@ func stagger(time: float, big: bool, dir: Vector3 = Vector3.ZERO) -> void:
 
 
 func die(dir: Vector3) -> void:
+	p.death_dir = dir
 	_end_move()
 	state = S.DEAD
 	var deaths: Array = HeroAnim.data["_deaths"]

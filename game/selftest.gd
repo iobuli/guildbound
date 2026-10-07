@@ -43,6 +43,7 @@ func run(main: Node) -> void:
 	tests.append_array([["body", t_body]])
 	tests.append_array([["cast", t_cast], ["parry", t_parry], ["sparparry", t_spar_parry], ["framedata", t_framedata]])
 	tests.append_array([["goblinlook", t_goblin_look], ["projzone", t_proj_zone]])
+	tests.append_array([["ragdoll", t_ragdoll]])
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -339,6 +340,7 @@ func t_mobs() -> void:
 		p.facing = p.facing.normalized() if p.facing.length() > 0.1 else Vector3(0, 0, -1)
 		await press("just_attack")
 		await frames(int(0.6 * 60))
+	await frames(int(0.9 * 60))  # the blob bursts and shrinks away, then its loot drops
 	check("swords hit a slime until it dies; it drops loot and pays gold", sl.dead and kills.has("slime") and ItemPickup.all.size() > picks0 and p.sheet.gold > gold0,
 		"dead %s, kills %s, pickups +%d, gold +%d" % [sl.dead, str(kills), ItemPickup.all.size() - picks0, p.sheet.gold - gold0])
 	# a live slime lunges at a player standing still: it hurts
@@ -369,6 +371,7 @@ func t_mobs() -> void:
 			break
 		await press("just_attack")
 		await frames(int(0.6 * 60))
+	await frames(int(3.4 * 60))  # the body ragdolls and burns away, then its loot drops
 	check("a goblin killed by the player drops its ear and counts as a kill", gob.knocked_out and kills.has("goblin") and _ground_count("goblin_ear") > ears0,
 		"down %s, kills %s" % [gob.knocked_out, str(kills)])
 	# loot rolls follow the table: always-drops always, cores rarely
@@ -726,7 +729,12 @@ func t_flow() -> void:
 			starts.append(snappedf(p.combat.t, 0.01))
 	ai.puppet.just_attack = false
 	check("chained hits start past their wind-up (the first from 0)", starts.size() >= 2 and starts[0] == 0.0 and float(starts[1]) > 0.0, str(starts))
-	check("no pops: no hand, foot or head moves faster than 28 m/s through a combo", worst < 28.0, "fastest %.1f m/s (%s)" % [worst, worst_at])
+	# 28 m/s was tuned when attacks played at clamp(attack speed / 1.5, 0.75, 1.4); Combat._start now plays
+	# them at clamp(attack speed / 1.1, 0.8, 1.5), and every limb moves faster in that proportion
+	var asp := p.sheet.v("attack_speed")
+	var limit := 28.0 * clampf(asp / 1.1, 0.8, 1.5) / clampf(asp / 1.5, 0.75, 1.4)
+	check("no pops: no hand, foot or head moves faster than the attack-speed limit through a combo", worst < limit,
+		"fastest %.1f m/s, limit %.1f (%s)" % [worst, limit, worst_at])
 	p.lock.target = null
 	await frames(60)
 
@@ -1341,3 +1349,66 @@ func t_proj_zone() -> void:
 		zones[0] == ["head", "head"] and zones[1] == ["leg", "leg"], str(zones))
 	sp.sheet.restore()
 	p.sheet.restore()
+
+
+func t_ragdoll() -> void:
+	print("-- ragdoll: a beaten goblin falls as physics pieces, burns away, then drops its loot")
+	var gs := _goblins()
+	if gs.is_empty():
+		check("a goblin to ragdoll", false, "none spawned")
+		return
+	var g: Player = gs[0]
+	var spot: Vector3 = m.arena.spots["run_lane"]
+	await put(spot)
+	g.teleport(spot + Vector3(1.5, 0.3, -3.0))
+	await frames(40)
+	var kills := []
+	var on_kill := func(kind: String, _who: Player) -> void: kills.append(kind)
+	m.mobs.killed.connect(on_kill)
+	var picks0 := ItemPickup.all.size()
+	var live0 := Ragdoll.live.size()
+	g.sheet.hp = 0.0
+	g.last_hit_by = p
+	g.combat.p.death_force = 80.0
+	g.combat.die((g.global_position - p.global_position) * Vector3(1, 0, 1))
+	m.mobs.killed.disconnect(on_kill)
+	var rd: Ragdoll = Ragdoll.live.back() if Ragdoll.live.size() > live0 else null
+	check("killing a goblin credits the kill at once and spawns a ragdoll (the animated body hidden)",
+		kills.has("goblin") and rd != null and not g.model.visible, "kills %s, ragdoll %s, model visible %s" % [str(kills), rd != null, g.model.visible])
+	if rd == null:
+		return
+	var bodies: Array[RigidBody3D] = rd.bodies.duplicate()
+	var start: Array[Vector3] = []
+	for b in bodies:
+		start.append(b.global_position)
+	var phys := bodies.size() >= BodyParts.names().size() and bodies.all(func(b: RigidBody3D) -> bool: return b.mass > 0.0 and b.collision_mask & Layers.PLAYER == 0)
+	var pelvis0: Vector3 = rd.root_body.global_position
+	await frames(int(0.8 * 60))
+	var moved := 0
+	for i in bodies.size():
+		moved += 1 if is_instance_valid(bodies[i]) and bodies[i].global_position.distance_to(start[i]) > 0.05 else 0
+	var pelvis1: Vector3 = rd.root_body.global_position
+	check("the ragdoll is one rigid body per segment (world-only collision) and they move/fall",
+		phys and moved >= bodies.size() / 2 and pelvis1.distance_to(pelvis0) > 0.05,
+		"%d bodies, %d moved, pelvis moved %.2f m" % [bodies.size(), moved, pelvis1.distance_to(pelvis0)])
+	var last := pelvis1
+	var fired := []
+	rd.finished.connect(func(at: Vector3) -> void: fired.append(at))
+	for k in 60:
+		if not fired.is_empty():
+			break
+		if rd.root_body != null and is_instance_valid(rd.root_body):
+			last = rd.root_body.global_position
+		await frames(5)
+	await frames(2)
+	var freed := bodies.all(func(b: Variant) -> bool: return not is_instance_valid(b))
+	var near := 0
+	var at: Vector3 = fired[0] if not fired.is_empty() else last
+	for i in range(picks0, ItemPickup.all.size()):
+		var pk: Node3D = ItemPickup.all[i]
+		if is_instance_valid(pk) and Vector2(pk.global_position.x - at.x, pk.global_position.z - at.z).length() < 1.5:
+			near += 1
+	check("after the dissolve the pieces are freed and the loot lies where the body ended up",
+		not fired.is_empty() and freed and near > 0 and Vector2(at.x - last.x, at.z - last.z).length() < 0.8,
+		"finished %s, freed %s, pickups near %d (of +%d)" % [not fired.is_empty(), freed, near, ItemPickup.all.size() - picks0])
+
