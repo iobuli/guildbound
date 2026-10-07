@@ -1,7 +1,7 @@
 # Rebuild plan (living document)
 
 Edited as the work moves: finished items get ticked, dropped ideas get deleted, new ones get added.
-Last updated: 2026-10-07.
+Last updated: 2026-10-07 (cloud session: animation pelvis fix; next: new map + core loop - guild quests, slimes / goblins, grid inventory, merchant).
 
 ## What the user asked for
 1. Delete every animation in use and rebuild the animation system properly, from a large set of
@@ -21,8 +21,8 @@ Last updated: 2026-10-07.
 ## Decisions
 | Topic | Choice | Why |
 |---|---|---|
-| Base character | VRoid Studio sample avatars, **CC0** (OpenGameArt "VRoid Studio CC0 models": base male / female, AvatarSample D, D Darkness, E, F, G, Sakurada Fumiriya, Sendagaya Shino) | Real anime look, faces with expressions, spring-bone hair / cloth, standard humanoid rig. The user can make more characters in the free VRoid Studio and drop the .vrm in. |
-| VRM import | V-Sekai **godot-vrm** v2.1.0 (MIT) | Imports VRM 0.x / 1.0, MToon toon shader, spring bones, maps the rig to Godot's humanoid profile. |
+| Base character | Quaternius **Universal Base Characters** (CC0): Superhero male / female bodies + hair, KayKit weapons | Switched from VRoid (2026-10-07): the UBC body matches the outfit pack and has a clean humanoid rig. VRoid / godot-vrm stays possible later. |
+| Animation library | **Mixamo** packs (user-downloaded; raw FBX kept outside the repo in `D:/Godot/assets/mixamo`) + ACCAD mocap for the fist set, retargeted by `tools/retarget.gd` into `assets/anims` (333 clips, `clips.json` metadata) | Large free library; only the retargeted clips are in the repo. Keep the repo private (Mixamo terms forbid redistributing the animations on their own). |
 | Retargeting | Godot's **SkeletonProfileHumanoid** + BoneMap for every model and every clip | The engine's own retargeting: any humanoid source works on any humanoid character. Replaces the one-rig-only pipeline. |
 | Bone names in code | One logical-name table (pelvis, spine, chest, hand_l...) mapped to the profile's names | BodyRig, MotionIK, GetUpPose, RagdollPose keep working on any character. |
 | Animation data | `data/anims.json`: role -> source clip, slice, speed, loop, tags | The tree is built from data; swapping or adding a clip is a data edit. |
@@ -44,13 +44,13 @@ assist, stance), Combat (timeline, hit sweep, guard / parry, hit-stop, PvP rules
 FighterAI, CharModel stats engine, side panel / HUD / status window, Sfx / Vfx, self-tests.
 
 ## What is deleted
-The Quaternius UBC character, every animation resource in `assets/animations/`, the hand-built
+The old physical-body stack (BodyRig, MotionIK, GetUpPose, RagdollPose), every animation resource in `assets/animations/`, the hand-built
 AnimationTree, the old bone-name assumptions. Rebuilt on the new base.
 
 ## Phases
 - [ ] **0. Tools**: Godot AI plugin (in `addons/godot_ai`, MCP registered in `.mcp.json`, telemetry
       off), Godot skill (`.claude/skills/godot`). Done when the editor is open and the tools respond.
-- [ ] **1. New base + retarget pipeline**: godot-vrm in, VRoid avatars imported, logical bone table,
+- [x] **1. New base + retarget pipeline** (done on the UBC body + Mixamo, see Decisions; pelvis-space bug fixed 2026-10-07, `tools/fix_pelvis.gd`): godot-vrm in, VRoid avatars imported, logical bone table,
       BodyRig / MotionIK / GetUp on the humanoid profile, importer for GLB / FBX / BVH sources onto
       the profile, `data/anims.json`, tree built from data. Old animations deleted.
 - [ ] **2. Animation library**: locomotion (100STYLE + UAL), fight footwork, strikes, kicks, blocks,

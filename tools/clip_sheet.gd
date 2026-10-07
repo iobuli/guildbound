@@ -1,9 +1,10 @@
 extends SceneTree
-## Renders library clips (assets/anims) on the VRoid base at 8 moments each -> docs/clip_sheet.png (windowed run).
+## Renders library clips (assets/anims) on the base body (data/anim_sources.json _target) at 8 moments each -> docs/clip_sheet.png (windowed run).
 ##   Godot --path <guildbound> --script res://tools/clip_sheet.gd [-- Clip1 Clip2 ...]
-## Clip names are the library's (data/anim_sources.json).
+## Clip names are the library's (data/anim_sources.json). Root motion is taken off like in the game, so the
+## body stays framed.
 
-const DEFAULT_CLIPS := ["Idle", "Walk", "Run", "FightStance", "Jab_L", "Roundhouse_R"]
+const DEFAULT_CLIPS := ["LOCO_idle", "LOCO_walking", "LOCO_running", "SS_slash", "FIST_jab", "FIST_roundhouse"]
 const STEPS := [0.0, 0.12, 0.25, 0.37, 0.5, 0.62, 0.75, 0.98]
 const CELL := Vector2i(260, 320)
 
@@ -45,6 +46,8 @@ func _run() -> void:
 	w.add_child(ch)
 	var ap := AnimationPlayer.new()
 	ch.add_child(ap)
+	var sk: Skeleton3D = ch.find_child("Skeleton3D", true, false)
+	ap.root_motion_track = NodePath(str(ch.get_path_to(sk)) + ":root")
 	var lib := AnimationLibrary.new()
 	for c in clips:
 		var a := _find(c)

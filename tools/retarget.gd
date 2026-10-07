@@ -567,7 +567,11 @@ func _build(name: String, job: Dictionary, d: Dictionary) -> Array:
 	if root_motion and root_bi >= 0:
 		rtr = anim.add_track(Animation.TYPE_POSITION_3D)
 		anim.track_set_path(rtr, NodePath("%s:%s" % [tgt_root.get_path_to(tgt), tname["Root"]]))
-	var hips_rest := tgt.get_bone_rest(hips).origin
+	# the hips are placed in skeleton space (Y up) and written into their parent's space at the end: the
+	# base body's root bone is Z up (its glTF rest turns -90 deg about X)
+	var hips_rest := tgt.get_bone_global_rest(hips).origin
+	var hips_parent := tgt.get_bone_parent(hips)
+	var to_parent := tgt.get_bone_global_rest(hips_parent).basis.inverse() if hips_parent >= 0 else Basis.IDENTITY
 	var trg_rest_g := {}
 	for bi in tgt.get_bone_count():
 		trg_rest_g[bi] = tgt.get_bone_global_rest(bi).basis.get_rotation_quaternion()
@@ -654,7 +658,7 @@ func _build(name: String, job: Dictionary, d: Dictionary) -> Array:
 			var travel_k := Vector3(path.x - hips_rest.x, 0.0, path.z - hips_rest.z)
 			anim.position_track_insert_key(rtr, t, travel_k)
 			hk -= travel_k
-		anim.position_track_insert_key(ptr, t, hk)
+		anim.position_track_insert_key(ptr, t, to_parent * hk)
 	var meta := {"kind": kind, "src": job["src"], "take": job["take"], "length": snappedf(anim.length, 0.01),
 		"scale": snappedf(scale, 0.001)}
 	if kind == "loop":
