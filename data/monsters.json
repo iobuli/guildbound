@@ -1,5 +1,5 @@
 {
- "_note": "PvE monsters. Loot follows the OSRS style: 'always' drops, then 'rolls' picks on a weighted table out of 'denom' (entries [item, count, weight]; 'nothing' = no drop), then each Magic Core rolls 1 in N on its own. Gold is a [min, max] range paid straight to the killer. Slimes are lightweight blobs (game/slime.gd); goblins are full fighters (same body and combat as the player) at a smaller scale. rank: the monster's guild rank (power x2 per letter, game/rank.gd) - it scales its health and damage and sets the XP it gives.",
+ "_note": "PvE monsters. Loot follows the OSRS style: 'always' drops, then 'rolls' picks on a weighted table out of 'denom' (entries [item, count, weight]; 'nothing' = no drop), then each Magic Core rolls 1 in N on its own. Gold is a [min, max] range paid straight to the killer. Slimes are lightweight blobs (game/slime.gd); goblins are full fighters (same body and combat as the player) at a smaller scale, hunting in packs: 'frame' is a permanent effect on each goblin's sheet (light and quick: far less health, lighter blows, more move and attack speed) and 'pack' tunes the pack brain (FighterAI 'pack': a ring around the foe at 'ring' m, at most 'attackers' striking at once, the rest circle and feint; they give up past 'leash' m from where the chase began, and walk home). rank: the monster's guild rank (power x2 per letter, game/rank.gd) - it scales its health and damage and sets the XP it gives.",
  "slime": {
   "name": "Slime",
   "hp": 120,
@@ -72,7 +72,38 @@
   ],
   "hair": "",
   "respawn": 20.0,
-  "count": 3,
+  "count": 6,
+  "frame": {
+   "name": "Goblin frame",
+   "icon": "S_Buff01",
+   "mods": [
+    {
+     "stat": "max_hp",
+     "op": "more",
+     "value": 0.3
+    },
+    {
+     "stat": "attack_damage",
+     "op": "more",
+     "value": 0.55
+    },
+    {
+     "stat": "move_speed",
+     "op": "add_pct",
+     "value": 0.3
+    },
+    {
+     "stat": "attack_speed",
+     "op": "add_pct",
+     "value": 0.35
+    }
+   ]
+  },
+  "pack": {
+   "attackers": 2,
+   "ring": 3.6,
+   "leash": 30.0
+  },
   "loot": {
    "always": [
     [

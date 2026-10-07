@@ -39,6 +39,7 @@ func run(main: Node) -> void:
 			only = a.substr(7)
 	var tests := [["move", t_move], ["dodge", t_dodge], ["melee", t_melee], ["guard", t_guard], ["ranged", t_ranged], ["ai", t_ai], ["ui", t_ui],
 		["grid", t_grid], ["mobs", t_mobs], ["quests", t_quests], ["shop", t_shop], ["rank", t_rank], ["duel", t_duel], ["magic", t_magic], ["flow", t_flow], ["sound", t_sound]]
+	tests.append_array([["pack", t_pack], ["mix", t_mix]])
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -751,3 +752,164 @@ func t_sound() -> void:
 	for e: String in HeroAnim.data["_elements"]:
 		elems_ok = elems_ok and Sfx.CUES.has(e + "_cast") and Sfx.CUES.has(e + "_hit") and cb._element_of(str(HeroAnim.data["_elements"][e]["light"])) == e
 	check("every element has a cast and an impact sound", elems_ok)
+
+
+## Goblins: light and quick, they hunt as a pack - surround the player, take turns (attack tokens),
+## land hits soon, and a hurt one backs off.
+func t_pack() -> void:
+	print("-- goblin pack: light and quick, they surround you and take turns")
+	var gobs: Array = _goblins()
+	var d: Dictionary = (m.mobs as Mobs).data["goblin"]
+	var plain := CharModel.new(str(d["name"]), str(d.get("race", "human")), int(d.get("level", 3)))
+	plain.rank_override = str(d.get("rank", ""))
+	plain.invalidate()
+	var g0: Player = gobs[0]
+	var gs := g0.sheet
+	var hp_r := gs.v("max_hp") / plain.v("max_hp")
+	var mv_r := gs.v("move_speed") / plain.v("move_speed")
+	var as_r := gs.v("attack_speed") / plain.v("attack_speed")
+	check("goblins wear the Goblin frame: far less health, faster feet and hands; a pack of 5-6 at the camp",
+		gobs.size() >= 5 and gs.find_effect("frame") != null and hp_r < 0.5 and mv_r > 1.2 and as_r > 1.2,
+		"%d goblins, hp x%.2f (%.0f), move x%.2f, attack speed x%.2f" % [gobs.size(), hp_r, gs.v("max_hp"), mv_r, as_r])
+	for g: Player in gobs:
+		g.teleport(g.respawn_pos)
+	var gc: Vector3 = m.arena.spots["goblin_camp"]
+	await put(gc + Vector3(9.0, 0.1, 0.0), Vector3(-1, 0, 0))
+	var taken := p.combat.hits_taken
+	var first_hit := -1.0
+	var max_att := 0
+	var max_tok := 0
+	var who := {}
+	var gaps := 0.0
+	var gap_n := 0
+	var best_gap := 360.0
+	for fr in 720:
+		await frames(1)
+		p.sheet.hp = p.sheet.v("max_hp")  # the player only stands there: keep them up
+		var att := 0
+		var bearings: Array[float] = []
+		for g: Player in gobs:
+			if not LockOn.alive(g):
+				continue
+			if g.combat.attacking():
+				att += 1
+				who[g.get_instance_id()] = true
+			var off := g.global_position - p.global_position
+			if Vector2(off.x, off.z).length() < 7.5:
+				bearings.append(rad_to_deg(atan2(off.x, off.z)))
+		max_att = maxi(max_att, att)
+		max_tok = maxi(max_tok, FighterAI.attackers_on("goblin", p))
+		if first_hit < 0.0 and p.combat.hits_taken > taken:
+			first_hit = fr / 60.0
+		if fr > 240 and bearings.size() >= 4:
+			bearings.sort()
+			var gap := 360.0 - bearings[-1] + bearings[0]
+			for k in range(1, bearings.size()):
+				gap = maxf(gap, bearings[k] - bearings[k - 1])
+			gaps += gap
+			gap_n += 1
+			best_gap = minf(best_gap, gap)
+	var mean_gap := gaps / maxf(1.0, gap_n)
+	check("the pack spreads around the player (largest gap between neighbours well under 180 deg)", gap_n > 120 and mean_gap < 150.0,
+		"mean largest gap %.0f deg over %d frames (best %.0f)" % [mean_gap, gap_n, best_gap])
+	check("no more than 2 goblins attack at the same moment; they take turns", max_att <= 2 and max_tok <= 2 and who.size() >= 3,
+		"max attacking %d, max tokens %d, %d different attackers" % [max_att, max_tok, who.size()])
+	check("the pack lands hits on the player within 8 s", first_hit >= 0.0 and first_hit < 8.0 and p.combat.hits_taken - taken >= 3,
+		"first hit at %.1f s, %d hits in 12 s" % [first_hit, p.combat.hits_taken - taken])
+	# a hurt goblin backs off
+	var hurt: Player = null
+	for g: Player in gobs:
+		var b := g.get_node("ai") as FighterAI
+		if LockOn.alive(g) and b.role == "ring" and not g.combat.attacking():
+			hurt = g
+			break
+	var backed := false
+	var dist0 := 0.0
+	var dist1 := 0.0
+	if hurt != null:
+		var hb := hurt.get_node("ai") as FighterAI
+		dist0 = hurt.global_position.distance_to(p.global_position)
+		hurt.sheet.hp = hurt.sheet.v("max_hp") * 0.3
+		hurt.combat.hits_taken += 1
+		await frames(2)
+		backed = hb.role == "hurt"
+		for fr in 70:
+			await frames(1)
+			p.sheet.hp = p.sheet.v("max_hp")
+		dist1 = hurt.global_position.distance_to(p.global_position)
+	check("a hurt goblin backs off before coming again", hurt != null and backed and dist1 > hb_ring() + 1.0,
+		"role hurt %s, distance %.1f -> %.1f m" % [backed, dist0, dist1])
+	# led away down the road: they follow, then past the leash they give up and walk home
+	var followed := 0.0
+	for k in 12:
+		p.teleport(gc + Vector3(12.0 + k * 4.0, 0.1, 0.0))
+		for fr in 30:
+			await frames(1)
+			p.sheet.hp = p.sheet.v("max_hp")
+		for g: Player in gobs:
+			followed = maxf(followed, g.global_position.distance_to(g.respawn_pos))
+	await frames(60 * 10)
+	var home_n := 0
+	var still: Array = []
+	for g: Player in gobs:
+		var b := g.get_node("ai") as FighterAI
+		if g.global_position.distance_to(b.home) < 3.0 and b._foe == null:
+			home_n += 1
+		else:
+			still.append("%.1f m" % g.global_position.distance_to(b.home))
+	check("led past the leash, the pack gives up and walks home (and does not chase forever)", followed > 12.0 and home_n == gobs.size(),
+		"followed %.0f m from home, %d/%d back home, still out %s" % [followed, home_n, gobs.size(), str(still)])
+	for g: Player in gobs:
+		g.teleport(g.respawn_pos)
+	await put(m.arena.spots["run_lane"])
+	p.sheet.restore()
+
+
+func hb_ring() -> float:
+	return float(((m.mobs as Mobs).data["goblin"] as Dictionary).get("pack", {}).get("ring", 3.6))
+
+
+## The sound mix (tools/make_sfx.py measures every file it writes into assets/audio/synth/levels.json):
+## the report matches the files on disk, nothing clips, every file sits near the loudness target, and
+## with the cue volumes in game/sfx.gd blows are louder than swishes and footsteps sit underneath.
+func t_mix() -> void:
+	print("-- sound mix: generated files are clean, level-matched and mixed in a sensible order")
+	var path := "res://assets/audio/synth/levels.json"
+	var rep: Dictionary = JSON.parse_string(FileAccess.get_file_as_string(path)) if FileAccess.file_exists(path) else {}
+	var files: Dictionary = rep.get("files", {})
+	var target := float(rep.get("target_lufs", -16.0))
+	var stale: Array = []
+	var hot: Array = []
+	var off: Array = []
+	for f: String in files:
+		var info: Dictionary = files[f]
+		var st := load("res://assets/audio/synth/" + f + ".wav") as AudioStreamWAV
+		if st == null or absf(st.get_length() - float(info["seconds"])) > 0.01:
+			stale.append(f)
+		if float(info["peak_db"]) > -0.9:
+			hot.append(f)
+		if f != "ambience_wind" and absf(float(info["lufs"]) - target) > 4.0:
+			off.append("%s %.1f" % [f, float(info["lufs"])])
+	var used := 0
+	for cue: String in Sfx.CUES:
+		for n: String in Sfx.CUES[cue][0]:
+			used += 1 if n.begins_with("synth/") and files.has(n.substr(6)) else 0
+	check("levels report covers every generated file and matches them on disk", files.size() >= 70 and stale.is_empty() and used >= 70,
+		"%d files, %d used by cues, stale %s" % [files.size(), used, str(stale.slice(0, 4))])
+	check("no generated sound clips (peaks at or under -1 dBFS) and each sits within 4 LU of %.0f LUFS" % target, hot.is_empty() and off.is_empty(),
+		"hot %s, off %s" % [str(hot.slice(0, 4)), str(off.slice(0, 4))])
+	var lvl := func(cue: String) -> float:
+		var c: Array = Sfx.CUES[cue]
+		var sum := 0.0
+		var k := 0
+		for n: String in c[0]:
+			if n.begins_with("synth/") and files.has(n.substr(6)):
+				sum += float(files[n.substr(6)]["lufs"])
+				k += 1
+		return (sum / k if k > 0 else target) + float(c[1])
+	var blow: float = lvl.call("hit_blade")
+	var swish: float = lvl.call("swish_blade")
+	var step: float = lvl.call("step_stone")
+	var bird: float = lvl.call("bird")
+	check("in the mix blows ride over swishes, footsteps and birds sit underneath", blow > swish + 3.0 and swish > step + 6.0 and bird < swish,
+		"hit_blade %.1f, swish_blade %.1f, step_stone %.1f, bird %.1f (LUFS + cue dB)" % [blow, swish, step, bird])

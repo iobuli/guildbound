@@ -1,15 +1,22 @@
 class_name Sfx
 extends RefCounted
-## Sound effects. Recorded foley from Kenney "Impact Sounds" + "RPG Audio" (CC0, assets/audio/CREDITS.txt)
-## and synthesized combat / magic / monster / ambience sounds (assets/audio/synth, made by
-## tools/make_sfx.py). Each cue picks one of its variants at random with a little pitch spread, so a
-## flurry of blows never sounds like one sample on repeat. 3D cues sit where it happened; UI cues are
-## flat. Buses: SFX (a touch of room reverb), UI, Ambience; a limiter on Master keeps big fights clean.
+## Sound effects. Recorded foley from Kenney "Impact Sounds" + "RPG Audio" (CC0), and the combat /
+## magic / monster / ambience cues in assets/audio/synth that tools/make_sfx.py builds FROM those
+## recordings (layered, varispeeded, filtered, transient-shaped, reversed, granulated, reverb tails;
+## synthesis only as a sweetener). assets/audio/CREDITS.txt lists the sources of every cue.
+## Every generated file is loudness-matched (about -16 LUFS, peaks under -1 dBFS: synth/levels.json),
+## so the dB here IS the mix: blows ~-16, guard clangs ~-18, casts ~-22, swishes ~-23 (they support a
+## hit, never compete with it), slime hops ~-28, footsteps ~-37, birds ~-30 on the Ambience bus.
+## Each cue picks one of its variants at random with a small pitch and level spread, so a flurry of
+## blows never sounds like one sample on repeat. 3D cues sit where it happened; UI cues are flat.
+## Buses: SFX (a touch of room reverb), UI, Ambience; a limiter on Master keeps big fights clean.
 ## A cue never plays more than MAX_PER_CUE copies at once (MAX_VOICES in all).
 
 const DIR := "res://assets/audio/"
 const MAX_PER_CUE := 4
 const MAX_VOICES := 28
+const PITCH_SPREAD := 0.04      # +-4 %: variety without the chipmunk wobble of a wide random pitch
+const GAIN_SPREAD := 1.0        # +-1 dB
 
 
 static func _v(base: String, n: int) -> Array:
@@ -20,31 +27,32 @@ static func _v(base: String, n: int) -> Array:
 
 
 static var CUES := {
-	"hit": [["impactPunch_medium_000", "impactPunch_medium_001", "impactPunch_medium_002", "impactPunch_medium_003", "impactPunch_medium_004"], -2.0],
+	"hit": [["impactPunch_medium_000", "impactPunch_medium_001", "impactPunch_medium_002", "impactPunch_medium_003", "impactPunch_medium_004"], -3.0],
 	"hit_heavy": [["impactPunch_heavy_000", "impactPunch_heavy_001", "impactPunch_heavy_002", "impactPunch_heavy_003", "impactPunch_heavy_004"], 0.0],
-	"hit_blade": [_v("hit_blade", 3), -1.0],
-	"block": [["impactSoft_heavy_000", "impactSoft_heavy_001", "impactSoft_heavy_002", "impactSoft_heavy_003"], -3.0],
-	"clang": [_v("clang", 3), -4.0],
-	"parry": [["impactMetal_light_000", "impactMetal_light_001", "impactPlate_light_000", "impactPlate_light_001"], -1.0],
+	"hit_blade": [_v("hit_blade", 3), 0.0],
+	"block": [_v("block", 3), -2.0],
+	"clang": [_v("clang", 3), -2.0],
+	"parry": [_v("parry", 3), 0.0],
+	"deflect": [_v("parry", 3), -1.0],   # a parried projectile flying back
 	"thud": [["impactSoft_heavy_004", "impactSoft_medium_000", "impactSoft_medium_001"], 0.0],
-	"swing": [_v("swish_light", 3), -8.0],
+	"swing": [_v("swish_light", 3), -9.0],
 	"swish_light": [_v("swish_light", 3), -8.0],
 	"swish_blade": [_v("swish_blade", 3), -7.0],
 	"swish_heavy": [_v("swish_heavy", 3), -5.0],
-	"swing_kick": [_v("swish_kick", 3), -6.0],
+	"swing_kick": [_v("swish_kick", 3), -7.0],
 	"cloth": [["cloth1", "cloth2", "cloth3", "cloth4"], -10.0],
-	"fire_cast": [_v("fire_cast", 3), -6.0], "fire_hit": [_v("fire_hit", 3), -3.0],
-	"ice_cast": [_v("ice_cast", 3), -8.0], "ice_hit": [_v("ice_hit", 3), -5.0],
-	"lightning_cast": [_v("lightning_cast", 3), -8.0], "lightning_hit": [_v("lightning_hit", 3), -3.0],
-	"wind_cast": [_v("wind_cast", 3), -7.0], "wind_hit": [_v("wind_hit", 3), -5.0],
-	"arcane_cast": [_v("arcane_cast", 3), -9.0], "arcane_hit": [_v("arcane_hit", 3), -6.0],
-	"shadow_cast": [_v("shadow_cast", 3), -7.0], "shadow_hit": [_v("shadow_hit", 3), -5.0],
-	"awaken": [_v("awaken", 1), -2.0],
-	"rank_up": [_v("rank_up", 1), -4.0],
-	"slime_hop": [_v("slime_hop", 3), -14.0], "slime_hit": [_v("slime_hit", 3), -6.0], "slime_die": [_v("slime_die", 3), -4.0],
+	"fire_cast": [_v("fire_cast", 3), -6.0], "fire_hit": [_v("fire_hit", 3), -1.0],
+	"ice_cast": [_v("ice_cast", 3), -7.0], "ice_hit": [_v("ice_hit", 3), -2.0],
+	"lightning_cast": [_v("lightning_cast", 3), -6.0], "lightning_hit": [_v("lightning_hit", 3), 0.0],
+	"wind_cast": [_v("wind_cast", 3), -7.0], "wind_hit": [_v("wind_hit", 3), -3.0],
+	"arcane_cast": [_v("arcane_cast", 3), -7.0], "arcane_hit": [_v("arcane_hit", 3), -2.0],
+	"shadow_cast": [_v("shadow_cast", 3), -6.0], "shadow_hit": [_v("shadow_hit", 3), -2.0],
+	"awaken": [_v("awaken", 1), 0.0],
+	"rank_up": [_v("rank_up", 1), -2.0],
+	"slime_hop": [_v("slime_hop", 3), -12.0], "slime_hit": [_v("slime_hit", 3), -3.0], "slime_die": [_v("slime_die", 3), -3.0],
 	"step": [["footstep_grass_000", "footstep_grass_001", "footstep_grass_002", "footstep_grass_003", "footstep_grass_004"], -18.0],
-	"step_stone": [_v("step_stone", 4), -20.0],
-	"bird": [_v("bird", 4), -22.0],
+	"step_stone": [_v("step_stone", 4), -21.0],
+	"bird": [_v("bird", 4), -14.0],
 	"open": [["bookOpen"], -8.0],
 	"close": [["bookClose"], -8.0],
 	"page": [["bookFlip1", "bookFlip2", "bookFlip3"], -8.0],
@@ -121,8 +129,8 @@ static func at(from: Node, pos: Vector3, cue: String, pitch: float = 1.0, gain_d
 	var a := AudioStreamPlayer3D.new()
 	a.stream = st
 	a.bus = "SFX"
-	a.volume_db = float(CUES[cue][1]) + gain_db
-	a.pitch_scale = pitch * randf_range(0.92, 1.08)
+	a.volume_db = float(CUES[cue][1]) + gain_db + randf_range(-GAIN_SPREAD, GAIN_SPREAD)
+	a.pitch_scale = pitch * randf_range(1.0 - PITCH_SPREAD, 1.0 + PITCH_SPREAD)
 	a.unit_size = 6.0
 	a.max_distance = 60.0
 	var tree := from.get_tree()
@@ -143,8 +151,8 @@ static func ui(from: Node, cue: String, gain_db: float = 0.0, bus: String = "UI"
 	var a := AudioStreamPlayer.new()
 	a.stream = st
 	a.bus = bus
-	a.volume_db = float(CUES[cue][1]) + gain_db
-	a.pitch_scale = randf_range(0.95, 1.05)
+	a.volume_db = float(CUES[cue][1]) + gain_db + randf_range(-GAIN_SPREAD, GAIN_SPREAD) * 0.5
+	a.pitch_scale = randf_range(1.0 - PITCH_SPREAD * 0.5, 1.0 + PITCH_SPREAD * 0.5)
 	a.process_mode = Node.PROCESS_MODE_ALWAYS  # menus pause the world
 	from.get_tree().root.add_child(a)
 	a.finished.connect(a.queue_free)
