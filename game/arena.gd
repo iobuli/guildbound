@@ -70,8 +70,8 @@ func prop(label_text: String, pos: Vector3, size: Vector3, mass: float, color: C
 	rb.mass = mass
 	rb.add_to_group("prop")
 	rb.set_meta("label", label_text)
-	rb.collision_layer = BodyRig.L_PROPS
-	rb.collision_mask = BodyRig.L_WORLD | BodyRig.L_PLAYER | BodyRig.L_BODY | BodyRig.L_PROPS
+	rb.collision_layer = Layers.PROPS
+	rb.collision_mask = Layers.WORLD | Layers.PLAYER | Layers.HITBOX | Layers.PROPS
 	var pm := PhysicsMaterial.new()
 	pm.friction = 0.8
 	rb.physics_material_override = pm

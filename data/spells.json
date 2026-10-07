@@ -1,0 +1,129 @@
+{
+  "_rules": "Dark peak is ~1.4x the Light peak on the primary stat; Dark pays for it with HP drain, a stat trade, Backlash or Corruption. Same group = strongest wins (no stacking a family with itself).",
+  "spells": {
+	"quick_step": {
+	  "name": "Quick Step", "icon": "S_Wind01", "school": "boon", "family": "swiftness", "aspect": "neutral",
+	  "mode": "sustained", "cost": 15, "upkeep": 1.5, "slots": 1, "cooldown": 2,
+	  "mods": [
+		{"stat": "move_speed", "op": "add_pct", "value": 0.15, "group": "swiftness.move_speed"},
+		{"stat": "attack_speed", "op": "add_pct", "value": 0.15, "group": "swiftness.attack_speed"}
+	  ]
+	},
+	"gale_step": {
+	  "name": "Gale Step", "icon": "S_Wind05", "school": "boon", "family": "swiftness", "aspect": "light",
+	  "mode": "sustained", "cost": 25, "upkeep": 2.5, "slots": 1, "cooldown": 4, "shares_to_allies": 0.5,
+	  "mods": [
+		{"stat": "move_speed", "op": "add_pct", "value": 0.30, "group": "swiftness.move_speed"},
+		{"stat": "attack_speed", "op": "add_pct", "value": 0.30, "group": "swiftness.attack_speed"}
+	  ]
+	},
+	"shadowrush": {
+	  "name": "Shadowrush", "icon": "S_Shadow07", "school": "boon", "family": "swiftness", "aspect": "dark",
+	  "mode": "sustained", "cost": 30, "upkeep": 3.5, "slots": 1, "cooldown": 6, "hp_drain": 12,
+	  "residue": "high",
+	  "backlash": {"name": "Exhaustion", "duration": 20, "mods": [
+		{"stat": "move_speed", "op": "add_pct", "value": -0.25},
+		{"stat": "stamina", "op": "flat", "value": -30}
+	  ]},
+	  "mods": [
+		{"stat": "move_speed", "op": "add_pct", "value": 0.42, "group": "swiftness.move_speed"},
+		{"stat": "attack_speed", "op": "add_pct", "value": 0.42, "group": "swiftness.attack_speed"}
+	  ]
+	},
+
+	"strength_surge": {
+	  "name": "Strength Surge", "icon": "S_Buff02", "school": "boon", "family": "might", "aspect": "neutral",
+	  "mode": "sustained", "cost": 15, "upkeep": 1.5, "slots": 1, "cooldown": 2,
+	  "mods": [
+		{"stat": "attack_damage", "op": "flat", "value": 14, "group": "might.attack_damage"},
+		{"stat": "carry", "op": "flat", "value": 10, "group": "might.carry"}
+	  ]
+	},
+	"bright_valor": {
+	  "name": "Bright Valor", "icon": "S_Holy05", "school": "boon", "family": "might", "aspect": "light",
+	  "mode": "sustained", "cost": 25, "upkeep": 2.5, "slots": 1, "cooldown": 4, "shares_to_allies": 0.5,
+	  "mods": [
+		{"stat": "attack_damage", "op": "flat", "value": 20, "group": "might.attack_damage"},
+		{"stat": "carry", "op": "flat", "value": 15, "group": "might.carry"}
+	  ]
+	},
+	"bloodrage": {
+	  "name": "Bloodrage", "icon": "S_Buff14", "school": "boon", "family": "might", "aspect": "dark",
+	  "mode": "sustained", "cost": 30, "upkeep": 3.0, "slots": 1, "cooldown": 6, "hp_drain": 6,
+	  "residue": "high",
+	  "backlash": {"name": "Bloodlust Hangover", "duration": 15, "mods": [
+		{"stat": "attack_damage", "op": "flat", "value": -10}
+	  ]},
+	  "mods": [
+		{"stat": "attack_damage", "op": "flat", "value": 28, "group": "might.attack_damage"},
+		{"stat": "carry", "op": "flat", "value": 21, "group": "might.carry"},
+		{"stat": "lifesteal", "op": "flat", "value": 0.10},
+		{"stat": "armor", "op": "flat", "value": -15}
+	  ]
+	},
+
+	"stone_skin": {
+	  "name": "Stone Skin", "icon": "S_Earth05", "school": "boon", "family": "ward", "aspect": "neutral",
+	  "mode": "sustained", "cost": 20, "upkeep": 2.0, "slots": 1, "cooldown": 2,
+	  "mods": [
+		{"stat": "armor", "op": "flat", "value": 20, "group": "ward.armor"},
+		{"stat": "magic_resist", "op": "flat", "value": 14, "group": "ward.magic_resist"}
+	  ]
+	},
+	"aegis": {
+	  "name": "Aegis", "icon": "S_Holy09", "school": "boon", "family": "ward", "aspect": "light",
+	  "mode": "sustained", "cost": 30, "upkeep": 3.0, "slots": 1, "cooldown": 4, "shares_to_allies": 0.5,
+	  "mods": [
+		{"stat": "armor", "op": "flat", "value": 30, "group": "ward.armor"},
+		{"stat": "magic_resist", "op": "flat", "value": 20, "group": "ward.magic_resist"}
+	  ]
+	},
+	"bone_carapace": {
+	  "name": "Bone Carapace", "icon": "S_Shadow15", "school": "boon", "family": "ward", "aspect": "dark",
+	  "mode": "sustained", "cost": 35, "upkeep": 3.0, "slots": 1, "cooldown": 6, "hp_drain": 5,
+	  "residue": "high",
+	  "mods": [
+		{"stat": "armor", "op": "flat", "value": 42, "group": "ward.armor"},
+		{"stat": "magic_resist", "op": "flat", "value": 28, "group": "ward.magic_resist"},
+		{"stat": "move_speed", "op": "add_pct", "value": -0.15}
+	  ]
+	},
+
+	"second_wind": {
+	  "name": "Second Wind", "icon": "S_Holy01", "school": "boon", "family": "vigor", "aspect": "neutral",
+	  "mode": "sustained", "cost": 15, "upkeep": 1.5, "slots": 1, "cooldown": 2,
+	  "mods": [
+		{"stat": "hp_regen", "op": "flat", "value": 4, "group": "vigor.hp_regen"},
+		{"stat": "stamina", "op": "flat", "value": 20, "group": "vigor.stamina"}
+	  ]
+	},
+	"renewal": {
+	  "name": "Renewal", "icon": "S_Holy03", "school": "boon", "family": "vigor", "aspect": "light",
+	  "mode": "sustained", "cost": 25, "upkeep": 2.0, "slots": 1, "cooldown": 4, "shares_to_allies": 0.5,
+	  "mods": [
+		{"stat": "hp_regen", "op": "flat", "value": 8, "group": "vigor.hp_regen"},
+		{"stat": "tenacity", "op": "flat", "value": 0.15, "group": "vigor.tenacity"},
+		{"stat": "stamina", "op": "flat", "value": 30, "group": "vigor.stamina"}
+	  ]
+	},
+	"leech_pact": {
+	  "name": "Leech Pact", "icon": "S_Shadow04", "school": "boon", "family": "vigor", "aspect": "dark",
+	  "mode": "sustained", "cost": 25, "upkeep": 2.5, "slots": 1, "cooldown": 6, "corruption": 3,
+	  "residue": "high",
+	  "mods": [
+		{"stat": "hp_regen", "op": "flat", "value": 11, "group": "vigor.hp_regen"},
+		{"stat": "tenacity", "op": "flat", "value": 0.21, "group": "vigor.tenacity"},
+		{"stat": "lifesteal", "op": "flat", "value": 0.15}
+	  ]
+	},
+
+	"awaken": {
+	  "name": "Awaken (Dragonblood)", "icon": "S_Fire05", "school": "racial", "family": "might", "aspect": "neutral",
+	  "mode": "timed", "duration": 10, "cost": 0, "upkeep": 0, "slots": 0, "cooldown": 600,
+	  "mods": [
+		{"stat": "attack_damage", "op": "more", "value": 1.25, "group": "racial.awaken"},
+		{"stat": "armor", "op": "add_pct", "value": 0.20, "group": "racial.awaken"}
+	  ]
+	}
+  }
+}

@@ -1,0 +1,2579 @@
+{
+ "_note": "Animation library jobs for tools/retarget.gd. Current set: Mixamo packs (downloaded by the user, raw FBX kept outside the repo in D:/Godot/assets/mixamo) retargeted onto the Universal Base Characters body. Older sources (100STYLE, ACCAD, CMU) stay listed for later use. Clip fields: src, take, kind loop|action, face, ground, root_motion (ground travel on the root bone), strike (hand / foot timing meta), from/to, cycle, tags.",
+ "_target": "res://assets/characters/base/Superhero_Male_FullBody.gltf",
+ "sources": {
+  "style100": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/100style/100STYLE.zip",
+   "map": "style100",
+   "licence": "CC BY 4.0 - 100STYLE (Mason, Starke, Komura)"
+  },
+  "accad_m2": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/accad/Male2_bvh.zip",
+   "map": "mixamo",
+   "licence": "CC BY 3.0 - ACCAD Motion Lab, The Ohio State University"
+  },
+  "accad_m1": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/accad/Male1_bvh.zip",
+   "map": "mixamo",
+   "licence": "CC BY 3.0 - ACCAD"
+  },
+  "accad_f1": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/accad/Female1_bvh.zip",
+   "map": "mixamo",
+   "licence": "CC BY 3.0 - ACCAD"
+  },
+  "accad_sprint": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/accad/sprint_BVH.ZIP",
+   "map": "amc",
+   "licence": "CC BY 3.0 - ACCAD"
+  },
+  "accad_hs": {
+   "type": "bvh_zip",
+   "path": "D:/Godot/assets/accad/handspring_BVH.ZIP",
+   "map": "amc",
+   "licence": "CC BY 3.0 - ACCAD"
+  },
+  "cmu": {
+   "type": "bvh_dir",
+   "path": "D:/Godot/assets/cmu/",
+   "map": "cmu",
+   "licence": "CMU Graphics Lab Motion Capture Database (mocap.cs.cmu.edu), free for any use"
+  },
+  "mx_SS": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Pro Sword and Shield Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_SS2": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Sword and Shield Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_GS": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Great Sword Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_BOW": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Pro Longbow Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_MAG": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Pro Magic Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_LOCO": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Locomotion Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_FEM": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Female Locomotion Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_ADV": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Action Adventure Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_FARM": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Farming Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  },
+  "mx_DRUNK": {
+   "type": "fbx_dir",
+   "path": "D:/Godot/assets/mixamo/Male Drunk Pack/",
+   "map": "mixamo_fbx",
+   "licence": "Mixamo (Adobe): royalty-free in projects, raw files not redistributed"
+  }
+ },
+ "clips": {
+  "SS_draw_sword_1": {
+   "src": "mx_SS",
+   "take": "draw sword 1",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_draw_sword_2": {
+   "src": "mx_SS",
+   "take": "draw sword 2",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_sheath_sword_1": {
+   "src": "mx_SS",
+   "take": "sheath sword 1",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_sheath_sword_2": {
+   "src": "mx_SS",
+   "take": "sheath sword 2",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_180_turn_2": {
+   "src": "mx_SS",
+   "take": "sword and shield 180 turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_180_turn": {
+   "src": "mx_SS",
+   "take": "sword and shield 180 turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_attack_2": {
+   "src": "mx_SS",
+   "take": "sword and shield attack (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_attack_3": {
+   "src": "mx_SS",
+   "take": "sword and shield attack (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_attack_4": {
+   "src": "mx_SS",
+   "take": "sword and shield attack (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_attack": {
+   "src": "mx_SS",
+   "take": "sword and shield attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_block_2": {
+   "src": "mx_SS",
+   "take": "sword and shield block (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_block_idle": {
+   "src": "mx_SS",
+   "take": "sword and shield block idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_block": {
+   "src": "mx_SS",
+   "take": "sword and shield block",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_casting_2": {
+   "src": "mx_SS",
+   "take": "sword and shield casting (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_casting": {
+   "src": "mx_SS",
+   "take": "sword and shield casting",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_crouch_block_2": {
+   "src": "mx_SS",
+   "take": "sword and shield crouch block (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_crouch_block_idle": {
+   "src": "mx_SS",
+   "take": "sword and shield crouch block idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_crouch_block": {
+   "src": "mx_SS",
+   "take": "sword and shield crouch block",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_crouch_idle": {
+   "src": "mx_SS",
+   "take": "sword and shield crouch idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_crouch": {
+   "src": "mx_SS",
+   "take": "sword and shield crouch",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_crouching_2": {
+   "src": "mx_SS",
+   "take": "sword and shield crouching (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_crouching_3": {
+   "src": "mx_SS",
+   "take": "sword and shield crouching (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_crouching": {
+   "src": "mx_SS",
+   "take": "sword and shield crouching",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_death_2": {
+   "src": "mx_SS",
+   "take": "sword and shield death (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_death": {
+   "src": "mx_SS",
+   "take": "sword and shield death",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_idle_2": {
+   "src": "mx_SS",
+   "take": "sword and shield idle (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_idle_3": {
+   "src": "mx_SS",
+   "take": "sword and shield idle (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_idle_4": {
+   "src": "mx_SS",
+   "take": "sword and shield idle (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_idle": {
+   "src": "mx_SS",
+   "take": "sword and shield idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_impact_2": {
+   "src": "mx_SS",
+   "take": "sword and shield impact (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_impact_3": {
+   "src": "mx_SS",
+   "take": "sword and shield impact (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_impact": {
+   "src": "mx_SS",
+   "take": "sword and shield impact",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_jump_2": {
+   "src": "mx_SS",
+   "take": "sword and shield jump (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_jump": {
+   "src": "mx_SS",
+   "take": "sword and shield jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_kick": {
+   "src": "mx_SS",
+   "take": "sword and shield kick",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_power_up": {
+   "src": "mx_SS",
+   "take": "sword and shield power up",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_run_2": {
+   "src": "mx_SS",
+   "take": "sword and shield run (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_run": {
+   "src": "mx_SS",
+   "take": "sword and shield run",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_slash_2": {
+   "src": "mx_SS",
+   "take": "sword and shield slash (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_slash_3": {
+   "src": "mx_SS",
+   "take": "sword and shield slash (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_slash_4": {
+   "src": "mx_SS",
+   "take": "sword and shield slash (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_slash_5": {
+   "src": "mx_SS",
+   "take": "sword and shield slash (5)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_slash": {
+   "src": "mx_SS",
+   "take": "sword and shield slash",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_strafe_2": {
+   "src": "mx_SS",
+   "take": "sword and shield strafe (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_strafe_3": {
+   "src": "mx_SS",
+   "take": "sword and shield strafe (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_strafe_4": {
+   "src": "mx_SS",
+   "take": "sword and shield strafe (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_strafe": {
+   "src": "mx_SS",
+   "take": "sword and shield strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_turn_2": {
+   "src": "mx_SS",
+   "take": "sword and shield turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_turn": {
+   "src": "mx_SS",
+   "take": "sword and shield turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_walk_2": {
+   "src": "mx_SS",
+   "take": "sword and shield walk (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_walk": {
+   "src": "mx_SS",
+   "take": "sword and shield walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_sheath_sword_1": {
+   "src": "mx_SS2",
+   "take": "sheath sword 1",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_sheath_sword_2": {
+   "src": "mx_SS2",
+   "take": "sheath sword 2",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_180_turn_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield 180 turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_180_turn": {
+   "src": "mx_SS2",
+   "take": "sword and shield 180 turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_attack_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield attack (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_attack_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield attack (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_attack_4": {
+   "src": "mx_SS2",
+   "take": "sword and shield attack (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_attack": {
+   "src": "mx_SS2",
+   "take": "sword and shield attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_block_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield block (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_block_idle": {
+   "src": "mx_SS2",
+   "take": "sword and shield block idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_block": {
+   "src": "mx_SS2",
+   "take": "sword and shield block",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_casting_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield casting (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_casting": {
+   "src": "mx_SS2",
+   "take": "sword and shield casting",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_crouch_block_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouch block (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_crouch_block_idle": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouch block idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_crouch_block": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouch block",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_crouch_idle": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouch idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_crouch": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouch",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_crouching_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouching (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_crouching_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouching (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_crouching": {
+   "src": "mx_SS2",
+   "take": "sword and shield crouching",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_death_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield death (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_b_death": {
+   "src": "mx_SS2",
+   "take": "sword and shield death",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_b_idle_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield idle (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_idle_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield idle (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_idle_4": {
+   "src": "mx_SS2",
+   "take": "sword and shield idle (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_idle": {
+   "src": "mx_SS2",
+   "take": "sword and shield idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_impact_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield impact (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_b_impact_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield impact (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_b_impact": {
+   "src": "mx_SS2",
+   "take": "sword and shield impact",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "SS_b_jump_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield jump (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_jump": {
+   "src": "mx_SS2",
+   "take": "sword and shield jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_kick": {
+   "src": "mx_SS2",
+   "take": "sword and shield kick",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_power_up": {
+   "src": "mx_SS2",
+   "take": "sword and shield power up",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_run_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield run (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_run": {
+   "src": "mx_SS2",
+   "take": "sword and shield run",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_slash_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield slash (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_slash_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield slash (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_slash_4": {
+   "src": "mx_SS2",
+   "take": "sword and shield slash (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_slash_5": {
+   "src": "mx_SS2",
+   "take": "sword and shield slash (5)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_slash": {
+   "src": "mx_SS2",
+   "take": "sword and shield slash",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "SS_b_strafe_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield strafe (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_strafe_3": {
+   "src": "mx_SS2",
+   "take": "sword and shield strafe (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_strafe_4": {
+   "src": "mx_SS2",
+   "take": "sword and shield strafe (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_strafe": {
+   "src": "mx_SS2",
+   "take": "sword and shield strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_turn_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_turn": {
+   "src": "mx_SS2",
+   "take": "sword and shield turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "SS_b_walk_2": {
+   "src": "mx_SS2",
+   "take": "sword and shield walk (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "SS_b_walk": {
+   "src": "mx_SS2",
+   "take": "sword and shield walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_draw_a_great_sword_1": {
+   "src": "mx_GS",
+   "take": "draw a great sword 1",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_draw_a_great_sword_2": {
+   "src": "mx_GS",
+   "take": "draw a great sword 2",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_180_turn_2": {
+   "src": "mx_GS",
+   "take": "great sword 180 turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_180_turn": {
+   "src": "mx_GS",
+   "take": "great sword 180 turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_attack": {
+   "src": "mx_GS",
+   "take": "great sword attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_blocking_2": {
+   "src": "mx_GS",
+   "take": "great sword blocking (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_blocking_3": {
+   "src": "mx_GS",
+   "take": "great sword blocking (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_blocking": {
+   "src": "mx_GS",
+   "take": "great sword blocking",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_casting": {
+   "src": "mx_GS",
+   "take": "great sword casting",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_crouching_2": {
+   "src": "mx_GS",
+   "take": "great sword crouching (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_crouching_3": {
+   "src": "mx_GS",
+   "take": "great sword crouching (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_crouching_4": {
+   "src": "mx_GS",
+   "take": "great sword crouching (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_crouching_5": {
+   "src": "mx_GS",
+   "take": "great sword crouching (5)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_crouching_6": {
+   "src": "mx_GS",
+   "take": "great sword crouching (6)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_crouching": {
+   "src": "mx_GS",
+   "take": "great sword crouching",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_high_spin_attack": {
+   "src": "mx_GS",
+   "take": "great sword high spin attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_idle_2": {
+   "src": "mx_GS",
+   "take": "great sword idle (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_idle_3": {
+   "src": "mx_GS",
+   "take": "great sword idle (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_idle_4": {
+   "src": "mx_GS",
+   "take": "great sword idle (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_idle_5": {
+   "src": "mx_GS",
+   "take": "great sword idle (5)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_idle": {
+   "src": "mx_GS",
+   "take": "great sword idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_impact_2": {
+   "src": "mx_GS",
+   "take": "great sword impact (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_impact_3": {
+   "src": "mx_GS",
+   "take": "great sword impact (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_impact_4": {
+   "src": "mx_GS",
+   "take": "great sword impact (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_impact_5": {
+   "src": "mx_GS",
+   "take": "great sword impact (5)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_impact": {
+   "src": "mx_GS",
+   "take": "great sword impact",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_jump_2": {
+   "src": "mx_GS",
+   "take": "great sword jump (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_jump_attack": {
+   "src": "mx_GS",
+   "take": "great sword jump attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_jump": {
+   "src": "mx_GS",
+   "take": "great sword jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_kick_2": {
+   "src": "mx_GS",
+   "take": "great sword kick (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_kick": {
+   "src": "mx_GS",
+   "take": "great sword kick",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_power_up": {
+   "src": "mx_GS",
+   "take": "great sword power up",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_run_2": {
+   "src": "mx_GS",
+   "take": "great sword run (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_run": {
+   "src": "mx_GS",
+   "take": "great sword run",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_slash_2": {
+   "src": "mx_GS",
+   "take": "great sword slash (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_slash_3": {
+   "src": "mx_GS",
+   "take": "great sword slash (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_slash_4": {
+   "src": "mx_GS",
+   "take": "great sword slash (4)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_slash_5": {
+   "src": "mx_GS",
+   "take": "great sword slash (5)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_slash": {
+   "src": "mx_GS",
+   "take": "great sword slash",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_slide_attack": {
+   "src": "mx_GS",
+   "take": "great sword slide attack",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "GS_strafe_2": {
+   "src": "mx_GS",
+   "take": "great sword strafe (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_strafe_3": {
+   "src": "mx_GS",
+   "take": "great sword strafe (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_strafe_4": {
+   "src": "mx_GS",
+   "take": "great sword strafe (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_strafe": {
+   "src": "mx_GS",
+   "take": "great sword strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_turn_2": {
+   "src": "mx_GS",
+   "take": "great sword turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_turn": {
+   "src": "mx_GS",
+   "take": "great sword turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_walk_2": {
+   "src": "mx_GS",
+   "take": "great sword walk (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_walk": {
+   "src": "mx_GS",
+   "take": "great sword walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "GS_spell_cast": {
+   "src": "mx_GS",
+   "take": "spell cast",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "GS_death_2": {
+   "src": "mx_GS",
+   "take": "two handed sword death (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "GS_death": {
+   "src": "mx_GS",
+   "take": "two handed sword death",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_fall_a_land_to_run_forward": {
+   "src": "mx_BOW",
+   "take": "fall a land to run forward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_fall_a_land_to_standing_idle_01": {
+   "src": "mx_BOW",
+   "take": "fall a land to standing idle 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_fall_a_loop": {
+   "src": "mx_BOW",
+   "take": "fall a loop",
+   "kind": "loop",
+   "face": "none",
+   "ground": "none"
+  },
+  "BOW_aim_overdraw": {
+   "src": "mx_BOW",
+   "take": "standing aim overdraw",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_aim_recoil": {
+   "src": "mx_BOW",
+   "take": "standing aim recoil",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_aim_walk_back": {
+   "src": "mx_BOW",
+   "take": "standing aim walk back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_aim_walk_forward": {
+   "src": "mx_BOW",
+   "take": "standing aim walk forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_aim_walk_left": {
+   "src": "mx_BOW",
+   "take": "standing aim walk left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_aim_walk_right": {
+   "src": "mx_BOW",
+   "take": "standing aim walk right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_block": {
+   "src": "mx_BOW",
+   "take": "standing block",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_death_backward_01": {
+   "src": "mx_BOW",
+   "take": "standing death backward 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_death_forward_01": {
+   "src": "mx_BOW",
+   "take": "standing death forward 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_disarm_bow": {
+   "src": "mx_BOW",
+   "take": "standing disarm bow",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_dive_forward": {
+   "src": "mx_BOW",
+   "take": "standing dive forward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_dodge_backward": {
+   "src": "mx_BOW",
+   "take": "standing dodge backward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_dodge_forward": {
+   "src": "mx_BOW",
+   "take": "standing dodge forward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_dodge_left": {
+   "src": "mx_BOW",
+   "take": "standing dodge left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_dodge_right": {
+   "src": "mx_BOW",
+   "take": "standing dodge right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "BOW_draw_arrow": {
+   "src": "mx_BOW",
+   "take": "standing draw arrow",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_equip_bow": {
+   "src": "mx_BOW",
+   "take": "standing equip bow",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_idle_01": {
+   "src": "mx_BOW",
+   "take": "standing idle 01",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_idle_02_looking": {
+   "src": "mx_BOW",
+   "take": "standing idle 02 looking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_idle_03_examine": {
+   "src": "mx_BOW",
+   "take": "standing idle 03 examine",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_melee_kick": {
+   "src": "mx_BOW",
+   "take": "standing melee kick",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "BOW_melee_punch": {
+   "src": "mx_BOW",
+   "take": "standing melee punch",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "BOW_react_small_from_front": {
+   "src": "mx_BOW",
+   "take": "standing react small from front",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_react_small_from_headshot": {
+   "src": "mx_BOW",
+   "take": "standing react small from headshot",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_run_back": {
+   "src": "mx_BOW",
+   "take": "standing run back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_run_forward_stop": {
+   "src": "mx_BOW",
+   "take": "standing run forward stop",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_run_forward": {
+   "src": "mx_BOW",
+   "take": "standing run forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_run_left": {
+   "src": "mx_BOW",
+   "take": "standing run left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_run_right": {
+   "src": "mx_BOW",
+   "take": "standing run right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_turn_90_left": {
+   "src": "mx_BOW",
+   "take": "standing turn 90 left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_turn_90_right": {
+   "src": "mx_BOW",
+   "take": "standing turn 90 right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "BOW_walk_back": {
+   "src": "mx_BOW",
+   "take": "standing walk back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_walk_forward": {
+   "src": "mx_BOW",
+   "take": "standing walk forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_walk_left": {
+   "src": "mx_BOW",
+   "take": "standing walk left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_walk_right": {
+   "src": "mx_BOW",
+   "take": "standing walk right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "BOW_unarmed_idle_01": {
+   "src": "mx_BOW",
+   "take": "unarmed idle 01",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_crouch_idle": {
+   "src": "mx_MAG",
+   "take": "Crouch Idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_crouch_to_standing_idle": {
+   "src": "mx_MAG",
+   "take": "Crouch To Standing Idle",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_crouch_turn_left_90": {
+   "src": "mx_MAG",
+   "take": "Crouch Turn Left 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_crouch_turn_right_90": {
+   "src": "mx_MAG",
+   "take": "Crouch Turn Right 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_crouch_walk_back": {
+   "src": "mx_MAG",
+   "take": "Crouch Walk Back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_crouch_walk_forward": {
+   "src": "mx_MAG",
+   "take": "Crouch Walk Forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_crouch_walk_left": {
+   "src": "mx_MAG",
+   "take": "Crouch Walk Left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_crouch_walk_right": {
+   "src": "mx_MAG",
+   "take": "Crouch Walk Right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_1h_magic_attack_01": {
+   "src": "mx_MAG",
+   "take": "Standing 1H Magic Attack 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_1h_magic_attack_02": {
+   "src": "mx_MAG",
+   "take": "Standing 1H Magic Attack 02",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_1h_magic_attack_03": {
+   "src": "mx_MAG",
+   "take": "Standing 1H Magic Attack 03",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_cast_spell_01": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Cast Spell 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_2h_magic_area_attack_01": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Area Attack 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_area_attack_02": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Area Attack 02",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_attack_01": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Attack 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_attack_02": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Attack 02",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_attack_03": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Attack 03",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_attack_04": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Attack 04",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_2h_magic_attack_05": {
+   "src": "mx_MAG",
+   "take": "Standing 2H Magic Attack 05",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true,
+   "strike": true
+  },
+  "MAG_block_end": {
+   "src": "mx_MAG",
+   "take": "Standing Block End",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_block_idle": {
+   "src": "mx_MAG",
+   "take": "Standing Block Idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_block_react_large": {
+   "src": "mx_MAG",
+   "take": "Standing Block React Large",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_block_start": {
+   "src": "mx_MAG",
+   "take": "Standing Block Start",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_idle_03": {
+   "src": "mx_MAG",
+   "take": "Standing Idle 03",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_idle_04": {
+   "src": "mx_MAG",
+   "take": "Standing Idle 04",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_idle_to_crouch": {
+   "src": "mx_MAG",
+   "take": "Standing Idle To Crouch",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_jump_running_landing": {
+   "src": "mx_MAG",
+   "take": "Standing Jump Running Landing",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_jump_running": {
+   "src": "mx_MAG",
+   "take": "Standing Jump Running",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_jump": {
+   "src": "mx_MAG",
+   "take": "Standing Jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_land_to_standing_idle": {
+   "src": "mx_MAG",
+   "take": "Standing Land To Standing Idle",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_react_death_backward": {
+   "src": "mx_MAG",
+   "take": "Standing React Death Backward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_death_forward": {
+   "src": "mx_MAG",
+   "take": "Standing React Death Forward",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_death_left": {
+   "src": "mx_MAG",
+   "take": "Standing React Death Left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_death_right": {
+   "src": "mx_MAG",
+   "take": "Standing React Death Right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_large_from_back": {
+   "src": "mx_MAG",
+   "take": "Standing React Large From Back",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_large_from_front": {
+   "src": "mx_MAG",
+   "take": "Standing React Large From Front",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_large_from_left": {
+   "src": "mx_MAG",
+   "take": "Standing React Large From Left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_large_from_right": {
+   "src": "mx_MAG",
+   "take": "Standing React Large From Right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "MAG_react_small_from_back": {
+   "src": "mx_MAG",
+   "take": "Standing React Small From Back",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_react_small_from_front": {
+   "src": "mx_MAG",
+   "take": "Standing React Small From Front",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_react_small_from_left": {
+   "src": "mx_MAG",
+   "take": "Standing React Small From Left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_react_small_from_right": {
+   "src": "mx_MAG",
+   "take": "Standing React Small From Right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_run_back": {
+   "src": "mx_MAG",
+   "take": "Standing Run Back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_run_forward": {
+   "src": "mx_MAG",
+   "take": "Standing Run Forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_run_left": {
+   "src": "mx_MAG",
+   "take": "Standing Run Left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_run_right": {
+   "src": "mx_MAG",
+   "take": "Standing Run Right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_sprint_forward": {
+   "src": "mx_MAG",
+   "take": "Standing Sprint Forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_turn_left_90": {
+   "src": "mx_MAG",
+   "take": "Standing Turn Left 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_turn_right_90": {
+   "src": "mx_MAG",
+   "take": "Standing Turn Right 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_walk_back": {
+   "src": "mx_MAG",
+   "take": "Standing Walk Back",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_walk_forward": {
+   "src": "mx_MAG",
+   "take": "Standing Walk Forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_walk_left": {
+   "src": "mx_MAG",
+   "take": "Standing Walk Left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_walk_right": {
+   "src": "mx_MAG",
+   "take": "Standing Walk Right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_1h_cast_spell_01": {
+   "src": "mx_MAG",
+   "take": "standing 1H cast spell 01",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "MAG_idle_02": {
+   "src": "mx_MAG",
+   "take": "standing idle 02",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "MAG_idle": {
+   "src": "mx_MAG",
+   "take": "standing idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_idle": {
+   "src": "mx_LOCO",
+   "take": "idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_jump": {
+   "src": "mx_LOCO",
+   "take": "jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "LOCO_left_strafe_walking": {
+   "src": "mx_LOCO",
+   "take": "left strafe walking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_left_strafe": {
+   "src": "mx_LOCO",
+   "take": "left strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_left_turn_90": {
+   "src": "mx_LOCO",
+   "take": "left turn 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "LOCO_left_turn": {
+   "src": "mx_LOCO",
+   "take": "left turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "LOCO_right_strafe_walking": {
+   "src": "mx_LOCO",
+   "take": "right strafe walking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_right_strafe": {
+   "src": "mx_LOCO",
+   "take": "right strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_right_turn_90": {
+   "src": "mx_LOCO",
+   "take": "right turn 90",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "LOCO_right_turn": {
+   "src": "mx_LOCO",
+   "take": "right turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "LOCO_running": {
+   "src": "mx_LOCO",
+   "take": "running",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "LOCO_walking": {
+   "src": "mx_LOCO",
+   "take": "walking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_idle": {
+   "src": "mx_FEM",
+   "take": "idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_jump": {
+   "src": "mx_FEM",
+   "take": "jump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FEM_left_strafe_walk": {
+   "src": "mx_FEM",
+   "take": "left strafe walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_left_strafe": {
+   "src": "mx_FEM",
+   "take": "left strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_left_turn": {
+   "src": "mx_FEM",
+   "take": "left turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FEM_right_strafe_walk": {
+   "src": "mx_FEM",
+   "take": "right strafe walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_right_strafe": {
+   "src": "mx_FEM",
+   "take": "right strafe",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_right_turn": {
+   "src": "mx_FEM",
+   "take": "right turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FEM_running": {
+   "src": "mx_FEM",
+   "take": "running",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FEM_walking": {
+   "src": "mx_FEM",
+   "take": "walking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_cover_to_stand_2": {
+   "src": "mx_ADV",
+   "take": "cover to stand (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_cover_to_stand": {
+   "src": "mx_ADV",
+   "take": "cover to stand",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_crouched_sneaking_left": {
+   "src": "mx_ADV",
+   "take": "crouched sneaking left",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_crouched_sneaking_right": {
+   "src": "mx_ADV",
+   "take": "crouched sneaking right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_falling_idle": {
+   "src": "mx_ADV",
+   "take": "falling idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "none"
+  },
+  "ADV_falling_to_roll": {
+   "src": "mx_ADV",
+   "take": "falling to roll",
+   "kind": "action",
+   "face": "none",
+   "ground": "start",
+   "root_motion": true
+  },
+  "ADV_hard_landing": {
+   "src": "mx_ADV",
+   "take": "hard landing",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_idle_2": {
+   "src": "mx_ADV",
+   "take": "idle (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_idle_3": {
+   "src": "mx_ADV",
+   "take": "idle (3)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_idle_4": {
+   "src": "mx_ADV",
+   "take": "idle (4)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_idle_5": {
+   "src": "mx_ADV",
+   "take": "idle (5)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_idle": {
+   "src": "mx_ADV",
+   "take": "idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_jumping_up": {
+   "src": "mx_ADV",
+   "take": "jumping up",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_left_cover_sneak": {
+   "src": "mx_ADV",
+   "take": "left cover sneak",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_left_turn": {
+   "src": "mx_ADV",
+   "take": "left turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_right_cover_sneak": {
+   "src": "mx_ADV",
+   "take": "right cover sneak",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_right_turn": {
+   "src": "mx_ADV",
+   "take": "right turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_run_to_stop": {
+   "src": "mx_ADV",
+   "take": "run to stop",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_running": {
+   "src": "mx_ADV",
+   "take": "running",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "ADV_stand_to_cover_2": {
+   "src": "mx_ADV",
+   "take": "stand to cover (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_stand_to_cover": {
+   "src": "mx_ADV",
+   "take": "stand to cover",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "ADV_walking": {
+   "src": "mx_ADV",
+   "take": "walking",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_box_idle": {
+   "src": "mx_FARM",
+   "take": "box idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_box_turn_2": {
+   "src": "mx_FARM",
+   "take": "box turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_box_turn": {
+   "src": "mx_FARM",
+   "take": "box turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_box_walk_arc": {
+   "src": "mx_FARM",
+   "take": "box walk arc",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_cow_milking": {
+   "src": "mx_FARM",
+   "take": "cow milking",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_dig_and_plant_seeds": {
+   "src": "mx_FARM",
+   "take": "dig and plant seeds",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_holding_idle": {
+   "src": "mx_FARM",
+   "take": "holding idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_holding_turn_left": {
+   "src": "mx_FARM",
+   "take": "holding turn left",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_holding_turn_right": {
+   "src": "mx_FARM",
+   "take": "holding turn right",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_holding_walk": {
+   "src": "mx_FARM",
+   "take": "holding walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_kneeling_idle": {
+   "src": "mx_FARM",
+   "take": "kneeling idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_pick_fruit_2": {
+   "src": "mx_FARM",
+   "take": "pick fruit (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_pick_fruit_3": {
+   "src": "mx_FARM",
+   "take": "pick fruit (3)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_pick_fruit": {
+   "src": "mx_FARM",
+   "take": "pick fruit",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_plant_a_plant": {
+   "src": "mx_FARM",
+   "take": "plant a plant",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_plant_tree": {
+   "src": "mx_FARM",
+   "take": "plant tree",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_pull_plant_2": {
+   "src": "mx_FARM",
+   "take": "pull plant (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_pull_plant": {
+   "src": "mx_FARM",
+   "take": "pull plant",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_watering": {
+   "src": "mx_FARM",
+   "take": "watering",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_wheelbarrow_dump": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow dump",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_wheelbarrow_idle": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_wheelbarrow_walk_2": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow walk (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FARM_wheelbarrow_walk_turn_2": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow walk turn (2)",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_wheelbarrow_walk_turn": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow walk turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "FARM_wheelbarrow_walk": {
+   "src": "mx_FARM",
+   "take": "wheelbarrow walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_backward_walking_turn": {
+   "src": "mx_DRUNK",
+   "take": "backward walking turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "DRUNK_drunk_idle_variation_2": {
+   "src": "mx_DRUNK",
+   "take": "drunk idle variation (2)",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_idle_variation": {
+   "src": "mx_DRUNK",
+   "take": "drunk idle variation",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_idle": {
+   "src": "mx_DRUNK",
+   "take": "drunk idle",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_run_backward": {
+   "src": "mx_DRUNK",
+   "take": "drunk run backward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_run_forward": {
+   "src": "mx_DRUNK",
+   "take": "drunk run forward",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_running_left_turn": {
+   "src": "mx_DRUNK",
+   "take": "drunk running left turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "DRUNK_drunk_turn": {
+   "src": "mx_DRUNK",
+   "take": "drunk turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "DRUNK_drunk_walk_backwards": {
+   "src": "mx_DRUNK",
+   "take": "drunk walk backwards",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_walk": {
+   "src": "mx_DRUNK",
+   "take": "drunk walk",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "DRUNK_drunk_walking_turn": {
+   "src": "mx_DRUNK",
+   "take": "drunk walking turn",
+   "kind": "action",
+   "face": "none",
+   "ground": "start"
+  },
+  "DRUNK_run_backward_arc_right": {
+   "src": "mx_DRUNK",
+   "take": "run backward arc right",
+   "kind": "loop",
+   "face": "none",
+   "ground": "min"
+  },
+  "FIST_jab": {
+   "src": "accad_m2",
+   "take": "Male2_E1_JabLeft",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.75,
+   "to": 1.75,
+   "ground": "start",
+   "root_motion": true
+  },
+  "FIST_cross": {
+   "src": "accad_m2",
+   "take": "Male2_E4_CrossRight",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.25,
+   "to": 1.5,
+   "ground": "start",
+   "root_motion": true
+  },
+  "FIST_hook": {
+   "src": "accad_m2",
+   "take": "Male2_E5_HookLeft",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.5,
+   "to": 1.45,
+   "ground": "start",
+   "root_motion": true
+  },
+  "FIST_uppercut": {
+   "src": "accad_m2",
+   "take": "Male2_E8_UppercutRight",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.2,
+   "to": 1.1,
+   "ground": "start",
+   "root_motion": true
+  },
+  "FIST_roundhouse": {
+   "src": "accad_m2",
+   "take": "Male2_G9_RoundhouseRight",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.0,
+   "to": 1.15,
+   "ground": "start",
+   "root_motion": true
+  },
+  "FIST_front_kick": {
+   "src": "accad_m2",
+   "take": "Male2_G2_FrontKick",
+   "kind": "action",
+   "face": "strike",
+   "from": 0.3,
+   "to": 1.35,
+   "ground": "start",
+   "root_motion": true
+  }
+ }
+}

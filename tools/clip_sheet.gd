@@ -1,10 +1,9 @@
 extends SceneTree
-## Renders clips on our character at 8 moments each -> docs/clip_sheet.png (windowed run).
+## Renders library clips (assets/anims) on the VRoid base at 8 moments each -> docs/clip_sheet.png (windowed run).
 ##   Godot --path <guildbound> --script res://tools/clip_sheet.gd [-- Clip1 Clip2 ...]
-## Clip names come from the CMU folder (CMU_*) or the Quaternius libraries (anything else).
+## Clip names are the library's (data/anim_sources.json).
 
-const DEFAULT_CLIPS := ["CMU_GetUp_FaceDown2", "CMU_GetUp_A", "CMU_GetUp_Back"]
-const LIBS := ["res://assets/animations/quaternius_ual1/UAL1_Standard.glb", "res://assets/animations/quaternius_ual2/UAL2_Standard.glb"]
+const DEFAULT_CLIPS := ["Idle", "Walk", "Run", "FightStance", "Jab_L", "Roundhouse_R"]
 const STEPS := [0.0, 0.12, 0.25, 0.37, 0.5, 0.62, 0.75, 0.98]
 const CELL := Vector2i(260, 320)
 
@@ -14,18 +13,8 @@ func _initialize() -> void:
 
 
 func _find(name: String) -> Animation:
-	if name.begins_with("CMU_"):
-		return load("res://assets/animations/cmu/%s.res" % name)
-	if name.begins_with("MF_"):
-		return load("res://assets/animations/motifect/%s.res" % name)
-	for path in LIBS:
-		var src: Node = (load(path) as PackedScene).instantiate()
-		var ap: AnimationPlayer = src.find_child("AnimationPlayer", true, false)
-		if ap.has_animation(name):
-			var a: Animation = ap.get_animation(name).duplicate()
-			src.free()
-			return a
-		src.free()
+	if ResourceLoader.exists("res://assets/anims/%s.res" % name):
+		return load("res://assets/anims/%s.res" % name)
 	push_error("clip not found: " + name)
 	return null
 
@@ -51,7 +40,8 @@ func _run() -> void:
 	pm.size = Vector2(10, 10)
 	floor.mesh = pm
 	w.add_child(floor)
-	var ch: Node3D = (load("res://assets/characters/quaternius_ubc/Superhero_Male_FullBody.gltf") as PackedScene).instantiate()
+	var model: String = (JSON.parse_string(FileAccess.get_file_as_string("res://data/anim_sources.json")) as Dictionary)["_target"]
+	var ch: Node3D = (load(model) as PackedScene).instantiate()
 	w.add_child(ch)
 	var ap := AnimationPlayer.new()
 	ch.add_child(ap)

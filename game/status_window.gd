@@ -7,7 +7,7 @@ extends Control
 ##   SKILLS     every Boon on the hotbar: cost, cooldown, upkeep, each modifier, backlash
 ##   COMBAT     the moves at YOUR attack speed (startup / active / recovery), the timing rules
 ##   CONTROLS
-## Opens with Tab (or I); the world pauses while it is open.
+## Opens with P (or from the side panel's Stats tab); the world pauses while it is open.
 
 const BG := Color(0.03, 0.08, 0.17, 0.92)
 const EDGE := Color(0.35, 0.75, 1.0, 0.9)
@@ -45,7 +45,9 @@ var _header: RichTextLabel
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_preset(Control.PRESET_TOP_LEFT)  # sized by _fit()
+	get_viewport().size_changed.connect(_fit)
+	_fit.call_deferred()
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	visible = false
 	var dim := ColorRect.new()
@@ -89,7 +91,7 @@ func _ready() -> void:
 	_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_body.add_theme_constant_override("separation", 4)
 	scroll.add_child(_body)
-	var foot := _label("Tab / I / Esc: close    hover anything for details", 12, DIM)
+	var foot := _label("P / Tab / Esc: close    hover anything for details", 12, DIM)
 	v.add_child(foot)
 	_tip = PanelContainer.new()
 	_tip.add_theme_stylebox_override("panel", _box(Color(0.02, 0.05, 0.12, 0.97), GOLD, 1))
@@ -105,7 +107,7 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:  # before the GUI: Tab is also its focus-next key
-	if event.is_action_pressed("menu") or (visible and event.is_action_pressed("free_mouse")):
+	if event.is_action_pressed("character") or (visible and (event.is_action_pressed("free_mouse") or event.is_action_pressed("menu"))):
 		toggle()
 		get_viewport().set_input_as_handled()
 
@@ -122,6 +124,7 @@ func toggle() -> void:
 
 
 func open() -> void:
+	_fit()
 	visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -351,24 +354,17 @@ static func spell_tip(d: Dictionary) -> String:
 
 
 func _combat() -> void:
-	var s := player.sheet
-	var k := clampf(Combat.REF_ATTACK_SPEED / maxf(0.1, s.v("attack_speed")), 0.5, 1.5)
-	_body.add_child(_label("MOVES AT YOUR ATTACK SPEED (%.2f/s)   startup / active / recovery in ms" % s.v("attack_speed"), 15, EDGE))
-	for id in Combat.move_ids():
-		var m := Combat.move_data(id)
-		var line := "%-15s %-26s %4d / %3d / %4d ms   dmg x%.2f   impact %.1f   %d stamina" % [m.get("name", id), m.get("input", ""),
-			roundi(float(m["startup"]) * k * 1000.0), roundi(float(m["active"]) * 1000.0), roundi(float(m["recovery"]) * k * 1000.0),
-			float(m["mult"]), float(m["impact"]) * s.v("power"), int(m["stamina"])]
-		_body.add_child(_label(line, 13, TEXT))
-	for ln in [
-		"Directional strikes: move the mouse as you click (up = uppercut, down = body blow, left / right = hooks); E kicks the same way.",
-		"Frame-perfect chain: after a hit, the gold ring closes - strike again on the beat (+-50 ms) for PERFECT: faster, x1.3 damage and impact.",
-		"Three perfects in a row, then E: finisher.",
-		"Guard (RMB) takes 20% and costs stamina; tap RMB as the blow lands to PARRY (staggers them).",
-		"Dodge (Alt) has i-frames; dodging just as a blow comes in is a PERFECT DODGE: Flurry (x1.3 attack speed, the attacker slows).",
-		"Impact x your Power vs their Tenacity: flinch (< 1.2), stagger (>= 1.2), knockdown (>= 3.5, or >= 2 on a staggered target)."]:
-		_body.add_child(_label(ln, 13, DIM))
-
+	var d: Dictionary = HeroAnim.data
+	_body.add_child(_label("WEAPON STYLES (Q switches)   damage x Attack Damage, poise = stagger power", 15, EDGE))
+	for id in d["_order"]:
+		var st: Dictionary = d[id]
+		var lights: Array = st.get("light", [])
+		var parts: Array = []
+		for m in lights:
+			parts.append("x%.2f" % float((m as Dictionary).get("dmg", 1.0)) if not (m as Dictionary).has("spell") else str(m["spell"]))
+		var hv: Dictionary = st.get("heavy", {})
+		_body.add_child(_label("%-18s combo %s   heavy x%.2f   guard %d%%" % [str(st["name"]), " / ".join(parts), float(hv.get("dmg", 0.0)),
+			int(float(st.get("block", 0.0)) * 100.0)], 13, TEXT))
 
 func _controls() -> void:
 	for ln in ["WASD move   Shift sprint   Space jump (side-hop when locked on)   C crouch   Alt dodge",
@@ -439,3 +435,10 @@ func _rich(size: int) -> RichTextLabel:
 	r.add_theme_font_size_override("bold_font_size", size)
 	r.add_theme_color_override("default_color", TEXT)
 	return r
+
+
+## Cover the window (a top-level Control under a CanvasLayer can come up 0 x 0 and then lays its
+## children out from the corner, off screen).
+func _fit() -> void:
+	position = Vector2.ZERO
+	size = get_viewport_rect().size

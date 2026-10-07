@@ -1,0 +1,4005 @@
+{
+  "ADV_cover_to_stand": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 1.5,
+    "scale": 0.998,
+    "speed": 0.65,
+    "speed_v": 0.25,
+    "src": "mx_ADV",
+    "take": "cover to stand"
+  },
+  "ADV_cover_to_stand_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 1.4,
+    "scale": 0.998,
+    "speed": 0.71,
+    "speed_v": 0.02,
+    "src": "mx_ADV",
+    "take": "cover to stand (2)"
+  },
+  "ADV_crouched_sneaking_left": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.27,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.06,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "crouched sneaking left"
+  },
+  "ADV_crouched_sneaking_right": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.1,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 1.12,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "crouched sneaking right"
+  },
+  "ADV_falling_idle": {
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "falling idle"
+  },
+  "ADV_falling_to_roll": {
+    "dir": [
+      -0.01,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.8,
+    "scale": 0.998,
+    "speed": 1.69,
+    "speed_v": 0.01,
+    "src": "mx_ADV",
+    "take": "falling to roll"
+  },
+  "ADV_hard_landing": {
+    "dir": [
+      -0.1,
+      0.99
+    ],
+    "kind": "action",
+    "length": 2.0,
+    "scale": 0.998,
+    "speed": 0.08,
+    "speed_v": 0.01,
+    "src": "mx_ADV",
+    "take": "hard landing"
+  },
+  "ADV_idle": {
+    "kind": "loop",
+    "length": 4.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "idle"
+  },
+  "ADV_idle_2": {
+    "kind": "loop",
+    "length": 10.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "idle (2)"
+  },
+  "ADV_idle_3": {
+    "kind": "loop",
+    "length": 3.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "idle (3)"
+  },
+  "ADV_idle_4": {
+    "kind": "loop",
+    "length": 2.57,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "idle (4)"
+  },
+  "ADV_idle_5": {
+    "kind": "loop",
+    "length": 2.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "idle (5)"
+  },
+  "ADV_jumping_up": {
+    "dir": [
+      0.53,
+      -0.85
+    ],
+    "kind": "action",
+    "length": 0.23,
+    "scale": 0.998,
+    "speed": 0.36,
+    "speed_v": -0.14,
+    "src": "mx_ADV",
+    "take": "jumping up"
+  },
+  "ADV_left_cover_sneak": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 1.13,
+    "scale": 0.998,
+    "speed": 1.18,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "left cover sneak"
+  },
+  "ADV_left_turn": {
+    "kind": "action",
+    "length": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "left turn"
+  },
+  "ADV_right_cover_sneak": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 1.13,
+    "scale": 0.998,
+    "speed": 1.18,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "right cover sneak"
+  },
+  "ADV_right_turn": {
+    "kind": "action",
+    "length": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "right turn"
+  },
+  "ADV_run_to_stop": {
+    "dir": [
+      -0.02,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.9,
+    "scale": 0.998,
+    "speed": 0.9,
+    "speed_v": 0.03,
+    "src": "mx_ADV",
+    "take": "run to stop"
+  },
+  "ADV_running": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 4.74,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "running"
+  },
+  "ADV_stand_to_cover": {
+    "dir": [
+      -0.01,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.13,
+    "scale": 0.998,
+    "speed": 1.04,
+    "speed_v": -0.03,
+    "src": "mx_ADV",
+    "take": "stand to cover"
+  },
+  "ADV_stand_to_cover_2": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.95,
+    "speed_v": -0.3,
+    "src": "mx_ADV",
+    "take": "stand to cover (2)"
+  },
+  "ADV_walking": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.03,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 1.78,
+    "speed_v": 0.0,
+    "src": "mx_ADV",
+    "take": "walking"
+  },
+  "BOW_aim_overdraw": {
+    "kind": "action",
+    "length": 3.77,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing aim overdraw"
+  },
+  "BOW_aim_recoil": {
+    "kind": "action",
+    "length": 0.7,
+    "scale": 0.998,
+    "speed": 0.05,
+    "speed_v": -0.04,
+    "src": "mx_BOW",
+    "take": "standing aim recoil"
+  },
+  "BOW_aim_walk_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.47,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 0.94,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing aim walk back"
+  },
+  "BOW_aim_walk_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.15,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing aim walk forward"
+  },
+  "BOW_aim_walk_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.49,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing aim walk left"
+  },
+  "BOW_aim_walk_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.3,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 1.47,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing aim walk right"
+  },
+  "BOW_block": {
+    "kind": "action",
+    "length": 2.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing block"
+  },
+  "BOW_death_backward_01": {
+    "dir": [
+      0.19,
+      -0.98
+    ],
+    "kind": "action",
+    "length": 3.1,
+    "scale": 0.998,
+    "speed": 0.36,
+    "speed_v": -0.26,
+    "src": "mx_BOW",
+    "take": "standing death backward 01"
+  },
+  "BOW_death_forward_01": {
+    "dir": [
+      -0.14,
+      0.99
+    ],
+    "kind": "action",
+    "length": 3.17,
+    "scale": 0.998,
+    "speed": 0.42,
+    "speed_v": -0.26,
+    "src": "mx_BOW",
+    "take": "standing death forward 01"
+  },
+  "BOW_disarm_bow": {
+    "kind": "action",
+    "length": 1.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.07,
+    "src": "mx_BOW",
+    "take": "standing disarm bow"
+  },
+  "BOW_dive_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 2.21,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing dive forward"
+  },
+  "BOW_dodge_backward": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 1.34,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing dodge backward"
+  },
+  "BOW_dodge_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.0,
+    "scale": 0.998,
+    "speed": 2.15,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing dodge forward"
+  },
+  "BOW_dodge_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 1.93,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing dodge left"
+  },
+  "BOW_dodge_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 1.98,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing dodge right"
+  },
+  "BOW_draw_arrow": {
+    "kind": "action",
+    "length": 1.03,
+    "scale": 0.998,
+    "speed": 0.03,
+    "speed_v": 0.03,
+    "src": "mx_BOW",
+    "take": "standing draw arrow"
+  },
+  "BOW_equip_bow": {
+    "kind": "action",
+    "length": 0.9,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": -0.09,
+    "src": "mx_BOW",
+    "take": "standing equip bow"
+  },
+  "BOW_fall_a_land_to_run_forward": {
+    "dir": [
+      0.05,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 1.89,
+    "speed_v": -0.09,
+    "src": "mx_BOW",
+    "take": "fall a land to run forward"
+  },
+  "BOW_fall_a_land_to_standing_idle_01": {
+    "kind": "action",
+    "length": 0.7,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": -0.07,
+    "src": "mx_BOW",
+    "take": "fall a land to standing idle 01"
+  },
+  "BOW_fall_a_loop": {
+    "kind": "loop",
+    "length": 1.07,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "fall a loop"
+  },
+  "BOW_idle_01": {
+    "kind": "loop",
+    "length": 5.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing idle 01"
+  },
+  "BOW_idle_02_looking": {
+    "kind": "loop",
+    "length": 3.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing idle 02 looking"
+  },
+  "BOW_idle_03_examine": {
+    "kind": "loop",
+    "length": 5.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing idle 03 examine"
+  },
+  "BOW_melee_kick": {
+    "back": 0.97,
+    "hit": 0.63,
+    "kind": "action",
+    "length": 1.43,
+    "limb": "foot_r",
+    "reach": 1.77,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "start": 0.33,
+    "take": "standing melee kick"
+  },
+  "BOW_melee_punch": {
+    "back": 0.33,
+    "hit": 0.3,
+    "kind": "action",
+    "length": 1.0,
+    "limb": "hand_l",
+    "reach": 0.16,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "start": 0.23,
+    "take": "standing melee punch"
+  },
+  "BOW_react_small_from_front": {
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing react small from front"
+  },
+  "BOW_react_small_from_headshot": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing react small from headshot"
+  },
+  "BOW_run_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 2.89,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing run back"
+  },
+  "BOW_run_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.87,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 3.62,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing run forward"
+  },
+  "BOW_run_forward_stop": {
+    "dir": [
+      0.22,
+      0.98
+    ],
+    "kind": "action",
+    "length": 0.9,
+    "scale": 0.998,
+    "speed": 0.51,
+    "speed_v": 0.04,
+    "src": "mx_BOW",
+    "take": "standing run forward stop"
+  },
+  "BOW_run_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 3.21,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing run left"
+  },
+  "BOW_run_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.77,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 3.24,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing run right"
+  },
+  "BOW_turn_90_left": {
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing turn 90 left"
+  },
+  "BOW_turn_90_right": {
+    "kind": "action",
+    "length": 1.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing turn 90 right"
+  },
+  "BOW_unarmed_idle_01": {
+    "kind": "loop",
+    "length": 5.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "unarmed idle 01"
+  },
+  "BOW_walk_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.47,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 0.94,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing walk back"
+  },
+  "BOW_walk_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.15,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing walk forward"
+  },
+  "BOW_walk_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.49,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing walk left"
+  },
+  "BOW_walk_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 1.59,
+    "speed_v": 0.0,
+    "src": "mx_BOW",
+    "take": "standing walk right"
+  },
+  "DRUNK_backward_walking_turn": {
+    "dir": [
+      -0.39,
+      -0.92
+    ],
+    "kind": "action",
+    "length": 1.97,
+    "scale": 0.998,
+    "speed": 0.97,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "backward walking turn"
+  },
+  "DRUNK_drunk_idle": {
+    "kind": "loop",
+    "length": 7.4,
+    "lstrike": 1.467,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk idle"
+  },
+  "DRUNK_drunk_idle_variation": {
+    "kind": "loop",
+    "length": 3.97,
+    "lstrike": 1.167,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk idle variation"
+  },
+  "DRUNK_drunk_idle_variation_2": {
+    "kind": "loop",
+    "length": 5.4,
+    "lstrike": 1.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk idle variation (2)"
+  },
+  "DRUNK_drunk_run_backward": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.1,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 2.4,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk run backward"
+  },
+  "DRUNK_drunk_run_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.83,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 2.59,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk run forward"
+  },
+  "DRUNK_drunk_running_left_turn": {
+    "dir": [
+      0.63,
+      0.78
+    ],
+    "kind": "action",
+    "length": 1.5,
+    "scale": 0.998,
+    "speed": 2.17,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk running left turn"
+  },
+  "DRUNK_drunk_turn": {
+    "kind": "action",
+    "length": 1.57,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk turn"
+  },
+  "DRUNK_drunk_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 3.0,
+    "lstrike": 0.567,
+    "scale": 0.998,
+    "speed": 0.86,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk walk"
+  },
+  "DRUNK_drunk_walk_backwards": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.57,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 1.23,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk walk backwards"
+  },
+  "DRUNK_drunk_walking_turn": {
+    "dir": [
+      0.39,
+      0.92
+    ],
+    "kind": "action",
+    "length": 2.57,
+    "scale": 0.998,
+    "speed": 0.83,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "drunk walking turn"
+  },
+  "DRUNK_run_backward_arc_right": {
+    "dir": [
+      -0.27,
+      -0.96
+    ],
+    "kind": "loop",
+    "length": 1.23,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 2.03,
+    "speed_v": 0.0,
+    "src": "mx_DRUNK",
+    "take": "run backward arc right"
+  },
+  "FARM_box_idle": {
+    "kind": "loop",
+    "length": 6.3,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "box idle"
+  },
+  "FARM_box_turn": {
+    "dir": [
+      -0.12,
+      0.99
+    ],
+    "kind": "action",
+    "length": 1.53,
+    "scale": 0.998,
+    "speed": 0.12,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "box turn"
+  },
+  "FARM_box_turn_2": {
+    "dir": [
+      0.45,
+      0.89
+    ],
+    "kind": "action",
+    "length": 1.17,
+    "scale": 0.998,
+    "speed": 0.11,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "box turn (2)"
+  },
+  "FARM_box_walk_arc": {
+    "dir": [
+      0.18,
+      0.98
+    ],
+    "kind": "loop",
+    "length": 1.23,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.17,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "box walk arc"
+  },
+  "FARM_cow_milking": {
+    "kind": "action",
+    "length": 4.53,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "cow milking"
+  },
+  "FARM_dig_and_plant_seeds": {
+    "kind": "action",
+    "length": 5.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "dig and plant seeds"
+  },
+  "FARM_holding_idle": {
+    "kind": "loop",
+    "length": 6.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "holding idle"
+  },
+  "FARM_holding_turn_left": {
+    "dir": [
+      0.31,
+      0.95
+    ],
+    "kind": "action",
+    "length": 1.2,
+    "scale": 0.998,
+    "speed": 0.21,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "holding turn left"
+  },
+  "FARM_holding_turn_right": {
+    "dir": [
+      -0.39,
+      0.92
+    ],
+    "kind": "action",
+    "length": 1.3,
+    "scale": 0.998,
+    "speed": 0.12,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "holding turn right"
+  },
+  "FARM_holding_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.37,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.23,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "holding walk"
+  },
+  "FARM_kneeling_idle": {
+    "kind": "loop",
+    "length": 4.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "kneeling idle"
+  },
+  "FARM_pick_fruit": {
+    "kind": "action",
+    "length": 8.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "pick fruit"
+  },
+  "FARM_pick_fruit_2": {
+    "kind": "action",
+    "length": 6.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "pick fruit (2)"
+  },
+  "FARM_pick_fruit_3": {
+    "kind": "action",
+    "length": 7.1,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "pick fruit (3)"
+  },
+  "FARM_plant_a_plant": {
+    "kind": "action",
+    "length": 7.57,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "plant a plant"
+  },
+  "FARM_plant_tree": {
+    "kind": "action",
+    "length": 9.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "plant tree"
+  },
+  "FARM_pull_plant": {
+    "kind": "action",
+    "length": 4.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "pull plant"
+  },
+  "FARM_pull_plant_2": {
+    "kind": "action",
+    "length": 4.73,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "pull plant (2)"
+  },
+  "FARM_watering": {
+    "kind": "action",
+    "length": 5.6,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "watering"
+  },
+  "FARM_wheelbarrow_dump": {
+    "kind": "action",
+    "length": 6.23,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow dump"
+  },
+  "FARM_wheelbarrow_idle": {
+    "kind": "loop",
+    "length": 1.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow idle"
+  },
+  "FARM_wheelbarrow_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.97,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 1.68,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow walk"
+  },
+  "FARM_wheelbarrow_walk_2": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.97,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 1.68,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow walk (2)"
+  },
+  "FARM_wheelbarrow_walk_turn": {
+    "dir": [
+      0.02,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.07,
+    "scale": 0.998,
+    "speed": 1.62,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow walk turn"
+  },
+  "FARM_wheelbarrow_walk_turn_2": {
+    "dir": [
+      0.01,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.07,
+    "scale": 0.998,
+    "speed": 1.62,
+    "speed_v": 0.0,
+    "src": "mx_FARM",
+    "take": "wheelbarrow walk turn (2)"
+  },
+  "FEM_idle": {
+    "kind": "loop",
+    "length": 8.33,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "idle"
+  },
+  "FEM_jump": {
+    "kind": "action",
+    "length": 1.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "jump"
+  },
+  "FEM_left_strafe": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 3.61,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "left strafe"
+  },
+  "FEM_left_strafe_walk": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.93,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.94,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "left strafe walk"
+  },
+  "FEM_left_turn": {
+    "kind": "action",
+    "length": 1.17,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "left turn"
+  },
+  "FEM_right_strafe": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 3.61,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "right strafe"
+  },
+  "FEM_right_strafe_walk": {
+    "dir": [
+      -1.0,
+      -0.01
+    ],
+    "kind": "loop",
+    "length": 0.93,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 1.94,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "right strafe walk"
+  },
+  "FEM_right_turn": {
+    "kind": "action",
+    "length": 1.17,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "right turn"
+  },
+  "FEM_running": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 3.76,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "running"
+  },
+  "FEM_walking": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.97,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 1.67,
+    "speed_v": 0.0,
+    "src": "mx_FEM",
+    "take": "walking"
+  },
+  "FIST_cross": {
+    "kind": "action",
+    "length": 1.23,
+    "scale": 0.01,
+    "speed": 0.04,
+    "speed_v": 0.01,
+    "src": "accad_m2",
+    "take": "Male2_E4_CrossRight"
+  },
+  "FIST_front_kick": {
+    "dir": [
+      -0.71,
+      0.7
+    ],
+    "kind": "action",
+    "length": 1.07,
+    "scale": 0.01,
+    "speed": 0.33,
+    "speed_v": 0.01,
+    "src": "accad_m2",
+    "take": "Male2_G2_FrontKick"
+  },
+  "FIST_hook": {
+    "dir": [
+      -0.96,
+      0.27
+    ],
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.01,
+    "speed": 0.21,
+    "speed_v": -0.05,
+    "src": "accad_m2",
+    "take": "Male2_E5_HookLeft"
+  },
+  "FIST_jab": {
+    "dir": [
+      1.0,
+      -0.07
+    ],
+    "kind": "action",
+    "length": 1.0,
+    "scale": 0.01,
+    "speed": 0.1,
+    "speed_v": 0.0,
+    "src": "accad_m2",
+    "take": "Male2_E1_JabLeft"
+  },
+  "FIST_roundhouse": {
+    "dir": [
+      0.93,
+      0.36
+    ],
+    "kind": "action",
+    "length": 1.17,
+    "scale": 0.01,
+    "speed": 0.14,
+    "speed_v": 0.01,
+    "src": "accad_m2",
+    "take": "Male2_G9_RoundhouseRight"
+  },
+  "FIST_uppercut": {
+    "dir": [
+      -0.73,
+      0.68
+    ],
+    "kind": "action",
+    "length": 0.9,
+    "scale": 0.01,
+    "speed": 0.46,
+    "speed_v": 0.04,
+    "src": "accad_m2",
+    "take": "Male2_E8_UppercutRight"
+  },
+  "GS_180_turn": {
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.03,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword 180 turn"
+  },
+  "GS_180_turn_2": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.57,
+    "scale": 0.998,
+    "speed": 0.42,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword 180 turn (2)"
+  },
+  "GS_attack": {
+    "back": 0.7,
+    "hit": 0.53,
+    "kind": "action",
+    "length": 1.2,
+    "limb": "hand_l",
+    "reach": 0.29,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.43,
+    "take": "great sword attack"
+  },
+  "GS_blocking": {
+    "dir": [
+      -0.98,
+      -0.2
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.2,
+    "speed_v": -0.46,
+    "src": "mx_GS",
+    "take": "great sword blocking"
+  },
+  "GS_blocking_2": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword blocking (2)"
+  },
+  "GS_blocking_3": {
+    "dir": [
+      0.98,
+      0.2
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.2,
+    "speed_v": 0.46,
+    "src": "mx_GS",
+    "take": "great sword blocking (3)"
+  },
+  "GS_casting": {
+    "kind": "action",
+    "length": 4.8,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword casting"
+  },
+  "GS_crouching": {
+    "dir": [
+      0.49,
+      -0.87
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.133,
+    "scale": 0.998,
+    "speed": 0.61,
+    "speed_v": -0.74,
+    "src": "mx_GS",
+    "take": "great sword crouching"
+  },
+  "GS_crouching_2": {
+    "dir": [
+      -0.54,
+      0.84
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.0,
+    "scale": 0.998,
+    "speed": 0.56,
+    "speed_v": 0.7,
+    "src": "mx_GS",
+    "take": "great sword crouching (2)"
+  },
+  "GS_crouching_3": {
+    "kind": "loop",
+    "length": 1.83,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword crouching (3)"
+  },
+  "GS_crouching_4": {
+    "dir": [
+      -0.33,
+      -0.94
+    ],
+    "kind": "loop",
+    "length": 0.37,
+    "scale": 0.998,
+    "speed": 0.23,
+    "speed_v": 0.07,
+    "src": "mx_GS",
+    "take": "great sword crouching (4)"
+  },
+  "GS_crouching_5": {
+    "kind": "loop",
+    "length": 1.4,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword crouching (5)"
+  },
+  "GS_crouching_6": {
+    "dir": [
+      0.33,
+      0.94
+    ],
+    "kind": "loop",
+    "length": 0.47,
+    "scale": 0.998,
+    "speed": 0.18,
+    "speed_v": -0.05,
+    "src": "mx_GS",
+    "take": "great sword crouching (6)"
+  },
+  "GS_death": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 2.4,
+    "scale": 0.998,
+    "speed": 0.36,
+    "speed_v": -0.36,
+    "src": "mx_GS",
+    "take": "two handed sword death"
+  },
+  "GS_death_2": {
+    "dir": [
+      -0.06,
+      1.0
+    ],
+    "kind": "action",
+    "length": 2.6,
+    "scale": 0.998,
+    "speed": 0.49,
+    "speed_v": -0.3,
+    "src": "mx_GS",
+    "take": "two handed sword death (2)"
+  },
+  "GS_draw_a_great_sword_1": {
+    "dir": [
+      0.92,
+      -0.38
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.22,
+    "speed_v": -0.01,
+    "src": "mx_GS",
+    "take": "draw a great sword 1"
+  },
+  "GS_draw_a_great_sword_2": {
+    "dir": [
+      -0.91,
+      0.43
+    ],
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.16,
+    "speed_v": -0.04,
+    "src": "mx_GS",
+    "take": "draw a great sword 2"
+  },
+  "GS_high_spin_attack": {
+    "back": 0.3,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.1,
+    "kind": "action",
+    "length": 1.87,
+    "limb": "hand_l",
+    "reach": 0.18,
+    "scale": 0.998,
+    "speed": 1.27,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.0,
+    "take": "great sword high spin attack"
+  },
+  "GS_idle": {
+    "kind": "loop",
+    "length": 2.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword idle"
+  },
+  "GS_idle_2": {
+    "kind": "loop",
+    "length": 3.7,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword idle (2)"
+  },
+  "GS_idle_3": {
+    "kind": "loop",
+    "length": 3.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword idle (3)"
+  },
+  "GS_idle_4": {
+    "kind": "loop",
+    "length": 3.77,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword idle (4)"
+  },
+  "GS_idle_5": {
+    "kind": "loop",
+    "length": 7.57,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword idle (5)"
+  },
+  "GS_impact": {
+    "kind": "action",
+    "length": 0.87,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword impact"
+  },
+  "GS_impact_2": {
+    "kind": "action",
+    "length": 1.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword impact (2)"
+  },
+  "GS_impact_3": {
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword impact (3)"
+  },
+  "GS_impact_4": {
+    "kind": "action",
+    "length": 0.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword impact (4)"
+  },
+  "GS_impact_5": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword impact (5)"
+  },
+  "GS_jump": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.63,
+    "scale": 0.998,
+    "speed": 2.74,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword jump"
+  },
+  "GS_jump_2": {
+    "kind": "action",
+    "length": 0.9,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword jump (2)"
+  },
+  "GS_jump_attack": {
+    "back": 1.17,
+    "dir": [
+      -0.02,
+      1.0
+    ],
+    "hit": 1.1,
+    "kind": "action",
+    "length": 2.17,
+    "limb": "hand_r",
+    "reach": 0.13,
+    "scale": 0.998,
+    "speed": 1.5,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 1.03,
+    "take": "great sword jump attack"
+  },
+  "GS_kick": {
+    "back": 0.87,
+    "hit": 0.63,
+    "kind": "action",
+    "length": 1.5,
+    "limb": "foot_r",
+    "reach": 1.61,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.47,
+    "take": "great sword kick"
+  },
+  "GS_kick_2": {
+    "back": 1.07,
+    "hit": 0.8,
+    "kind": "action",
+    "length": 1.73,
+    "limb": "foot_l",
+    "reach": 1.22,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.57,
+    "take": "great sword kick (2)"
+  },
+  "GS_power_up": {
+    "kind": "action",
+    "length": 3.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword power up"
+  },
+  "GS_run": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 0.73,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 2.63,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword run"
+  },
+  "GS_run_2": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.6,
+    "lstrike": 0.167,
+    "scale": 0.998,
+    "speed": 4.36,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword run (2)"
+  },
+  "GS_slash": {
+    "back": 0.67,
+    "hit": 0.57,
+    "kind": "action",
+    "length": 1.27,
+    "limb": "hand_l",
+    "reach": 0.37,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.5,
+    "take": "great sword slash"
+  },
+  "GS_slash_2": {
+    "back": 1.83,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 1.77,
+    "kind": "action",
+    "length": 3.53,
+    "limb": "hand_r",
+    "reach": 0.22,
+    "scale": 0.998,
+    "speed": 0.89,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 1.67,
+    "take": "great sword slash (2)"
+  },
+  "GS_slash_3": {
+    "back": 1.0,
+    "hit": 0.93,
+    "kind": "action",
+    "length": 1.83,
+    "limb": "hand_r",
+    "reach": 0.15,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.83,
+    "take": "great sword slash (3)"
+  },
+  "GS_slash_4": {
+    "back": 1.47,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 1.37,
+    "kind": "action",
+    "length": 1.8,
+    "limb": "hand_l",
+    "reach": 0.23,
+    "scale": 0.998,
+    "speed": 0.64,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 1.23,
+    "take": "great sword slash (4)"
+  },
+  "GS_slash_5": {
+    "back": 1.37,
+    "hit": 0.97,
+    "kind": "action",
+    "length": 1.43,
+    "limb": "hand_l",
+    "reach": 0.31,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 0.77,
+    "take": "great sword slash (5)"
+  },
+  "GS_slide_attack": {
+    "back": 1.27,
+    "dir": [
+      -0.02,
+      1.0
+    ],
+    "hit": 1.2,
+    "kind": "action",
+    "length": 2.13,
+    "limb": "hand_l",
+    "reach": 0.14,
+    "scale": 0.998,
+    "speed": 1.66,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "start": 1.1,
+    "take": "great sword slide attack"
+  },
+  "GS_spell_cast": {
+    "kind": "action",
+    "length": 1.13,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "spell cast"
+  },
+  "GS_strafe": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.1,
+    "lstrike": 1.1,
+    "scale": 0.998,
+    "speed": 1.17,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword strafe"
+  },
+  "GS_strafe_2": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.17,
+    "lstrike": 0.667,
+    "scale": 0.998,
+    "speed": 1.27,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword strafe (2)"
+  },
+  "GS_strafe_3": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.57,
+    "lstrike": 0.467,
+    "scale": 0.998,
+    "speed": 2.39,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword strafe (3)"
+  },
+  "GS_strafe_4": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.63,
+    "lstrike": 0.567,
+    "scale": 0.998,
+    "speed": 3.15,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword strafe (4)"
+  },
+  "GS_turn": {
+    "dir": [
+      0.02,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.73,
+    "scale": 0.998,
+    "speed": 0.24,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword turn"
+  },
+  "GS_turn_2": {
+    "dir": [
+      -0.75,
+      0.67
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 0.18,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword turn (2)"
+  },
+  "GS_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.37,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.11,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword walk"
+  },
+  "GS_walk_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.3,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.02,
+    "speed_v": 0.0,
+    "src": "mx_GS",
+    "take": "great sword walk (2)"
+  },
+  "LOCO_idle": {
+    "kind": "loop",
+    "length": 8.33,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "idle"
+  },
+  "LOCO_jump": {
+    "kind": "action",
+    "length": 2.17,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "jump"
+  },
+  "LOCO_left_strafe": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 4.51,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "left strafe"
+  },
+  "LOCO_left_strafe_walking": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.03,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 1.73,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "left strafe walking"
+  },
+  "LOCO_left_turn": {
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "left turn"
+  },
+  "LOCO_left_turn_90": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "left turn 90"
+  },
+  "LOCO_right_strafe": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 4.51,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "right strafe"
+  },
+  "LOCO_right_strafe_walking": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.03,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 1.73,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "right strafe walking"
+  },
+  "LOCO_right_turn": {
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "right turn"
+  },
+  "LOCO_right_turn_90": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "right turn 90"
+  },
+  "LOCO_running": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 4.37,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "running"
+  },
+  "LOCO_walking": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.03,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 1.66,
+    "speed_v": 0.0,
+    "src": "mx_LOCO",
+    "take": "walking"
+  },
+  "MAG_1h_cast_spell_01": {
+    "kind": "action",
+    "length": 2.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "standing 1H cast spell 01"
+  },
+  "MAG_1h_magic_attack_01": {
+    "back": 1.7,
+    "hit": 1.17,
+    "kind": "action",
+    "length": 2.3,
+    "limb": "hand_r",
+    "reach": 1.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.73,
+    "take": "Standing 1H Magic Attack 01"
+  },
+  "MAG_1h_magic_attack_02": {
+    "back": 0.97,
+    "hit": 0.67,
+    "kind": "action",
+    "length": 2.2,
+    "limb": "hand_r",
+    "reach": 0.86,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.47,
+    "take": "Standing 1H Magic Attack 02"
+  },
+  "MAG_1h_magic_attack_03": {
+    "back": 1.8,
+    "hit": 0.9,
+    "kind": "action",
+    "length": 2.3,
+    "limb": "hand_r",
+    "reach": 0.89,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.63,
+    "take": "Standing 1H Magic Attack 03"
+  },
+  "MAG_2h_cast_spell_01": {
+    "kind": "action",
+    "length": 2.17,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing 2H Cast Spell 01"
+  },
+  "MAG_2h_magic_area_attack_01": {
+    "back": 2.9,
+    "hit": 2.6,
+    "kind": "action",
+    "length": 2.97,
+    "limb": "hand_l",
+    "reach": 0.06,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 2.43,
+    "take": "Standing 2H Magic Area Attack 01"
+  },
+  "MAG_2h_magic_area_attack_02": {
+    "back": 0.2,
+    "hit": 0.17,
+    "kind": "action",
+    "length": 3.27,
+    "limb": "hand_l",
+    "reach": 0.02,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.07,
+    "take": "Standing 2H Magic Area Attack 02"
+  },
+  "MAG_2h_magic_attack_01": {
+    "back": 2.0,
+    "hit": 1.53,
+    "kind": "action",
+    "length": 2.7,
+    "limb": "hand_r",
+    "reach": 1.05,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 1.1,
+    "take": "Standing 2H Magic Attack 01"
+  },
+  "MAG_2h_magic_attack_02": {
+    "back": 2.27,
+    "hit": 1.67,
+    "kind": "action",
+    "length": 2.63,
+    "limb": "hand_l",
+    "reach": 0.41,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 1.23,
+    "take": "Standing 2H Magic Attack 02"
+  },
+  "MAG_2h_magic_attack_03": {
+    "back": 3.6,
+    "hit": 3.17,
+    "kind": "action",
+    "length": 4.3,
+    "limb": "hand_r",
+    "reach": 1.13,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.93,
+    "take": "Standing 2H Magic Attack 03"
+  },
+  "MAG_2h_magic_attack_04": {
+    "back": 2.97,
+    "hit": 1.33,
+    "kind": "action",
+    "length": 3.33,
+    "limb": "hand_r",
+    "reach": 1.06,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.8,
+    "take": "Standing 2H Magic Attack 04"
+  },
+  "MAG_2h_magic_attack_05": {
+    "back": 1.57,
+    "hit": 0.87,
+    "kind": "action",
+    "length": 3.53,
+    "limb": "hand_r",
+    "reach": 0.8,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "start": 0.6,
+    "take": "Standing 2H Magic Attack 05"
+  },
+  "MAG_block_end": {
+    "dir": [
+      0.86,
+      0.51
+    ],
+    "kind": "action",
+    "length": 1.3,
+    "scale": 0.998,
+    "speed": 0.09,
+    "speed_v": 0.05,
+    "src": "mx_MAG",
+    "take": "Standing Block End"
+  },
+  "MAG_block_idle": {
+    "kind": "loop",
+    "length": 2.77,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Block Idle"
+  },
+  "MAG_block_react_large": {
+    "kind": "action",
+    "length": 1.33,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Block React Large"
+  },
+  "MAG_block_start": {
+    "dir": [
+      -0.88,
+      -0.48
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.24,
+    "speed_v": -0.14,
+    "src": "mx_MAG",
+    "take": "Standing Block Start"
+  },
+  "MAG_crouch_idle": {
+    "kind": "loop",
+    "length": 1.37,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Idle"
+  },
+  "MAG_crouch_to_standing_idle": {
+    "kind": "action",
+    "length": 1.0,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.37,
+    "src": "mx_MAG",
+    "take": "Crouch To Standing Idle"
+  },
+  "MAG_crouch_turn_left_90": {
+    "kind": "action",
+    "length": 1.83,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Turn Left 90"
+  },
+  "MAG_crouch_turn_right_90": {
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Turn Right 90"
+  },
+  "MAG_crouch_walk_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.23,
+    "lstrike": 0.567,
+    "scale": 0.998,
+    "speed": 1.28,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Walk Back"
+  },
+  "MAG_crouch_walk_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.13,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.77,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Walk Forward"
+  },
+  "MAG_crouch_walk_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.17,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 1.42,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Walk Left"
+  },
+  "MAG_crouch_walk_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.27,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 1.22,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Crouch Walk Right"
+  },
+  "MAG_idle": {
+    "kind": "loop",
+    "length": 1.87,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "standing idle"
+  },
+  "MAG_idle_02": {
+    "kind": "loop",
+    "length": 5.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "standing idle 02"
+  },
+  "MAG_idle_03": {
+    "kind": "loop",
+    "length": 11.4,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Idle 03"
+  },
+  "MAG_idle_04": {
+    "kind": "loop",
+    "length": 7.47,
+    "lstrike": 4.7,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Idle 04"
+  },
+  "MAG_idle_to_crouch": {
+    "kind": "action",
+    "length": 1.0,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": -0.37,
+    "src": "mx_MAG",
+    "take": "Standing Idle To Crouch"
+  },
+  "MAG_jump": {
+    "kind": "action",
+    "length": 2.37,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Jump"
+  },
+  "MAG_jump_running": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.07,
+    "scale": 0.998,
+    "speed": 3.87,
+    "speed_v": 0.49,
+    "src": "mx_MAG",
+    "take": "Standing Jump Running"
+  },
+  "MAG_jump_running_landing": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.37,
+    "scale": 0.998,
+    "speed": 3.47,
+    "speed_v": -0.38,
+    "src": "mx_MAG",
+    "take": "Standing Jump Running Landing"
+  },
+  "MAG_land_to_standing_idle": {
+    "dir": [
+      -0.01,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.1,
+    "scale": 0.998,
+    "speed": 1.21,
+    "speed_v": -0.46,
+    "src": "mx_MAG",
+    "take": "Standing Land To Standing Idle"
+  },
+  "MAG_react_death_backward": {
+    "dir": [
+      -0.14,
+      -0.99
+    ],
+    "kind": "action",
+    "length": 3.63,
+    "scale": 0.998,
+    "speed": 0.25,
+    "speed_v": -0.22,
+    "src": "mx_MAG",
+    "take": "Standing React Death Backward"
+  },
+  "MAG_react_death_forward": {
+    "dir": [
+      -0.05,
+      1.0
+    ],
+    "kind": "action",
+    "length": 3.67,
+    "scale": 0.998,
+    "speed": 0.37,
+    "speed_v": -0.22,
+    "src": "mx_MAG",
+    "take": "Standing React Death Forward"
+  },
+  "MAG_react_death_left": {
+    "dir": [
+      0.99,
+      -0.13
+    ],
+    "kind": "action",
+    "length": 3.6,
+    "scale": 0.998,
+    "speed": 0.27,
+    "speed_v": -0.22,
+    "src": "mx_MAG",
+    "take": "Standing React Death Left"
+  },
+  "MAG_react_death_right": {
+    "dir": [
+      -0.98,
+      0.17
+    ],
+    "kind": "action",
+    "length": 3.5,
+    "scale": 0.998,
+    "speed": 0.4,
+    "speed_v": -0.23,
+    "src": "mx_MAG",
+    "take": "Standing React Death Right"
+  },
+  "MAG_react_large_from_back": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 1.67,
+    "scale": 0.998,
+    "speed": 0.97,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Large From Back"
+  },
+  "MAG_react_large_from_front": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 1.37,
+    "scale": 0.998,
+    "speed": 0.82,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Large From Front"
+  },
+  "MAG_react_large_from_left": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 1.57,
+    "scale": 0.998,
+    "speed": 0.8,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Large From Left"
+  },
+  "MAG_react_large_from_right": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 0.69,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Large From Right"
+  },
+  "MAG_react_small_from_back": {
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Small From Back"
+  },
+  "MAG_react_small_from_front": {
+    "kind": "action",
+    "length": 1.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Small From Front"
+  },
+  "MAG_react_small_from_left": {
+    "kind": "action",
+    "length": 1.2,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Small From Left"
+  },
+  "MAG_react_small_from_right": {
+    "kind": "action",
+    "length": 1.0,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing React Small From Right"
+  },
+  "MAG_run_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 0.63,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 3.25,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Run Back"
+  },
+  "MAG_run_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.73,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 3.92,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Run Forward"
+  },
+  "MAG_run_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.77,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 3.5,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Run Left"
+  },
+  "MAG_run_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.77,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 3.94,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Run Right"
+  },
+  "MAG_sprint_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.57,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 5.63,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Sprint Forward"
+  },
+  "MAG_turn_left_90": {
+    "kind": "action",
+    "length": 1.87,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Turn Left 90"
+  },
+  "MAG_turn_right_90": {
+    "kind": "action",
+    "length": 1.63,
+    "scale": 0.998,
+    "speed": 0.01,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Turn Right 90"
+  },
+  "MAG_walk_back": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.433,
+    "scale": 0.998,
+    "speed": 1.21,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Walk Back"
+  },
+  "MAG_walk_forward": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.13,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.66,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Walk Forward"
+  },
+  "MAG_walk_left": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.17,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.33,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Walk Left"
+  },
+  "MAG_walk_right": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.2,
+    "lstrike": 0.333,
+    "scale": 0.998,
+    "speed": 1.37,
+    "speed_v": 0.0,
+    "src": "mx_MAG",
+    "take": "Standing Walk Right"
+  },
+  "SS_180_turn": {
+    "dir": [
+      -0.4,
+      0.92
+    ],
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.35,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield 180 turn"
+  },
+  "SS_180_turn_2": {
+    "dir": [
+      -0.15,
+      0.99
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 0.6,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield 180 turn (2)"
+  },
+  "SS_attack": {
+    "back": 1.3,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 1.1,
+    "kind": "action",
+    "length": 2.33,
+    "limb": "hand_l",
+    "reach": 0.56,
+    "scale": 0.998,
+    "speed": 1.55,
+    "speed_v": -0.02,
+    "src": "mx_SS",
+    "start": 0.93,
+    "take": "sword and shield attack"
+  },
+  "SS_attack_2": {
+    "back": 0.63,
+    "dir": [
+      0.38,
+      0.93
+    ],
+    "hit": 0.57,
+    "kind": "action",
+    "length": 1.3,
+    "limb": "hand_r",
+    "reach": 0.25,
+    "scale": 0.998,
+    "speed": 2.23,
+    "speed_v": -0.03,
+    "src": "mx_SS",
+    "start": 0.5,
+    "take": "sword and shield attack (2)"
+  },
+  "SS_attack_3": {
+    "back": 0.87,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.8,
+    "kind": "action",
+    "length": 1.73,
+    "limb": "hand_r",
+    "reach": 0.31,
+    "scale": 0.998,
+    "speed": 1.39,
+    "speed_v": -0.03,
+    "src": "mx_SS",
+    "start": 0.73,
+    "take": "sword and shield attack (3)"
+  },
+  "SS_attack_4": {
+    "back": 0.7,
+    "hit": 0.5,
+    "kind": "action",
+    "length": 1.0,
+    "limb": "hand_r",
+    "reach": 0.96,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.37,
+    "take": "sword and shield attack (4)"
+  },
+  "SS_b_180_turn": {
+    "dir": [
+      -0.4,
+      0.92
+    ],
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.35,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield 180 turn"
+  },
+  "SS_b_180_turn_2": {
+    "dir": [
+      -0.15,
+      0.99
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 0.6,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield 180 turn (2)"
+  },
+  "SS_b_attack": {
+    "back": 1.3,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 1.1,
+    "kind": "action",
+    "length": 2.33,
+    "limb": "hand_l",
+    "reach": 0.56,
+    "scale": 0.998,
+    "speed": 1.55,
+    "speed_v": -0.02,
+    "src": "mx_SS2",
+    "start": 0.93,
+    "take": "sword and shield attack"
+  },
+  "SS_b_attack_2": {
+    "back": 0.63,
+    "dir": [
+      0.38,
+      0.93
+    ],
+    "hit": 0.57,
+    "kind": "action",
+    "length": 1.3,
+    "limb": "hand_r",
+    "reach": 0.25,
+    "scale": 0.998,
+    "speed": 2.23,
+    "speed_v": -0.03,
+    "src": "mx_SS2",
+    "start": 0.5,
+    "take": "sword and shield attack (2)"
+  },
+  "SS_b_attack_3": {
+    "back": 0.87,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.8,
+    "kind": "action",
+    "length": 1.73,
+    "limb": "hand_r",
+    "reach": 0.31,
+    "scale": 0.998,
+    "speed": 1.39,
+    "speed_v": -0.03,
+    "src": "mx_SS2",
+    "start": 0.73,
+    "take": "sword and shield attack (3)"
+  },
+  "SS_b_attack_4": {
+    "back": 0.7,
+    "hit": 0.5,
+    "kind": "action",
+    "length": 1.0,
+    "limb": "hand_r",
+    "reach": 0.96,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.37,
+    "take": "sword and shield attack (4)"
+  },
+  "SS_b_block": {
+    "dir": [
+      -0.12,
+      0.99
+    ],
+    "kind": "action",
+    "length": 0.57,
+    "scale": 0.998,
+    "speed": 0.47,
+    "speed_v": -0.22,
+    "src": "mx_SS2",
+    "take": "sword and shield block"
+  },
+  "SS_b_block_2": {
+    "dir": [
+      -0.01,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 0.67,
+    "scale": 0.998,
+    "speed": 0.38,
+    "speed_v": 0.18,
+    "src": "mx_SS2",
+    "take": "sword and shield block (2)"
+  },
+  "SS_b_block_idle": {
+    "kind": "loop",
+    "length": 1.4,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield block idle"
+  },
+  "SS_b_casting": {
+    "kind": "action",
+    "length": 2.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield casting"
+  },
+  "SS_b_casting_2": {
+    "kind": "action",
+    "length": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield casting (2)"
+  },
+  "SS_b_crouch": {
+    "dir": [
+      -0.12,
+      -0.99
+    ],
+    "kind": "action",
+    "length": 0.57,
+    "scale": 0.998,
+    "speed": 0.48,
+    "speed_v": -0.76,
+    "src": "mx_SS2",
+    "take": "sword and shield crouch"
+  },
+  "SS_b_crouch_block": {
+    "dir": [
+      0.35,
+      0.94
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.66,
+    "speed_v": 0.13,
+    "src": "mx_SS2",
+    "take": "sword and shield crouch block"
+  },
+  "SS_b_crouch_block_2": {
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield crouch block (2)"
+  },
+  "SS_b_crouch_block_idle": {
+    "kind": "loop",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield crouch block idle"
+  },
+  "SS_b_crouch_idle": {
+    "kind": "loop",
+    "length": 2.43,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield crouch idle"
+  },
+  "SS_b_crouching": {
+    "dir": [
+      0.13,
+      0.99
+    ],
+    "kind": "loop",
+    "length": 0.5,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 0.56,
+    "speed_v": 0.86,
+    "src": "mx_SS2",
+    "take": "sword and shield crouching"
+  },
+  "SS_b_crouching_2": {
+    "dir": [
+      -0.35,
+      -0.94
+    ],
+    "kind": "loop",
+    "length": 0.6,
+    "scale": 0.998,
+    "speed": 0.55,
+    "speed_v": -0.11,
+    "src": "mx_SS2",
+    "take": "sword and shield crouching (2)"
+  },
+  "SS_b_crouching_3": {
+    "kind": "loop",
+    "length": 0.63,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield crouching (3)"
+  },
+  "SS_b_death": {
+    "dir": [
+      0.03,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 2.3,
+    "scale": 0.998,
+    "speed": 0.55,
+    "speed_v": -0.32,
+    "src": "mx_SS2",
+    "take": "sword and shield death"
+  },
+  "SS_b_death_2": {
+    "dir": [
+      -0.24,
+      0.97
+    ],
+    "kind": "action",
+    "length": 3.9,
+    "scale": 0.998,
+    "speed": 0.27,
+    "speed_v": -0.18,
+    "src": "mx_SS2",
+    "take": "sword and shield death (2)"
+  },
+  "SS_b_idle": {
+    "kind": "loop",
+    "length": 3.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield idle"
+  },
+  "SS_b_idle_2": {
+    "kind": "loop",
+    "length": 7.53,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield idle (2)"
+  },
+  "SS_b_idle_3": {
+    "kind": "loop",
+    "length": 8.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield idle (3)"
+  },
+  "SS_b_idle_4": {
+    "kind": "loop",
+    "length": 2.53,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield idle (4)"
+  },
+  "SS_b_impact": {
+    "kind": "action",
+    "length": 0.77,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield impact"
+  },
+  "SS_b_impact_2": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield impact (2)"
+  },
+  "SS_b_impact_3": {
+    "kind": "action",
+    "length": 0.7,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield impact (3)"
+  },
+  "SS_b_jump": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 3.14,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield jump"
+  },
+  "SS_b_jump_2": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield jump (2)"
+  },
+  "SS_b_kick": {
+    "back": 0.83,
+    "hit": 0.53,
+    "kind": "action",
+    "length": 1.2,
+    "limb": "foot_r",
+    "reach": 1.83,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.33,
+    "take": "sword and shield kick"
+  },
+  "SS_b_power_up": {
+    "kind": "action",
+    "length": 2.37,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield power up"
+  },
+  "SS_b_run": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 4.14,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield run"
+  },
+  "SS_b_run_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 0.53,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 4.38,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield run (2)"
+  },
+  "SS_b_sheath_sword_1": {
+    "dir": [
+      0.37,
+      -0.93
+    ],
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.06,
+    "speed_v": 0.11,
+    "src": "mx_SS2",
+    "take": "sheath sword 1"
+  },
+  "SS_b_sheath_sword_2": {
+    "dir": [
+      -0.28,
+      0.96
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 0.1,
+    "speed_v": 0.02,
+    "src": "mx_SS2",
+    "take": "sheath sword 2"
+  },
+  "SS_b_slash": {
+    "back": 1.33,
+    "hit": 0.6,
+    "kind": "action",
+    "length": 1.5,
+    "limb": "hand_r",
+    "reach": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.5,
+    "take": "sword and shield slash"
+  },
+  "SS_b_slash_2": {
+    "back": 0.97,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.7,
+    "kind": "action",
+    "length": 3.53,
+    "limb": "hand_r",
+    "reach": 1.03,
+    "scale": 0.998,
+    "speed": 0.69,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.53,
+    "take": "sword and shield slash (2)"
+  },
+  "SS_b_slash_3": {
+    "back": 1.0,
+    "hit": 0.8,
+    "kind": "action",
+    "length": 1.67,
+    "limb": "hand_r",
+    "reach": 0.87,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.1,
+    "take": "sword and shield slash (3)"
+  },
+  "SS_b_slash_4": {
+    "back": 0.67,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.6,
+    "kind": "action",
+    "length": 2.43,
+    "limb": "hand_l",
+    "reach": 0.13,
+    "scale": 0.998,
+    "speed": 0.43,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.53,
+    "take": "sword and shield slash (4)"
+  },
+  "SS_b_slash_5": {
+    "back": 0.37,
+    "hit": 0.23,
+    "kind": "action",
+    "length": 1.37,
+    "limb": "hand_l",
+    "reach": 0.19,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "start": 0.07,
+    "take": "sword and shield slash (5)"
+  },
+  "SS_b_strafe": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.13,
+    "lstrike": 0.533,
+    "scale": 0.998,
+    "speed": 1.23,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield strafe"
+  },
+  "SS_b_strafe_2": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.3,
+    "lstrike": 0.1,
+    "scale": 0.998,
+    "speed": 1.09,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield strafe (2)"
+  },
+  "SS_b_strafe_3": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 3.47,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield strafe (3)"
+  },
+  "SS_b_strafe_4": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 3.39,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield strafe (4)"
+  },
+  "SS_b_turn": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield turn"
+  },
+  "SS_b_turn_2": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield turn (2)"
+  },
+  "SS_b_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.1,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 1.5,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield walk"
+  },
+  "SS_b_walk_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.27,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 1.13,
+    "speed_v": 0.0,
+    "src": "mx_SS2",
+    "take": "sword and shield walk (2)"
+  },
+  "SS_block": {
+    "dir": [
+      -0.12,
+      0.99
+    ],
+    "kind": "action",
+    "length": 0.57,
+    "scale": 0.998,
+    "speed": 0.47,
+    "speed_v": -0.22,
+    "src": "mx_SS",
+    "take": "sword and shield block"
+  },
+  "SS_block_2": {
+    "dir": [
+      -0.01,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 0.67,
+    "scale": 0.998,
+    "speed": 0.38,
+    "speed_v": 0.18,
+    "src": "mx_SS",
+    "take": "sword and shield block (2)"
+  },
+  "SS_block_idle": {
+    "kind": "loop",
+    "length": 1.4,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield block idle"
+  },
+  "SS_casting": {
+    "kind": "action",
+    "length": 2.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield casting"
+  },
+  "SS_casting_2": {
+    "kind": "action",
+    "length": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield casting (2)"
+  },
+  "SS_crouch": {
+    "dir": [
+      -0.12,
+      -0.99
+    ],
+    "kind": "action",
+    "length": 0.57,
+    "scale": 0.998,
+    "speed": 0.48,
+    "speed_v": -0.76,
+    "src": "mx_SS",
+    "take": "sword and shield crouch"
+  },
+  "SS_crouch_block": {
+    "dir": [
+      0.35,
+      0.94
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.66,
+    "speed_v": 0.13,
+    "src": "mx_SS",
+    "take": "sword and shield crouch block"
+  },
+  "SS_crouch_block_2": {
+    "kind": "action",
+    "length": 0.8,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield crouch block (2)"
+  },
+  "SS_crouch_block_idle": {
+    "kind": "loop",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield crouch block idle"
+  },
+  "SS_crouch_idle": {
+    "kind": "loop",
+    "length": 2.43,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield crouch idle"
+  },
+  "SS_crouching": {
+    "dir": [
+      0.13,
+      0.99
+    ],
+    "kind": "loop",
+    "length": 0.5,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 0.56,
+    "speed_v": 0.86,
+    "src": "mx_SS",
+    "take": "sword and shield crouching"
+  },
+  "SS_crouching_2": {
+    "dir": [
+      -0.35,
+      -0.94
+    ],
+    "kind": "loop",
+    "length": 0.6,
+    "scale": 0.998,
+    "speed": 0.55,
+    "speed_v": -0.11,
+    "src": "mx_SS",
+    "take": "sword and shield crouching (2)"
+  },
+  "SS_crouching_3": {
+    "kind": "loop",
+    "length": 0.63,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield crouching (3)"
+  },
+  "SS_death": {
+    "dir": [
+      0.03,
+      -1.0
+    ],
+    "kind": "action",
+    "length": 2.3,
+    "scale": 0.998,
+    "speed": 0.55,
+    "speed_v": -0.32,
+    "src": "mx_SS",
+    "take": "sword and shield death"
+  },
+  "SS_death_2": {
+    "dir": [
+      -0.24,
+      0.97
+    ],
+    "kind": "action",
+    "length": 3.9,
+    "scale": 0.998,
+    "speed": 0.27,
+    "speed_v": -0.18,
+    "src": "mx_SS",
+    "take": "sword and shield death (2)"
+  },
+  "SS_draw_sword_1": {
+    "dir": [
+      0.28,
+      -0.96
+    ],
+    "kind": "action",
+    "length": 0.5,
+    "scale": 0.998,
+    "speed": 0.16,
+    "speed_v": -0.03,
+    "src": "mx_SS",
+    "take": "draw sword 1"
+  },
+  "SS_draw_sword_2": {
+    "dir": [
+      -0.62,
+      0.79
+    ],
+    "kind": "action",
+    "length": 0.77,
+    "scale": 0.998,
+    "speed": 0.11,
+    "speed_v": -0.19,
+    "src": "mx_SS",
+    "take": "draw sword 2"
+  },
+  "SS_idle": {
+    "kind": "loop",
+    "length": 3.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield idle"
+  },
+  "SS_idle_2": {
+    "kind": "loop",
+    "length": 7.53,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield idle (2)"
+  },
+  "SS_idle_3": {
+    "kind": "loop",
+    "length": 8.67,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield idle (3)"
+  },
+  "SS_idle_4": {
+    "kind": "loop",
+    "length": 2.53,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield idle (4)"
+  },
+  "SS_impact": {
+    "kind": "action",
+    "length": 0.77,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield impact"
+  },
+  "SS_impact_2": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield impact (2)"
+  },
+  "SS_impact_3": {
+    "kind": "action",
+    "length": 0.7,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield impact (3)"
+  },
+  "SS_jump": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 3.14,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield jump"
+  },
+  "SS_jump_2": {
+    "kind": "action",
+    "length": 0.97,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield jump (2)"
+  },
+  "SS_kick": {
+    "back": 0.83,
+    "hit": 0.53,
+    "kind": "action",
+    "length": 1.2,
+    "limb": "foot_r",
+    "reach": 1.83,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.33,
+    "take": "sword and shield kick"
+  },
+  "SS_power_up": {
+    "kind": "action",
+    "length": 2.37,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield power up"
+  },
+  "SS_run": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.2,
+    "scale": 0.998,
+    "speed": 4.14,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield run"
+  },
+  "SS_run_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 0.53,
+    "lstrike": 0.267,
+    "scale": 0.998,
+    "speed": 4.38,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield run (2)"
+  },
+  "SS_sheath_sword_1": {
+    "dir": [
+      0.37,
+      -0.93
+    ],
+    "kind": "action",
+    "length": 1.27,
+    "scale": 0.998,
+    "speed": 0.06,
+    "speed_v": 0.11,
+    "src": "mx_SS",
+    "take": "sheath sword 1"
+  },
+  "SS_sheath_sword_2": {
+    "dir": [
+      -0.28,
+      0.96
+    ],
+    "kind": "action",
+    "length": 0.83,
+    "scale": 0.998,
+    "speed": 0.1,
+    "speed_v": 0.02,
+    "src": "mx_SS",
+    "take": "sheath sword 2"
+  },
+  "SS_slash": {
+    "back": 1.33,
+    "hit": 0.6,
+    "kind": "action",
+    "length": 1.5,
+    "limb": "hand_r",
+    "reach": 1.03,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.5,
+    "take": "sword and shield slash"
+  },
+  "SS_slash_2": {
+    "back": 0.97,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.7,
+    "kind": "action",
+    "length": 3.53,
+    "limb": "hand_r",
+    "reach": 1.03,
+    "scale": 0.998,
+    "speed": 0.69,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.53,
+    "take": "sword and shield slash (2)"
+  },
+  "SS_slash_3": {
+    "back": 1.0,
+    "hit": 0.8,
+    "kind": "action",
+    "length": 1.67,
+    "limb": "hand_r",
+    "reach": 0.87,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.1,
+    "take": "sword and shield slash (3)"
+  },
+  "SS_slash_4": {
+    "back": 0.67,
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "hit": 0.6,
+    "kind": "action",
+    "length": 2.43,
+    "limb": "hand_l",
+    "reach": 0.13,
+    "scale": 0.998,
+    "speed": 0.43,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.53,
+    "take": "sword and shield slash (4)"
+  },
+  "SS_slash_5": {
+    "back": 0.37,
+    "hit": 0.23,
+    "kind": "action",
+    "length": 1.37,
+    "limb": "hand_l",
+    "reach": 0.19,
+    "scale": 0.998,
+    "speed": 0.0,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "start": 0.07,
+    "take": "sword and shield slash (5)"
+  },
+  "SS_strafe": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.13,
+    "lstrike": 0.533,
+    "scale": 0.998,
+    "speed": 1.23,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield strafe"
+  },
+  "SS_strafe_2": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 1.3,
+    "lstrike": 0.1,
+    "scale": 0.998,
+    "speed": 1.09,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield strafe (2)"
+  },
+  "SS_strafe_3": {
+    "dir": [
+      1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.67,
+    "lstrike": 0.367,
+    "scale": 0.998,
+    "speed": 3.47,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield strafe (3)"
+  },
+  "SS_strafe_4": {
+    "dir": [
+      -1.0,
+      0.0
+    ],
+    "kind": "loop",
+    "length": 0.7,
+    "lstrike": 0.233,
+    "scale": 0.998,
+    "speed": 3.39,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield strafe (4)"
+  },
+  "SS_turn": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield turn"
+  },
+  "SS_turn_2": {
+    "kind": "action",
+    "length": 0.93,
+    "scale": 0.998,
+    "speed": 0.02,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield turn (2)"
+  },
+  "SS_walk": {
+    "dir": [
+      0.0,
+      1.0
+    ],
+    "kind": "loop",
+    "length": 1.1,
+    "lstrike": 0.3,
+    "scale": 0.998,
+    "speed": 1.5,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield walk"
+  },
+  "SS_walk_2": {
+    "dir": [
+      0.0,
+      -1.0
+    ],
+    "kind": "loop",
+    "length": 1.27,
+    "lstrike": 0.4,
+    "scale": 0.998,
+    "speed": 1.13,
+    "speed_v": 0.0,
+    "src": "mx_SS",
+    "take": "sword and shield walk (2)"
+  }
+}

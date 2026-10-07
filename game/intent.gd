@@ -28,7 +28,11 @@ var just_lock_next := false
 var just_lock_prev := false
 var just_ragdoll := false
 var just_crouch := false
+var just_switch := false     # next weapon style (Q)
+var just_special := false    # the weapon's special attack (E with nothing to pick up)
 var just_cast := [false, false, false, false]  # cast_1..4
+
+static var menu_focus := false  # a menu (the side panel) has the mouse: its buttons click it, not the fists
 
 
 ## The local player: everything from the named input actions, movement relative to the camera.
@@ -60,8 +64,18 @@ static func from_input(cam: CameraRig) -> Intent:
 		cam.wheel_steps = 0
 	i.just_ragdoll = Input.is_action_just_pressed("ragdoll")
 	i.just_crouch = Input.is_action_just_pressed("crouch")
+	i.just_switch = Input.is_action_just_pressed("weapon_next")
 	for k in 4:
 		i.just_cast[k] = Input.is_action_just_pressed("cast_%d" % (k + 1))
+	if menu_focus:
+		# a menu is open: the mouse buttons click the menu, they do not punch
+		i.attack = false
+		i.just_attack = false
+		i.just_attack_released = false
+		i.guard = false
+		i.just_guard = false
+		i.just_lock = false
+		i.flick = Vector2.ZERO
 	return i
 
 
@@ -83,4 +97,6 @@ func clear_once() -> void:
 	just_lock_prev = false
 	just_ragdoll = false
 	just_crouch = false
+	just_switch = false
+	just_special = false
 	just_cast = [false, false, false, false]

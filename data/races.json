@@ -1,0 +1,86 @@
+{
+  "human": {
+	"name": "Human",
+	"base": {"str": 13, "agi": 13, "int": 13},
+	"growth": {"str": 1.0, "agi": 1.0, "int": 1.0},
+	"affinity": [],
+	"xp_bonus": 0.10,
+	"untrained_penalty_cut": 0.25,
+	"passive": {
+	  "name": "Adaptable",
+	  "text": "+10% XP in all jobs; untrained-job penalty reduced by 25%; any magic family is cheaper to learn.",
+	  "mods": []
+	}
+  },
+  "ironkin": {
+	"name": "Ironkin",
+	"base": {"str": 16, "agi": 11, "int": 10},
+	"growth": {"str": 1.4, "agi": 0.7, "int": 0.6},
+	"affinity": ["ward", "might"],
+	"passive": {
+	  "name": "Stoneblood",
+	  "text": "+4 Armor, +10% Tenacity. Forging bonus.",
+	  "mods": [
+		{"stat": "armor", "op": "flat", "value": 4},
+		{"stat": "tenacity", "op": "flat", "value": 0.10}
+	  ]
+	}
+  },
+  "sylph": {
+	"name": "Sylph",
+	"base": {"str": 10, "agi": 12, "int": 16},
+	"growth": {"str": 0.6, "agi": 0.8, "int": 1.4},
+	"affinity": ["insight", "light"],
+	"passive": {
+	  "name": "Wellspring",
+	  "text": "+25% Mana Regen, +10% Max Mana. Reads magic residue at scenes.",
+	  "mods": [
+		{"stat": "mana_regen", "op": "add_pct", "value": 0.25},
+		{"stat": "max_mana", "op": "add_pct", "value": 0.10}
+	  ]
+	}
+  },
+  "beastkin": {
+	"name": "Beastkin",
+	"base": {"str": 12, "agi": 16, "int": 10},
+	"growth": {"str": 0.8, "agi": 1.0, "int": 0.6},
+	"affinity": ["swiftness"],
+	"passive": {
+	  "name": "Wild Instinct",
+	  "text": "+10% Move Speed, +10% Attack Speed, +15% Climb Speed. Scent tracking.",
+	  "mods": [
+		{"stat": "move_speed", "op": "add_pct", "value": 0.10},
+		{"stat": "attack_speed", "op": "add_pct", "value": 0.10},
+		{"stat": "climb_speed", "op": "add_pct", "value": 0.15}
+	  ]
+	}
+  },
+  "drakari": {
+	"name": "Drakari",
+	"base": {"str": 15, "agi": 12, "int": 11},
+	"growth": {"str": 1.3, "agi": 0.8, "int": 0.7},
+	"affinity": ["might", "fire", "dark"],
+	"active": "awaken",
+	"passive": {
+	  "name": "Dragonblood",
+	  "text": "+8 Magic Resist. Heat/poison resistant. Once per rest: Awaken (10s of x1.25 Attack Damage, +20% Armor).",
+	  "mods": [
+		{"stat": "magic_resist", "op": "flat", "value": 8}
+	  ]
+	}
+  },
+  "wisp": {
+	"name": "Wisp",
+	"base": {"str": 8, "agi": 13, "int": 15},
+	"growth": {"str": 0.5, "agi": 0.9, "int": 1.3},
+	"affinity": ["veil", "spirit"],
+	"passive": {
+	  "name": "Spirit-touched",
+	  "text": "+20 Magic Resist, -15% Max HP. Slips through narrow gaps, hears echoes.",
+	  "mods": [
+		{"stat": "magic_resist", "op": "flat", "value": 20},
+		{"stat": "max_hp", "op": "add_pct", "value": -0.15}
+	  ]
+	}
+  }
+}

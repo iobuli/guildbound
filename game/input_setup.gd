@@ -23,6 +23,8 @@ const KEYS := {
 	"ragdoll": [KEY_G],
 	"free_mouse": [KEY_ESCAPE],
 	"menu": [KEY_TAB, KEY_I],
+	"character": [KEY_P],
+	"weapon_next": [KEY_Q],
 }
 
 

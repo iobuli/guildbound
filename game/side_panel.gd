@@ -42,7 +42,9 @@ var _sig_t := 0.0
 
 
 func _ready() -> void:
-	set_anchors_preset(Control.PRESET_FULL_RECT)
+	set_anchors_preset(Control.PRESET_TOP_LEFT)  # sized by _fit()
+	get_viewport().size_changed.connect(_fit)
+	_fit.call_deferred()
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST  # crisp pixel-art icons
 	visible = false
@@ -54,7 +56,7 @@ func _ready() -> void:
 	_frame.anchor_top = 1.0
 	_frame.anchor_bottom = 1.0
 	var w := 262.0 * _k
-	var h := 430.0 * _k
+	var h := 460.0 * _k
 	_frame.offset_left = -w - 12.0
 	_frame.offset_right = -12.0
 	_frame.offset_top = -h - 12.0
@@ -80,16 +82,22 @@ func _ready() -> void:
 		b.add_theme_stylebox_override("pressed", _box(Color(0.42, 0.18, 0.12), ORANGE, 2, 4))
 		b.add_theme_stylebox_override("hover_pressed", _box(Color(0.48, 0.22, 0.14), ORANGE, 2, 4))
 		b.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		b.pressed.connect(func() -> void: show_tab(i))
+		b.pressed.connect(func() -> void:
+			Sfx.ui(self, "page")
+			show_tab(i))
 		tabs.add_child(b)
 		_tab_btns.append(b)
 	_title = _label("", 15, ORANGE)
 	_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(_title)
+	var scroll := ScrollContainer.new()
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	v.add_child(scroll)
 	_content = VBoxContainer.new()
-	_content.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_content.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_content.add_theme_constant_override("separation", int(4 * _k))
-	v.add_child(_content)
+	scroll.add_child(_content)
 	_tip = PanelContainer.new()
 	_tip.add_theme_stylebox_override("panel", _box(Color(0.08, 0.07, 0.05, 0.96), STONE_EDGE, 1, 3))
 	_tip.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -137,13 +145,20 @@ func toggle() -> void:
 
 
 func open(which: int = -1) -> void:
+	_fit()
+	if not visible:
+		Sfx.ui(self, "open")
 	visible = true
+	Intent.menu_focus = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	show_tab(tab if which < 0 else which)
 
 
 func close() -> void:
+	if visible:
+		Sfx.ui(self, "close")
 	visible = false
+	Intent.menu_focus = false
 	_tip.visible = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -176,8 +191,7 @@ func _signature() -> String:
 		for sid in s.cooldowns:
 			parts.append(int(maxf(0.0, float(s.cooldowns[sid]) - s.clock)))
 	if tab == 0:
-		parts.append(player.combat.string_i)
-		parts.append(player.combat.kick_string)
+		parts.append(player.combat.stance_id)
 	return str(parts)
 
 
@@ -337,21 +351,33 @@ func _stats() -> void:
 
 func _combat() -> void:
 	var c := player.combat
+	var st: Dictionary = c.stance
 	var s := player.sheet
 	var head := _rich(13)
-	var w := s._weapon()
-	head.text = "[color=#ffd95a]%s[/color]   attack speed %.2f/s   power %.2f" % ["Unarmed" if w.is_empty() else str(w.get("name", "Weapon")),
+	head.text = "[color=#ffd95a]%s[/color]
+attack %d   speed %.2f/s   power %.2f" % [str(st.get("name", "")), int(s.v("attack_damage")),
 		s.v("attack_speed"), s.v("power")]
 	_content.add_child(head)
-	var nxt_p: Array = Combat.STRINGS[(c.string_i + 1) % Combat.STRINGS.size()] if c.combo_i == 0 else Combat.STRINGS[c.string_i]
-	var nxt_k: Array = Combat.KICK_STRINGS[(c.kick_string + 1) % Combat.KICK_STRINGS.size()] if c.kick_i == 0 else Combat.KICK_STRINGS[c.kick_string]
-	_box_text("Punch string  (LMB, LMB...)", " > ".join(nxt_p.map(func(id: String) -> String: return str(Combat.move_data(id)["name"]))) +
-		"\n[color=#9a8a6a]each new string is a different one; in close, an elbow[/color]")
-	_box_text("Kick string  (E, E...)", " > ".join(nxt_k.map(func(id: String) -> String: return str(Combat.move_data(id)["name"]))) +
-		"\n[color=#9a8a6a]sprint at them + E: flying kick[/color]")
-	_box_text("Mouse flick + press", "up: uppercut (alternating) / knee\ndown: body shot / leg sweep\nleft, right: hooks / roundhouses\nhold LMB: charged straight")
-	_box_text("Defence  (RMB)", "hold: block (chip damage, costs stamina)\ntap as it lands: PARRY (they stagger)\nAlt: slip / sway, on time = Flurry")
-	_box_text("Rhythm", "strike again as the gold ring closes: PERFECT\n3 PERFECT in a row, then E: finisher")
+	var lights: Array = st.get("light", [])
+	var combo := ""
+	for k in lights.size():
+		var m: Dictionary = lights[k]
+		combo += "%d. x%.2f%s
+" % [k + 1, float(m.get("dmg", 1.0)), "  (" + str(m["spell"]) + ")" if m.has("spell") else ""]
+	_box_text("Combo  (LMB, LMB...)", combo.strip_edges())
+	var hv: Dictionary = st.get("heavy", {})
+	var sp: Dictionary = st.get("special", {})
+	_box_text("Heavy (hold LMB) / Special (E)", "heavy x%.2f, breaks poise %d
+special x%.2f%s" % [float(hv.get("dmg", 0.0)), int(hv.get("poise", 0)),
+		float(sp.get("dmg", 0.0)), "  - breaks guards" if bool(sp.get("guard_break", false)) else ""])
+	if c.ranged():
+		_box_text("Aim  (hold RMB)", "LMB fires / casts at the crosshair
+(or straight at a locked target)")
+	else:
+		_box_text("Guard  (hold RMB)", "blocks %d%% from the front
+tap it as a blow lands: PARRY" % int(float(st.get("block", 0.6)) * 100.0))
+	_box_text("Moving", "Alt: roll / dodge step (invulnerable)
+Q: next weapon style")
 
 
 func _magic() -> void:
@@ -388,6 +414,7 @@ func _magic() -> void:
 # ---- actions ---------------------------------------------------------------------------------
 
 func _use(id: String) -> void:
+	Sfx.ui(self, "consume" if CharModel.is_consumable(id) else "equip")
 	status.use_item(id)
 	_hide_tip()
 	show_tab(tab)
@@ -397,6 +424,7 @@ func _take_off(slot: String) -> void:
 	var s := player.sheet
 	var id: String = s.equipment.get(slot, "")
 	if id != "" and s.unequip(slot):
+		Sfx.ui(self, "equip")
 		player.toast.emit("Took off " + s.item_data(id).get("name", id))
 	_hide_tip()
 	show_tab(tab)
@@ -426,6 +454,7 @@ func _on_menu(i: int) -> void:
 				player.get_parent().add_child(pk)
 				pk.global_position = player.global_position + player.facing * 0.9
 				player.toast.emit("Dropped " + str(player.sheet.item_data(id).get("name", id)))
+				Sfx.ui(self, "drop")
 				show_tab(tab)
 		2:
 			var d := player.sheet.item_data(id)
@@ -487,7 +516,7 @@ func _slot(icon: Texture2D, count: String, framed: bool) -> Button:
 	b.add_theme_stylebox_override("disabled", _box(bg, edge, 1, 3))
 	b.mouse_exited.connect(_hide_tip)
 	if count != "":
-		var l := _label(count, int(12 * _k), YELLOW)
+		var l := _label(count, int(12 * _k), YELLOW, false)
 		l.position = Vector2(2, 0)
 		l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		b.add_child(l)
@@ -515,7 +544,7 @@ func _text_button(t: String) -> Button:
 	return b
 
 
-func _label(t: String, size: int, col: Color) -> Label:
+func _label(t: String, size: int, col: Color, wrap := true) -> Label:
 	var l := Label.new()
 	l.text = t
 	l.add_theme_font_size_override("font_size", size)
@@ -523,7 +552,8 @@ func _label(t: String, size: int, col: Color) -> Label:
 	l.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.9))
 	l.add_theme_constant_override("shadow_offset_x", 1)
 	l.add_theme_constant_override("shadow_offset_y", 1)
-	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if wrap:
+		l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return l
 
 
@@ -556,3 +586,10 @@ static func _rs_count(n: int) -> String:
 	if n >= 100000:
 		return "%dK" % (n / 1000)
 	return str(n)
+
+
+## Cover the window (a top-level Control under a CanvasLayer can come up 0 x 0 and then lays its
+## children out from the corner, off screen).
+func _fit() -> void:
+	position = Vector2.ZERO
+	size = get_viewport_rect().size

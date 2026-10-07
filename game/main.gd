@@ -5,6 +5,7 @@ var arena: Arena
 var player: Player
 var hud: Hud
 var status: StatusWindow
+var panel: SidePanel
 var dummy: Player
 var spar: Player
 const DUMMY_POS := Vector3(24.0, 0.1, 25.0)
@@ -39,37 +40,29 @@ func _ready() -> void:
 	player.toast.connect(hud.add_toast)
 	status = StatusWindow.new()
 	status.player = player
+	panel = SidePanel.new()
+	panel.player = player
+	panel.status = status
+	layer.add_child(panel)
 	layer.add_child(status)
 	player.sheet.add_item("hearty_stew")
 	player.sheet.add_item("swift_tonic")
 	player.sheet.gold = 120
 
 	# sparring ring: a training dummy and a sparring partner (same bodies and code as the player)
-	dummy = spawn_fighter(CharModel.new("Training Dummy", "human", 10), DUMMY_POS, FighterAI.new("dummy"))
-	spar = spawn_fighter(CharModel.new("Sparring Partner", "human", 8), SPAR_POS, FighterAI.new("spar"))
+	dummy = spawn_fighter(CharModel.new("Training Dummy", "human", 10), DUMMY_POS, FighterAI.new("dummy"), "Superhero_Female_FullBody", "unarmed", "Hair_Long")
+	spar = spawn_fighter(CharModel.new("Sparring Partner", "human", 8), SPAR_POS, FighterAI.new("spar"), "Superhero_Male_FullBody", "greatsword", "Hair_Buzzed")
 	(spar.get_node("ai") as FighterAI).home = SPAR_POS
 	dummy.facing = Vector3(0.0, 0.0, -1.0)
-	hud.add_toast("Test arena: climb the cliff, jump the pit, swim the pond, lift the crates")
+	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
-	if "--preview" in OS.get_cmdline_user_args():
-		_preview()
+	if "--uishots" in OS.get_cmdline_user_args():
+		_ui_shots()
 		return
-	if "--combatshots" in OS.get_cmdline_user_args():
-		var cs := AnimShots.new()
-		add_child(cs)
-		cs.run_combat(self)
-		return
-	if "--getupshots" in OS.get_cmdline_user_args():
-		var gs := AnimShots.new()
-		add_child(gs)
-		gs.run_getup(self)
-		return
-	if "--animshots" in OS.get_cmdline_user_args():
-		var shots := AnimShots.new()
-		add_child(shots)
-		shots.run_shots(self)
+	if "--shots" in OS.get_cmdline_user_args():
+		_shots()
 		return
 	if "--selftest" in OS.get_cmdline_user_args():
 		var st := SelfTest.new()
@@ -79,9 +72,13 @@ func _ready() -> void:
 
 ## Another fighter in the arena: same physical body, its own stats, no camera. `brain` (optional) is
 ## added as the `ai` child that supplies its intent each physics frame via think(player, delta).
-func spawn_fighter(sheet: CharModel, pos: Vector3, brain: Node = null) -> Player:
+func spawn_fighter(sheet: CharModel, pos: Vector3, brain: Node = null, body: String = "Superhero_Male_FullBody",
+		stance: String = "sword_shield", hair: String = "Hair_SimpleParted") -> Player:
 	var f := Player.new()
 	f.is_ai = true
+	f.body_id = body
+	f.hair_id = hair
+	f.stance_id = stance
 	if brain != null:
 		brain.name = "ai"
 		f.add_child(brain)
@@ -113,7 +110,7 @@ func _build_environment() -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("free_mouse"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
-	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE:
+	elif event is InputEventMouseButton and event.pressed and Input.mouse_mode == Input.MOUSE_MODE_VISIBLE 			and not panel.visible and not status.visible:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	elif event.is_action_pressed("toggle_debug"):
 		hud.show_debug = not hud.show_debug
@@ -133,20 +130,102 @@ func _unhandled_input(event: InputEvent) -> void:
 		player.teleport(player.respawn_pos)
 
 
-## Close-up screenshots of the character for checking the model: --preview [--female]
-func _preview() -> void:
-	var args := OS.get_cmdline_user_args()
-	for i in 20:
+## Screenshots of the HUD (mid-fight, a buff up, hurt) and every side-panel tab: docs/ui_*.png
+func _ui_shots() -> void:
+	for id in ["iron_helm", "chain_vest", "brawler_wraps", "sprinter_greaves", "ring_ogre", "swift_tonic", "keen_eye_tea"]:
+		player.sheet.add_item(id)
+	player.sheet.equip_from_bag("iron_helm")
+	player.teleport(SPAR_POS + Vector3(0.0, 0.0, 3.0))
+	for i in 30:
 		await get_tree().physics_frame
-	player.cam.zoom = 3.2
-	player.cam.pitch = -0.08
-	player.cam.height = 1.25
-	var shots := {"front": PI + 0.4, "back": -0.4, "side": PI * 0.5}
-	for name in shots:
-		player.cam.yaw = shots[name]
+	player.cast_spell("bright_valor")
+	player.sheet.hp *= 0.7
+	player.lock.target = spar
+	for i in 90:
+		await get_tree().physics_frame
+	spar.sheet.hp *= 0.6
+	for i in 20:
+		await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_png("res://docs/ui_hud.png")
+	for k in SidePanel.TABS.size():
+		panel.open(k)
 		for i in 6:
 			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		print("panel visible %s frame %s children %d" % [panel.visible, str(panel._frame.get_global_rect()), panel._content.get_child_count()])
+		get_viewport().get_texture().get_image().save_png("res://docs/ui_panel_%s.png" % SidePanel.TABS[k])
+	print("ui shots saved")
+	get_tree().quit()
+
+
+## Gameplay screenshots into one sheet (docs/shots.png): stance, run, a swing on the dummy, great sword,
+## bow aim, staff cast. One image to check the whole look.
+func _shots() -> void:
+	var cells: Array[Image] = []
+	var grab := func() -> void:
+		for k in 3:
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
 		var img := get_viewport().get_texture().get_image()
-		img.save_png(ProjectSettings.globalize_path("res://docs/character_%s.png" % name))
-	print("preview saved")
+		img.resize(640, 360)
+		cells.append(img)
+	(spar.get_node("ai") as FighterAI).mode = "dummy"
+	player.teleport(DUMMY_POS + Vector3(0.0, 0.0, 2.2))
+	for k in 40:
+		await get_tree().physics_frame
+	player.cam.yaw = 0.0
+	await grab.call()
+	var ai := FighterAI.new("puppet")
+	ai.name = "ai"
+	player.add_child(ai)
+	ai.puppet.move = Vector2(0, 1)
+	ai.puppet.view_yaw = PI
+	for k in 50:
+		await get_tree().physics_frame
+	await grab.call()
+	ai.puppet.move = Vector2.ZERO
+	player.teleport(DUMMY_POS + Vector3(0.0, 0.0, 1.4))
+	player.facing = Vector3(0, 0, -1)
+	for k in 20:
+		await get_tree().physics_frame
+	player.lock.target = dummy
+	for style in ["sword_shield", "greatsword"]:
+		player.combat.set_stance(style)
+		for k in 10:
+			await get_tree().physics_frame
+		ai.puppet.just_attack = true
+		await get_tree().physics_frame
+		ai.puppet.just_attack = false
+		for k in 60:
+			await get_tree().physics_frame
+			if player.combat.window.x >= 0.0 and player.combat.t >= player.combat.window.x + 0.05:
+				break
+		await grab.call()
+		for k in 60:
+			await get_tree().physics_frame
+	player.lock.target = null
+	player.combat.set_stance("bow")
+	ai.puppet.guard = true
+	for k in 40:
+		await get_tree().physics_frame
+	await grab.call()
+	ai.puppet.guard = false
+	player.combat.set_stance("magic")
+	player.lock.target = dummy
+	for k in 10:
+		await get_tree().physics_frame
+	ai.puppet.just_attack = true
+	await get_tree().physics_frame
+	ai.puppet.just_attack = false
+	for k in 30:
+		await get_tree().physics_frame
+	await grab.call()
+	var sheet := Image.create(1920, 720, false, Image.FORMAT_RGBA8)
+	for k in cells.size():
+		var c: Image = cells[k]
+		c.convert(Image.FORMAT_RGBA8)
+		sheet.blit_rect(c, Rect2i(0, 0, 640, 360), Vector2i((k % 3) * 640, (k / 3) * 360))
+	sheet.save_png(ProjectSettings.globalize_path("res://docs/shots.png"))
+	print("shots saved: ", cells.size())
 	get_tree().quit()

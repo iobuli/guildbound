@@ -1,0 +1,459 @@
+{
+  "_note": "Weapon styles. Clips are Mixamo animations retargeted onto the base body (assets/anims, data/anim_sources.json). loco: the clip prefix whose idle / walk / run / strafe / back loops are picked by their measured travel direction. light: the combo (each press chains into the next inside the window); heavy: hold the attack button; special: the second attack (E). Each move: clip, speed (playback), dmg (x Attack Damage), poise (stagger damage), stamina, reach (m: the distance between the two bodies' centres the blow is thrown from - you step in to it while winding up). The swing's active window is measured from the clip (fastest blade-hand motion). Player hits are tuned as a power fantasy: light hits never interrupt your attacks; only heavy hits stagger you.",
+  "_dodge": {
+    "roll": "BOW_dive_forward",
+    "f": "BOW_dodge_forward",
+    "b": "BOW_dodge_backward",
+    "l": "BOW_dodge_left",
+    "r": "BOW_dodge_right"
+  },
+  "_hits": {
+    "small_f": "MAG_react_small_from_front",
+    "small_b": "MAG_react_small_from_back",
+    "small_l": "MAG_react_small_from_left",
+    "small_r": "MAG_react_small_from_right",
+    "large_f": "MAG_react_large_from_front",
+    "large_b": "MAG_react_large_from_back",
+    "large_l": "MAG_react_large_from_left",
+    "large_r": "MAG_react_large_from_right"
+  },
+  "_deaths": [
+    "MAG_react_death_backward",
+    "MAG_react_death_forward",
+    "MAG_react_death_left",
+    "MAG_react_death_right"
+  ],
+  "_air": {
+    "jump": "ADV_jumping_up",
+    "fall": "ADV_falling_idle",
+    "land": "BOW_fall_a_land_to_standing_idle_01",
+    "land_run": "BOW_fall_a_land_to_run_forward",
+    "hard_land": "ADV_hard_landing"
+  },
+  "_crouch": "MAG_crouch_",
+  "_sprint": "MAG_sprint_forward",
+  "sword_shield": {
+    "name": "Sword and Shield",
+    "loco": "SS_",
+    "weapon": "sword_1handed",
+    "offhand": "shield_round",
+    "hand": "r",
+    "guard": "SS_block_idle",
+    "guard_hit": "SS_block",
+    "draw": "SS_draw_sword_1",
+    "art": "SS_power_up",
+    "cast": "SS_casting_2",
+    "block": 0.85,
+    "poise": 60,
+    "light": [
+      {
+        "clip": "SS_slash",
+        "speed": 1.25,
+        "dmg": 1.0,
+        "poise": 18,
+        "stamina": 8,
+        "reach": 1.0
+      },
+      {
+        "clip": "SS_slash_3",
+        "speed": 1.25,
+        "dmg": 1.05,
+        "poise": 18,
+        "stamina": 8,
+        "reach": 1.0
+      },
+      {
+        "clip": "SS_slash_5",
+        "speed": 1.2,
+        "dmg": 1.15,
+        "poise": 22,
+        "stamina": 10,
+        "reach": 1.0
+      },
+      {
+        "clip": "SS_attack_3",
+        "speed": 1.15,
+        "dmg": 1.5,
+        "poise": 40,
+        "stamina": 12,
+        "reach": 1.0
+      }
+    ],
+    "heavy": {
+      "clip": "SS_attack_2",
+      "speed": 1.2,
+      "dmg": 2.2,
+      "poise": 60,
+      "stamina": 20,
+      "reach": 1.1
+    },
+    "special": {
+      "clip": "SS_kick",
+      "speed": 1.15,
+      "dmg": 0.6,
+      "poise": 70,
+      "stamina": 12,
+      "reach": 0.95,
+      "limb": "foot_r",
+      "guard_break": true
+    },
+    "special_leap": {
+      "clip": "SS_attack",
+      "speed": 1.15,
+      "dmg": 2.6,
+      "poise": 80,
+      "stamina": 24,
+      "reach": 1.6
+    }
+  },
+  "greatsword": {
+    "name": "Great Sword",
+    "loco": "GS_",
+    "weapon": "sword_2handed",
+    "hand": "r",
+    "guard": "GS_blocking",
+    "guard_hit": "GS_blocking_2",
+    "draw": "GS_draw_a_great_sword_1",
+    "art": "GS_power_up",
+    "cast": "GS_spell_cast",
+    "block": 0.7,
+    "poise": 80,
+    "light": [
+      {
+        "clip": "GS_slash",
+        "speed": 1.15,
+        "dmg": 1.4,
+        "poise": 30,
+        "stamina": 12,
+        "reach": 1.2
+      },
+      {
+        "clip": "GS_slash_4",
+        "speed": 1.15,
+        "dmg": 1.5,
+        "poise": 32,
+        "stamina": 12,
+        "reach": 1.2
+      },
+      {
+        "clip": "GS_attack",
+        "speed": 1.1,
+        "dmg": 1.9,
+        "poise": 45,
+        "stamina": 15,
+        "reach": 1.2
+      }
+    ],
+    "heavy": {
+      "clip": "GS_high_spin_attack",
+      "speed": 1.15,
+      "dmg": 2.8,
+      "poise": 80,
+      "stamina": 26,
+      "reach": 1.3,
+      "spin": true
+    },
+    "special": {
+      "clip": "GS_jump_attack",
+      "speed": 1.15,
+      "dmg": 3.0,
+      "poise": 90,
+      "stamina": 28,
+      "reach": 1.35
+    },
+    "sprint_attack": {
+      "clip": "GS_slide_attack",
+      "speed": 1.2,
+      "dmg": 2.0,
+      "poise": 50,
+      "stamina": 18,
+      "reach": 1.3
+    }
+  },
+  "dagger": {
+    "name": "Daggers",
+    "loco": "LOCO_",
+    "weapon": "dagger",
+    "hand": "r",
+    "guard": "SS_block_idle",
+    "guard_hit": "SS_block",
+    "draw": "SS_draw_sword_2",
+    "art": "SS_power_up",
+    "cast": "SS_casting_2",
+    "block": 0.5,
+    "poise": 40,
+    "light": [
+      {
+        "clip": "SS_slash_4",
+        "speed": 1.6,
+        "dmg": 0.7,
+        "poise": 8,
+        "stamina": 5,
+        "reach": 0.85
+      },
+      {
+        "clip": "SS_slash",
+        "speed": 1.7,
+        "dmg": 0.7,
+        "poise": 8,
+        "stamina": 5,
+        "reach": 0.85
+      },
+      {
+        "clip": "SS_slash_3",
+        "speed": 1.7,
+        "dmg": 0.8,
+        "poise": 10,
+        "stamina": 5,
+        "reach": 0.85
+      },
+      {
+        "clip": "SS_attack_2",
+        "speed": 1.6,
+        "dmg": 1.1,
+        "poise": 16,
+        "stamina": 7,
+        "reach": 0.85
+      }
+    ],
+    "heavy": {
+      "clip": "SS_attack_4",
+      "speed": 1.4,
+      "dmg": 1.8,
+      "poise": 30,
+      "stamina": 14,
+      "reach": 0.9,
+      "crit_bonus": 0.3
+    },
+    "special": {
+      "clip": "BOW_melee_kick",
+      "speed": 1.2,
+      "dmg": 0.6,
+      "poise": 50,
+      "stamina": 10,
+      "reach": 0.95,
+      "limb": "foot_r"
+    }
+  },
+  "bow": {
+    "name": "Longbow",
+    "loco": "BOW_",
+    "aim_loco": "BOW_aim_walk_",
+    "weapon": "bow",
+    "hand": "l",
+    "aim": "BOW_aim_overdraw",
+    "fire": "BOW_aim_recoil",
+    "nock": "BOW_draw_arrow",
+    "draw": "BOW_equip_bow",
+    "guard": "BOW_block",
+    "guard_hit": "BOW_react_small_from_front",
+    "art": "SS_power_up",
+    "cast": "MAG_1h_cast_spell_01",
+    "block": 0.4,
+    "poise": 40,
+    "arrow": {
+      "speed": 42.0,
+      "gravity": 6.0,
+      "dmg": 1.6,
+      "poise": 25,
+      "full_draw": 0.6
+    },
+    "light": [
+      {
+        "clip": "BOW_melee_punch",
+        "speed": 1.3,
+        "dmg": 0.5,
+        "poise": 15,
+        "stamina": 6,
+        "reach": 0.8,
+        "limb": "hand_l"
+      }
+    ],
+    "heavy": {
+      "clip": "BOW_melee_kick",
+      "speed": 1.2,
+      "dmg": 0.7,
+      "poise": 45,
+      "stamina": 10,
+      "reach": 0.95,
+      "limb": "foot_r"
+    },
+    "special": {
+      "clip": "BOW_melee_kick",
+      "speed": 1.2,
+      "dmg": 0.7,
+      "poise": 45,
+      "stamina": 10,
+      "reach": 0.95,
+      "limb": "foot_r"
+    }
+  },
+  "magic": {
+    "name": "Staff (magic)",
+    "loco": "MAG_",
+    "weapon": "staff",
+    "hand": "r",
+    "guard": "MAG_block_idle",
+    "guard_hit": "MAG_block_react_large",
+    "draw": "MAG_2h_cast_spell_01",
+    "art": "MAG_2h_cast_spell_01",
+    "cast": "MAG_1h_cast_spell_01",
+    "block": 0.6,
+    "poise": 35,
+    "light": [
+      {
+        "clip": "MAG_1h_magic_attack_01",
+        "speed": 1.5,
+        "spell": "bolt",
+        "mana": 6,
+        "stamina": 3
+      },
+      {
+        "clip": "MAG_1h_magic_attack_02",
+        "speed": 1.5,
+        "spell": "bolt",
+        "mana": 6,
+        "stamina": 3
+      },
+      {
+        "clip": "MAG_1h_magic_attack_03",
+        "speed": 1.6,
+        "spell": "bolt",
+        "mana": 6,
+        "stamina": 3
+      }
+    ],
+    "heavy": {
+      "clip": "MAG_2h_magic_attack_01",
+      "speed": 1.3,
+      "spell": "orb",
+      "mana": 18,
+      "stamina": 6
+    },
+    "special": {
+      "clip": "MAG_2h_magic_area_attack_01",
+      "speed": 1.3,
+      "spell": "nova",
+      "mana": 25,
+      "stamina": 8
+    }
+  },
+  "unarmed": {
+    "name": "Fists",
+    "loco": "SS_",
+    "hand": "r",
+    "guard": "MAG_block_idle",
+    "guard_hit": "MAG_block_react_large",
+    "draw": "",
+    "art": "SS_power_up",
+    "cast": "MAG_1h_cast_spell_01",
+    "block": 0.5,
+    "poise": 40,
+    "light": [
+      {
+        "clip": "FIST_jab",
+        "speed": 1.3,
+        "dmg": 0.6,
+        "poise": 12,
+        "stamina": 5,
+        "reach": 0.85,
+        "limb": "hand_l"
+      },
+      {
+        "clip": "FIST_cross",
+        "speed": 1.3,
+        "dmg": 0.75,
+        "poise": 15,
+        "stamina": 6,
+        "reach": 0.85,
+        "limb": "hand_r"
+      },
+      {
+        "clip": "FIST_hook",
+        "speed": 1.3,
+        "dmg": 0.9,
+        "poise": 22,
+        "stamina": 7,
+        "reach": 0.8,
+        "limb": "hand_l"
+      },
+      {
+        "clip": "FIST_uppercut",
+        "speed": 1.3,
+        "dmg": 1.1,
+        "poise": 30,
+        "stamina": 8,
+        "reach": 0.8,
+        "limb": "hand_r"
+      }
+    ],
+    "heavy": {
+      "clip": "FIST_roundhouse",
+      "speed": 1.2,
+      "dmg": 1.4,
+      "poise": 45,
+      "stamina": 12,
+      "reach": 1.0,
+      "limb": "foot_r"
+    },
+    "special": {
+      "clip": "FIST_front_kick",
+      "speed": 1.2,
+      "dmg": 1.0,
+      "poise": 50,
+      "stamina": 10,
+      "reach": 1.0,
+      "limb": "foot_r",
+      "guard_break": true
+    }
+  },
+  "_order": [
+    "sword_shield",
+    "greatsword",
+    "dagger",
+    "bow",
+    "magic",
+    "unarmed"
+  ],
+  "_spells": {
+    "bolt": {
+      "name": "Arcane Bolt",
+      "speed": 30.0,
+      "dmg": 1.0,
+      "poise": 12,
+      "radius": 0.25,
+      "color": [
+        0.55,
+        0.65,
+        1.0
+      ],
+      "homing": 3.0
+    },
+    "orb": {
+      "name": "Fire Orb",
+      "speed": 18.0,
+      "dmg": 2.2,
+      "poise": 45,
+      "radius": 0.45,
+      "color": [
+        1.0,
+        0.45,
+        0.15
+      ],
+      "homing": 1.5,
+      "blast": 2.5
+    },
+    "nova": {
+      "name": "Frost Nova",
+      "dmg": 1.6,
+      "poise": 55,
+      "radius": 4.0,
+      "color": [
+        0.5,
+        0.85,
+        1.0
+      ],
+      "slow": 0.5
+    }
+  }
+}
