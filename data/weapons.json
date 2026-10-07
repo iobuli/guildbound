@@ -288,56 +288,6 @@
    "limb": "foot_r"
   }
  },
- "magic": {
-  "name": "Staff (magic)",
-  "loco": "MAG_",
-  "weapon": "staff",
-  "hand": "r",
-  "guard": "MAG_block_idle",
-  "guard_hit": "MAG_block_react_large",
-  "draw": "MAG_2h_cast_spell_01",
-  "art": "MAG_2h_cast_spell_01",
-  "cast": "MAG_1h_cast_spell_01",
-  "block": 0.6,
-  "poise": 35,
-  "light": [
-   {
-    "clip": "MAG_1h_magic_attack_01",
-    "speed": 1.5,
-    "spell": "@light",
-    "mana": 6,
-    "stamina": 3
-   },
-   {
-    "clip": "MAG_1h_magic_attack_02",
-    "speed": 1.5,
-    "spell": "@light",
-    "mana": 6,
-    "stamina": 3
-   },
-   {
-    "clip": "MAG_1h_magic_attack_03",
-    "speed": 1.6,
-    "spell": "@light",
-    "mana": 6,
-    "stamina": 3
-   }
-  ],
-  "heavy": {
-   "clip": "MAG_2h_magic_attack_01",
-   "speed": 1.3,
-   "spell": "@heavy",
-   "mana": 18,
-   "stamina": 6
-  },
-  "special": {
-   "clip": "MAG_2h_magic_area_attack_01",
-   "speed": 1.3,
-   "spell": "nova",
-   "mana": 25,
-   "stamina": 8
-  }
- },
  "unarmed": {
   "name": "Fists",
   "loco": "SS_",

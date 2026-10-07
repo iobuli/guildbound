@@ -9,6 +9,7 @@ var kind := "arrow"
 var vel := Vector3.ZERO
 var gravity := 0.0
 var dmg := 1.0
+var hit_zone := ""          # where the last fighter hit landed: head / torso / arm / leg
 var poise := 10.0
 var radius := 0.06
 var color := Color(1, 1, 1)
@@ -145,10 +146,9 @@ func _physics_process(delta: float) -> void:
 	for f: Node3D in Combat.targets():
 		if not is_instance_valid(shooter) or not shooter.combat.is_foe(f) or _hit.has(f):
 			continue
-		var band := Combat.body_band(f)
-		var pts := Geometry3D.get_closest_points_between_segments(from, to, band[0], band[1])
-		if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + radius:
-			_impact(pts[0], f)
+		var hit_f := Combat.hurt_test(f, from, to, from, to, radius)  # body capsules (a monster: its band)
+		if not hit_f.is_empty():
+			_impact(hit_f[0], f, str(hit_f[1]))
 			if not pierce:
 				return
 	var q := PhysicsRayQueryParameters3D.create(from, to, Layers.WORLD | Layers.PROPS)
@@ -161,13 +161,15 @@ func _physics_process(delta: float) -> void:
 	_orient()
 
 
-func _impact(at: Vector3, victim: Node3D) -> void:
+func _impact(at: Vector3, victim: Node3D, zone: String = "torso") -> void:
 	if victim != null and is_instance_valid(shooter):
 		if victim is Player and (victim as Player).combat.receive_projectile(self, at) == "deflect":
 			return  # it flies on, the defender's now
 		_hit[victim] = true
+		hit_zone = zone
 		var sc := shooter.combat
-		var res := sc.apply_hit(victim, dmg, poise, at, false, kind != "arrow", true)
+		sc.last_zone = zone  # same zones and multipliers as a melee blow (head x1.2, limbs x0.85)
+		var res := sc.apply_hit(victim, dmg * float(BodyParts.ZONE_MULT.get(zone, 1.0)), poise, at, false, kind != "arrow", true)
 		if status != "" and res != "guard" and res != "dodge":
 			var pw := status_power * sc.last_dealt if status == "burn" else status_power
 			StatusFx.apply(victim, status, pw, status_dur, shooter)

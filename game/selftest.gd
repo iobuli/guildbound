@@ -42,6 +42,7 @@ func run(main: Node) -> void:
 	tests.append_array([["pack", t_pack], ["mix", t_mix]])
 	tests.append_array([["body", t_body]])
 	tests.append_array([["cast", t_cast], ["parry", t_parry], ["sparparry", t_spar_parry], ["framedata", t_framedata]])
+	tests.append_array([["goblinlook", t_goblin_look], ["projzone", t_proj_zone]])
 	for t in tests:
 		if only == "" or t[0] in only.split(","):
 			await (t[1] as Callable).call()
@@ -202,12 +203,14 @@ func t_ranged() -> void:
 	await frames(60)
 	ai.puppet.guard = false
 	check("bow: aim (RMB) and loose (LMB) - the arrow flies and hits", p.combat.hits_landed > landed, "hits %d" % (p.combat.hits_landed - landed))
-	p.combat.set_stance("magic")
+	p.combat.set_stance("sword_shield")
 	await frames(10)
+	p.combat.cast_cd = {"light": 0.0, "heavy": 0.0}
+	p.sheet.mana = p.sheet.v("max_mana")
 	landed = p.combat.hits_landed
-	await press("just_attack")
+	await press("just_spell")
 	await frames(120)
-	check("staff: LMB casts a bolt that homes in and hits", p.combat.hits_landed > landed, "hits %d" % (p.combat.hits_landed - landed))
+	check("F (any weapon): a tap casts a bolt that homes in and hits", p.combat.hits_landed > landed, "hits %d" % (p.combat.hits_landed - landed))
 	p.combat.set_stance("sword_shield")
 
 
@@ -769,7 +772,7 @@ func t_anim() -> void:
 	check("running: the pose changes on every drawn frame (%d frames over 40 ticks)" % frames_n, frames_n >= 40 and still <= frames_n / 20, "%d frames without a change" % still)
 	check("running: planted feet hold still (stride matched to the ground speed)", planted > 5 and plant < 0.35, "planted-foot speed %.2f m/s over %d samples" % [plant, planted])
 	# an upper-body one-shot over the running legs
-	var dur := p.model.play_upper(str(HeroAnim.data["magic"]["art"]), 1.4)
+	var dur := p.model.play_upper(str(HeroAnim.data["_cast"]["light"]["clip"]), 1.4)
 	await frames(15)
 	var uw: float = p.model.tree.get("parameters/uact/blend_amount")
 	var legs_on: float = p.model.tree.get("parameters/move/blend_amount")
@@ -1294,3 +1297,47 @@ func t_spar_parry() -> void:
 	sp.sheet.restore()
 	p.sheet.restore()
 	await frames(60)
+
+
+## Goblins read as goblins: big head and hands, wiry limbs on the mannequin; the hurtboxes keep their size.
+func t_goblin_look() -> void:
+	print("-- goblin silhouette (mannequin proportions)")
+	var gs := _goblins()
+	if gs.is_empty():
+		check("a goblin to look at", false, "none spawned")
+		return
+	var g: Player = gs[0]
+	var ratio := func(who: Player, seg: String) -> float:
+		var mi: MeshInstance3D = who.model.parts.get(seg)
+		return (mi.mesh as CapsuleMesh).radius / float(who.model._seg(seg)["r"]) if mi != null else 0.0
+	var heads := 0
+	for mi in g.model.skeleton.find_children("*", "MeshInstance3D", true, false):
+		heads += 1 if str(mi.get_meta("body_part", "")) == "head" else 0
+	check("goblin: head x1.35, hands x1.3, forearms x0.8 (player x1.0), rebuilt once",
+		absf(ratio.call(g, "head") - 1.35) < 0.01 and absf(ratio.call(g, "hand_r") - 1.3) < 0.01 and absf(ratio.call(g, "forearm_l") - 0.8) < 0.01
+		and absf(ratio.call(p, "head") - 1.0) < 0.01 and heads == 1 and g.model.parts.size() == g.model.hurt.size(),
+		"head %.2f hand %.2f forearm %.2f player %.2f heads %d" % [ratio.call(g, "head"), ratio.call(g, "hand_r"), ratio.call(g, "forearm_l"), ratio.call(p, "head"), heads])
+
+
+## A projectile hits the body capsule it crosses and takes that zone's multiplier, like a blade.
+func t_proj_zone() -> void:
+	print("-- projectile hit zones")
+	var sp: Player = m.spar
+	(sp.get_node("ai") as FighterAI).mode = "dummy"
+	sp.teleport(m.SPAR_POS)
+	await put(m.SPAR_POS + Vector3(5.0, 0.1, 5.0))
+	await frames(10)
+	var zones: Array = []
+	for seg in ["head", "shin_l"]:
+		var e: Array = BodyParts.endpoints(sp.model.skeleton, seg)
+		var at: Vector3 = (e[0] as Vector3).lerp(e[1], 0.5)
+		sp.invuln_t = 0.0
+		var pr := Projectile.make(p, "arrow", at + Vector3(0, 0, 2.0), Vector3(0, 0, -30), 0.0, 1.0, 5.0, 0.05)
+		m.add_child(pr)
+		await frames(12)
+		zones.append([pr.hit_zone if is_instance_valid(pr) else p.combat.last_zone, p.combat.last_zone])
+		await frames(30)
+	check("projectile: a head-high arrow counts head, a shin-high one counts leg (melee zones and multipliers)",
+		zones[0] == ["head", "head"] and zones[1] == ["leg", "leg"], str(zones))
+	sp.sheet.restore()
+	p.sheet.restore()

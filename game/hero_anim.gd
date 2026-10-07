@@ -71,6 +71,11 @@ var parts := {}                        # segment name -> its mannequin MeshInsta
 var _attach := {}                      # bone name -> BoneAttachment3D
 var _armour: Array[MeshInstance3D] = []
 var _armour_sig := -1
+## Per-segment visual proportions (mannequin + armour only; the hurtboxes keep their size): a segment
+## name or its side-less stem ("hand", "thigh") -> radius scale; UNIFORM_PARTS also scale in length.
+var proportions: Dictionary = {}
+const UNIFORM_PARTS := ["head", "hand"]
+const GOBLIN_PROPORTIONS := {"head": 1.35, "hand": 1.3, "forearm": 0.8, "upperarm": 0.8, "chest": 1.1, "shin": 0.85, "thigh": 0.85}
 var _mat_body: StandardMaterial3D
 var _mat_joint: StandardMaterial3D
 var _tint := Color.WHITE
@@ -616,6 +621,25 @@ static func _sphere(r: float, mat: Material, half: bool = false) -> SphereMesh:
 
 ## The prototype body: the skinned mesh hidden, a smooth matte capsule per segment and a darker sphere at
 ## each joint, all riding the skeleton (a test dummy: it fits whatever pose the clips put it in).
+## The visual scale of a segment (1.0 unless `proportions` says otherwise).
+func prop(seg: String) -> float:
+	return float(proportions.get(seg, proportions.get(seg.trim_suffix("_l").trim_suffix("_r"), 1.0)))
+
+
+## Set the proportions after build: the mannequin is rebuilt and the armour refits.
+func set_proportions(pr: Dictionary) -> void:
+	proportions = pr.duplicate()
+	if skeleton == null or _mat_body == null:
+		return  # build() will use them
+	for mi in skeleton.find_children("*", "MeshInstance3D", true, false):
+		if mi.has_meta("body_part"):
+			mi.free()
+	parts.clear()
+	_build_mannequin()
+	_armour_sig = -1
+	_watch_armour()
+
+
 func _build_mannequin() -> void:
 	for mi in inst.find_children("*", "MeshInstance3D", true, false):
 		(mi as MeshInstance3D).visible = false
@@ -629,17 +653,20 @@ func _build_mannequin() -> void:
 	for h: Dictionary in hurt:
 		var pa: Vector3 = h["rest_a"]
 		var pb: Vector3 = h["rest_b"]
-		parts[h["n"]] = _add_part(int(h["bone"]), _capsule(float(h["r"]), pa.distance_to(pb), _mat_body), BodyParts.along(pa, pb), "body_part", str(h["n"]))
+		var k := prop(str(h["n"]))
+		var stem := str(h["n"]).trim_suffix("_l").trim_suffix("_r")
+		var length := pa.distance_to(pb) * (k if UNIFORM_PARTS.has(stem) else 1.0)
+		parts[h["n"]] = _add_part(int(h["bone"]), _capsule(float(h["r"]) * k, length, _mat_body), BodyParts.along(pa, pb), "body_part", str(h["n"]))
 	for j: Array in BodyParts.joints():
 		var bi := skeleton.find_bone(str(j[0]))
 		var seg := _seg(str(j[1]))
 		if bi < 0 or seg.is_empty():
 			continue
 		var at := Transform3D(Basis(), skeleton.get_bone_global_rest(bi).origin)
-		_add_part(bi, _sphere(float(seg["r"]) * float(j[2]), _mat_joint), at, "body_part", "joint")
+		_add_part(bi, _sphere(float(seg["r"]) * prop(str(j[1])) * float(j[2]), _mat_joint), at, "body_part", "joint")
 	var head := _seg("head")
 	if not head.is_empty():  # a dark visor band, so the dummy's facing reads at a glance
-		var r := float(head["r"])
+		var r := float(head["r"]) * prop("head")
 		var c: Vector3 = (head["rest_a"] as Vector3).lerp(head["rest_b"], 0.7) + Vector3(0, 0, r * 0.78)
 		var visor := Transform3D(Basis(Vector3.FORWARD, PI * 0.5), c)
 		_add_part(int(head["bone"]), _capsule(r * 0.3, r * 0.75, _mat_joint), visor, "body_part", "visor")
@@ -726,7 +753,7 @@ func _cover(seg: String, pad: float, from: float, to: float, mat: Material, slot
 		return
 	var pa: Vector3 = (h["rest_a"] as Vector3).lerp(h["rest_b"], from)
 	var pb: Vector3 = (h["rest_a"] as Vector3).lerp(h["rest_b"], to)
-	_shell(h, _capsule(float(h["r"]) + pad, pa.distance_to(pb), mat), BodyParts.along(pa, pb), slot)
+	_shell(h, _capsule(float(h["r"]) * prop(seg) + pad, pa.distance_to(pb), mat), BodyParts.along(pa, pb), slot)
 
 
 ## The armour pieces worn now, optionally of one slot.
@@ -1156,7 +1183,7 @@ func strike_segment(limb: String) -> Array:
 		var q := bone_pos(b.replace("hand", "lowerarm").replace("foot", "calf"))
 		return [p, p + (p - q).normalized() * 0.12]
 	var g := _weapon.global_transform
-	var length := 1.15 if stance_id == "greatsword" else (0.33 if stance_id == "dagger" else (0.95 if stance_id == "magic" else 0.7))
+	var length := 1.15 if stance_id == "greatsword" else (0.33 if stance_id == "dagger" else 0.7)
 	var up := g.basis.y.normalized()
 	return [g.origin + up * 0.08, g.origin + up * length]
 

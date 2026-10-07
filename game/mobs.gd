@@ -69,6 +69,7 @@ func spawn_goblins(center: Vector3, n: int = -1) -> Array[Player]:
 		g.respawn_after = float(d.get("respawn", 20.0))
 		g.set_meta("monster", "goblin")
 		g.model.scale = Vector3.ONE * float(d.get("scale", 0.8))
+		g.model.set_proportions(d.get("proportions", HeroAnim.GOBLIN_PROPORTIONS))  # big head and hands, wiry limbs
 		var t: Array = d.get("tint", [0.55, 0.85, 0.45])
 		g.model.tint(Color(t[0], t[1], t[2]))
 		g.died.connect(_on_fighter_died)

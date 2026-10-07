@@ -111,12 +111,12 @@ func _ready() -> void:
 	elowen.name = "RefereeNPC"
 	add_child(elowen)
 	elowen.build("Superhero_Female_FullBody", "Hair_Long")
-	elowen.set_stance("magic")
+	elowen.set_stance("unarmed")  # no staff anywhere: she casts bare-handed (F) like everyone
 	elowen.set_idle("MAG_idle")
 	elowen.position = arena.spots["referee"] - Vector3(0.0, 0.1, 0.0)
 	elowen.rotation.y = PI  # faces the gate (+Z)
 	arena.add_interaction(arena.spots["referee"], "Duel (Referee Elowen)", start_yard_duel, 2.4)
-	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, staff, fists)")
+	hud.add_toast("Q: switch weapon (sword & shield, great sword, daggers, bow, fists) - F: cast your element's spell with any weapon")
 
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -294,13 +294,15 @@ func _shots() -> void:
 		await get_tree().physics_frame
 	await grab.call()
 	ai.puppet.guard = false
-	player.combat.set_stance("magic")
+	player.combat.set_stance("sword_shield")  # F casts with any weapon (no staff)
 	player.lock.target = dummy
+	player.combat.cast_cd = {"light": 0.0, "heavy": 0.0}
+	player.sheet.mana = player.sheet.v("max_mana")
 	for k in 10:
 		await get_tree().physics_frame
-	ai.puppet.just_attack = true
+	ai.puppet.just_spell = true
 	await get_tree().physics_frame
-	ai.puppet.just_attack = false
+	ai.puppet.just_spell = false
 	for k in 30:
 		await get_tree().physics_frame
 	await grab.call()

@@ -148,7 +148,7 @@ func _poise_max() -> float:
 
 
 func ranged() -> bool:
-	return stance_id == "bow" or stance_id == "magic"
+	return stance_id == "bow"
 
 
 func busy() -> bool:
@@ -423,21 +423,22 @@ func _sweep() -> void:
 
 ## Does a blade moving from pa-pb (last frame) to a-b (now) touch `f`? Tested at 4 moments in between:
 ## a fighter's body capsules (BodyParts: segment-segment distance under the radii), a monster's band.
-## Returns [where on the blade, zone] or [].
-static func hurt_test(f: Node3D, pa: Vector3, pb: Vector3, a: Vector3, b: Vector3) -> Array:
+## Returns [where on the blade, zone] or []. `r` is the blade's (or a projectile's) own radius; a still
+## segment (pa-pb == a-b, e.g. a projectile's step this frame) is tested once.
+static func hurt_test(f: Node3D, pa: Vector3, pb: Vector3, a: Vector3, b: Vector3, r: float = BLADE_RADIUS) -> Array:
 	var caps: Array = (f as Player).model.hurtboxes() if f is Player and (f as Player).model.hurt.size() > 0 else []
 	var band := body_band(f)
-	for k in 4:
+	for k in (1 if pa == a and pb == b else 4):
 		var u := float(k) / 3.0
 		var s0 := pa.lerp(a, u)
 		var s1 := pb.lerp(b, u)
 		if caps.is_empty():
 			var pts := Geometry3D.get_closest_points_between_segments(s0, s1, band[0], band[1])
-			if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + BLADE_RADIUS:
+			if (pts[0] as Vector3).distance_to(pts[1]) <= float(band[2]) + r:
 				return [pts[0], "torso"]
 		else:
 			var near: Array = BodyParts.nearest(caps, s0, s1)
-			if float(near[0]) <= BLADE_RADIUS + HURT_PAD:
+			if float(near[0]) <= r + HURT_PAD:
 				return [near[1], near[2]]
 	return []
 
