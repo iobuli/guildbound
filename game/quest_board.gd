@@ -14,26 +14,24 @@ const GOOD := Color(0.55, 0.95, 0.5)
 var player: Player
 var _list: VBoxContainer
 var _head: Label
+var _panel: PanelContainer
+var _dim: ColorRect
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = false
-	set_anchors_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
-	var dim := ColorRect.new()
-	dim.color = Color(0, 0, 0, 0.45)
-	dim.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(dim)
-	var panel := PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", SidePanel._box(STONE, EDGE, 3, 8))
-	panel.custom_minimum_size = Vector2(620, 520)
-	panel.set_anchors_preset(Control.PRESET_CENTER)
-	panel.position = -panel.custom_minimum_size * 0.5
-	add_child(panel)
+	_dim = ColorRect.new()
+	_dim.color = Color(0, 0, 0, 0.45)
+	add_child(_dim)
+	_panel = PanelContainer.new()
+	_panel.add_theme_stylebox_override("panel", SidePanel._box(STONE, EDGE, 3, 8))
+	_panel.custom_minimum_size = Vector2(620, 520)
+	add_child(_panel)
 	var v := VBoxContainer.new()
 	v.add_theme_constant_override("separation", 8)
-	panel.add_child(v)
+	_panel.add_child(v)
 	var title := Label.new()
 	title.text = "Adventurers' Guild - Quest Board"
 	title.add_theme_color_override("font_color", GOLD)
@@ -58,7 +56,19 @@ func _ready() -> void:
 	v.add_child(close)
 
 
+## Fill the screen and centre the window (anchors are not resolved under a CanvasLayer here; the
+## other windows size themselves the same way).
+func _fit() -> void:
+	position = Vector2.ZERO
+	size = get_viewport_rect().size
+	_dim.position = Vector2.ZERO
+	_dim.size = size
+	_panel.size = _panel.custom_minimum_size
+	_panel.position = ((size - _panel.size) * 0.5).floor()
+
+
 func open_board() -> void:
+	_fit()
 	visible = true
 	get_tree().paused = true
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
