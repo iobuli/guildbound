@@ -369,6 +369,57 @@ namespace Guildbound.Tests
             Assert.AreEqual(1.85f, r.world.Fighters[1].Position.z, 1e-4f, "and is not pushed");
         }
 
+        // ---------------- motion slice: bounded turning, run carry ----------------
+
+        [Test]
+        public void Unlocked_ReversalTurnsAtTheBoundedRate_LockOnStillFacesTheTarget()
+        {
+            var w = new CombatWorld();
+            var f = w.Add(V(0, 0), Vector3.forward, 100f);
+            var o = w.Add(V(3, 3), Vector3.forward, 60f);
+            var back = new[] { new Intent { Move = new Vector2(0, -1) }, default };
+            int quarter = Mathf.RoundToInt(90f / (w.T.TurnRate * Tuning.Step));   // 15 ticks at 720 deg/s
+            for (int k = 0; k < quarter; k++) w.Tick(back);
+            Assert.AreEqual(90f, Vector3.Angle(Vector3.forward, f.Facing), 0.5f, "half way through the reversal");
+            Assert.AreEqual(0f, f.Facing.y, "the turn stays in the ground plane");
+            for (int k = 0; k < quarter; k++) w.Tick(back);
+            Assert.AreEqual(180f, Vector3.Angle(Vector3.forward, f.Facing), 0.5f);
+            Assert.Less(f.Position.z, 0f, "the body moved back from the first tick; only the facing turns");
+
+            f.LockTarget = o.Id;
+            var side = new[] { new Intent { Move = new Vector2(1, 0) }, default };
+            for (int k = 0; k < 30; k++)
+            {
+                w.Tick(side);
+                Assert.AreEqual(0f, Vector3.Angle((o.Position - f.Position).normalized, f.Facing), 0.05f, "locked: faces the target every tick");
+            }
+        }
+
+        // Run 12 ticks (0.4 m) then press light at 0.1 s: the carry slides 0.3 m more, so the fist reaches a defender at
+        // 1.7 m. Control: run until 0.06 s (8 ticks at 30/60/120 fps) and stand 4 ticks before the press (no carry): the same light falls short.
+        static Scenario RunThenLight(float runUntil, float defenderAt, float seconds = 1.2f) => Duel(defenderAt,
+            (t, f) => I(new Intent { Move = t < runUntil ? new Vector2(0, 1) : Vector2.zero, Run = t < runUntil, Light = At(t, f, 0.1) }, default),
+            seconds);
+
+        [Test]
+        public void RunningStrike_CarriesTheRun_StandingStrikeDoesNot()
+        {
+            var control = RunAll(RunThenLight(0.06f, 1.7f));
+            Assert.AreEqual(0, control.contacts.Count, "control: no carry, out of reach");
+
+            var r = RunAll(RunThenLight(0.1f, 1.7f));
+            Assert.AreEqual(Outcome.Hit, r.contacts.Single().Outcome);
+            Assert.AreEqual(0.4f + 0.3f, r.world.Fighters[0].Position.z, 0.02f, "run 0.4 m + carry 0.3 m, then planted");
+        }
+
+        [Test]
+        public void RunCarry_StopsAtAWall()
+        {
+            var r = RunAll(Walled(RunThenLight(0.1f, 1.7f), 0.85f));
+            Assert.AreEqual(0.85f - 0.3f, r.world.Fighters[0].Position.z, 1e-4f, "the slide ends one body radius short of the wall");
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+        }
+
         [Test]
         public void Recover_InterruptedByMove_NoHeal_ItemKept()
         {

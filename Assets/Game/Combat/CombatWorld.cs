@@ -111,13 +111,14 @@ namespace Guildbound.Combat
                 return true;
             }
             if (intent.Throw) { LeaveGuard(f); Start(f, ActionKind.Throw, new ActionTiming { Startup = T.ReachIn, Active = T.ThrowPaired, Recovery = T.ThrowRecover }); f.State.Committed = true; return true; }
-            if (intent.Heavy) { LeaveGuard(f); Start(f, ActionKind.Heavy, T.Heavy); f.State.Committed = true; return true; }
+            if (intent.Heavy) { LeaveGuard(f); Start(f, ActionKind.Heavy, T.Heavy); f.State.Committed = true; Carry(f); return true; }
             if (intent.Light)
             {
                 LeaveGuard(f);
                 var kind = f.LastKind == ActionKind.LightL && f.hasBuffer ? ActionKind.LightR : ActionKind.LightL;
                 Start(f, kind, T.Light);
                 f.State.Committed = true;
+                Carry(f);
                 return true;
             }
             if (intent.Step && f.stepCooldown <= 0)
@@ -135,6 +136,15 @@ namespace Guildbound.Combat
                 return true;
             }
             return false;
+        }
+
+        // A strike thrown from a run carries the run into its wind-up: the motor slides the body CarryCap metres along
+        // its velocity, through the world constraint. Reach grows only by that visible travel; the arm never reaches further.
+        void Carry(FighterSim f)
+        {
+            if (!f.ranLastTick) return;
+            float speed = Flat(f.Velocity).magnitude;
+            if (speed > 1e-3f) Travel(f, f.Velocity, T.CarryCap, T.CarryCap / speed);
         }
 
         void LeaveGuard(FighterSim f)
@@ -260,6 +270,7 @@ namespace Guildbound.Combat
         {
             if (f.Defeated) return;
             Vector3 v = Vector3.zero;
+            f.ranLastTick = false;
             if (f.travelLeft > 0)
             {
                 float d = Mathf.Min(f.travelLeft, f.travelSpeed * dt);
@@ -272,11 +283,13 @@ namespace Guildbound.Combat
                 if (m.sqrMagnitude > 1) m.Normalize();
                 float speed = f.State.Kind == ActionKind.Guard ? T.GuardWalkSpeed : intent.Run ? T.RunSpeed : T.WalkSpeed;
                 v = m * speed;
+                f.ranLastTick = intent.Run && f.State.Kind == ActionKind.None && m.sqrMagnitude > 1e-4f;
             }
             f.Velocity = v;
             f.Position += v * dt;
 
-            // facing: free fighters face the lock target, else their movement; committed actions keep their facing
+            // facing: free fighters face the lock target (strafe), else turn toward their movement at a bounded rate;
+            // committed actions keep their facing
             if (f.Free)
             {
                 if (f.LockTarget >= 0 && f.LockTarget < Fighters.Count)
@@ -284,7 +297,7 @@ namespace Guildbound.Combat
                     var to = Flat(Fighters[f.LockTarget].Position - f.Position);
                     if (to.sqrMagnitude > 1e-6f) f.Facing = to.normalized;
                 }
-                else if (v.sqrMagnitude > 1e-4f && f.State.Kind == ActionKind.None) f.Facing = Flat(v).normalized;
+                else if (v.sqrMagnitude > 1e-4f && f.State.Kind == ActionKind.None) f.Facing = TurnToward(f.Facing, Flat(v).normalized, T.TurnRate * dt);
             }
         }
 
@@ -530,6 +543,13 @@ namespace Guildbound.Combat
         // ---------------- helpers ----------------
 
         static Vector3 Flat(Vector3 v) => new Vector3(v.x, 0, v.z);
+
+        // planar turn about +Y, so even an exact reversal never tips the facing out of the ground plane
+        static Vector3 TurnToward(Vector3 from, Vector3 to, float maxDegrees)
+        {
+            float a = Vector3.SignedAngle(from, to, Vector3.up);
+            return Mathf.Abs(a) <= maxDegrees ? to : Quaternion.AngleAxis(Mathf.Sign(a) * maxDegrees, Vector3.up) * from;
+        }
 
         static float SegmentParam(Vector3 a, Vector3 b, Vector3 p)
         {

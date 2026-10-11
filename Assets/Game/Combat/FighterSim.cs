@@ -22,7 +22,7 @@ namespace Guildbound.Combat
         internal double lastCombatTime = -1e9;
         internal Vector3 travelDir;
         internal float travelSpeed, travelLeft;
-        internal bool hasBuffer, releaseCharged, recoverWithItem;
+        internal bool hasBuffer, releaseCharged, recoverWithItem, ranLastTick;
         internal Intent buffered;
         internal Vector3 fistPrev, moveFrom;
         internal bool fistPrevValid;

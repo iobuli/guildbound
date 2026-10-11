@@ -17,6 +17,7 @@ namespace Guildbound.Play
         public bool playerAttuned = true;
         public int playerPrepItems = 1;
         public OpponentBrain.Pattern pattern = OpponentBrain.Pattern.Pressure;
+        public float moveRamp = 10f;   // (H) move intent per second: rest -> full in 0.1 s, full reversal in 0.2 s
 
         public CombatWorld World { get; private set; }
         public GuildState Guild { get; private set; }
@@ -33,6 +34,7 @@ namespace Guildbound.Play
         readonly List<Intent> intents = new List<Intent> { default, default };
         readonly List<GameObject> projectileViews = new List<GameObject>();
         bool locked = true;
+        Vector2 move;
 
         void Awake()
         {
@@ -113,12 +115,17 @@ namespace Guildbound.Play
                 var w = f * m.y + r * m.x;
                 m = new Vector2(w.x, w.z);
             }
-            i.Move = Vector2.ClampMagnitude(m, 1f);
             i.Run = kb.leftShiftKey.isPressed;
             i.Light = mouse != null && mouse.leftButton.wasPressedThisFrame;
             i.GuardHeld = mouse != null && mouse.rightButton.isPressed;
             i.Heavy = kb.fKey.wasPressedThisFrame;
             i.Step = kb.leftCtrlKey.wasPressedThisFrame;
+            // Starts and direction changes ramp, so the intent never flips sign inside one frame. Letting go stops at
+            // once (leftover movement would cancel a cast or recover pressed right after stopping), and a step takes the
+            // pressed direction at once (the motor reads the step direction from Move).
+            var target = Vector2.ClampMagnitude(m, 1f);
+            move = target == Vector2.zero || i.Step ? target : Vector2.MoveTowards(move, target, moveRamp * Time.deltaTime);
+            i.Move = move;
             i.Throw = kb.rKey.wasPressedThisFrame;
             i.Cast = kb.qKey.wasPressedThisFrame;
             i.CastHeld = kb.qKey.isPressed;
