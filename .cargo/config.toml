@@ -1,0 +1,4 @@
+# Cap parallel rustc processes so a full Bevy build does not peg all 16 cores.
+# Raise for faster cold builds when the machine is idle: cargo build -j 16
+[build]
+jobs = 6

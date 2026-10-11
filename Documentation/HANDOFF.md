@@ -1,9 +1,12 @@
 # Guildbound - handoff, 2026-10-11
 
 ## Current state: Bevy (read first; everything below this section is the Unity era)
-- **Engine:** Bevy (Rust), code only. Boss dropped Unity on 2026-10-11. Branch `build/bevy`. No Bevy code exists yet.
+- **Engine:** Bevy 0.20.0 (Rust 1.99 stable, MSVC), code only. Boss dropped Unity on 2026-10-11. Branch `build/bevy`.
+- **Workspace:** `crates/sim` = `guildbound_sim`, the deterministic core with no Bevy types (`cargo test -p guildbound_sim`); today it holds only the motor slice (move, turn, arena, separation, state hash). `crates/game` = `guildbound`, the Bevy dev build. `.cargo/config.toml` caps builds at 6 jobs (raise with `-j 16`).
+- **Run it:** double-click `play.cmd`, or `cargo run -p guildbound`. The left panel is the boss's: pause/step/reset/speed, fighters, live tuning, view toggles, and a feed for messages to Claude (also saved to `collab/devfeed.log`).
+- **Claude's side:** the same running game answers JSON-RPC on `http://127.0.0.1:15702` (Bevy Remote Protocol). `python -I Tools/gb.py state | feed | say | step | input | tuning | shot` - see the file header. `gb.screenshot` writes `Documentation/checks/live/latest.png`.
 - **Unity is archived, not lost:** commit `0adfb47`, tag `unity-final` on `build/m0` (all code, scenes, tools, checks). Ignored packs, Aura package and caches: `D:/New folder (4)/guildbound-unity-archive/bevy-move-2026-10-11/`.
-- **Read next:** `Documentation/UNITY_LESSONS.md` (what to keep, verification rules, new Bevy risks, Unity -> Bevy translation table), then `Documentation/COMBAT_MOTION_PLAN.md` (phases still valid; its Unity type names translate through the lessons table).
+- **Read next:** `Documentation/ALPHA_LESSONS.md` (what to keep, verification rules, new Bevy risks, Unity -> Bevy translation table), then `Documentation/COMBAT_MOTION_PLAN.md` (phases still valid; its Unity type names translate through the lessons table).
 - **Open tasks:** `collab/TASKS.md`.
 
 ## Unity era (historical; paths below refer to tag `unity-final`)

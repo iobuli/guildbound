@@ -1,6 +1,42 @@
-# Unity lessons, carried into Bevy (2026-10-11)
+# Alpha lessons, carried into the Bevy beta (2026-10-11)
 
-Unity was dropped on 2026-10-11 (boss: "we move to bevy... now we can only work in code").
+Boss, 2026-10-11: the earlier builds were alphas, Bevy is the beta, and the beta is rebuilt with the context
+from all of them.
+
+| Build | Engine | Where it lives now |
+|---|---|---|
+| Alpha 1 | Godot 4 (GDScript, Jolt) | `_OldGodot/` zip (local, git-ignored); its defects are MASTER.md section 2, L1-L14 |
+| Alpha 2 | Unity 6.3 LTS, two attempts | tag `unity-final`; this file, sections 1-6 |
+| Beta | Bevy 0.20 (Rust), code only | branch `build/bevy` |
+
+## 0. Alpha 1 (Godot) - the defects the beta must make impossible
+
+MASTER.md section 2 is the full table; each row is a real defect and the rule that prevents it. In Bevy terms:
+
+| # | Rule | Beta form |
+|---|---|---|
+| L1 | One translation authority | sim motor only; views copy sim state |
+| L2 | One final pose writer per skeleton, fixed layer order | one ordered chain of pose systems after animation evaluation |
+| L3 | Foot lock is a phase machine, anchors written only on PLANT | `FootLock` per foot, MASTER 4.6 |
+| L4 | Every ragdoll/get-up exit inertializes from the captured pose | the inertialization system, MASTER 4.8 |
+| L5 | Collision layers owned by state enter/exit | state transitions in the sim, one test each |
+| L6 | Every controller state declares its animation contract | exhaustive `match` on the state enum: the compiler enforces it |
+| L7 | Tests use public APIs, the runner times out | `cargo test` on public sim APIs |
+| L8 | Hit-stop is per actor | per-actor clock in the sim, never `Time<Virtual>` |
+| L9 | Swept limb capsules from the simulated pose + line of sight | sim hit detection, MASTER 4.7 |
+| L10 | SI units; names carry the unit | `mass_kg`, `impulse_ns` |
+| L11 | Rest lengths measured once, immutable | rig data loaded once into an immutable asset |
+| L12 | IK pole from the previous knee plane, with fallback | two-bone IK, MASTER 4.5 |
+| L13 | One design doc | MASTER GDD in `TANDEM_REASONING.log` + MASTER.md; this file only maps lessons |
+| L14 | No god object, explicit dependency direction | sim crate depends on nothing; game crate depends on sim |
+
+Also from alpha 1 (playtest measurements): the knee is a hinge; procedural kicks showed hip twist of 72-78 deg
+against a human ~+-45; spatial combat rules are engine-independent: aim through the target, contact hold,
+kicks step in before planting, conform to the ground.
+
+---
+
+Alpha 2: Unity was dropped on 2026-10-11 (boss: "we move to bevy... now we can only work in code").
 The last Unity state is commit `0adfb47`, tag `unity-final` on `build/m0`. Read any old file with
 `git show unity-final:<path>`, e.g. `git show unity-final:Assets/Game/Combat/CombatWorld.cs`.
 Git-ignored Unity material (asset packs, Aura package, Library cache, stray "New Unity Project" folders)
