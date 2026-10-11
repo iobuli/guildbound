@@ -32,20 +32,49 @@ fn replay_is_identical() {
 fn walk_covers_walk_speed_per_second() {
     let mut w = World::sparring(Tuning::default());
     w.fighters.truncate(1);
-    w.fighters[0].position = V2::ZERO;
-    for _ in 0..120 {
-        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: false }]);
+    w.fighters[0].position = V2::new(-5.0, 0.0);
+    let walk = [Intent { move_dir: V2::new(1.0, 0.0), run: false }];
+    for _ in 0..60 {
+        w.step(&walk); // accelerate to cruise first (momentum)
     }
-    assert!((w.fighters[0].position.x - 2.1).abs() < 1e-4, "x = {}", w.fighters[0].position.x);
+    let x0 = w.fighters[0].position.x;
+    for _ in 0..120 {
+        w.step(&walk);
+    }
+    assert!((w.fighters[0].position.x - x0 - 2.1).abs() < 1e-3, "dx = {}", w.fighters[0].position.x - x0);
 }
 
 #[test]
 fn oversized_input_is_clamped_to_unit() {
     let mut w = World::sparring(Tuning::default());
     w.fighters.truncate(1);
-    w.fighters[0].position = V2::ZERO;
-    w.step(&[Intent { move_dir: V2::new(5.0, 0.0), run: true }]);
-    assert!((w.fighters[0].velocity.length() - 4.0).abs() < 1e-5);
+    w.fighters[0].position = V2::new(-5.0, 0.0);
+    for _ in 0..60 {
+        w.step(&[Intent { move_dir: V2::new(5.0, 0.0), run: true }]);
+    }
+    assert!((w.fighters[0].velocity.length() - 4.0).abs() < 1e-4);
+}
+
+#[test]
+fn speed_ramps_up_and_momentum_carries_into_a_stop() {
+    let mut w = World::sparring(Tuning::default());
+    w.fighters.truncate(1);
+    w.fighters[0].position = V2::new(-5.0, 0.0);
+    w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+    assert!((w.fighters[0].velocity.x - 12.0 * STEP).abs() < 1e-5, "first tick only gains accel * dt");
+    for _ in 0..60 {
+        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+    }
+    let x0 = w.fighters[0].position.x;
+    let mut ticks = 0;
+    while w.fighters[0].velocity.length() > 0.0 {
+        w.step(&[Intent::default()]);
+        ticks += 1;
+    }
+    let slide = w.fighters[0].position.x - x0;
+    let expect = 4.0 * 4.0 / (2.0 * 9.0); // v^2 / 2a
+    assert!((slide - expect).abs() < 4.0 * STEP, "slide {slide} vs {expect}");
+    assert!(ticks > 40, "a run does not stop instantly");
 }
 
 #[test]

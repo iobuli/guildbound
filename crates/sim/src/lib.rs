@@ -18,11 +18,26 @@ pub struct Tuning {
     pub arena_half_size: f32,
     /// Degrees per second a free fighter turns toward its movement.
     pub turn_rate: f32,
+    /// m/s^2 gaining speed toward the input.
+    pub accel: f32,
+    /// m/s^2 losing speed with no input or a slower target (the momentum you carry into a stop).
+    pub decel: f32,
+    /// m/s^2 when the input opposes the current velocity (plant and turn).
+    pub reverse_brake: f32,
 }
 
 impl Default for Tuning {
     fn default() -> Self {
-        Self { body_radius: 0.30, walk_speed: 2.1, run_speed: 4.0, arena_half_size: 6.0, turn_rate: 720.0 }
+        Self {
+            body_radius: 0.30,
+            walk_speed: 2.1,
+            run_speed: 4.0,
+            arena_half_size: 6.0,
+            turn_rate: 720.0,
+            accel: 12.0,
+            decel: 9.0,
+            reverse_brake: 20.0,
+        }
     }
 }
 
@@ -37,6 +52,8 @@ pub struct Intent {
 pub struct Fighter {
     pub position: V2,
     pub velocity: V2,
+    /// Velocity change over the last tick (m/s^2); presentation reads it for lean and weight shift.
+    pub accel: V2,
     pub facing: V2,
     pub hp: f32,
     pub max_hp: f32,
@@ -47,7 +64,7 @@ pub struct Fighter {
 
 impl Fighter {
     pub fn new(position: V2, facing: V2, hp: f32) -> Self {
-        Self { position, velocity: V2::ZERO, facing: facing.normalized(), hp, max_hp: hp, lock_target: None, move_from: position }
+        Self { position, velocity: V2::ZERO, accel: V2::ZERO, facing: facing.normalized(), hp, max_hp: hp, lock_target: None, move_from: position }
     }
 }
 
@@ -85,19 +102,42 @@ impl World {
         let t = &self.tuning;
         let m = if intent.move_dir.length_squared() > 1.0 { intent.move_dir.normalized() } else { intent.move_dir };
         let speed = if intent.run { t.run_speed } else { t.walk_speed };
-        let v = m * speed;
+        let target = m * speed;
         let lock = self.fighters[i].lock_target.filter(|&j| j != i && j < self.fighters.len()).map(|j| self.fighters[j].position);
         let max_turn = t.turn_rate * STEP;
+        let (accel, decel, reverse) = (t.accel, t.decel, t.reverse_brake);
         let f = &mut self.fighters[i];
-        f.velocity = v;
-        f.position = f.position + v * STEP;
+
+        // momentum: velocity chases the input target at a bounded rate; which rate depends on what the body is doing
+        let v = f.velocity;
+        let rate = if target.length_squared() < 1e-8 {
+            decel
+        } else if v.dot(target) < 0.0 {
+            reverse
+        } else if target.length() >= v.length() {
+            accel
+        } else {
+            decel
+        };
+        let mut dv = target - v;
+        let max = rate * STEP;
+        if dv.length() > max {
+            dv = dv.normalized() * max;
+        }
+        f.velocity = v + dv;
+        f.accel = dv / STEP;
+        f.position = f.position + f.velocity * STEP;
+
         if let Some(target) = lock {
             let to = target - f.position;
             if to.length_squared() > 1e-6 {
                 f.facing = to.normalized();
             }
-        } else if v.length_squared() > 1e-4 {
-            f.facing = turn_toward(f.facing, v.normalized(), max_turn);
+        } else if m.length_squared() > 1e-4 {
+            // face where the player is steering, so a reversal visibly plants and turns
+            f.facing = turn_toward(f.facing, m.normalized(), max_turn);
+        } else if f.velocity.length_squared() > 1e-2 {
+            f.facing = turn_toward(f.facing, f.velocity.normalized(), max_turn);
         }
     }
 
@@ -120,7 +160,15 @@ impl World {
         // one world constraint per tick, from the pre-motion position, so separation never pushes through a wall
         let half = self.tuning.arena_half_size - self.tuning.body_radius;
         for f in &mut self.fighters {
-            f.position = V2::new(f.position.x.clamp(-half, half), f.position.z.clamp(-half, half));
+            let clamped = V2::new(f.position.x.clamp(-half, half), f.position.z.clamp(-half, half));
+            // a wall absorbs the momentum into it
+            if clamped.x != f.position.x {
+                f.velocity.x = 0.0;
+            }
+            if clamped.z != f.position.z {
+                f.velocity.z = 0.0;
+            }
+            f.position = clamped;
         }
     }
 
@@ -135,7 +183,7 @@ impl World {
         };
         eat(self.tick);
         for f in &self.fighters {
-            for v in [f.position.x, f.position.z, f.velocity.x, f.velocity.z, f.facing.x, f.facing.z, f.hp, f.max_hp] {
+            for v in [f.position.x, f.position.z, f.velocity.x, f.velocity.z, f.accel.x, f.accel.z, f.facing.x, f.facing.z, f.hp, f.max_hp] {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
