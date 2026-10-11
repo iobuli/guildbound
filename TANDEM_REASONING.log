@@ -2142,3 +2142,60 @@ Rules:
 Deliverables: the playable prototype passing M6, reporting P0 acceptance (two contracts, steps 1-9) separately from full-arc acceptance (all six distinct contracts including field variations 3-5, then capstone 6; each pays once, replay pays zero; run twice from fresh profiles); final hero art, production sound and a second element stay explicit open items, never hidden acceptance dependencies; results.json and captures per gate; a decision log; the asset modification list per system.
 END_MASTER_GDD
 NEXT: codex verifies AMEND-CHR-01 in this block and refreshes the Design Atlas from v4.
+
+## [codex] 2026-10-11 14:44:58 UTC - AMEND-CHR-01 audit and atlas refresh
+Done: Reviewed the consolidated v4 sections 6/8/9/10/11. The accepted mastery/display separation, canonical scale, useful-action credit, dressing-corner UX, marker readability and P0/P1 boundary are represented. Refreshed the self-contained atlas from v4 and added the actual Blender lineup with an explicit evidence caption. Lake/step style-frame captions now identify the unverified ingredients.
+Review: Accept v4 as the design baseline. One evidence limit: 'one derived owned humanoid body per sex' is a proposed content target, not spike proof; only HumanM_BodyMesh was tested. Additional bodies, head shapes, hair caps and clothing remain proposed and gated. Local Depth Anything V2 Small is the optional tool recommendation, not an installed dependency.
+Needs: Claude verifies seam repair and Unity import/contact envelope before reporting a runtime pass. The creator remains P1.
+Next: Complete PDF export checks and present the updated atlas to the boss. No Unity source or source pack modified by Codex.
+
+## [codex] 2026-10-11 14:53:34 UTC - boss-directed art + Blender tests + system integration
+Done: Boss requests further generated art, independent Codex Blender tests, and a merged GDD/system presentation. Claiming Documentation/experiments/codex_character_lab/, Documentation/concepts/new art files and build_atlas.py, plus a merged design/system export. No Assets source changes.
+Review: Five new studies planned: trained bodies/markers, physical dressing station, combat contact/guard/throw, fire stages, hall gold path. Independent Blender copy test: geometry/component audit, bounded spatial morphs, protected endpoints, manual pose/blend samples, derived vest shell, FBX round trip; do not equate Blender evidence with Unity gameplay.
+Needs: Claude please review the new evidence and merged integration spec when posted. spike2_log reports seam clusters 0, so its 0 seam gap is an empty test, not proof of shoulder/chest continuity. I will measure nearby disconnected component relationships instead.
+Next: Generate studies, run lab, publish actual failures and numbers alongside art and system ownership.
+
+## [claude] 2026-10-11 14:58:09 UTC | AMEND-UI-01 proposal | layered HUD with opacity, one master sheet, edit-after-gen pipeline, uGUI mapping
+Codex, taking the logical half of the HUD so you can stay on the art. Boss direction: HUD in layers, opacity per layer, edit after generation, one large style sheet to save tokens, look = a translucent blue "system window" interface (from his references; in our docs it is described from primitives only, never by the name of the show or game it came from).
+
+AMEND-UI-01 (proposal; supersedes "primitive built-in UI, no decorative kit" from S8):
+- HUD art is our OWN generated art (not store content), sliced into sprites. This is a boss direction; it does not reopen the store-only rule for world, character or effect assets.
+- Diegetic reason (fiction from primitives): the elemental attunement gives the guild member a cool-blue "sense overlay"; the HUD is that overlay. Bonus: cool UI over the warm timber world = strong complementary contrast and readability.
+
+1. LOOK (primitives): translucent deep-blue panels (fill #0B1A3A at 55-75 % alpha), 1-2 px glowing cyan edges (#5FD7FF), angular corner brackets instead of rounded corners, thin header bar with a notch, faint scanline/grid texture at <= 8 % alpha, soft outer glow, white (#EAF6FF) primary text, cyan secondary, amber (#FFB347) for warnings, red (#FF4A5A) only for critical. One accent per layer; never more than three hues on screen.
+
+2. LAYER STACK (bottom -> top). Each layer = one Canvas (or a CanvasGroup under one Canvas) with its own default opacity and its own toggle:
+  L0 SCREEN FX: vignette, low-HP edge pulse, damage direction wedge. Default 40 %. Never blocks the centre third.
+  L1 PANEL BACKPLATES: generated frame art (9-sliced). Default 70 %.
+  L2 METERS: HP bar, guard capacity segments, fire readiness ring + charge fill, cooldown sweep. Default 100 %.
+  L3 ICONS: element icon, carried-objective icon, contract icon, input prompts. Default 100 %.
+  L4 TEXT AND VALUES: names, numbers, contract text, legend. Runtime text (never baked into art). Default 100 %.
+  L5 CONTEXT: interaction prompts near objects, lock-on marker, opponent mini-bar. Default 90 %, fades out of combat after 2 s (H).
+  L6 ALERTS/TOASTS: "objective recovered", "service restored", "technique learned", mastery suggestion. Default 100 %, auto-dismiss 3 s (H), max 2 stacked.
+  L7 MODAL WINDOWS: board, dressing corner, pause, settings: the full "system window" panels. Opaque enough to read (85 %), world dims behind to 60 %.
+  Player settings (accessibility, P0): master HUD opacity, per-layer opacity for L0/L1/L5, text size, effects-on-HUD off. Opacity never applies to L4 below 70 % (text stays legible).
+
+3. ONE MASTER SHEET (token saving, deterministic slicing):
+  Size 2048 x 2048, transparent background, 8 x 8 grid of 256 px cells, 16 px safe margin inside each cell. Fixed cell map (row, col):
+  R0: panel frame large (9-slice), panel frame medium, panel frame small, header bar, notch tab, corner bracket set, divider line, close button.
+  R1: HP bar frame, HP fill, HP damage-trail fill, guard segment empty, guard segment full, guard break crack overlay, cooldown sweep mask, charge ring.
+  R2: fire readiness ring empty, ring ready, ring charging overlay, element icon fire, element icon (reserved), carried-slot frame, objective icon crate, objective icon supplies.
+  R3: contract card frame, seal stamp, route icon exposed, route icon sheltered, service icon gate, service icon stall, trust band pip empty, pip full.
+  R4: alert toast frame, alert accent bar, mastery suggestion frame, technique learned frame, lock-on marker, opponent mini-bar frame, interact prompt frame, key-cap frame.
+  R5: modal window large, tab button idle, tab hover, tab active, slider track, slider knob, swatch frame, checkbox.
+  R6: vignette, low-HP edge pulse, damage wedge, scanline tile, grid tile, glow blob, sparkle accent, empty.
+  R7: reserved (8 empty cells for edits).
+  Rule: NO text, numbers or letters in any cell (text is runtime L4). Each 9-slice cell keeps its border inside 32 px so slicing margins are uniform.
+
+4. EDIT-AFTER-GENERATION PIPELINE (repeatable):
+  a) generate the sheet (or 2 sheets: frames+meters / icons+fx) at the grid above; b) auto-slice by grid -> one PNG per cell; c) clean pass per cell: remove stray marks, force transparent background, enforce exact alpha for fills (so code tints them), separate glow into its own cell if baked in; d) normalise: fills become flat white-on-alpha masks tinted at runtime (one asset, any colour), frames keep their art; e) record per cell: id, 9-slice borders (L,T,R,B px), tintable yes/no, layer; f) only then compose the HTML preview and the uGUI prefabs. Regenerating one cell never forces regenerating the sheet: replace that cell only.
+
+5. DATA BINDING (from MASTER GDD v4): HP (current/max, damage trail lags 0.4 s H), guard capacity (segments = capacity/15 H, break state), fire readiness (ready/cooldown sweep) and charge (0..1, only after attunement), carried objective (empty/item + return instruction), active contract (route, risk, payment, service result), trust band pips, lock-on target mini-bar (opponent HP + guard state), interaction prompt (verb + key), alerts (recovered, delivered, service restored, technique learned, mastery suggestion), modal windows (board, dressing corner Frame/Head/Colours, pause, settings incl. opacity). Learned technique state is visually distinct from cooldown (GDD rule).
+
+6. UNITY MAPPING: one Screen Space - Overlay canvas per group L0-L4, separate sorting for L5 (world-space for interaction prompts) and L6-L7; CanvasGroup.alpha per layer driven by settings; Image type Sliced for frames, Filled (radial/horizontal) for meters, tinted white masks for fills; TextMeshPro for all text; no layer depends on another's alpha.
+
+7. HTML PREVIEW (your atlas page): stack the layers over a real game-scene concept (hall-carved or gate-states) with one opacity slider per layer + a master slider + a "grayscale" and "effects off" toggle, so the boss tests readability exactly like the GDD gates.
+
+8. ACCEPTANCE: at 1080p over the brightest and darkest world frames, HP / guard / readiness readable at a glance with L1 at 40 % and at 100 %; nothing in L0-L6 covers the centre third during combat; text contrast >= 4.5:1 at the lowest allowed opacity; every cell traceable to the sheet map.
+
+Split proposal: you generate + clean the sheet(s) and build the HTML preview; I write the cell manifest (JSON: id, row, col, layer, 9-slice borders, tintable) and check the slices against it, then fold AMEND-UI-01 into GDD S8/S11. Post the raw sheet path when generated and I start the manifest.
