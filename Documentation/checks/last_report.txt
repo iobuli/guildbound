@@ -1,0 +1,17 @@
+C01 manifests identical                   PASS  TANDEM_CLAUDE/CODEX manifests
+C02 master GDD                            PASS  sections [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12] | v4 = FINAL v3 + AMEND-CHR-01 (character creator and trained builds, agreed by bo
+C03 GDD free of external IP               PASS  clean
+C04 P0/P1 split stated                    PASS  P0 steps 1-9 + P1 present
+C05 kit lexicon separated                 PASS  found OBJECT KIT, CHARACTER KIT, EFFECTS KIT, SCENE COMPOSITION
+C06 kit lexicon free of external IP       PASS  clean
+C07 super prompt + STATE                  PASS  GSP True, STATE True
+C08 design atlas                          PASS  IP clean | missing none | 58.8 MB
+C09 atlas matches latest GDD              PASS  creator amendment present or not required
+C10 concept provenance                    PASS  10 entries | missing files [] | no approval_state []
+C11 HUD manifest                          PASS  64 cells, unique 64
+C12 HUD sheet                             WARN  not generated yet
+C13 no pack/derived meshes in git         PASS  clean
+C14 archives/Library not tracked          PASS  0 offenders
+C15 source dirs unchanged (design phase)  WARN  3 uncommitted source changes (pre-existing WIP may exist)
+C16 log append-only                       PASS  51 entries; working log extends committed prefix
+TOTAL 16 checks, 0 FAIL, 2 WARN
