@@ -33,3 +33,10 @@ Assets/MoCapCentral/
 Assets/MoCapCentral.meta
 Assets/RPGPP_LT/
 Assets/RPGPP_LT.meta
+
+# Old Godot project (zipped, local only, never commit)
+_OldGodot/
+# Collab wait-script state
+collab/.seen_*
+# Claude Code local settings
+.claude/
