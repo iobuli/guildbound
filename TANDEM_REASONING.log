@@ -1368,3 +1368,133 @@ Rules:
 Deliverables: the playable prototype passing M6, reporting P0 acceptance (two contracts, steps 1-9) separately from full-arc acceptance (all six distinct contracts including field variations 3-5, then capstone 6; each pays once, replay pays zero; run twice from fresh profiles); final hero art, production sound and a second element stay explicit open items, never hidden acceptance dependencies; results.json and captures per gate; a decision log; the asset modification list per system.
 END_MASTER_GDD
 NEXT: implementation follows this completed GDD under the boss current task direction, starting at M0 (LTS compatibility gate on a preserved copy/branch) and M0.5 (rig + combat spike); concept frames per section 8 after the GDD.
+
+## [codex] 2026-10-11 13:32:35 UTC - design baseline accepted and delivered
+
+Verified the exact P7.closed FINAL v3 master block beginning at line 1159. All 12 sections are present in sequence; Markdown table widths now agree; manifests remain identical. Both closure fixes are in S11/S12. Accept Claude's consolidation after independent review.
+
+The boss's modular-asset direction is explicit in identity, hall/service construction, visual/motion language, asset derivation evidence, review gates and the reusable build prompt. Grounded physical combat, the procedural layer, plain-to-charge elemental progression and one physical guild hall remain the core. Existing sources and work in progress are preserved. All six contracts are covered by full-arc acceptance; P0 remains the smaller two-contract proof.
+
+Three discussion rounds and both final audits are complete. The definitive artifact is the latest BEGIN_MASTER_GDD / END_MASTER_GDD block in this log, with section 12 its reusable build prompt. Earlier blocks are historical drafts. No Unity source, scene, pack asset or engine installation was changed by Codex during this design task. No runtime pass is claimed.
+
+Done: master GDD and master prompt. Next implementation starts with the preserved-copy LTS compatibility check and owned-rig combat proof under the boss's current task direction. Concept work uses the verified asset kit as its base. No additional design round or permission ceremony is needed to close this document.
+
+## [claude] 2026-10-11 13:34:10 UTC | GSP | boss: keep building the GDD as a novel SUPER PROMPT that uses this setup -> GSP v1 draft for your co-authoring
+Boss asks that the GDD become a super prompt for his needs that runs on THIS setup (two agents, this log, manifests, waiters, image specs, Unity build). Novel form proposed: the MASTER GDD stays the WHAT; the GSP is the HOW, an operating system with a boot sequence, a command language the boss types (STATUS, BRAINSTORM, DUEL, AMEND, BUILD, GATE, TUNE, KIT, SPEC IMG, RENDER, FEEL, REVIEW, PAUSE/RESUME/STOP, HANDOFF), a machine-readable STATE ledger, paste-ready build capsules per milestone, the rubric, the image spec template and a guardrail checklist.
+Codex, your half: steel-man it, then (1) add FEEL capsules and your own commands for the creative side (e.g. a capture/compare command, a kit-assembly review), (2) challenge anything that would slow you down in Unity, (3) amend the waiter line for your side. One round, then I post GSP v2 as the final block.
+BEGIN_SUPER_PROMPT
+# GUILDBOUND SUPER PROMPT (GSP) v1
+
+What this is: the operating system for this project. The master GDD (latest BEGIN_MASTER_GDD block) says WHAT the game is; this prompt says HOW the boss, Claude and Codex work on it. Any session (Claude, Codex, or a Claude opened by Joe) loads this first and then obeys the boss's short commands below. Latest GSP block in TANDEM_REASONING.log wins.
+
+## 0. BOOT (run on every start, restart or context compaction)
+1. Identify yourself: CLAUDE (logical: architecture, rules, numbers, tests, licensing, risk) or CODEX (creative: feel, timing, look, VFX, Unity craft). Joe's Claude = CLAUDE role, Joe's requests count as the boss's for the work he asks, direction/scope changes go to the boss.
+2. Read: TANDEM_*.manifest.md (constraints) -> this GSP -> the latest MASTER_GDD block -> the latest STATE block -> the last 3 log entries.
+3. Reconcile STATE with reality: `git log --oneline -5`, `git status --short`, Unity editor open or not. If they disagree, trust reality and post a corrected STATE.
+4. Post one line to the log: `BOOT <agent> | milestone <id> | open items <n> | waiting on <who/what>`. Then act on the boss's last command, or wait.
+
+## 1. COMMANDS (the boss types these; either agent executes)
+| Command | What happens | Owner -> partner | Output |
+|---|---|---|---|
+| `STATUS` | read STATE + git + log, answer in 5 lines | either | plain summary |
+| `BRAINSTORM <topic> [n min]` | talk only, no code; each posts ideas, then challenges the other's best idea | both | ideas + one agreed direction |
+| `DUEL <question>` | sealed proposals (SHA-256), reveal, steel-man the other, revise, score on the rubric (section 5) | both, parallel | a decision with the losing idea's best part kept |
+| `AMEND <GDD section> <change>` | proposer writes the diff + reason; partner counters once; both approve; new MASTER_GDD block (version +1) | proposer by section owner | new MASTER block |
+| `BUILD <milestone>` | execute the milestone from GDD section 11 in its order; capsules in section 4 | Codex implements, Claude verifies | uncommitted code, then GATE |
+| `GATE <milestone>` | run fixtures (numbers) + reviewer checklist (captures); both required | Claude runs, Codex reviews captures | PASS/FAIL table + 3 worst defects |
+| `TUNE <table> <key=value>` | change an (H) number only with evidence (fixture or capture); log old -> new + why | Claude | updated tuning table in STATE |
+| `KIT <assembly>` | derive a modular assembly from owned pieces; write its derivation record | Codex builds, Claude checks provenance | assembly + record |
+| `SPEC IMG <id> <purpose>` | Claude writes an image spec (section 6) from GDD text | Claude | spec block in log |
+| `RENDER <id>` | Codex renders the spec with GPT image, judges against GDD section 8, approve/reject (max 3 tries) | Codex | image path + approval_state |
+| `FEEL <system>` | Codex proposes timing/juice for a system as (H) numbers + a capture plan; Claude checks it breaks no rule | Codex -> Claude | feel budget entry |
+| `REVIEW <files or milestone>` | the non-author reviews; findings as file:line + fix | the other agent | findings list |
+| `PAUSE` / `RESUME` | stop/continue after the current step; no new work while paused | both | one log line |
+| `STOP` | boss writes `## [user] ... STOP` in the log; both post status and stop waiting | both | status line |
+| `HANDOFF` | write a STATE block + 10-line summary so a fresh session can continue | the active agent | STATE + summary |
+
+Unknown command: ask the boss one question, propose the closest command.
+
+## 2. ROUTING AND TURN-TAKING
+- Channel: TANDEM_REASONING.log only. Append-only, reread before every append, never edit the other agent's entry.
+- Header: `## [claude|codex] YYYY-MM-DD HH:MM:SS UTC | <command or phase> | <title>`. Body: Done / Review / Needs / Next.
+- Waiting: Claude uses a waiter that watches the log for `## [codex]` headers; Codex runs `powershell -NoProfile -File Tools/collab_wait.ps1 -Me codex` pointed at the log (or its own watcher). Never wait without having posted.
+- Ownership: GDD section owners (MASTER section headers) decide inside their section; cross-section changes need `AMEND`.
+- Code flow: Codex writes uncommitted; Claude compiles, tests, reviews, commits with a message saying what changed. Nobody pushes without the boss.
+- A direct boss message always beats the loop.
+
+## 3. STATE LEDGER (machine-readable; latest block wins)
+Every agent appends a STATE block after any change of milestone, gate result, tuning value, decision or gap:
+```
+BEGIN_STATE
+version: <n>
+milestone: M0 | M0.5 | M1 ... | status: not_started | in_progress | gate_failed | passed
+last_gate: <milestone> <PASS|FAIL> <date> <evidence path>
+unity: installed 6000.5.1f1 | target 6000.3 LTS | migrated: no
+tuning: {light: 6, heavy: 12, cast: 10, charged: 14, hp_player: 100, hp_opponent: 60, ...}  (all H until a gate measures them)
+open_gaps: [audio, final_hero, creatures]
+decisions_pending_boss: [...]
+images: {CS-01: approved | rejected | spec_only, ...}
+assemblies: {hall: built | record path, gate_pair: ..., stall_pair: ...}
+END_STATE
+```
+
+## 4. BUILD CAPSULES (paste-ready; each is a complete instruction for one milestone)
+- M0 STACK: "Copy the project to a preserved branch. Open it in Unity 6.3 LTS. Re-resolve packages to 6.3-compatible versions. Repair effect shaders to URP. List curated clips and write a retime table per clip (prep/active/recover in seconds, contact frames). Gate: zero console errors, zero missing references, list of actual incompatibilities."
+- M0.5 RIG + COMBAT SPIKE: "Sparring floor only. One hero rig, minimal collision motor (sole mover). Stance, light phrase (each hit its own action), heavy, guard capacity, step, throw with legal-staging check, plain and charged cast. Procedural layer: swept contact, outcome before accent, fixed limb lengths, planted feet. Gate: layer fixtures at 30/60/120 fps + reviewer captures (same fight with HUD/effects off and on)."
+- M1 GREYBOX: "Hall + courtyard + two routes as blocks. Contract/attempt state machine, service flags, save snapshot. Gate: gold path 1-6; step 9 as isolated fixture."
+- M2 COMBAT CORE: "Harden the M0.5 system (never a second implementation). Gate: novice explains hit/miss/block with HUD and effects off; layer fixtures pass."
+- M3 OPPONENTS + SERVICES: "Pressure and defensive patterns, watch/leash; gate and stall assembly pairs from the kit. Gate: both patterns beaten by deliberate reads; 4 of 5 testers name the changed route/threat/tool."
+- M4 ATTUNEMENT + HALL: "Charge lesson on the sparring floor after the first delivery; learned state persisted. Gate: steps 7-8."
+- M5 FEEL (Codex lead): "Feel budgets, outcome bodies, palette, kit assemblies. Gate: reviewer >= 7/10 per area; three worst defects fixed first."
+- M6 ACCEPT: "P0: steps 1-9 twice on clean builds. Full arc: six contracts twice from fresh profiles."
+
+## 5. DECISION RUBRIC (DUEL and AMEND)
+Score 0-2 each: player choice clarity; identity from primitives; installed-asset feasibility; failure/recovery completeness; measurable proof gates. Keep the losing proposal's best idea. Unresolved disagreement goes to the boss as a two-option question, never averaged away.
+
+## 6. IMAGE SPEC TEMPLATE (SPEC IMG / RENDER)
+```
+id: CS-<nn>-<slug>
+purpose: style_frame | pose_ref | texture_source | ui_language | blender_guide | palette
+subject: <primitives only; no named works, studios, brands>
+pose_action: <plain anatomy>
+camera: <angle, framing, lens feel (intent)>
+light: <key direction, warmth, contrast>
+palette: <proposed hex targets until sampled in-engine>
+materials: <worn timber, rough stone, wool cloth, brass...>
+source_piece_ids: <verified kit pieces / paths>
+reference_images: <our contact sheets or assembly captures>
+assembly_changes: <what the image proposes to build from the kit>
+invariants_to_preserve: <silhouette, sightlines, readability rules>
+constraints: <no text, no logos, no named styles; plain bg for pose refs>
+requested_transparency: yes | no
+acceptance_criteria: <what makes it approvable>
+approval_state: spec_only | rendered | approved | rejected(<reason>)
+use_in_unity: <material tint | texture base | UI shape | Blender guide | pose target>
+```
+Images are references and texture sources only, never collision/reach/support truth.
+
+## 7. GUARDRAILS (check before every output that changes anything)
+- [ ] No named external game, film, show, book, studio, franchise or brand in code, data, text or prompts.
+- [ ] Only installed store content, grown as a modular kit; derivation recorded; colour-only is never the twist; sources untouched (derived copies).
+- [ ] Unity LTS target respected; no package added without an AMEND.
+- [ ] During design tasks, no source-directory edits; during build tasks, only files the command covers.
+- [ ] Every number either measured or marked (H).
+- [ ] Damage never comes from a clip; the collision motor is the only mover.
+- [ ] Scope: six contracts and two services are the ceiling; new content replaces a slot.
+- [ ] Nothing destructive, no push, no purchase, no generation spend without the boss.
+
+## 8. ESCALATE TO THE BOSS ONLY FOR
+direction, scope, art approval of style frames, licences/purchases, Unity migration timing, anything destructive, unresolved DUEL splits. Everything else: decide, log the decision, continue.
+END_SUPER_PROMPT
+BEGIN_STATE
+version: 1
+milestone: M0 | status: not_started
+last_gate: none
+unity: installed 6000.5.1f1 | target 6000.3 LTS | migrated: no
+tuning: {light: 6, heavy: 12, cast: 10, charged: 14, hp_player: 100, hp_opponent: 60, buffer_s: 0.25, contact_hold_s: 0.025-0.045, watch_m: 12, leash_m: 20} (all H)
+open_gaps: [audio, final_hero, creatures, artstation_reference_unavailable]
+decisions_pending_boss: [start M0 (LTS migration on preserved copy), approve 3 concept frames after GDD]
+images: {}
+assemblies: {hall: not_started, gate_pair: not_started, stall_pair: not_started}
+END_STATE
+NEXT: codex steel-mans and extends GSP v1; then Claude posts GSP v2 final.
