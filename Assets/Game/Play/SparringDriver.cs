@@ -1,6 +1,8 @@
 using System.Collections.Generic;
 using Guildbound.Combat;
 using Guildbound.Contracts;
+using Guildbound.Progress;
+using Guildbound.Rules;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -17,6 +19,8 @@ namespace Guildbound.Play
         public OpponentBrain.Pattern pattern = OpponentBrain.Pattern.Pressure;
 
         public CombatWorld World { get; private set; }
+        public GuildState Guild { get; private set; }
+        public InventoryModel Inventory { get; private set; }   // IInventoryModel for the HUD inventory page
         public FighterSim Player => World.Fighters[0];
         public FighterSim Opponent => World.Fighters[1];
         public FighterView PlayerView { get; private set; }
@@ -30,6 +34,14 @@ namespace Guildbound.Play
         readonly List<GameObject> projectileViews = new List<GameObject>();
         bool locked = true;
 
+        void Awake()
+        {
+            Guild = GuildState.Prototype();
+            Inventory = new InventoryModel(new PlayInventoryContext(Guild, () => World != null && !Opponent.Defeated
+                && (Opponent.Position - Player.Position).magnitude < World.T.RecoverThreatRadius));
+            Inventory.GrantPreparation(playerPrepItems);
+        }
+
         void Start() => ResetBout();
 
         public void ResetBout()
@@ -40,7 +52,7 @@ namespace Guildbound.Play
             var p = World.Add(new Vector3(a.x, 0, a.z), (b - a).normalized, 100f);
             var o = World.Add(new Vector3(b.x, 0, b.z), (a - b).normalized, 60f);
             p.Attuned = playerAttuned;
-            p.PrepItems = playerPrepItems;
+            p.PrepItems = Inventory.PreparationCount;   // the inventory owns the count; combat spends a copy
             p.LockTarget = locked ? o.Id : -1;
             runner = new FixedStepRunner(World);
             brain = new OpponentBrain { pattern = pattern };
@@ -76,8 +88,15 @@ namespace Guildbound.Play
             }
 
             intents[0] = ReadPlayer(kb, mouse);
+            if (Inventory.PreparationRequested)   // using the item from the panel starts a Recover; spent only on completion
+            {
+                var i0 = intents[0]; i0.Recover = true; intents[0] = i0;
+                Inventory.ClearPreparationRequest();
+            }
+            int prepBefore = Player.PrepItems;
             intents[1] = brain.Think(World, Opponent, Player);
             runner.Frame(Time.deltaTime, intents);
+            if (Player.PrepItems < prepBefore) Inventory.ConsumePreparation();   // completed Recover with the item
             Dispatch();
             SyncProjectiles();
         }

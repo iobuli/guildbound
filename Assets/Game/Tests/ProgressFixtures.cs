@@ -112,6 +112,17 @@ namespace Guildbound.Tests
         }
 
         [Test]
+        public void Snapshot_KeepsGarmentsAndWornPiece()
+        {
+            var store = new SaveStore(dir);
+            store.Write(GuildState.Prototype().ToSnapshot(2, new[] { "garment.sash", "garment.vest" }, "garment.vest"));
+            var s = store.Read();
+            CollectionAssert.AreEqual(new[] { "garment.sash", "garment.vest" }, s.garments);
+            Assert.AreEqual("garment.vest", s.equipped);
+            Assert.AreEqual(2, s.prepItems);
+        }
+
+        [Test]
         public void EmptySaveFile_IsTreatedAsMissing()
         {
             var store = new SaveStore(dir);

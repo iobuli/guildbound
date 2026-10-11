@@ -119,12 +119,15 @@ namespace Guildbound.Progress
             public List<string> services = new List<string>();
             public List<string> delivered = new List<string>();
             public int prepItems;
+            public List<string> garments = new List<string>();   // owned dressing-corner pieces (AMEND-INV-01 item 4)
+            public string equipped;                              // worn garment id, empty when none
         }
 
         // Only persistent state: never an active attempt, carried item, charge, cooldown or scene reference.
-        public Snapshot ToSnapshot(int prepItems)
+        public Snapshot ToSnapshot(int prepItems, IEnumerable<string> garments = null, string equipped = null)
         {
-            var s = new Snapshot { version = 1, wallet = Wallet, trust = TrustPoints, attuned = Attuned, prepItems = prepItems };
+            var s = new Snapshot { version = 1, wallet = Wallet, trust = TrustPoints, attuned = Attuned, prepItems = prepItems, equipped = equipped ?? "" };
+            if (garments != null) s.garments.AddRange(garments);
             s.paid.AddRange(Paid);
             s.services.AddRange(Services);
             foreach (var kv in Attempts) if (kv.Value == AttemptState.Delivered) s.delivered.Add(kv.Key);
