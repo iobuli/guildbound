@@ -88,6 +88,7 @@ fn state_json(sim: &Sim) -> Value {
         "tuning": {
             "walk_speed": t.walk_speed, "run_speed": t.run_speed, "turn_rate": t.turn_rate,
             "body_radius": t.body_radius, "arena_half_size": t.arena_half_size,
+            "accel": t.accel, "decel": t.decel, "reverse_brake": t.reverse_brake,
         },
     })
 }
@@ -163,6 +164,9 @@ fn gb_tuning(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
         ("turn_rate", &mut t.turn_rate),
         ("body_radius", &mut t.body_radius),
         ("arena_half_size", &mut t.arena_half_size),
+        ("accel", &mut t.accel),
+        ("decel", &mut t.decel),
+        ("reverse_brake", &mut t.reverse_brake),
     ] {
         if let Some(v) = f32_of(&p, key) {
             *field = v;

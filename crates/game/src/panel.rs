@@ -164,6 +164,15 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.label("arena half m");
         ui.add(egui::DragValue::new(&mut t.arena_half_size).speed(0.1).range(2.0..=20.0));
         ui.end_row();
+        ui.label("accel m/s2");
+        ui.add(egui::DragValue::new(&mut t.accel).speed(0.2).range(1.0..=80.0));
+        ui.end_row();
+        ui.label("decel (slide) m/s2");
+        ui.add(egui::DragValue::new(&mut t.decel).speed(0.2).range(1.0..=80.0));
+        ui.end_row();
+        ui.label("reverse brake m/s2");
+        ui.add(egui::DragValue::new(&mut t.reverse_brake).speed(0.2).range(1.0..=120.0));
+        ui.end_row();
     });
     if ui.button("Defaults").clicked() {
         sim.world.tuning = guildbound_sim::Tuning::default();
@@ -194,8 +203,18 @@ fn anim_section(ui: &mut egui::Ui, lib: Option<&AnimLibrary>, anim: &mut AnimSet
     if ui.button("Play clip once").clicked() {
         requests.0.push((state.clip_target, state.clip.clone()));
     }
+    ui.horizontal(|ui| {
+        ui.label("stance");
+        egui::ComboBox::from_id_salt("stance").selected_text(&anim.stance_idle).show_ui(ui, |ui| {
+            for (name, _) in lib.clips.iter().filter(|(n, _)| n.contains("idle")) {
+                ui.selectable_value(&mut anim.stance_idle, name.clone(), name);
+            }
+        });
+    });
+    ui.checkbox(&mut anim.inertialize, "smooth transitions (inertialize from last pose)");
     ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk clip m/s at 1x"));
     ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
+    ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean rad per m/s2"));
 }
 
 fn link_section(ui: &mut egui::Ui, remote: &RemoteActivity, now: f64) {

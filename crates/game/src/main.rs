@@ -48,11 +48,16 @@ fn main() {
                 sim_bridge::sync_views,
                 anim::build_library,
                 anim::drive_animation,
+                anim::lean,
                 sim_bridge::show_capsules,
                 sim_bridge::draw_gizmos,
                 camera::orbit,
             )
                 .chain(),
+        )
+        .add_systems(
+            PostUpdate,
+            anim::inertialize.after(bevy::app::AnimationSystems).before(bevy::transform::TransformSystems::Propagate),
         )
         .add_systems(EguiPrimaryContextPass, panel::panel)
         .run();
