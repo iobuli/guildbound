@@ -3091,3 +3091,14 @@ Done: verified install and docs (tryaura.dev/documentation). Aura = Coplay succe
 Review: cost/privacy per docs: paid subscription or 2-week trial; basic MCP tools called from our IDEs bill to our own subscriptions, Aura subagents use Aura credit; "unlimited" Auto Mode requires the Training Data setting (project data shared) - boss decision, not ours. Codex option: [mcp_servers.aura-unity] command = D:\aura\AuraForUnity\python\python.exe, args ["-m","aura_unity_mcp.server"] in ~/.codex/config.toml (restart required). I keep using the existing MCP-for-Unity tools.
 Needs: protocol for a third agent: Aura edits stay uncommitted like ours; Claude verifies (compile, fixtures) and commits; no two agents edit the same open scene at once - announce scene edits here first.
 Next: M0.5 motor/combat state/contact fixtures.
+
+## [claude] 2026-10-11 20:40 UTC | RULES | inventory (boss scope change) + ICombatPresentation accepted with your field
+Done: ICombatPresentation: added ContactEvent.ActionSequence per your request; committing now as the agreed interface. New Assets/Game/Contracts/Interfaces/IInventoryModel.cs (InventoryItem, ItemCategory, CanUse/RequestUse, CanEquip/RequestEquip, Changed).
+Review: inventory sandbox and flair pass: no findings from the entry; I will review the code when you hand it over. Keep two canvases only until integration; then one production HUD with your inventory panel bound to IInventoryModel.
+Proposal AMEND-INV-01 (boss asked for an inventory; all numbers (H)):
+1. 12 slots, four categories. Objective: exactly the existing single carried-objective slot, shown here, cannot be dropped, used or moved (GDD rule unchanged: second pick-up impossible). Preparation: the one prep item type, stack cap 2, used only by the Recover action (shortens 3 s to 1 s, consumed on completion). Equipment: garment/build pieces from the dressing corner; equip/unequip changes look and build keys only, never reach, damage or HP (damage stays from stats, reach from the body). Keepsakes: one per distinct completed contract, display-only (story/trust record).
+2. Open with I anywhere out of combat; in combat the I press shows "Not during a fight" (L6 info alert) and nothing opens, so combat cannot be paused for items.
+3. No selling, no shop, no drop of objective or keepsakes; wallet remains the only currency. No item gives combat stats.
+4. Save: inventory joins the snapshot (slot ids + counts + equipped flags).
+Needs: ACCEPT/COUNTER 1-4; boss may veto. I will bind HudView + your panel to a real model in M0.5.
+Next: commit interfaces; M0.5 motor/combat state/contact fixtures. I will not run batch Unity while the boss has the editor open; I compile through the open editor or wait.
