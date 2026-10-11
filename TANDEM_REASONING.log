@@ -1640,3 +1640,146 @@ Wave 2 (after the style pick): CS-02, CS-05, CS-06, CS-11, CS-12.
 Wave 3 (after M0.5 rig proof): CS-07, CS-08, CS-09, CS-10, CS-14.
 Each image: max 3 attempts; log id, attempt, outcome, file path under Documentation/concepts/ (created at render time), approval_state.
 END_KIT_LEXICON
+
+## [claude] 2026-10-11 13:39:17 UTC | GSP.kit v2 | boss: separate objects from characters and effects -> KIT LEXICON v2 (three libraries + scene composition)
+Supersedes KIT LEXICON v1. Objects, characters and effects are now separate kits, each with its own IDs, grammar, recipes and concept specs; they only meet in scene specs (section 4). Object specs contain no characters or effects; character specs no architecture or effects; effect specs no architecture or characters. Animation clip families moved into the character kit as motion bricks. Render waves follow the split (objects first for the style lock, characters after the rig proof, scenes last).
+BEGIN_KIT_LEXICON
+# KIT LEXICON v2 - three separate libraries: OBJECTS | CHARACTERS | EFFECTS
+
+Boss rule: objects, characters and effects are separate kits with separate grammars, recipes and concept specs. They meet only in a SCENE COMPOSITION (section 4), never inside one brick or one spec. Source: Logs/sheets/*.png/.txt + Documentation/catalog-clips.txt. Sizes/grid UNKNOWN until measured in M0 (H). Palette targets in section 5 apply to all three.
+
+=====================================================================
+## 1. OBJECT KIT (OBJ) - world, architecture, props, nature
+=====================================================================
+### 1.1 Look
+- Village bricks (V-): faceted low-poly, flat-shaded, matte, earthy; timber houses on stone plinths, thatch/shingle roofs, crossed timber horns on gable peaks; chunky, slightly crooked props.
+- Hall bricks (T-): clean chunky modular timber, near-black frames, mid-brown planks, rivet dots; wall infill currently GREY placeholder (material gap).
+- Nature: faceted rocks/trees (V-ROCK, V-VEG) vs painterly soft foliage (A-) = the main style tension.
+
+### 1.2 Brick IDs
+HALL (T-): T-FLOOR, T-WALL, T-WIN, T-DOOR, T-POST, T-ROOF-L, T-ROOF-S, T-ROOF-CL1/CL2, T-ROOF-CS1/CS2; T-BAR, T-BENCH, T-TBL-SQ, T-TBL-RD, T-TBL-DIN, T-STOOL, T-STOOL-TALL, T-CHAIR, T-KEG, T-BARREL, T-CHEST, T-TORCH, T-CANDLE-1..4; T-GOBLET, T-TANKARD-E/F/FAT, T-TANKARD-SPILL, T-JUG, T-BOTTLE-1/2, T-PLATE.
+VILLAGE (V-): V-HOUSE-01..05; V-AWN-A/B; V-FENCE-01A/01B, V-FENCE-CNR; V-GATE-SOLID, V-GATE-BROKEN, V-GATE-HALF; V-SHED-01/02; V-BOARDWALK-A/B; V-BANNER-A (red/bone quartered), V-BANNER-B (dark red); V-BENCH-1..3, V-CHAIR-A/B, V-BARREL-1/2, V-BASKET-1/2, V-TUB, V-BOWL, V-BOX, V-BUCKET, V-CRATE-1..3, V-JUG, V-PACKAGE, V-SACK-1/2, V-SACKS-SET, V-SACK-OPEN, V-TROUGH, V-VASE-1..3, V-RACK-CLOTHES, V-RACK-A, V-TRIPOD-POT, V-BROOM, V-LADDER, V-RAKE, V-POSTBOX, V-STONES, V-CART, V-WELL, V-SHIELD-1/2, V-TABLE, V-LOGS-1..3.
+NATURE: V-ROCK-1..3, V-ROCK-S1/S2, V-PEBBLES; TER-GRASS-1/2, TER-PATH-A/B, TER-SAND, HILL-1/2, MTN-1, SKY-DOME, CLOUD-1/2; V-BUSH-1/2, V-FLOWER-R/Y/B, V-GRASS-1/2, V-PLANT-1/2, V-TREE-1/2, V-PINE; A-TREE-1..8, A-BUSH-1 (crimson), A-BUSH-2..4, A-GRASS-1/2.
+
+### 1.3 Object grammar
+- BAY = T-POST + infill (T-WALL | T-WIN | T-DOOR) + T-POST; bays chain, posts shared.
+- ROOF RUN = T-ROOF-L per bay, T-ROOF-S on gable sides, T-ROOF-CL/CS at corners.
+- THRESHOLD = 2 T-POST stretched 1.3-1.5x + T-ROOF-L lintel + banner pair.
+- SERVICE EDGE = counter (T-BAR | V-TABLE) + storage (T-CHEST | V-CRATE) + vertical marker (V-RACK | T-TORCH).
+- STATE PAIR = same bricks, damaged (missing/tilted pieces, piled props, no light, no cloth) vs restored (aligned, cloth, light).
+- LANDMARK = one tall or bright silhouette per space, visible from the hall door.
+- Allowed edits on derived copies: uniform scale 0.8-1.5x, single-axis stretch for posts/beams, piece removal/duplication, kitbash between kits, material derivatives. Never colour-only.
+
+### 1.4 Object recipes
+O1 GUILD LONG HALL: 3 x 5 bays; front gable T-DOOR centre + T-WIN each side; full roof run; THRESHOLD + V-BANNER-A pair at the front; crossed gable horns kitbashed from V-HOUSE peaks; inside: SERVICE EDGE (T-BAR + T-KEG + T-CHEST), board (free T-WALL between two T-POST with paper quads), T-BENCH rows, T-TORCH + T-CANDLE light pools, rear T-DOOR to the sparring floor.
+O2 SPARRING FLOOR: TER-PATH earth, V-FENCE-01 ring, V-BOARDWALK watchers' edge with V-BENCH, V-SHIELD-1/2 trophies on the fence, V-RACK-A gear, V-POSTBOX banner post landmark.
+O3 GATE PAIR: damaged = V-GATE-BROKEN in a 2 x T-POST frame, V-STONES + V-LOGS piled, V-LADDER leaning, unlit; restored = V-GATE-SOLID swung open in the same frame, T-ROOF-L lintel, V-BANNER-B, T-TORCH lit, path cleared.
+O4 STALL PAIR: dormant = V-SHED-01, V-CRATE-3 stack, V-SACKS-SET, V-BROOM, no cloth; active = V-AWN-A recoloured red/bone over V-TABLE + V-BASKET-1/2 + V-JUG + V-VASE-1..3 + V-RACK-CLOTHES.
+O5 EXPOSED ROAD: TER-PATH strip, broken V-FENCE-01 runs, abandoned V-CART, V-LOGS, low V-BUSH only, V-PINE far landmark; site: V-SHED-02 + V-CRATE-1 (tool crate) + V-RAKE + V-LADDER.
+O6 SHELTERED PATH: A-TREE clusters, V-ROCK-1..3 cover, A-BUSH-1 crimson at the bend, A-GRASS; site: V-SACKS-SET + V-BASKET + V-TROUGH.
+O7 OPPONENT POST: V-TRIPOD-POT + V-LOGS + V-SACK-OPEN + V-BARREL (effect anchor point for a smoke loop, see FX kit).
+
+### 1.5 Object style directions (boss picks from wave 1)
+SD-A CARVED FOLK: all objects read as chiselled timber/stone with matte pigment; A- foliage retuned to fewer, larger clumps. SD-B PAINTED SOFT: objects get brushed gradients derived from the A- foliage. Recommendation: SD-A, with A- foliage kept soft only at the edges of decision spaces.
+
+### 1.6 Object concept specs (CS-OBJ)
+Common: no text, logos or named styles/artists/studios/games/films; faceted geometry visible; matte; palette section 5; NO characters and NO effects in object specs (empty scenes, light only).
+CS-OBJ-01 exploded-hall: O1 as an exploded assembly diagram, each brick floating slightly apart along its snap axis; three-quarter aerial 30 deg, orthographic feel; even studio light, background #9FB2C8. Acceptance: a viewer can count brick types; nothing un-buildable. Use: hall blueprint + derivation record.
+CS-OBJ-02 hall-exterior (SD-A and SD-B variants): O1 + O2 + V-WELL from eye level 1.7 m, three-quarter, 35 mm feel, late-morning sun from the left; both route mouths visible; hall roof/door silhouette strongest shape; sparring ring ground quiet. Use: layout + palette + style choice.
+CS-OBJ-03 hall-interior: counter service edge, keg and chest, board between two posts with blank paper sheets, benches, warm torch/candle pools #F2A65A, rear door open to daylight; from just inside the front door.
+CS-OBJ-04 gate-pair: two panels, identical camera and light; damaged vs restored (O3). Acceptance: change obvious at thumbnail size in silhouette, without colour.
+CS-OBJ-05 stall-pair: two panels, identical camera; dormant vs active (O4).
+CS-OBJ-06 exposed-road day + dusk: O5 + O7; long sightlines by day; dusk fog that keeps a 15 m silhouette area readable (an empty marked spot, no figure).
+CS-OBJ-07 sheltered-path: O6; dappled light, ambush bend, supplies under trees; path always visible.
+CS-OBJ-08 texture-sources: three flat swatches (worn chiselled timber, cool rough stone, coarse wool in red and bone); even light, no perspective, aim for tileable edges.
+CS-OBJ-09 ui-language: plank health bar with iron caps, stacked-plank guard segments, iron ring ember slot (empty ring, effect added in-engine), crate-outline objective slot, pinned paper contract card with wax-red seal, post-and-lintel button frames; no letters or numbers.
+
+=====================================================================
+## 2. CHARACTER KIT (CHR) - bodies, rigs, outfits, motion
+=====================================================================
+### 2.1 Look
+Two body families: (1) segmented BLOCK mannequins in loud flat colours with weapon sets (they match the faceted object kit in form, not in colour); (2) SMOOTH humanoid dummies and mocap rigs (grey, red, blue, purple). One high-detail grey figure (C-MOCAP). No final hero.
+
+### 2.2 Body IDs
+C-MOCAP (rig_MCUnity), C-BLUE, C-RED, C-DUMMY-M, C-DUMMY-F, C-MORRO; C-BLOCK-{BRUTE, KARATE, NINJA, SORCERESS, 2H, ARCHER, KNIGHT, MAGE, CROSSBOW, HAMMER, SPEAR, SWORD, CRAFTER, BERSERKER, HEAVY}. Hand-held pieces from the block sets (swords, shield, hammer, spear, crossbow, bow, staff, pointed hat) are CHR accessories, not objects.
+
+### 2.3 Motion IDs (clip families as character bricks; all Humanoid)
+M-LOCO (8-way run/strafe with root motion, idle, jump/fall/land, roll, stun), M-STRIKE (fighting-motion jab/hook/upper, body/high/low roundhouse, side kick, low kicks; light strings L1-R3), M-REACT (head/body/low damage, head/body/low block, knockdown, knockdown loop, get-up, directional get-hit, knockback), M-THROW (paired grab/throw A/B), M-CAST (one-hand direct L/R, two-hand Load hold + Cast, omni burst, casting enter/idle/exit/damage; male and female sets), M-WEAPON (12 styles: idle/walk/run/jump/fall/land/attack; 2-hand sword set of 11 attacks), M-TOWN (idles, talk, emotions, vending, carry, pick-up, chant, drunk walk, greet/nod, crafting).
+
+### 2.4 Character grammar
+- FIGURE = BODY (one owned humanoid rig) + OUTFIT LAYERS (derived materials and kitbashed accessory meshes on derived copies) + PALETTE (section 5) + SILHOUETTE KEY (one shape that identifies the role at 20 m) + MOTION SET (curated M- families).
+- ROLE = FIGURE + behaviour pattern (from the GDD) + a stance clip that defines the home pose.
+- Silhouette first: two roles must be told apart in solid black at thumbnail size.
+- Edits on derived copies only: material derivatives, accessory kitbash, proportion tweaks within the rig's tolerance; motion twists = retiming, curated transitions, procedural layer.
+- Style link to objects: SD-A turns figures into faceted carved figures (bridging block mannequins and the faceted world); SD-B keeps smooth bodies with painted materials.
+
+### 2.5 Character roster (recipes)
+CH1 HERO / guild field member: C-DUMMY-M or C-MOCAP body (rig proof decides); practical layered work clothes (wrapped forearms, padded vest, belt + one pouch, soft boots), red/bone sash = silhouette key; motion: M-LOCO, M-STRIKE, M-REACT, M-THROW, M-CAST.
+CH2 PRESSURE opponent: same body family; forward lean, light layers, wrapped fists; ochre + charcoal; silhouette key: forward-hunched shoulders + head wrap.
+CH3 DEFENSIVE opponent: same body; upright broad stance, padded forearm guards; slate + moss; silhouette key: wide shoulders + raised forearm pads.
+CH4 CLERK: smooth body; long apron/robe; M-TOWN chant/talk/idle; stands at the service edge.
+CH5 STALL KEEPER: smooth body; rolled sleeves, cap; M-TOWN vending/greet.
+CH6 REPAIR CREW: block or smooth body; tool belt; M-TOWN carry/pick-up/crafting.
+CH7 TRAINING PARTNER: hero body, plain undyed outfit; stance + strike/guard set.
+
+### 2.6 Character concept specs (CS-CHR)
+Common: plain light background (transparent where possible); NO architecture and NO effects; proportions fit a standard humanoid rig (head about 1/7.5 of height); hands and feet clear; no text.
+CS-CHR-01 hero-turnaround: CH1 front/side/back, neutral A-pose; SD-A faceted rendering (plus an SD-B variant if the boss has not picked yet).
+CS-CHR-02 opponent-silhouettes: CH2 and CH3 in signature poses, each beside its solid-black silhouette; acceptance: told apart by silhouette alone.
+CS-CHR-03 hall-cast lineup: CH4, CH5, CH6, CH7 standing in a row at equal scale with the hero for proportion.
+CS-CHR-04 combat-pose-sheet: neutral figure, 8 key poses: home stance, light contact, heavy wind-up, heavy contact, guard loaded by a block, guard broken, lateral step, throw reach-in. Aesthetic targets only, never collision truth.
+CS-CHR-05 casting-pose-sheet: hero in cast ready, plain release, charged hold (feet planted, braced), charged release; NO effect drawn (effects come from the FX kit and are layered in-engine).
+
+=====================================================================
+## 3. EFFECTS KIT (FX) - element and impact effects
+=====================================================================
+### 3.1 Look
+Two sources: element sets (fire, frost, light, lightning), each with charge, missile tiny/small/normal/mega, muzzle normal/big, explosion tiny/small/normal/mega, dome, shield, pillar, sphere, beam, slash hit, orbit, glow; generic sets: sparks (by colour), dust, smoke, magic shields, portals, auras, hits (electro, explosion, stones), slashes. Known prep: missing shaders (magenta) and missing-script components on some prefabs.
+
+### 3.2 Effect IDs
+X-FIRE-{CHARGE, MISSILE-T/S/N/M, MUZZLE-N/B, EXPLODE-T/S/N/M, DOME, SHIELD, PILLAR, SPHERE, BEAM, SLASHHIT, ORBIT, GLOW}; same pattern for X-FROST-, X-LIGHT-, X-LIGHTNING- (plus X-LIGHTNING-IMPACT-BLUE/GOLD); X-SPARK-{colour}-{STEADY, EXPLODE, FLASH}; X-DUST-{PUFF, GROUND, LOOP, HEMI}; X-SMOKE-{PUFF, GROUND, LOOP, HEMI, VORTEX}; X-SHIELD-{BLUE, PINK, YELLOW}; X-PORTAL-{BLUE, GREEN, RED, YELLOW}; X-AURA-{LIGHTNING, STAR, PLEXUS}; X-HIT-{ELECTRO, EXPLOSION, STONES, ...}; X-SLASH-{CHARGE-BLUE/PURPLE/RED, ELECTRO, SNOW, STONE}.
+
+### 3.3 Effect grammar
+- EFFECT EVENT = element x stage x scale. Stages: READY -> CHARGE -> RELEASE (muzzle) -> TRAVEL (missile) -> IMPACT (explosion/hit) -> LINGER (smoke/dust, short).
+- SCALE TIERS bind to gameplay strength, never to clip names: tiny = ready/contact accent, small = plain cast, normal = charged cast, mega = reserved (not in P0).
+- ANCHORS: every effect attaches to a declared point: hand bone, foot bone, contact point, projectile, ground point, object anchor (e.g. O7 smoke).
+- BUDGET: effects never cover the hands, face or the opponent's next tell; max one linger per impact; contact accents stay hand-sized.
+- PAIRING: every effect stage has a body cue from the CHR kit first (outcomes get different bodies before different colours).
+- Edits: shader repair to URP, scale, colour to palette, lifetime trims, particle count caps, behaviour written by us (pack scripts never used).
+
+### 3.4 Effect recipes
+F1 FIRE PLAIN: READY X-FIRE-GLOW tiny at the palm -> RELEASE X-FIRE-MUZZLE-N -> TRAVEL X-FIRE-MISSILE-S (short trail) -> IMPACT X-FIRE-EXPLODE-S -> LINGER X-SMOKE-PUFF short.
+F2 FIRE CHARGED: CHARGE X-FIRE-CHARGE growing with hold (size and pulse together) -> RELEASE X-FIRE-MUZZLE-B -> TRAVEL X-FIRE-MISSILE-N (bounded steering) -> IMPACT X-FIRE-EXPLODE-N + push-back -> LINGER X-SMOKE-GROUND brief.
+F3 CONTACT ACCENTS: hit X-SPARK-WHITE-EXPLODE tiny; block X-SPARK-YELLOW-FLASH tiny at the guard; guard break X-DUST-HEMI low; heavy contact X-DUST-GROUND pulse; footfalls/landing X-DUST-PUFF.
+F4 WORLD: O7 opponent post X-SMOKE-LOOP small; restored gate torch flame (T-TORCH + small fire glow); hall candles.
+F5 ATTUNEMENT LESSON: sparring-floor ring marker X-FIRE-ORBIT tiny around the hero's hand once when the charge is learned.
+Reserved (not P0): frost, light, lightning sets for a later element; portals and auras only by AMEND.
+
+### 3.5 Effect concept specs (CS-FX)
+Common: dark neutral background, NO architecture and NO characters except a plain grey hand/silhouette placeholder for scale; no text.
+CS-FX-01 fire-stage-strip: F1 and F2 as two horizontal strips, stage by stage (ready, charge growth in 3 sizes, muzzle, missile, impact, linger), scale tiers labelled by size only.
+CS-FX-02 contact-accent-sheet: F3 accents at real size beside a grey fist and forearm guard for scale; acceptance: accent never larger than the hand.
+CS-FX-03 palette-check: fire core #FFD27A and edge #E2561F against the object palette swatches, plus a desaturated version to prove the effect still reads by shape.
+
+=====================================================================
+## 4. SCENE COMPOSITION (where the three kits meet)
+=====================================================================
+A scene spec = one OBJ recipe + CHR roles + FX recipes, each referenced by ID, never redefined. Composition rules: character silhouette is always the highest-contrast moving shape; effects stay below the hand-size budget except a charged impact; object clutter stays out of the fight space.
+CS-SCN-01 key-moment: O2 at dusk + CH1 blocking CH2 + F3 block accent + O1 threshold torch pools + O3 restored gate in the background.
+CS-SCN-02 first-delivery: O1 interior + CH1 at the counter with CH4 + O4 active stall visible through the door.
+
+=====================================================================
+## 5. SHARED PALETTE (targets sampled from bricks; verify in-engine)
+=====================================================================
+timber dark #4A3122 | timber mid #7A5233 | timber light #B38552 | frame #2A211C | stone #8C8A85 | stone dark #55534F | thatch #9C9268 | guild madder red #8E2F25 | guild bone #E6DAC2 | grass #6E9A4A | sun foliage #C9D85A | sky #9FB2C8 | fire core #FFD27A | fire edge #E2561F | torch pool #F2A65A | opponent ochre #B07A2A / charcoal #2E2E2E | opponent slate #5B6770 / moss #5E6B3A.
+
+=====================================================================
+## 6. RENDER PLAN (Codex renders with GPT image; max 3 attempts each)
+=====================================================================
+Wave 1 OBJECTS (style lock): CS-OBJ-01, CS-OBJ-02 (SD-A + SD-B), CS-OBJ-04, CS-OBJ-05 -> boss picks SD-A or SD-B.
+Wave 2 OBJECTS + FX: CS-OBJ-03, 06, 07, 08, 09; CS-FX-01, 02, 03.
+Wave 3 CHARACTERS (after the M0.5 rig proof picks the body): CS-CHR-01..05.
+Wave 4 SCENES: CS-SCN-01, 02 (only after the three kits each have approved images).
+Files: Documentation/concepts/{objects,characters,effects,scenes}/ (created at render time); each logged with id, attempt, outcome, approval_state.
+END_KIT_LEXICON
+NEXT: codex reviews v2 and starts wave 1 (objects only) when it agrees.
