@@ -3,7 +3,9 @@
 //! Positions are on the ground plane as `V2 { x, z }`. The motor is the only mover (MASTER L1).
 //! Nothing here reads a clock, a random source or a hash-map order: same inputs, same state.
 
+pub mod combat;
 mod math;
+pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase};
 pub use math::V2;
 
 /// Fixed simulation step in seconds.
@@ -65,6 +67,12 @@ impl Default for Tuning {
 pub struct Intent {
     pub move_dir: V2,
     pub run: bool,
+    /// Press edges (true for exactly one tick).
+    pub light: bool,
+    pub heavy: bool,
+    pub guard_pressed: bool,
+    /// Held.
+    pub guard: bool,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -78,20 +86,66 @@ pub struct Fighter {
     pub max_hp: f32,
     /// Index of the fighter this one faces while free (strafe), if any.
     pub lock_target: Option<usize>,
+    pub action: Action,
+    pub guard: f32,
+    /// Light-string depth of the current string (0 = first hit).
+    pub chain: u8,
+    pub last_move: Option<combat::MoveId>,
+    /// Seconds left: hit-stop freeze, parry window, counter window, block stun.
+    pub hit_stop: f32,
+    pub parry_left: f32,
+    pub counter_left: f32,
+    pub block_stun: f32,
+    pub(crate) parry_recharge: f32,
+    pub(crate) guard_regen_wait: f32,
+    pub(crate) landed: bool,
+    pub(crate) hit_mask: u64,
+    pub(crate) fist_prev: Option<V2>,
+    pub(crate) start_facing: V2,
+    pub(crate) buffered: Option<combat::Press>,
     move_from: V2,
 }
 
 impl Fighter {
     pub fn new(position: V2, facing: V2, hp: f32) -> Self {
-        Self { position, velocity: V2::ZERO, accel: V2::ZERO, facing: facing.normalized(), hp, max_hp: hp, lock_target: None, move_from: position }
+        let facing = facing.normalized();
+        Self {
+            position,
+            velocity: V2::ZERO,
+            accel: V2::ZERO,
+            facing,
+            hp,
+            max_hp: hp,
+            lock_target: None,
+            action: Action::IDLE,
+            guard: CombatTuning::default().guard_max,
+            chain: 0,
+            last_move: None,
+            hit_stop: 0.0,
+            parry_left: 0.0,
+            counter_left: 0.0,
+            block_stun: 0.0,
+            parry_recharge: 0.0,
+            guard_regen_wait: 0.0,
+            landed: false,
+            hit_mask: 0,
+            fist_prev: None,
+            start_facing: facing,
+            buffered: None,
+            move_from: position,
+        }
     }
 }
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct World {
     pub tuning: Tuning,
+    pub combat: CombatTuning,
     pub fighters: Vec<Fighter>,
     pub tick: u64,
+    /// Contacts resolved since the presentation last drained them.
+    pub contacts: Vec<Contact>,
+    pub(crate) seq: u32,
 }
 
 impl World {
@@ -101,7 +155,7 @@ impl World {
             Fighter::new(V2::new(0.0, -1.5), V2::new(0.0, 1.0), 100.0),
             Fighter::new(V2::new(0.0, 1.5), V2::new(0.0, -1.0), 100.0),
         ];
-        Self { tuning, fighters, tick: 0 }
+        Self { tuning, combat: CombatTuning::default(), fighters, tick: 0, contacts: Vec::new(), seq: 0 }
     }
 
     /// Advance one fixed step. Missing intents count as idle.
@@ -112,15 +166,43 @@ impl World {
         }
         for i in 0..self.fighters.len() {
             let intent = intents.get(i).copied().unwrap_or_default();
+            self.think(i, &intent);
+        }
+        for i in 0..self.fighters.len() {
+            let intent = intents.get(i).copied().unwrap_or_default();
             self.move_fighter(i, intent);
         }
         self.separate();
+        for i in 0..self.fighters.len() {
+            self.sweep(i);
+        }
+    }
+
+    /// Hand the contacts resolved since the last call to the caller.
+    pub fn drain_contacts(&mut self) -> Vec<Contact> {
+        std::mem::take(&mut self.contacts)
     }
 
     fn move_fighter(&mut self, i: usize, intent: Intent) {
         let t = &self.tuning;
-        let m = if intent.move_dir.length_squared() > 1.0 { intent.move_dir.normalized() } else { intent.move_dir };
-        let speed = if intent.run { t.run_speed } else { t.walk_speed };
+        let f = &self.fighters[i];
+        if f.hit_stop > 0.0 {
+            // frozen in hit-stop: keeps its velocity for when the clock resumes
+            self.fighters[i].accel = V2::ZERO;
+            return;
+        }
+        let action = f.action;
+        // strikes, stuns and knockdowns coast on momentum (run carry, knockback); guard walks slowly
+        let steering = action.free() && f.hp > 0.0;
+        let raw = if steering { intent.move_dir } else { V2::ZERO };
+        let m = if raw.length_squared() > 1.0 { raw.normalized() } else { raw };
+        let speed = if action.kind == ActionKind::Guard {
+            self.combat.guard_walk_speed
+        } else if intent.run {
+            t.run_speed
+        } else {
+            t.walk_speed
+        };
         let target = m * speed;
         let lock = self.fighters[i].lock_target.filter(|&j| j != i && j < self.fighters.len()).map(|j| self.fighters[j].position);
         let max_turn = t.turn_rate * STEP;
@@ -163,7 +245,9 @@ impl World {
         f.accel = (f.velocity - v) / STEP;
         f.position = f.position + f.velocity * STEP;
 
-        if let Some(target) = lock {
+        if !steering {
+            // committed actions keep their facing (strike retarget is bounded in combat::think)
+        } else if let Some(target) = lock {
             let to = target - f.position;
             if to.length_squared() > 1e-6 {
                 f.facing = to.normalized();
@@ -222,6 +306,11 @@ impl World {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
+            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed] {
+                eat(v.to_bits() as u64);
+            }
+            eat(f.action.seq as u64);
+            eat(f.chain as u64);
         }
         h
     }
@@ -236,3 +325,6 @@ pub fn turn_toward(from: V2, to: V2, max_degrees: f32) -> V2 {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod tests_combat;

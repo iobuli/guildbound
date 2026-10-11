@@ -11,7 +11,7 @@ fn script(tick: u64) -> [Intent; 2] {
         4 => V2::ZERO,
         _ => V2::new(-0.6, 0.8),
     };
-    [Intent { move_dir: dir, run: phase % 2 == 0 }, Intent { move_dir: V2::new(-dir.z, dir.x), run: false }]
+    [Intent { move_dir: dir, run: phase % 2 == 0, ..Default::default() }, Intent { move_dir: V2::new(-dir.z, dir.x), run: false, ..Default::default() }]
 }
 
 #[test]
@@ -33,7 +33,7 @@ fn walk_covers_walk_speed_per_second() {
     let mut w = World::sparring(Tuning::default());
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.0, 0.0);
-    let walk = [Intent { move_dir: V2::new(1.0, 0.0), run: false }];
+    let walk = [Intent { move_dir: V2::new(1.0, 0.0), run: false, ..Default::default() }];
     for _ in 0..60 {
         w.step(&walk); // accelerate to cruise first (momentum)
     }
@@ -50,7 +50,7 @@ fn oversized_input_is_clamped_to_unit() {
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.0, 0.0);
     for _ in 0..240 {
-        w.step(&[Intent { move_dir: V2::new(5.0, 0.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(5.0, 0.0), run: true, ..Default::default() }]);
     }
     assert!((w.fighters[0].velocity.length() - 4.0).abs() < 1e-4);
 }
@@ -60,10 +60,10 @@ fn linear_speed_ramps_up_and_momentum_carries_into_a_stop() {
     let mut w = World::sparring(Tuning { model: MotorModel::Linear, ..Tuning::default() });
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.0, 0.0);
-    w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+    w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true, ..Default::default() }]);
     assert!((w.fighters[0].velocity.x - 12.0 * STEP).abs() < 1e-5, "first tick only gains accel * dt");
     for _ in 0..60 {
-        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true, ..Default::default() }]);
     }
     let x0 = w.fighters[0].position.x;
     let mut ticks = 0;
@@ -82,7 +82,7 @@ fn arena_holds_bodies_inside() {
     let mut w = World::sparring(Tuning::default());
     let half = w.tuning.arena_half_size - w.tuning.body_radius;
     for _ in 0..1200 {
-        w.step(&[Intent { move_dir: V2::new(1.0, 1.0), run: true }, Intent { move_dir: V2::new(-1.0, -1.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(1.0, 1.0), run: true, ..Default::default() }, Intent { move_dir: V2::new(-1.0, -1.0), run: true, ..Default::default() }]);
         for f in &w.fighters {
             assert!(f.position.x.abs() <= half + 1e-6 && f.position.z.abs() <= half + 1e-6);
         }
@@ -95,7 +95,7 @@ fn bodies_never_overlap_after_a_step() {
     let min = 2.0 * w.tuning.body_radius;
     for _ in 0..600 {
         // walk straight into each other
-        w.step(&[Intent { move_dir: V2::new(0.0, 1.0), run: true }, Intent { move_dir: V2::new(0.0, -1.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(0.0, 1.0), run: true, ..Default::default() }, Intent { move_dir: V2::new(0.0, -1.0), run: true, ..Default::default() }]);
         let d = (w.fighters[1].position - w.fighters[0].position).length();
         assert!(d >= min - 1e-4, "overlap: {d}");
     }
@@ -109,7 +109,7 @@ fn turning_is_bounded_and_reversal_does_not_flip() {
     let max = w.tuning.turn_rate * STEP;
     let mut prev = w.fighters[0].facing;
     for _ in 0..30 {
-        w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: false }]);
+        w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: false, ..Default::default() }]);
         let f = w.fighters[0].facing;
         assert!(prev.signed_angle_to(f).abs().to_degrees() <= max + 1e-3);
         assert!((f.length() - 1.0).abs() < 1e-5);
@@ -122,7 +122,7 @@ fn turning_is_bounded_and_reversal_does_not_flip() {
 fn lock_target_faces_the_target() {
     let mut w = World::sparring(Tuning::default());
     w.fighters[0].lock_target = Some(1);
-    w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: false }]);
+    w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: false, ..Default::default() }]);
     let to = (w.fighters[1].position - w.fighters[0].position).normalized();
     assert!(w.fighters[0].facing.dot(to) > 0.9999);
 }
@@ -132,7 +132,7 @@ fn run_to_cruise(model: MotorModel) -> World {
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.5, 0.0);
     for _ in 0..240 {
-        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true, ..Default::default() }]);
     }
     w
 }
@@ -148,7 +148,7 @@ fn drag_starts_fast_then_eases_into_top_speed() {
     let mut w = World::sparring(Tuning::default());
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.5, 0.0);
-    let run = [Intent { move_dir: V2::new(1.0, 0.0), run: true }];
+    let run = [Intent { move_dir: V2::new(1.0, 0.0), run: true, ..Default::default() }];
     let mut speeds = Vec::new();
     for _ in 0..60 {
         w.step(&run);
@@ -183,7 +183,7 @@ fn drag_reversal_plants_before_moving_back() {
     let x0 = w.fighters[0].position.x;
     let mut furthest = x0;
     for _ in 0..120 {
-        w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: true }]);
+        w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: true, ..Default::default() }]);
         furthest = furthest.max(w.fighters[0].position.x);
     }
     assert!(furthest > x0 + 0.05, "momentum carries the body on before it turns");
