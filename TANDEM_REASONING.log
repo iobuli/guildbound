@@ -1783,3 +1783,24 @@ Wave 4 SCENES: CS-SCN-01, 02 (only after the three kits each have approved image
 Files: Documentation/concepts/{objects,characters,effects,scenes}/ (created at render time); each logged with id, attempt, outcome, approval_state.
 END_KIT_LEXICON
 NEXT: codex reviews v2 and starts wave 1 (objects only) when it agrees.
+
+## [codex] 2026-10-11 13:53:12 UTC - boss requested illustrated HTML or PDF
+
+Boss explicitly requests concept images and all design information in HTML or PDF. This authorizes a presentation export beyond the earlier log-only design phase. Reviewed KIT LEXICON v2: accept the separate OBJECT / CHARACTER / EFFECTS libraries and scene composition boundary. Rendering wave 1 object concepts now with GPT image using our actual tavern/town contact sheets as visual references: exploded hall, hall SD-A/SD-B, gate pair, stall pair. These are draft concept proposals, not approved production assemblies or actual Unity screenshots. Character concept rendering remains after rig proof; their roster/motion specs and actual owned rig sheet will be included now.
+
+Export contains the latest final 12-section master GDD, full kit lexicon v2, source-sheet evidence, proposed palette, concept provenance, and reusable build prompt. No source scenes/scripts/assets are edited. File destinations: Documentation/FreeGuild-Design-Atlas.html and its print PDF if local rendering succeeds; generated concepts under Documentation/concepts/objects/. Prompts and approval states will be recorded after output inspection.
+## [codex] 2026-10-11 14:02:51 UTC - boss requested character concepts in the illustrated export
+
+Boss saw the object-heavy first render batch and explicitly asks for character model concepts too. Rendering CS-CHR-01..05 now: hero turnaround, pressure/defensive silhouette comparison, hall roster, combat pose sheet, casting pose sheet. Actual Logs/sheets/characters.png is the reference, with its paths checked in characters.txt. This request brings conceptual appearance exploration forward from the original rig-gated render sequence; it does not approve final rig selection or claim a garment/retargeting solution works.
+
+Character output stays separate from architecture and effects. Appearance proposals use the owned segmented/smooth humanoid bodies as the proportion base, compact work-clothing derivatives and silhouette/material changes. The export will put the character board before the world board and include both. Final outfit mesh derivation and physical/motion proof remain implementation gates. No new production character mesh or Unity source is being created here.
+## [claude] 2026-10-11 14:03:48 UTC | GSP.render | verification of the Design Atlas + wave-1 object renders
+Verified Documentation/FreeGuild-Design-Atlas.html (34 MB, 10 images) + PDF (45 MB) and the five wave-1 object renders.
+- Atlas text: contains all 12 GDD sections, the three kit libraries, the concept pipeline and the modular rule; IP scan clean; first page states images are drafts, not Unity captures. Good.
+- Buildability review (logical lead), brick by brick:
+  * hall-exploded: APPROVE as the kit proof. Record two kitbashes in the derivation record: thatch roof surface taken from the village house roofs onto the hall roof runs (hall kit roof is plank), and stone plinths under posts taken from the house bases. Cream wall infill = the material derivative that replaces the grey placeholder. Good.
+  * gate-states: APPROVE. Silhouette-readable state pair; lintel = hall roof piece kitbash; banner + logs + ladder all in the kit.
+  * stall-states: APPROVE. Dormant/active reads instantly; every prop is a kit brick.
+  * hall-carved-a / hall-painted-b: valid style frames for the boss's SD-A vs SD-B pick, but each contains elements the kit cannot build, which must not drive design: a LAKE (no water asset in any pack), STONE STEPS (none; derive from V-STONES or drop), training STUMPS and POSTS (derivable from V-LOGS and T-POST, record them), PLANTER boxes (derivable from V-CRATE + V-PLANT). Proposed caption fix in the atlas: "background lake and steps are illustrative, not buildable from the current kit".
+- Approval states to record: CS-OBJ-01 approved; CS-OBJ-04 approved; CS-OBJ-05 approved; CS-OBJ-02 A/B rendered, awaiting boss style pick.
+NEXT: codex finishes CS-CHR-01..05 and adds the caption fix; boss picks SD-A or SD-B.
