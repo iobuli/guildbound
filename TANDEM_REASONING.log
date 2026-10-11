@@ -60,3 +60,23 @@ E. Tooling: Higgsfield CLI 1.1.26 installed (`higgsfield model list --json` once
 COUNTER-REASON for you (to sharpen P2): the canvas pulls toward a small, dense, close-quarters game (one settlement + surroundings, melee + casting, living townsfolk). Any vision that needs scale, mounts, many biomes or many enemy species fights the assets we actually own. Argue against this if you see a twist that makes scale cheap.
 
 NEXT: codex posts P1 findings (blog categories, RPG page online, ArtStation). After both P1 entries: P2 isolated reasoning, 20 min window, SEALED hashes first.
+
+## [claude] 2026-10-11 13:55 | P1.ack | acknowledge briefing, amendments, verified gaps
+DONE: Read your briefing. Note: the log was created twice at the same moment; your write replaced my P0 setup entry (it survives in git, commit "Tandem GDD loop: manifests..."). No harm; your briefing stands as the opener. I also put a one-line pointer to the manifests at the top of CLAUDE.md/AGENTS.md so a restarted session finds this task.
+
+ACCEPT: your research split (mine: verified asset/module capability, systemic dependencies, economy/progression/failure rules, document coverage, proof gates), the 0-2 rubric on five criteria, three round themes (R1 promise + loop, R2 systems/world/content feasibility, R3 presentation/onboarding/gates/build prompt), and "no private chain-of-thought, share proposal + assumptions + alternatives + rationale".
+
+AMEND:
+1. Timer: 120 s is fine for speed, but isolation must be checkable, not only timed. Each of us posts `SEALED sha256=<hex>` of the proposal text first, REVEAL after both seals (or at the deadline). Costs one line; proves neither read the other.
+2. Higgsfield: the boss's step 2 lists "Higgsfield setup if needed for concept art" inside the research phase, and the boss gave the three setup commands directly. I installed the CLI (1.1.26) and the companion skills before reading your deferral. INSTALL is done; GENERATION stays deferred until the GDD is complete, per your reading of step 10. The boss still has to run `higgsfield auth login`. If you read the boss differently, say so and we ask the boss.
+
+VERIFIED GAPS (file evidence, Assets/ today):
+- AUDIO: zero .wav/.ogg/.mp3 in any installed pack. The GDD needs a sound source that is an Asset Store module (CONSTRAINT 2) or a generated source; nothing exists now.
+- CREATURES: zero non-humanoid models or clips. Every opponent must be humanoid unless a new store module is added. This is a design constraint, not only a gap.
+- HERO: no approved hero model; Kevin Iglesias has male AND female humanoid sets (idles, run with root motion, casts), Explosive has unarmed + 2H sword + 12 weapon styles. Any humanoid model with a Humanoid avatar can play all of it.
+- STACK: 6000.5.1f1 is non-LTS; current LTS is 6.3 (6000.3.x, supported to Dec 2027). Agreed: no migration during design; the GDD names the LTS target and a migration gate for the boss.
+- VFX: Magic Arsenal shaders missing (magenta), 36 materials on built-in Standard; shader summary is from the catalog run, unverified against files today (your caution accepted).
+
+READY for P2 R1 (promise + loop). Proposed start: the timestamp of your next entry; window 120 s from it; both post SEALED, then REVEAL.
+
+NEXT: codex confirms amendments 1-2 and posts research readiness (its P1 findings: blog categories, ArtStation, art/motion/space readability) with the R1 start timestamp.
