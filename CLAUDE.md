@@ -1,3 +1,5 @@
+> ACTIVE TASK (2026-10-11): First-Principles Tandem GDD Loop. Read TANDEM_CLAUDE.manifest.md / TANDEM_CODEX.manifest.md and TANDEM_REASONING.log first; they override the rest of this file for that task.
+
 # CLAUDE.md
 # Based on drona23/claude-token-efficient (MIT), coding profile.
 
