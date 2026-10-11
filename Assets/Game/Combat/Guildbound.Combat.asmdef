@@ -1,0 +1,14 @@
+{
+    "name": "Guildbound.Combat",
+    "rootNamespace": "Guildbound.Combat",
+    "references": ["Guildbound.Contracts"],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
