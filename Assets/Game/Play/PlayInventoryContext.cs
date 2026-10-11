@@ -27,7 +27,7 @@ namespace Guildbound.Play
             {
                 delivered.Clear();
                 foreach (var c in guild.Contracts)
-                    if (guild.Attempts.TryGetValue(c.Id, out var a) && a == AttemptState.Delivered)
+                    if (guild.Paid.Contains(c.Id))   // keepsake stays while the contract is replayed as practice
                         delivered.Add(new DeliveredContract { Id = c.Id, Title = c.Title });
                 return delivered;
             }

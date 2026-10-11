@@ -72,7 +72,7 @@ namespace Guildbound.UI
             optionsTab.onValueChanged.AddListener(on => { if (on) Show(false); });
             if (inventory)
             {
-                inventory.Bind((IInventoryModel)inventorySource);
+                if (inventorySource) inventory.Bind((IInventoryModel)inventorySource);   // plain C# models bind through BindInventory
                 inventoryTab.onValueChanged.AddListener(on => { if (on) OpenInventory(); });
             }
             closeButton.onClick.AddListener(CloseModal);
@@ -93,6 +93,11 @@ namespace Guildbound.UI
             cameraShake.onValueChanged.AddListener(v => HudSettings.CameraShake = v);
             effectsOnHud.onValueChanged.AddListener(v => HudSettings.EffectsOnHud = v);
             modalLayer.visible = false;
+        }
+
+        public void BindInventory(IInventoryModel source)
+        {
+            if (inventory) inventory.Bind(source);
         }
 
         void Update()

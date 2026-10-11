@@ -7,7 +7,13 @@ namespace Guildbound.Play
     public class CombatHudModel : MonoBehaviour, IHudModel
     {
         public SparringDriver driver;
+        public UI.HudView hud;   // the inventory page binds to driver.Inventory (plain C#, not assignable in the inspector)
         const int Segments = 5;
+
+        void Start()   // after every Awake, so the driver's InventoryModel exists
+        {
+            if (hud) hud.BindInventory(driver.Inventory);
+        }
 
         Combat.FighterSim P => driver.Player;
         Combat.Tuning T => driver.World.T;

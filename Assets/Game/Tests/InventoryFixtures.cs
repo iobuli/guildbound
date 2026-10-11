@@ -107,8 +107,8 @@ namespace Guildbound.Tests
         public void Garments_EquipOneAtATime_AndTogglingTakesItOff()
         {
             var model = New();
-            model.AddGarment("g1", "Worn coat", "Cosmetic only.", "garment");
-            model.AddGarment("g2", "Guild sash", "Cosmetic only.", "garment");
+            model.AddGarment("g1", "Worn coat", "Cosmetic only.", "garment", out _);
+            model.AddGarment("g2", "Guild sash", "Cosmetic only.", "garment", out _);
 
             Assert.IsFalse(model.GetSlot(2).Equipped);
             model.RequestEquip(2);
@@ -176,11 +176,61 @@ namespace Guildbound.Tests
             model.ConsumePreparation();
             Assert.AreEqual(3, raised);
 
-            model.AddGarment("g1", "Worn coat", "Cosmetic only.", "garment");
+            model.AddGarment("g1", "Worn coat", "Cosmetic only.", "garment", out _);
             Assert.AreEqual(4, raised);
 
             model.RequestEquip(2);
             Assert.AreEqual(5, raised);
+        }
+
+        [Test]
+        public void Garments_CannotBeChangedInCombat()
+        {
+            var model = New(out var ctx);
+            model.AddGarment("g1", "Worn coat", "Cosmetic only.", "garment", out _);
+            ctx.Combat = true;
+
+            Assert.IsFalse(model.CanEquip(2, out var reason));
+            Assert.AreEqual(InventoryModel.InCombatRefusal, reason);
+            model.RequestEquip(2);
+            Assert.IsFalse(model.GetSlot(2).Equipped, "the rules refuse a mid-fight swap, not only the HUD");
+
+            ctx.Combat = false;
+            Assert.IsTrue(model.CanEquip(2, out _));
+        }
+
+        [Test]
+        public void FifthGarment_IsRefusedWithAReason()
+        {
+            var model = New();
+            for (int i = 0; i < InventoryModel.EquipmentSlots; i++)
+                Assert.IsTrue(model.AddGarment("g" + i, "Piece " + i, "Cosmetic only.", "garment", out _));
+
+            int raised = 0;
+            model.Changed += () => raised++;
+            Assert.IsFalse(model.AddGarment("g9", "Extra", "Cosmetic only.", "garment", out var reason));
+            Assert.AreEqual(InventoryModel.GarmentsFullRefusal, reason);
+            Assert.AreEqual(0, raised, "a refused add must not raise Changed");
+        }
+
+        [Test]
+        public void Keepsakes_CapAtSix_InContractOrder()
+        {
+            var model = New(out var ctx);
+            for (int i = 1; i <= InventoryModel.KeepsakeSlots + 1; i++)
+                ctx.DeliveredList.Add(new DeliveredContract { Id = "c" + i, Title = "Contract " + i });
+
+            int first = InventoryModel.ObjectiveSlots + InventoryModel.PreparationSlots + InventoryModel.EquipmentSlots;
+            for (int i = 0; i < InventoryModel.KeepsakeSlots; i++)
+                Assert.AreEqual("c" + (i + 1), model.GetSlot(first + i).Id);
+            Assert.IsTrue(model.GetSlot(first + InventoryModel.KeepsakeSlots).IsEmpty, "no thirteenth slot");
+        }
+
+        [Test]
+        public void ContentBudget_FitsTheKeepsakeSlots()
+        {
+            // GDD S10: six contracts is the full budget, one keepsake each. A seventh contract fails here, not silently in the panel.
+            Assert.LessOrEqual(Progress.GuildState.Prototype().Contracts.Count, InventoryModel.KeepsakeSlots);
         }
     }
 }

@@ -291,6 +291,58 @@ def keycap(name, s=36):
     record(name, s, s, [10, 10, 10, 10], 'Sliced', 'L5', 'input glyph background; key text in TMP')
 
 
+def compass_strip(name, w=128, h=64):
+    """Heading tape. Sliced: the diamond end caps and the plate are preserved, the middle stretches to any width."""
+    k = Canvas(w, h)
+    d = sd_chamfer_rect(k.x, k.y, 2, 4, w - 2, h - 4, 10)
+    k.paint(halo(d, 3) * 0.3, EDGE)
+    k.gradient(cov(d) * PLATE_ALPHA, PLATE_TOP, PLATE)
+    k.paint(line(d, 1.2), EDGE)
+    base = np.maximum(np.abs(k.y - (h - 14)) - 0.9, np.abs(k.x - w / 2) - (w / 2 - 16))
+    k.paint(cov(base) * 0.45, EDGE)
+    for cx in (14, w - 14):
+        k.paint(halo(sd_diamond(k.x, k.y, cx, h / 2, 12), 2.5) * 0.5, EDGE)
+        k.paint(cov(sd_diamond(k.x, k.y, cx, h / 2, 12)) * 0.9, PLATE)
+        k.paint(line(sd_diamond(k.x, k.y, cx, h / 2, 12), 1.4), EDGE)
+        k.paint(cov(sd_diamond(k.x, k.y, cx, h / 2, 4)), WHITE)
+    k.save(name)
+    record(name, w, h, [30, 8, 30, 8], 'Sliced', 'L1', 'heading tape behind N/E/S/W text; end caps preserved')
+
+
+def compass_pointer(name, s=28):
+    """Fixed centre marker the heading tape scrolls behind."""
+    k = Canvas(s, s)
+    d = sd_diamond(k.x, k.y, s / 2, s / 2, s / 2 - 4)
+    k.paint(halo(d, 3) * 0.7, EDGE)
+    k.paint(cov(d), (0x9F, 0xEC, 0xFF))
+    k.paint(cov(sd_diamond(k.x, k.y, s / 2, s / 2, s / 2 - 10)), WHITE)
+    k.save(name)
+    record(name, s, s, None, 'Simple', 'L3', 'fixed centre marker over the heading tape')
+
+
+def minimap_frame(name, s=256):
+    """Round map frame: outer ring, four cardinal spikes, diagonal notches. The centre stays transparent so the
+    map renders through it; put the Blit inside a child Image(disc_mask) + Mask to get a circular window."""
+    k = Canvas(s, s)
+    c = s / 2
+    r = c - 18
+    outer = sd_circle(k.x, k.y, c, c, r)
+    k.paint(halo(outer, 4) * 0.35, EDGE)
+    k.paint(line(outer, 3.0), EDGE)
+    k.paint(line(sd_circle(k.x, k.y, c, c, r - 5), 1.0) * 0.45, EDGE)
+    for dx, dy in ((0, -1), (1, 0), (0, 1), (-1, 0)):
+        ax, ay = c + dx * (r - 6), c + dy * (r - 6)
+        bx, by = c + dx * (r + 14), c + dy * (r + 14)
+        sp = sd_segment(k.x, k.y, ax, ay, bx, by, 1.2)
+        k.paint(halo(sp, 2.5) * 0.5, EDGE)
+        k.paint(cov(sp), WHITE)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            k.paint(cov(sd_diamond(k.x, k.y, c + sx * (r - 24), c + sy * (r - 24), 5)), EDGE)
+    k.save(name)
+    record(name, s, s, None, 'Simple', 'L1', 'round map frame; centre transparent so the map shows through')
+
+
 if __name__ == '__main__':
     os.makedirs(OUT, exist_ok=True)
     panel('panel_frame')
@@ -310,6 +362,8 @@ if __name__ == '__main__':
     divider('divider'); ornament('ornament_diamond')
     soft('glow_blob'); soft('vignette', 256, 'vignette')
     accent_frame('toast_frame'); keycap('keycap_frame')
+    compass_strip('compass_strip'); compass_pointer('compass_pointer')
+    minimap_frame('minimap_frame')
     json.dump({'scale': SCALE, 'pixels_per_unit': 100 * SCALE, 'reference_resolution': [1920, 1080],
                'palette': {'plate': '#0B1A3A', 'edge': '#5FD7FF', 'text': '#EAF6FF', 'warn': '#FFB347', 'critical': '#FF4A5A'},
                'plate_alpha_min': 0.70, 'sprites': KIT}, open(os.path.join(OUT, 'kit.json'), 'w'), indent=1)

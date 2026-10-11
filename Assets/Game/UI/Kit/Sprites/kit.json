@@ -741,6 +741,84 @@
    "image_type": "Sliced",
    "layer": "L5",
    "note": "input glyph background; key text in TMP"
+  },
+  "compass_strip": {
+   "file": "compass_strip.png",
+   "ref_size": [
+    128,
+    64
+   ],
+   "tex_size": [
+    256,
+    128
+   ],
+   "border_ref_px_LBRT": [
+    30,
+    8,
+    30,
+    8
+   ],
+   "border_tex_px_LBRT": [
+    60,
+    16,
+    60,
+    16
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "heading tape behind N/E/S/W text; end caps preserved"
+  },
+  "compass_pointer": {
+   "file": "compass_pointer.png",
+   "ref_size": [
+    28,
+    28
+   ],
+   "tex_size": [
+    56,
+    56
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L3",
+   "note": "fixed centre marker over the heading tape"
+  },
+  "minimap_frame": {
+   "file": "minimap_frame.png",
+   "ref_size": [
+    256,
+    256
+   ],
+   "tex_size": [
+    512,
+    512
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L1",
+   "note": "round map frame; centre transparent so the map shows through"
   }
  }
 }

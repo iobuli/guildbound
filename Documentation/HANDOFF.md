@@ -8,7 +8,7 @@
 - **Legacy, do not run:** `Assets/Game/Scripts/Game.cs`, `Fighter.cs` and `Assets/Game/Editor/Build.cs` (`Guildbound/Build Scene`) are an earlier prototype of unknown ownership kept for reference only. Do not generate `Main.unity` from them; M0.5 play work will happen in `Assets/Game/Scenes/Sparring.unity` (not created yet).
 
 ## Older state notes (2026-10-11 morning, partly stale)
-- **Project:** a fresh Unity 6000.5.1f1 project with one blank scene, `Assets/Game/Scenes/Main.unity`. Our code lives under `Assets/Game` (namespace `Guildbound`).
+- **Project:** a fresh Unity 6000.3.26f1 (6.3 LTS) project with one blank scene, `Assets/Game/Scenes/Main.unity`. Our code lives under `Assets/Game` (namespace `Guildbound`).
 - **Packages:** URP 17.5 (now 17.3.0 on 6.3 LTS), Input System 1.20.1, Animation Rigging 1.4.1, Cinemachine 3.1.7, AI Navigation 2.0.13, Test Framework, MCP for Unity v10.3.0.
 - **Asset packs:** 16 Asset Store packs are imported. Their C# scripts were deliberately skipped: we write our own systems. Built-in materials were converted to URP; 4 Unlit/Color and Unlit/Texture materials remain.
 

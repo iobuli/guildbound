@@ -46,6 +46,7 @@ namespace Guildbound.Rules
         public const string KeepsakeWearRefusal = "Keepsakes are a record, not equipment.";
         public const string InCombatRefusal = "Not during a fight.";
         public const string NoPreparationRefusal = "No preparation item.";
+        public const string GarmentsFullRefusal = "The dressing corner holds four pieces.";
 
         readonly IInventoryContext context;
         readonly List<InventoryItem> garments = new List<InventoryItem>();
@@ -93,9 +94,10 @@ namespace Guildbound.Rules
 
         // Dressing-corner pieces. Cosmetic only: equipping changes look and build keys, never reach,
         // damage or HP (GDD: reach comes from the body, damage from stats).
-        public void AddGarment(string id, string name, string description, string iconId)
+        public bool AddGarment(string id, string name, string description, string iconId, out string reason)
         {
-            if (garments.Count >= EquipmentSlots) return;
+            reason = null;
+            if (garments.Count >= EquipmentSlots) { reason = GarmentsFullRefusal; return false; }
             garments.Add(new InventoryItem
             {
                 Id = id,
@@ -107,6 +109,7 @@ namespace Guildbound.Rules
                 MaxStack = 1
             });
             Changed?.Invoke();
+            return true;
         }
 
         public InventoryItem GetSlot(int index)
@@ -205,6 +208,7 @@ namespace Guildbound.Rules
             if (index < EquipmentSlots)
             {
                 if (index >= garments.Count) { reason = EmptySlotRefusal; return false; }
+                if (context.InCombat) { reason = InCombatRefusal; return false; }
                 return true;
             }
             index -= EquipmentSlots;

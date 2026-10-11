@@ -8,4 +8,8 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Game/Scenes/Main.unity
     guid: 8b5f1c3abe94b6e49a24da07a0aba335
+  - enabled: 1
+    path: Assets/Game/Scenes/Sparring.unity
+    guid: 6403d452de80943468393e56b3fd99ad
   m_configObjects: {}
+  m_UseUCBPForAssetBundles: 0

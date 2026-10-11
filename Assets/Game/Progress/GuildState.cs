@@ -130,7 +130,7 @@ namespace Guildbound.Progress
             if (garments != null) s.garments.AddRange(garments);
             s.paid.AddRange(Paid);
             s.services.AddRange(Services);
-            foreach (var kv in Attempts) if (kv.Value == AttemptState.Delivered) s.delivered.Add(kv.Key);
+            s.delivered.AddRange(Paid);   // completed = paid once; a practice replay (Accepted/Carried) must not hide it
             s.paid.Sort(); s.services.Sort(); s.delivered.Sort();
             return s;
         }

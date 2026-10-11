@@ -24,7 +24,7 @@
 
 ## Guildbound (Unity)
 - If the user is Joe (or says so), read JOE.md first.
-- Unity 6000.5.1f1, URP 17.5, new Input System, Animation Rigging, Cinemachine. Our code: `Assets/Game` (namespace `Guildbound`). Third-party packs are git-ignored; rebuild them per Documentation/HANDOFF.md.
+- Unity 6000.3.26f1 (6.3 LTS), URP 17.3, Input System 1.20, Animation Rigging 1.4, Cinemachine 3.1. Our code: `Assets/Game` (namespace `Guildbound`). Third-party packs are git-ignored; rebuild them per Documentation/HANDOFF.md.
 - Read Documentation/HANDOFF.md (state, asset-to-system map, next steps) and Documentation/MASTER.md (vision; sections 3-4 describe the old Godot code, the design and lessons still apply).
 - The old Godot project is zipped in `_OldGodot/` (local only, git-ignored). Reference only; never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code.
 - Team: the user is the boss (direction, scope, art). Codex = creative dev. Claude = logical dev (architecture, verification, tests, licensing, risk).

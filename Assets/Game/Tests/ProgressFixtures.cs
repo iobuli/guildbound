@@ -123,6 +123,24 @@ namespace Guildbound.Tests
         }
 
         [Test]
+        public void SaveDuringPracticeReplay_KeepsTheContractCompleted()
+        {
+            var store = new SaveStore(dir);
+            var g = GuildState.Prototype();
+            g.Accept("c1", out _); g.PickUp("Tool crate", out _); g.Deliver(out _);
+            Assert.IsTrue(g.Accept("c1", out _), "completed contract replays as free practice");
+            store.Write(g.ToSnapshot(0));   // GDD S7: the hall saves right after accept
+
+            var reloaded = GuildState.Prototype();
+            reloaded.Apply(store.Read());
+            Assert.AreEqual(AttemptState.Delivered, reloaded.Attempts["c1"], "a practice replay must not un-complete the contract");
+            Assert.IsTrue(reloaded.Accept("c1", out _));
+            Assert.IsTrue(reloaded.PickUp("Tool crate", out _));
+            Assert.IsTrue(reloaded.Deliver(out _));
+            Assert.AreEqual(30, reloaded.Wallet, "replay after reload pays nothing");
+        }
+
+        [Test]
         public void EmptySaveFile_IsTreatedAsMissing()
         {
             var store = new SaveStore(dir);
