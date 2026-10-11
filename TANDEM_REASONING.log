@@ -1830,3 +1830,32 @@ Reviewed all five character concepts (Documentation/concepts/characters/) agains
 
 FEASIBILITY FLAG (logical lead, biggest production gap now visible): no installed pack contains clothing, hair or accessory meshes. Every outfit in these sheets must be DERIVED from owned bodies under the kit rule. Proposed route for M0.5/M2 (to agree): (1) base = owned smooth humanoid (C-DUMMY-M/F or C-MOCAP), faceted by decimation on a derived copy to match SD-A; (2) clothing as mesh edits of that derived body (vest/trouser/boot volumes split from the body surface, same skin weights) plus a few rigid skinned pieces (sash panels, forearm wraps, belt pouch) kitbashed from owned primitives; (3) hair as a rigid faceted cap piece; (4) colour by material derivatives from the palette. Gate: deformation check in the M0.5 rig proof (no clipping beyond tolerance through the 8 combat poses and the cast poses). If the gate fails, fall back to material-only clothing painted on the faceted body. Record each derivation per the kit rule.
 NEXT: codex replies on the derivation route; boss reviews the atlas and picks SD-A or SD-B.
+
+## [claude] 2026-10-11 14:34:45 UTC | GSP.chr | boss: models/textures/rigs with variation, character creator, depth maps, trained specialised builds -> spike + design
+Boss asks: can the doc drive UPDATED models, textures and rigs with variation, a deeper deconstruction toward a CHARACTER CREATOR (using depth maps), where the body TRANSITIONS into a specialised build based on what the player trains.
+
+FEASIBILITY SPIKE (Claude, done, evidence in Documentation/experiments/chr_spike/: lineup.png, spike_log.txt; derived FBX kept local only):
+- Source: owned rigged body HumanM_Model.fbx (51 bones, 5340 verts), processed in Blender 5.2.2 headless on a copy; nothing under Assets/ touched.
+- Faceting: decimate to 1880 verts + flat shading = the carved look of the concepts in one step.
+- Builds: three shape keys (fighter, caster, heavy) generated FROM the body's own skin weights (radial push around each bone axis, weighted per vertex). The rig still deforms the faceted, morphed mesh in a test pose. Export with shape keys works.
+- Findings: fighter/caster are too subtle at these factors; heavy separates the chest/shoulder segments at seams (scale must use shared centroids/falloff across neighbouring bones); pose test angles were rough but skinning held.
+=> Verdict: the owned body CAN be the base of a creator and of trained builds. Clothing/hair remain the separate gap (derived mesh pieces, see my previous entry).
+
+PROPOSED DESIGN (Claude rules; Codex owns look and creator UX):
+1. CREATOR AXES (all on one derived owned body per sex; Humanoid retarget unaffected):
+   - Build blend: weights over fighter / caster / heavy / lean shape keys (sum <= 1).
+   - Proportion: height via uniform root scale 0.92-1.08; shoulder width and limb thickness via shape keys only (never bone-length edits, so every clip stays valid).
+   - Head: faceless faceted head; 4-6 head-shape keys + hair caps (derived rigid pieces).
+   - Palette: skin tone and outfit colours from the palette set; guild red reserved for the sash.
+2. TRAINED SPECIALISATION ("you become what you train"):
+   - Each body has a build_state vector (fighter, caster, heavy). Training sources move it slowly: completed contracts by how they were won (strikes/throws landed vs casts landed vs guard capacity absorbed), sparring-floor lessons, the attunement.
+   - Rate: at most +0.08 per delivered contract per axis, cap 1.0; it never decreases (progress never regresses); the creator sets the starting point.
+   - Visible markers per path: fighter = broader shoulders/forearms + wraps tier; caster = leaner build + ember scars along the forearms (texture layer) + hand glow at rest; heavy = thicker torso/legs + padded layer.
+   - FAIRNESS RULE: the build is presentation. Collision capsule and limb contact volumes are FIXED per bone regardless of morph, so a bigger body never hits further or gets hit easier. Stats come from CombatStats, never from the mesh.
+3. DEPTH MAPS (where they help, honestly):
+   - Concept image -> depth map -> (a) relief/normal detail baked onto the faceted low-poly cloth (folds, stitching) as a material derivative; (b) a sculpt guide for clothing volumes in Blender; (c) creator thumbnails.
+   - Tool gap: GPT image does not produce measured depth. A depth-estimation tool is needed (a Higgsfield model if one exists in its catalog, or a local depth estimator). TOOL CHOICE = BOSS DECISION. Depth output is a detail source only, never geometry truth.
+4. PIPELINE (repeatable script, extends the spike): owned body -> facet -> build keys with seam-safe falloff -> clothing/hair derived pieces -> texture layers (palette + depth-baked detail + path markers) -> export to a derived folder -> Humanoid avatar check -> M0.5 deformation gate (8 combat + 4 cast poses, clipping tolerance).
+5. SCOPE: creator + trained builds are a P1 feature on top of the P0 slice, except the base faceted hero body which is P0 (needed for the rig proof). Fits the GDD's growth rule: growth adds a visible change, never a hidden multiplier.
+
+Codex: your call on (a) the creator screen as a physical place (a mirror/ dressing corner in the guild hall instead of a menu?), (b) how strong each build should read at 20 m, (c) marker designs per path. Then I fold this into MASTER GDD S6/S9 and KIT CHR via AMEND.

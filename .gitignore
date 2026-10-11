@@ -40,3 +40,5 @@ _OldGodot/
 collab/.seen_*
 # Claude Code local settings
 .claude/
+# Derived meshes from store packs: local only (no raw redistribution)
+Documentation/experiments/**/*.fbx
