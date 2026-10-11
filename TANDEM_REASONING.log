@@ -901,3 +901,245 @@ S12 Build prompt rules, replace "always with a stated modification" by: "Only in
 Image generation link (my proposal P6.img, still awaiting your answer): concept frames would now show ASSEMBLY ideas built from the verified piece list (the hall threshold, gate pair, stall pair), so images stay grounded in what the kit can actually build, not an unrelated look.
 
 NEXT: codex audits GDD v1 + this amendment, and answers P6.img (a)-(c).
+
+## [codex] 2026-10-11 13:30:00 UTC - full GDD audit and concept pipeline resolution
+
+Read all 12 sections of P7 and P7.amend. The four pillars, two-services/six-contract ceiling, P0/plain-plus-charge scope, actual-contact authority and owned-kit expansion survive the merge. Accept the assembly amendment. My audit finds a few concrete consistency corrections; consolidate them into the final MASTER block, not a separate export.
+
+Section audit:
+1. Accept identity/pillars with P7.amend. "Colour-only never a twist" applies to the overall derived assembly/system, not every constituent material: a cloth tint is a valid small part of a larger assembly.
+2. Gold-path step 8 must complete the second obligation, not stop at reaching its objective: recover, return, deliver exactly once, verify its second service and payment. Then step 9 uses a free replay/reset fixture to test defeat after both persistent deliveries; no demand for a third paying obligation. "Different route/tactic" is a test scenario demonstrating an available choice, not a player restriction or failure condition. The tutorial stays skippable; verb-performed checks belong to the fixture/practice track.
+3. Accept input, camera and buffer. The charged Q input needs a release rule: tap/release before the charge threshold performs the plain cast; reaching the threshold changes to the charged release; early movement cancels only before commitment. Threshold/maximum hold/auto-release behaviour are tuning decisions recorded with the clip table at M0.5. No undefined infinite charge hold.
+4. Accept contact and procedural ownership. Add to the contact gate: a collision volume swept through a surface can geometrically enter it before time-of-impact correction; judge the resolved visible contact pose within a calibrated tolerance, not a literal zero-penetration claim at every sampled intermediate pose. Any support/contact fitting after resolution cannot create another damaging contact or enlarge reach. Specify charged impact falloff, maximum area, push distance and its blocked/world-occluded targets in the M0.5 tuning table; area cannot reach through walls. "Groups" is future applicability, not P0 multi-attacker scope. Each light in the phrase needs its own action/contact identity; otherwise once-per-action unintentionally suppresses the second hit.
+5. Accept the modular hall/gate/stall construction. Do not describe future lookout/training services as promised extra services: candidates can replace slots under the scope rule. State concrete order coupling: gate work opens the shorter return to the exposed recovery site; preparation work offers optional recovery before either route; neither change locks an obligation or requires purchasing an item. Contrast in threat remains the two opponent patterns and sightlines.
+6. Accept growth/economy. Clarify 1-of-2 trust-band sidegrades as future candidates, outside P0 and the fixed full-arc requirements unless an existing technique slot is replaced. The first plain-to-charge attunement is the actual scoped progression.
+7. Add attunement completion and relevant settings changes to safe-hall persistence events. A completed lesson must survive quitting before another accept/purchase/delivery. Persist learned technique separately from transient charge/cooldown/paired animation. After reload the reset attempt offers a fresh objective and already completed contracts remain free practice with no duplicated payment.
+8. Accept feel/style/accessibility and silent proof. Resolve the concept pipeline below; generated pose references are aesthetic targets, never collision, reach, support or transition correctness oracles.
+9. Accept evidenced kit vocabulary and gaps. Make the concrete evidence links part of the master block: Documentation/catalog-summary.txt, Documentation/catalog-clips.txt, Logs/catalog/, Logs/sheets/tavern.txt and town.txt plus their contact sheets. Installed clip existence does not prove usable retargeting. Effect art requires new owned behaviour and shader repair; no skipped demo component becomes our implementation.
+10. Accept P0/P1. Keep final hero art, sound and second element explicitly unresolved/later, not hidden acceptance dependencies.
+11. Gate order needs clarity: M0.5 is a small combat/rig spike with the chosen clips and minimal owned collision motor; it necessarily implements enough contact/charge to prove the layer before broader M1 gold-path construction. M2 hardens that same system, not a second combat implementation. Fix contact penetration metric as in S4. Test second delivery and quitting immediately after attunement. Every named scenario has independently stated expected results; proposed counts/tolerances remain H.
+12. Add this distinction to the prompt: source pack modification is on derived copies; preserve originals and existing uncommitted work. The boss has already requested Unity LTS for this task; replace blanket "pending boss approval" with a post-design compatibility/migration gate on a preserved copy/branch. Do not migrate during this GDD task. Package versions are re-resolved and actual incompatibilities reported. Later build reporting must distinguish P0 acceptance from full-arc acceptance.
+
+P6.img answers:
+(a) The built-in image tool supports generation/editing and transparent output, so it can serve all five categories as concept work. It cannot guarantee seamless tiling, exact multi-view consistency, usable UV layouts, exact output dimensions, or physically correct anatomy/poses. A texture-source image requires a separate seam/scale/UV review and processing before it becomes a material derivative. A front/side guide is a design reference, not a measured model blueprint. All production meshes remain derived from our owned content.
+(b) Keep your structured specification, adding: source_piece_ids/verified_paths, reference_images, assembly_changes, invariants_to_preserve, acceptance_criteria, requested_transparency, and approval_state. Palette hexes are proposed targets until sampled in-engine, not invented existing bible values. Actual supported invocation controls are prompt, transparency and existing-image references; size/count/lens are requested visual intent and recorded output metadata, not guaranteed API switches. Store spec and judgment in this log. Our source-piece contact sheets or actual assembly captures should anchor edits; record generated additions that are infeasible from the kit and reject them. Maximum three attempts then simplify is a useful budget.
+(c) Finish the GDD first, as the task timeline requires. Afterwards three concept frames are enough initially: the hall assembled from our kit; gate broken/restored; preparation stall dormant/active. Those frames explore the actual modular vocabulary and growth. Motion pose references and texture work follow the rig/source proof. No new image dependency is needed to finish this document, and no Higgsfield authentication/setup blocks it. GPT image is the primary concept path; fallback remains optional, not another required production system.
+
+Quality assessment after those corrections: coherent, scoped and buildable as a proposal; feasibility still depends on the rig/stack gates. This is document approval conditional on consolidation, not a claim that any Unity build, procedural animation, footage or playtest currently passes.
+
+NEXT: Claude independently audit these corrections, then append the complete consolidated 12-section final MASTER block incorporating P7.amend, this audit and the resolved image pipeline. I will verify that exact artifact and deliver it to the boss. Continue in the shared log; no source edits.
+
+## [claude] 2026-10-11 13:31:16 UTC | P7.final | independent audit of Codex corrections + FINAL MASTER GDD
+AUDIT: all 12 of your corrections accepted after independent check, plus your P6.img answers (a)-(c). Best catch: each light hit needs its own action identity, or once-per-action silently swallows the second hit. My additions found in my own pass: (1) starting HP/damage values (H) so M0.5 has a table to tune; (2) opponent watch/leash radii, because "avoid" in gold-path step 4 had no rule. IP scan of the final text: clean (no external games, media, studios or brands).
+BEGIN_MASTER_GDD
+# FreeGuild - Game Design Document v1 (core prototype)
+
+Status: FINAL (v2) consolidated by Claude after Codex's full audit (13:30) and Claude's independent audit; v1 assembled by Claude from text both co-architects accepted in rounds R1-R3, with Codex's six assembly corrections (13:24) applied. Codex audits next. This block in TANDEM_REASONING.log is the master artifact; no export during this task. Owners per section in brackets. Numbers marked (H) are tuning hypotheses, not verified results. UNKNOWN means not yet established. This document is also the master build prompt (section 12).
+
+---
+
+## 1. Identity, audience, pillars, promise [Codex; Claude reviews]
+
+Promise: Read a committed action, choose your response, and bring useful work home. The settlement becomes easier to move through and prepare in because it can rely on you.
+
+Fantasy: a capable field member of a small guild. Close, grounded fights against people; a growing elemental attunement visible on the body; one guild hall that changes because of the order in which you chose to help.
+
+Audience: single-player progression and self-expression. Players who enjoy reading bodies and space more than reading numbers.
+
+Pillars (stable; everything else in this document is revisable):
+1. Grounded physical combat. Bodies and space are read before numbers. Every exchange has preparation, contact and recovery.
+2. Procedural animation layer. Authored motion is the source; a bounded layer makes contact, support and transitions physically true. The mesh never does what the game did not decide.
+3. Elemental progression on the body. Growth is a new deliberate thing the body can do, never a hidden multiplier.
+4. A single guild hall hub. The hall is a place, not a menu: board, clerk, sparring floor, preparation offer and the door to both routes.
+
+Design rules:
+1. Every service change alters a route, a threat or a tool, never only decoration.
+2. The owned assets are a modular building kit. New forms come from recombining owned pieces by role (surface, frame, roof, threshold, enclosure, service prop, landmark), measured proportion changes, source-mesh edits where needed, material/texture derivatives and animation retiming/rig correction. Colour change alone is never the twist of a derived assembly (a cloth tint can be one small part of a larger assembly). Sources stay untouched; every derived piece traces to its source module.
+
+## 2. Gold path and session loop [Claude]
+
+Session loop: choose an obligation (stated risk, payment, unlock) -> leave through the hall door by one of two routes -> read and handle a humanoid opponent, or avoid them -> recover the objective into the single expedition slot -> return and deliver -> payment, service change and new option happen as one event -> the next trip is a different decision.
+
+Gold path (each step has a pass condition; the driver in section 11 plays it):
+1. Wake on the hall bench. PASS: camera, HUD, board, clerk, sparring floor and door are visible within 3 s; input legend shown.
+2. Clerk/board: accept obligation A or B. PASS: route, risk, payment and service result visible before accepting.
+3. Sparring floor: four skippable, replayable prompts (verb checks belong to the fixture/practice track) (light phrase, guard, step, ready cast), then a practice partner shows preparation/commitment/recovery and a guard that invites the throw/heavy choice. PASS: each verb performed once; partner reacts by contact direction and guard state.
+4. Leave by the door; first opponent on the chosen route. PASS: opponent defeated or avoided; zero hits registered without contact.
+5. Recover the objective. PASS: slot shows it; a second pick-up is impossible.
+6. Return and deliver. PASS: payment + service change + new option in one event; the changed gate or preparation offer is visible from the hall door.
+7. Attunement exercise on the sparring floor, offered by the clerk after the first delivery. PASS: charged cast unlocked and performed once.
+8. Second obligation, completed: recover, return and deliver exactly once. PASS: second payment and second service verified. The fixture also demonstrates that a different route or tactic was available (a test scenario, never a restriction on the player).
+9. After both persistent deliveries, a free practice replay is used to test defeat once (scripted by the fixture, never a forced loss in the tutorial), retry. PASS: back on the same bench; rewards and services intact; objective available again; zero coin needed.
+10. Capstone duel on the sparring floor (full arc only). PASS: won with at least one guard break and one punish.
+The P0 core prototype is accepted on steps 1-9. Step 10 is required for the full six-contract arc, not for P0.
+
+## 3. Verbs, states, input, camera [Claude rules / Codex feel]
+
+Verbs: move, run, light strike (two-hit phrase), heavy strike, guard (hold), lateral step, throw, cast (plain; charged after attunement), interact, traversal jump.
+
+Input (remappable, legend on screen): WASD move, mouse look, Shift run, LMB light, F heavy, RMB guard, Ctrl step, R throw, Q cast (after attunement: release before the charge threshold = plain cast; reaching the threshold switches to the charged release; moving cancels only before commitment; threshold, maximum hold and auto-release are tuned in the M0.5 table; no infinite hold), E interact, Space jump, middle mouse lock toggle, Esc pause/menu. No attack or cast during a traversal jump in the prototype.
+
+Action states: Idle/Move -> Prepare -> Active -> Recover -> Idle; plus Guard, Guard-broken, Step, Throw-reach, Throw-paired, Cast-prepare, Cast-charge, Cast-release, Hit-react, Defeated. An action buffer accepts the next input during late recovery (0.25 s, H) without cancelling commitment.
+
+Camera: third person, keeps the target and both fighters' preparation/support area legible. Lock-on changes facing and framing only, never reach or aim snap. Must keep telegraphs visible at walls and corners (tested with real colliders).
+
+Feel (Codex): calm loaded stance, compact preparation, committed path, one sharp contact accent, restrained recovery to guard. The second light's preparation grows out of the first's follow-through. A miss finishes its arc with no spark and no pause.
+
+## 4. Combat and opponents [Claude rules / Codex feel]
+
+Contact truth: damage only on verified geometric contact, at most once per target per action. Each hit of the light phrase is its own action with its own contact identity. A swept volume may enter a surface before time-of-impact correction: judge the RESOLVED visible contact pose within a calibrated tolerance (H), not zero penetration at every sampled pose. Support/contact fitting after resolution can never create another damaging contact or enlarge reach. Contact is swept from the limb's previous final position; world obstruction stops contact before any actor behind it. The logical outcome is decided before its visual accent. Animation never sets damage. Damage = attacker stat x move factor (light 1, heavy 2) (H).
+
+| Option | Beats | Loses to | Cost (H) |
+|---|---|---|---|
+| Light phrase: start 0.25, active 0.10, recover 0.30 | throw reach-in, cast preparation | guard, step | recovery after the phrase |
+| Heavy: start 0.55 (clear wind-up), recover 0.50 | guard (large capacity drain) | light during wind-up, step | long tell and recovery |
+| Guard (hold, frontal) | light, heavy | throw, side/rear contact | finite capacity: light -15, heavy -45; holding blocks regen; regen starts 0.8 s after release; at 0 = guard break 1.0 s |
+| Lateral step 0.35 s, evasive 0.08-0.22 | heavy, throw, cast | light phrase (recovery is hittable) | 0.4 s cooldown; no instant cancel into guard |
+| Throw: reach 1.2 m, reach-in 0.30, needs legal staging and landing space | guard | any strike during reach-in, guard release, step | whiff recovery 0.6; illegal space = visible failed attempt, never a body through a wall; mutual throws = both stagger, neutral reset |
+| Cast (plain): ready from the start, cooldown on commitment | distance | strikes during preparation, step | stationary preparation; moving before commitment cancels with no projectile; interruption after commitment spends the cooldown; no melee refund |
+| Cast (charged, after attunement): held, then released | guard (pushes back), range | interruption during the hold, step | slower, stationary, larger impact radius with falloff, maximum area and push distance set in the M0.5 tuning table; area never reaches through walls; blocked and world-occluded targets defined there; hits the world before targets behind it; bounded effect area that cannot be farmed and never hides the opponent's next tell; a declared behaviour choice, not a multiplier |
+
+Safe-tactic audit: turtling empties capacity and is thrown; mashing meets guard then punish; zoning with casts is closed down during preparation; reflex stepping is caught by light phrases.
+
+Opponents: one humanoid kit, two patterns in the prototype, each punishing one habit.
+- Pressure: approaches, clearly prepares a two-hit attempt, pauses, resets; punishes long casts and throw attempts. Forces guard/step.
+- Defensive: visibly guards, backs off after a failed throw; offers the heavy/throw decision. Forces throw/heavy.
+- Later (P1): rival pattern using the player's own verb set (step, throw, cast).
+Opponents obey the same reach, commitment and capacity rules. Starting values (H, tuned in M0.5): player 100 HP; opponent 60 HP; light 6, heavy 12, plain cast 10, charged cast 14 damage at the base stat. Avoiding: an opponent engages within its watch radius (about 12 m, H) and leashes back to its post beyond about 20 m (H), so a route can be passed without fighting. Retrying never makes an opponent secretly faster or stronger. The first fight is strictly 1v1; multiple attackers are a later content gate.
+
+Outcome bodies (Codex): hit = defender recoils from the real contact direction; block = the contacting limb arrests against the guard and the guard loads; guard break = guard opens, centre drops, recovery obvious; throw = visible reach-in, then the staged pair only if space is legal; miss = uninterrupted arc and recovery. Height-specific reactions follow contact location (presentation, not a rule). Contact hold 0.025-0.045 s on the involved fighters only (H); no global time scale; the hold never extends invulnerability or cooldowns.
+
+Procedural animation layer (P0 system). Order per tick: collect intent -> advance the single collision motor and gravity -> sample the curated clip/transition -> form bounded limb targets -> sweep the active limb -> resolve earliest contact and one outcome per target/action -> fit the visible contact and support pose to that outcome -> render.
+Invariants: the collision motor is the only actor mover; limb lengths are fixed; aim correction is bounded and can never move a planted foot; an unreachable target makes the strike miss or end safely; foot contacts come from reviewed clip phases; support pivots at the planted contact instead of sliding; feet release for steps and strikes that actually travel; only curated transitions are guaranteed continuous.
+
+## 5. World, contracts, places, narrative frame [Codex]
+
+The hall: one guild assembly built from the tavern and village kits: a strong framed threshold from supports and roof pieces, one cloth/banner accent, a quiet open sparring floor, a service edge from counter/bench/chest pieces; its roof and door silhouette stays recognisable as it grows. One traversable hall and courtyard. Board, clerk, sparring floor and preparation station are all visible from the entrance by shape and light. The door frames the two route approaches and their landmarks. First defeat returns to a known bench. Service changes are visible from home base.
+
+Routes (each about 150 m, H):
+- Exposed timber road: open, long sightlines, opponent visible early; favours casting and choosing to avoid or engage; one quiet fight space with lateral room.
+- Sheltered path: cover, short sightlines, ambush corners; favours melee and stepping; teaches observation and retreat.
+A safe route is always traversable at zero wallet with no item, even if longer.
+
+Services are broken/restored ASSEMBLY PAIRS from the same kit (prototype set: 1 hall assembly, 1 gate pair, 1 preparation-station pair; the six-contract arc reuses this vocabulary). 1. Gate repair (the frame gains aligned planks and an open passage): a shortcut to the exposed route's objective (route). 2. Preparation offer (a dormant stall gains canopy, counter and a settled NPC routine): one optional out-of-combat item (tool). Each rebalances the other route, so the second trip is a fresh choice. Concrete order coupling: gate work opens the shorter return to the exposed recovery site; preparation work offers optional recovery before either route; neither locks an obligation or requires buying an item. Threat contrast comes from the two opponent patterns and sightlines. Lookout or training-post services are only candidates that may REPLACE a slot.
+
+Contracts (six total; capstone is number six):
+1. Recover the tool crate (exposed route) - prototype.
+2. Recover supplies (sheltered path) - prototype.
+3. Known-route skill test (a route revisited with a changed service).
+4. Field variation under a condition that keeps telegraphs visible (dusk or fog on the exposed route).
+5. Combined-tools challenge (requires the charged cast and a throw read).
+6. Capstone duel on the sparring floor.
+A two-opponent camp or a stationary crew defence may replace a field contract only after the multi-attacker gate passes; never added on top.
+
+Narrative frame: opponents are people (deserters, rival crews, people touched by raw element). One sentence of context per contract on the board; the place tells the rest. No named external references anywhere.
+
+## 6. Growth, economy, items, services [Claude]
+
+Three linked outcomes, not three progress bars: combat competence is the player's own skill; guild trust grants contract access (from distinct completed work, never repeated enemies); town work changes a service or path. Projects can wait but never regress.
+
+Elemental attunement (progression on the body):
+- Band 1 (start): plain fire cast.
+- Band 2 (after the first delivery, taught on the sparring floor): controlled charge (enter, hold, release, interruption, fixed recovery). Prototype scope ends here.
+- P1 candidates, each needing a real mechanical choice and counterplay: attuned guard (a perfect block releases a short push-back burst but consumes the cast cooldown); a second element as a loadout choice (fast, straight, reach) after the first is proven. A recoloured punch is never progression.
+- Techniques beyond the attunement (future candidates, outside P0 and the fixed full arc unless they replace an existing technique slot): 1-of-2 sidegrades per trust band; choices, never flat stat ladders, so learned timing stays valid.
+
+Economy: one wallet. Each distinct contract pays once; replays pay nothing. Accept, retry and hall recovery cost zero. One optional preparation item (carry cap 2, H) that shortens an out-of-combat recovery and is never required. Nothing can be sold back. No unbounded farming or sink economy.
+
+## 7. Save, failure, recovery [Claude]
+
+Attempt states: available -> accepted -> carried -> delivered (terminal), or reset -> available. One carried objective at a time.
+Delivery checks the active attempt and objective, then commits payment, service and access together exactly once.
+Save: complete snapshot plus a recoverable previous file, written at the hall after accept, delivery, purchase, abandon, attunement completion and settings changes; never during combat. A completed lesson survives quitting immediately afterwards. Learned technique state is stored separately from transient charge, cooldown and paired-animation state. After reload a reset attempt offers a fresh objective; completed contracts remain free practice with no duplicated payment. Load always resumes in the hall with no active combat; an undelivered attempt resets without reward and its objective is available again. Never restore a pending throw, cast, scene reference or half-paid service.
+Failure: defeat or abandon returns to the bench at full HP; rewards, equipment, trust and services persist; only the current objective is lost. No softlock: starter contracts are free and re-acceptable; a safe route always exists; no coin or item is needed to finish any contract.
+
+## 8. Visual style, motion, audio, UI, accessibility [Codex]
+
+Look: one wood/stone/cloth palette unifies the two building kits; combat floor and sightlines are kept clear before any clutter; the moving character silhouette is always the highest-contrast shape. Motion follows the kit principle: curated owned clips are the vocabulary, and timing, transitions, contact/support correction and restrained effects make one physical language. Warm cloth and wood, quiet stone and ground, controlled vegetation. Value contrast concentrates on interactive silhouettes; broad quiet ground under fights; foliage at the edge of decision spaces. Effects are capped so hands, body and telegraphs stay readable. Fire: warm core, a hand-sized charge whose size and pulse change together (colour is never the only cue), short readable trail.
+
+Motion: see sections 3-4. Outcomes get different bodies before different colours.
+
+Feel budgets (H, judged at 30/60/120 fps): action buffer 0.25 s; contact hold 0.025-0.045 s; one small contact spark with a fast-fading accent; heavy contact may add a low dust pulse; camera response optional, capped near 1 degree / 4 cm, reducible to zero.
+
+UI (primitive built-in Unity UI, uGUI): HP, guard capacity, fire readiness/charge, carried objective with return instruction when relevant. Wallet and trust at the board/preparation station. Learned techniques shown as learned/locked with the reason, separate from the ready/wait cooldown cue. No decorative UI kit assumed.
+
+Accessibility (P0): remappable controls with a live legend, adjustable text size, toggle options for lock and guard, camera shake and hit flash reducible to zero, non-colour status cues, pause.
+
+Audio: the installed content has zero audio files. The prototype is a silent proof that teaches all timing visually. Production sound is a listed gap; required cues: contact, block, guard break, step, throw, cast charge and release, footfalls, hall ambience.
+
+Concept art pipeline (resolved): GPT image (Codex built-in) is the primary concept path; Higgsfield is an optional fallback, not a required system. Claude writes a structured spec per image; Codex renders, judges against this section and approves or rejects (max 3 attempts, then simplify). Spec fields: id; purpose (style_frame | pose_ref | texture_source | ui_language | blender_guide | palette); subject in primitives only; pose/action in plain anatomy; camera; light; palette (proposed targets until sampled in-engine); materials; source_piece_ids / verified_paths; reference_images (our contact sheets or assembly captures); assembly_changes; invariants_to_preserve; constraints (negative list: no text, logos or named styles); requested_transparency; acceptance_criteria; approval_state; use_in_unity. Size, count and lens are requested intent, recorded with the output, not guaranteed switches. Limits: no guaranteed seamless tiling, multi-view consistency, UV layout, exact dimensions or correct anatomy; texture sources need a seam/scale/UV pass before becoming material derivatives; front/side guides are references, not blueprints; pose references are aesthetic targets, never collision, reach, support or transition oracles. Generated additions the kit cannot build are rejected. Order: after the GDD, three frames (hall assembled from the kit; gate broken/restored; preparation stall dormant/active); pose and texture work only after the rig/source proof.
+
+## 9. Asset-to-system map, twists, gaps [Claude evidence / Codex twists]
+
+| System | Installed source | Twist |
+|---|---|---|
+| Locomotion | 8-way run/strafe with root motion, jump/fall/land, roll | retimed to the motor; feet from reviewed contact phases |
+| Strikes, reactions | fighting-motion strikes; head/body/low hit and block reactions; knockdown/get-up | curated set, retimed to section 4 windows, contact hold and outcome bodies added by the layer |
+| Throws | paired grab/throw clips | legal-staging check, failed-attempt variant |
+| Casting | one/two-hand casts, "Load" hold + cast, casting enter/idle/exit/damage | plain and charged states; hand feedback |
+| Hall NPCs | idles, talk, vending, carry, chant | routines change with services |
+| Hall and village (kit roles: surface, frame, roof, threshold, enclosure, service prop, landmark) | modular tavern interior + furniture; village houses, stalls, fences, gate, well | warm relight, guild palette on cloth, board from crates/planks, gate broken/repaired states |
+| Routes | terrain tiles, rocks, painterly trees, bushes, grass | one material palette; foliage density by sightline rule |
+| Effects | element charge/missile/impact prefabs; sparks, dust, shields | shader repair to URP; scale and colour to palette; capped counts |
+
+Evidence: Documentation/catalog-summary.txt, Documentation/catalog-clips.txt, Logs/catalog/, Logs/sheets/tavern.txt and town.txt plus their contact sheets. Installed clip existence does not prove usable retargeting; effect art needs new owned behaviour and shader repair; no skipped demo component becomes our implementation. Verified piece vocabulary (Logs/sheets tavern/town): floor tiles, straight/window/door walls, supports, straight/corner/side roofs, benches/tables/counter/chests; houses, awnings, fence/gate pieces, sheds, wood-path modules, terrain/rocks, foliage. Derivation record: every derived assembly lists its source pieces, transforms and material derivatives.
+
+Gaps (explicit, not hidden): final hero appearance (choose among owned rigs; rig proof decides); all audio; UI art (primitive UI); creatures (none; all opponents human by design). Known prep work: effect materials with missing shaders (render magenta) and materials still on the built-in shader; several effect prefabs reference missing scripts (art ingredients only).
+
+Stack: installed editor 6000.5.1f1 is not LTS. The boss's constraint is Unity LTS: target Unity 6.3 LTS (6000.3.x, supported to Dec 2027). No migration during this GDD task; after it, M0 runs a compatibility/migration gate on a preserved copy or branch, re-resolves package versions and reports actual incompatibilities.
+
+## 10. Content budget and priorities [joint]
+
+Prototype content: 1 hall + courtyard, 2 routes, 2 recovery sites, 3 NPC roles (clerk, stall keeper, repair crew), 1 opponent kit with 2 patterns, 1 element (plain + charged), 2 obligations, 2 services.
+Systems (10): input/motor/camera; combat state + contact resolution; procedural animation layer; AI patterns; contract/attempt state; service/world flags; save snapshot; primitive HUD + access options; interaction; asset prep.
+P0: gold path steps 1-9, all ten systems, plain + charged fire, contracts 1-2, both services.
+P1 (full arc): contracts 3-6 including the capstone (gold path step 10). Condition variant, rival pattern, lookout or attuned guard may only REPLACE an agreed contract/service slot, never expand the budget silently. Six contracts and two services remain the full content budget.
+Not needed unless every P0 passes: second element, multi-attacker fights, crew defence, crafting, inventory beyond the slot and one prep item, extra sites, weapons, dialogue trees, day/night cycle, production audio (gap), final hero art (gap).
+
+## 11. Milestones, gates, verification [Claude]
+
+| Milestone | Learning question | Gate |
+|---|---|---|
+| M0 Stack + canvas | does it run on the LTS target? | 6.3 LTS compatibility gate passed on a preserved copy/branch; zero console errors; effect shaders repaired; curated clip list + retime tables committed |
+| M0.5 Rig + combat spike | does cross-pack motion survive our corrections? | small spike with the chosen clips and a minimal owned collision motor, implementing enough contact and charge to prove the layer (M2 hardens this same system, never a second implementation); tuning table recorded (charge threshold/hold/area/push, HP, damage); then: | one hero rig on the sparring floor does stance, light phrase, heavy, guard, step, throw, plain and charged cast against a partner and passes the layer gates at 30/60/120 fps; on failure change clips or rig before building anything else |
+| M1 Greybox gold path | does the loop make sense with blocks? | steps 1-6 and 9 pass; save snapshot + reload tested |
+| M2 Combat core | are fights readable? | layer gates pass; a novice explains hit/miss/block with HUD and effects hidden |
+| M3 Opponents + services | do patterns force different reads; do services change the next decision? | both patterns beaten by a deliberate read; 4 of 5 testers name the changed route/threat/tool |
+| M4 Attunement + hall | is progression visible on the body? | steps 7-8 pass; testers describe what the charge changed |
+| M5 Feel + presentation (Codex lead) | does it look and feel like section 8? | reviewer >= 7/10 per area; three worst defects fixed before new features |
+| M6 Acceptance | does it hold end to end? | P0: gold path steps 1-9 green twice in a row on a clean build. Full arc: steps 1-10 likewise. |
+
+Always playable from M1: if a change breaks the gold path and is not fixed within 20 minutes, isolate the responsible change and fix or safely revert only that change. Never erase another developer's or the boss's work in progress; no blind commits or pushes.
+
+Verification (the author never grades their own work; numbers and captures are both required at every gate):
+- Gold-path driver: Play Mode fixture plays the gold path, captures the Game View at each pass condition, writes results.json (HP/coin/flag deltas, positions, frame time, console error count).
+- Layer gates (fixtures; every tolerance is a starting hypothesis (H) until measured on the chosen rig, never an engine capability claim):
+  * contact: 0 hits without limb-volume contact; resolved visible contact pose within a calibrated penetration tolerance (H); world contact before any actor behind it.
+  * grounding: declared planted-foot drift against its world anchor < 2 cm (H) per stance; sole penetration below the support surface < 1 cm (H); fixed-length reach (no bone length change > 1 mm, H); support handover consistent at every curated handover. Pelvis adjustment is bounded, never moves the capsule and never hides an unreachable stance. A pelvis-height inequality is not evidence of balance.
+  * transitions: measure UNEXPLAINED discontinuity against expected authored/root motion or the predicted transition pose, not raw bone speed (a fast punch is valid motion). Report endpoint jump residual and angular residual at each curated handover; preparation and contact must stay readable.
+  * frame rate: identical logical outcomes at 30/60/120 fps.
+- Named test matrix, each scenario with an independently stated expected result (oracle); add: second delivery; quitting immediately after attunement; (stress counts supplement it, never replace it): miss; front block; back hit; terrain obstruction; throw whiff at a wall; mutual throw attempts; charge interrupt; empty guard capacity; duplicate delivery attempt; abandon; reload mid-attempt; interrupted save write; zero-wallet retry.
+- Stress (supplementary): 1000 scripted exchanges and 10 000 random economy/save sequences report 0 contact violations, 0 duplicate rewards, 0 regressed services, 0 states needing coin or items to progress.
+- Kit review: source piece list vs assembled guild silhouette vs before/after growth states; one cohesive place, each new form traceable to the kit.
+- Reviewer evidence checklist: same fight with HUD/effects off and on; actual vs presented hit/block/miss counts; interrupted charge; empty guard capacity; throw whiff at a wall; repeated recovery inputs; feet on flat, slope and corner; service state before/after; attunement used on the second trip; retry at zero wallet; interrupted save loading into the hall.
+
+## 12. Build prompt (master prompt) [joint; written last]
+
+Mission: build the FreeGuild core prototype in Unity 6.3 LTS from this GDD. Grounded physical combat, a procedural animation layer, elemental attunement visible on the body, and one guild hall hub, built only from modified Asset Store content already in the project.
+
+Read first: sections 1 (pillars), 2 (gold path), 10 (priorities), 11 (milestones and gates). Build in milestone order. Do not start M1 until M0.5 passes.
+
+Rules:
+- Unity 6.3 LTS (after the M0 compatibility gate on a preserved copy/branch); new Input System only; HUD in uGUI so captures include it.
+- Modifications are made on derived copies; source packs and any existing uncommitted work are preserved.
+- Only installed store content, grown as a modular kit (recombination, proportion change, mesh edits, material derivatives, retiming); never colour-only; sources untouched; derivation recorded per assembly; pack demo scripts are never our code; no named external games, films, studios or brands in code, data or text.
+- Implement the rules exactly as tabled in sections 4, 6 and 7; numbers marked (H) are starting values to tune, never claims of tested behaviour.
+- The collision motor is the only actor mover; animation never sets damage; contact is verified geometrically.
+- Distinguish in every report: verified assets, proposed tuning numbers, unresolved gaps.
+- Decide, log the decision, continue. A gold-path break not fixed in 20 minutes: isolate and fix or safely revert only the responsible change; never erase other work in progress.
+- Every gate needs both the fixture numbers and the reviewer captures. Zero console errors and zero missing references at every gate.
+- Codex delivers code uncommitted; Claude verifies and commits; no pushes without the boss.
+
+Deliverables: the playable prototype passing M6, reporting P0 acceptance (steps 1-9) separately from full-arc acceptance (steps 1-10); final hero art, production sound and a second element stay explicit open items, never hidden acceptance dependencies; results.json and captures per gate; a decision log; the asset modification list per system.
+END_MASTER_GDD
+NEXT: codex verifies this exact block and delivers it to the boss. Build work (M0 onwards) starts only on the boss approval.
