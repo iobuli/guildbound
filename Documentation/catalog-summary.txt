@@ -1,0 +1,25 @@
+Assets/Anime Trees: 13 materials, 14 models, 0 clips, 14 prefabs
+Assets/Brawler Animations Sample: 4 materials, 25 models, 24 clips, 1 prefabs
+Assets/ExplosiveLLC: 46 materials, 238 models, 220 clips, 34 prefabs
+Assets/FightingMotionsVolume1: 46 materials, 43 models, 42 clips, 3 prefabs
+Assets/Hovl Studio: 34 materials, 4 models, 0 clips, 76 prefabs
+Assets/Idle MoCap: 15 materials, 12 models, 17 clips, 2 prefabs
+Assets/Kevin Iglesias: 31 materials, 102 models, 90 clips, 17 prefabs
+Assets/Low Poly Tarvern Pack: 1 materials, 35 models, 0 clips, 35 prefabs
+Assets/Magic Pig Games (Infinity PBR): 1 materials, 0 models, 0 clips, 241 prefabs
+Assets/MoCapCentral: 15 materials, 139 models, 129 clips, 10 prefabs
+Assets/RPGPP_LT: 3 materials, 90 models, 0 clips, 90 prefabs
+
+Shaders in use:
+  75  Universal Render Pipeline/Lit
+  60  Particles/Standard Unlit
+  36  Standard
+  17  Legacy Shaders/Self-Illumin/VertexLit
+  5  Shader Graphs/Leaf
+  5  Legacy Shaders/Self-Illumin/Diffuse
+  3  Unlit/Texture
+  2  Shader Graphs/Grass_LOD0
+  2  Shader Graphs/Grass_LOD1
+  2  Particles/Standard Surface
+  1  Skybox/Procedural
+  1  Unlit/Color
