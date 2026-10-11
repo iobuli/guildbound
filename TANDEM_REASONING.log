@@ -1804,3 +1804,29 @@ Verified Documentation/FreeGuild-Design-Atlas.html (34 MB, 10 images) + PDF (45 
   * hall-carved-a / hall-painted-b: valid style frames for the boss's SD-A vs SD-B pick, but each contains elements the kit cannot build, which must not drive design: a LAKE (no water asset in any pack), STONE STEPS (none; derive from V-STONES or drop), training STUMPS and POSTS (derivable from V-LOGS and T-POST, record them), PLANTER boxes (derivable from V-CRATE + V-PLANT). Proposed caption fix in the atlas: "background lake and steps are illustrative, not buildable from the current kit".
 - Approval states to record: CS-OBJ-01 approved; CS-OBJ-04 approved; CS-OBJ-05 approved; CS-OBJ-02 A/B rendered, awaiting boss style pick.
 NEXT: codex finishes CS-CHR-01..05 and adds the caption fix; boss picks SD-A or SD-B.
+
+## [codex] 2026-10-11 14:10:06 UTC - illustrated atlas delivered with character concepts
+
+Done: Documentation/FreeGuild-Design-Atlas.html (self-contained offline HTML) and Documentation/FreeGuild-Design-Atlas.pdf (38 pages). Includes the complete reviewed 12-section GDD/master prompt, full Kit Lexicon v2, four actual source contact sheets, proposed palette, five object concepts and five character concepts. Character board precedes world board. Boss's latest request explicitly brought character concept rendering forward; final rig/garment proof remains required for production.
+
+Objects saved under Documentation/concepts/objects/: hall-carved-a.png, hall-painted-b.png, hall-exploded.png, gate-states.png, stall-states.png.
+Characters saved under Documentation/concepts/characters/: hero-turnaround.png, opponent-silhouettes.png, guild-roster.png, combat-poses.png, casting-poses.png.
+
+Built-in GPT image used actual tavern/town/character contact sheets as references. Exact initial prompts, targeted correction prompts, output paths, attempts and inspection notes are in Documentation/concepts/concept-prompts.json and embedded in the atlas. Character attempts: hero 1; opponent 2 (ochre/charcoal corrected so red belongs to hero); roster 2 (hero outfit matched); combat poses 1; casting 2 (hero outfit/hair matched). All images are draft-for-boss-review, not approved meshes or measured anatomy/collision evidence. No generated effect concepts yet; complete FX definitions/recipes/specs are included.
+
+Verification: 10 concept figures, four actual asset sheets, all 12 GDD sections and six kit sections present; HTML internal links valid; PDF text contains all five CS-CHR IDs, master build prompt and complete kit libraries; hero/opponent pages contain images; rendered PDF pages inspected for readable layout. Earlier list formatting was corrected. Direct browser preview is unavailable in this session (no enabled browsers); delivered file links let the boss open locally. HTML is 54.9 MB; PDF is 75.3 MB because embedded full-resolution art is retained.
+
+Review: character silhouettes/materials fit the faceted kit direction. Clothing, hair, accessory mesh derivation and retargeting remain proposals to verify on the chosen owned body. Concept background scenery is mood, not added world scope. The final playable courtyard must clear fight-space clutter. No Unity source, scene or pack content modified; exports and image records are uncommitted for the peer workflow.
+
+Next: boss reviews the illustrated atlas and character appearance. Claude can assess kit consistency and implementation feasibility from the saved sheets; implementation follows the completed design gates. No blanket approval request added.
+
+## [claude] 2026-10-11 14:10:42 UTC | GSP.render | review of character concepts + clothing derivation flag
+Reviewed all five character concepts (Documentation/concepts/characters/) against the CHR kit and the asset-only rule.
+- hero-turnaround: APPROVE as direction. Faceted figure, faceless head (good: no facial animation dependency), red sash + wrapped forearms = clear silhouette key, proportions fit a standard humanoid rig.
+- opponent-silhouettes: APPROVE. Told apart in solid black (pressure: head-wrap tail + forward hunch; defensive: broad padded shoulders, square stance). Red correctly reserved for the hero.
+- combat-poses: APPROVE as aesthetic targets for curation and the rig proof. Guard-broken (arms open, centre dropped) and throw reach-in are especially readable.
+- casting-poses: APPROVE. No effects drawn (correct per kit separation); charged hold reads as braced with cupped hands.
+- guild-roster: ACCEPT with one note: the clerk (long robe) is distinct, but stall keeper and repair crew are close in silhouette and all three share browns. Give each one silhouette key (crew: tool belt + shoulder bag; keeper: cap + rolled sleeves + apron) and one accent colour from the palette.
+
+FEASIBILITY FLAG (logical lead, biggest production gap now visible): no installed pack contains clothing, hair or accessory meshes. Every outfit in these sheets must be DERIVED from owned bodies under the kit rule. Proposed route for M0.5/M2 (to agree): (1) base = owned smooth humanoid (C-DUMMY-M/F or C-MOCAP), faceted by decimation on a derived copy to match SD-A; (2) clothing as mesh edits of that derived body (vest/trouser/boot volumes split from the body surface, same skin weights) plus a few rigid skinned pieces (sash panels, forearm wraps, belt pouch) kitbashed from owned primitives; (3) hair as a rigid faceted cap piece; (4) colour by material derivatives from the palette. Gate: deformation check in the M0.5 rig proof (no clipping beyond tolerance through the 8 combat poses and the cast poses). If the gate fails, fall back to material-only clothing painted on the faceted body. Record each derivation per the kit rule.
+NEXT: codex replies on the derivation route; boss reviews the atlas and picks SD-A or SD-B.
