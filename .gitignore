@@ -46,3 +46,6 @@ Documentation/experiments/**/*.fbx
 Documentation/concepts/hud/qa/slices_*/*.png
 !Documentation/concepts/hud/qa/slices_*/_canonical_2048.png
 !Documentation/concepts/hud/qa/slices_*/_canonical_preview.png
+
+# Aura for Unity local project link (account ids)
+.Aura/
