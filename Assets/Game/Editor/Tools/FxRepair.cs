@@ -26,15 +26,17 @@ namespace Guildbound.Editor
             "Particles/Impacts & Explosions/Magic Arsenal - Fire Explosion Tiny.prefab",
         };
 
-        // missing material guid -> (repaired material name, Hovl texture, additive)
-        static readonly Dictionary<string, (string name, string texture, bool additive)> Map = new()
+        // missing material guid -> (repaired material name, Hovl texture, additive, tint). Tints pull the pale source
+        // start colours toward the fire palette (white-hot core, orange body, red-orange rim, warm grey smoke).
+        static readonly Color Core = new(1f, 0.85f, 0.55f), Body = new(1f, 0.52f, 0.14f), Rim = new(1f, 0.32f, 0.08f), Smoke = new(0.42f, 0.36f, 0.33f);
+        static readonly Dictionary<string, (string name, string texture, bool additive, Color tint)> Map = new()
         {
-            ["5ebadb3a85da1d54297d8a21786bec58"] = ("Arsenal Glow", "GlowFree1", true),
-            ["b4a3cd532f543a4448281dc9c13d9aec"] = ("Arsenal Smoke", "SmokeFree1", false),
-            ["27322810aa42bc943960f0952f27361d"] = ("Arsenal Ring", "Circle2", true),
-            ["cc1f87ebec52f2a42a16c1b98ea1c2fb"] = ("Arsenal Core", "FlashFree1", true),
-            ["01e0386bc3c5b2f45b5b2735939daa3f"] = ("Arsenal Muzzle", "FlashFree3", true),
-            ["7c707bedfbf7942459e20471e6f8d740"] = ("Arsenal Fire", "FlashFree1", true),
+            ["5ebadb3a85da1d54297d8a21786bec58"] = ("Arsenal Glow", "GlowFree1", true, Body),
+            ["b4a3cd532f543a4448281dc9c13d9aec"] = ("Arsenal Smoke", "SmokeFree1", false, Smoke),
+            ["27322810aa42bc943960f0952f27361d"] = ("Arsenal Ring", "Circle2", true, Rim),
+            ["cc1f87ebec52f2a42a16c1b98ea1c2fb"] = ("Arsenal Core", "FlashFree1", true, Core),
+            ["01e0386bc3c5b2f45b5b2735939daa3f"] = ("Arsenal Muzzle", "FlashFree3", true, Body),
+            ["7c707bedfbf7942459e20471e6f8d740"] = ("Arsenal Fire", "FlashFree1", true, Body),
         };
 
         [MenuItem("Guildbound/Assets/Repair Magic Arsenal Fire")]
@@ -42,7 +44,7 @@ namespace Guildbound.Editor
         {
             Directory.CreateDirectory(Out);
             var materials = new Dictionary<string, Material>();
-            foreach (var (guid, spec) in Map) materials[guid] = Build(spec.name, spec.texture, spec.additive);
+            foreach (var (guid, spec) in Map) materials[guid] = Build(spec.name, spec.texture, spec.additive, spec.tint);
 
             int assigned = 0, unmapped = 0, scripts = 0;
             foreach (var rel in Prefabs)
@@ -86,14 +88,14 @@ namespace Guildbound.Editor
             return result;
         }
 
-        static Material Build(string name, string texture, bool additive)
+        static Material Build(string name, string texture, bool additive, Color tint)
         {
             var path = Out + name + ".mat";
             var m = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (m == null) { m = new Material(Shader.Find("Universal Render Pipeline/Particles/Unlit")); AssetDatabase.CreateAsset(m, path); }
             m.shader = Shader.Find("Universal Render Pipeline/Particles/Unlit");
             m.SetTexture("_BaseMap", AssetDatabase.LoadAssetAtPath<Texture2D>(Hovl + texture + ".png"));
-            m.SetColor("_BaseColor", Color.white);
+            m.SetColor("_BaseColor", tint);
             m.SetFloat("_Surface", (float)BaseShaderGUI.SurfaceType.Transparent);
             m.SetFloat("_Blend", (float)(additive ? BaseShaderGUI.BlendMode.Additive : BaseShaderGUI.BlendMode.Alpha));
             BaseShaderGUI.SetMaterialKeywords(m, null, ParticleGUI.SetMaterialKeywords);
