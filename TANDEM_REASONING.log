@@ -3331,3 +3331,39 @@ Open work, for Aura to order (my suggested priority):
 3. Animation (Codex): bind the hero rig to FighterView/IFighterPresentation (retime clips to ActionState timing, no root motion), owned fire VFX on projectiles (SparringDriver.SyncProjectiles is the placeholder), contact accents on ContactEvent.
 4. Next milestone M1 greybox gold path (any agent Aura assigns): hall + door + two route stubs + recovery sites driving GuildState; save at hall events only.
 Claude: on request I verify/commit, fix rules bugs, extend fixtures, and review. Ask in the log.
+
+## [aura] 2026-10-11 21:15 editor clock | LEAD | rig verdict: yes, one model fits everything; work order
+
+Done: Kit frames finished - 3 new sprites our kit lacked (compass_strip, compass_pointer, minimap_frame) added to Tools/build_hud_kit.py and regenerated, 31 sprites from 28, all from our own SDF pipeline. Then the boss's rig question, answered with measurement instead of opinion: wrote Tools/AnimRigAudit.cs and ran it through the live editor across all 704 model assets.
+
+THE ANSWER IS YES. Of the 519 animation clips we own, 514 are ALREADY humanoid and retarget onto any humanoid Avatar with no edits. Per pack (fbx / clips / humanoid / generic):
+- MoCapCentral 139 / 129 / 126 / 3
+- ExplosiveLLC RPG Character 99 / 91 / 89 / 2
+- Kevin Iglesias Human Animations 102 / 90 / 90 / 0
+- FightingMotionsVolume1 43 / 42 / 42 / 0
+- ExplosiveLLC Warrior Bundles 1-3 100 / 102 / 102 / 0
+- Brawler Animations Sample (the boxing one) 25 / 24 / 24 / 0
+- Idle MoCap 12 / 17 / 17 / 0
+- ExplosiveLLC Fighter Bundle 21 / 16 / 16 / 0
+- ExplosiveLLC Crafting 10 / 8 / 8 / 0
+The only 5 non-humanoid clips are 3 MoCapCentral props and 2 RPG-character extras. All 24 Brawler clips resolve as [human]. Anime Trees, Tavern, RPGPP_LT, Hovl and SuperCharacterController carry 0 clips - they are props, not animation.
+
+BASE MODEL: Assets/Brawler Animations Sample/Models/Armature/Armature.fbx is the cleanest pick and it is the boxing one - type=Human, avatar=valid+human, clips=0, so it is a body with a correct humanoid Avatar and no animation baggage. It is not the only valid one: Crafter FREE, Berserker, Female, Heavy, Male, Kevin Iglesias HumanM_Model/HumanF_Model and MoCapCentral rig_MCUnity all also report avatar=valid+human. Armature simply has nothing else attached to it.
+
+Review - two things that matter more than the retarget itself:
+1. ROOT MOTION is the real trap. Kevin Iglesias ships plain clips AND "[RM]" root-motion variants; MoCapCentral ships "_NoRM" and un-suffixed pairs. Our motor is the sole mover (Claude's combat core), so every pair must be bound to its no-root-motion clip or the character drifts against the sim. This is a rule, not a preference.
+2. Humanoid type guarantees the MAPPING exists, not that it READS. A valid Avatar means Unity can retarget; it does not mean a six-foot mocap arm lines up on a smaller body. Expect specific clips to need judgement once the rig is on screen, and that call cannot be made from import settings - it needs the character moving.
+
+WORK ORDER (I direct now, per the boss's handover):
+- Codex: bind Armature.fbx to FighterView/IFighterPresentation (placeholder=false) and retime ONLY the subset FighterSim's ActionState actually needs first - idle, walk, light, heavy, guard idle, guard hit, hit F/B, quickstep F/B, grab start/throw/break, knockdown/getup. No-root-motion clips. Post the clip->ActionState table when it plays. The other ~490 clips stay on the shelf until this core set reads right on screen.
+- Claude: on request, as before; nothing blocking you.
+- Me: Sparring.unity next. It is the critical path - nothing can be play-verified until it exists and Claude is waiting on it to bind SparringDriver + CombatHudModel + the HUD instance.
+
+Needs: Codex - the clip->ActionState table when you have it. Boss - nothing.
+
+Next: Sparring.unity (floor, walls, light, camera at (0,1.2,0), SpawnA/B), post the object list, then the HUD rebuild to the board layout.
+
+## [claude] 2026-10-11 23:35 UTC | DONE for Aura | your two asks are in (commit above), 36/36 EditMode pass
+1. GuildState.Snapshot now carries garments (owned ids) + equipped (worn id); ToSnapshot(prepItems, garments, equipped). Fixture Snapshot_KeepsGarmentsAndWornPiece.
+2. Assets/Game/Play/PlayInventoryContext : IInventoryContext (CarriedObjective = GuildState.Carried, Delivered from Attempts == Delivered, InCombat from the live fight). SparringDriver now owns Guild (GuildState.Prototype) and Inventory (InventoryModel) - bind the HUD inventory page to driver.Inventory. Prep sync: FighterSim.PrepItems copies Inventory.PreparationCount at bout start; a completed Recover calls Inventory.ConsumePreparation(); using the item from the panel (PreparationRequested) issues a Recover press and clears the request.
+Standing by for your next assignment.
