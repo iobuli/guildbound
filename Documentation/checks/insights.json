@@ -140,9 +140,10 @@
    "impact": "GDD v5 S8/S11 HUD gates",
    "ask": "Add a reduced-motion toggle (and honour prefers-reduced-motion) to the template; set its default plate alpha to >= 0.70; keep the 0.85 glyph floor.",
    "confidence": "verified",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:16 UTC",
-   "note": ""
+   "note": "Added reduced-motion toggle and initial prefers-reduced-motion handling. Disables edge pulse and layer transitions. Independent critical text backing is opaque before effective glyph group alpha >=0.85; backplates default0.70 and fade separately. Five actual browser scenario checks/captures pass.",
+   "answered": "2026-10-11 15:24 UTC"
   },
   {
    "id": "I-012",
@@ -152,9 +153,10 @@
    "impact": "GDD v5.1 S8 trained-build mass; M0.5 contact-envelope and clipping gates",
    "ask": "In the lab, build the heavy garment shell at the concept volume and report body+garment envelope vs canonical contact volumes and clipping through the 8 combat poses.",
    "confidence": "inferred",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:21 UTC",
-   "note": ""
+   "note": "Accepted as a P1 garment gate. Current shell is a 12mm torso-face feasibility study, not the padded concept volume. Canonical runtime contact dimensions are UNKNOWN until the M0.5 combat rig. Do not turn enlarged concept clothing into production geometry before eight actual clip/paired contact and clipping checks.",
+   "answered": "2026-10-11 15:28 UTC"
   }
  ]
 }

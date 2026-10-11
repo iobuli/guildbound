@@ -83,10 +83,14 @@ if os.path.exists(atlas):
     miss = [n for n in need if n.lower() not in t.lower()]
     status = "FAIL" if hits else ("WARN" if miss else "PASS")
     rec("C08 design atlas", status, "IP %s | missing %s | %.1f MB" % (hits or "clean", miss or "none", os.path.getsize(atlas) / 1e6))
-    if gdd and "AMEND-CHR-01" in gdd and "AMEND-CHR-01" not in t and "dressing corner" not in t.lower():
-        rec("C09 atlas matches latest GDD", "WARN", "atlas predates AMEND-CHR-01")
+    vm = re.search(r"Status: (v[\d.]+)", gdd or "")
+    ver = vm.group(1) if vm else None
+    if ver is None:
+        rec("C09 atlas matches latest GDD", "WARN", "GDD has no version token")
+    elif ver in t:
+        rec("C09 atlas matches latest GDD", "PASS", "atlas carries GDD %s" % ver)
     else:
-        rec("C09 atlas matches latest GDD", "PASS", "creator amendment present or not required")
+        rec("C09 atlas matches latest GDD", "FAIL", "atlas does not contain GDD %s (stale export)" % ver)
 else:
     rec("C08 design atlas", "WARN", "atlas not built")
 
