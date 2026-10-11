@@ -49,3 +49,4 @@ Documentation/concepts/hud/qa/slices_*/*.png
 
 # Aura for Unity local project link (account ids)
 .Aura/
+__pycache__/
