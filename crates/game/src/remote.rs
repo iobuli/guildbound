@@ -7,6 +7,7 @@ use bevy::render::view::window::screenshot::{Screenshot, save_to_disk};
 use guildbound_sim as gs;
 use serde_json::{Value, json};
 
+use crate::anim::{AnimLibrary, AnimRequests};
 use crate::feed::DevFeed;
 use crate::sim_bridge::{OpponentMode, Scripted, Sim};
 
@@ -26,6 +27,27 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.say", gb_say)
         .with_method_main("gb.feed", gb_feed)
         .with_method_main("gb.screenshot", gb_screenshot)
+        .with_method_main("gb.clips", gb_clips)
+        .with_method_main("gb.anim", gb_anim)
+}
+
+fn gb_clips(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.clips");
+    let names: Vec<String> = world.get_resource::<AnimLibrary>().map(|l| l.clips.iter().map(|(n, _)| n.clone()).collect()).unwrap_or_default();
+    Ok(json!({ "count": names.len(), "clips": names }))
+}
+
+/// {clip, fighter?: 0}. Plays the clip once, then locomotion resumes.
+fn gb_anim(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.anim");
+    let p = p.ok_or_else(|| bad("params required"))?;
+    let clip = p.get("clip").and_then(Value::as_str).ok_or_else(|| bad("clip required"))?.to_owned();
+    let fighter = p.get("fighter").and_then(Value::as_u64).unwrap_or(0) as usize;
+    if world.get_resource::<AnimLibrary>().is_none_or(|l| l.node(&clip).is_none()) {
+        return Err(bad(format!("unknown clip {clip} (see gb.clips)")));
+    }
+    world.resource_mut::<AnimRequests>().0.push((fighter, clip.clone()));
+    Ok(json!({ "fighter": fighter, "clip": clip }))
 }
 
 fn touch(world: &mut World, method: &str) -> Value {
@@ -176,11 +198,12 @@ fn gb_feed(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
 fn gb_screenshot(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.screenshot");
     let rel = p.as_ref().and_then(|p| p.get("path")).and_then(Value::as_str).unwrap_or("Documentation/checks/live/latest.png").to_owned();
-    let path = std::path::Path::new(crate::ROOT).join(&rel);
+    let root = std::path::Path::new(crate::ROOT).canonicalize().map_err(BrpError::internal)?;
+    let path = root.join(&rel);
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(BrpError::internal)?;
     }
     let _ = std::fs::remove_file(&path);
     world.spawn(Screenshot::primary_window()).observe(save_to_disk(path.clone()));
-    Ok(json!({ "path": rel, "absolute": path.canonicalize().unwrap_or(path.clone()).to_string_lossy() }))
+    Ok(json!({ "path": rel, "absolute": path.to_string_lossy() }))
 }

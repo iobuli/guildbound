@@ -26,3 +26,6 @@ Documentation/concepts/hud/qa/slices_*/*.png
 !Documentation/concepts/hud/qa/slices_*/_canonical_preview.png
 
 __pycache__/
+
+# Converted Asset Store pack content (boss holds the licences; no raw redistribution in the repo)
+assets/packs/

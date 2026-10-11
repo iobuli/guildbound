@@ -3,6 +3,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 
+use crate::anim::{AnimLibrary, AnimRequests, AnimSettings};
 use crate::camera::OrbitCamera;
 use crate::feed::DevFeed;
 use crate::remote::RemoteActivity;
@@ -15,12 +16,24 @@ pub struct PanelState {
     pub show_grid: bool,
     pub show_velocity: bool,
     pub show_bodies: bool,
+    pub show_capsules: bool,
     draft: String,
+    clip: String,
+    clip_target: usize,
 }
 
 impl Default for PanelState {
     fn default() -> Self {
-        Self { width: 340.0, show_grid: true, show_velocity: true, show_bodies: false, draft: String::new() }
+        Self {
+            width: 340.0,
+            show_grid: true,
+            show_velocity: true,
+            show_bodies: false,
+            show_capsules: false,
+            draft: String::new(),
+            clip: "hp_straight_left_A".into(),
+            clip_target: 0,
+        }
     }
 }
 
@@ -32,6 +45,9 @@ pub fn panel(
     remote: Res<RemoteActivity>,
     time: Res<Time<Real>>,
     mut cam: Single<&mut OrbitCamera>,
+    lib: Option<Res<AnimLibrary>>,
+    mut anim: ResMut<AnimSettings>,
+    mut requests: ResMut<AnimRequests>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     let mut root = egui::Ui::new(
@@ -46,6 +62,7 @@ pub fn panel(
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Guildbound dev");
                 ui.label("WASD move (camera-relative), Shift run, right-drag orbit, wheel zoom, Space pause, . step");
+                ui.label("J jab, K cross, U hook, I uppercut, L roundhouse, O side kick | opp: H hit, N knockdown, G get up");
                 ui.separator();
                 sim_section(ui, &mut sim);
                 ui.separator();
@@ -58,7 +75,10 @@ pub fn panel(
                     ui.checkbox(&mut state.show_grid, "grid");
                     ui.checkbox(&mut state.show_velocity, "velocity");
                     ui.checkbox(&mut state.show_bodies, "bodies");
+                    ui.checkbox(&mut state.show_capsules, "capsules");
                 });
+                ui.separator();
+                anim_section(ui, lib.as_deref(), &mut anim, &mut requests, &mut state);
                 ui.separator();
                 link_section(ui, &remote, time.elapsed_secs_f64());
                 ui.separator();
@@ -148,6 +168,29 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
     if ui.button("Defaults").clicked() {
         sim.world.tuning = guildbound_sim::Tuning::default();
     }
+}
+
+fn anim_section(ui: &mut egui::Ui, lib: Option<&AnimLibrary>, anim: &mut AnimSettings, requests: &mut AnimRequests, state: &mut PanelState) {
+    ui.label(egui::RichText::new("Animation (FightingMotions pack)").strong());
+    let Some(lib) = lib.filter(|l| !l.clips.is_empty()) else {
+        ui.label(format!("loading assets/{} ...", crate::anim::FIGHTER_GLB));
+        return;
+    };
+    ui.label(format!("{} clips", lib.clips.len()));
+    ui.horizontal(|ui| {
+        egui::ComboBox::from_id_salt("clip").selected_text(&state.clip).width(170.0).show_ui(ui, |ui| {
+            for (name, _) in &lib.clips {
+                ui.selectable_value(&mut state.clip, name.clone(), name);
+            }
+        });
+        ui.radio_value(&mut state.clip_target, 0, "you");
+        ui.radio_value(&mut state.clip_target, 1, "opp");
+    });
+    if ui.button("Play clip once").clicked() {
+        requests.0.push((state.clip_target, state.clip.clone()));
+    }
+    ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk clip m/s at 1x"));
+    ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
 }
 
 fn link_section(ui: &mut egui::Ui, remote: &RemoteActivity, now: f64) {

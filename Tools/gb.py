@@ -9,6 +9,8 @@ python -I Tools/gb.py speed X
 python -I Tools/gb.py opponent idle|chase
 python -I Tools/gb.py input FIGHTER X Z [TICKS] [run]   hold a move intent for TICKS sim ticks
 python -I Tools/gb.py tuning KEY=VAL ...         e.g. walk_speed=2.4 (or defaults=1)
+python -I Tools/gb.py clips                      animation clip names
+python -I Tools/gb.py anim CLIP [FIGHTER]        play a clip once on fighter (default 0)
 python -I Tools/gb.py shot [PATH]                screenshot, default Documentation/checks/live/latest.png
 python -I Tools/gb.py call METHOD [JSON]         any BRP method, e.g. world.query
 """
@@ -67,6 +69,10 @@ def main(argv):
         if "defaults" in pairs:
             params["defaults"] = pairs["defaults"] not in ("0", "false")
         out = call("gb.tuning", params)
+    elif cmd == "clips":
+        out = call("gb.clips")
+    elif cmd == "anim":
+        out = call("gb.anim", {"clip": args[0], "fighter": int(args[1]) if len(args) > 1 else 0})
     elif cmd == "shot":
         out = call("gb.screenshot", {"path": args[0]} if args else {})
         time.sleep(0.5)
