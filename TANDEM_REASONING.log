@@ -3303,3 +3303,31 @@ Done: compile clean (0 errors, 0 warnings in console), EditMode 25/25 pass (17 c
 Review: Codex handover accepted; Aura is the HUD owner from here. Note for the real inventory model: GuildState (Progress) owns the objective slot; your inventory model should read Carried/Active from it rather than keep a second copy.
 Needs: Aura: Sparring.unity is yours to create now (spec in my 22:40 entry). Post the object list when saved; I add a GameObject "Sparring" with SparringDriver + CombatHudModel + SparringCamera on the camera, spawn refs, and an instance of Hud.prefab bound to CombatHudModel, then run Play-mode verification with you.
 Next: wait for Sparring; meanwhile M1 gold-path driver design (fixture that plays steps 1-9 on GuildState + CombatWorld).
+
+## [aura] 2026-10-11 20:30 editor clock | RULES | the inventory system now exists; 35/35 EditMode pass
+
+Done: The missing inventory system is written and green. New assembly Guildbound.Rules (Assets/Game/Rules/Guildbound.Rules.asmdef, refs Guildbound.Contracts + Guildbound.Combat, per Claude's answer) and Assets/Game/Rules/InventoryModel.cs implementing IInventoryModel against AMEND-INV-01: 12 slots partitioned 1 objective / 1 preparation / 4 equipment / 6 keepsake (H), preparation stack cap 2 (H), every refusal returns a reason string the HUD can show, Changed raised on every mutation. Added Assets/Game/Tests/InventoryFixtures.cs (10 fixtures) and Guildbound.Rules to the Tests asmdef references.
+
+Review:
+- The objective is NOT a second copy. GuildState owns it, so InventoryModel reads it through a new IInventoryContext (CarriedObjective / Delivered / InCombat) which the Play layer implements over GuildState plus the combat world. This is why Guildbound.Rules does not reference Guildbound.Progress - the dependency points the other way and stays acyclic.
+- Spending is deferred the way the rules require: RequestUse only sets PreparationRequested; ConsumePreparation does the decrement. So the Recover path copies PreparationCount into FighterSim.PrepItems and spends on completion, never on request.
+- One thing I deliberately did NOT do: AMEND-INV-01 item 4 says the inventory joins the save snapshot with slot ids, counts and equipped flags. GuildState.Snapshot already carries prepItems, but there is nowhere to put equipped flags and GuildState is Claude's assembly. I am not editing Progress unasked.
+- Evidence, run through the live editor: check_compile_errors = no errors; EditMode 35/35 pass (was 25, plus my 10), 0 failed, 0 skipped.
+
+Needs: Claude - (1) add a garment list to GuildState.Snapshot when you are next in Progress, or tell me to, so equipped flags persist; (2) the Play adapter implements IInventoryContext as CarriedObjective = GuildState.Carried, Delivered from Attempts == Delivered, InCombat from the live fight. Boss - nothing; this is the base the HUD binds to.
+
+Next: HUD rebuild to the board layout - left rail, quests list, top-centre compass, top-right minimap with the right-edge backpack rail, bottom-centre console - reusing the kit art. Then Sparring.unity.
+
+## [claude] 2026-10-11 23:20 UTC | HANDOVER | boss: Aura takes the lead and directs the team; Claude finishes and stands by
+Done (all committed on build/m0, compile clean, EditMode 35/35):
+- cd8035f combat core (Guildbound.Combat): CombatWorld fixed step 1/120, motor sole mover, strikes/guard capacity+break/step/throw/plain+charged cast/recover; FixedStepRunner (identical at 30/60/120 fps); Tuning (all (H)).
+- e4454d3 play layer (Assets/Game/Play): SparringDriver (keys: WASD, Shift run, LMB light, F heavy, RMB guard, Ctrl step, R throw, Q cast/hold, V recover, MMB lock, Enter reset, P partner pattern), FighterView : IFighterPresentation (placeholder bodies; set placeholder=false when a rig binds), OpponentBrain Pressure/Defensive, CombatHudModel : IHudModel, SparringCamera. Progress (Guildbound.Progress): GuildState (contracts/attempts/wallet/trust/services/attunement, deliver once, replay pays nothing, reset keeps rewards), SaveStore (snapshot + previous file).
+- 25b6a5a gold path fixture: GDD steps 2-9 pass on the real rules.
+- fc79f38 Aura's inventory rules (Guildbound.Rules) + fixtures; 070b783 Codex's HUD handover baseline.
+Lead: AURA now directs work order and assignments (boss instruction). Claude and Codex take tasks from Aura's entries. Unchanged team rules: edits stay uncommitted until Claude verifies (compile + EditMode tests) and commits; announce a scene before editing it; no batch Unity while the editor is open; free trial only, no purchases or premium generation.
+Open work, for Aura to order (my suggested priority):
+1. Sparring.unity (Aura): floor/walls/light/camera/SpawnA-B per the 22:40 spec, then add a GameObject "Sparring" with SparringDriver (spawnA/B, viewCamera) + CombatHudModel(driver) and put SparringCamera(driver) on the camera; instance Assets/Game/UI/Kit/Hud.prefab and set HudView.modelSource = CombatHudModel (+ EventSystem with InputSystemUIInputModule). Then Play-mode check: fight, guard break, throw, Q hold charge, V recover with partner far, captures + worst GC frames.
+2. HUD (Aura): your diagnosis + boss reference (Fantasy Warrior board, backpack); bind inventory page to the real InventoryModel; prep-item count must sync with FighterSim.PrepItems (driver copies it in, writes back after a completed Recover).
+3. Animation (Codex): bind the hero rig to FighterView/IFighterPresentation (retime clips to ActionState timing, no root motion), owned fire VFX on projectiles (SparringDriver.SyncProjectiles is the placeholder), contact accents on ContactEvent.
+4. Next milestone M1 greybox gold path (any agent Aura assigns): hall + door + two route stubs + recovery sites driving GuildState; save at hall events only.
+Claude: on request I verify/commit, fix rules bugs, extend fixtures, and review. Ask in the log.
