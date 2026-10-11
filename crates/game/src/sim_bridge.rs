@@ -2,7 +2,6 @@
 //! and mirrors its state onto the scene. Presentation reads the sim; it never writes sim state directly.
 
 use bevy::prelude::*;
-use bevy::world_serialization::WorldAssetRoot;
 use bevy_egui::input::EguiWantsInput;
 use guildbound_sim as gs;
 
@@ -88,10 +87,11 @@ pub fn setup_scene(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     assets: Res<AssetServer>,
+    libs: Res<crate::anim::Libraries>,
     sim: Res<Sim>,
 ) {
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(40.0, 40.0))),
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(200.0, 200.0))),
         MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::srgb(0.22, 0.24, 0.22), perceptual_roughness: 0.95, ..default() })),
     ));
     commands.spawn((
@@ -99,24 +99,23 @@ pub fn setup_scene(
         Transform::from_xyz(6.0, 12.0, 4.0).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
-    let colors = [Color::srgb(0.25, 0.55, 0.95), Color::srgb(0.9, 0.3, 0.25)];
     let r = sim.world.tuning.body_radius;
     let body = meshes.add(Capsule3d::new(r, 1.8 - 2.0 * r));
     let nose = meshes.add(Cuboid::new(0.12, 0.12, 0.25));
-    let model = assets.load(GltfAssetLabel::Scene(0).from_asset(crate::anim::FIGHTER_GLB));
-    for (i, color) in colors.iter().enumerate().take(sim.world.fighters.len()) {
-        let mat = materials.add(StandardMaterial { base_color: *color, ..default() });
-        commands.spawn((FighterView(i), Transform::default(), Visibility::default())).with_children(|p| {
-            p.spawn((CapsuleView, Mesh3d(body.clone()), MeshMaterial3d(mat.clone()), Transform::from_xyz(0.0, 0.9, 0.0), Visibility::Hidden))
-                .with_child((Mesh3d(nose.clone()), MeshMaterial3d(mat), Transform::from_xyz(0.0, 0.55, -r - 0.08)));
-            // pack models face +Z; the view faces -Z (Bevy forward), so turn the model around
-            p.spawn((
-                crate::anim::FighterRig::new(i, *color),
-                WorldAssetRoot(model.clone()),
-                Transform::from_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
-            ))
-            .observe(crate::anim::on_rig_ready);
-        });
+    let model = libs.current().map(|l| assets.load(GltfAssetLabel::Scene(0).from_asset(l.path.clone())));
+    for i in 0..sim.world.fighters.len().min(crate::anim::FIGHTER_COLORS.len()) {
+        let mat = materials.add(StandardMaterial { base_color: crate::anim::FIGHTER_COLORS[i], ..default() });
+        let capsule_visibility = if model.is_some() { Visibility::Hidden } else { Visibility::Inherited };
+        let view = commands
+            .spawn((FighterView(i), Transform::default(), Visibility::default()))
+            .with_children(|p| {
+                p.spawn((CapsuleView, Mesh3d(body.clone()), MeshMaterial3d(mat.clone()), Transform::from_xyz(0.0, 0.9, 0.0), capsule_visibility))
+                    .with_child((Mesh3d(nose.clone()), MeshMaterial3d(mat), Transform::from_xyz(0.0, 0.55, -r - 0.08)));
+            })
+            .id();
+        if let Some(scene) = &model {
+            crate::anim::spawn_rig(&mut commands, view, i, scene.clone());
+        }
     }
 }
 
@@ -137,6 +136,7 @@ pub fn read_player_input(
     mut sim: ResMut<Sim>,
     mut anims: ResMut<crate::anim::AnimRequests>,
     mut cursor: ResMut<crate::anim::ClusterCursor>,
+    lib: Option<Res<crate::anim::AnimLibrary>>,
 ) {
     if wants.wants_any_keyboard_input() {
         sim.keyboard = gs::Intent::default();
@@ -148,20 +148,20 @@ pub fn read_player_input(
     if keys.just_pressed(KeyCode::Period) && sim.paused {
         sim.pending_steps += 1;
     }
-    // presentation-only strike keys until the sim's move table lands (COMBAT_MOTION_PLAN phase 1)
-    // strike keys pick the next variant from their combat cluster (anim::CLUSTERS)
-    for (key, cluster) in [KeyCode::KeyJ, KeyCode::KeyK, KeyCode::KeyU, KeyCode::KeyI, KeyCode::KeyL, KeyCode::KeyO].into_iter().zip(0..) {
-        if keys.just_pressed(key) {
-            anims.0.push((0, cursor.next(cluster).into()));
+    // presentation-only strike keys until the sim's move table lands (COMBAT_MOTION_PLAN phase 1):
+    // each key takes the next variant from its combat cluster in the current library
+    if let Some(lib) = &lib {
+        let strike_keys = [KeyCode::KeyJ, KeyCode::KeyK, KeyCode::KeyU, KeyCode::KeyI, KeyCode::KeyL, KeyCode::KeyO, KeyCode::KeyY];
+        for (cluster, key) in strike_keys.into_iter().enumerate() {
+            if keys.just_pressed(key) && let Some(clip) = cursor.next(lib, cluster) {
+                anims.0.push((0, clip));
+            }
         }
-    }
-    for (key, fighter, clip) in [
-        (KeyCode::KeyH, 1, "hd_front_A"),
-        (KeyCode::KeyN, 1, "knockdown_A2"),
-        (KeyCode::KeyG, 1, "getup_A"),
-    ] {
-        if keys.just_pressed(key) {
-            anims.0.push((fighter, clip.into()));
+        let r = &lib.roles;
+        for (key, clip) in [(KeyCode::KeyH, &r.hit), (KeyCode::KeyN, &r.knockdown), (KeyCode::KeyG, &r.getup)] {
+            if keys.just_pressed(key) && let Some(clip) = clip {
+                anims.0.push((1, clip.clone()));
+            }
         }
     }
     let fwd = camera.forward().as_vec3().with_y(0.0).normalize_or_zero();

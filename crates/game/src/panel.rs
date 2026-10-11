@@ -3,7 +3,7 @@
 use bevy::prelude::*;
 use bevy_egui::{EguiContexts, egui};
 
-use crate::anim::{AnimLibrary, AnimRequests, AnimSettings};
+use crate::anim::{AnimLibrary, AnimRequests, AnimSettings, Libraries};
 use crate::camera::OrbitCamera;
 use crate::feed::DevFeed;
 use crate::remote::RemoteActivity;
@@ -48,6 +48,7 @@ pub fn panel(
     lib: Option<Res<AnimLibrary>>,
     mut anim: ResMut<AnimSettings>,
     mut requests: ResMut<AnimRequests>,
+    mut libs: ResMut<Libraries>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     let mut root = egui::Ui::new(
@@ -62,7 +63,7 @@ pub fn panel(
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Guildbound dev");
                 ui.label("WASD move (camera-relative), Shift run, right-drag orbit, wheel zoom, Space pause, . step");
-                ui.label("J jab, K cross, U hook, I uppercut, L roundhouse, O side kick | opp: H hit, N knockdown, G get up");
+                ui.label("J jab, K cross, U hook, I uppercut, L roundhouse, O side kick, Y run punch | opp: H hit, N knockdown, G get up");
                 ui.separator();
                 sim_section(ui, &mut sim);
                 ui.separator();
@@ -78,7 +79,7 @@ pub fn panel(
                     ui.checkbox(&mut state.show_capsules, "capsules");
                 });
                 ui.separator();
-                anim_section(ui, lib.as_deref(), &mut anim, &mut requests, &mut state);
+                anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
                 ui.separator();
                 link_section(ui, &remote, time.elapsed_secs_f64());
                 ui.separator();
@@ -179,16 +180,38 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
     }
 }
 
-fn anim_section(ui: &mut egui::Ui, lib: Option<&AnimLibrary>, anim: &mut AnimSettings, requests: &mut AnimRequests, state: &mut PanelState) {
-    ui.label(egui::RichText::new("Animation (FightingMotions pack)").strong());
+fn anim_section(
+    ui: &mut egui::Ui,
+    libs: &mut Libraries,
+    lib: Option<&AnimLibrary>,
+    anim: &mut AnimSettings,
+    requests: &mut AnimRequests,
+    state: &mut PanelState,
+) {
+    // header: "Animation [<pack v>]" - the dropdown is the model picker (model + its fitted clips)
+    ui.horizontal(|ui| {
+        ui.label(egui::RichText::new("Animation [").strong());
+        let current = libs.current().map_or("no packs converted".to_owned(), |l| l.name.clone());
+        egui::ComboBox::from_id_salt("library").selected_text(current).show_ui(ui, |ui| {
+            for (i, entry) in libs.list.iter().enumerate() {
+                if ui.selectable_label(i == libs.selected, &entry.name).clicked() {
+                    libs.requested = Some(i);
+                }
+            }
+        });
+        ui.label(egui::RichText::new("]").strong());
+    });
     let Some(lib) = lib.filter(|l| !l.clips.is_empty()) else {
-        ui.label(format!("loading assets/{} ...", crate::anim::FIGHTER_GLB));
+        ui.label("loading model and clips ...");
         return;
     };
-    ui.label(format!("{} clips", lib.clips.len()));
+    let r = &lib.roles;
+    let show = |o: &Option<String>| o.clone().unwrap_or_else(|| "-".into());
+    ui.label(format!("{} clips | stance {} | walk {} | run {} | back {}", lib.clips.len(), show(&r.idle), show(&r.walk), show(&r.run), show(&r.back)));
     egui::CollapsingHeader::new("Combat clusters (keys rotate variants)").show(ui, |ui| {
-        for ((name, limb, clips), key) in crate::anim::CLUSTERS.iter().zip(["J", "K", "U", "I", "L", "O"]) {
-            ui.label(format!("{key} {name} ({limb}): {}", clips.join(", ")));
+        for ((name, limb, clips), spec) in lib.clusters.iter().zip(crate::anim::CLUSTER_SPECS) {
+            let list = if clips.is_empty() { "none in this pack".to_owned() } else { clips.join(", ") };
+            ui.label(format!("{} {name} ({limb}): {list}", spec.2));
         }
     });
     ui.horizontal(|ui| {
@@ -206,13 +229,14 @@ fn anim_section(ui: &mut egui::Ui, lib: Option<&AnimLibrary>, anim: &mut AnimSet
     ui.horizontal(|ui| {
         ui.label("stance");
         egui::ComboBox::from_id_salt("stance").selected_text(&anim.stance_idle).show_ui(ui, |ui| {
-            for (name, _) in lib.clips.iter().filter(|(n, _)| n.contains("idle")) {
+            for (name, _) in lib.clips.iter().filter(|(n, _)| n.to_lowercase().contains("idle")) {
                 ui.selectable_value(&mut anim.stance_idle, name.clone(), name);
             }
         });
     });
     ui.checkbox(&mut anim.inertialize, "smooth transitions (inertialize from last pose)");
     ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk clip m/s at 1x"));
+    ui.add(egui::Slider::new(&mut anim.run_reference_speed, 1.0..=8.0).text("run clip m/s at 1x"));
     ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
     ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean rad per m/s2"));
 }

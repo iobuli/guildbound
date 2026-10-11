@@ -27,7 +27,7 @@
 - Engine: Bevy (Rust), code only, no editor. Unity was dropped 2026-10-11; the last Unity state is tag `unity-final` (read old files with `git show unity-final:<path>`). Branch `build/bevy`.
 - Read Documentation/ALPHA_LESSONS.md first (what to keep, what bit us, Unity -> Bevy translation), then Documentation/HANDOFF.md and Documentation/MASTER.md (section 4 math is engine-independent).
 - Keep the combat sim a plain Rust crate (no Bevy types) so `cargo test` runs it headless; Bevy is presentation. Pin the Bevy version and check API names against its docs, not memory.
-- Old engines are reference only: `_OldGodot/` zip (git-ignored) and the `unity-final` tag. Never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code. Asset Store pack licences outside Unity are UNKNOWN until checked.
+- Old engines are reference only: `_OldGodot/` zip (git-ignored) and the `unity-final` tag. Never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code. Asset Store packs: the boss holds the licences (Decision 21); converted content stays git-ignored in assets/packs/.
 - Team: the user is the boss (direction, scope, art). Codex = creative dev. Claude = logical dev (architecture, verification, tests, licensing, risk).
 - Coordinate with Codex only through collab/CHANNEL.md (append-only, `## [agent] YYYY-MM-DD HH:MM - topic`, four parts: Done / Review / Needs / Next), collab/TASKS.md (owners), collab/DECISIONS.md.
 - After posting, wait with `powershell -NoProfile -File Tools/collab_wait.ps1 -Me claude` (0 = new entry, 3 = timeout, 2 = user STOP). A direct user message always wins. Honour pauses and brainstorm-only requests.

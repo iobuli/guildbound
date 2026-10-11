@@ -7,7 +7,7 @@ use bevy::render::view::window::screenshot::{Screenshot, save_to_disk};
 use guildbound_sim as gs;
 use serde_json::{Value, json};
 
-use crate::anim::{AnimLibrary, AnimRequests};
+use crate::anim::{AnimLibrary, AnimRequests, Libraries};
 use crate::feed::DevFeed;
 use crate::sim_bridge::{OpponentMode, Scripted, Sim};
 
@@ -29,12 +29,38 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.screenshot", gb_screenshot)
         .with_method_main("gb.clips", gb_clips)
         .with_method_main("gb.anim", gb_anim)
+        .with_method_main("gb.library", gb_library)
+}
+
+/// {select?: name or index}. Lists the converted packs; selecting one swaps every fighter's model and clips.
+fn gb_library(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.library");
+    let mut libs = world.resource_mut::<Libraries>();
+    if let Some(sel) = p.as_ref().and_then(|p| p.get("select")) {
+        let i = match sel {
+            Value::Number(n) => n.as_u64().map(|n| n as usize),
+            Value::String(name) => libs.list.iter().position(|l| &l.name == name),
+            _ => None,
+        }
+        .filter(|&i| i < libs.list.len())
+        .ok_or_else(|| bad("select must be a pack name or index from the list"))?;
+        libs.requested = Some(i);
+    }
+    let names: Vec<&str> = libs.list.iter().map(|l| l.name.as_str()).collect();
+    Ok(json!({ "packs": names, "selected": libs.selected, "requested": libs.requested }))
 }
 
 fn gb_clips(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.clips");
-    let names: Vec<String> = world.get_resource::<AnimLibrary>().map(|l| l.clips.iter().map(|(n, _)| n.clone()).collect()).unwrap_or_default();
-    Ok(json!({ "count": names.len(), "clips": names }))
+    let Some(lib) = world.get_resource::<AnimLibrary>() else { return Ok(json!({ "count": 0, "clips": [] })) };
+    let names: Vec<&String> = lib.clips.iter().map(|(n, _)| n).collect();
+    let r = &lib.roles;
+    let clusters: Vec<Value> = lib.clusters.iter().map(|(n, limb, c)| json!({ "cluster": n, "limb": limb, "clips": c })).collect();
+    Ok(json!({
+        "count": names.len(), "clips": names,
+        "roles": { "idle": r.idle, "walk": r.walk, "run": r.run, "back": r.back, "hit": r.hit, "knockdown": r.knockdown, "getup": r.getup },
+        "clusters": clusters,
+    }))
 }
 
 /// {clip, fighter?: 0}. Plays the clip once, then locomotion resumes.

@@ -7,6 +7,9 @@ use bevy::window::PrimaryWindow;
 use crate::panel::PanelState;
 use crate::sim_bridge::Sim;
 
+/// Sky and fog colour (also the clear colour).
+pub const SKY: Color = Color::srgb(0.62, 0.71, 0.80);
+
 #[derive(Component)]
 pub struct OrbitCamera {
     pub yaw: f32,
@@ -17,10 +20,12 @@ pub struct OrbitCamera {
 }
 
 pub fn spawn(mut commands: Commands) {
+    // third person by default: close behind and above the player, fog for depth toward the horizon
     commands.spawn((
         Camera3d::default(),
         Transform::default(),
-        OrbitCamera { yaw: 0.0, pitch: 0.75, distance: 13.0, focus: Vec3::ZERO, follow_player: false },
+        OrbitCamera { yaw: 0.0, pitch: 0.42, distance: 7.5, focus: Vec3::ZERO, follow_player: true },
+        DistanceFog { color: SKY, falloff: FogFalloff::Linear { start: 30.0, end: 110.0 }, ..default() },
     ));
 }
 

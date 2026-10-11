@@ -17,7 +17,8 @@ pub const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 
 fn main() {
     App::new()
-        .insert_resource(ClearColor(Color::srgb(0.07, 0.09, 0.13)))
+        .insert_resource(ClearColor(camera::SKY))
+        .insert_resource(GlobalAmbientLight { color: Color::WHITE, brightness: 350.0, ..default() })
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
@@ -39,6 +40,7 @@ fn main() {
         .init_resource::<anim::AnimSettings>()
         .init_resource::<anim::AnimRequests>()
         .init_resource::<anim::ClusterCursor>()
+        .insert_resource(anim::Libraries::scan())
         .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, camera::spawn, announce))
         .add_systems(
             Update,
@@ -46,6 +48,7 @@ fn main() {
                 sim_bridge::read_player_input,
                 sim_bridge::step_sim,
                 sim_bridge::sync_views,
+                anim::switch_library,
                 anim::build_library,
                 anim::drive_animation,
                 anim::lean,
@@ -57,7 +60,7 @@ fn main() {
         )
         .add_systems(
             PostUpdate,
-            anim::inertialize.after(bevy::app::AnimationSystems).before(bevy::transform::TransformSystems::Propagate),
+            (anim::lock_root_motion, anim::inertialize).chain().after(bevy::app::AnimationSystems).before(bevy::transform::TransformSystems::Propagate),
         )
         .add_systems(EguiPrimaryContextPass, panel::panel)
         .run();

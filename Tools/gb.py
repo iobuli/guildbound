@@ -11,6 +11,7 @@ python -I Tools/gb.py input FIGHTER X Z [TICKS] [run]   hold a move intent for T
 python -I Tools/gb.py tuning KEY=VAL ...         e.g. walk_speed=2.4 (or defaults=1)
 python -I Tools/gb.py clips                      animation clip names
 python -I Tools/gb.py anim CLIP [FIGHTER]        play a clip once on fighter (default 0)
+python -I Tools/gb.py library [NAME|INDEX]       list packs, or switch every fighter's model + clips
 python -I Tools/gb.py shot [PATH]                screenshot, default Documentation/checks/live/latest.png
 python -I Tools/gb.py call METHOD [JSON]         any BRP method, e.g. world.query
 """
@@ -71,6 +72,8 @@ def main(argv):
         out = call("gb.tuning", params)
     elif cmd == "clips":
         out = call("gb.clips")
+    elif cmd == "library":
+        out = call("gb.library", {"select": int(args[0]) if args[0].isdigit() else args[0]} if args else {})
     elif cmd == "anim":
         out = call("gb.anim", {"clip": args[0], "fighter": int(args[1]) if len(args) > 1 else 0})
     elif cmd == "shot":
