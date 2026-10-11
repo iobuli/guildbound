@@ -1,0 +1,5 @@
+{
+  "name": "Guildbound.Anim",
+  "rootNamespace": "Guildbound.Anim",
+  "references": ["Guildbound.Contracts"]
+}

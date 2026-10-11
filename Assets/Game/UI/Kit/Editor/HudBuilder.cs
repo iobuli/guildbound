@@ -28,6 +28,27 @@ namespace Guildbound.UI.Editor
         static readonly float[] Floors = { 0f, 0.875f, 0.85f, 0.85f, 0.85f, 0.875f, 0.9f, 1f };
         static readonly string[] LayerNames = { "L0 Accents", "L1 Plates", "L2 Meters", "L3 Icons", "L4 Text", "L5 Prompts", "L6 Alerts", "L7 Modal" };
 
+        // A1 weather surfaces, keyed by cluster name. Each becomes one CanvasGroup per layer that draws it, so a
+        // surface fades as a whole (plate + glyph + text) instead of only the layer it happens to sit on - the
+        // ledger and the combat panel share L1, so a layer-wide fade could not tell them apart. Weights are
+        // town / approach / fight. Alerts and the two action prompts never fade: they are what a fight is read from.
+        static readonly Dictionary<string, float[]> WeatherSurfaces = new()
+        {
+            { "Combat",    new[] { 0.35f, 0.80f, 1.00f } },
+            { "Objective", new[] { 1.00f, 1.00f, 0.45f } },
+            { "Compass",   new[] { 1.00f, 1.00f, 0.80f } },
+            { "Minimap",   new[] { 1.00f, 1.00f, 0.80f } },
+            { "Alerts",    new[] { 1.00f, 1.00f, 1.00f } },
+            { "Prompt",    new[] { 1.00f, 1.00f, 1.00f } },
+            { "Recover",   new[] { 1.00f, 1.00f, 1.00f } },
+        };
+
+        // HUD defect 9. LiberationSans SDF ships without U+2026, so TextOverflowModes.Ellipsis warned once per
+        // text on every build and then silently rendered as truncate - the affordance was never there and the
+        // console was 29 warnings louder. Ask the font asset for the glyph, and use whichever mode TMP can
+        // actually draw, so the mode and the behaviour agree.
+        static TextOverflowModes Overflow = TextOverflowModes.Ellipsis;
+
         static Transform[] layers;
         static readonly Dictionary<string, RectTransform> clusters = new();
 
@@ -41,6 +62,7 @@ namespace Guildbound.UI.Editor
                 Debug.Log("GUILDBOUND_HUD imported TMP essentials; run Build HUD again");
                 return;
             }
+            Overflow = EnsureEllipsisGlyph() ? TextOverflowModes.Ellipsis : TextOverflowModes.Truncate;
             var root = BuildHud();
             PrefabUtility.SaveAsPrefabAsset(root.gameObject, PrefabPath);
             Object.DestroyImmediate(root.gameObject);
@@ -137,8 +159,53 @@ namespace Guildbound.UI.Editor
             T(rec, "Label", "RECOVERING", 18, 0, 94, 240, 30, TextAlignmentOptions.Center, Caps, true);
             view.recoverRoot = rec.gameObject;
 
-            // ALERTS (L6): top-right, two 440 x 64 slots, newest on top
-            var alerts = C(6, "Alerts", new Vector2(1, 1), new Vector2(-32, -32), new Vector2(440, 140));
+            // ---- WORLD MAP (board layout) ------------------------------------------------------------
+            // COMPASS: heading tape over the top centre, board reference x 657..1258 y 42..113. The kit's
+            // compass_strip is authored to be scrolled behind a fixed centre marker, so the tape is a wide
+            // child inside a RectMask2D window and compass_pointer stays put in the middle. The cardinals are
+            // children of the tape rather than of L4 because they have to travel with it; HudView still scales
+            // them, since it collects every TMP_Text under the canvas regardless of layer.
+            var ct = new Vector2(0.5f, 1f);
+            var compassPos = new Vector2(0, -42);
+            var compassSize = new Vector2(601, 71);
+            const float DegreesPerPx = 5f;                    // a 601 px window shows about 120 degrees
+            float turn = 360f * DegreesPerPx;                 // one revolution of tape
+            float tapeW = turn * 2f;                          // two revolutions, so a +-180 slide never runs dry
+            float cell = 45f * DegreesPerPx;                  // 225 px between cardinals
+            var compass = C(1, "Compass", ct, compassPos, compassSize);
+            Img(compass, "compass_strip");                    // static frame; the art's end caps land on the window edges
+            compass.gameObject.AddComponent<RectMask2D>();    // clips the tape sliding behind it
+            // The tape rests so that NORTH is under the marker at heading 0: window centre (300.5) minus the
+            // second revolution's N centre (turn + cell/2). Sliding is then x = rest - heading * 5, and the
+            // second revolution guarantees labels either side of a wrapped +-180 slide. Names are indexed
+            // rather than lettered because the cardinals repeat across the two revolutions.
+            var tape = R(compass, "Tape", compassSize.x * 0.5f - (turn + cell * 0.5f), 0, tapeW, compassSize.y);
+            string[] cardinals = { "N", "NE", "E", "SE", "S", "SW", "W", "NW" };
+            for (int i = 0; i < cardinals.Length * 2; i++)
+                T(tape, "C" + i, cardinals[i % cardinals.Length], 16, i * cell, 22, cell, 26, TextAlignmentOptions.Center, Caps, i % 2 == 0);
+            var pointer = Img(Anchored(C(3, "Compass", ct, compassPos, compassSize), "Pointer", new Vector2(0.5f, 0.5f), Vector2.zero, new Vector2(28, 28)), "compass_pointer");
+            pointer.raycastTarget = false;
+            view.compassTape = tape;
+
+            // MINIMAP: the frame's centre is transparent by design and it is round, so the map is a disc_mask
+            // inside a Mask rather than a plate behind a cut-out. Kept square - the art is a circle and a
+            // non-uniform stretch would distort the ring and the cardinal spikes. Board: 1611..1900, 56..325.
+            var miniPos = new Vector2(-20, -56);
+            var miniSize = new Vector2(256, 256);
+            var mini = C(1, "Minimap", new Vector2(1, 1), miniPos, miniSize);
+            Img(Stretch(mini, "Frame"), "minimap_frame");
+            var mapWindow = R(mini, "Window", 20, 20, miniSize.x - 40, miniSize.y - 40);
+            // The disc graphic and the Mask MUST sit on the same GameObject: Mask takes its shape from the Graphic on
+            // its own object, and clips its children. Putting the disc on a child (as this did) leaves the mask inert,
+            // which was harmless only while nothing was parented under the window - the runtime blips now are.
+            var disc = Img(mapWindow, "disc_mask", new Color(0.03f, 0.06f, 0.12f, 0.62f));
+            disc.raycastTarget = false;
+            mapWindow.gameObject.AddComponent<Mask>().showMaskGraphic = true;
+            view.mapWindow = mapWindow;
+            view.mapEmpty = T(C(4, "Minimap", new Vector2(1, 1), miniPos, miniSize), "Empty", "NO MAP DATA", 15, 20, 113, miniSize.x - 40, 30, TextAlignmentOptions.Center, new Color(Caps.r, Caps.g, Caps.b, 0.5f), true);
+
+            // ALERTS (L6): moved under the minimap, so the top-right corner belongs to the map.
+            var alerts = C(6, "Alerts", new Vector2(1, 1), new Vector2(-20, -341), new Vector2(440, 140));
             for (int i = 0; i < 2; i++)
             {
                 var slot = R(alerts, "Alert" + i, 0, i * 76, 440, 64);
@@ -150,6 +217,7 @@ namespace Guildbound.UI.Editor
             }
 
             BuildModal(view);
+            AddWeather(canvasGo, view);
             return rootRt;
         }
 
@@ -336,6 +404,35 @@ namespace Guildbound.UI.Editor
             follower.others = list.ToArray();
         }
 
+        // A1 weather wiring. Every cluster node named in WeatherSurfaces gets a CanvasGroup of its own; the weather
+        // writes one weight per surface into all of them, so the surface moves together across the layers. Left
+        // alone, a CanvasGroup is alpha 1 and changes nothing, so this is additive to the built prefab.
+        static void AddWeather(GameObject canvasGo, HudView view)
+        {
+            var weather = canvasGo.AddComponent<HudWeather>();
+            view.weather = weather;
+            var built = new List<HudWeather.Surface>();
+            foreach (var surface in WeatherSurfaces)
+            {
+                var groups = new List<CanvasGroup>();
+                foreach (var cluster in clusters)
+                {
+                    if (!cluster.Key.EndsWith("/" + surface.Key)) continue;
+                    var group = cluster.Value.GetComponent<CanvasGroup>();
+                    if (group == null) group = cluster.Value.gameObject.AddComponent<CanvasGroup>();
+                    groups.Add(group);
+                }
+                if (groups.Count == 0) { Debug.LogError("HUD_WEATHER no cluster drawn for surface " + surface.Key); continue; }
+                built.Add(new HudWeather.Surface
+                {
+                    id = surface.Key,
+                    town = surface.Value[0], approach = surface.Value[1], fight = surface.Value[2],
+                    groups = groups.ToArray(),
+                });
+            }
+            weather.surfaces = built.ToArray();
+        }
+
         static RectTransform Anchored(Transform parent, string name, Vector2 anchor, Vector2 pos, Vector2 size)
         {
             var rt = new GameObject(name, typeof(RectTransform)).GetComponent<RectTransform>();
@@ -406,9 +503,30 @@ namespace Guildbound.UI.Editor
             t.text = text; t.fontSize = size; t.color = color; t.alignment = align;
             t.fontStyle = bold ? FontStyles.Bold : FontStyles.Normal;
             t.textWrappingMode = TextWrappingModes.Normal;
-            t.overflowMode = TextOverflowModes.Ellipsis;
+            t.overflowMode = Overflow;
             t.raycastTarget = false;
             return t;
+        }
+
+        // True when the font asset can actually render U+2026. HasCharacter alone is not enough: it reports the
+        // character table, and TryAddCharacters updates that table without necessarily regenerating the atlas,
+        // which is why the first attempt reported success and TMP still warned and truncated. So add the glyph,
+        // reimport the font asset so the atlas picks it up, then re-read and ask again.
+        static bool EnsureEllipsisGlyph()
+        {
+            var font = TMP_Settings.defaultFontAsset;
+            if (font == null) return false;
+            if (font.HasCharacter('\u2026')) return true;
+            string path = AssetDatabase.GetAssetPath(font);
+            string name = font.name;
+            if (!font.TryAddCharacters("\u2026")) return false;
+            EditorUtility.SetDirty(font);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            font = TMP_Settings.defaultFontAsset;
+            if (font == null || !font.HasCharacter('\u2026')) return false;
+            Debug.Log("GUILDBOUND_HUD added U+2026 to " + name + " and rebuilt its atlas (HUD defect 9)");
+            return true;
         }
 
         // ---------- scene + captures ----------
@@ -445,6 +563,7 @@ namespace Guildbound.UI.Editor
             var rtex = new RenderTexture(1920, 1080, 24, RenderTextureFormat.ARGB32);
             cam.targetTexture = rtex;
             model.demo = false;
+            model.inCombat = true;   // A1: the combat capture is the FIGHT end of the weather
             model.fire = FireState.Charging; model.charge = 0.65f; model.hp = 0.72f; model.guardCurrent = 3;
             model.recover = -1;
             model.Push("Contract accepted: Recover the guild parcel.", AlertLevel.Info);
@@ -452,6 +571,9 @@ namespace Guildbound.UI.Editor
             view.Init();
             Directory.CreateDirectory("Documentation/build/hud");
             Shot(view, cam, rtex, "Documentation/build/hud/hud_combat.png");
+            model.inCombat = false;   // A1: the same frame at the TOWN pole, so the two densities are comparable
+            Shot(view, cam, rtex, "Documentation/build/hud/hud_town.png");
+            model.inCombat = true;
             view.OpenModal(true);
             Shot(view, cam, rtex, "Documentation/build/hud/hud_board.png");
             view.OpenModal(false);
@@ -465,6 +587,7 @@ namespace Guildbound.UI.Editor
         static void Shot(HudView view, Camera cam, RenderTexture rtex, string path)
         {
             view.Tick();
+            if (view.weather) view.weather.Snap();   // A1: a capture shows the settled phase, not a crossfade in flight
             foreach (var l in view.GetComponentsInChildren<HudLayer>(true)) l.Apply();
             foreach (var s in view.GetComponentsInChildren<UiSwitch>(true)) s.Refresh(true);
             Canvas.ForceUpdateCanvases();

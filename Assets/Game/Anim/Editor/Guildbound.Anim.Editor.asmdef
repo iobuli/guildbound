@@ -1,0 +1,6 @@
+{
+  "name": "Guildbound.Anim.Editor",
+  "rootNamespace": "Guildbound.Anim.Editor",
+  "references": ["Guildbound.Anim", "Guildbound.Contracts"],
+  "includePlatforms": ["Editor"]
+}

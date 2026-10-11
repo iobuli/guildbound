@@ -55,6 +55,7 @@ namespace Guildbound.Play
         public string PromptKey => "Enter";
 
         public bool InCombat => !driver.Opponent.Defeated && (driver.Opponent.Position - P.Position).magnitude < T.RecoverThreatRadius;
+        public float Engagement01 => InCombat ? 1f : 0f;
         public float Recover01 => P.State.Kind == ActionKind.Recover ? P.State.Elapsed / Mathf.Max(P.State.Timing.Active, 1e-3f) : -1f;
 
         public int Wallet => G.Wallet;
@@ -75,6 +76,80 @@ namespace Guildbound.Play
                 Available = G.Active == null && (a == AttemptState.Available || a == AttemptState.Delivered),
             };
         }
+
+        // One row while an objective is carried. There is no world target for the objective yet, so no bearing.
+        public int ObjectiveCount => string.IsNullOrEmpty(G.Carried) ? 0 : 1;
+
+        public ObjectiveRow GetObjective(int index)
+        {
+            var c = G.Active != null ? G.Find(G.Active) : null;
+            return new ObjectiveRow
+            {
+                Archetype = "Fetch", Verb = "Return", Target = c != null ? c.ObjectiveItem : G.Carried,
+                Stake = c != null ? c.Service : "", HasBearing = false, Primary = true,
+            };
+        }
+
+        // No payout history is kept in GuildState yet (Stage 4 economy), so the trend is honestly flat.
+        static readonly float[] NoPayouts = new float[7];
+        public float[] RecentPayouts => NoPayouts;
+
+        // No ledger events are recorded yet (W6 defeat and completed-contract entries).
+        public int LedgerCount => 0;
+        public LedgerLine GetLedgerLine(int index) => default;
+
+        public bool InputBuffered => P.InputBuffered;
+        public float InputBufferRemaining01 => P.InputBuffered ? Mathf.Clamp01((P.State.Timing.Total - P.State.Elapsed) / Mathf.Max(T.Buffer, 1e-3f)) : 0f;
+
+        public TellPhase OpponentPhase
+        {
+            get
+            {
+                var o = driver.Opponent.State;
+                if (o.Kind == ActionKind.None) return TellPhase.None;
+                switch (o.Phase)
+                {
+                    case ActionPhase.Startup: return TellPhase.Startup;
+                    case ActionPhase.Active: return TellPhase.Active;
+                    case ActionPhase.Recovery: return TellPhase.Recovery;
+                    default: return TellPhase.None;
+                }
+            }
+        }
+
+        public float OpponentPhase01
+        {
+            get
+            {
+                var s = driver.Opponent.State;
+                var t = s.Timing;
+                float start, length;
+                switch (s.Phase)
+                {
+                    case ActionPhase.Startup: start = 0; length = t.Startup; break;
+                    case ActionPhase.Active: start = t.Startup; length = t.Active; break;
+                    case ActionPhase.Recovery: start = t.Startup + t.Active; length = t.Recovery; break;
+                    default: return 0f;
+                }
+                return Mathf.Clamp01((s.Elapsed - start) / Mathf.Max(length, 1e-3f));
+            }
+        }
+
+        public bool TryGetOpponentMarker(out Vector3 world)
+        {
+            world = driver.Opponent.Position + Vector3.up * 2f;
+            return OpponentPhase != TellPhase.None;
+        }
+
+        // Trust is one value today (one contact, the guild's). Named contacts arrive with the hall's people.
+        public int ContactCount => 1;
+        public HudContact GetContact(int index) => new HudContact
+        {
+            Name = G.TrustName, Trust01 = G.TrustProgress01, Band = G.TrustName, ContractCount = G.Contracts.Count,
+        };
+
+        // No surfaces are taught yet (B3 is not built); nothing is marked known.
+        public int KnownSurfacesMask => 0;
 
         public bool TryDequeueAlert(out HudAlert alert) => driver.Alerts.TryDequeue(out alert);
 

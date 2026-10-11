@@ -40,12 +40,31 @@ namespace Guildbound.UI
         public string Prompt => prompt;
         public string PromptKey => promptKey;
         public bool InCombat => inCombat;
+        public float Engagement01 => inCombat ? 1f : 0f;
         public float Recover01 => recover;
         public int Wallet => wallet;
         public string TrustName => trust;
         public float TrustProgress01 => trustProgress;
         public int ContractCount => contracts.Count;
         public ContractCard GetContract(int index) => contracts[index];
+
+        // Preview: one objective row while a carried objective is shown, and an empty payout trend and ledger.
+        public int ObjectiveCount => string.IsNullOrEmpty(carried) ? 0 : 1;
+        public ObjectiveRow GetObjective(int index) => new ObjectiveRow
+        {
+            Archetype = "Fetch", Verb = "Return", Target = carried, Stake = "", HasBearing = false, Primary = true,
+        };
+        public float[] RecentPayouts { get; } = new float[7];
+        public int LedgerCount => 0;
+        public LedgerLine GetLedgerLine(int index) => default;
+        public bool InputBuffered => false;
+        public float InputBufferRemaining01 => 0f;
+        public TellPhase OpponentPhase => TellPhase.None;
+        public float OpponentPhase01 => 0f;
+        public bool TryGetOpponentMarker(out Vector3 world) { world = Vector3.zero; return false; }
+        public int ContactCount => 1;
+        public HudContact GetContact(int index) => new HudContact { Name = trust, Trust01 = trustProgress, Band = trust, ContractCount = contracts.Count };
+        public int KnownSurfacesMask => 0;
         public bool TryDequeueAlert(out HudAlert alert) => alerts.TryDequeue(out alert);
 
         public void RequestAcceptContract(string id)

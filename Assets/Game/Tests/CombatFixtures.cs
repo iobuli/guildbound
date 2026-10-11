@@ -275,6 +275,14 @@ namespace Guildbound.Tests
 
         static Scenario Walled(Scenario s, float wallZ) { s.Geometry = new WallAtZ(wallZ); return s; }
 
+        // Open ground with no walls at all, for route-scale scenarios.
+        sealed class Open : IWorldGeometry
+        {
+            public Vector3 Constrain(Vector3 from, Vector3 to, float r) => new Vector3(to.x, 0, to.z);
+            public bool Blocked(Vector3 from, Vector3 to, float r, out float t) { t = 2; return false; }
+            public bool Fits(Vector3 at, float r) => true;
+        }
+
         [Test]
         public void Walk_IntoAWall_StopsAtTheWall()
         {
@@ -502,6 +510,85 @@ namespace Guildbound.Tests
         {
             Assert.AreEqual(0, RunAll(Offset20(false)).contacts.Count, "control: the straight strike misses");
             Assert.AreEqual(Outcome.Hit, RunAll(Offset20(true)).contacts.Single().Outcome);
+        }
+
+        // ---------------- M1 W3: opponent posts (watch 12 m, leash 20 m, line of sight) ----------------
+
+        // Player (fighter 0) walks +Z along x = passX from z = -15 for 14 s; the posted opponent (fighter 1) at the origin
+        // only moves when its post says fight. Returns whether it ever engaged.
+        static bool WalkPast(float passX)
+        {
+            var w = new CombatWorld(null, new Open());
+            var player = w.Add(V(passX, -15f), Vector3.forward, 100f);
+            var opp = w.Add(V(0, 0), Vector3.back, 60f);
+            var post = new OpponentPost(opp.Position);
+            bool engaged = false;
+            for (int k = 0; k < 120 * 14; k++)
+            {
+                engaged |= post.Update(w, opp, player, out var home);
+                w.Tick(new[] { new Intent { Move = new Vector2(0, 1) }, new Intent { Move = home } });
+            }
+            return engaged;
+        }
+
+        [Test]
+        public void Post_PassingOutsideTheWatchRadius_NeverEngages()
+        {
+            Assert.IsFalse(WalkPast(13f), "closest approach 13 m: the route is passed without a fight");
+            Assert.IsTrue(WalkPast(11f), "control: closest approach 11 m engages");
+        }
+
+        [Test]
+        public void Post_LeashesPast20m_WalksHome_IgnoringTheFoe_ThenWatchesAgain()
+        {
+            var w = new CombatWorld(null, new Open());
+            var player = w.Add(V(10f, 0), Vector3.forward, 100f);
+            var opp = w.Add(V(0, 0), Vector3.forward, 60f);
+            opp.Hp = 45f;
+            var post = new OpponentPost(opp.Position);
+            Intent Chase(Vector2 home, bool fight)
+            {
+                if (!fight) return new Intent { Move = home };
+                var to = player.Position - opp.Position;
+                return new Intent { Move = new Vector2(to.x, to.z).normalized, Run = true };
+            }
+
+            Assert.IsTrue(post.Update(w, opp, player, out _), "10 m with a clear line: engaged");
+            int k = 0;
+            for (; k < 120 * 20 && !post.Returning; k++)   // the player flees at run speed, the opponent chases
+            {
+                bool fight = post.Update(w, opp, player, out var home);
+                w.Tick(new[] { new Intent { Move = new Vector2(1, 0), Run = true }, Chase(home, fight) });
+            }
+            Assert.IsTrue(post.Returning, "leashed");
+            Assert.Greater(opp.Position.x, 20f - 0.1f);
+
+            for (k = 0; k < 120 * 20; k++)   // the player now trails it home, staying inside 12 m
+            {
+                bool fight = post.Update(w, opp, player, out var home);
+                if (!post.Returning) break;   // home: from here it may watch again
+                Assert.IsFalse(fight, "walking home it ignores the foe");
+                w.Tick(new[] { new Intent { Move = new Vector2(-1, 0) }, Chase(home, fight) });
+                Assert.Less((player.Position - opp.Position).magnitude, 12f);
+            }
+            Assert.IsFalse(post.Returning, "home again");
+            Assert.LessOrEqual(new Vector3(opp.Position.x, 0, opp.Position.z).magnitude, post.HomeTolerance + 0.05f);
+            Assert.AreEqual(45f, opp.Hp, "no regen on the way home");
+            Assert.IsTrue(post.Update(w, opp, player, out _), "back at its post it watches again");
+        }
+
+        [Test]
+        public void Post_Watch_NeedsALineOfSight()
+        {
+            bool Sees(IWorldGeometry g)
+            {
+                var w = new CombatWorld(null, g);
+                var player = w.Add(V(0, 3f), Vector3.back, 100f);
+                var opp = w.Add(V(0, -3f), Vector3.forward, 60f);
+                return new OpponentPost(opp.Position).Update(w, opp, player, out _);
+            }
+            Assert.IsTrue(Sees(new Open()), "control: 6 m in the open engages");
+            Assert.IsFalse(Sees(new WallAtZ(0f)), "the same 6 m behind a wall does not");
         }
 
         [Test]

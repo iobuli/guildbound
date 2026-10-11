@@ -11,6 +11,7 @@ namespace Guildbound.Play
     {
         public enum Pattern { Pressure, Defensive }
         public Pattern pattern = Pattern.Pressure;
+        public OpponentPost post;   // route opponents hold a post (M1); null for the sparring partner
         double nextDecision;
         int phraseStep;
 
@@ -18,6 +19,7 @@ namespace Guildbound.Play
         {
             var intent = new Intent();
             if (me.Defeated || foe.Defeated) return intent;
+            if (post != null && !post.Update(world, me, foe, out var home)) { me.LockTarget = -1; intent.Move = home; return intent; }
             var to = foe.Position - me.Position;
             to.y = 0;
             float dist = to.magnitude;

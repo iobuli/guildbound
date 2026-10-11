@@ -23,6 +23,7 @@ namespace Guildbound.Combat
         internal Vector3 travelDir;
         internal float travelSpeed, travelLeft;
         internal bool hasBuffer, releaseCharged, recoverWithItem, ranLastTick, landed;
+        public bool InputBuffered => hasBuffer;
         internal Intent buffered;
         internal Vector3 fistPrev, moveFrom, startFacing;
         internal bool fistPrevValid;

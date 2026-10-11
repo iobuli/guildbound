@@ -1,0 +1,11 @@
+Chain blend continuity - 6000.3.26f1
+press tick 44, handover tick 44 (Light1 -> Light2)
+largest hand acceleration at handover (ticks 44-45): 0.03390 m/tick^2
+largest hand acceleration in the 6 ticks either side: 0.00870 m/tick^2
+  tick 42 Light1 accel 0.00870
+  tick 43 Light1 accel 0.00173
+  tick 44 Light2 accel 0.01559
+  tick 45 Light2 accel 0.03390
+  tick 46 Light2 accel 0.00279
+  tick 47 Light2 accel 0.00315
+FAIL: velocity jumps at the handover beyond the surrounding motion.

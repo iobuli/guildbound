@@ -1,4 +1,5 @@
 using System;
+using Guildbound.Anim;
 using Guildbound.Combat;
 using Guildbound.Contracts;
 using UnityEngine;
@@ -13,6 +14,9 @@ namespace Guildbound.Play
         public Transform lockTarget;
         public bool placeholder = true;
         public Color tint = new Color(0.35f, 0.6f, 1f);
+        public FighterAnimationProfile animationProfile;
+
+        FighterAnimation animationView;
 
         Transform fist, guardDisc;
         Material bodyMat;
@@ -33,6 +37,19 @@ namespace Guildbound.Play
 
         void Start()
         {
+            if (!animationProfile) animationProfile = Resources.Load<FighterAnimationProfile>("FighterPresentation");
+            if (animationProfile)
+            {
+                var rig = Instantiate(animationProfile.rig, transform);
+                rig.name = "Animated Armature";
+                rig.transform.localPosition = Vector3.zero;
+                rig.transform.localRotation = Quaternion.identity;
+                foreach (var collider in rig.GetComponentsInChildren<Collider>()) Destroy(collider);
+                var animator = rig.GetComponent<Animator>();
+                animationView = rig.AddComponent<FighterAnimation>();
+                animationView.Bind(this, animator, animationProfile);
+                placeholder = false;
+            }
             if (!placeholder) return;
             var body = Part(PrimitiveType.Capsule, "Body", new Vector3(0, 0.9f, 0), new Vector3(0.6f, 0.9f, 0.6f));
             bodyMat = body.GetComponent<Renderer>().material;
@@ -61,6 +78,7 @@ namespace Guildbound.Play
             if (Sim == null) return;
             transform.position = Sim.Position;
             if (Sim.Facing.sqrMagnitude > 1e-6f) transform.rotation = Quaternion.LookRotation(Sim.Facing, Vector3.up);
+            if (animationView) animationView.SetDefeated(Sim.Defeated);
             if (!placeholder || fist == null) return;
 
             var s = Sim.State;

@@ -36,6 +36,25 @@ namespace Guildbound.UI
         public Image[] alertAccents = new Image[2];
         readonly float[] alertTimers = new float[2];
 
+        // World map. compassTape slides horizontally at 5 px per degree behind a fixed centre marker;
+        // mapWindow is the circular disc blips project into; mapEmpty is the honest state while the model
+        // reports no map data. Binding waits on IHudModel.HasMapData / CompassHeadingDegrees / GetMapBounds
+        // (posted 19:30); the layout is finished so that binding is a handful of lines in Tick.
+        [Header("World map")]
+        public RectTransform compassTape;
+        public RectTransform mapWindow;
+        public TMP_Text mapEmpty;
+        public float compassPixelsPerDegree = 5f;
+        public float blipSize = 10f;
+        public Sprite blipSprite;
+        public Color blipSelf = new Color(0.37f, 0.84f, 1f), blipOpponent = new Color(1f, 0.29f, 0.35f);
+        readonly System.Collections.Generic.List<Image> blips = new System.Collections.Generic.List<Image>();
+        float compassRestX, compassRestY;
+        bool compassRestTaken;
+
+        [Header("Weather (A1)")]
+        public HudWeather weather;
+
         [Header("Modal (L7)")]
         public HudLayer modalLayer;
         public TMP_Text windowTitle;
@@ -93,6 +112,12 @@ namespace Guildbound.UI
             cameraShake.onValueChanged.AddListener(v => HudSettings.CameraShake = v);
             effectsOnHud.onValueChanged.AddListener(v => HudSettings.EffectsOnHud = v);
             modalLayer.visible = false;
+            if (compassTape)   // the authored rest position is the marker's true north; captured once so re-init cannot drift it
+            {
+                compassRestX = compassTape.anchoredPosition.x;
+                compassRestY = compassTape.anchoredPosition.y;
+                compassRestTaken = true;
+            }
         }
 
         public void BindInventory(IInventoryModel source)
@@ -142,6 +167,10 @@ namespace Guildbound.UI
             if (model.Recover01 >= 0f) recoverRing.fillAmount = model.Recover01;
 
             UpdateAlerts();
+            UpdateMap();
+            // A1 weather: InCombat is a bool, so today it is the two poles of the crossfade. When
+            // IHudModel.Engagement01 lands this expression becomes that value and nothing else changes.
+            if (weather) weather.Tick(model.InCombat ? 1f : 0f);
             if (InventoryVisible && model.InCombat) CloseModal();
             if (inventoryTab) inventoryTab.interactable = !model.InCombat;
             if (modalLayer.visible) UpdateModal();
@@ -152,6 +181,54 @@ namespace Guildbound.UI
                 appliedScale = scale;
                 for (int i = 0; i < texts.Length; i++) texts[i].fontSize = baseSizes[i] * scale;
             }
+        }
+
+        // Compass: the tape slides behind the fixed centre marker, and the heading it shows is the CAMERA's view
+        // direction, not the fighter's facing, because the strip reads as "which way am I looking". DeltaAngle wraps
+        // to +-180 so crossing north does not run the 3600 px (two revolution) tape off its travel.
+        // Minimap: blips are world XZ projected against the geometry bounds into the disc. When the model reports no
+        // map data the honest empty state shows instead of an invented map.
+        void UpdateMap()
+        {
+            if (compassTape && compassRestTaken)
+                compassTape.anchoredPosition = new Vector2(compassRestX - Mathf.DeltaAngle(0f, model.CompassHeadingDegrees) * compassPixelsPerDegree, compassRestY);
+
+            if (!mapWindow) return;
+            bool has = model.HasMapData;
+            if (mapEmpty) mapEmpty.gameObject.SetActive(!has);
+
+            int count = has ? Mathf.Max(0, model.MapBlipCount) : 0;
+            while (blips.Count < count) AddBlip();
+            for (int i = 0; i < blips.Count; i++) blips[i].gameObject.SetActive(i < count);
+            if (count == 0) return;
+
+            float minX, minZ, maxX, maxZ;
+            model.GetMapBounds(out minX, out minZ, out maxX, out maxZ);
+            float invX = maxX > minX ? 1f / (maxX - minX) : 0f, invZ = maxZ > minZ ? 1f / (maxZ - minZ) : 0f;
+            float w = mapWindow.rect.width, h = mapWindow.rect.height;
+            for (int i = 0; i < count; i++)
+            {
+                var blip = model.GetMapBlip(i);
+                float u = (blip.X - minX) * invX - 0.5f;   // -0.5 .. 0.5 across the bounds
+                float v = (blip.Z - minZ) * invZ - 0.5f;   // +Z is the map's up
+                blips[i].rectTransform.anchoredPosition = new Vector2(u * w, v * h);
+                blips[i].color = blip.Kind == MapBlipKind.Opponent ? blipOpponent
+                    : blip.Kind == MapBlipKind.Self ? blipSelf : Edge;
+            }
+        }
+
+        // Blips are built at runtime rather than authored: the count is model-driven, so an authored pool could only
+        // ever be a guess at how much map there is.
+        void AddBlip()
+        {
+            var go = new GameObject("Blip", typeof(RectTransform), typeof(Image));
+            var rt = (RectTransform)go.transform;
+            rt.SetParent(mapWindow, false);
+            rt.sizeDelta = new Vector2(blipSize, blipSize);
+            var img = go.GetComponent<Image>();
+            img.sprite = blipSprite;
+            img.raycastTarget = false;
+            blips.Add(img);
         }
 
         void UpdateAlerts()

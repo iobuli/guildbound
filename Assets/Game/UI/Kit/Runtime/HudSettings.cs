@@ -25,6 +25,11 @@ namespace Guildbound.UI
             _ => 1f,
         };
 
+        // A1 weather: a pinned surface ignores the weather and keeps its authored look. Remembered per surface,
+        // because which surface a player wants held (the ledger, usually) is a preference and not a state.
+        public static bool WeatherPinned(string surface) => Get("hud.weather.pin." + surface, 0f) > 0.5f;
+        public static void SetWeatherPinned(string surface, bool pinned) => Set("hud.weather.pin." + surface, pinned ? 1f : 0f);
+
         static float Get(string key, float fallback) => PlayerPrefs.GetFloat(key, fallback);
 
         static void Set(string key, float value)

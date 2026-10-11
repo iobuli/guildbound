@@ -16,6 +16,9 @@ bpy.ops.wm.read_factory_settings(use_empty=True)
 bpy.ops.import_scene.fbx(filepath=str(src), automatic_bone_orientation=True)
 arm = next(o for o in bpy.context.scene.objects if o.type == 'ARMATURE')
 body = max((o for o in bpy.context.scene.objects if o.type == 'MESH'), key=lambda o: len(o.data.vertices))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / 'codex_motion_lab'))
+from codex_skin_root import restore_imported_hips
+skin_root = restore_imported_hips(src, arm, body)
 original_vertices = len(body.data.vertices)
 for o in bpy.context.scene.objects:
     o.select_set(o == body)
@@ -237,7 +240,7 @@ import_arm = next(o for o in bpy.context.scene.objects if o.type == 'ARMATURE')
 import_meshes = [o for o in bpy.context.scene.objects if o.type == 'MESH']
 import_body = max(import_meshes, key=lambda o:len(o.data.vertices))
 actual = {'bones': len(import_arm.data.bones), 'body_vertices':len(import_body.data.vertices), 'keys':[k.name for k in import_body.data.shape_keys.key_blocks]}
-report = {'author':'Codex', 'blender':bpy.app.version_string, 'source':str(src), 'source_sha256_before':source_hash, 'source_sha256_after':hashlib.sha256(src.read_bytes()).hexdigest(),
+report = {'author':'Codex', 'blender':bpy.app.version_string, 'source':str(src), 'source_sha256_before':source_hash, 'source_sha256_after':hashlib.sha256(src.read_bytes()).hexdigest(), 'skin_root_repair':skin_root,
     'original_vertices':original_vertices, 'faceted_vertices':expected['body_vertices'], 'bones':expected['bones'],
     'topology_components':len(counts), 'component_sizes':sorted(counts.values(),reverse=True), 'coincident_clusters':sum(n>1 for n in coincident.values()),
     'near_island_pairs':len(pairs), 'pair_records':[{'a':a,'b':b,'rest_distance_m':d} for a,b,d in pairs], 'pair_selection':'For every vertex at world z 0.80-1.57 m, take its nearest vertex of another island within 3 cm, canonicalise (min,max) and deduplicate. Includes asymmetric nearest relationships. Diagnostic only; not a weld/seam map. Interface vertices protected with 4-8 cm attenuation.',

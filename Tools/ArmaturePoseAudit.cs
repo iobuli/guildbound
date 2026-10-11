@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Globalization;
+using System.Text;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -107,13 +109,63 @@ public static class ArmaturePoseAudit
             }
             string directory = "Documentation/build/animation";
             Directory.CreateDirectory(directory);
-            File.WriteAllText(directory + "/armature-pose-audit.json", JsonUtility.ToJson(new Report {
+            var report = new Report {
                 unity = Application.unityVersion, rig = Rig, avatarValid = animator.avatar.isValid,
                 avatarHuman = animator.avatar.isHuman, clips = reports.ToArray(),
                 limits = "61 pose samples per clip on Armature with root motion off; reach peaks are candidate timing markers, not contact proof. No support fitting, throw pairing or runtime acceptance."
-            }, true));
+            };
+            // JsonUtility omits nested dynamic types when this tool is compiled through execute_script.
+            // Write the measured arrays explicitly, then reject an incomplete export.
+            File.WriteAllText(directory + "/armature-pose-audit.json", Serialize(report));
+            var markers = new StringBuilder("role,path,duration,hand,contact,followThrough\n");
+            foreach (var c in reports)
+            {
+                float leftRange = c.samples.Max(s => s.leftHand.z) - c.samples.Min(s => s.leftHand.z);
+                float rightRange = c.samples.Max(s => s.rightHand.z) - c.samples.Min(s => s.rightHand.z);
+                // Select the hand that actually reaches furthest forward. Range alone can pick the
+                // guarding hand because a large backward counter-swing is not a punch contact.
+                bool left = c.samples.Max(s => s.leftHand.z) > c.samples.Max(s => s.rightHand.z);
+                float peak = left ? c.leftHandPeak : c.rightHandPeak;
+                float max = c.samples.Max(s => left ? s.leftHand.z : s.rightHand.z);
+                float drop = (left ? leftRange : rightRange) * .10f;
+                var retract = c.samples.FirstOrDefault(s => s.time > peak && (left ? s.leftHand.z : s.rightHand.z) <= max - drop);
+                markers.AppendLine(c.role + "," + c.path + "," + F(c.duration) + "," + (left ? "left" : "right") + ","
+                    + F(peak) + "," + F(retract == null ? c.duration : retract.time));
+            }
+            File.WriteAllText(directory + "/pose-markers.csv", markers.ToString());
             return "Armature audit saved: " + reports.Count + " Humanoid clips, " + reports.Sum(c => c.samples.Length) + " actual poses. Active scene preserved.";
         }
         finally { EditorSceneManager.ClosePreviewScene(preview); }
+    }
+
+    static string F(float value) => value.ToString("R", CultureInfo.InvariantCulture);
+    static string Q(string value) => "\"" + value.Replace("\\", "\\\\").Replace("\"", "\\\"") + "\"";
+    static string V(Vector3 v) => "{\"x\":" + F(v.x) + ",\"y\":" + F(v.y) + ",\"z\":" + F(v.z) + "}";
+    static string Serialize(Report report)
+    {
+        var b = new StringBuilder();
+        b.Append("{\"unity\":").Append(Q(report.unity)).Append(",\"rig\":").Append(Q(report.rig))
+            .Append(",\"limits\":").Append(Q(report.limits)).Append(",\"avatarValid\":true,\"avatarHuman\":true,\"clips\":[");
+        for (int i = 0; i < report.clips.Length; i++)
+        {
+            if (i > 0) b.Append(',');
+            var c = report.clips[i];
+            b.Append("{\"role\":").Append(Q(c.role)).Append(",\"path\":").Append(Q(c.path)).Append(",\"clip\":").Append(Q(c.clip))
+                .Append(",\"duration\":").Append(F(c.duration)).Append(",\"rootDrift\":").Append(F(c.rootDrift))
+                .Append(",\"human\":true,\"loop\":").Append(c.loop ? "true" : "false")
+                .Append(",\"leftHandPeak\":").Append(F(c.leftHandPeak)).Append(",\"rightHandPeak\":").Append(F(c.rightHandPeak))
+                .Append(",\"leftFootPeak\":").Append(F(c.leftFootPeak)).Append(",\"rightFootPeak\":").Append(F(c.rightFootPeak))
+                .Append(",\"rootCurves\":[").Append(string.Join(",", c.rootCurves.Select(Q))).Append("],\"samples\":[");
+            for (int j = 0; j < c.samples.Length; j++)
+            {
+                if (j > 0) b.Append(',');
+                var s = c.samples[j];
+                b.Append("{\"time\":").Append(F(s.time)).Append(",\"leftHand\":").Append(V(s.leftHand))
+                    .Append(",\"rightHand\":").Append(V(s.rightHand)).Append(",\"leftFoot\":").Append(V(s.leftFoot))
+                    .Append(",\"rightFoot\":").Append(V(s.rightFoot)).Append(",\"hips\":").Append(V(s.hips)).Append('}');
+            }
+            b.Append("]}");
+        }
+        return b.Append("]}").ToString();
     }
 }

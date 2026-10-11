@@ -13,3 +13,6 @@
 | 9 | Integrate twelve-slot inventory page in the primary HUD Canvas | codex -> aura | handover/released: compile + editor rebuild passed; Play Mode input checks exited before assertions, runtime QA pending |
 | 10 | Production inventory rules/model and HUD refinement | aura + claude | boss mandate recorded in Tandem; Aura implementation, Claude verification/commit |
 | 11 | Local Aura-to-Unity and Blender MCP setup | codex + claude | connected and verified; trial/local tools only, setup in Documentation/MCP_SETUP.md |
+| 12 | Armature binding, procedural lean/turn/recoil and contextual camera | codex -> aura | delivered uncommitted for Aura review; compile clean, 30/60/120 pose checks and 13 core-to-rig samples pass; full real-input/repeated-Play gate open |
+
+Aura has full task, design and review authority under the boss's latest instruction. Use the latest Tandem entry for editor ownership; announce PLAY ownership and release before running or injecting input.
