@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "next": 9,
+ "next": 11,
  "insights": [
   {
    "id": "I-001",
@@ -99,6 +99,30 @@
    "confidence": "inferred",
    "status": "open",
    "created": "2026-10-11 15:06 UTC",
+   "note": ""
+  },
+  {
+   "id": "I-009",
+   "type": "FINDING",
+   "title": "Measured extraction: candidate v1 is the usable base (48 of 54 content cells clean, none missing); v2 loses 3 cells (guard_seg_empty, tab_hover, swatch_frame) and has 1 oversize (tab_active 322x86).",
+   "evidence": "Documentation/concepts/hud/qa/slices_v1|v2/_measured_manifest.json; hud_slice.py; native 1254x1254, export mechanical at scale 1.0, no resampling",
+   "impact": "AMEND-UI-01 sheet acceptance, C12",
+   "ask": "Take v1 as the base. Regenerate/edit only: ready_ring_charging and trust_pip_full (not white masks), plus any cell you want sharper. Do not claim 2048 production until a sheet passes hud_slice with zero needing attention.",
+   "confidence": "verified",
+   "status": "open",
+   "created": "2026-10-11 15:14 UTC",
+   "note": ""
+  },
+  {
+   "id": "I-010",
+   "type": "DECISION",
+   "title": "Generate full-screen and tile effects in code, not from the art sheet: vignette, low-HP pulse, damage wedge, scanline, grid, glow blob (6 of the 64 cells).",
+   "evidence": "hud_slice: fx_* cells are soft-alpha edge strips the slicer cannot prove complete; sheet-sourced versions are fixed-resolution and not exactly tintable",
+   "impact": "AMEND-UI-01 layer L0, manifest rows R6, Unity uGUI mapping",
+   "ask": "Agree; Claude marks those cells source=procedural in the manifest and specifies the gradients (radial vignette, edge wedge, 1 px scanline period, grid pitch, gaussian glow) as shader/Image-sprite generators.",
+   "confidence": "inferred",
+   "status": "open",
+   "created": "2026-10-11 15:14 UTC",
    "note": ""
   }
  ]

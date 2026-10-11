@@ -70,7 +70,8 @@
   "all numbers (H) until tested",
   "text (L4) always sits on its own contrast backing plate; contrast >= 4.5:1 is measured text vs plate, independent of panel/layer opacity",
   "master alpha multiplies layers but is clamped: effective_alpha(L4) = max(0.7, master * layer); critical alerts (warning/critical colours) have an effective floor of 0.9",
-  "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced"
+  "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced",
+  "cells with source=procedural are generated in code/shader (exact, tintable, resolution-independent); the art sheet does not supply them"
  ],
  "cells": [
   {
@@ -94,7 +95,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "panel_frame_m",
@@ -117,7 +119,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "panel_frame_s",
@@ -140,7 +143,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "header_bar",
@@ -163,7 +167,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "notch_tab",
@@ -181,7 +186,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "corner_brackets",
@@ -199,7 +205,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "divider",
@@ -217,7 +224,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "close_button",
@@ -235,7 +243,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "hp_frame",
@@ -258,7 +267,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "hp_fill",
@@ -276,7 +286,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "hp_trail_fill",
@@ -294,7 +305,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "guard_seg_empty",
@@ -312,7 +324,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "guard_seg_full",
@@ -330,7 +343,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "guard_break_crack",
@@ -348,7 +362,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "cooldown_sweep_mask",
@@ -366,7 +381,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "charge_ring",
@@ -384,7 +400,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "ready_ring_empty",
@@ -402,7 +419,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "ready_ring_ready",
@@ -420,7 +438,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "ready_ring_charging",
@@ -438,7 +457,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_element_fire",
@@ -456,7 +476,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_element_reserved",
@@ -474,7 +495,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "carry_slot_frame",
@@ -497,7 +519,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_obj_crate",
@@ -515,7 +538,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_obj_supplies",
@@ -533,7 +557,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "contract_card_frame",
@@ -556,7 +581,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "seal_stamp",
@@ -574,7 +600,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_route_exposed",
@@ -592,7 +619,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_route_sheltered",
@@ -610,7 +638,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_service_gate",
@@ -628,7 +657,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "icon_service_stall",
@@ -646,7 +676,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "trust_pip_empty",
@@ -664,7 +695,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "trust_pip_full",
@@ -682,7 +714,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "toast_frame",
@@ -705,7 +738,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "toast_accent_bar",
@@ -723,7 +757,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "mastery_frame",
@@ -746,7 +781,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "technique_frame",
@@ -769,7 +805,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "lockon_marker",
@@ -787,7 +824,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "enemy_minibar_frame",
@@ -810,7 +848,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "interact_prompt_frame",
@@ -833,7 +872,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "keycap_frame",
@@ -856,7 +896,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "modal_window_l",
@@ -879,7 +920,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "tab_idle",
@@ -902,7 +944,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "tab_hover",
@@ -925,7 +968,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "tab_active",
@@ -948,7 +992,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "slider_track",
@@ -971,7 +1016,8 @@
    ],
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "slider_knob",
@@ -989,7 +1035,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "swatch_frame",
@@ -1007,7 +1054,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "checkbox",
@@ -1025,7 +1073,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "fx_vignette",
@@ -1043,7 +1092,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "fx_lowhp_pulse",
@@ -1061,7 +1111,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "fx_damage_wedge",
@@ -1079,7 +1130,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "tile_scanline",
@@ -1097,7 +1149,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "tile_grid",
@@ -1115,7 +1168,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "glow_blob",
@@ -1133,7 +1187,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": true,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
   },
   {
    "id": "sparkle_accent",
@@ -1151,7 +1206,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "sheet"
   },
   {
    "id": "empty_r6c7",
@@ -1169,7 +1225,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_0",
@@ -1187,7 +1244,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_1",
@@ -1205,7 +1263,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_2",
@@ -1223,7 +1282,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_3",
@@ -1241,7 +1301,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_4",
@@ -1259,7 +1320,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_5",
@@ -1277,7 +1339,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_6",
@@ -1295,7 +1358,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   },
   {
    "id": "reserved_7",
@@ -1313,7 +1377,8 @@
    "nine_slice_px": null,
    "tintable_white_mask": false,
    "text_baked": false,
-   "status": "spec_only"
+   "status": "spec_only",
+   "source": "empty"
   }
  ]
 }

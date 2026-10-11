@@ -42,3 +42,7 @@ collab/.seen_*
 .claude/
 # Derived meshes from store packs: local only (no raw redistribution)
 Documentation/experiments/**/*.fbx
+# HUD slicer outputs: keep canonical sheets + measured manifests, not the per-sprite PNGs (regenerable)
+Documentation/concepts/hud/qa/slices_*/*.png
+!Documentation/concepts/hud/qa/slices_*/_canonical_2048.png
+!Documentation/concepts/hud/qa/slices_*/_canonical_preview.png

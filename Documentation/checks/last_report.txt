@@ -9,10 +9,10 @@ C08 design atlas                          PASS  IP clean | missing none | 58.8 M
 C09 atlas matches latest GDD              PASS  creator amendment present or not required
 C10 concept provenance                    PASS  10 entries | missing files [] | no approval_state []
 C11 HUD manifest                          PASS  64 cells, unique 64
-C12 HUD sheet                             WARN  not generated yet
+C12 HUD sheet                             WARN  no production sheet yet (candidates only). hud-master-sheet-v1.png: 48 ok, 10 empty-expected, 6 need attention; hud-master-sheet-v2.png: 44 ok, 10 empty-expected, 10 need attention
 C13 no pack/derived meshes in git         PASS  clean
 C14 archives/Library not tracked          PASS  0 offenders
 C15 source dirs unchanged (design phase)  WARN  3 uncommitted source changes (pre-existing WIP may exist)
-C16 log append-only                       PASS  53 entries; working log extends committed prefix
-C17 insights answered                     PASS  5 open of 8: I-002, I-003, I-005, I-007, I-008
-TOTAL 17 checks, 0 FAIL, 2 WARN
+C16 log append-only                       PASS  56 entries; working log extends committed prefix
+C17 insights answered                     WARN  7 open of 10: I-002, I-003, I-005, I-007, I-008, I-009, I-010
+TOTAL 17 checks, 0 FAIL, 3 WARN

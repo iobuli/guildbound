@@ -114,18 +114,29 @@ if os.path.exists(hm):
     ids = [c["id"] for c in m["cells"]]
     ok = len(ids) == 64 and len(set(ids)) == 64 and all(c["layer"] in m["layers"] or c["layer"] == "reserved" for c in m["cells"])
     rec("C11 HUD manifest", "PASS" if ok else "FAIL", "%d cells, unique %d" % (len(ids), len(set(ids))))
-    sheets = [f for f in os.listdir(os.path.dirname(hm)) if f.lower().endswith(".png") and "sheet" in f.lower()]
-    if sheets:
+    hud_dir = os.path.dirname(hm)
+    prod = [f for f in os.listdir(hud_dir) if f.lower().startswith("hud_sheet_production") and f.lower().endswith(".png")]
+    if prod:
         try:
             from PIL import Image
-            for s in sheets:
-                im = Image.open(os.path.join(os.path.dirname(hm), s))
-                rec("C12 HUD sheet " + s, "PASS" if im.size == tuple(m["sheet"]["size_px"]) and im.mode == "RGBA" else "FAIL",
+            for f_ in prod:
+                im = Image.open(os.path.join(hud_dir, f_))
+                rec("C12 HUD production sheet " + f_, "PASS" if im.size == tuple(m["sheet"]["size_px"]) and im.mode == "RGBA" else "FAIL",
                     "size %s mode %s (want %s RGBA)" % (im.size, im.mode, m["sheet"]["size_px"]))
         except ImportError:
-            rec("C12 HUD sheet", "WARN", "PIL missing")
+            rec("C12 HUD production sheet", "WARN", "PIL missing")
     else:
-        rec("C12 HUD sheet", "WARN", "not generated yet")
+        qa = os.path.join(hud_dir, "qa")
+        tallies = []
+        if os.path.isdir(qa):
+            for d_ in sorted(os.listdir(qa)):
+                mm = os.path.join(qa, d_, "_measured_manifest.json")
+                if d_.startswith("slices_") and os.path.exists(mm):
+                    r_ = json.load(open(mm, encoding="utf-8"))
+                    t_ = r_["tally"]
+                    tallies.append("%s: %d ok, %d empty-expected, %d need attention" % (
+                        r_["sheet"], t_.get("ok", 0), t_.get("empty_expected", 0), sum(v for k_, v in t_.items() if k_ not in ("ok", "empty_expected"))))
+        rec("C12 HUD sheet", "WARN", "no production sheet yet (candidates only). " + ("; ".join(tallies) if tallies else "no measured candidates"))
 
 # C13 licence guard: no pack-derived meshes or raw pack folders tracked in git
 tracked = git("ls-files").splitlines()

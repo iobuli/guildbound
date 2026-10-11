@@ -1,0 +1,44 @@
+{
+ "file": "hud-master-sheet-v1.png",
+ "size_px": [
+  1254,
+  1254
+ ],
+ "wanted_px": [
+  2048,
+  2048
+ ],
+ "size_ok": false,
+ "alpha": {
+  "transparent_frac": 0.3143052280549133,
+  "opaque_frac": 0.11576289207868155,
+  "partial_frac": 0.5699318798664051
+ },
+ "components": {
+  "250": {
+   "count": 45,
+   "giant_merged(>20% sheet)": 0
+  },
+  "235": {
+   "count": 66,
+   "giant_merged(>20% sheet)": 0
+  },
+  "200": {
+   "count": 68,
+   "giant_merged(>20% sheet)": 0
+  },
+  "128": {
+   "count": 86,
+   "giant_merged(>20% sheet)": 0
+  }
+ },
+ "best_threshold": 235,
+ "best_count": 66,
+ "grid_pitch_px_scaled": 156.75,
+ "median_centre_offset_from_cell_centre_frac": [
+  0.08,
+  0.27
+ ],
+ "components_crossing_cell_borders": 39,
+ "verdict": "MECHANICAL SLICE NOT POSSIBLE: size (1254, 1254) vs (2048, 2048), 66 cores at alpha>=235 (want 64), 39 cross cell borders, partial-alpha haze 57% of pixels"
+}
