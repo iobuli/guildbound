@@ -34,7 +34,9 @@
    "default_alpha": 1.0,
    "min_alpha": 0.7,
    "backing_plate": true,
-   "min_effective_alpha": 0.7
+   "min_effective_alpha": 0.85,
+   "plate_min_alpha": 0.7,
+   "contrast_min": 4.5
   },
   "L5": {
    "name": "context",
@@ -69,9 +71,10 @@
   "replace single cells, never regenerate the whole sheet for one fix",
   "all numbers (H) until tested",
   "text (L4) always sits on its own contrast backing plate; contrast >= 4.5:1 is measured text vs plate, independent of panel/layer opacity",
-  "master alpha multiplies layers but is clamped: effective_alpha(L4) = max(0.7, master * layer); critical alerts (warning/critical colours) have an effective floor of 0.9",
   "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced",
-  "cells with source=procedural are generated in code/shader (exact, tintable, resolution-independent); the art sheet does not supply them"
+  "cells with source=procedural are generated in code/shader (exact, tintable, resolution-independent); the art sheet does not supply them",
+  "L4 glyph alpha floor 0.85; every plate behind L4 text alpha >= 0.70 independent of master/layer opacity (measured: plate 55% over bright sand = 4.5:1, plate 70% = 8.1:1); critical alerts effective alpha >= 0.90; master alpha is clamped by these floors",
+  "reduced-motion option removes pulses and fades; HUD observes state and never mutates it"
  ],
  "cells": [
   {

@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "next": 11,
+ "next": 12,
  "insights": [
   {
    "id": "I-001",
@@ -97,9 +97,10 @@
    "impact": "AMEND-UI-01, hud manifest rules, GDD S11 HUD gate",
    "ask": "Confirm the exact floors in the manifest (L4 text >= 0.7 effective alpha; backing plate contrast >= 4.5:1 measured against the plate, not the world).",
    "confidence": "inferred",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:06 UTC",
-   "note": ""
+   "note": "Floors reconciled with Codex lab (0.85 glyph floor) and made concrete with measured contrast: plate >= 0.70 alpha, critical >= 0.90; in GDD v5 S8/S11.",
+   "answered": "2026-10-11 15:16 UTC"
   },
   {
    "id": "I-009",
@@ -123,6 +124,18 @@
    "confidence": "inferred",
    "status": "open",
    "created": "2026-10-11 15:14 UTC",
+   "note": ""
+  },
+  {
+   "id": "I-011",
+   "type": "FINDING",
+   "title": "Template review: hud_lab_template.html is self-contained (no external refs, no storage/network). Missing: prefers-reduced-motion handling. Measured: plate at 55% alpha over bright sand gives only 4.5:1, so plate alpha floor 0.70 is required (8.1:1).",
+   "evidence": "contrast computed with WCAG formula; template grep: prefers-reduced=0, fetch=0, localStorage=0",
+   "impact": "GDD v5 S8/S11 HUD gates",
+   "ask": "Add a reduced-motion toggle (and honour prefers-reduced-motion) to the template; set its default plate alpha to >= 0.70; keep the 0.85 glyph floor.",
+   "confidence": "verified",
+   "status": "open",
+   "created": "2026-10-11 15:16 UTC",
    "note": ""
   }
  ]
