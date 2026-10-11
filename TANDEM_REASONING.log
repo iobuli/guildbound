@@ -1498,3 +1498,145 @@ images: {}
 assemblies: {hall: not_started, gate_pair: not_started, stall_pair: not_started}
 END_STATE
 NEXT: codex steel-mans and extends GSP v1; then Claude posts GSP v2 final.
+
+## [claude] 2026-10-11 13:37:44 UTC | GSP.kit | boss: no stone unturned; assets are visual Lego bricks -> KIT LEXICON v1 + concept spec bank (14 specs)
+Boss direction: every asset is a visual Lego brick; concept art must be assembled from them in full detail. I inspected all six contact sheets and catalogued every piece. This block becomes GSP section 9 (and feeds MASTER GDD S8/S9 via AMEND).
+Key finding for you (creative call): the foliage pack is painterly-soft while the village/hall kits and block mannequins are faceted low-poly. I propose two style directions (SD-A carved folk vs SD-B painted soft) rendered side by side in wave 1 so the boss picks. Guild colours come from an existing brick (the quartered banner: madder red + bone), so the palette is literally sampled from the kit.
+Codex: (1) steel-man/attack the lexicon and grammar; (2) you own the render: start wave 1 (CS-13 exploded hall, CS-01 in SD-A and SD-B, CS-03 gate pair, CS-04 stall pair) with GPT image when you agree; (3) add your FEEL capsules + creative commands to the GSP (my 13:34 entry).
+BEGIN_KIT_LEXICON
+# KIT LEXICON v1 - the whole asset library as visual building bricks
+
+Principle (boss): every installed asset is a brick. Concept art, level building, UI and characters are all ASSEMBLIES of named bricks plus a stated twist. Nothing is drawn that the bricks cannot build. Source: Logs/sheets/{tavern,town,nature,characters,vfx_hovl,vfx_arsenal_fire_lightning}.png + .txt (contact sheets inspected 2026-10-11). Sizes and grid are UNKNOWN until measured in M0 (grid unit G, H).
+
+## A. Visual reading of the bricks (what they actually look like)
+- Village kit (V-): faceted low-poly, flat-shaded, matte, earthy. Timber houses on stone plinths, thatch/shingle roofs, crossed timber horns on gable peaks. Props are chunky, slightly crooked, hand-made feeling.
+- Hall kit (T-): clean chunky modular timber, dark near-black frames, mid-brown planks, rivet dots. Wall panels currently show GREY placeholder glass/infill (material gap). Furniture matches.
+- Foliage kit (A-): soft painterly clumps, bright green with yellow sun highlights, brushy silhouettes; one crimson bush. Stylistically SOFTER than V-/T- (the main style tension).
+- Village vegetation/rocks (V-R, V-VEG): faceted low-poly rocks and trees, flat greens.
+- Characters (C-): (1) segmented block mannequins in loud flat colours with weapon sets; (2) smooth humanoid dummies and mocap rigs (grey, red, blue, purple); one high-detail grey robot-like figure. No final hero.
+- Effects (X-): element sets (fire, frost, light, lightning) x (charge, missile tiny-mega, muzzle, explosion tiny-mega, dome, shield, pillar, sphere, beam, slash hit) + generic sparks, dust, smoke, shields, portals, auras.
+
+## B. Brick IDs
+HALL KIT (T-): T-FLOOR, T-WALL, T-WIN (wall with window), T-DOOR (wall with doorway), T-POST (wall support), T-ROOF-L (line roof), T-ROOF-S (side roof), T-ROOF-CL1/CL2 (corner line roof), T-ROOF-CS1/CS2 (corner side roof); T-BAR (bar counter), T-BENCH (long bench), T-TBL-SQ, T-TBL-RD (round large), T-TBL-DIN (dining), T-STOOL, T-STOOL-TALL, T-CHAIR (backing chair), T-KEG (horizontal keg), T-BARREL (standing), T-CHEST, T-TORCH (iron bracket), T-CANDLE-1..4; tableware T-GOBLET, T-TANKARD-E/F/FAT, T-TANKARD-SPILL, T-JUG, T-BOTTLE-1/2, T-PLATE.
+VILLAGE KIT (V-): V-HOUSE-01..05; V-AWN-A (blue canopy), V-AWN-B (pink canopy); V-FENCE-01A/01B (rail), V-FENCE-CNR; V-GATE-SOLID (02a plank wall), V-GATE-BROKEN (02b missing planks), V-GATE-HALF (02c); V-SHED-01/02 (thatched lean-to, 02 with bench); V-BOARDWALK-A/B; V-BANNER-A (quartered red/bone), V-BANNER-B (dark red); V-BENCH-1..3, V-CHAIR-A/B, V-BARREL-1/2, V-BASKET-1/2, V-TUB, V-BOWL, V-BOX, V-BUCKET, V-CRATE-1..3 (closed, slatted, open), V-JUG, V-PACKAGE, V-SACK-1/2, V-SACKS-SET, V-SACK-OPEN, V-TROUGH, V-VASE-1..3, V-RACK-CLOTHES, V-RACK-A, V-TRIPOD-POT, V-BROOM, V-LADDER, V-RAKE, V-POSTBOX (bird house on post), V-STONES (cut block pile), V-CART, V-WELL, V-SHIELD-1/2 (wall shields), V-TABLE, V-LOGS-1..3.
+NATURE (V-R/V-VEG/TER-/A-): V-ROCK-1..3, V-ROCK-S1/S2, V-PEBBLES; TER-GRASS-1/2, TER-PATH-A/B, TER-SAND, HILL-1/2, MTN-1, SKY-DOME, CLOUD-1/2; V-BUSH-1/2, V-FLOWER-R/Y/B, V-GRASS-1/2, V-PLANT-1/2, V-TREE-1/2, V-PINE; A-TREE-1..8, A-BUSH-1 (crimson), A-BUSH-2..4, A-GRASS-1/2.
+CHARACTERS (C-): C-MOCAP (rig_MCUnity), C-BLUE, C-RED, C-DUMMY-M, C-DUMMY-F, C-MORRO, C-BLOCK-* (block mannequins: brute, karate, ninja, sorceress, 2h, archer, knight, mage, crossbow, hammer, spearman, swordsman, crafter, berserker, heavy).
+EFFECTS (X-): X-FIRE-{CHARGE, MISSILE-T/S/N/M, MUZZLE-N/B, EXPLODE-T/S/N/M, DOME, SHIELD, PILLAR, SPHERE, BEAM, SLASHHIT, ORBIT, GLOW}; same for FROST, LIGHT, LIGHTNING; X-SPARK-*, X-DUST-{PUFF, GROUND, LOOP}, X-SMOKE-*, X-SHIELD-*, X-PORTAL-*, X-AURA-LIGHTNING, X-HIT-{ELECTRO, EXPLOSION, STONES}, X-SLASH-*.
+
+## C. Assembly grammar (how bricks snap)
+- BAY = T-POST + one infill (T-WALL | T-WIN | T-DOOR) + T-POST. Bays chain along a line; posts are shared.
+- ROOF RUN = T-ROOF-L over each bay, T-ROOF-S on gable sides, T-ROOF-CL/CS at corners. A building = closed ring of bays + roof run.
+- THRESHOLD = 2 T-POST at 1.3-1.5x height (proportion edit) + T-ROOF-L as a lintel canopy + a banner pair. Marks every important doorway.
+- SERVICE EDGE = counter brick (T-BAR or V-TABLE) + storage brick (T-CHEST/V-CRATE) + a vertical marker (V-RACK or T-TORCH). Every service has one.
+- STATE PAIR = the same assembly in two states built from the SAME bricks: damaged (missing/tilted pieces, props piled, no light, no cloth) vs restored (aligned pieces, cloth, light, an NPC routine). Growth is always a state pair.
+- LANDMARK = one tall or bright silhouette per space (well, cart, banner, gate frame, pine) visible from the hall door.
+- PALETTE LAW: wood from the kits stays; cloth and banners carry guild colour; stone stays cool grey; foliage is tuned toward the palette; effects stay saturated but small.
+- Proportion edits allowed on derived copies: uniform scale 0.8-1.5x, single-axis stretch for posts/beams, piece removal/duplication (mesh edits), material derivatives. Never colour-only.
+
+## D. Recipes (assemblies for the GDD content)
+1. GUILD HALL "long hall": 3 x 5 bay ring; front gable: T-DOOR centre, T-WIN either side; roof run complete; THRESHOLD at the front door with V-BANNER-A pair; crossed gable horns kitbashed from V-HOUSE roof peaks onto the hall gable (mesh edit) so hall and village read as one people. Inside: SERVICE EDGE = T-BAR + T-KEG + T-CHEST (clerk); board = freestanding T-WALL between two T-POST with primitive paper quads; long T-BENCH rows; T-TORCH + T-CANDLE for warm pools of light; a rear T-DOOR to the sparring floor.
+2. SPARRING FLOOR (courtyard): TER-PATH tiles as packed earth; ring of V-FENCE-01; V-BOARDWALK on one edge for watchers on V-BENCH; V-SHIELD-1/2 hung on the fence as trophies; V-RACK-A with practice gear; LANDMARK: V-POSTBOX post with the guild banner.
+3. GATE PAIR: damaged = V-GATE-BROKEN in a frame of two T-POST, V-STONES and V-LOGS piled, V-LADDER leaning, no light; restored = V-GATE-SOLID (open leaf) in the same frame, lintel T-ROOF-L, V-BANNER-B, T-TORCH lit, path cleared to a shorter route.
+4. STALL PAIR: dormant = V-SHED-01, stacked V-CRATE-3, V-SACKS-SET, V-BROOM, no cloth; active = V-AWN-A recoloured guild bone/red over V-TABLE, V-BASKET-1/2, V-JUG, V-VASE-1..3 (prep items), V-RACK-CLOTHES, stall keeper NPC with vending routine.
+5. EXPOSED TIMBER ROAD: TER-PATH strip, V-FENCE-01 runs with gaps, V-CART abandoned mid-road, V-LOGS piles, low V-BUSH only (long sightlines), one V-PINE landmark at the far end; recovery site: V-SHED-02 + V-CRATE-1 (tool crate) + V-RAKE + V-LADDER.
+6. SHELTERED PATH: A-TREE clusters close to the path, V-ROCK-1..3 as cover and ambush corners, A-BUSH-1 crimson accent at the turn, A-GRASS; recovery site: V-SACK set + V-BASKET + V-TROUGH under trees.
+7. OPPONENT POST (watch/leash anchor): V-TRIPOD-POT + V-LOGS + V-SACK-OPEN + V-BARREL; readable from a distance by the smoke loop (X-SMOKE-LOOP small).
+
+## E. Style directions to decide with concept frames (boss chooses)
+- SD-A "CARVED FOLK": everything reads as carved timber and stone with matte painted pigment; facets are deliberate chisel planes; characters are faceted figures that belong in the faceted village (bridges the block mannequins, V- kit and T- kit). Foliage is tuned to fewer, larger leaf clumps. Strength: one coherent world from what we own. Risk: foliage pack fights it unless retuned.
+- SD-B "PAINTED SOFT": buildings and props get soft hand-painted gradients and brush texture derived from the foliage pack; characters smooth (mocap rigs) with painted materials. Strength: lush, warm. Risk: the faceted kits need heavy material work to stop looking flat.
+Recommendation (Claude): SD-A primary, with A- foliage as the one soft element at the edges of decision spaces (Codex's existing rule). Codex owns the call to the boss.
+
+## F. Palette (proposed targets, sampled from bricks; verify in-engine)
+timber dark #4A3122 | timber mid #7A5233 | timber light #B38552 | frame near-black #2A211C | stone #8C8A85 | stone dark #55534F | thatch #9C9268 | guild madder red #8E2F25 (from V-BANNER-A) | guild bone #E6DAC2 (from V-BANNER-A) | grass #6E9A4A | sun foliage #C9D85A | sky #9FB2C8 | fire core #FFD27A | fire edge #E2561F | torch pool #F2A65A.
+
+## G. CONCEPT SPEC BANK (GSP section 6 template; render order = priority)
+Common to all: constraints = no text, no logos, no named styles, artists, studios, games or films; low-poly faceted geometry visible; matte materials; consistent palette F; readable silhouettes; no gore. approval_state = spec_only.
+
+CS-13 kit-exploded-hall | purpose: style_frame (kit proof)
+ subject: the guild long hall shown as an exploded assembly diagram, every brick floating a little apart from its neighbours along its snap axis, as if about to click together: posts, wall panels with doorway and windows, roof pieces, threshold posts with banners, counter, chest, keg, benches
+ camera: three-quarter aerial, 30 deg down, orthographic feel, whole hall in frame
+ light: soft even studio light from upper left, light cool background #9FB2C8
+ palette: F | materials: worn timber planks with dark frames, cool stone plinth, red/bone cloth banners
+ source_piece_ids: T-POST, T-WALL, T-WIN, T-DOOR, T-ROOF-L/S/CL/CS, T-BAR, T-CHEST, T-KEG, T-BENCH, V-BANNER-A, V-HOUSE roof horns
+ reference_images: Logs/sheets/tavern.png, town.png | assembly_changes: recipe D1
+ invariants: every visible part must be one of the listed bricks; gaps between parts small and equal
+ acceptance: a viewer can count the brick types and see the hall is built only from them
+ use_in_unity: blueprint for the hall assembly and its derivation record
+
+CS-01 hall-exterior-day | purpose: style_frame
+ subject: the long hall from the courtyard: framed threshold with banners, crossed gable horns, sparring floor ring of rail fences in front, watchers' boardwalk, a rack of practice gear, one well as landmark, two route mouths visible left and right
+ camera: eye level 1.7 m, three-quarter, 35 mm feel | light: late morning sun from the left, warm key, cool shade
+ source_piece_ids: recipe D1 + D2 + V-WELL | reference_images: town.png, tavern.png
+ invariants: open quiet ground in the sparring ring; both route mouths readable; hall roof/door silhouette strongest shape
+ acceptance: reads as one place built from two kits; nothing un-buildable
+ use_in_unity: hall + courtyard layout, light and palette target
+ Also render as SD-A and SD-B variants (two images) for the boss's style choice.
+
+CS-02 hall-interior | purpose: style_frame
+ subject: inside the hall: counter service edge with clerk position, keg and chest behind it, the contract board between two posts with plain paper sheets, long benches, iron torch brackets and candles making warm pools, rear door open onto the sparring floor
+ camera: eye level, from just inside the front door | light: warm torch pools #F2A65A, cool daylight through the rear door
+ source_piece_ids: T- kit interior bricks | invariants: board, clerk, rear door visible together from the entrance
+ use_in_unity: interior layout, light mood
+
+CS-03 gate-pair | purpose: style_frame (state pair), two panels side by side
+ subject: left = damaged gate (broken plank gate in a two-post frame, stone blocks and logs piled, ladder leaning, no light); right = restored gate (solid gate leaf swung open in the same frame, lintel canopy, dark red banner, lit torch bracket, path cleared beyond)
+ camera: identical framing both panels, eye level, straight-on 3/4 | light: identical late afternoon
+ source_piece_ids: recipe D3 | invariants: same frame, same bricks, only state changes
+ acceptance: change is obvious at thumbnail size without colour (silhouette changes)
+ use_in_unity: gate state pair assembly
+
+CS-04 stall-pair | purpose: style_frame (state pair), two panels
+ subject: left = dormant stall (thatched lean-to shed, stacked crates, sack pile, broom, no cloth); right = active preparation stall (bone/red canopy over a table with baskets, jugs and three vases, clothes rack, a vendor figure standing behind)
+ source_piece_ids: recipe D4 | invariants: same footprint and camera; silhouette change readable without colour
+ use_in_unity: stall state pair
+
+CS-05 exposed-road day+dusk | purpose: style_frame, two panels
+ subject: the open timber road: earth path, broken rail fence runs, an abandoned handcart, log piles, low bushes, a lone pine landmark far ahead, an opponent post with a thin smoke column; dusk panel with long shadows and fog that still leaves a figure's silhouette readable at 15 m
+ source_piece_ids: recipe D5 + D7 | invariants: long sightlines day; telegraph-readable silhouettes at dusk
+ use_in_unity: route layout + condition variant target
+
+CS-06 sheltered-path | purpose: style_frame
+ subject: the sheltered path between painterly trees and faceted boulders, an ambush corner at a bend marked by one crimson bush, dappled light, sacks and baskets of supplies under the trees
+ source_piece_ids: recipe D6 | invariants: cover reads as cover; path always visible
+ use_in_unity: route layout, foliage density rule
+
+CS-07 hero-turnaround | purpose: pose_ref + blender_guide (three views: front, side, back, neutral A-pose)
+ subject: the guild field member: an adult human of average athletic build, practical layered work clothes (wrapped forearms, padded vest, belt with one pouch, soft boots), guild bone/red sash; SD-A faceted carved-figure rendering
+ constraints: plain light background, transparent if possible; proportions must fit a standard humanoid rig (head 1/7.5 of height)
+ source_piece_ids: C-MOCAP, C-DUMMY-M as proportion bases | invariants: limbs readable as separate shapes; hands and feet clear
+ use_in_unity: hero material/kitbash direction on an owned humanoid rig (never a new production mesh)
+
+CS-08 opponent-patterns | purpose: style_frame + pose_ref
+ subject: two opponents built on the same humanoid body: PRESSURE (forward-leaning, light layers, wrapped fists, ochre and charcoal) and DEFENSIVE (upright, broad stance, shield-like padded forearms, slate and moss); each in its signature pose next to its silhouette in solid black
+ invariants: told apart by silhouette alone | use_in_unity: opponent palettes and stances
+
+CS-09 combat-pose-sheet | purpose: pose_ref (transparent, neutral figure)
+ subject: one neutral figure in 8 key poses: home stance (weight on rear leg, guard hands between chin and chest), light strike contact, heavy wind-up, heavy contact, guard loaded by a block, guard broken (guard open, centre dropped), lateral step mid-motion, throw reach-in
+ invariants: feet placement physically plausible; planted foot clear | use_in_unity: aesthetic targets for curation and the rig proof (never collision truth)
+
+CS-10 fire-attunement | purpose: style_frame + pose_ref
+ subject: three hand states: ready (small warm ember at the palm), plain cast release (compact bolt leaving the palm, short trail), charged hold (hand-sized orb that grows and pulses, feet planted, body braced); then the charged impact pushing a guarding figure back
+ source_piece_ids: X-FIRE-CHARGE, X-FIRE-MISSILE-S/N, X-FIRE-EXPLODE-S | invariants: hands and body stay readable through the effect; size and pulse change together
+ use_in_unity: effect scaling/colour targets
+
+CS-11 ui-language | purpose: ui_language
+ subject: a UI sheet built from the kit's shapes: health bar as a plank with iron end caps, guard capacity as stacked plank segments, fire readiness as an ember in an iron ring, carried-objective slot as a small crate outline, contract card as a pinned paper sheet with a wax-red seal, button shapes from post-and-lintel frames
+ constraints: no letters or numbers (text is runtime); flat, high-contrast, readable at 1080p
+ use_in_unity: shapes rebuilt in primitive uGUI (pixels never become a dependency)
+
+CS-12 texture-sources | purpose: texture_source (three square swatches)
+ subject: worn timber planks with faceted chisel marks; cool rough stone; coarse wool cloth in guild red and bone
+ constraints: even flat lighting, no perspective, no shadows, aim for tileable edges | use_in_unity: material derivatives after seam/scale/UV pass
+
+CS-14 key-moment | purpose: style_frame (key art)
+ subject: dusk on the sparring floor: the field member blocks a pressure opponent's strike, contact accent at the forearm, watchers on the boardwalk, warm torch pools from the hall threshold, the restored gate visible in the background
+ invariants: both bodies and the contact readable; effect small
+ use_in_unity: mood target for M5 feel pass
+
+## H. Render plan
+Wave 1 (style lock): CS-13, CS-01 (SD-A and SD-B), CS-03, CS-04 -> boss picks SD-A or SD-B.
+Wave 2 (after the style pick): CS-02, CS-05, CS-06, CS-11, CS-12.
+Wave 3 (after M0.5 rig proof): CS-07, CS-08, CS-09, CS-10, CS-14.
+Each image: max 3 attempts; log id, attempt, outcome, file path under Documentation/concepts/ (created at render time), approval_state.
+END_KIT_LEXICON
