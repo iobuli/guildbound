@@ -32,7 +32,9 @@
   "L4": {
    "name": "text/values (runtime TMP, no art)",
    "default_alpha": 1.0,
-   "min_alpha": 0.7
+   "min_alpha": 0.7,
+   "backing_plate": true,
+   "min_effective_alpha": 0.7
   },
   "L5": {
    "name": "context",
@@ -43,7 +45,8 @@
    "name": "alerts",
    "default_alpha": 1.0,
    "auto_dismiss_s": 3.0,
-   "max_stack": 2
+   "max_stack": 2,
+   "critical_min_effective_alpha": 0.9
   },
   "L7": {
    "name": "modal windows",
@@ -64,7 +67,10 @@
   "tintable cells are flat white on alpha",
   "glow separated from frames when baked",
   "replace single cells, never regenerate the whole sheet for one fix",
-  "all numbers (H) until tested"
+  "all numbers (H) until tested",
+  "text (L4) always sits on its own contrast backing plate; contrast >= 4.5:1 is measured text vs plate, independent of panel/layer opacity",
+  "master alpha multiplies layers but is clamped: effective_alpha(L4) = max(0.7, master * layer); critical alerts (warning/critical colours) have an effective floor of 0.9",
+  "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced"
  ],
  "cells": [
   {

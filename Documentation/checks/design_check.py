@@ -150,6 +150,13 @@ committed = subprocess.run(["git", "-C", ROOT, "show", "HEAD:TANDEM_REASONING.lo
 prefix_ok = log.startswith(committed) if committed else True
 rec("C16 log append-only", "PASS" if prefix_ok else "FAIL", "%d entries; working log %s committed prefix" % (len(heads), "extends" if prefix_ok else "DIVERGES from"))
 
+# C17 insight ledger: no pile-up of unanswered insights
+led = os.path.join(os.path.dirname(__file__), "insights.json")
+if os.path.exists(led):
+    items = json.load(open(led, encoding="utf-8"))["insights"]
+    op = [i["id"] for i in items if i["status"] == "open"]
+    rec("C17 insights answered", "PASS" if len(op) <= 5 else "WARN", "%d open of %d: %s" % (len(op), len(items), ", ".join(op[:8])))
+
 # report
 width = max(len(r[0]) for r in results)
 lines = ["%-*s  %-4s  %s" % (width, c, s, m) for c, s, m in results]

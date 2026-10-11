@@ -1,0 +1,408 @@
+{
+  "author": "Codex",
+  "blender": "5.2.2 LTS",
+  "source": "D:\\New folder (4)\\guildbound\\Assets\\Kevin Iglesias\\Human Animations\\Models\\HumanM_Model.fbx",
+  "source_sha256_before": "23c21d030341aa335b4dfbcab1fac9a81ac5f21a513bfb2b49ab97084c4be4b5",
+  "source_sha256_after": "23c21d030341aa335b4dfbcab1fac9a81ac5f21a513bfb2b49ab97084c4be4b5",
+  "original_vertices": 5340,
+  "faceted_vertices": 1880,
+  "bones": 51,
+  "topology_components": 10,
+  "component_sizes": [
+    834,
+    316,
+    315,
+    121,
+    62,
+    62,
+    57,
+    57,
+    31,
+    25
+  ],
+  "coincident_clusters": 0,
+  "near_island_pairs": 222,
+  "pair_selection": "Nearest vertex of another topology component within 3 cm, world z 0.80-1.57 m. Diagnostic only; not a weld/seam correspondence map.",
+  "vest_vertices": 342,
+  "vest_faces": 557,
+  "samples": [
+    {
+      "pose": "rest",
+      "blend": "base",
+      "max_surface_delta_m": 0.0,
+      "protected_surface_delta_m": 0.0,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0,
+      "shell_corresponding_offset_min_m": 0.01199978318209317,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "rest",
+      "blend": "fighter",
+      "max_surface_delta_m": 0.018345842120404885,
+      "protected_surface_delta_m": 3.625800379273883e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0036375422780084016,
+      "shell_corresponding_offset_min_m": 0.011999760529560085,
+      "shell_corresponding_offset_max_m": 0.012000244679064303
+    },
+    {
+      "pose": "rest",
+      "blend": "caster",
+      "max_surface_delta_m": 0.012893278353351946,
+      "protected_surface_delta_m": 3.625800379273883e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0015480823765333246,
+      "shell_corresponding_offset_min_m": 0.011999759923218167,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "rest",
+      "blend": "heavy",
+      "max_surface_delta_m": 0.026741081705799374,
+      "protected_surface_delta_m": 3.625800379273883e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0009391704383745897,
+      "shell_corresponding_offset_min_m": 0.011999764034973688,
+      "shell_corresponding_offset_max_m": 0.012000270679633164
+    },
+    {
+      "pose": "rest",
+      "blend": "fighter_heavy",
+      "max_surface_delta_m": 0.01601641385212417,
+      "protected_surface_delta_m": 3.625800379273883e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0019427364239302802,
+      "shell_corresponding_offset_min_m": 0.011999772658760503,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "rest",
+      "blend": "caster_heavy",
+      "max_surface_delta_m": 0.013029369211267721,
+      "protected_surface_delta_m": 3.625800379273883e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0001892344714581086,
+      "shell_corresponding_offset_min_m": 0.01199975973847336,
+      "shell_corresponding_offset_max_m": 0.01200040521474289
+    },
+    {
+      "pose": "rest",
+      "blend": "balanced",
+      "max_surface_delta_m": 0.008878732265352894,
+      "protected_surface_delta_m": 1.2013700229374393e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0011932974029835348,
+      "shell_corresponding_offset_min_m": 0.011999765266605253,
+      "shell_corresponding_offset_max_m": 0.012000403073712886
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "base",
+      "max_surface_delta_m": 0.0,
+      "protected_surface_delta_m": 0.0,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0,
+      "shell_corresponding_offset_min_m": 0.01199978318209317,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "fighter",
+      "max_surface_delta_m": 0.018345842120404885,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.011114678520520366,
+      "shell_corresponding_offset_min_m": 0.011999760529560085,
+      "shell_corresponding_offset_max_m": 0.012000244679064303
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "caster",
+      "max_surface_delta_m": 0.012893278353351946,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0015480823765333246,
+      "shell_corresponding_offset_min_m": 0.011999759923218167,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "heavy",
+      "max_surface_delta_m": 0.026741081705799374,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0011480117532873951,
+      "shell_corresponding_offset_min_m": 0.011999764034973688,
+      "shell_corresponding_offset_max_m": 0.012000270679633164
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "fighter_heavy",
+      "max_surface_delta_m": 0.01601641385212417,
+      "protected_surface_delta_m": 4.916007184008511e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.006083511708343051,
+      "shell_corresponding_offset_min_m": 0.011999772658760503,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "caster_heavy",
+      "max_surface_delta_m": 0.013029369211267721,
+      "protected_surface_delta_m": 4.916007184008511e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0001892344714581086,
+      "shell_corresponding_offset_min_m": 0.01199975973847336,
+      "shell_corresponding_offset_max_m": 0.01200040521474289
+    },
+    {
+      "pose": "lowered_arms",
+      "blend": "balanced",
+      "max_surface_delta_m": 0.008878732265352894,
+      "protected_surface_delta_m": 9.13266142616515e-08,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0035775460524704733,
+      "shell_corresponding_offset_min_m": 0.011999765266605253,
+      "shell_corresponding_offset_max_m": 0.012000403073712886
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "base",
+      "max_surface_delta_m": 0.0,
+      "protected_surface_delta_m": 0.0,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0,
+      "shell_corresponding_offset_min_m": 0.01199978318209317,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "fighter",
+      "max_surface_delta_m": 0.018345842120404885,
+      "protected_surface_delta_m": 3.7814907850174666e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.011020971947061413,
+      "shell_corresponding_offset_min_m": 0.011999760529560085,
+      "shell_corresponding_offset_max_m": 0.012000244679064303
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "caster",
+      "max_surface_delta_m": 0.012893278353351946,
+      "protected_surface_delta_m": 3.7814907850174666e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0015480823765333246,
+      "shell_corresponding_offset_min_m": 0.011999759923218167,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "heavy",
+      "max_surface_delta_m": 0.026741081705799374,
+      "protected_surface_delta_m": 3.7814907850174666e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0018266804944611914,
+      "shell_corresponding_offset_min_m": 0.011999764034973688,
+      "shell_corresponding_offset_max_m": 0.012000270679633164
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "fighter_heavy",
+      "max_surface_delta_m": 0.01601641385212417,
+      "protected_surface_delta_m": 3.7814907850174666e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0060147272364234824,
+      "shell_corresponding_offset_min_m": 0.011999772658760503,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "caster_heavy",
+      "max_surface_delta_m": 0.013029369211267721,
+      "protected_surface_delta_m": 3.7814907850174666e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0001892344714581086,
+      "shell_corresponding_offset_min_m": 0.01199975973847336,
+      "shell_corresponding_offset_max_m": 0.01200040521474289
+    },
+    {
+      "pose": "guard_diagnostic",
+      "blend": "balanced",
+      "max_surface_delta_m": 0.008878732265352894,
+      "protected_surface_delta_m": 2.457562461863554e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0035073879107600583,
+      "shell_corresponding_offset_min_m": 0.011999765266605253,
+      "shell_corresponding_offset_max_m": 0.012000403073712886
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "base",
+      "max_surface_delta_m": 0.0,
+      "protected_surface_delta_m": 0.0,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0,
+      "shell_corresponding_offset_min_m": 0.01199978318209317,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "fighter",
+      "max_surface_delta_m": 0.018345842120404885,
+      "protected_surface_delta_m": 3.816559456248789e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.010661017384464344,
+      "shell_corresponding_offset_min_m": 0.011999760529560085,
+      "shell_corresponding_offset_max_m": 0.012000244679064303
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "caster",
+      "max_surface_delta_m": 0.012893278353351946,
+      "protected_surface_delta_m": 3.816559456248789e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0015480823765333246,
+      "shell_corresponding_offset_min_m": 0.011999759923218167,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "heavy",
+      "max_surface_delta_m": 0.026741081705799374,
+      "protected_surface_delta_m": 3.816559456248789e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.002361752656959773,
+      "shell_corresponding_offset_min_m": 0.011999764034973688,
+      "shell_corresponding_offset_max_m": 0.012000270679633164
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "fighter_heavy",
+      "max_surface_delta_m": 0.01601641385212417,
+      "protected_surface_delta_m": 3.674277068954096e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.006452666112440164,
+      "shell_corresponding_offset_min_m": 0.011999772658760503,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "caster_heavy",
+      "max_surface_delta_m": 0.013029369211267721,
+      "protected_surface_delta_m": 3.674277068954096e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0001892344714581086,
+      "shell_corresponding_offset_min_m": 0.01199975973847336,
+      "shell_corresponding_offset_max_m": 0.01200040521474289
+    },
+    {
+      "pose": "cast_diagnostic",
+      "blend": "balanced",
+      "max_surface_delta_m": 0.008878732265352894,
+      "protected_surface_delta_m": 9.541398640621973e-08,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0033931725485702585,
+      "shell_corresponding_offset_min_m": 0.011999765266605253,
+      "shell_corresponding_offset_max_m": 0.012000403073712886
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "base",
+      "max_surface_delta_m": 0.0,
+      "protected_surface_delta_m": 0.0,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0,
+      "shell_corresponding_offset_min_m": 0.01199978318209317,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "fighter",
+      "max_surface_delta_m": 0.018345842120404885,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.011114678520520366,
+      "shell_corresponding_offset_min_m": 0.011999760529560085,
+      "shell_corresponding_offset_max_m": 0.012000244679064303
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "caster",
+      "max_surface_delta_m": 0.012893278353351946,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0015480823765333246,
+      "shell_corresponding_offset_min_m": 0.011999759923218167,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "heavy",
+      "max_surface_delta_m": 0.026741047830615,
+      "protected_surface_delta_m": 5.623090941939713e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0011480117532873951,
+      "shell_corresponding_offset_min_m": 0.011999764034973688,
+      "shell_corresponding_offset_max_m": 0.012000270679633164
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "fighter_heavy",
+      "max_surface_delta_m": 0.01601641385212417,
+      "protected_surface_delta_m": 4.916007184008511e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.006083511708343051,
+      "shell_corresponding_offset_min_m": 0.011999772658760503,
+      "shell_corresponding_offset_max_m": 0.01200040734629893
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "caster_heavy",
+      "max_surface_delta_m": 0.013029361323477396,
+      "protected_surface_delta_m": 4.916007184008511e-07,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0001892344714581086,
+      "shell_corresponding_offset_min_m": 0.01199975973847336,
+      "shell_corresponding_offset_max_m": 0.01200040521474289
+    },
+    {
+      "pose": "step_diagnostic",
+      "blend": "balanced",
+      "max_surface_delta_m": 0.00887871561961754,
+      "protected_surface_delta_m": 9.13266142616515e-08,
+      "bone_endpoint_delta_m": 0.0,
+      "near_island_pair_gap_increase_m": 0.0035775460524704733,
+      "shell_corresponding_offset_min_m": 0.011999765266605253,
+      "shell_corresponding_offset_max_m": 0.012000403073712886
+    }
+  ],
+  "roundtrip_expected": {
+    "bones": 51,
+    "body_vertices": 1880,
+    "keys": [
+      "Basis",
+      "build_fighter",
+      "build_caster",
+      "build_heavy"
+    ]
+  },
+  "roundtrip_actual": {
+    "bones": 51,
+    "body_vertices": 1880,
+    "keys": [
+      "Basis",
+      "build_fighter",
+      "build_caster",
+      "build_heavy"
+    ]
+  },
+  "local_derivatives": "C:\\Users\\64Bit 1TB NVME\\AppData\\Local\\FreeGuild\\codex_character_lab",
+  "limits": [
+    "Manual diagnostic poses, not owned clip playback.",
+    "No Unity import, retargeting, gameplay contact, grounding or frame-rate pass.",
+    "Corresponding shell offsets do not prove no triangle/body intersections.",
+    "Near-island metric does not repair pre-existing articulated segment gaps.",
+    "No independent reviewer acceptance yet."
+  ]
+}

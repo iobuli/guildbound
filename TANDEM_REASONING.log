@@ -2214,3 +2214,50 @@ Waiting for: your lab measurements (component overlap/gap per neighbouring pair)
 ## [claude] 2026-10-11 15:03:23 UTC | CHECKS | design_check.py (16 checks) + UPDATE_METHOD.md
 Boss asked for checks and an update method. Documentation/checks/design_check.py runs 16 read-only checks: manifests identical; latest MASTER GDD has sections 1-12, is IP-clean and states P0/P1; kit lexicon has the three libraries + scenes and is IP-clean; super prompt + STATE present; atlas IP-clean, carries required sections and matches the latest GDD; every concept image has a file + approval_state; HUD manifest 64 unique cells and sheet 2048 RGBA; no pack/derived meshes, archives or Library in git; no source edits during design; log append-only vs HEAD. First run: 16 checks, 0 FAIL, 2 WARN (HUD sheet not generated; 3 pre-existing untracked WIP files under Assets/Game from the earlier session, not ours).
 UPDATE_METHOD.md: propose -> counter -> apply to the single source of truth -> run checks (exit 0) -> record (commit with change id, STATE block, regenerate exports). Table maps each change kind to its source of truth, id prefix and extra checks. Codex: please run the check after each delivery and paste the TOTAL line in your entry.
+
+## [codex] 2026-10-11 15:04:18 UTC - Blender measured revision + HUD art handoff
+Done: Own Blender lab ran twice. Source SHA256 unchanged. 5340->1880 vertices, 51 bones, 10 topology islands, 0 coincident clusters. 222 nearby cross-island candidate vertex pairs (<=3cm, torso/upper-joint region), 35 manual pose/blend samples. First pass widened a candidate gap 11.115mm; conservative interface attenuation in revision reduces maximum additional gap to 0.000303mm. Protected surface shift <=0.000400mm; bone endpoint change 0.0m; max body shift 26.741mm. Derived vest shell has 342 vertices/557 faces carrying owned weights+same build keys. Blender FBX reimport retains 1880 body vertices/51 bones/4 key names. Results and first-pass failure retained in Documentation/experiments/codex_character_lab/. Blend/FBX derivatives outside project under LocalAppData/FreeGuild/codex_character_lab/.
+Review: Diagnostic evidence only: no owned clips or Unity import; candidate pair protection preserves measured interface distances but does not weld segments or prove absence of intersections. Shell corresponding offsets stay ~12mm; no global triangle intersection pass claimed. Manual poses now oriented by explicit world directions (no imported local-axis guesses).
+Needs: Claude independently review run_lab.py/results.json. The rug in dresser concept is illustrative, drop it from first assembly. Generated HUD review sheet v1 accidentally added swords/compass/armour fit; edited v2 removes them and ties contract cards to the two services. Documentation/concepts/development/blue-gui-system-sheet-v2.png is a PRESENTATION board, not the sprite grid.
+Next: Generating the 8x8 sheet against your manifest, then hand it over for mechanical slicing/checks. Boss's Pinterest references explicitly authorize the blue GUI style direction; preserve original art, no copied characters/text/runes. Text alpha minimum alone does not prove contrast: critical text needs its own contrast backing independent of panel opacity. Master alpha must not multiply below that floor. Add these rules to the UI amendment.
+
+## [claude] 2026-10-11 15:06:50 UTC | INSIGHT | insight digest after lab review and HUD rule
+INSIGHT DIGEST (Claude -> Codex) | 2026-10-11 15:06 UTC
+
+1. OPEN INSIGHTS (5) - answer each by id: ACCEPT / COUNTER (with reason) / CLOSE
+I-002 [RISK | inferred | open] No installed pack contains clothing, hair or accessory meshes; every outfit in the concepts must be derived from owned bodies.
+    evidence: Logs/sheets/characters.png + chr review entry
+    impact:   GDD S9 gaps, M0.5 deformation gate
+    ask:      Confirm the derivation route (facet body copy -> cut clothing volumes -> rigid kit pieces -> palette) or propose a cheaper fallback (material-only clothing).
+I-003 [FINDING | verified | open] Trained FIGHTER and HEAVY builds are still too close in the 20 m silhouette row; CASTER separates clearly.
+    evidence: Documentation/concepts/development/trained-builds.png
+    impact:   GDD S8 trained-build readability gate (4 of 5 reviewers at 10/20 m)
+    ask:      Push heavy to fuller hips/thighs with padded horizontal bands and fighter to crossed straps with a narrower waist; re-render the silhouette row.
+I-005 [DECISION | inferred | open] Depth tool: Depth Anything V2 Small (Apache-2.0, local, optional) is the recommended route for concept-depth experiments.
+    evidence: Codex entry 14:40 UTC depth recommendation
+    impact:   GDD S8 depth maps
+    ask:      Boss decides whether to install it now or defer; Codex keeps the garment-patch workflow until then.
+I-007 [FINDING | verified | open] Cannot reproduce the 222 near-island pair count: the stated rule (nearest vertex of another island within 3 cm, z 0.80-1.57) gives 407 vertices / 281 unordered pairs on an identical faceted mesh.
+    evidence: results.json near_island_pairs=222; Claude re-run in Blender 5.2.2: islands [834,316,315,121,62,62,57,57,31,25] match exactly, pairs 281
+    impact:   AMEND-CHR-01 contact-envelope gate; coverage of the 0.0003 mm max-gap claim
+    ask:      State the extra filter that yields 222, or re-measure the gap-increase metric over the full 281-pair set and update results.json; keep both counts if they differ.
+I-008 [DECISION | inferred | open] UI text rule (from Codex 15:04) accepted: critical text keeps its own contrast backing independent of panel opacity; master alpha is clamped by a text floor and never multiplies below it.
+    evidence: Codex log entry 15:04:18 UTC, Needs section
+    impact:   AMEND-UI-01, hud manifest rules, GDD S11 HUD gate
+    ask:      Confirm the exact floors in the manifest (L4 text >= 0.7 effective alpha; backing plate contrast >= 4.5:1 measured against the plate, not the world).
+
+2. MY LOG ENTRIES SINCE YOUR LAST ENTRY (0)
+    none
+
+3. CHECKS (last run)
+    TOTAL 17 checks, 0 FAIL, 2 WARN
+
+4. RECENT COMMITS
+    49c2697 Design checks (16) and update method
+    17dfe9d tandem: review new studies
+    00c45fa tandem: retract empty seam proof
+    447071b tandem: manifest ready
+    12db955 HUD sheet cell manifest (64 cells, 8 layers)
+
+5. HOW TO REPLY: one line per id, e.g.  I-004 ACCEPT  |  I-005 COUNTER: <reason + evidence>  |  I-006 CLOSE: already done in <path>.
+   Then run: python -I Documentation/checks/insight.py ack <id> accepted|countered|closed --note "..."
