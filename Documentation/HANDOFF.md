@@ -1,10 +1,16 @@
 # Guildbound (Unity) - handoff, 2026-10-11
 
-## State
+## Current state (read first; supersedes the older notes below)
+- **Design of record:** MASTER GDD v5.1 = the latest `BEGIN_MASTER_GDD` block in `TANDEM_REASONING.log` (repo root). Team log, roles and decisions live there too (Claude = rules code, verification, commits; Codex = art, animation, world, HUD presentation; boss = direction). `Documentation/MASTER.md` is older background.
+- **Stack (M0 done):** Unity 6.3 LTS 6000.3.26f1, URP 17.3.0, Input System 1.20.1, Animation Rigging 1.4.1, Cinemachine 3.1.7, Test Framework 1.6.0, MCP for Unity v10.3.0, Aura for Unity plugin (free trial). Branch `build/m0`. Open the editor with `Tools/open_unity.ps1` (starts the MCP bridge).
+- **Built:** layered HUD (`Assets/Game/UI/Kit`, `Guildbound/UI/Build HUD`), interfaces (`Assets/Game/Contracts/Interfaces`: IHudModel, ICombatPresentation, IInventoryModel), FxRepair (Magic Arsenal fire repaired with owned Hovl textures; no magenta), AvatarRepair, clip table (`Documentation/build/CLIP_TABLE.md`), Codex art tools/palette/panel kit.
+- **In progress (M0.5):** owned collision motor + combat rules + fixtures in `Assets/Game/Motor`, `Assets/Game/Combat`, `Assets/Game/Tests` (Claude); animation driver + support layer (Codex).
+- **Legacy, do not run:** `Assets/Game/Scripts/Game.cs`, `Fighter.cs` and `Assets/Game/Editor/Build.cs` (`Guildbound/Build Scene`) are an earlier prototype of unknown ownership kept for reference only. Do not generate `Main.unity` from them; M0.5 work happens in `Assets/Game/Scenes/Sparring.unity`.
+
+## Older state notes (2026-10-11 morning, partly stale)
 - **Project:** a fresh Unity 6000.5.1f1 project with one blank scene, `Assets/Game/Scenes/Main.unity`. Our code lives under `Assets/Game` (namespace `Guildbound`).
-- **Packages:** URP 17.5, Input System 1.20.1 (new Input System only), Animation Rigging 1.4.1, Cinemachine 3.1.7, AI Navigation 2.0.13, Test Framework, MCP for Unity v10.3.0.
+- **Packages:** URP 17.5 (now 17.3.0 on 6.3 LTS), Input System 1.20.1, Animation Rigging 1.4.1, Cinemachine 3.1.7, AI Navigation 2.0.13, Test Framework, MCP for Unity v10.3.0.
 - **Asset packs:** 16 Asset Store packs are imported. Their C# scripts were deliberately skipped: we write our own systems. Built-in materials were converted to URP; 4 Unlit/Color and Unlit/Texture materials remain.
-- **Not done yet:** no game code. The next step is the first playable (see "Next").
 
 ## Rebuild the asset folders (they are git-ignored)
 1. **List purchases:** open the editor normally, signed in through the Hub. `Unity.exe -projectPath <proj> -executeMethod Guildbound.Editor.Fetch.List -guildboundExit` writes `Logs/fetch-purchases.txt`.
@@ -31,7 +37,7 @@ Product ids for this project: 276931 305932 45047 36286 76699 326043 28345 28365
 | VFX | Hovl Studio, Magic Arsenal | Hovl: lightning aura (awaken), electro hit, explosion, AoE, shields (guard/parry), portals, sparks, dust (footfalls/landing). Magic Arsenal: per element, Charge / Missile Tiny-Mega / Muzzle / Explosion Tiny-Mega / Dome / Beam. Fire charge stages: Fire (orange) -> Frost/Arcane (blue) -> Light (white). |
 
 ## Known issues
-- **Magic Arsenal renders magenta:** its materials reference shaders missing from the "Projectile Factory" package (e.g. shader guid b7839dad95683814aa64166edc107ae2). Fix by converting its materials to URP Particles/Unlit additive in an editor step, keeping `_MainTex` and `_TintColor`.
+- **Magic Arsenal (fixed):** materials/scripts came from two unowned packs; `Guildbound/Assets/Repair Magic Arsenal Fire` (Assets/Game/Editor/Tools/FxRepair.cs) rebuilds them as URP Particles/Unlit on owned Hovl textures with fire tints. Re-run after a pack re-import.
 - **Characters:** the Explosive characters are blocky demo mannequins. The smoothest rigs are MoCapCentral `rig_MCUnity` and the FightingMotions Blue/RedGuy. The boss decides the hero model; all clips are Humanoid, so any of them can play everything.
 - **Hovl effects:** some sample tiny at 0.8 s. They play correctly in game, but check scale per effect.
 
