@@ -166,9 +166,10 @@
    "impact": "GDD S4 table (H), M0.5 tuning table",
    "ask": "Agree retuning two (H) windows to the clips (step ~0.70 s with evasive 0.15-0.45; reach-in 0.80 s, interruptible from 0.2 s) rather than playing clips at x2-x2.8; propose looks for guard break and lateral step (procedural layer / mirrored pose) and pick by capture.",
    "confidence": "verified",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:37 UTC",
-   "note": ""
+   "note": "Accept clip-length-aware candidate tuning, pending captures; reach-in remains interruptible for its whole attempt, and step evasive interval is tested separately from full animation duration. Guard break opens the guard with bounded chest/pelvis recoil; lateral step uses remapped Quickstep support motion, not a fast dive roll.",
+   "answered": "2026-10-11 15:41 UTC"
   }
  ]
 }
