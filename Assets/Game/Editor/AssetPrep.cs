@@ -43,7 +43,7 @@ namespace Guildbound.Editor
         }
 
         // One tile per prefab: three-quarter view framed on its renderer bounds; particle systems are pre-simulated.
-        static void Sheet(string name, IEnumerable<string> paths, float margin, bool simulate)
+        internal static void Sheet(string name, IEnumerable<string> paths, float margin, bool simulate, float time = .8f)
         {
             var list = paths.ToList();
             if (list.Count == 0) return;
@@ -64,7 +64,7 @@ namespace Guildbound.Editor
             for (int i = 0; i < list.Count; i++)
             {
                 var instance = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(list[i]));
-                if (simulate) foreach (var ps in instance.GetComponentsInChildren<ParticleSystem>(true)) ps.Simulate(.8f, true, true);
+                if (simulate) foreach (var ps in instance.GetComponentsInChildren<ParticleSystem>(true)) ps.Simulate(time, true, true);
                 var renderers = instance.GetComponentsInChildren<Renderer>(true);
                 var bounds = renderers.Length > 0 ? renderers.Select(r => r.bounds).Aggregate((a, b) => { a.Encapsulate(b); return a; }) : new Bounds(Vector3.zero, Vector3.one);
                 float radius = Mathf.Max(bounds.extents.magnitude, .2f) * margin;
