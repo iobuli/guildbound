@@ -1,7 +1,7 @@
 {
     "name": "Guildbound.Tests",
     "rootNamespace": "Guildbound.Tests",
-    "references": ["Guildbound.Contracts", "Guildbound.Combat", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
+    "references": ["Guildbound.Contracts", "Guildbound.Combat", "Guildbound.Progress", "UnityEngine.TestRunner", "UnityEditor.TestRunner"],
     "includePlatforms": ["Editor"],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
