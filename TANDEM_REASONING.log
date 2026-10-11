@@ -864,3 +864,40 @@ Rules:
 Deliverables: the playable prototype passing M6 (P0 = steps 1-9; full arc = steps 1-10); results.json and captures per gate; a decision log; the asset modification list per system.
 END_MASTER_GDD
 NEXT: codex audits every section (asset evidence, four pillars, build prompt) and answers P6.img; then my audit of your corrections; then delivery to the boss.
+
+
+## [codex] 2026-10-11 13:25:54 UTC - boss visual direction: grow the owned kit by recombination
+
+Boss: use the assets as the base and expand them like a modular building kit. This is an explicit visual-production rule, not a request to buy replacements or generate an unrelated look. Add it to GDD sections 1, 5, 8, 9 and the reusable prompt.
+
+Owned vocabulary verified in Logs/sheets/tavern.txt and town.txt: floor tiles, straight/window/door walls, wall supports, straight/corner/side roofs, benches/tables/counter/chests; village houses, awnings, fence/gate pieces, sheds, wood-path modules, terrain/rocks and foliage. Those are our construction pieces. Break them down by role (surface, frame, roof, threshold, enclosure, service prop, landmark), align useful connection points/proportions, then compose new guild-specific assemblies.
+
+Hall identity proposal: a strong framed threshold using existing supports and roof pieces, one clear cloth/banner accent, a quiet open sparring floor, and a service edge made from the counter/bench/chest vocabulary. A consistent wood/stone/cloth palette ties the tavern and village packs together. Preserve combat floor/sightlines before adding clutter. The character/pose silhouette remains the highest-contrast moving shape.
+
+Visible growth uses the SAME kit: a damaged gate frame gains aligned planks and its open passage; a dormant stall gains its canopy/counter preparation service and a settled NPC routine; the hall retains its recognizable roof/door silhouette as those assemblies fill out. Expand through recombination, measured proportion changes, source-mesh edits where needed, material/texture derivatives and animation retiming/rig correction. Source assets remain untouched; provenance of every derived piece stays traceable to the installed module.
+
+Budget: a few reusable derived assemblies with broken/restored variants beat a unique object per contract. The first proof needs one hall assembly, one gate pair and one preparation-station pair; the later six-contract arc reuses their vocabulary. Changing color alone is insufficient if the silhouette or use still reads like an unchanged demo arrangement. Rebuilding all art from scratch would violate the intended base. Derived additions are allowed by this boss clarification when they grow from the owned pieces; they do not justify unrelated new-model/image dependencies.
+
+Review criterion: compare the source piece list, the assembled guild silhouette, and its before/after growth states. A reviewer should recognize a cohesive place with modular expansion, and trace how each new form was built from our kit. Motion follows the same principle: curated owned clips are the vocabulary; timing, transitions, support/contact correction and restrained effects make a shared physical language.
+
+Claude: fold this into the assembly now. All earlier discussion that implied simple placement/recolor was the final visual target is superseded by this more specific modular expansion rule. The scope stays one guild hall and grounded combat/attunement; the visual construction can be inventive within that canvas.
+
+## [claude] 2026-10-11 13:26:29 UTC | P7.amend | modular-kit rule folded into GDD S1/S5/S8/S9/S11/S12
+Folded the boss's modular-kit rule into the master GDD (consolidated text will be in the final MASTER block after both audits). Exact amendments:
+
+S1 Pillars, add rule 2 (alongside route/threat/tool): "The owned assets are a modular building kit. New forms are built by recombining owned pieces (by role: surface, frame, roof, threshold, enclosure, service prop, landmark), measured proportion changes, source-mesh edits where needed, material/texture derivatives and animation retiming/rig correction. Colour change alone is never a twist. Source assets stay untouched; every derived piece traces to its source module."
+
+S5 World, the hall: "Built as one guild assembly from the tavern and village kits: a strong framed threshold from supports and roof pieces, one cloth/banner accent, a quiet open sparring floor, a service edge from counter/bench/chest pieces. Its roof and door silhouette stays recognisable as it grows."
+S5 Services become ASSEMBLY PAIRS (broken/restored) from the same kit: gate frame gains aligned planks and an open passage; a dormant stall gains canopy, counter and a settled NPC routine. Prototype set: 1 hall assembly, 1 gate pair, 1 preparation-station pair; the six-contract arc reuses this vocabulary.
+
+S8 Style, add: "Wood/stone/cloth palette unifies the two building kits. Combat floor and sightlines are preserved before any clutter. The moving character silhouette stays the highest-contrast shape. Motion follows the same kit principle: curated owned clips are the vocabulary; timing, transitions, contact/support correction and restrained effects make one physical language."
+
+S9 Asset map, add a column "Role in kit" and a "Derivation record" rule: each derived assembly lists its source pieces, transforms and material derivatives. Verified piece vocabulary (Logs/sheets tavern/town): floor tiles, straight/window/door walls, supports, straight/corner/side roofs, benches/tables/counter/chests; houses, awnings, fence/gate pieces, sheds, wood-path modules, terrain/rocks, foliage.
+
+S11 Reviewer checklist, add: source piece list vs assembled guild silhouette vs before/after growth states; a reviewer must recognise one cohesive place and trace each new form to the kit.
+
+S12 Build prompt rules, replace "always with a stated modification" by: "Only installed store content, grown as a modular kit (recombination, proportion change, mesh edits, material derivatives, retiming); never colour-only; sources untouched; derivation recorded per assembly."
+
+Image generation link (my proposal P6.img, still awaiting your answer): concept frames would now show ASSEMBLY ideas built from the verified piece list (the hall threshold, gate pair, stall pair), so images stay grounded in what the kit can actually build, not an unrelated look.
+
+NEXT: codex audits GDD v1 + this amendment, and answers P6.img (a)-(c).
