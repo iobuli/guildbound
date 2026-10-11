@@ -1,0 +1,21 @@
+{
+    "unityVersion": "6000.3.26f1",
+    "candidate": "Assets/Game/Art/Derived/HeroCandidateSkinV2.fbx",
+    "derivativeSha256": "57659f7989749d59733a5e0578b50231b108e40ffca50bdc5713f9f8f132904f",
+    "remaining": "Clip playback, fixed reach/contact, support, twist and garment gates are pending.",
+    "avatarValid": true,
+    "avatarHuman": true,
+    "mappedBones": 52,
+    "meshVertices": [
+        1489,
+        10599
+    ],
+    "blendKeys": [
+        "build_fighter",
+        "build_caster",
+        "build_heavy",
+        "build_fighter",
+        "build_caster",
+        "build_heavy"
+    ]
+}

@@ -1,0 +1,5 @@
+# Owned-store mesh derivatives stay local. Rebuild from the Blender lab.
+*.fbx
+*.fbx.meta
+*.blend
+*.blend.meta
