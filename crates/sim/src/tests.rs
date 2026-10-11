@@ -49,15 +49,15 @@ fn oversized_input_is_clamped_to_unit() {
     let mut w = World::sparring(Tuning::default());
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.0, 0.0);
-    for _ in 0..60 {
+    for _ in 0..240 {
         w.step(&[Intent { move_dir: V2::new(5.0, 0.0), run: true }]);
     }
     assert!((w.fighters[0].velocity.length() - 4.0).abs() < 1e-4);
 }
 
 #[test]
-fn speed_ramps_up_and_momentum_carries_into_a_stop() {
-    let mut w = World::sparring(Tuning::default());
+fn linear_speed_ramps_up_and_momentum_carries_into_a_stop() {
+    let mut w = World::sparring(Tuning { model: MotorModel::Linear, ..Tuning::default() });
     w.fighters.truncate(1);
     w.fighters[0].position = V2::new(-5.0, 0.0);
     w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
@@ -125,4 +125,67 @@ fn lock_target_faces_the_target() {
     w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: false }]);
     let to = (w.fighters[1].position - w.fighters[0].position).normalized();
     assert!(w.fighters[0].facing.dot(to) > 0.9999);
+}
+
+fn run_to_cruise(model: MotorModel) -> World {
+    let mut w = World::sparring(Tuning { model, ..Tuning::default() });
+    w.fighters.truncate(1);
+    w.fighters[0].position = V2::new(-5.5, 0.0);
+    for _ in 0..240 {
+        w.step(&[Intent { move_dir: V2::new(1.0, 0.0), run: true }]);
+    }
+    w
+}
+
+#[test]
+fn drag_terminal_speed_is_exactly_the_target() {
+    let w = run_to_cruise(MotorModel::Drag);
+    assert!((w.fighters[0].velocity.x - 4.0).abs() < 1e-4, "v = {}", w.fighters[0].velocity.x);
+}
+
+#[test]
+fn drag_starts_fast_then_eases_into_top_speed() {
+    let mut w = World::sparring(Tuning::default());
+    w.fighters.truncate(1);
+    w.fighters[0].position = V2::new(-5.5, 0.0);
+    let run = [Intent { move_dir: V2::new(1.0, 0.0), run: true }];
+    let mut speeds = Vec::new();
+    for _ in 0..60 {
+        w.step(&run);
+        speeds.push(w.fighters[0].velocity.x);
+    }
+    let gain = |a: usize, b: usize| speeds[b] - speeds[a];
+    assert!(gain(0, 10) > gain(30, 40) * 2.0, "early ticks gain more speed than late ones");
+    // discrete closed form: v_n = s (1 - d^n), d = s / (s + a dt)
+    let (s, push) = (4.0f32, 30.0 * STEP);
+    let expect = s * (1.0 - (s / (s + push)).powi(60));
+    assert!((speeds[59] - expect).abs() < 1e-4, "v60 {} vs {expect}", speeds[59]);
+}
+
+#[test]
+fn drag_coast_halves_speed_each_half_life() {
+    let mut w = run_to_cruise(MotorModel::Drag);
+    let half = w.tuning.coast_half_life;
+    let ticks = (half / STEP).round() as usize;
+    for _ in 0..ticks {
+        w.step(&[Intent::default()]);
+    }
+    assert!((w.fighters[0].velocity.x - 2.0).abs() < 0.05, "v = {}", w.fighters[0].velocity.x);
+    for _ in 0..600 {
+        w.step(&[Intent::default()]);
+    }
+    assert_eq!(w.fighters[0].velocity, V2::ZERO, "coasting comes to rest");
+}
+
+#[test]
+fn drag_reversal_plants_before_moving_back() {
+    let mut w = run_to_cruise(MotorModel::Drag);
+    let x0 = w.fighters[0].position.x;
+    let mut furthest = x0;
+    for _ in 0..120 {
+        w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: true }]);
+        furthest = furthest.max(w.fighters[0].position.x);
+    }
+    assert!(furthest > x0 + 0.05, "momentum carries the body on before it turns");
+    assert!(w.fighters[0].velocity.x < -3.9, "then it runs back at full speed");
 }

@@ -9,9 +9,25 @@ pub use math::V2;
 /// Fixed simulation step in seconds.
 pub const STEP: f32 = 1.0 / 120.0;
 
+/// How the motor turns input into velocity.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum MotorModel {
+    /// Velocity chases the target at bounded rates (accel / decel / reverse_brake).
+    Linear,
+    /// Push plus speed-scaled drag (reimagined from Overgrowth's ground movement): input pushes the body at
+    /// `drag_accel`, drag bleeds momentum so terminal speed is exactly the target; coasting decays by
+    /// `coast_half_life`. Fast starts that ease into top speed, momentum that carries, natural plant-and-turn.
+    Drag,
+}
+
 /// Starting hypotheses from GDD v5.1 section 4 until measured (same values as the Unity `Tuning`).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tuning {
+    pub model: MotorModel,
+    /// Drag model: push (m/s^2) toward the input.
+    pub drag_accel: f32,
+    /// Drag model: seconds for speed to halve with no input.
+    pub coast_half_life: f32,
     pub body_radius: f32,
     pub walk_speed: f32,
     pub run_speed: f32,
@@ -29,6 +45,9 @@ pub struct Tuning {
 impl Default for Tuning {
     fn default() -> Self {
         Self {
+            model: MotorModel::Drag,
+            drag_accel: 30.0,
+            coast_half_life: 0.15,
             body_radius: 0.30,
             walk_speed: 2.1,
             run_speed: 4.0,
@@ -106,26 +125,42 @@ impl World {
         let lock = self.fighters[i].lock_target.filter(|&j| j != i && j < self.fighters.len()).map(|j| self.fighters[j].position);
         let max_turn = t.turn_rate * STEP;
         let (accel, decel, reverse) = (t.accel, t.decel, t.reverse_brake);
+        let (model, drag_accel, coast_half_life) = (t.model, t.drag_accel, t.coast_half_life);
         let f = &mut self.fighters[i];
 
-        // momentum: velocity chases the input target at a bounded rate; which rate depends on what the body is doing
         let v = f.velocity;
-        let rate = if target.length_squared() < 1e-8 {
-            decel
-        } else if v.dot(target) < 0.0 {
-            reverse
-        } else if target.length() >= v.length() {
-            accel
-        } else {
-            decel
+        let next = match model {
+            // momentum: velocity chases the input target at a bounded rate; which rate depends on what the body is doing
+            MotorModel::Linear => {
+                let rate = if target.length_squared() < 1e-8 {
+                    decel
+                } else if v.dot(target) < 0.0 {
+                    reverse
+                } else if target.length() >= v.length() {
+                    accel
+                } else {
+                    decel
+                };
+                let mut dv = target - v;
+                let max = rate * STEP;
+                if dv.length() > max {
+                    dv = dv.normalized() * max;
+                }
+                v + dv
+            }
+            // push, then drag chosen so the steady state of v' = (v + a dt m) * d is exactly speed * m
+            MotorModel::Drag => {
+                if m.length_squared() > 1e-8 {
+                    let push = drag_accel * STEP;
+                    (v + m * push) * (speed / (speed + push))
+                } else {
+                    v * 0.5f32.powf(STEP / coast_half_life.max(1e-3))
+                }
+            }
         };
-        let mut dv = target - v;
-        let max = rate * STEP;
-        if dv.length() > max {
-            dv = dv.normalized() * max;
-        }
-        f.velocity = v + dv;
-        f.accel = dv / STEP;
+        // a coasting body comes to rest instead of creeping forever
+        f.velocity = if m.length_squared() <= 1e-8 && next.length_squared() < 1e-6 { V2::ZERO } else { next };
+        f.accel = (f.velocity - v) / STEP;
         f.position = f.position + f.velocity * STEP;
 
         if let Some(target) = lock {

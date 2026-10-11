@@ -115,6 +115,7 @@ fn state_json(sim: &Sim) -> Value {
             "walk_speed": t.walk_speed, "run_speed": t.run_speed, "turn_rate": t.turn_rate,
             "body_radius": t.body_radius, "arena_half_size": t.arena_half_size,
             "accel": t.accel, "decel": t.decel, "reverse_brake": t.reverse_brake,
+            "model": format!("{:?}", t.model).to_lowercase(), "drag_accel": t.drag_accel, "coast_half_life": t.coast_half_life,
         },
     })
 }
@@ -184,6 +185,12 @@ fn gb_tuning(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     if p.get("defaults").and_then(Value::as_bool) == Some(true) {
         *t = gs::Tuning::default();
     }
+    match p.get("model").and_then(Value::as_str) {
+        Some("drag") => t.model = gs::MotorModel::Drag,
+        Some("linear") => t.model = gs::MotorModel::Linear,
+        Some(_) => return Err(bad("model must be drag or linear")),
+        None => {}
+    }
     for (key, field) in [
         ("walk_speed", &mut t.walk_speed),
         ("run_speed", &mut t.run_speed),
@@ -193,6 +200,8 @@ fn gb_tuning(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
         ("accel", &mut t.accel),
         ("decel", &mut t.decel),
         ("reverse_brake", &mut t.reverse_brake),
+        ("drag_accel", &mut t.drag_accel),
+        ("coast_half_life", &mut t.coast_half_life),
     ] {
         if let Some(v) = f32_of(&p, key) {
             *field = v;

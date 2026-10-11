@@ -8,7 +8,7 @@ python -I Tools/gb.py step [N]                   step N ticks (pauses first)
 python -I Tools/gb.py speed X
 python -I Tools/gb.py opponent idle|chase
 python -I Tools/gb.py input FIGHTER X Z [TICKS] [run]   hold a move intent for TICKS sim ticks
-python -I Tools/gb.py tuning KEY=VAL ...         e.g. walk_speed=2.4 (or defaults=1)
+python -I Tools/gb.py tuning KEY=VAL ...         e.g. walk_speed=2.4 model=drag (or defaults=1)
 python -I Tools/gb.py clips                      animation clip names
 python -I Tools/gb.py anim CLIP [FIGHTER]        play a clip once on fighter (default 0)
 python -I Tools/gb.py library [NAME|INDEX]       list packs, or switch every fighter's model + clips
@@ -66,7 +66,12 @@ def main(argv):
         out = call("gb.input", {"fighter": fighter, "move": [x, z], "ticks": ticks, "run": "run" in args})
     elif cmd == "tuning":
         pairs = dict(a.split("=", 1) for a in args)
-        params = {k: float(v) for k, v in pairs.items() if k != "defaults"}
+        def num(v):
+            try:
+                return float(v)
+            except ValueError:
+                return v
+        params = {k: num(v) for k, v in pairs.items() if k != "defaults"}
         if "defaults" in pairs:
             params["defaults"] = pairs["defaults"] not in ("0", "false")
         out = call("gb.tuning", params)

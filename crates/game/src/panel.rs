@@ -165,7 +165,19 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.label("arena half m");
         ui.add(egui::DragValue::new(&mut t.arena_half_size).speed(0.1).range(2.0..=20.0));
         ui.end_row();
-        ui.label("accel m/s2");
+        ui.label("motor");
+        ui.horizontal(|ui| {
+            ui.radio_value(&mut t.model, guildbound_sim::MotorModel::Drag, "drag (Overgrowth-style)");
+            ui.radio_value(&mut t.model, guildbound_sim::MotorModel::Linear, "linear");
+        });
+        ui.end_row();
+        ui.label("drag push m/s2");
+        ui.add(egui::DragValue::new(&mut t.drag_accel).speed(0.5).range(2.0..=150.0));
+        ui.end_row();
+        ui.label("coast half-life s");
+        ui.add(egui::DragValue::new(&mut t.coast_half_life).speed(0.005).range(0.02..=2.0));
+        ui.end_row();
+        ui.label("linear accel m/s2");
         ui.add(egui::DragValue::new(&mut t.accel).speed(0.2).range(1.0..=80.0));
         ui.end_row();
         ui.label("decel (slide) m/s2");
@@ -239,6 +251,7 @@ fn anim_section(
     ui.add(egui::Slider::new(&mut anim.run_reference_speed, 1.0..=8.0).text("run clip m/s at 1x"));
     ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
     ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean rad per m/s2"));
+    ui.add(egui::Slider::new(&mut anim.lean_per_speed, 0.0..=0.06).text("lean rad per m/s (run lean)"));
 }
 
 fn link_section(ui: &mut egui::Ui, remote: &RemoteActivity, now: f64) {

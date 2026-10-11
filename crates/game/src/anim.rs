@@ -106,8 +106,9 @@ pub struct AnimSettings {
     pub stance_idle: String,
     /// true: inertialize (start the new clip, ease out the pose offset from the last frame). false: crossfade.
     pub inertialize: bool,
-    /// Body lean (rad) per m/s^2 of acceleration, and its limit.
+    /// Body lean (rad) per m/s^2 of acceleration, per m/s of speed (lean into a run), and its limit.
     pub lean_per_accel: f32,
+    pub lean_per_speed: f32,
     pub lean_max: f32,
 }
 
@@ -120,6 +121,7 @@ impl Default for AnimSettings {
             stance_idle: "idle_Tiramis".into(),
             inertialize: true,
             lean_per_accel: 0.018,
+            lean_per_speed: 0.02,
             lean_max: 0.22,
         }
     }
@@ -465,10 +467,12 @@ pub fn lean(time: Res<Time>, settings: Res<AnimSettings>, sim: Res<Sim>, mut rig
     let omega = 12.0;
     for (mut rig, mut t) in &mut rigs {
         let Some(f) = sim.world.fighters.get(rig.fighter) else { continue };
-        let forward = f.accel.dot(f.facing);
-        let right = f.accel.dot(guildbound_sim::V2::new(-f.facing.z, f.facing.x));
+        // lean = speed term (into the run) + acceleration term (weight shift on starts, stops and turns)
+        let right_axis = guildbound_sim::V2::new(-f.facing.z, f.facing.x);
+        let forward = f.accel.dot(f.facing) * settings.lean_per_accel + f.velocity.dot(f.facing) * settings.lean_per_speed;
+        let right = f.accel.dot(right_axis) * settings.lean_per_accel + f.velocity.dot(right_axis) * settings.lean_per_speed;
         let max = settings.lean_max;
-        let target = Vec2::new((-forward * settings.lean_per_accel).clamp(-max, max), (-right * settings.lean_per_accel).clamp(-max, max));
+        let target = Vec2::new((-forward).clamp(-max, max), (-right).clamp(-max, max));
         let a = omega * omega * (target - rig.lean) - 2.0 * omega * rig.lean_vel;
         rig.lean_vel += a * dt;
         let v = rig.lean_vel;
