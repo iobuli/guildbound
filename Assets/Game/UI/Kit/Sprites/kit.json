@@ -1,0 +1,746 @@
+{
+ "scale": 2,
+ "pixels_per_unit": 200,
+ "reference_resolution": [
+  1920,
+  1080
+ ],
+ "palette": {
+  "plate": "#0B1A3A",
+  "edge": "#5FD7FF",
+  "text": "#EAF6FF",
+  "warn": "#FFB347",
+  "critical": "#FF4A5A"
+ },
+ "plate_alpha_min": 0.7,
+ "sprites": {
+  "panel_frame": {
+   "file": "panel_frame.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    34,
+    34,
+    34,
+    34
+   ],
+   "border_tex_px_LBRT": [
+    68,
+    68,
+    68,
+    68
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "glass plate; content safe inset 14 px"
+  },
+  "panel_frame_plain": {
+   "file": "panel_frame_plain.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    20,
+    20,
+    20,
+    20
+   ],
+   "border_tex_px_LBRT": [
+    40,
+    40,
+    40,
+    40
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "glass plate; content safe inset 14 px"
+  },
+  "card_frame": {
+   "file": "card_frame.png",
+   "ref_size": [
+    96,
+    128
+   ],
+   "tex_size": [
+    192,
+    256
+   ],
+   "border_ref_px_LBRT": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "border_tex_px_LBRT": [
+    64,
+    64,
+    64,
+    64
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "glass plate; content safe inset 14 px"
+  },
+  "modal_frame": {
+   "file": "modal_frame.png",
+   "ref_size": [
+    128,
+    128
+   ],
+   "tex_size": [
+    256,
+    256
+   ],
+   "border_ref_px_LBRT": [
+    38,
+    38,
+    38,
+    38
+   ],
+   "border_tex_px_LBRT": [
+    76,
+    76,
+    76,
+    76
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "glass plate; content safe inset 14 px"
+  },
+  "header_bar": {
+   "file": "header_bar.png",
+   "ref_size": [
+    128,
+    40
+   ],
+   "tex_size": [
+    256,
+    80
+   ],
+   "border_ref_px_LBRT": [
+    30,
+    8,
+    14,
+    8
+   ],
+   "border_tex_px_LBRT": [
+    60,
+    16,
+    28,
+    16
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "title strip; text starts at x=34"
+  },
+  "bar_frame": {
+   "file": "bar_frame.png",
+   "ref_size": [
+    64,
+    24
+   ],
+   "tex_size": [
+    128,
+    48
+   ],
+   "border_ref_px_LBRT": [
+    10,
+    8,
+    10,
+    8
+   ],
+   "border_tex_px_LBRT": [
+    20,
+    16,
+    20,
+    16
+   ],
+   "image_type": "Sliced",
+   "layer": "L2",
+   "note": "meter slot; fill inset 4 px"
+  },
+  "fill_mask": {
+   "file": "fill_mask.png",
+   "ref_size": [
+    64,
+    16
+   ],
+   "tex_size": [
+    128,
+    32
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Filled",
+   "layer": "L2",
+   "note": "white; tint in code; fillMethod Horizontal"
+  },
+  "button_frame": {
+   "file": "button_frame.png",
+   "ref_size": [
+    160,
+    44
+   ],
+   "tex_size": [
+    320,
+    88
+   ],
+   "border_ref_px_LBRT": [
+    24,
+    16,
+    24,
+    16
+   ],
+   "border_tex_px_LBRT": [
+    48,
+    32,
+    48,
+    32
+   ],
+   "image_type": "Sliced",
+   "layer": "L7",
+   "note": "uGUI Button; label centred"
+  },
+  "button_frame_active": {
+   "file": "button_frame_active.png",
+   "ref_size": [
+    160,
+    44
+   ],
+   "tex_size": [
+    320,
+    88
+   ],
+   "border_ref_px_LBRT": [
+    24,
+    16,
+    24,
+    16
+   ],
+   "border_tex_px_LBRT": [
+    48,
+    32,
+    48,
+    32
+   ],
+   "image_type": "Sliced",
+   "layer": "L7",
+   "note": "uGUI Button; label centred"
+  },
+  "tab_idle": {
+   "file": "tab_idle.png",
+   "ref_size": [
+    120,
+    36
+   ],
+   "tex_size": [
+    240,
+    72
+   ],
+   "border_ref_px_LBRT": [
+    14,
+    12,
+    14,
+    12
+   ],
+   "border_tex_px_LBRT": [
+    28,
+    24,
+    28,
+    24
+   ],
+   "image_type": "Sliced",
+   "layer": "L7",
+   "note": "tab; Toggle in a ToggleGroup"
+  },
+  "tab_active": {
+   "file": "tab_active.png",
+   "ref_size": [
+    120,
+    36
+   ],
+   "tex_size": [
+    240,
+    72
+   ],
+   "border_ref_px_LBRT": [
+    14,
+    12,
+    14,
+    12
+   ],
+   "border_tex_px_LBRT": [
+    28,
+    24,
+    28,
+    24
+   ],
+   "image_type": "Sliced",
+   "layer": "L7",
+   "note": "tab; Toggle in a ToggleGroup"
+  },
+  "slider_track": {
+   "file": "slider_track.png",
+   "ref_size": [
+    96,
+    12
+   ],
+   "tex_size": [
+    192,
+    24
+   ],
+   "border_ref_px_LBRT": [
+    6,
+    5,
+    6,
+    5
+   ],
+   "border_tex_px_LBRT": [
+    12,
+    10,
+    12,
+    10
+   ],
+   "image_type": "Sliced",
+   "layer": "L7",
+   "note": "Slider background; fill = fill_mask tinted"
+  },
+  "slider_knob": {
+   "file": "slider_knob.png",
+   "ref_size": [
+    28,
+    28
+   ],
+   "tex_size": [
+    56,
+    56
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L7",
+   "note": "Slider handle"
+  },
+  "toggle_track": {
+   "file": "toggle_track.png",
+   "ref_size": [
+    64,
+    28
+   ],
+   "tex_size": [
+    128,
+    56
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L7",
+   "note": "switch background; knob slides in code"
+  },
+  "toggle_knob": {
+   "file": "toggle_knob.png",
+   "ref_size": [
+    22,
+    22
+   ],
+   "tex_size": [
+    44,
+    44
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Filled",
+   "layer": "L7",
+   "note": "white; tint in code"
+  },
+  "checkbox_frame": {
+   "file": "checkbox_frame.png",
+   "ref_size": [
+    28,
+    28
+   ],
+   "tex_size": [
+    56,
+    56
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L7",
+   "note": "Toggle background"
+  },
+  "checkbox_mark": {
+   "file": "checkbox_mark.png",
+   "ref_size": [
+    28,
+    28
+   ],
+   "tex_size": [
+    56,
+    56
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L7",
+   "note": "Toggle graphic"
+  },
+  "icon_slot_diamond": {
+   "file": "icon_slot_diamond.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L1",
+   "note": "icon centred, 64 px"
+  },
+  "icon_slot_circle": {
+   "file": "icon_slot_circle.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L1",
+   "note": "icon centred, 64 px"
+  },
+  "portrait_slot": {
+   "file": "portrait_slot.png",
+   "ref_size": [
+    128,
+    128
+   ],
+   "tex_size": [
+    256,
+    256
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L1",
+   "note": "icon centred, 85 px"
+  },
+  "ring_mask": {
+   "file": "ring_mask.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Filled",
+   "layer": "L2",
+   "note": "fillMethod Radial360; tint in code"
+  },
+  "disc_mask": {
+   "file": "disc_mask.png",
+   "ref_size": [
+    96,
+    96
+   ],
+   "tex_size": [
+    192,
+    192
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Filled",
+   "layer": "L2",
+   "note": "white; tint in code"
+  },
+  "divider": {
+   "file": "divider.png",
+   "ref_size": [
+    96,
+    12
+   ],
+   "tex_size": [
+    192,
+    24
+   ],
+   "border_ref_px_LBRT": [
+    26,
+    0,
+    26,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    52,
+    0,
+    52,
+    0
+   ],
+   "image_type": "Sliced",
+   "layer": "L1",
+   "note": "horizontal rule"
+  },
+  "ornament_diamond": {
+   "file": "ornament_diamond.png",
+   "ref_size": [
+    24,
+    24
+   ],
+   "tex_size": [
+    48,
+    48
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L1",
+   "note": "centred on frame edges (cards, headers)"
+  },
+  "glow_blob": {
+   "file": "glow_blob.png",
+   "ref_size": [
+    128,
+    128
+   ],
+   "tex_size": [
+    256,
+    256
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L0",
+   "note": "glow; tint/alpha in code"
+  },
+  "vignette": {
+   "file": "vignette.png",
+   "ref_size": [
+    256,
+    256
+   ],
+   "tex_size": [
+    512,
+    512
+   ],
+   "border_ref_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "border_tex_px_LBRT": [
+    0,
+    0,
+    0,
+    0
+   ],
+   "image_type": "Simple",
+   "layer": "L0",
+   "note": "stretch full screen"
+  },
+  "toast_frame": {
+   "file": "toast_frame.png",
+   "ref_size": [
+    96,
+    64
+   ],
+   "tex_size": [
+    192,
+    128
+   ],
+   "border_ref_px_LBRT": [
+    16,
+    16,
+    16,
+    16
+   ],
+   "border_tex_px_LBRT": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "image_type": "Sliced",
+   "layer": "L6",
+   "note": "alert / toast / prompt"
+  },
+  "keycap_frame": {
+   "file": "keycap_frame.png",
+   "ref_size": [
+    36,
+    36
+   ],
+   "tex_size": [
+    72,
+    72
+   ],
+   "border_ref_px_LBRT": [
+    10,
+    10,
+    10,
+    10
+   ],
+   "border_tex_px_LBRT": [
+    20,
+    20,
+    20,
+    20
+   ],
+   "image_type": "Sliced",
+   "layer": "L5",
+   "note": "input glyph background; key text in TMP"
+  }
+ }
+}

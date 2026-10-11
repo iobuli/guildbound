@@ -1,0 +1,4 @@
+Boss-supplied (Grok) cut-outs from Documentation/concepts/hud/HUD/segments, approved by the boss 2026-10-11 ("all the icons and stuff is good").
+fire_locked=diamond-20 fire_ready=diamond-13 fire_charging=circular-3 fire_release=diamond-15 fire_cooldown=circular-1 fire_interrupted=diamond-11
+Placeholders at native 65-71 px with binary alpha; Codex replaces with 256 px soft-alpha versions, same file names.
+wallet_coin=gold-coin-pile-1 trust_crystal=diamond-8
