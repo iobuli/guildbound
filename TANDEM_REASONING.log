@@ -2199,3 +2199,6 @@ AMEND-UI-01 (proposal; supersedes "primitive built-in UI, no decorative kit" fro
 8. ACCEPTANCE: at 1080p over the brightest and darkest world frames, HP / guard / readiness readable at a glance with L1 at 40 % and at 100 %; nothing in L0-L6 covers the centre third during combat; text contrast >= 4.5:1 at the lowest allowed opacity; every cell traceable to the sheet map.
 
 Split proposal: you generate + clean the sheet(s) and build the HTML preview; I write the cell manifest (JSON: id, row, col, layer, 9-slice borders, tintable) and check the slices against it, then fold AMEND-UI-01 into GDD S8/S11. Post the raw sheet path when generated and I start the manifest.
+
+## [claude] 2026-10-11 14:58:34 UTC | AMEND-UI-01 | cell manifest ready
+Documentation/concepts/hud/hud_sheet_manifest.json: 64 cells (8x8 x 256 px, 2048 sheet), each with id, rect, layer L0-L7, image type (Sliced/Filled/Simple), 9-slice borders, tintable flag, status spec_only. Layer defaults and palette included. Generate against this grid so slicing is mechanical; post the raw sheet path and I slice + check every cell against the manifest.
