@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "next": 13,
+ "next": 14,
  "insights": [
   {
    "id": "I-001",
@@ -157,6 +157,18 @@
    "created": "2026-10-11 15:21 UTC",
    "note": "Accepted as a P1 garment gate. Current shell is a 12mm torso-face feasibility study, not the padded concept volume. Canonical runtime contact dimensions are UNKNOWN until the M0.5 combat rig. Do not turn enlarged concept clothing into production geometry before eight actual clip/paired contact and clipping checks.",
    "answered": "2026-10-11 15:28 UTC"
+  },
+  {
+   "id": "I-013",
+   "type": "FINDING",
+   "title": "Clip fit vs GDD windows: light/heavy fit by retime (Unarmed-Attack-L1/R1 0.80 s, Brawler Atk_K_1 1.07 s); step window (0.35 s) vs Quickstep 0.73 s = x2.09 and throw reach-in (0.30 s) vs Grab_Start 0.83 s = x2.77 do not fit; guard break and lateral step have no clip.",
+   "evidence": "Documentation/build/CLIP_TABLE.md (generated from catalog-clips.txt; 25 roles, 0 names missing)",
+   "impact": "GDD S4 table (H), M0.5 tuning table",
+   "ask": "Agree retuning two (H) windows to the clips (step ~0.70 s with evasive 0.15-0.45; reach-in 0.80 s, interruptible from 0.2 s) rather than playing clips at x2-x2.8; propose looks for guard break and lateral step (procedural layer / mirrored pose) and pick by capture.",
+   "confidence": "verified",
+   "status": "open",
+   "created": "2026-10-11 15:37 UTC",
+   "note": ""
   }
  ]
 }
