@@ -117,9 +117,73 @@ READY for P2 R1 (promise + loop). Proposed start: the timestamp of your next ent
 
 NEXT: codex confirms amendments 1-2 and posts research readiness (its P1 findings: blog categories, ArtStation, art/motion/space readability) with the R1 start timestamp.
 
+## [codex] 2026-10-11 12:58:00 UTC - R1 start and protocol confirmation
+
+Read P1.claude and P1.ack in full. My P1 findings are the preceding 12:57 UTC entry, including the blog topic coverage, unavailable ArtStation page, current contact-sheet findings and asset gaps. Agree with the small/dense canvas; novel play should come from consequences and spatial choice, not assumed new art. Your audio and creature audit strengthens that constraint. No inherited feature list becomes mandatory simply because it appears in the old documentation.
+
+Accept 120-second rounds and SEALED/REVEAL. R1 starts 2026-10-11 12:58:00 UTC; reveal deadline 13:00:00 UTC (14:00 London). Both finalize their proposal privately and post its SHA-256 before reveal. Reveal after both seals and the timed window. If one seal is absent at the deadline, the other may reveal its own proposal, but the round remains incomplete until the other real contribution arrives. Hashes verify that revealed text matches the commitment; they do not by themselves prove the participant never accessed other material. Use UTC with seconds for all round clocks to avoid ambiguity.
+
+Higgsfield: acknowledge your reported CLI/skills installation. No rollback or repeat install. I will not run generation/authentication during design; authentication can remain a later build dependency, and does not block the GDD. No new production art source is assumed. No additional boss clarification is needed to continue this design loop.
+
+Initialization correction: I created the log after an earlier inventory showed it absent; your simultaneous P0 creation was overwritten. I acknowledge the collision. From here, use append-only entries and reread before every append; preserve both participants' entries. Your P0 reportedly survives in git; no history changes from me.
+
+Round 1 deliverable: one player promise derived from choice/risk/reward; one complete 10-15 minute proposed session from start through success/failure and return; the differentiating consequence of a player's decision; asset fit and weakest assumption; one alternative; two falsifiable playtest gates. Proposals remain hypotheses for joint review, not boss-approved features.
+
 ## [claude] 2026-10-11 12:58 UTC | P2.R1 | timer confirmed, ArtStation result, R1 START + SEALED
 ARTSTATION: tried direct fetch (HTTP 403 Forbidden) and exact-ID web search (no match). Contents UNKNOWN for both of us. Recorded honestly; the GDD does not depend on it. Boss: if you can paste the artwork title/artist or a screenshot, we fold its technique notes in later.
 AUDIO/UI GAP CHECK (your ask): zero audio files in any installed pack (verified by file scan). UI: no UI kit pack installed; uGUI/UI Toolkit built-ins only + our Codex concept sheets are NOT allowed under this pass (old material). So UI art is also a gap the GDD must source (store module) or design as primitive shapes.
 TIMER: confirmed. R1 (promise + loop) STARTS NOW at 12:58:41 UTC, window 120 s, ends at reveal of both.
 SEALED sha256=65cb8758961b522d53bceb511bcc31b7ab5d7c25c3fac1fd10ddbfa3bdc86393
 NEXT: codex posts its SEALED hash; when both seals exist, both post REVEAL (text must hash to the seal).
+
+## [codex] 2026-10-11 13:03:10 UTC - R1 SEALED and boss's live viewer
+
+SEALED sha256=d910d76dcb20eed61f6dd3e02974d6e0b7be57a466b5f6b37844a14c9a5f0144
+
+The hash covers the exact UTF-8 proposal text, LF newlines, with no final newline. Codex has not read a Claude R1 reveal. Timing exception: the boss steered the turn to open a separate live terminal viewer, and my seal was posted after the agreed deadline. Do not claim an exact 120-second Codex preparation window was achieved; the independent text commitment is still available for verification. If strict timing is required for the audit, repeat the timed opening before final synthesis.
+
+Boss viewing request completed: opened a separate PowerShell viewer for TANDEM_REASONING.log, process ID 448, and verified that process remains running. It prints public proposals, evidence, assumptions, critiques, revisions and evaluations as entries arrive. No private internal thought transcripts are included. The viewer reads the log and does not modify source directories or create a helper file.
+
+NEXT: both seals now exist; reveal the exact proposal text, then steel-man the other real proposal. Preserve the original independent positions rather than retrospectively editing them.
+
+## [claude] 2026-10-11 13:03:43 UTC | P2.R1 | REVEAL (sha256=65cb8758961b522d53bceb511bcc31b7ab5d7c25c3fac1fd10ddbfa3bdc86393; hash covers the exact file bytes: LF newlines, final newline included)
+```
+R1 CLAUDE PROPOSAL - player promise + core loop (from primitives, sized to the installed canvas)
+
+PROMISE (one line): "Read the body, answer the body: every fight is a fast exchange of height, timing and element, and every win visibly rebuilds the town you defend."
+
+WHY THIS AND NOT SOMETHING BIGGER: our richest asset is humanoid motion (strikes with head/body/low reactions, blocks per height, throws, charged casts, town-life routines). We own one village, one tavern interior, painterly trees and element VFX. We own no creatures and no audio. The promise lives where the assets are dense: close quarters, people, one settlement that grows.
+
+CORE LOOP (5-15 min):
+1. Guild board in the tavern: pick a contract (each names a site, an opponent group, a reward and a town need it serves).
+2. Travel a short road from the village to one of 4 nearby sites (camp, ruined mill, crossroads shrine, quarry).
+3. Fight humanoid opponents in readable duels and small skirmishes (max 3 at once).
+4. Return with proof + materials. Spend on (a) your kit (b) a town project.
+5. The town changes on screen: a stall reopens, a house is rebuilt, new NPC routines appear, new contracts unlock.
+
+SESSION LOOP (hours): guild rank (who trusts you) x town tier (what exists) x personal mastery (what your body and element can do). Three independent progress bars that feed each other but never replace each other.
+
+COMBAT CORE (the primitive):
+- HEIGHT GAME: every strike has a height (high / mid / low). Guard is held at a height. Matching height = block (block reaction clip); wrong height = hit (damage reaction at that height). Assets already pair hd/bd/ld damage with hb/bb/lb block.
+- TRIANGLE: strike beats throw-attempt (interrupts), throw beats guard (guard break, paired throw clip), guard beats strike. Three verbs, one readable rule.
+- MOMENTUM -> ELEMENT: landed strikes and perfect guards fill an element charge. Casts spend it: tap = quick bolt, hold = charged shot, overfill = area burst. Magic is the reward for reading melee well, not a separate mode. The player carries ONE element at a time (fire or storm), swapped at the guild, which changes cast behaviour (fire = homing, slow, big; storm = fast, straight, chains).
+- Reads before numbers: tells (wind-up pose), height shown by limb + a subtle trail colour, no damage numbers needed to understand an exchange.
+
+WORLD FRAME THAT TURNS GAPS INTO LORE: opponents are all people because the threat is people: deserters, rival crews, and the "Overrun" - townsfolk who absorbed raw element and fight with its aura (same rigs, element VFX aura, different behaviour). No creature assets required.
+
+FAILURE / RECOVERY: losing a fight = carried back to the tavern; you lose the contract and part of the carried materials, never rank, kit or town progress. A town project can stall but never regress.
+
+AUDIENCE: single-player progression + self-expression (element choice, kit, which town projects first).
+
+SCOPE FIT: one village (RPGPP pieces, tiered states), one guild tavern (modular interior), 4 sites built from the same kit + trees/rocks. All motion from installed clips after a twist (re-time, re-target, mix).
+
+ALTERNATIVES REJECTED: open world (canvas too small), party control (input and UI complexity, no party clips), turn-based (all motion is real-time), weapon-heavy classes (unarmed + casting is where clip density is; one weapon style can come later).
+
+ASSUMPTIONS / UNKNOWN: an audio source must be added (store module or generated); hero model to be made; LTS target 6000.3 pending boss.
+```
+ADDENDUM (written AFTER sealing, not part of the hash; answers your deliverable list):
+- Weakest assumption: that the three-height guard is readable in third person at combat speed without numbers. If players cannot tell high/mid/low within ~0.3 s of the tell, the whole combat core collapses into button-guessing.
+- Playtest gate 1: in 20 duels by first-time players, >= 70% of correctly-blocked strikes are blocked at the matching height on purpose (they can say which height afterwards).
+- Playtest gate 2: after 3 contracts, >= 4 of 5 players can name one town change their choice caused and say why they picked that project first.
+- Differentiating consequence: which town project you fund first changes which contracts appear next (and which NPC routines exist), so two players have different second hours.
+NEXT: codex REVEAL; then each writes the steel-man of the other.
