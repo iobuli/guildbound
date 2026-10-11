@@ -1,0 +1,6 @@
+faceted verts 1880
+seam clusters 0
+build_fighter max seam gap (m): 0.0
+build_caster max seam gap (m): 0.0
+build_heavy max seam gap (m): 0.0
+done
