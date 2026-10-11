@@ -4,8 +4,8 @@
 - **Design of record:** MASTER GDD v5.1 = the latest `BEGIN_MASTER_GDD` block in `TANDEM_REASONING.log` (repo root). Team log, roles and decisions live there too (Claude = rules code, verification, commits; Codex = art, animation, world, HUD presentation; boss = direction). `Documentation/MASTER.md` is older background.
 - **Stack (M0 done):** Unity 6.3 LTS 6000.3.26f1, URP 17.3.0, Input System 1.20.1, Animation Rigging 1.4.1, Cinemachine 3.1.7, Test Framework 1.6.0, MCP for Unity v10.3.0, Aura for Unity plugin (free trial). Branch `build/m0`. Open the editor with `Tools/open_unity.ps1` (starts the MCP bridge).
 - **Built:** layered HUD (`Assets/Game/UI/Kit`, `Guildbound/UI/Build HUD`), interfaces (`Assets/Game/Contracts/Interfaces`: IHudModel, ICombatPresentation, IInventoryModel), FxRepair (Magic Arsenal fire repaired with owned Hovl textures; no magenta), AvatarRepair, clip table (`Documentation/build/CLIP_TABLE.md`), Codex art tools/palette/panel kit.
-- **In progress (M0.5):** owned collision motor + combat rules + fixtures in `Assets/Game/Motor`, `Assets/Game/Combat`, `Assets/Game/Tests` (Claude); animation driver + support layer (Codex).
-- **Legacy, do not run:** `Assets/Game/Scripts/Game.cs`, `Fighter.cs` and `Assets/Game/Editor/Build.cs` (`Guildbound/Build Scene`) are an earlier prototype of unknown ownership kept for reference only. Do not generate `Main.unity` from them; M0.5 work happens in `Assets/Game/Scenes/Sparring.unity`.
+- **In progress (M0.5):** owned collision motor + combat rules + fixtures in `Assets/Game/Combat` and `Assets/Game/Tests` (Claude; being created now); animation driver + support layer (Codex).
+- **Legacy, do not run:** `Assets/Game/Scripts/Game.cs`, `Fighter.cs` and `Assets/Game/Editor/Build.cs` (`Guildbound/Build Scene`) are an earlier prototype of unknown ownership kept for reference only. Do not generate `Main.unity` from them; M0.5 play work will happen in `Assets/Game/Scenes/Sparring.unity` (not created yet).
 
 ## Older state notes (2026-10-11 morning, partly stale)
 - **Project:** a fresh Unity 6000.5.1f1 project with one blank scene, `Assets/Game/Scenes/Main.unity`. Our code lives under `Assets/Game` (namespace `Guildbound`).
@@ -41,11 +41,12 @@ Product ids for this project: 276931 305932 45047 36286 76699 326043 28345 28365
 - **Characters:** the Explosive characters are blocky demo mannequins. The smoothest rigs are MoCapCentral `rig_MCUnity` and the FightingMotions Blue/RedGuy. The boss decides the hero model; all clips are Humanoid, so any of them can play everything.
 - **Hovl effects:** some sample tiny at 0.8 s. They play correctly in game, but check scale per effect.
 
-## Next (first playable, in order)
-1. **`Build.cs` scene generator:** a town clearing from the RPGPP terrain tiles and buildings, Anime trees, the tavern-built guild hall, lighting and post.
-2. **Player:** a rig with a CharacterController motor and a root-motion 8-way run/strafe tree; a Cinemachine orbit/lock-on camera.
-3. **Combat:** the strike table from FightingMotions with baked reach and impact (port the strike-warp and bake ideas from the archive). Reactions by height and direction; guard/parry/throw.
-4. **Magic:** Kevin Iglesias load/cast states plus Magic Arsenal effects implementing D18.
-5. **Opponent and contracts:** sparring AI, guild board contracts, shop, crafting, save.
+## Next (current plan: GDD v5.1 milestones; the older list below the line is superseded)
+1. **M0.5 combat spike (Claude):** deterministic fixed-step combat core in `Assets/Game/Combat` (asmdef `Guildbound.Combat`): owned motor (sole mover), action states, swept contact + one outcome per target/action, guard capacity/break, step, throw, plain/charged cast, recover; EditMode fixtures in `Assets/Game/Tests` run at 30/60/120 fps.
+2. **M0.5 presentation (Codex):** animation driver on ICombatPresentation, fixed-length support/contact layer, HUD inventory page, fire visuals from owned packs.
+3. **Sparring floor:** `Assets/Game/Scenes/Sparring.unity` (Aura may create it when the boss says go).
+4. **M1 greybox gold path** after the M0.5 gates (GDD section 11).
+
+Superseded (morning plan, do not follow): Build.cs scene generator, CharacterController + root-motion player, strike bake/warp, old D18 magic, shop/crafting.
 
 Archive of the earlier attempts: `D:/New folder (4)/guildbound-unity-archive/` (code worth mining: the strike bake/warp, D18 fire, the HUD and the Fetch API notes).
