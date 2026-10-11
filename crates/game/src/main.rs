@@ -38,6 +38,7 @@ fn main() {
         .init_resource::<panel::PanelState>()
         .init_resource::<anim::AnimSettings>()
         .init_resource::<anim::AnimRequests>()
+        .init_resource::<anim::ClusterCursor>()
         .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, camera::spawn, announce))
         .add_systems(
             Update,

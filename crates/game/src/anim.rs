@@ -42,6 +42,30 @@ impl Default for AnimSettings {
     }
 }
 
+/// Combat clusters: same strike type and limb, different clips. Each press takes the next variant,
+/// so a repeated string never shows the same clip twice in a row. (cluster, limb, clips)
+pub const CLUSTERS: &[(&str, &str, &[&str])] = &[
+    ("jab", "left arm", &["hp_straight_left_A", "hp_straight_left_Tiramis"]),
+    ("cross", "right arm", &["hp_straight_right_A", "hp_straight_right_A2"]),
+    ("hook", "both arms", &["hp_hook_left_A", "bp_hook_right_A", "hp_hook_left_Tiramis", "bp_hook_right_A2"]),
+    ("uppercut", "both arms", &["hp_upper_right_A", "bp_upper_left_A", "hp_upper_right_A2", "bp_upper_left_A2"]),
+    ("roundhouse", "right leg", &["hk_rh_right_A2", "bk_rh_right_A2", "lk_rh_right_A2", "hk_rh_right_A", "lk_rh_right_Tiramis"]),
+    ("side kick", "left leg", &["hk_side_left_A2", "lk_rh_left_A2", "hk_side_left_A", "lk_rh_left_A"]),
+];
+
+/// Next variant per cluster, so combos rotate through the cluster deterministically.
+#[derive(Resource, Default)]
+pub struct ClusterCursor(pub [usize; 6]);
+
+impl ClusterCursor {
+    pub fn next(&mut self, cluster: usize) -> &'static str {
+        let clips = CLUSTERS[cluster].2;
+        let clip = clips[self.0[cluster] % clips.len()];
+        self.0[cluster] += 1;
+        clip
+    }
+}
+
 /// One-shot clip requests from the panel or the remote API: (fighter index, clip name).
 #[derive(Resource, Default)]
 pub struct AnimRequests(pub Vec<(usize, String)>);

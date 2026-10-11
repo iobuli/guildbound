@@ -177,6 +177,11 @@ fn anim_section(ui: &mut egui::Ui, lib: Option<&AnimLibrary>, anim: &mut AnimSet
         return;
     };
     ui.label(format!("{} clips", lib.clips.len()));
+    egui::CollapsingHeader::new("Combat clusters (keys rotate variants)").show(ui, |ui| {
+        for ((name, limb, clips), key) in crate::anim::CLUSTERS.iter().zip(["J", "K", "U", "I", "L", "O"]) {
+            ui.label(format!("{key} {name} ({limb}): {}", clips.join(", ")));
+        }
+    });
     ui.horizontal(|ui| {
         egui::ComboBox::from_id_salt("clip").selected_text(&state.clip).width(170.0).show_ui(ui, |ui| {
             for (name, _) in &lib.clips {

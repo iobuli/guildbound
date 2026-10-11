@@ -136,6 +136,7 @@ pub fn read_player_input(
     camera: Single<&Transform, With<OrbitCamera>>,
     mut sim: ResMut<Sim>,
     mut anims: ResMut<crate::anim::AnimRequests>,
+    mut cursor: ResMut<crate::anim::ClusterCursor>,
 ) {
     if wants.wants_any_keyboard_input() {
         sim.keyboard = gs::Intent::default();
@@ -148,13 +149,13 @@ pub fn read_player_input(
         sim.pending_steps += 1;
     }
     // presentation-only strike keys until the sim's move table lands (COMBAT_MOTION_PLAN phase 1)
+    // strike keys pick the next variant from their combat cluster (anim::CLUSTERS)
+    for (key, cluster) in [KeyCode::KeyJ, KeyCode::KeyK, KeyCode::KeyU, KeyCode::KeyI, KeyCode::KeyL, KeyCode::KeyO].into_iter().zip(0..) {
+        if keys.just_pressed(key) {
+            anims.0.push((0, cursor.next(cluster).into()));
+        }
+    }
     for (key, fighter, clip) in [
-        (KeyCode::KeyJ, 0, "hp_straight_left_A"),
-        (KeyCode::KeyK, 0, "hp_straight_right_A"),
-        (KeyCode::KeyU, 0, "hp_hook_left_A"),
-        (KeyCode::KeyI, 0, "hp_upper_right_A"),
-        (KeyCode::KeyL, 0, "hk_rh_right_A2"),
-        (KeyCode::KeyO, 0, "hk_side_left_A2"),
         (KeyCode::KeyH, 1, "hd_front_A"),
         (KeyCode::KeyN, 1, "knockdown_A2"),
         (KeyCode::KeyG, 1, "getup_A"),
