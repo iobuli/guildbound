@@ -1,6 +1,12 @@
-# Guildbound (Unity) - handoff, 2026-10-11
+# Guildbound - handoff, 2026-10-11
 
-## Current state (read first; supersedes the older notes below)
+## Current state: Bevy (read first; everything below this section is the Unity era)
+- **Engine:** Bevy (Rust), code only. Boss dropped Unity on 2026-10-11. Branch `build/bevy`. No Bevy code exists yet.
+- **Unity is archived, not lost:** commit `0adfb47`, tag `unity-final` on `build/m0` (all code, scenes, tools, checks). Ignored packs, Aura package and caches: `D:/New folder (4)/guildbound-unity-archive/bevy-move-2026-10-11/`.
+- **Read next:** `Documentation/UNITY_LESSONS.md` (what to keep, verification rules, new Bevy risks, Unity -> Bevy translation table), then `Documentation/COMBAT_MOTION_PLAN.md` (phases still valid; its Unity type names translate through the lessons table).
+- **Open tasks:** `collab/TASKS.md`.
+
+## Unity era (historical; paths below refer to tag `unity-final`)
 - **Design of record:** MASTER GDD v5.1 = the latest `BEGIN_MASTER_GDD` block in `TANDEM_REASONING.log` (repo root). Team log, roles and decisions live there too (Claude = rules code, verification, commits; Codex = art, animation, world, HUD presentation; boss = direction). `Documentation/MASTER.md` is older background.
 - **Stack (M0 done):** Unity 6.3 LTS 6000.3.26f1, URP 17.3.0, Input System 1.20.1, Animation Rigging 1.4.1, Cinemachine 3.1.7, Test Framework 1.6.0, MCP for Unity v10.3.0, Aura for Unity plugin (free trial). Branch `build/m0`. Open the editor with `Tools/open_unity.ps1` (starts the MCP bridge).
 - **Built:** layered HUD (`Assets/Game/UI/Kit`, `Guildbound/UI/Build HUD`), interfaces (`Assets/Game/Contracts/Interfaces`: IHudModel, ICombatPresentation, IInventoryModel), FxRepair (Magic Arsenal fire repaired with owned Hovl textures; no magenta), AvatarRepair, clip table (`Documentation/build/CLIP_TABLE.md`), Codex art tools/palette/panel kit.

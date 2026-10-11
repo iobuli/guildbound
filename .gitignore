@@ -1,38 +1,14 @@
+# Rust / Bevy
+/target/
+**/target/
+*.pdb
+
+# Leftover Unity cache (locked by a running MCP bridge on 2026-10-11); delete once free
 Library/
-Temp/
-Obj/
-Logs/
-Builds/
-UserSettings/
+
 .vs/
 .idea/
-*.csproj
-*.sln
-*.pidb
-*.userprefs
-# Third-party Asset Store packs: rebuild with Tools/unpack.py from Unity's cache (see Documentation/HANDOFF.md)
-Assets/Anime Trees/
-Assets/Anime Trees.meta
-Assets/Brawler Animations Sample/
-Assets/Brawler Animations Sample.meta
-Assets/ExplosiveLLC/
-Assets/ExplosiveLLC.meta
-Assets/FightingMotionsVolume1/
-Assets/FightingMotionsVolume1.meta
-Assets/Hovl Studio/
-Assets/Hovl Studio.meta
-Assets/Idle MoCap/
-Assets/Idle MoCap.meta
-Assets/Kevin Iglesias/
-Assets/Kevin Iglesias.meta
-Assets/Low Poly Tarvern Pack/
-Assets/Low Poly Tarvern Pack.meta
-Assets/Magic Pig Games (Infinity PBR)/
-Assets/Magic Pig Games (Infinity PBR).meta
-Assets/MoCapCentral/
-Assets/MoCapCentral.meta
-Assets/RPGPP_LT/
-Assets/RPGPP_LT.meta
+.vscode/
 
 # Old Godot project (zipped, local only, never commit)
 _OldGodot/
@@ -47,6 +23,4 @@ Documentation/concepts/hud/qa/slices_*/*.png
 !Documentation/concepts/hud/qa/slices_*/_canonical_2048.png
 !Documentation/concepts/hud/qa/slices_*/_canonical_preview.png
 
-# Aura for Unity local project link (account ids)
-.Aura/
 __pycache__/

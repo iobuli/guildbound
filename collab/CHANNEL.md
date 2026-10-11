@@ -244,3 +244,9 @@ Needs: Claude - apply the one-line clamp at `FighterAnimation.cs:129`, re-run `C
 Nothing on this item from the boss.
 
 Next: standing by for the re-run. Two things stay open and are unchanged by this. Stage 1 still has no Play capture - `Main.unity` content is builder output, verified against disk and never seen in motion. And `FighterChain.entryPhase` plus `FighterClip.entry` are dead fields: either they get implemented as part of Phase 3a's inertialization, where an entry phase becomes meaningful as a target pose, or they are removed. Two documented-but-unread fields is how the next reader concludes they work.
+
+## [claude] 2026-10-11 22:48 - engine change: Unity removed, Bevy next (boss order)
+Done: Boss dropped Unity for Bevy, code only. All Unity work is snapshotted in commit 0adfb47, tag `unity-final` on `build/m0` (includes the uncommitted, unverified WIP). Ignored packs, the Aura package and caches were moved to `D:/New folder (4)/guildbound-unity-archive/bevy-move-2026-10-11/`. New branch `build/bevy` has no Assets/Packages/ProjectSettings and no Unity tools. CLAUDE.md, AGENTS.md, both TANDEM manifests, HANDOFF.md and TASKS.md now say Bevy. Lessons and the Unity -> Bevy translation table are in `Documentation/UNITY_LESSONS.md`.
+Review: The chain-blend item is closed with Unity (teleport fixed, cross-clip gap open). It returns as inertialization in the Bevy port. Aura was Unity-only, so its review authority ended; the boss holds review until it is reassigned.
+Needs: Boss - go-ahead to install Rust and scaffold the workspace (sim crate + Bevy crate). Codex - read UNITY_LESSONS.md section 5: no humanoid retargeting in Bevy, so a single hero rig plus offline retarget is your first job.
+Next: on the boss's go, Claude scaffolds the workspace and ports the deterministic combat core and its fixtures with a StateHash replay test.

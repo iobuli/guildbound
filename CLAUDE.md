@@ -22,12 +22,13 @@
 ## Simple Formatting
 - No em dashes, smart quotes, or decorative Unicode symbols. Plain hyphens and straight quotes only.
 
-## Guildbound (Unity)
+## Guildbound (Bevy)
 - If the user is Joe (or says so), read JOE.md first.
-- Unity 6000.3.26f1 (6.3 LTS), URP 17.3, Input System 1.20, Animation Rigging 1.4, Cinemachine 3.1. Our code: `Assets/Game` (namespace `Guildbound`). Third-party packs are git-ignored; rebuild them per Documentation/HANDOFF.md.
-- Read Documentation/HANDOFF.md (state, asset-to-system map, next steps) and Documentation/MASTER.md (vision; sections 3-4 describe the old Godot code, the design and lessons still apply).
-- The old Godot project is zipped in `_OldGodot/` (local only, git-ignored). Reference only; never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code.
+- Engine: Bevy (Rust), code only, no editor. Unity was dropped 2026-10-11; the last Unity state is tag `unity-final` (read old files with `git show unity-final:<path>`). Branch `build/bevy`.
+- Read Documentation/UNITY_LESSONS.md first (what to keep, what bit us, Unity -> Bevy translation), then Documentation/HANDOFF.md and Documentation/MASTER.md (section 4 math is engine-independent).
+- Keep the combat sim a plain Rust crate (no Bevy types) so `cargo test` runs it headless; Bevy is presentation. Pin the Bevy version and check API names against its docs, not memory.
+- Old engines are reference only: `_OldGodot/` zip (git-ignored) and the `unity-final` tag. Never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code. Asset Store pack licences outside Unity are UNKNOWN until checked.
 - Team: the user is the boss (direction, scope, art). Codex = creative dev. Claude = logical dev (architecture, verification, tests, licensing, risk).
 - Coordinate with Codex only through collab/CHANNEL.md (append-only, `## [agent] YYYY-MM-DD HH:MM - topic`, four parts: Done / Review / Needs / Next), collab/TASKS.md (owners), collab/DECISIONS.md.
 - After posting, wait with `powershell -NoProfile -File Tools/collab_wait.ps1 -Me claude` (0 = new entry, 3 = timeout, 2 = user STOP). A direct user message always wins. Honour pauses and brainstorm-only requests.
-- Codex delivers code uncommitted; Claude verifies (compile clean, tests/smoke) and commits. Never commit asset packs, Library/, or _OldGodot/. Ask the boss before any push.
+- Codex delivers code uncommitted; Claude verifies (`cargo build`, `cargo test`, smoke) and commits. Never commit asset packs, target/, or _OldGodot/. Ask the boss before any push.
