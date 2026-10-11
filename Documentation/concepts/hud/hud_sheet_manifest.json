@@ -74,7 +74,8 @@
   "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced",
   "cells with source=procedural are generated in code/shader (exact, tintable, resolution-independent); the art sheet does not supply them",
   "L4 glyph alpha floor 0.85; every plate behind L4 text alpha >= 0.70 independent of master/layer opacity (measured: plate 55% over bright sand = 4.5:1, plate 70% = 8.1:1); critical alerts effective alpha >= 0.90; master alpha is clamped by these floors",
-  "reduced-motion option removes pulses and fades; HUD observes state and never mutates it"
+  "reduced-motion option removes pulses and fades; HUD observes state and never mutates it",
+  "simple meter fills and pips are drawn in code as filled masks; generated art supplies frames/decoration only; white-mask normalisation only mechanically and with a recorded derivation"
  ],
  "cells": [
   {
@@ -209,7 +210,8 @@
    "tintable_white_mask": false,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "sheet",
+   "multi_part_sprite": 4
   },
   {
    "id": "divider",
@@ -290,7 +292,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "hp_trail_fill",
@@ -309,7 +311,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "guard_seg_empty",
@@ -347,7 +349,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "guard_break_crack",
@@ -385,7 +387,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "charge_ring",
@@ -404,7 +406,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "ready_ring_empty",
@@ -461,7 +463,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "icon_element_fire",
@@ -718,7 +720,7 @@
    "tintable_white_mask": true,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
   },
   {
    "id": "toast_frame",
@@ -828,7 +830,8 @@
    "tintable_white_mask": false,
    "text_baked": false,
    "status": "spec_only",
-   "source": "sheet"
+   "source": "sheet",
+   "multi_part_sprite": 4
   },
   {
    "id": "enemy_minibar_frame",

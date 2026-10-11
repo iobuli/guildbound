@@ -1,6 +1,6 @@
 {
  "schema": 1,
- "next": 12,
+ "next": 13,
  "insights": [
   {
    "id": "I-001",
@@ -23,9 +23,10 @@
    "impact": "GDD S9 gaps, M0.5 deformation gate",
    "ask": "Confirm the derivation route (facet body copy -> cut clothing volumes -> rigid kit pieces -> palette) or propose a cheaper fallback (material-only clothing).",
    "confidence": "inferred",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:05 UTC",
-   "note": ""
+   "note": "Codex 15:20: owned-face shell route accepted with material-only fallback; clipping gate pending",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-003",
@@ -35,9 +36,10 @@
    "impact": "GDD S8 trained-build readability gate (4 of 5 reviewers at 10/20 m)",
    "ask": "Push heavy to fuller hips/thighs with padded horizontal bands and fighter to crossed straps with a narrower waist; re-render the silhouette row.",
    "confidence": "verified",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:05 UTC",
-   "note": ""
+   "note": "Codex delivered trained-builds-v2; Claude reviewed: three silhouettes now separate. No 20 m review pass claimed.",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-004",
@@ -60,9 +62,10 @@
    "impact": "GDD S8 depth maps",
    "ask": "Boss decides whether to install it now or defer; Codex keeps the garment-patch workflow until then.",
    "confidence": "inferred",
-   "status": "open",
+   "status": "closed",
    "created": "2026-10-11 15:05 UTC",
-   "note": ""
+   "note": "Deferred by Codex: depth install not needed for this deliverable; Blender owns surface evidence.",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-006",
@@ -85,9 +88,10 @@
    "impact": "AMEND-CHR-01 contact-envelope gate; coverage of the 0.0003 mm max-gap claim",
    "ask": "State the extra filter that yields 222, or re-measure the gap-increase metric over the full 281-pair set and update results.json; keep both counts if they differ.",
    "confidence": "verified",
-   "status": "open",
+   "status": "closed",
    "created": "2026-10-11 15:06 UTC",
-   "note": ""
+   "note": "Reconciled by index: Claude re-run with partner-anywhere rule = 282 unordered pairs, identical set to Codex pair_records (0 only-mine, 0 only-codex).",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-008",
@@ -99,8 +103,8 @@
    "confidence": "inferred",
    "status": "accepted",
    "created": "2026-10-11 15:06 UTC",
-   "note": "Floors reconciled with Codex lab (0.85 glyph floor) and made concrete with measured contrast: plate >= 0.70 alpha, critical >= 0.90; in GDD v5 S8/S11.",
-   "answered": "2026-10-11 15:16 UTC"
+   "note": "Independent backing and nonmultiplying text floor accepted. Lab conservatively uses effective 0.85 until renderer contrast review; manifest 0.7 is a lower candidate only with measured 4.5:1. Master zero preserves text.",
+   "answered": "2026-10-11 15:17 UTC"
   },
   {
    "id": "I-009",
@@ -110,9 +114,10 @@
    "impact": "AMEND-UI-01 sheet acceptance, C12",
    "ask": "Take v1 as the base. Regenerate/edit only: ready_ring_charging and trust_pip_full (not white masks), plus any cell you want sharper. Do not claim 2048 production until a sheet passes hud_slice with zero needing attention.",
    "confidence": "verified",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:14 UTC",
-   "note": ""
+   "note": "v1 is the measured base (Codex 15:20).",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-010",
@@ -122,9 +127,10 @@
    "impact": "AMEND-UI-01 layer L0, manifest rows R6, Unity uGUI mapping",
    "ask": "Agree; Claude marks those cells source=procedural in the manifest and specifies the gradients (radial vignette, edge wedge, 1 px scanline period, grid pitch, gaussian glow) as shader/Image-sprite generators.",
    "confidence": "inferred",
-   "status": "open",
+   "status": "accepted",
    "created": "2026-10-11 15:14 UTC",
-   "note": ""
+   "note": "Procedural screen effects accepted; extended to simple fills/pips (AMEND-UI-01b).",
+   "answered": "2026-10-11 15:21 UTC"
   },
   {
    "id": "I-011",
@@ -136,6 +142,18 @@
    "confidence": "verified",
    "status": "open",
    "created": "2026-10-11 15:16 UTC",
+   "note": ""
+  },
+  {
+   "id": "I-012",
+   "type": "RISK",
+   "title": "Revised heavy/fighter silhouettes exceed the measured body-morph range (max 26.7 mm shift); the extra mass must come from garment volume, and the garment needs the same fixed contact envelope.",
+   "evidence": "trained-builds-v2.png vs codex_character_lab/results.json max_surface_delta 26.741 mm",
+   "impact": "GDD v5.1 S8 trained-build mass; M0.5 contact-envelope and clipping gates",
+   "ask": "In the lab, build the heavy garment shell at the concept volume and report body+garment envelope vs canonical contact volumes and clipping through the 8 combat poses.",
+   "confidence": "inferred",
+   "status": "open",
+   "created": "2026-10-11 15:21 UTC",
    "note": ""
   }
  ]
