@@ -322,3 +322,123 @@ GATES:
 WEAKEST ASSUMPTION NOW: one enemy kit with two behaviours is enough variety for a 15-minute session. Mitigation: behaviours differ in what they punish (one turtles and must be thrown, one rushes and must be guarded), so the triangle itself makes them feel different.
 END_CLAUDE_R1B
 NEXT: codex REVEAL R1b; then I verify, compare both revisions and draft the joint R1 synthesis.
+
+
+## [codex] 2026-10-11 13:13:51 UTC - R1b revised position
+
+BEGIN_CODEX_R1B
+R1b CODEX REFINEMENT - promises that survive a small playable proof.
+
+Promise: Read a committed action, choose your response, and bring useful work home; the settlement becomes easier to move through and prepare in because it can rely on you.
+
+Adopt Claude's strongest principle: Players read moving bodies and space before numerical rewards. Use preparation, contact and recovery to make attack, block, lateral step and a compact cast understandable. Keep height-specific hit/block animations as presentation. Height selection is an experimental alternative, not a requirement for basic defense. Magic has an initial reserve so a beginner can try casting without first winning melee; a long preparation exchanges safety for reach. No guessed source-clip timings become combat truth.
+
+Core session: Choose between two recovery obligations with stated danger, payment and concrete unlock. Depart through a short route, recognize a humanoid opponent's preparation, act or withdraw, recover one declared objective and return. Deliver once to change a gate's traversability or a stall's preparation offer. Then choose the other obligation or a follow-up which uses the changed service. The first choice sets order rather than closing the other choice forever.
+
+Three linked outcomes, not three required progress bars: combat competence is mainly the player's growing understanding; guild trust grants declared contract access; town work changes a service or path. A project can wait but never regress. The first slice needs one access unlock and two service outcomes; later mastery progression must add choices, not invalidate already-learned timing.
+
+Failure: prior rewards, equipment and service states persist; the current undelivered objective resets; no reward is paid. Accepting/retrying a starter obligation is free, and no consumable is required to complete it. Abandonment and defeat both exit the current attempt cleanly. Saving cannot duplicate the objective or delivery reward.
+
+Scope and canvas: one hub, two routes, one humanoid opponent kit with two behavior patterns, two recovery contracts, two service changes, one spell behavior and primitive built-in UI. No new hero, creature, audio module or generated production content is assumed. Existing effect cleanup and custom Unity gameplay behavior are explicit post-GDD implementation tasks; the packs contribute art/motion, not working systems.
+
+What stays open: whether service changes make returning worthwhile; whether current rigs communicate the fighting promise; production sound source under strict current-download-only constraints. The GDD states these gaps and proof gates, without installing/purchasing assets to hide them.
+
+Gates: four of five new players predict their chosen service outcome and identify it after return; three of five start the next trip and explain one changed route/preparation choice. For fighting, a novice can explain a miss, block and hit from a clip with UI/effects hidden. This is a gate specification, not a claim to have performed a playtest.
+END_CODEX_R1B
+
+Committed hash: 486e6ee30f10e93455ea7d7b3411389d684c17a7da6460c4e47f50b1f158711b (UTF-8, LF, no final newline).
+
+
+## [codex] 2026-10-11 13:13:51 UTC - direct boss steering and next useful design step
+
+Boss asks us to stop the unnecessary side activity and take the logical next step; permissions now allow normal workspace tools. Continue the actual tandem GDD. No viewer, approval ceremony, repeated timer repair or extra tooling work. Keep public proposals, assumptions, critiques and revisions concise. The original R1 timing interruption remains disclosed; it does not justify repeating the process indefinitely. Complete the remaining two design rounds with real contributions from both sessions.
+
+R1 revision response: accept a readable body/space combat promise and a contract -> return -> useful service-change loop. Accept route/threat/tool as the test of meaningful settlement progress. For the first two services, use a gate shortcut and an out-of-combat preparation offer; lookout, salvage branches and smoke pots are later candidates. Basic casting is available before a melee win. Height-specific reaction clips are presentation, and three-height guard remains experimental. Keep free starter retry and non-regressing town/service states.
+
+Before R2, agree this R1 synthesis: a capable guild field member learns readable committed fights and chooses the order of work that improves a small settlement. One hub, two routes, two obligations, two service changes, one humanoid kit with two behavior patterns, one spell, primitive UI. This is the first proof slice, not the full growth design. All 12 GDD sections and the proposed ownership are agreed. Audio and final hero are explicit current-asset gaps, not assumed new purchases or generated production assets.
+
+Claude: draft the R1 synthesis and your R2 systems/world/content proposal next. I will independently write mine before reading your R2 contribution. Address how guard, throw and cast avoid a universal safe tactic; how both routes remain relevant without salvage assumptions; how later growth adds choices; how economy, failure and saving avoid softlocks/duplicates. Then exchange steel-mans, revise and proceed to R3 presentation/onboarding/gates. Keep it moving to the completed GDD in this log.
+
+
+## [codex] 2026-10-11 13:15:46 UTC - R2 independent systems/world/content proposal
+
+Written before reading a Claude R2 proposal. This is a proposed complete design structure with a small first proof slice, not an implementation or a new dependency request.
+
+1. Combat decisions: baseline move, light two-hit phrase, committed guard-pressure heavy, frontal guard, lateral step, guard-specific throw and one cast. A strike has visible preparation, active contact and recovery; damage requires verified geometric contact, once per target per action. Animations supply motion and height-specific response, never an unverified damage multiplier. The first fight is strictly 1v1; multiple attackers are a later content gate.
+
+Guard uses finite capacity rather than health chip: each valid block drains capacity; holding prevents regeneration, releasing starts a short regeneration delay. A heavy pressures guard more than a light and has longer readable preparation/recovery. Exhaustion visibly breaks guard and has bounded recovery. No perpetual block -> instant throw universal tactic: a throw only catches a guarding opponent in measured reach; its reach-in is interruptible; a guard release/lateral retreat defeats the attempt, leaving the thrower committed to recovery. Throw contact and the paired motion need verified relative staging and free landing space. Invalid space produces a visible failed attempt, never teleporting a body through a wall. Simultaneous valid attempts need a single defined neutral/stagger outcome. No mechanic relies on a clip name implying a valid contact window.
+
+Casting starts ready, spends a cooldown at commitment, and has a body-readable stationary preparation. Interruption after commitment spends that opportunity; movement before commitment cancels without a projectile. Melee initially gives no cooldown refund: test the basic casting/spacing loop before adding a refund meter. A novice caster can use it immediately; an opponent closes space during preparation and avoids/leashes blocked shots, so endlessly retreating to wait is not automatically safe. Fire may steer at a bounded rate only toward an explicit target; no instant turn, through-wall path or guaranteed hit. One spell behavior in the proof slice. Cast strength/charge and a second element belong to the full design's later depth gate, after the baseline works.
+
+Proposed input map for review: WASD move, mouse look, LMB light, F heavy, RMB guard, Ctrl step, Q cast, E interact, Space traversal jump, Shift run, middle mouse lock toggle, Esc pause/menu. Throw can use R rather than overloading the guard press. No attack/cast during traversal jump in the first slice. These are proposed controls, not inherited prototype bindings; support remapping and a visible input legend.
+
+2. Opponents: the same Humanoid kit has two behavior patterns. Pressure pattern approaches, clearly prepares a two-hit attempt, pauses, then resets; it punishes an extended cast. Defensive pattern visibly guards and backs off after a failed throw; it offers a heavy/throw decision. Opponents obey player reach/commitment rules. Do not claim fairness from shared animation alone: validate action readiness, block capacity, cooldowns and recovery. Retrying never makes an enemy secretly faster or stronger.
+
+3. World: one hub interior opens to a legible courtyard. Two route entrances remain in sight from the board exit, with distinct ground shape and an existing banner/gate landmark. The sheltered route teaches observation/retreat; the exposed route has one quiet fight space with clear lateral room. Recovery sites use already-owned crates/sacks and a receipt, avoiding carry/escort animations. A restored gate opens a shortcut to the exposed site's objective; the sheltered route remains a different obligation/location, so repairing the gate does not erase its purpose. The stall provides optional preparation; hub restoration/retry stays free. No speculative terrain streaming or continent.
+
+4. Growth intent: local obligations establish trust; field obligations test reading and preparation; a capstone combines known decisions. Trust is earned by distinct completed work rather than grinding repeated enemies. Useful place changes never regress. Player mastery is practiced skill first; equipment/element depth later adds an action choice and a corresponding opponent response. First slice = two obligations and two useful services. Proposed full scoped release = six authored contracts across the same two routes and three escalating trust bands, with one clear capstone and an ending receipt. Extra sites/weapon paths are P1 only after the complete loop passes, not requirements silently added from the old prototype.
+
+5. Economy/items: one wallet and one optional preparation item initially. Each distinct contract pays once; replay practice pays nothing. Accept/retry costs zero. Recovery at the hub is free. A preparation item can shorten an out-of-combat recovery, never become necessary for the next obligation. Its quantity, use commitment, cancellation and saving rules must be explicit. Do not create an unbounded farming/repair sink economy without content to support it. Item appearance uses an existing pot/container or primitive UI symbol; no new UI/art kit is assumed.
+
+6. Failure/save: accepting creates one attempt; recovery registers one non-stackable objective; defeat/abandon clears that attempt/objective and returns the player to a safe hub. Delivery checks the active attempt and objective, then commits reward, service and access together exactly once. Save at a safe hub after delivery/purchase/abandon, using a complete snapshot and recoverable prior file. Loading resumes in a safe hub with no active combat; any undelivered attempt is reset without reward and its objective is available again. Never restore a pending paired throw/cast, living scene reference or partially paid service. Data descriptions here are design requirements, not claims that a save API exists today.
+
+7. Canvas/dependencies: current humanoid rigs, locomotion/fighting/cast/town clips, timber village/interior modules, stylized foliage and cleaned particle ingredients. Source rigs and imported clips stay original; modifications live under our later project-owned derivatives. Need LTS compatibility, hero material/style choice, camera/motor, validated contacts, AI, interactions, primitives UI, persistence and effect cleanup. These are own Unity behavior tasks after the GDD. Audio is absent: the current-content design relies on visual timing cues and honestly scopes a silent proof; production sound is a recorded gap, not an invented asset or an unauthorized purchase.
+
+8. Essential gates: fighting - explain hit/miss/block with HUD/effects hidden and defeat both behavior patterns using a deliberate read; camera/motor - neither opponent nor telegraph disappears during corner/step/lock-on tests; world - novice returns to board without arrow-following and sees a service change alter the next route/preparation decision; economy - no reward duplication and free retry at zero wallet; save - interruption of a write loads a complete previous/current state at the hub; full loop - a player completes both first obligations, retries once, delivers once per contract and can describe why the next trip differs. Gate numbers/timing are tuning hypotheses, not verified results.
+
+Strongest alternative: Claude's melee-fed cooldown/charged cast could create a more expressive unified rhythm. Favor it only if a basic cooldown cast feels disconnected in playtests; otherwise a second meter/coupling makes attack spam or optimal stalling harder to reason about. My weakest risk is too little long-session combat variety; six contracts must vary the decision, not reuse identical fights with different receipts.
+
+NEXT: Claude posts his independent R2 systems proposal, steel-mans this one and challenges the growth/variety assumption. I will steel-man his actual R2 contribution, revise and agree the dependency/content budget before R3.
+
+## [claude] 2026-10-11 13:15:47 UTC | P4 + P5.R2 | R1 synthesis (agreed) + Claude R2 systems/world/content proposal
+VERIFY: your R1b hashes to 486e6ee30f10e93455ea7d7b3411389d684c17a7da6460c4e47f50b1f158711b. Matches. Boss steer acknowledged: no more timer repair; real contributions only.
+
+=== R1 SYNTHESIS (joint; your 13:13 text, accepted unchanged) ===
+A capable guild field member learns readable, committed fights and chooses the ORDER of work that improves a small settlement. Rules: body and space are read before numbers; every service change alters a route, a threat or a tool; casting is available from the first second; height-specific reactions are presentation (three-height guard stays experimental); failure costs only the undelivered objective; projects can wait, never regress. First proof slice: 1 hub, 2 routes, 2 obligations, 2 service changes (gate shortcut + out-of-combat preparation offer), 1 humanoid kit x 2 behaviours, 1 spell, primitive built-in UI. Audio and final hero are explicit current-asset gaps. All 12 GDD sections + ownership agreed.
+
+=== CLAUDE R2: SYSTEMS / WORLD / CONTENT (written before reading your R2) ===
+NOTE: my R1b had THROW in the verb set; your R1b has lateral STEP and no throw. I keep both and show below that they do not create a safe tactic. Drop throw from the slice if 6 verbs is too many (fallback: guard break via heavy strike).
+
+R2.1 COMBAT: every option has a counter AND a cost. Times in seconds are tuning hypotheses, not truth.
+| Option | Beats | Loses to | Cost / exposure |
+| Light strike (2-hit string): start 0.25, active 0.10, recover 0.30 | throw start-up, charging cast | guard (chip), step | recovery after the string |
+| Heavy strike: start 0.55 (clear wind-up), recover 0.50 | guard (big guard damage) | light strike during wind-up, step | long tell, long recovery |
+| Guard (hold) | light and heavy (chip only) | throw, charged cast | guard stamina: light -15, heavy -45; at 0 = 1.0 s guard break; regen 30/s after 0.8 s not guarding |
+| Step (lateral): 0.35 s, evasive 0.08-0.22 | heavy, throw, charged cast | light string (step recovery is hittable) | 0.4 s cooldown; cannot cancel into guard |
+| Throw: range 1.2 m, reach-in 0.30, needs 0.8 m clear behind target | guard | any strike, step | whiff recovery 0.6 |
+| Cast: tap = straight bolt; hold 1.0 s = charged (homing, guard-breaking) | distance; guard (charged only) | strikes during the hold (interrupt), step | 3 charges, regen 1 per 8 s; each landed strike or blocked hit refunds 0.25 |
+Safe-tactic audit: turtling drains stamina and gets thrown; mashing loses to guard then punish; zoning with casts loses to the charge interrupt plus a step-in; reflex stepping loses to light strings. Each opponent behaviour punishes one habit: GUARDER (turtles, counters strikes) forces throw or charged cast; RUSHER (strings, throws) forces guard or step. Damage = attacker stat x move factor (light 1, heavy 2, charged cast 2.5). The clip never sets damage.
+
+R2.2 ROUTES stay relevant without salvage: each route favours a different tool.
+- Timber road: open, long sightlines, opponent visible early -> favours casting and choosing to avoid or engage; longer.
+- Sheltered path: cover, short sightlines, ambush corners -> favours melee and stepping; shorter.
+- Service 1 (gate shortcut) cuts the timber road's length, so the ranged route stops being the slow one. Service 2 (prep offer: one out-of-combat salve or a charge-restoring draught, carry cap 2) makes the sheltered path's ambushes survivable. Each service rebalances the OTHER route, so the second trip is a fresh choice.
+
+R2.3 GROWTH that adds choices (beyond the slice, same rules):
+- Guild trust tiers (from delivered contracts, not grind): T1 slice; T2 new contract shapes (hold a spot for 60 s; clear a camp of 2); T3 second element (storm: fast, straight, chains to 1 extra target) as a loadout choice; T4 rival-crew contracts (mirror opponents with the player's own verbs).
+- Techniques: at each tier pick 1 of 2 sidegrades (counter-step: a perfect step opens a 0.4 s punish window, versus iron guard: guard regen x1.5 but no step). Choices, never flat stat ladders, so learned timing stays valid.
+- Services (all obey route/threat/tool): lookout (shows where opponents wait = threat), training post (spar a recorded behaviour = tool/practice), bridge (new route), apothecary (prep tool).
+
+R2.4 ECONOMY (sources and sinks tracked):
+- Sources: contract payment (coin); each obligation delivers one named material that only that obligation produces.
+- Sinks: prep offers (coin), technique training (coin), town projects (MATERIALS, not coin).
+- Why: coin is repeatable and buys convenience; world progress needs delivered work, so it cannot be bought by grinding one route. Repeatable starter contracts pay coin only after their first completion.
+- No essential item costs coin; the coin floor is 0; nothing can be sold back (no exploit loop).
+
+R2.5 SAVE / FAILURE / NO SOFTLOCK / NO DUPLICATES:
+- Contract states: available -> accepted -> carried -> delivered (terminal), or reset -> available. One carried objective at a time (your slot).
+- Delivery is one transaction: payment + material credit + service flag + contract state in a single save write. On load, "carried" reverts to "available" (an expedition never resumes mid-route).
+- Autosave on accept, delivery, service change and return to the guild; never during combat.
+- Softlock guards: starter contracts free and always re-acceptable; a safe route always exists; no consumable or coin needed to finish any contract; services and trust never regress; respawn in the guild at full HP.
+
+R2.6 WORLD + CONTENT BUDGET (slice), asset -> twist:
+- Hub: guild hall interior from the tavern modular kit (twist: warm relight, cloth recoloured to the guild palette, contract board built from crates and planks); village square from the village kit: 4 houses, 2 stalls, well, gate (twist: gate has broken/repaired states by plank swap + banner colour).
+- Routes: 2 x ~150 m from terrain tiles + painterly trees and rocks (twist: one material palette; foliage density tuned to the sightline rule above).
+- NPCs: clerk (chant/idle), stall keeper (vending), repair crew (carry/hammer); their routines change with services (a visible consequence).
+- Opponents: humanoid kit with fighting-motion strikes and reactions (twist: retimed to R2.1 windows, one palette per behaviour).
+- Spell: installed fire effects (twist: shader repair to URP, scale and colour to palette).
+- Gaps (explicit): final hero model, all audio, UI art (primitive built-in UI until a source is approved).
+
+R2.7 DEPENDENCY BUDGET (packs give art and motion only): input + motor + camera; combat state machine + hit resolution; 2 AI behaviours; contract state machine; services/world-state flags; save; primitive HUD (HP, guard stamina, cast charges, carried slot, contract tracker); asset prep (shader repair, retime tables). 9 systems; anything not listed is out of the slice.
+
+NEXT: codex posts its independent R2; then each steel-mans the other's R2, revise, then R3 (presentation/onboarding/gates/build prompt).
