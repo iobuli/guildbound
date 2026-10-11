@@ -49,7 +49,7 @@ counts = Counter(component)
 coincident = Counter(tuple(round(c, 5) for c in p) for p in base)
 # Nearby cross-island vertex pairs, <= 3cm in rest space. These are diagnostics,
 # not an automatic weld map and not all are intended garment/body seams.
-pairs = []
+pairs_by_id = {}
 for i, a in enumerate(base):
     if not (0.80 < a.z < 1.57):
         continue
@@ -60,8 +60,9 @@ for i, a in enumerate(base):
         d = (a - b).length
         if d <= 0.03 and (best is None or d < best[0]):
             best = (d, j)
-    if best and i < best[1]:
-        pairs.append((i, best[1], best[0]))
+    if best:
+        pairs_by_id[tuple(sorted((i, best[1])))] = best[0]
+pairs = [(a,b,d) for (a,b),d in sorted(pairs_by_id.items())]
 seam_indices = sorted(set(i for a,b,d in pairs for i in (a,b)))
 seam_tree = KDTree(len(seam_indices))
 for n,i in enumerate(seam_indices):
@@ -239,7 +240,7 @@ actual = {'bones': len(import_arm.data.bones), 'body_vertices':len(import_body.d
 report = {'author':'Codex', 'blender':bpy.app.version_string, 'source':str(src), 'source_sha256_before':source_hash, 'source_sha256_after':hashlib.sha256(src.read_bytes()).hexdigest(),
     'original_vertices':original_vertices, 'faceted_vertices':expected['body_vertices'], 'bones':expected['bones'],
     'topology_components':len(counts), 'component_sizes':sorted(counts.values(),reverse=True), 'coincident_clusters':sum(n>1 for n in coincident.values()),
-    'near_island_pairs':len(pairs), 'pair_selection':'Nearest vertex of another topology component within 3 cm, world z 0.80-1.57 m. Diagnostic only; not a weld/seam correspondence map. Candidate interface vertices protected with 4-8 cm attenuation.',
+    'near_island_pairs':len(pairs), 'pair_records':[{'a':a,'b':b,'rest_distance_m':d} for a,b,d in pairs], 'pair_selection':'For every vertex at world z 0.80-1.57 m, take its nearest vertex of another island within 3 cm, canonicalise (min,max) and deduplicate. Includes asymmetric nearest relationships. Diagnostic only; not a weld/seam map. Interface vertices protected with 4-8 cm attenuation.',
     'vest_vertices':len(indices), 'vest_faces':len(selected), 'samples':samples, 'roundtrip_expected':expected, 'roundtrip_actual':actual,
     'local_derivatives':str(local), 'limits':['Manual diagnostic poses, not owned clip playback.', 'No Unity import, retargeting, gameplay contact, grounding or frame-rate pass.', 'Corresponding shell offsets do not prove no triangle/body intersections.', 'Near-island metric does not repair pre-existing articulated segment gaps.', 'No independent reviewer acceptance yet.']}
 (out/'results.json').write_text(json.dumps(report,indent=2),encoding='utf-8')
