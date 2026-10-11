@@ -420,6 +420,90 @@ namespace Guildbound.Tests
             Assert.AreEqual(60f, r.world.Fighters[1].Hp);
         }
 
+        // ---------------- motion slice C/D (Aura rulings): cancel on hit only, bounded wind-up retarget ----------------
+
+        // The second press lands at 11/30 s: the same tick at 30/60/120 fps, past the active window (0.35 s) and 0.28 s
+        // before the end of recovery, outside the 0.25 s buffer. Without a cancel that press is simply dropped.
+        static Scenario PressTwice(float distance, Intent defender = default)
+            => Duel(distance, (t, f) => I(new Intent { Light = At(t, f, 0) || At(t, f, 11.0 / 30) }, defender), seconds: 1.2f);
+
+        static int Starts(Scenario s, string kind) => Run(s, 60f).log.Count(l => l.StartsWith("start 0 " + kind));
+
+        [Test]
+        public void Hit_CancelsRecovery_IntoTheNextStrike()
+        {
+            var r = RunAll(PressTwice(1.0f));
+            CollectionAssert.AreEqual(new[] { Outcome.Hit, Outcome.Hit }, r.contacts.Select(c => c.Outcome).ToArray());
+            CollectionAssert.AreEqual(new[] { ActionKind.LightL, ActionKind.LightR }, r.contacts.Select(c => c.Action).ToArray(), "the phrase continues");
+            Assert.Less(r.contacts[1].Time, 0.65 + 0.25, "the second strike started on the press, not after the full recovery");
+        }
+
+        [Test]
+        public void Whiff_KeepsFullRecovery_NoCancel()
+        {
+            var r = RunAll(PressTwice(2.0f));
+            Assert.AreEqual(0, r.contacts.Count);
+            Assert.AreEqual(1, Starts(PressTwice(2.0f), "Light"), "the second press is dropped, as before");
+        }
+
+        [Test]
+        public void Blocked_KeepsFullRecovery_NoCancel()
+        {
+            var r = RunAll(PressTwice(1.0f, new Intent { GuardHeld = true }));
+            Assert.AreEqual(Outcome.Blocked, r.contacts.Single().Outcome);
+            Assert.AreEqual(1, Starts(PressTwice(1.0f, new Intent { GuardHeld = true }), "Light"), "a blocked strike stays punishable");
+        }
+
+        [Test]
+        public void Retarget_AtMostFifteenDegrees_OnlyDuringStartup_NeverWhenLocked()
+        {
+            var right = new Vector2(1, 0);
+
+            var w = new CombatWorld();
+            var f = w.Add(V(0, 0), Vector3.forward, 100f);
+            w.Add(V(4, 4), Vector3.forward, 60f);
+            w.Tick(new[] { new Intent { Light = true, Move = right }, default });
+            for (int k = 1; k < 40; k++) w.Tick(new[] { new Intent { Move = right }, default });   // into the active window
+            Assert.AreEqual(ActionKind.LightL, f.State.Kind);
+            Assert.AreEqual(w.T.RetargetMax, Vector3.Angle(Vector3.forward, f.Facing), 0.01f, "held input turns 15 deg, no more");
+
+            var w2 = new CombatWorld();
+            var g = w2.Add(V(0, 0), Vector3.forward, 100f);
+            w2.Add(V(4, 4), Vector3.forward, 60f);
+            w2.Tick(new[] { new Intent { Light = true }, default });
+            for (int k = 1; k < 32; k++) w2.Tick(null);                                              // past startup
+            for (int k = 0; k < 10; k++) w2.Tick(new[] { new Intent { Move = right }, default });
+            Assert.AreEqual(0f, Vector3.Angle(Vector3.forward, g.Facing), 0.01f, "no turn once Active has begun");
+
+            var w3 = new CombatWorld();
+            var h = w3.Add(V(0, 0), Vector3.forward, 100f);
+            var o = w3.Add(V(4, 4), Vector3.forward, 60f);
+            h.LockTarget = o.Id;
+            w3.Tick(new[] { new Intent { Light = true, Move = right }, default });
+            for (int k = 1; k < 40; k++) w3.Tick(new[] { new Intent { Move = right }, default });
+            Assert.AreEqual(0f, Vector3.Angle(Vector3.forward, h.Facing), 0.01f, "locked strikes keep their facing");
+        }
+
+        // Defender 20 deg off the attacker's facing at 1.15 m: a straight light misses by 0.08 m; turned 15 deg in the
+        // wind-up, the SAME sweep connects. Proves the rules facing and the contact sweep are one source.
+        static Scenario Offset20(bool steer)
+        {
+            var dir = new Vector2(Mathf.Sin(20f * Mathf.Deg2Rad), Mathf.Cos(20f * Mathf.Deg2Rad));
+            return new Scenario
+            {
+                Seconds = 1.0f,
+                Script = (t, f) => I(new Intent { Light = At(t, f, 0), Move = steer ? dir : Vector2.zero }, default),
+                Setup = w => { w.Add(V(0, 0), Vector3.forward, 100f); w.Add(V(dir.x * 1.15f, dir.y * 1.15f), Vector3.back, 60f); },
+            };
+        }
+
+        [Test]
+        public void Retarget_TurnsTheContactSweep_NotJustTheBody()
+        {
+            Assert.AreEqual(0, RunAll(Offset20(false)).contacts.Count, "control: the straight strike misses");
+            Assert.AreEqual(Outcome.Hit, RunAll(Offset20(true)).contacts.Single().Outcome);
+        }
+
         [Test]
         public void Recover_InterruptedByMove_NoHeal_ItemKept()
         {

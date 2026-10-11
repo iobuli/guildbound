@@ -22,9 +22,9 @@ namespace Guildbound.Combat
         internal double lastCombatTime = -1e9;
         internal Vector3 travelDir;
         internal float travelSpeed, travelLeft;
-        internal bool hasBuffer, releaseCharged, recoverWithItem, ranLastTick;
+        internal bool hasBuffer, releaseCharged, recoverWithItem, ranLastTick, landed;
         internal Intent buffered;
-        internal Vector3 fistPrev, moveFrom;
+        internal Vector3 fistPrev, moveFrom, startFacing;
         internal bool fistPrevValid;
         internal readonly HashSet<int> hitThisAction = new HashSet<int>();
 

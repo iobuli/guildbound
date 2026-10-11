@@ -81,6 +81,16 @@ namespace Guildbound.Combat
             }
             if (!f.Free)
             {
+                Retarget(f, intent);
+                // a strike that HIT may cancel its recovery into the next strike; a whiff or a blocked strike keeps its
+                // full recovery (Aura ruling C), so mashing into guard is still punished
+                if (f.landed && f.IsStrike && f.State.Phase == ActionPhase.Recovery && (intent.Light || intent.Heavy))
+                {
+                    f.LastKind = f.State.Kind;
+                    f.State = new ActionState { Kind = ActionKind.None, Phase = ActionPhase.Hold, Sequence = f.State.Sequence };
+                    TryStart(f, new Intent { Light = intent.Light, Heavy = intent.Heavy }, chain: true);
+                    return;
+                }
                 // late-recovery buffer: the press waits, commitment is never cancelled
                 if (intent.AnyPress && f.State.Phase == ActionPhase.Recovery && f.State.Timing.Total - f.State.Elapsed <= T.Buffer
                     && f.State.Kind != ActionKind.Knockdown)
@@ -102,7 +112,7 @@ namespace Guildbound.Combat
             }
         }
 
-        bool TryStart(FighterSim f, Intent intent)
+        bool TryStart(FighterSim f, Intent intent, bool chain = false)
         {
             if (intent.Recover && CanRecover(f))
             {
@@ -115,7 +125,7 @@ namespace Guildbound.Combat
             if (intent.Light)
             {
                 LeaveGuard(f);
-                var kind = f.LastKind == ActionKind.LightL && f.hasBuffer ? ActionKind.LightR : ActionKind.LightL;
+                var kind = f.LastKind == ActionKind.LightL && (f.hasBuffer || chain) ? ActionKind.LightR : ActionKind.LightL;
                 Start(f, kind, T.Light);
                 f.State.Committed = true;
                 Carry(f);
@@ -147,6 +157,17 @@ namespace Guildbound.Combat
             if (speed > 1e-3f) Travel(f, f.Velocity, T.CarryCap, T.CarryCap / speed);
         }
 
+        // During a strike's wind-up an unlocked fighter may turn up to RetargetMax toward its move input (Aura ruling D).
+        // The contact sweep reads the same facing, so the body never swings where the rules do not. Fixed once Active
+        // begins; a locked fighter keeps facing its target.
+        void Retarget(FighterSim f, Intent intent)
+        {
+            if (!f.IsStrike || f.State.Phase != ActionPhase.Startup || f.LockTarget >= 0 || intent.Move.sqrMagnitude <= 0.04f) return;
+            var turned = TurnToward(f.Facing, new Vector3(intent.Move.x, 0, intent.Move.y).normalized, T.TurnRate * Tuning.Step);
+            float off = Vector3.SignedAngle(f.startFacing, turned, Vector3.up);
+            f.Facing = Mathf.Abs(off) <= T.RetargetMax ? turned : Quaternion.AngleAxis(Mathf.Sign(off) * T.RetargetMax, Vector3.up) * f.startFacing;
+        }
+
         void LeaveGuard(FighterSim f)
         {
             if (f.State.Kind == ActionKind.Guard) f.guardRegenWait = T.GuardRegenDelay;
@@ -171,6 +192,8 @@ namespace Guildbound.Combat
             if (timing.Startup <= 0 && phase == ActionPhase.Startup) phase = timing.Active > 0 ? ActionPhase.Active : ActionPhase.Recovery;
             f.State = new ActionState { Kind = kind, Phase = phase, Elapsed = 0, Timing = timing, Sequence = ++sequence };
             f.hitThisAction.Clear();
+            f.landed = false;
+            f.startFacing = f.Facing;
             f.fistPrevValid = false;
             f.travelLeft = 0;
             f.hasBuffer = false;
@@ -351,8 +374,8 @@ namespace Guildbound.Combat
             a.hitThisAction.Add(best.Id);
             var point = Vector3.Lerp(from, fist, bestT);
             float damage = a.Stat * (heavy ? T.HeavyFactor : T.LightFactor);
-            Resolve(a, best, a.State.Kind, a.State.Sequence, damage, heavy ? T.GuardDrainHeavy : T.GuardDrainLight,
-                heavy ? HitHeight.Mid : HitHeight.High, point, a.Facing, a.Position);
+            if (Resolve(a, best, a.State.Kind, a.State.Sequence, damage, heavy ? T.GuardDrainHeavy : T.GuardDrainLight,
+                heavy ? HitHeight.Mid : HitHeight.High, point, a.Facing, a.Position) == Outcome.Hit) a.landed = true;
         }
 
         bool Evading(FighterSim f) => f.State.Kind == ActionKind.Step && f.State.Elapsed >= T.EvadeFrom && f.State.Elapsed <= T.EvadeTo;
@@ -364,7 +387,7 @@ namespace Guildbound.Combat
             return Vector3.Angle(defender.Facing, to) <= T.GuardArcDegrees;
         }
 
-        void Resolve(FighterSim a, FighterSim d, ActionKind action, int seq, float damage, float drain, HitHeight height, Vector3 point, Vector3 dir, Vector3 source)
+        Outcome Resolve(FighterSim a, FighterSim d, ActionKind action, int seq, float damage, float drain, HitHeight height, Vector3 point, Vector3 dir, Vector3 source)
         {
             Outcome outcome;
             a.lastCombatTime = d.lastCombatTime = Time;
@@ -386,6 +409,7 @@ namespace Guildbound.Combat
                 Damage(d, damage, dir, T.Knockback, 0.1f);
             }
             Contacts.Add(new ContactEvent { AttackerId = a.Id, DefenderId = d.Id, Action = action, ActionSequence = seq, Outcome = outcome, Height = height, Point = point, Normal = -Flat(dir).normalized, Time = Time });
+            return outcome;
         }
 
         void Damage(FighterSim d, float amount, Vector3 dir, float push, float pushTime)

@@ -20,6 +20,7 @@ namespace Guildbound.Combat
         public float LightFactor = 1f, HeavyFactor = 2f, Knockback = 0.15f;
         public float Buffer = 0.25f;
         public float CarryCap = 0.30f;          // a strike thrown from a run slides this far in its wind-up
+        public float RetargetMax = 15f;         // deg an unlocked strike may turn toward move input during its wind-up
 
         // guard
         public float GuardMax = 100f, GuardDrainLight = 15f, GuardDrainHeavy = 45f, GuardDrainCast = 15f, GuardDrainCharged = 30f;
