@@ -9,6 +9,7 @@ namespace Guildbound.Combat
     public class CombatWorld
     {
         public readonly Tuning T;
+        public readonly IWorldGeometry Geometry;
         public readonly List<FighterSim> Fighters = new List<FighterSim>();
         public readonly List<Projectile> Projectiles = new List<Projectile>();
         public readonly List<ContactEvent> Contacts = new List<ContactEvent>();
@@ -17,7 +18,11 @@ namespace Guildbound.Combat
         int sequence;
         static readonly Intent Idle = default;
 
-        public CombatWorld(Tuning tuning = null) => T = tuning ?? new Tuning();
+        public CombatWorld(Tuning tuning = null, IWorldGeometry geometry = null)
+        {
+            T = tuning ?? new Tuning();
+            Geometry = geometry ?? new BoxArena(T.ArenaHalfSize);
+        }
 
         public FighterSim Add(Vector3 position, Vector3 facing, float hp)
         {
@@ -37,6 +42,7 @@ namespace Guildbound.Combat
         {
             float dt = Tuning.Step;
             Time += dt;
+            foreach (var f in Fighters) f.moveFrom = f.Position;
             for (int i = 0; i < Fighters.Count; i++)
             {
                 var f = Fighters[i];
@@ -284,7 +290,6 @@ namespace Guildbound.Combat
 
         void Separate()
         {
-            float half = T.ArenaHalfSize - T.BodyRadius;
             for (int i = 0; i < Fighters.Count; i++)
                 for (int j = i + 1; j < Fighters.Count; j++)
                 {
@@ -297,8 +302,9 @@ namespace Guildbound.Combat
                     a.Position -= push;
                     b.Position += push;
                 }
+            // one world constraint per tick, swept from the pre-motion position, so separation never pushes through a wall
             foreach (var f in Fighters)
-                f.Position = new Vector3(Mathf.Clamp(f.Position.x, -half, half), 0, Mathf.Clamp(f.Position.z, -half, half));
+                f.Position = Geometry.Constrain(f.moveFrom, f.Position, T.BodyRadius);
         }
 
         // ---------------- contact ----------------
@@ -323,6 +329,7 @@ namespace Guildbound.Combat
             foreach (var d in Fighters)
             {
                 if (d == a || d.Defeated || a.hitThisAction.Contains(d.Id) || Evading(d)) continue;
+                if (Geometry.Blocked(a.Position, d.Position, 0f, out _)) continue;   // world first: nobody is hit through a wall
                 float s = SegmentParam(from, fist, d.Position);
                 var closest = Vector3.Lerp(from, fist, s);
                 if (Flat(d.Position - closest).magnitude <= T.FistRadius + T.BodyRadius && s < bestT) { bestT = s; best = d; }
@@ -389,7 +396,8 @@ namespace Guildbound.Combat
             {
                 if (d == a || d.Defeated) continue;
                 var to = Flat(d.Position - a.Position);
-                if (to.magnitude <= T.ThrowReach && Vector3.Angle(a.Facing, to) <= T.ThrowArcDegrees) { target = d; break; }
+                if (to.magnitude <= T.ThrowReach && Vector3.Angle(a.Facing, to) <= T.ThrowArcDegrees
+                    && !Geometry.Blocked(a.Position, d.Position, 0f, out _)) { target = d; break; }
             }
             a.lastCombatTime = Time;
             if (target != null && target.State.Kind == ActionKind.Throw && target.State.Phase == ActionPhase.Startup)
@@ -403,8 +411,8 @@ namespace Guildbound.Combat
                 return;
             }
             var landing = a.Position + a.Facing * T.ThrowLand;
-            float half = T.ArenaHalfSize - T.BodyRadius;
-            bool legal = Mathf.Abs(landing.x) <= half && Mathf.Abs(landing.z) <= half;
+            bool legal = Geometry.Fits(landing, T.BodyRadius)
+                && (target == null || !Geometry.Blocked(target.Position, landing, T.BodyRadius, out _));
             // a target already striking (preparation or active) beats the reach-in: the throw fails and the strike lands
             bool striking = target != null && target.IsStrike && target.State.Phase != ActionPhase.Recovery;
             if (target == null || Evading(target) || !legal || striking)
@@ -425,16 +433,18 @@ namespace Guildbound.Combat
 
         void Fire(FighterSim f, bool charged)
         {
+            var spawn = f.Position + f.Facing * (T.BodyRadius + T.ProjectileRadius + 0.05f);
+            // point-blank at a wall: start on this side so the first sweep meets the wall, never the far side
+            if (Geometry.Blocked(f.Position, spawn, 0f, out var wall)) spawn = Vector3.Lerp(f.Position, spawn, Mathf.Max(0f, wall - 0.01f));
             Projectiles.Add(new Projectile
             {
                 Owner = f.Id, Sequence = f.State.Sequence, Charged = charged,
-                Position = f.Position + f.Facing * (T.BodyRadius + T.ProjectileRadius + 0.05f), Direction = f.Facing,
+                Position = spawn, Direction = f.Facing,
             });
         }
 
         void AdvanceProjectiles(float dt)
         {
-            float half = T.ArenaHalfSize;
             foreach (var pr in Projectiles)
             {
                 if (!pr.Alive) continue;
@@ -442,16 +452,8 @@ namespace Guildbound.Combat
                 var to = from + pr.Direction * (T.ProjectileSpeed * dt);
                 pr.Traveled += T.ProjectileSpeed * dt;
 
-                // world first: the arena boundary stops the projectile before any fighter behind it
-                float wallT = 2;
-                if (Mathf.Abs(to.x) > half || Mathf.Abs(to.z) > half)
-                {
-                    float tx = to.x != from.x ? (Mathf.Sign(to.x) * half - from.x) / (to.x - from.x) : 2;
-                    float tz = to.z != from.z ? (Mathf.Sign(to.z) * half - from.z) / (to.z - from.z) : 2;
-                    if (tx < 0 || tx > 1) tx = 2;
-                    if (tz < 0 || tz > 1) tz = 2;
-                    wallT = Mathf.Min(tx, tz);
-                }
+                // world first: a wall stops the projectile before any fighter behind it
+                float wallT = Geometry.Blocked(from, to, 0f, out var bt) ? bt : 2;
 
                 FighterSim hit = null;
                 float hitT = 2;
@@ -459,7 +461,10 @@ namespace Guildbound.Combat
                 {
                     if (d.Id == pr.Owner || d.Defeated || Evading(d)) continue;
                     float s = SegmentParam(from, to, d.Position);
-                    if (Flat(d.Position - Vector3.Lerp(from, to, s)).magnitude <= T.ProjectileRadius + T.BodyRadius && s < hitT) { hitT = s; hit = d; }
+                    var at = Vector3.Lerp(from, to, s);
+                    // the projectile's radius never reaches a body on the far side of a wall it has not crossed yet
+                    if (Flat(d.Position - at).magnitude <= T.ProjectileRadius + T.BodyRadius && s < hitT
+                        && !Geometry.Blocked(at, d.Position, 0f, out _)) { hitT = s; hit = d; }
                 }
 
                 var owner = Fighters[pr.Owner];
@@ -486,9 +491,11 @@ namespace Guildbound.Combat
         void Explode(FighterSim owner, Projectile pr, Vector3 center)
         {
             bool any = false;
+            var origin = center - pr.Direction * 0.05f;   // off the wall surface, on the caster's side
             foreach (var d in Fighters)
             {
                 if (d.Id == owner.Id || d.Defeated) continue;
+                if (Geometry.Blocked(origin, d.Position, 0f, out _)) continue;   // the area never reaches through walls
                 var away = Flat(d.Position - center);
                 float dist = Mathf.Max(0, away.magnitude - T.BodyRadius);
                 if (dist > T.ChargedRadius) continue;

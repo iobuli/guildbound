@@ -9,6 +9,15 @@ namespace Guildbound.Contracts
         public AlertLevel Level;
     }
 
+    public enum MapBlipKind { Self, Opponent, Objective, Door, ServicePoint }
+
+    // A point of interest in WORLD space (metres on the ground plane). The HUD owns the projection onto the map.
+    public struct MapBlip
+    {
+        public float X, Z;
+        public MapBlipKind Kind;
+    }
+
     public struct ContractCard
     {
         public string Id, Title, Objective, Service;
@@ -44,5 +53,11 @@ namespace Guildbound.Contracts
 
         bool TryDequeueAlert(out HudAlert alert);
         void RequestAcceptContract(string id);
+
+        bool HasMapData { get; }                 // false: the HUD shows "no map data", never an invented map
+        float CompassHeadingDegrees { get; }     // view direction: 0 = +Z, clockwise, 0..360
+        void GetMapBounds(out float minX, out float minZ, out float maxX, out float maxZ);   // world space
+        int MapBlipCount { get; }
+        MapBlip GetMapBlip(int index);
     }
 }

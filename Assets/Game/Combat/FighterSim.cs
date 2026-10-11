@@ -24,7 +24,7 @@ namespace Guildbound.Combat
         internal float travelSpeed, travelLeft;
         internal bool hasBuffer, releaseCharged, recoverWithItem;
         internal Intent buffered;
-        internal Vector3 fistPrev;
+        internal Vector3 fistPrev, moveFrom;
         internal bool fistPrevValid;
         internal readonly HashSet<int> hitThisAction = new HashSet<int>();
 

@@ -58,6 +58,13 @@ namespace Guildbound.UI
             }
         }
 
+        // No world behind the preview, so it reports no map data (the honest empty state).
+        public bool HasMapData => false;
+        public float CompassHeadingDegrees => 0f;
+        public void GetMapBounds(out float minX, out float minZ, out float maxX, out float maxZ) { minX = minZ = maxX = maxZ = 0f; }
+        public int MapBlipCount => 0;
+        public MapBlip GetMapBlip(int index) => default;
+
         public void Push(string text, AlertLevel level) => alerts.Enqueue(new HudAlert { Text = text, Level = level });
 
         void Update()

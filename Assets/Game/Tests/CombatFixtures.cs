@@ -19,13 +19,35 @@ namespace Guildbound.Tests
             public Action<CombatWorld> Setup;
             public Func<double, double, Intent[]> Script;   // (frame start time, frame length) -> intents per fighter
             public float Seconds = 2f;
+            public IWorldGeometry Geometry;   // null = the sparring BoxArena
+        }
+
+        // A thin wall across the world at z = Z (infinite in x), for world-first scenarios without Unity physics.
+        sealed class WallAtZ : IWorldGeometry
+        {
+            readonly float z;
+            public WallAtZ(float z) => this.z = z;
+
+            public Vector3 Constrain(Vector3 from, Vector3 to, float r)
+                => new Vector3(to.x, 0, from.z < z ? Mathf.Min(to.z, z - r) : Mathf.Max(to.z, z + r));
+
+            public bool Blocked(Vector3 from, Vector3 to, float r, out float t)
+            {
+                t = 2;
+                float plane = from.z < z ? z - r : z + r;
+                if (from.z < z ? to.z <= plane : to.z >= plane) return false;
+                t = Mathf.Clamp01((plane - from.z) / (to.z - from.z));
+                return true;
+            }
+
+            public bool Fits(Vector3 at, float r) => Mathf.Abs(at.z - z) >= r;
         }
 
         static bool At(double now, double frame, double t) => now <= t + 1e-9 && now + frame > t + 1e-9;
 
         static (CombatWorld world, List<ContactEvent> contacts, List<string> log) Run(Scenario s, float fps)
         {
-            var world = new CombatWorld();
+            var world = new CombatWorld(null, s.Geometry);
             s.Setup(world);
             var runner = new FixedStepRunner(world);
             var contacts = new List<ContactEvent>();
@@ -247,6 +269,104 @@ namespace Guildbound.Tests
                 Setup = w => { var a = w.Add(V(0, 0), Vector3.forward, 100f); a.Hp = 40f; w.Add(V(0, 4f), Vector3.back, 60f); },
             });
             Assert.AreEqual(40f, r.world.Fighters[0].Hp);
+        }
+
+        // ---------------- world first (M1 W1): walls stop bodies, strikes, throws and fire ----------------
+
+        static Scenario Walled(Scenario s, float wallZ) { s.Geometry = new WallAtZ(wallZ); return s; }
+
+        [Test]
+        public void Walk_IntoAWall_StopsAtTheWall()
+        {
+            var r = RunAll(Walled(new Scenario
+            {
+                Seconds = 1.5f,
+                Script = (t, f) => I(new Intent { Move = new Vector2(0, 1) }, default),
+                Setup = w => { w.Add(V(0, 0), Vector3.forward, 100f); w.Add(V(5f, -5f), Vector3.forward, 60f); },
+            }, 1.5f));
+            Assert.AreEqual(1.5f - 0.3f, r.world.Fighters[0].Position.z, 1e-4f, "stops one body radius short of the wall");
+        }
+
+        [Test]
+        public void Light_ThroughAWall_NoContact()
+        {
+            Func<double, double, Intent[]> light = (t, f) => I(new Intent { Light = At(t, f, 0) }, default);
+            var open = RunAll(Duel(1.0f, light));
+            Assert.AreEqual(Outcome.Hit, open.contacts.Single().Outcome, "control: the same strike lands with no wall");
+
+            var r = RunAll(Walled(Duel(1.0f, light), 0.5f));
+            Assert.AreEqual(0, r.contacts.Count);
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+        }
+
+        [Test]
+        public void Throw_AtATargetBehindAWall_IsAVisibleFailure()
+        {
+            Func<double, double, Intent[]> grab = (t, f) => I(new Intent { Throw = At(t, f, 0) }, default);
+            var open = RunAll(Duel(0.9f, grab, seconds: 1.5f));
+            Assert.AreEqual(Outcome.Hit, open.contacts.Single().Outcome, "control: the same throw lands with no wall");
+
+            var r = RunAll(Walled(Duel(0.9f, grab, seconds: 1.5f), 0.45f));
+            Assert.AreEqual(Outcome.Miss, r.contacts.Single().Outcome);
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+            Assert.GreaterOrEqual(r.world.Fighters[1].Position.z, 0.45f + 0.3f - 1e-4f, "the target stays on its side");
+        }
+
+        [Test]
+        public void Throw_WithTheLandingBehindAWall_IsAVisibleFailure()
+        {
+            var r = RunAll(Walled(Duel(0.8f, (t, f) => I(new Intent { Throw = At(t, f, 0) }, default), seconds: 1.5f), 1.25f));
+            Assert.AreEqual(Outcome.Miss, r.contacts.Single().Outcome);
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+            Assert.LessOrEqual(r.world.Fighters[1].Position.z, 1.25f - 0.3f + 1e-4f, "nobody through the wall");
+        }
+
+        [Test]
+        public void PlainCast_StopsAtTheWall_BeforeAFighterBehindIt()
+        {
+            var r = RunAll(Walled(Duel(5.0f, (t, f) => I(new Intent { Cast = At(t, f, 0) }, default)), 2.5f));
+            var c = r.contacts.Single();
+            Assert.AreEqual(Outcome.Miss, c.Outcome);
+            Assert.AreEqual(2.5f, c.Point.z, 1e-3f, "the projectile ends at the wall");
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+        }
+
+        [Test]
+        public void PointBlankCast_AtAWall_NeverStartsBehindIt()
+        {
+            var r = RunAll(Walled(Duel(1.5f, (t, f) => I(new Intent { Cast = At(t, f, 0) }, default)), 0.4f));
+            var c = r.contacts.Single();
+            Assert.AreEqual(Outcome.Miss, c.Outcome);
+            Assert.AreEqual(0.4f, c.Point.z, 1e-3f);
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+        }
+
+        // Defender 0.35 m behind a thin wall: the projectile's 0.25 m radius reaches the body one tick before the
+        // projectile reaches the wall (spawn 0.6 m, 0.117 m per tick, endpoint 1.417 m is 0.43 m from the defender).
+        [Test]
+        public void PlainCast_AtAFighterJustBehindAWall_StopsAtTheWall()
+        {
+            var r = RunAll(Walled(Duel(1.85f, (t, f) => I(new Intent { Cast = At(t, f, 0) }, default)), 1.5f));
+            var c = r.contacts.Single();
+            Assert.AreEqual(Outcome.Miss, c.Outcome);
+            Assert.AreEqual(1.5f, c.Point.z, 1e-3f);
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+        }
+
+        // Same placement for the charged blast; the wall is 8 ticks from the release, so the release and the impact never
+        // share a 30 fps frame (the harness logs a frame's contacts before its starts).
+        [Test]
+        public void ChargedBlast_DoesNotReachThroughAWall()
+        {
+            var s = Walled(Duel(1.85f, (t, f) => I(new Intent { Cast = At(t, f, 0), CastHeld = t < 1.2 }, default), seconds: 2.5f), 1.5f);
+            var setup = s.Setup;
+            s.Setup = w => { setup(w); w.Fighters[0].Attuned = true; };
+            var r = RunAll(s);
+            var c = r.contacts.Single();
+            Assert.AreEqual(ActionKind.CastRelease, c.Action);
+            Assert.AreEqual(Outcome.Miss, c.Outcome, "the defender is inside the radius but behind the wall");
+            Assert.AreEqual(60f, r.world.Fighters[1].Hp);
+            Assert.AreEqual(1.85f, r.world.Fighters[1].Position.z, 1e-4f, "and is not pushed");
         }
 
         [Test]
