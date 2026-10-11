@@ -164,9 +164,11 @@ namespace Guildbound.UI.Editor
             view.windowTitle = T(win, "Title", "GUILD BOARD", 26, 60, 26, 420, 40, TextAlignmentOptions.Left, TextColor, true);
 
             var group = win.gameObject.AddComponent<ToggleGroup>();
-            view.boardTab = Tab(win, "TabBoard", "BOARD", 690, 28, group);
-            view.optionsTab = Tab(win, "TabOptions", "OPTIONS", 840, 28, group);
+            view.boardTab = Tab(win, "TabBoard", "BOARD", 454, 28, group);
+            view.inventoryTab = Tab(win, "TabInventory", "INVENTORY", 604, 28, group);
+            view.optionsTab = Tab(win, "TabOptions", "OPTIONS", 754, 28, group);
             view.closeButton = Btn(win, "Close", "CLOSE", 990, 28, 96, 36, 16);
+            view.inventory = InventoryPanelBuilder.Build(win);
 
             // BOARD page
             var board = Stretch(win, "Board");
@@ -367,7 +369,7 @@ namespace Guildbound.UI.Editor
             rt.offsetMin = new Vector2(-outset, -outset); rt.offsetMax = new Vector2(outset, outset);
             var img = rt.gameObject.AddComponent<Image>();
             img.sprite = sprite; img.type = Image.Type.Sliced; img.fillCenter = false;
-            img.pixelsPerUnitMultiplier = ppuMultiplier; img.raycastTarget = false;
+            img.pixelsPerUnitMultiplier = ppuMultiplier * .65f; img.raycastTarget = false;
             return img;
         }
 
@@ -422,9 +424,11 @@ namespace Guildbound.UI.Editor
             sun.transform.rotation = Quaternion.Euler(50, -30, 0);
             new GameObject("EventSystem", typeof(EventSystem), typeof(InputSystemUIInputModule));
             var model = new GameObject("HudPreviewModel").AddComponent<HudPreviewModel>();
+            var inventoryModel = model.gameObject.AddComponent<InventoryPreviewModel>();
             var hud = (GameObject)PrefabUtility.InstantiatePrefab(AssetDatabase.LoadAssetAtPath<GameObject>(PrefabPath));
             var view = hud.GetComponent<HudView>();
             view.modelSource = model;
+            view.inventorySource = inventoryModel;
             EditorSceneManager.SaveScene(scene, ScenePath);
 
             Capture(hud, view, model, cam);
@@ -452,6 +456,8 @@ namespace Guildbound.UI.Editor
             Shot(view, cam, rtex, "Documentation/build/hud/hud_board.png");
             view.OpenModal(false);
             Shot(view, cam, rtex, "Documentation/build/hud/hud_options.png");
+            view.OpenInventory();
+            Shot(view, cam, rtex, "Documentation/build/hud/hud_inventory.png");
             cam.targetTexture = null;
             Object.DestroyImmediate(rtex);
         }

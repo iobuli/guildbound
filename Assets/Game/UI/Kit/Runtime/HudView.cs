@@ -40,7 +40,9 @@ namespace Guildbound.UI
         public HudLayer modalLayer;
         public TMP_Text windowTitle;
         public GameObject boardWindow, optionsWindow;
-        public Toggle boardTab, optionsTab;
+        public Toggle boardTab, optionsTab, inventoryTab;
+        public InventoryView inventory;
+        public MonoBehaviour inventorySource;
         public TMP_Text wallet, trustName;
         public Image trustBar;
         public TMP_Text[] cardTitles, cardObjectives, cardServices, cardButtonLabels;
@@ -68,6 +70,11 @@ namespace Guildbound.UI
             }
             boardTab.onValueChanged.AddListener(on => { if (on) Show(true); });
             optionsTab.onValueChanged.AddListener(on => { if (on) Show(false); });
+            if (inventory)
+            {
+                inventory.Bind((IInventoryModel)inventorySource);
+                inventoryTab.onValueChanged.AddListener(on => { if (on) OpenInventory(); });
+            }
             closeButton.onClick.AddListener(CloseModal);
 
             float[] start = { HudSettings.Master, HudSettings.PanelOpacity, HudSettings.PromptOpacity, HudSettings.AccentOpacity, HudSettings.TextScale };
@@ -92,8 +99,10 @@ namespace Guildbound.UI
         {
             if (model == null) return;
             var kb = Keyboard.current;
-            if (kb != null && kb.tabKey.wasPressedThisFrame) { if (modalLayer.visible && boardWindow.activeSelf) CloseModal(); else OpenModal(true); }
-            if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (modalLayer.visible) CloseModal(); else OpenModal(false); }
+            if (kb != null && kb.iKey.wasPressedThisFrame && inventory)
+            { if (InventoryVisible) CloseModal(); else OpenInventory(); }
+            else if (kb != null && kb.tabKey.wasPressedThisFrame) { if (modalLayer.visible && boardWindow.activeSelf) CloseModal(); else OpenModal(true); }
+            else if (kb != null && kb.escapeKey.wasPressedThisFrame) { if (modalLayer.visible) CloseModal(); else OpenModal(false); }
             Tick();
         }
 
@@ -128,6 +137,8 @@ namespace Guildbound.UI
             if (model.Recover01 >= 0f) recoverRing.fillAmount = model.Recover01;
 
             UpdateAlerts();
+            if (InventoryVisible && model.InCombat) CloseModal();
+            if (inventoryTab) inventoryTab.interactable = !model.InCombat;
             if (modalLayer.visible) UpdateModal();
             // text size option: 0..1 maps to 0.8x..1.2x of the authored sizes (default 0.5 = 1x)
             float scale = Mathf.Lerp(0.8f, 1.2f, HudSettings.TextScale);
@@ -146,14 +157,17 @@ namespace Guildbound.UI
             }
             while (model.TryDequeueAlert(out var alert))
             {
-                // newest on top: shift slot 0 down, drop the oldest
-                alertTexts[1].text = alertTexts[0].text; alertAccents[1].color = alertAccents[0].color;
-                alertTimers[1] = alertTimers[0]; alertSlots[1].SetActive(alertSlots[0].activeSelf);
-                alertTexts[0].text = alert.Text;
-                alertAccents[0].color = alert.Level == AlertLevel.Critical ? Critical : alert.Level == AlertLevel.Warning ? Warn : Edge;
-                alertTimers[0] = 3f;
-                alertSlots[0].SetActive(true);
+                ShowAlert(alert);
             }
+        }
+
+        void ShowAlert(HudAlert alert)
+        {
+            alertTexts[1].text = alertTexts[0].text; alertAccents[1].color = alertAccents[0].color;
+            alertTimers[1] = alertTimers[0]; alertSlots[1].SetActive(alertSlots[0].activeSelf);
+            alertTexts[0].text = alert.Text;
+            alertAccents[0].color = alert.Level == AlertLevel.Critical ? Critical : alert.Level == AlertLevel.Warning ? Warn : Edge;
+            alertTimers[0] = 3f; alertSlots[0].SetActive(true);
         }
 
         void UpdateModal()
@@ -182,13 +196,36 @@ namespace Guildbound.UI
             modalLayer.visible = true;
             (board ? boardTab : optionsTab).SetIsOnWithoutNotify(true);
             (board ? optionsTab : boardTab).SetIsOnWithoutNotify(false);
+            if (inventoryTab) inventoryTab.SetIsOnWithoutNotify(false);
             Show(board);
+        }
+
+        public bool InventoryVisible => inventory && modalLayer.visible && inventory.gameObject.activeSelf;
+
+        public void OpenInventory()
+        {
+            if (model.InCombat)
+            {
+                inventoryTab.SetIsOnWithoutNotify(false);
+                boardTab.SetIsOnWithoutNotify(boardWindow.activeSelf);
+                optionsTab.SetIsOnWithoutNotify(optionsWindow.activeSelf);
+                ShowAlert(new HudAlert { Text = "Not during a fight", Level = AlertLevel.Info });
+                return;
+            }
+            modalLayer.visible = true;
+            boardTab.SetIsOnWithoutNotify(false); optionsTab.SetIsOnWithoutNotify(false);
+            inventoryTab.SetIsOnWithoutNotify(true);
+            boardWindow.SetActive(false); optionsWindow.SetActive(false);
+            inventory.gameObject.SetActive(true);
+            windowTitle.text = "GUILD SATCHEL";
+            inventory.Refresh(); inventory.FocusFirst();
         }
 
         void Show(bool board)
         {
             boardWindow.SetActive(board);
             optionsWindow.SetActive(!board);
+            if (inventory) inventory.gameObject.SetActive(false);
             windowTitle.text = board ? "GUILD BOARD" : "HUD OPTIONS";
             var first = board ? (Selectable)cardButtons[0] : sliders[0];
             if (EventSystem.current) EventSystem.current.SetSelectedGameObject(first.gameObject);

@@ -8,6 +8,7 @@ namespace Guildbound.UI
     public class HudPreviewModel : MonoBehaviour, IHudModel
     {
         public bool demo = true;
+        public bool inCombat;
         [Range(0, 1)] public float hp = 0.8f;
         public int guardCurrent = 4, guardMax = 5;
         public bool guardBroken;
@@ -38,7 +39,7 @@ namespace Guildbound.UI
         public string ReturnInstruction => returnInstruction;
         public string Prompt => prompt;
         public string PromptKey => promptKey;
-        public bool InCombat => fire != FireState.Locked;
+        public bool InCombat => inCombat;
         public float Recover01 => recover;
         public int Wallet => wallet;
         public string TrustName => trust;

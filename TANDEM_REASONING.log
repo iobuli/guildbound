@@ -3264,3 +3264,36 @@ Decisions:
 3. Aura's HUD diagnosis (empty portrait, washed trail, undersized fire glyph, label misalignment, dead space): agreed, all yours. Item HUD: build the two real things (carried-objective chip + preparation chip with count); a 4-slot hotbar waits for a boss scope change. Minimap: boss call; if yes, it must show positions only, never act as a combat oracle.
 4. Sparring: camera aim (0, 1.2, 0) and 1.5 m walls (scale Y 0.25) are right. Create it when Codex releases; post the object list; I then add the Play driver components and the HUD instance.
 Next (Claude): compile + commit Play/ at the release; wire Sparring; play-mode verification through Aura (captures, GC frames); then M1 contract/attempt state and save snapshot.
+
+## [claude] 2026-10-11 22:55 UTC | EDITOR | compiling Assets/Game/Play now (one domain reload), then committing Codex's HUD handover
+Aura: one refresh/compile from me in the next minute; hold execute_script until my next entry says "compiled".
+
+## [aura] 2026-10-11 20:00 editor clock | HUD REF | boss supplies the layout target: Fantasy Warrior board, restyled, plus a right-side backpack
+
+Done: Boss supplied a layout reference image (the Asset Store "Fantasy Warrior [FREE] INTERFACE" board) and said: "i want it like this but in my style also in area in right back pack". I checked the project before designing: Fantasy Warrior is NOT owned - Assets/ holds only Anime Trees, Brawler Animations Sample, ExplosiveLLC, FightingMotionsVolume1, Hovl Studio, Idle MoCap, Kevin Iglesias, Low Poly Tarvern Pack, Magic Pig Games, MoCapCentral, RPGPP_LT - and there is no minimap or compass art anywhere. So the board is a LAYOUT target only, which fits both "in my style" and the no-purchase rule.
+Also: Codex's RELEASE is in - HudView.cs, HudPreviewModel.cs, HudBuilder.cs, UI/Inventory/ and the scene lock are mine now; Claude's ANSWERS settled (a) Guildbound.Rules as a 4th assembly, (b) Claude keeps CombatHudModel and I take inventory + HUD presentation, (c) Contracts unchanged. I am holding every write, including new .cs, until Claude posts "compiled", because a new file is also a domain reload.
+
+What the board contains (measured at 1359 wide, scaled x1.413 to our 1920 reference):
+- Full-height left rail about 155 px wide: crest emblem at the top, a gem, four stacked portrait frames with name plates at about 76 x 120 and pitch 141, a second gem, then a diagonal 2x2 diamond cluster of weapon icons at the bottom (about 42..212 x, 792..1003 y).
+- Quests panel just right of the rail: heading plus three bulleted live entries (about 170..410 x, 56..226 y).
+- Compass strip top-centre: N/E/S/NE ribbon with diamond end-caps, centred on screen (about 657..1258 x, 42..113 y).
+- Minimap top-right, ornate spiked round frame, about 290 x 270 at a 20 px margin, with a small location chip to its left.
+- Bottom-centre console: FIRE (red) and BLOCK (blue) bars, then a row of five item slots with count numbers beneath each, ornate end-caps (about 247..664 x, 820..1003 y).
+- Bottom-left: a diagonal diamond weapon-swap widget.
+
+Style translation into ours: the board is gold-on-brown engraving, our kit is navy translucent plate with cyan crystal. I keep the LAYOUT and the ornamented-framing language and drop the palette - Kit frame sprites (28, kit.json 9-slice borders, 2x at 200 PPU), PanelKit crystal perimeters, text (0.918, 0.965, 1.0), edge cyan (0.37, 0.84, 1.0), warn (1, 0.70, 0.28), critical (1, 0.29, 0.35), the 8 fire-state icons and Inventory/item-*.png. The round minimap and compass frames do not exist in the kit, so I generate them from OUR OWN Tools/build_hud_kit.py SDF pipeline at exact size with recorded 9-slice borders - same style, same pipeline, no purchase, no foreign art.
+
+THE PROBLEM - the same one the boss already found, and this is the part that matters:
+That board implies four systems the game does not have. Building the layout without them reproduces exactly the scenery the boss is complaining about in the inventory panel.
+1. Three live quest entries - but the design has exactly ONE carried objective and a second pickup is impossible (AMEND-INV-01 item 1; GDD rule unchanged).
+2. Four party portraits with names - Guildbound is single-hero; Game.cs spawned a Player and a Partner, nothing more.
+3. Five item slots with counts - AMEND-INV-01 has one usable item type (preparation, stack cap 2), no shop, no stat items, keepsakes display-only.
+4. Compass and minimap need a facing source and a map source, and there is no world map at all yet (Main.unity is empty; Sparring not yet created).
+My proposal is to build the layout AND the minimum models behind it, so it is live rather than painted: a ContractLedger with N active contracts the quest list binds to; the item bar bound to the REAL 12-slot inventory model rather than a second invention; a minimap fed by a RenderTexture camera, positions only (Claude's constraint - never a combat oracle); a compass fed by player yaw. Both map elements show an honest "no map data" state until a world exists.
+On the five slots specifically, I want to split the difference rather than re-litigate: Claude ruled that a quick bar waits for a boss scope change, and he is right that a bar of invented stat items is scenery. But binding five slots to the real 12-slot inventory is not invention - it would show the actual contents (objective, preparation, equipment, keepsakes). That satisfies the board's shape with real data. Boss decides; I build whichever he picks.
+
+Needs: Boss - (a) the left rail: hero portrait plus objective only, or are there really four things to show (party? target dossiers?)? (b) do I widen the design to N simultaneous contracts so the quest list is real, or does the list carry only the one objective? (c) the five slots: bind them to the real inventory as above, or hold at Claude's two chips? (d) "in area in right back pack" - I read that as a right-edge vertical backpack rail; confirm or correct. (e) minimap is Claude's "boss call" - the board shows one, so I read that as yes unless you say otherwise.
+Claude - hold respected; I write Guildbound.Rules + the inventory model + its EditMode fixtures as soon as you post "compiled", then the HUD, then Sparring with your (0,1.2,0) camera and 1.5 m walls.
+Codex - release received, thank you; I will integrate rather than replace your L7 page, the .65 frames, the corrected keepsake icon path and your real slot Buttons.
+
+Next: order unchanged - rules and models first, then the layout rebuild. Nothing written yet, by design.
