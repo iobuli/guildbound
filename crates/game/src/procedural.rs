@@ -20,6 +20,32 @@ const PITCH_RANGE: f32 = 0.8;
 const CURL: [f32; 3] = [1.4, 1.65, 1.2];
 const THUMB_CURL: [f32; 3] = [0.35, 0.6, 0.5];
 
+/// Live values of the life layers (Studio Tuning tab). Defaults are the Overgrowth-derived numbers.
+#[derive(Resource, Clone)]
+pub struct LifeTuning {
+    /// Head look spring speed (rad/s) and a scale on each rig's look limits.
+    pub look_speed: f32,
+    pub look_scale: f32,
+    /// How fast a grip eases (1/s) and scales on the finger and thumb curl at a full fist.
+    pub grip_ease: f32,
+    pub curl_scale: f32,
+    pub thumb_scale: f32,
+    /// Chest pitch and shoulder lift at a full breath (deg); breathing rate at rest and at full exertion (rad/s).
+    pub breath_chest_deg: f32,
+    pub breath_shoulder_deg: f32,
+    pub breath_rest: f32,
+    pub breath_max: f32,
+    /// Lean per m/s and per m/s^2 (deg).
+    pub lean_speed_deg: f32,
+    pub lean_accel_deg: f32,
+}
+
+impl Default for LifeTuning {
+    fn default() -> Self {
+        Self { look_speed: 11.0, look_scale: 1.0, grip_ease: 12.0, curl_scale: 1.0, thumb_scale: 1.0, breath_chest_deg: 1.6, breath_shoulder_deg: 2.5, breath_rest: 0.9, breath_max: 4.9, lean_speed_deg: 0.5, lean_accel_deg: 1.0 }
+    }
+}
+
 /// Local rotations and offsets of a rig's bones as the scene spawned them (the bind pose), captured when ready.
 #[derive(Component, Default)]
 pub struct RestPose(pub HashMap<Entity, Quat>, pub HashMap<Entity, Vec3>);
@@ -88,37 +114,38 @@ fn rot(world: &World, e: Entity) -> Option<Quat> {
 }
 
 pub fn apply(world: &mut World, root: Entity, bones: &[Entity], d: &Drive) {
+    let lt = world.get_resource::<LifeTuning>().cloned().unwrap_or_default();
     let mut life = world.entity_mut(root).take::<Life>().unwrap_or_default();
     let by_name = names(world, bones);
     let dt = d.dt.max(0.0);
     if let Some(target) = d.grip {
-        let k = 1.0 - (-dt * 12.0).exp();
+        let k = 1.0 - (-dt * lt.grip_ease).exp();
         for side in 0..2 {
             life.grip[side] += (target[side] - life.grip[side]) * k;
-            curl_hand(world, root, &by_name, side == 0, life.grip[side]);
+            curl_hand(world, root, &by_name, side == 0, life.grip[side], lt.curl_scale, lt.thumb_scale);
         }
     }
     let (want, amount) = match d.look {
-        Some((target, amount)) => (look_angles(world, &by_name, target, d.forward, d.chest_yaw, life.look.x, look_limits(world, root)), amount),
+        Some((target, amount)) => (look_angles(world, &by_name, target, d.forward, d.chest_yaw, life.look.x, look_limits(world, root) * lt.look_scale), amount),
         None => (Vec2::ZERO, 0.0),
     };
     let goal = want * amount.clamp(0.0, 1.0);
-    (life.look.x, life.look_vel.x) = spring(life.look.x, life.look_vel.x, goal.x, 11.0, dt);
-    (life.look.y, life.look_vel.y) = spring(life.look.y, life.look_vel.y, goal.y, 11.0, dt);
+    (life.look.x, life.look_vel.x) = spring(life.look.x, life.look_vel.x, goal.x, lt.look_speed, dt);
+    (life.look.y, life.look_vel.y) = spring(life.look.y, life.look_vel.y, goal.y, lt.look_speed, dt);
     if life.look.length_squared() > 1e-6 {
         turn_head(world, &by_name, d.forward, life.look);
     }
     if d.breath > 0.0 {
         // Overgrowth: the breathing rate eases between 0.9 rad/s at rest and 4.9 at full exertion
-        let target_rate = 0.9 + 4.0 * d.exertion.clamp(0.0, 1.0);
+        let target_rate = lt.breath_rest + (lt.breath_max - lt.breath_rest) * d.exertion.clamp(0.0, 1.0);
         life.breath_rate += (target_rate - life.breath_rate) * (1.0 - (-dt * 0.8).exp());
         life.breath_phase = (life.breath_phase + dt * life.breath_rate).rem_euclid(std::f32::consts::TAU);
-        let lift = (life.breath_phase.sin() * 0.5 + 0.5) * (0.5 + 0.5 * life.breath_rate / 4.9) * d.breath;
-        breathe(world, &by_name, d.forward, lift);
+        let lift = (life.breath_phase.sin() * 0.5 + 0.5) * (0.5 + 0.5 * life.breath_rate / lt.breath_max.max(0.1)) * d.breath;
+        breathe(world, &by_name, d.forward, lift, lt.breath_chest_deg, lt.breath_shoulder_deg);
     }
     if let Some((vel, acc)) = d.lean {
         // Overgrowth: 0.5 deg per m/s plus 1 deg per m/s^2, horizontal, eased (about 0.1 s)
-        let target = Vec3::new(vel.x, 0.0, vel.z) * 0.5 + Vec3::new(acc.x, 0.0, acc.z);
+        let target = Vec3::new(vel.x, 0.0, vel.z) * lt.lean_speed_deg + Vec3::new(acc.x, 0.0, acc.z) * lt.lean_accel_deg;
         for i in 0..3 {
             (life.tilt[i], life.tilt_vel[i]) = spring(life.tilt[i], life.tilt_vel[i], target[i], 10.0, dt);
         }
@@ -134,28 +161,29 @@ fn look_limits(world: &World, root: Entity) -> Vec2 {
 /// The stage is seekable: these layers depend on the sampled time, never render history.
 /// Gameplay retains the stateful springs in `apply`; generated motion supplies its own timed targets.
 pub fn sample(world: &mut World, root: Entity, bones: &[Entity], d: &Drive, time: f32) {
+    let lt = world.get_resource::<LifeTuning>().cloned().unwrap_or_default();
     let by_name = names(world, bones);
     if let Some(grip) = d.grip {
         for (side, value) in grip.into_iter().enumerate() {
-            curl_hand(world, root, &by_name, side == 0, value.clamp(0.0, 1.0));
+            curl_hand(world, root, &by_name, side == 0, value.clamp(0.0, 1.0), lt.curl_scale, lt.thumb_scale);
         }
     }
     if let Some((target, amount)) = d.look {
-        let look = look_angles(world, &by_name, target, d.forward, d.chest_yaw, 0.0, look_limits(world, root));
+        let look = look_angles(world, &by_name, target, d.forward, d.chest_yaw, 0.0, look_limits(world, root) * lt.look_scale);
         turn_head(world, &by_name, d.forward, look * amount.clamp(0.0, 1.0));
     }
     if d.breath > 0.0 {
-        let rate = 0.9 + 4.0 * d.exertion.clamp(0.0, 1.0);
-        let lift = ((time * rate).sin() * 0.5 + 0.5) * (0.5 + 0.5 * rate / 4.9) * d.breath;
-        breathe(world, &by_name, d.forward, lift);
+        let rate = lt.breath_rest + (lt.breath_max - lt.breath_rest) * d.exertion.clamp(0.0, 1.0);
+        let lift = ((time * rate).sin() * 0.5 + 0.5) * (0.5 + 0.5 * rate / lt.breath_max.max(0.1)) * d.breath;
+        breathe(world, &by_name, d.forward, lift, lt.breath_chest_deg, lt.breath_shoulder_deg);
     }
     if let Some((vel, acc)) = d.lean {
-        lean(world, &by_name, Vec3::new(vel.x, 0.0, vel.z) * 0.5 + Vec3::new(acc.x, 0.0, acc.z));
+        lean(world, &by_name, Vec3::new(vel.x, 0.0, vel.z) * lt.lean_speed_deg + Vec3::new(acc.x, 0.0, acc.z) * lt.lean_accel_deg);
     }
 }
 
 /// Fingers back to rest, then curled toward the palm about the hand's knuckle axis.
-fn curl_hand(world: &mut World, root: Entity, by_name: &HashMap<String, Entity>, left: bool, grip: f32) {
+fn curl_hand(world: &mut World, root: Entity, by_name: &HashMap<String, Entity>, left: bool, grip: f32, curl_scale: f32, thumb_scale: f32) {
     let s = if left { "l" } else { "r" };
     let hand = by_name.get(if left { "B_L_Forearm.001" } else { "B_R_Hand" }).copied();
     let middle = by_name.get(if left { "B_L_Finger2" } else { "B_R_Finger2" }).copied();
@@ -189,7 +217,7 @@ fn curl_hand(world: &mut World, root: Entity, by_name: &HashMap<String, Entity>,
         let mut acc = Quat::IDENTITY;
         for (k, e) in chain.iter().enumerate() {
             let (Some(e), Some(r)) = (*e, chain[k].and_then(|e| rot(world, e))) else { break };
-            let q = Quat::from_axis_angle(acc * axis, CURL[k] * grip);
+            let q = Quat::from_axis_angle(acc * axis, CURL[k] * grip * curl_scale);
             rotate_world(world, e, q * r);
             acc = q * acc;
         }
@@ -200,7 +228,7 @@ fn curl_hand(world: &mut World, root: Entity, by_name: &HashMap<String, Entity>,
         let mut acc = Quat::IDENTITY;
         for (k, e) in thumb.iter().enumerate() {
             let (Some(e), Some(r)) = (*e, thumb[k].and_then(|e| rot(world, e))) else { break };
-            let q = Quat::from_axis_angle(acc * t_axis, THUMB_CURL[k] * grip);
+            let q = Quat::from_axis_angle(acc * t_axis, THUMB_CURL[k] * grip * thumb_scale);
             rotate_world(world, e, q * r);
             acc = q * acc;
         }
@@ -240,19 +268,19 @@ fn turn_head(world: &mut World, by_name: &HashMap<String, Entity>, forward: Vec3
     }
 }
 
-fn breathe(world: &mut World, by_name: &HashMap<String, Entity>, forward: Vec3, lift: f32) {
+fn breathe(world: &mut World, by_name: &HashMap<String, Entity>, forward: Vec3, lift: f32, chest_deg: f32, shoulder_deg: f32) {
     let f = Vec3::new(forward.x, 0.0, forward.z).normalize_or(Vec3::Z);
     // chest rises (pitches back 1.6 deg at a full breath), shoulders lift 2.5 deg
     if let Some(&e) = by_name.get("B_Spine2")
         && let Some(r) = rot(world, e)
     {
-        rotate_world(world, e, Quat::from_axis_angle(f.cross(Vec3::Y), 0.028 * lift) * r);
+        rotate_world(world, e, Quat::from_axis_angle(f.cross(Vec3::Y), chest_deg.to_radians() * lift) * r);
     }
     for (n, sign) in [("B_L_Clavicle", 1.0), ("B_R_Clavicle", -1.0)] {
         if let Some(&e) = by_name.get(n)
             && let Some(r) = rot(world, e)
         {
-            rotate_world(world, e, Quat::from_axis_angle(f, sign * 0.044 * lift) * r);
+            rotate_world(world, e, Quat::from_axis_angle(f, sign * shoulder_deg.to_radians() * lift) * r);
         }
     }
 }
@@ -275,21 +303,25 @@ fn lean(world: &mut World, by_name: &HashMap<String, Entity>, tilt: Vec3) {
 /// the mouse steers the camera (cursor locked). The ground under the ray, or 25 m out when it points at the sky.
 fn pointer_target(world: &mut World) -> Option<Vec3> {
     let focus = world.query::<&crate::camera::OrbitCamera>().iter(world).next().map_or(4.0, |c| c.distance);
+    // only a free, visible pointer counts; a locked cursor still reports a position at the screen centre
     let cursor = world
-        .query_filtered::<&Window, With<bevy::window::PrimaryWindow>>()
+        .query_filtered::<(&Window, &bevy::window::CursorOptions), With<bevy::window::PrimaryWindow>>()
         .iter(world)
         .next()
-        .and_then(|w| w.cursor_position());
+        .filter(|(_, c)| c.visible && c.grab_mode == bevy::window::CursorGrabMode::None)
+        .and_then(|(w, _)| w.cursor_position());
     let (camera, global) = world
         .query_filtered::<(&Camera, &GlobalTransform), With<crate::camera::OrbitCamera>>()
         .iter(world)
         .next()?;
+    let free = cursor.is_some();
     let at = cursor.or_else(|| camera.logical_viewport_size().map(|s| s * 0.5))?;
     let ray = camera.viewport_to_world(global, at).ok()?;
     let dir = ray.direction.as_vec3();
     // a third-person camera's centre ray passes through the hero: aim beyond him (the camera's focus distance
     // plus 12 m), never at the ground at his own feet, or every camera move swings the head around itself
-    let near = focus + 12.0;
+    // a free pointer marks the spot it hovers; the locked centre aim starts past the hero
+    let near = if free { 1.5 } else { focus + 12.0 };
     let ground = (dir.y < -0.02).then(|| -ray.origin.y / dir.y).filter(|t| (near..80.0).contains(t));
     Some(ray.origin + dir * ground.unwrap_or(near))
 }

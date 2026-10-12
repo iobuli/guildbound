@@ -46,6 +46,8 @@ pub struct Tuning {
     /// sprint_speed; in combat it walks and run runs. Off keeps the classic walk/run everywhere.
     pub relaxed: bool,
     pub sprint_speed: f32,
+    /// Relaxed: seconds of held run before the sprint.
+    pub sprint_after_s: f32,
     /// Degrees per second a free fighter turns toward its movement.
     pub turn_rate: f32,
     /// m/s^2 gaining speed toward the input.
@@ -68,6 +70,7 @@ impl Default for Tuning {
             arena_half_size: 10.0,
             relaxed: false,
             sprint_speed: 6.2,
+            sprint_after_s: 1.0,
             turn_rate: 720.0,
             accel: 12.0,
             decel: 9.0,
@@ -144,6 +147,8 @@ pub struct Fighter {
     pub cooldowns: [f32; magic::SPELL_COUNT],
     /// Seconds of combat left after the last attack, guard, cast or hit (lock-on also counts as combat).
     pub combat_timer: f32,
+    /// Seconds the run input has been held while moving (relaxed: run breaks into a sprint after a while).
+    pub run_held: f32,
     /// 0..1 charge of the spell being held or just released.
     pub charge: f32,
     /// 0..1 strength prepared by a held smash; presentation never determines it.
@@ -191,6 +196,7 @@ impl Fighter {
             mana: MagicTuning::default().mana_max,
             cooldowns: [0.0; magic::SPELL_COUNT],
             combat_timer: 0.0,
+            run_held: 0.0,
             charge: 0.0,
             heavy_charge: 0.0,
             parry_recharge: 0.0,
@@ -299,10 +305,14 @@ impl World {
         let raw = if steering { intent.move_dir } else { V2::ZERO };
         let m = if raw.length_squared() > 1.0 { raw.normalized() } else { raw };
         let relaxed = t.relaxed && !self.in_combat(i);
+        // out of combat the stick walks and run runs; holding run past sprint_after_s breaks into a sprint
+        // (boss QA, 2026-10-13: the stick jogging and run sprinting read as walk and run swapped)
+        let held = if intent.run && m.length_squared() > 1e-4 { self.fighters[i].run_held + STEP } else { 0.0 };
+        self.fighters[i].run_held = held;
         let speed = if action.kind == ActionKind::Guard || drinking {
             self.combat.guard_walk_speed
         } else if relaxed {
-            if intent.run { t.sprint_speed } else { t.run_speed }
+            if !intent.run { t.walk_speed } else if held >= t.sprint_after_s { t.sprint_speed } else { t.run_speed }
         } else if intent.run {
             t.run_speed
         } else {
@@ -447,7 +457,7 @@ impl World {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
-            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.mana, f.combat_timer, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left, f.posture, f.posture_wait] {
+            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.mana, f.combat_timer, f.run_held, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left, f.posture, f.posture_wait] {
                 eat(v.to_bits() as u64);
             }
             let kind = match f.action.kind {

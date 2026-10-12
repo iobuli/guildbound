@@ -270,7 +270,7 @@ fn fighting_enters_combat_mode_which_lingers_then_ends() {
 }
 
 #[test]
-fn relaxed_movement_jogs_and_sprints_out_of_combat_and_walks_in_it() {
+fn relaxed_movement_walks_runs_and_sprints_on_a_held_run_out_of_combat() {
     let mut w = duel(30.0);
     w.tuning.relaxed = true;
     w.tuning.arena_half_size = 60.0;
@@ -278,11 +278,18 @@ fn relaxed_movement_jogs_and_sprints_out_of_combat_and_walks_in_it() {
     for _ in 0..240 {
         w.step(&[go]);
     }
-    assert!((w.fighters[0].velocity.length() - w.tuning.run_speed).abs() < 0.1, "jog");
+    assert!((w.fighters[0].velocity.length() - w.tuning.walk_speed).abs() < 0.1, "the stick walks");
+    let held = (w.tuning.sprint_after_s / crate::STEP) as usize;
+    for _ in 0..held.saturating_sub(10) {
+        w.step(&[Intent { run: true, ..go }]);
+    }
+    assert!((w.fighters[0].velocity.length() - w.tuning.run_speed).abs() < 0.15, "run runs before the hold");
     for _ in 0..240 {
         w.step(&[Intent { run: true, ..go }]);
     }
-    assert!((w.fighters[0].velocity.length() - w.tuning.sprint_speed).abs() < 0.1, "sprint");
+    assert!((w.fighters[0].velocity.length() - w.tuning.sprint_speed).abs() < 0.1, "a held run sprints");
+    w.step(&[go]);
+    assert_eq!(w.fighters[0].run_held, 0.0, "letting go resets the hold");
     w.fighters[0].lock_target = Some(1);
     for _ in 0..240 {
         w.step(&[go]);

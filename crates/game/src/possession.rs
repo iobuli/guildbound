@@ -152,7 +152,8 @@ impl Possession {
 }
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 1.0, physical_regions: [true; 3], ..default() }).add_systems(Update, draw);
+    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 1.0, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
+        .init_resource::<crate::procedural::LifeTuning>().add_systems(Update, draw);
 }
 
 fn bone_map(world: &World, bones: &[Entity]) -> BTreeMap<String, Entity> {
@@ -771,6 +772,14 @@ pub struct PhysicalBody {
     doll: Option<crate::ragdoll::Doll>,
     /// The stage root the doll was built for.
     doll_root: Option<Entity>,
+    /// Damping ratio of the joint motors, the pelvis's own upright motor, the balance feedback on position and
+    /// velocity (SIMBICON), and the assist pull's stiffness and damping.
+    pub damping: f32,
+    pub hip_gain: f32,
+    pub balance_pos: f32,
+    pub balance_vel: f32,
+    pub assist_kp: f32,
+    pub assist_kd: f32,
     pub on: bool,
     pub assist: f32,
     pub motor: f32,
@@ -843,7 +852,7 @@ pub fn physical_drive(world: &mut World) {
             }
         }
         let kp = 420.0 * pb.motor.max(0.05);
-        let kd = 2.0 * kp.sqrt();
+        let kd = 2.0 * pb.damping * kp.sqrt();
         // balance (SIMBICON-style): the centre of mass drifting off the feet tilts the legs' targets toward the
         // drift so the base moves under it
         let body_pos = |w: &World, e: Entity| w.get::<Transform>(e).map(|t| t.translation);
@@ -860,7 +869,7 @@ pub fn physical_drive(world: &mut World) {
         com_v /= m_sum.max(1e-3);
         let feet: Vec<Vec3> = doll.links.iter().filter(|l| world.get::<Name>(l.bone).is_some_and(|n| n.as_str().ends_with("_Foot"))).filter_map(|l| body_pos(world, l.body)).collect();
         let base = if feet.is_empty() { com } else { feet.iter().sum::<Vec3>() / feet.len() as f32 };
-        let drift = Vec3::new(com.x - base.x, 0.0, com.z - base.z) * 0.8 + Vec3::new(com_v.x, 0.0, com_v.z) * 0.25;
+        let drift = Vec3::new(com.x - base.x, 0.0, com.z - base.z) * pb.balance_pos + Vec3::new(com_v.x, 0.0, com_v.z) * pb.balance_vel;
         let tilt = if drift.length() > 1e-4 { Quat::from_axis_angle(Vec3::Y.cross(drift).normalize(), drift.length().min(0.5)) } else { Quat::IDENTITY };
         let mut jobs = Vec::new();
         for (i, link) in doll.links.iter().enumerate() {
@@ -883,9 +892,9 @@ pub fn physical_drive(world: &mut World) {
                 // the pelvis has no motor; only the assist holds it toward the clip
                 let centre = bp - target * link.origin;
                 let v = world.get::<LinearVelocity>(link.body).map_or(Vec3::ZERO, |v| v.0);
-                lin = ((centre - body.translation) * 300.0 - v * 35.0) * pb.assist;
+                lin = ((centre - body.translation) * pb.assist_kp - v * pb.assist_kd) * pb.assist;
                 // the pelvis's own motor reacts against the thighs (an internal hip torque: the floor has to carry it)
-                acc = axis * angle * kp * 0.6 - w * kd;
+                acc = axis * angle * kp * pb.hip_gain - w * kd;
             }
             jobs.push((i, acc, lin));
         }

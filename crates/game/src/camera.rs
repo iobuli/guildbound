@@ -98,6 +98,7 @@ pub fn orbit(
     feedback: Res<crate::feedback::FeedbackSettings>,
     spatial: SpatialQuery,
     bodies: Query<&RigidBody>,
+    keys: Res<ButtonInput<KeyCode>>,
 ) {
     let in_menu = *state.get() == crate::menu::AppState::MainMenu;
     let (mut orbit, mut transform, mut projection) = cam.into_inner();
@@ -107,15 +108,18 @@ pub fn orbit(
     let studio = orbit.studio_focus.is_some();
     let play = panel.hidden && win.focused && !in_menu && !ended && !studio;
 
-    // play mode locks the cursor; dev and studio modes free it
-    let want = if play { CursorGrabMode::Locked } else { CursorGrabMode::None };
+    // play mode locks the cursor; dev and studio modes free it, and holding Left Alt frees it in play so the
+    // hero's head can follow the pointer (the camera holds still meanwhile)
+    let free = play && keys.pressed(KeyCode::AltLeft);
+    let steer = play && !free;
+    let want = if steer { CursorGrabMode::Locked } else { CursorGrabMode::None };
     if cursor.grab_mode != want {
         cursor.grab_mode = want;
-        cursor.visible = !play;
+        cursor.visible = !steer;
     }
 
     let over_panel = !panel.hidden && win.cursor_position().is_some_and(|p| p.x <= panel.width);
-    let looking = play || (!over_panel && buttons.pressed(MouseButton::Middle));
+    let looking = steer || (!over_panel && buttons.pressed(MouseButton::Middle));
     let me = &sim.world.fighters[0];
     let lock = me.lock_target.and_then(|j| sim.world.fighters.get(j)).filter(|t| t.hp > 0.0);
     if in_menu {

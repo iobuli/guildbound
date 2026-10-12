@@ -252,7 +252,10 @@ pub fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.add(egui::DragValue::new(&mut t.sprint_speed).speed(0.05).range(0.1..=20.0));
         ui.end_row();
         ui.label("relaxed out of combat");
-        ui.checkbox(&mut t.relaxed, "jog / sprint set");
+        ui.checkbox(&mut t.relaxed, "walk, run, held run sprints");
+        ui.end_row();
+        ui.label("sprint after held run s");
+        ui.add(egui::DragValue::new(&mut t.sprint_after_s).speed(0.05).range(0.0..=5.0));
         ui.end_row();
         ui.label("turn deg/s");
         ui.add(egui::DragValue::new(&mut t.turn_rate).speed(5.0).range(30.0..=2000.0));

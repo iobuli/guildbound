@@ -91,6 +91,44 @@ pub struct Roles {
     pub pickup: Option<String>,
 }
 
+/// A clip's edit (Studio Tuning, clip editor): play speed, the part of the clip kept (fractions of its
+/// length), a blend-in override; a variant also names the clip it is cut from. Saved in assets/clip_edits.json.
+#[derive(Clone, Debug, PartialEq)]
+pub struct ClipEdit {
+    pub base: Option<String>,
+    pub speed: f32,
+    pub trim: [f32; 2],
+    pub blend_in: Option<f32>,
+}
+
+impl Default for ClipEdit {
+    fn default() -> Self {
+        Self { base: None, speed: 1.0, trim: [0.0, 1.0], blend_in: None }
+    }
+}
+
+impl ClipEdit {
+    pub fn is_identity(&self) -> bool {
+        self.base.is_none() && (self.speed - 1.0).abs() < 1e-4 && self.trim == [0.0, 1.0] && self.blend_in.is_none()
+    }
+}
+
+pub fn load_clip_edits() -> std::collections::BTreeMap<String, ClipEdit> {
+    let v: serde_json::Value = std::fs::read_to_string(format!("{}/assets/clip_edits.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+    v.as_object().into_iter().flatten().map(|(name, e)| {
+        let f = |k: &str, d: f32| e[k].as_f64().map_or(d, |x| x as f32);
+        let trim = [f("trim_start", 0.0).clamp(0.0, 0.95), f("trim_end", 1.0).clamp(0.05, 1.0)];
+        (name.clone(), ClipEdit { base: e["base"].as_str().map(str::to_owned), speed: f("speed", 1.0).clamp(0.1, 4.0), trim: [trim[0].min(trim[1] - 0.05), trim[1]], blend_in: e["blend_in"].as_f64().map(|x| x as f32) })
+    }).collect()
+}
+
+pub fn save_clip_edits(edits: &std::collections::BTreeMap<String, ClipEdit>) {
+    let out: serde_json::Map<String, serde_json::Value> = edits.iter().filter(|(_, e)| !e.is_identity()).map(|(n, e)| {
+        (n.clone(), serde_json::json!({"base": e.base, "speed": e.speed, "trim_start": e.trim[0], "trim_end": e.trim[1], "blend_in": e.blend_in}))
+    }).collect();
+    let _ = std::fs::write(format!("{}/assets/clip_edits.json", crate::ROOT), serde_json::to_string_pretty(&out).unwrap_or_default());
+}
+
 #[derive(Resource)]
 pub struct AnimLibrary {
     gltf: Handle<Gltf>,
@@ -106,6 +144,8 @@ pub struct AnimLibrary {
     contact_timing: std::collections::HashMap<String, crate::motion_timing::ContactTiming>,
     foot_contacts: std::collections::HashMap<String, Vec<[f32; 2]>>,
     pub sole_height_m: [f32; 2],
+    /// Clip edits and variants (variant name -> edit with a base clip).
+    pub edits: std::collections::BTreeMap<String, ClipEdit>,
 }
 
 impl AnimLibrary {
@@ -128,19 +168,50 @@ impl AnimLibrary {
             (curve.len() >= 2 && curve.iter().flatten().all(|v| v.is_finite() && (0.0..=1.0).contains(v))).then(|| (name.clone(), curve))
         }).collect()).unwrap_or_default();
         let sole_height_m = std::array::from_fn(|i| motion.as_ref().and_then(|m| m["sole_height_m"][i].as_f64()).map(|v| v as f32).filter(|v| v.is_finite() && (0.03..0.2).contains(v)).unwrap_or(0.1));
-        Self { gltf: assets.load(path.to_owned()), graph: None, clips: Vec::new(), durations: Vec::new(), roles: Roles::default(), clusters: Vec::new(), strides_m, contact_timing, foot_contacts, sole_height_m }
+        Self { gltf: assets.load(path.to_owned()), graph: None, clips: Vec::new(), durations: Vec::new(), roles: Roles::default(), clusters: Vec::new(), strides_m, contact_timing, foot_contacts, sole_height_m, edits: load_clip_edits() }
+    }
+
+    /// The clip a name plays: itself, or a variant's base clip.
+    pub fn base<'a>(&'a self, name: &'a str) -> &'a str {
+        self.edits.get(name).and_then(|e| e.base.as_deref()).unwrap_or(name)
+    }
+
+    pub fn edit(&self, name: &str) -> ClipEdit {
+        self.edits.get(name).cloned().unwrap_or_default()
+    }
+
+    /// Every playable name: the library's clips and the variants cut from them.
+    pub fn names(&self) -> Vec<String> {
+        let mut out: Vec<String> = self.clips.iter().map(|(n, _)| n.clone()).collect();
+        out.extend(self.edits.iter().filter(|(_, e)| e.base.as_ref().is_some_and(|b| self.raw_duration(b).is_some())).map(|(n, _)| n.clone()));
+        out
+    }
+
+    fn raw_duration(&self, name: &str) -> Option<f32> {
+        self.clips.iter().position(|(n, _)| n == name).and_then(|i| self.durations.get(i).copied())
+    }
+
+    /// Where in the node's own clip a time on the edited timeline lands (trim start + time x speed).
+    pub fn seek(&self, name: &str, t: f32) -> f32 {
+        let e = self.edit(name);
+        let raw = self.raw_duration(self.base(name)).unwrap_or(1.0);
+        (raw * e.trim[0] + (t * e.speed).max(0.0)).min(raw * e.trim[1])
     }
 
     pub fn node(&self, name: &str) -> Option<AnimationNodeIndex> {
-        self.clips.iter().find(|(n, _)| n == name).map(|(_, i)| *i)
+        let base = self.base(name);
+        self.clips.iter().find(|(n, _)| n == base).map(|(_, i)| *i)
     }
 
+    /// Length of the edited timeline: the kept part of the clip at its speed.
     pub fn duration(&self, name: &str) -> f32 {
-        self.clips.iter().position(|(n, _)| n == name).and_then(|i| self.durations.get(i).copied()).unwrap_or(1.0)
+        let e = self.edit(name);
+        self.raw_duration(self.base(name)).map_or(1.0, |d| d * (e.trim[1] - e.trim[0]) / e.speed)
     }
 
     pub fn stride(&self, name: &str, reference_speed: f32) -> f32 {
-        self.strides_m.get(name).copied().unwrap_or_else(|| reference_speed * self.duration(name))
+        let e = self.edit(name);
+        self.strides_m.get(self.base(name)).map(|s| s * (e.trim[1] - e.trim[0]) / e.speed).unwrap_or_else(|| reference_speed * self.duration(name))
     }
 
     pub fn foot_contact(&self, name: &str, phase: f32) -> Option<[f32; 2]> {
@@ -174,7 +245,8 @@ impl AnimLibrary {
 
     fn strike_time(&self, clip: &str, m: guildbound_sim::combat::MoveId, clock: f32, fallback_rate: f32) -> f32 {
         let mv = &guildbound_sim::MOVES[m];
-        self.contact_timing.get(clip).map_or(clock * fallback_rate, |timing| timing.sample(clock, mv.startup, mv.active, mv.recovery, self.duration(clip)))
+        // an edited clip retimes linearly over its kept part; the measured contact timing is for the whole clip
+        self.contact_timing.get(clip).filter(|_| self.edit(clip).is_identity()).map_or(clock * fallback_rate, |timing| timing.sample(clock, mv.startup, mv.active, mv.recovery, self.duration(clip)))
     }
 
     /// First clip (in name order) containing any preference, earlier preferences win; skips excluded words.
@@ -338,6 +410,9 @@ pub struct FighterRig {
     /// Nodes in the locomotion blend last frame, and the smoothed travel angle relative to facing.
     loco: Vec<AnimationNodeIndex>,
     loco_angle: f32,
+    /// Turning in place: last facing (rad) and the turn gathered while standing.
+    last_yaw: Option<f32>,
+    turn_acc: f32,
 }
 
 impl FighterRig {
@@ -391,6 +466,8 @@ impl FighterRig {
             bag_len: usize::MAX,
             loco: Vec::new(),
             loco_angle: 0.0,
+            last_yaw: None,
+            turn_acc: 0.0,
         }
     }
 }
@@ -887,6 +964,9 @@ pub fn drive_animation(
                         transitions.play(&mut player, node, Duration::from_secs_f32(rig.transition_s.max(0.01)));
                     }
                     rig.rate = lib.duration(&clip) / length.max(0.05);
+                    if let Some(b) = lib.edit(&clip).blend_in {
+                        rig.transition_s = b;
+                    }
                     rig.current = Some(node);
                     rig.one_shot = Some(clip);
                     rig.rule_sample = true;
@@ -943,13 +1023,15 @@ pub fn drive_animation(
                         guildbound_sim::ActionKind::Charge(_) => clock.min(lib.duration(rig.one_shot.as_deref().unwrap()) - 0.001),
                         _ => clock * rig.rate,
                     };
-                    a.set_speed(0.0).set_seek_time(seek);
+                    a.set_speed(0.0).set_seek_time(lib.seek(rig.one_shot.as_deref().unwrap_or(""), seek));
                 } else {
-                    a.set_speed(0.0).set_seek_time(rig.clip_time_s);
+                    a.set_speed(0.0).set_seek_time(lib.seek(rig.one_shot.as_deref().unwrap_or(""), rig.clip_time_s));
                 }
             }
             let busy = !f.action.free();
-            let preview_running = !rig.rule_sample && rig.one_shot.as_ref().is_some_and(|name| rig.clip_time_s < lib.duration(name));
+            // a turn-in-place step gives way the moment the body starts to travel
+            let turning_off = rig.one_shot.as_deref().is_some_and(|n| n.starts_with("mx_turn")) && f.velocity.length() > 0.6;
+            let preview_running = !turning_off && !rig.rule_sample && rig.one_shot.as_ref().is_some_and(|name| rig.clip_time_s < lib.duration(name));
             if busy || preview_running {
                 continue;
             }
@@ -958,6 +1040,37 @@ pub fn drive_animation(
         }
 
         let speed = f.velocity.length();
+        // turning in place (mx clips): standing still while the facing swings round (lock-on circling, a turn
+        // on the spot) steps the feet round instead of sliding the body; 90 or 180 by how far it turned
+        let yaw = f.facing.x.atan2(f.facing.z);
+        let turned = rig.last_yaw.map_or(0.0, |y| (yaw - y + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI);
+        rig.last_yaw = Some(yaw);
+        if speed < 0.3 && f.action.free() && f.height <= 0.0 {
+            rig.turn_acc += turned;
+        } else {
+            rig.turn_acc = 0.0;
+        }
+        rig.turn_acc *= (-sim.frame_step_s * 1.5).exp();
+        if rig.turn_acc.abs() > 1.2 && rig.one_shot.is_none() {
+            // yaw grows toward +X from +Z; facing +Z the character's right is -X, so a growing yaw turns left
+            let side = if rig.turn_acc > 0.0 { "left" } else { "right" };
+            let size = if rig.turn_acc.abs() > 2.4 { 180 } else { 90 };
+            let clip = format!("mx_turn_{side}_{size}");
+            if let Some(node) = lib.node(&clip) {
+                player.stop_all();
+                player.start(node);
+                rig.pending_inertia = settings.inertialize;
+                rig.current = Some(node);
+                rig.rate = 1.0;
+                rig.one_shot = Some(clip);
+                rig.rule_sample = false;
+                rig.clip_time_s = 0.0;
+                rig.transition_s = settings.blend_seconds;
+                rig.loco.clear();
+                rig.turn_acc = 0.0;
+                continue;
+            }
+        }
         let r = &lib.roles;
         // airborne: jump clip on the way up, fall clip on the way down
         if f.height > 0.0 || f.crouch_left > 0.0 {
@@ -974,7 +1087,7 @@ pub fn drive_animation(
                     rig.clip_time_s += sim.frame_step_s;
                 }
                 if let Some(active) = player.animation_mut(node) {
-                    active.set_speed(0.0).set_seek_time(rig.clip_time_s);
+                    active.set_speed(0.0).set_seek_time(lib.seek(air.unwrap_or(""), rig.clip_time_s));
                 }
                 continue;
             }
@@ -1059,9 +1172,9 @@ pub fn drive_animation(
             active.set_weight(*w);
             if *synced_clip {
                 let phase = (rig.gait_phase + lib.left_strike(clip)).rem_euclid(1.0);
-                active.set_speed(0.0).set_seek_time(phase * lib.duration(clip));
+                active.set_speed(0.0).set_seek_time(lib.seek(clip, phase * lib.duration(clip)));
             } else {
-                active.set_speed(rate);
+                active.set_speed(rate * lib.edit(clip).speed);
             }
         }
         rig.loco = nodes.iter().map(|x| x.0).collect();

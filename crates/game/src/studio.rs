@@ -30,7 +30,7 @@ use crate::ui_theme::{self as theme, Kit};
 /// Where models are staged: a cleared spot north-west of the courtyard.
 pub const STAGE: Vec3 = Vec3::new(-30.0, 0.0, 30.0);
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
-const TABS: [&str; 9] = ["Inspect", "Possession", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+const TABS: [&str; 8] = ["Inspect", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -166,6 +166,8 @@ pub struct Studio {
     audit: Value,
     /// Moveset picks: move -> (clip, enabled), and the move a clip is being added to.
     moveset: Option<BTreeMap<String, Vec<(String, bool)>>>,
+    /// Name typed for a new clip variant in the clip editor.
+    variant_name: String,
     move_add: (String, String),
 }
 
@@ -184,6 +186,7 @@ impl Default for Studio {
             numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false,
             audit: Value::Null,
             moveset: None,
+            variant_name: String::new(),
             move_add: (String::new(), String::new()),
         }
     }
@@ -349,7 +352,8 @@ pub fn drive(
     }
     let source: Option<(Handle<AnimationGraph>, Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)> = if studio.hero_clips {
         lib.as_ref().and_then(|l| l.graph.clone()).map(|g| {
-            let names: HashMap<String, (AnimationNodeIndex, f32)> = lib.as_ref().unwrap().clips.iter().map(|(n, node)| (n.clone(), (*node, lib.as_ref().unwrap().duration(n)))).collect();
+            let l = lib.as_ref().unwrap();
+            let names: HashMap<String, (AnimationNodeIndex, f32)> = l.names().into_iter().filter_map(|n| l.node(&n).map(|node| (n.clone(), (node, l.duration(&n))))).collect();
             (g, Box::new(move |c: &str| names.get(c).copied()) as Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)
         })
     } else {
@@ -440,7 +444,13 @@ pub fn drive(
         player.play(node);
     }
     if let Some(a) = player.animation_mut(node) {
-        a.set_speed(0.0).set_seek_time(studio.time.min(studio.duration));
+        let t = studio.time.min(studio.duration);
+        // hero clips play through the library's clip edits (trim and speed), variants included
+        let seek = match (studio.hero_clips, lib.as_ref(), studio.clip.as_deref()) {
+            (true, Some(l), Some(c)) => l.seek(c, t),
+            _ => t,
+        };
+        a.set_speed(0.0).set_seek_time(seek);
     }
 }
 
@@ -662,6 +672,15 @@ pub fn snapshot(world: &World) -> Value {
            "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len(), "audit_patterns": audit_patterns(&read_audit())})
 }
 
+/// Everything the Tuning tab edits live: sim motion tuning, animation tuning, life layers, the physical body.
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct TuningParams<'w> {
+    sim: ResMut<'w, Sim>,
+    anim: ResMut<'w, crate::anim::AnimSettings>,
+    life: ResMut<'w, crate::procedural::LifeTuning>,
+    physical: ResMut<'w, crate::possession::PhysicalBody>,
+}
+
 #[allow(clippy::too_many_arguments)]
 fn ui(
     mut contexts: EguiContexts,
@@ -670,16 +689,14 @@ fn ui(
     mut layout: ResMut<HudLayout>,
     diag: Res<DiagnosticsStore>,
     kit: Option<Res<Kit>>,
-    lib: Option<Res<AnimLibrary>>,
-    mut sim: ResMut<Sim>,
+    mut lib: Option<ResMut<AnimLibrary>>,
     mut feed: ResMut<crate::feed::DevFeed>,
     assets: Res<AssetServer>,
     bodies: Query<(), With<avian3d::prelude::RigidBody>>,
     mut possession: ResMut<crate::possession::Possession>,
-    mut physical: ResMut<crate::possession::PhysicalBody>,
     names: Query<&Name>,
     rigs: Query<&StudioRig>,
-    mut anim: ResMut<crate::anim::AnimSettings>,
+    mut tune: TuningParams,
 ) -> Result {
     if !studio.open {
         return Ok(());
@@ -765,20 +782,29 @@ fn ui(
     egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
         theme::dock_backdrop(ui, kit, ui.max_rect());
         egui::ScrollArea::vertical().show(ui, |ui| match studio.tab {
-            0 => inspect(ui, studio, &mut corr, kit, &mut feed, sim.world.tick),
+            0 => inspect(ui, studio, &mut corr, kit, &mut feed, tune.sim.world.tick),
             1 => {
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
-                theme::section(ui, "Physical body (motors track the clip; it must stand on its own feet)");
-                ui.checkbox(&mut physical.on, "Physical");
-                ui.add(egui::Slider::new(&mut physical.assist, 0.0..=1.0).text("assist (0 = pure physics)"));
-                ui.add(egui::Slider::new(&mut physical.motor, 0.1..=3.0).text("motor strength"));
+                egui::CollapsingHeader::new(egui::RichText::new("Possession: bones, fixed fps, life layers, physics readout").color(theme::TEAL)).default_open(true).show(ui, |ui| {
+                    crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
+                    if let Some(sel) = studio.numbers["selected"].as_object() {
+                        theme::section(ui, "Selected bone (live)");
+                        let v = |k: &str| sel.get(k).and_then(|a| a.as_array()).map(|a| a.iter().map(|x| format!("{:.2}", x.as_f64().unwrap_or(0.0))).collect::<Vec<_>>().join("  ")).unwrap_or_default();
+                        theme::stat(ui, "world", v("world"), theme::PAPER);
+                        theme::stat(ui, "local euler deg", v("local_euler_deg"), theme::PAPER);
+                    }
+                });
+                egui::CollapsingHeader::new(egui::RichText::new("Physical body: motors track the clip, it must stand on its own").color(theme::TEAL)).show(ui, |ui| {
+                ui.checkbox(&mut tune.physical.on, "Physical");
+                ui.add(egui::Slider::new(&mut tune.physical.assist, 0.0..=1.0).text("assist (0 = pure physics)"));
+                ui.add(egui::Slider::new(&mut tune.physical.motor, 0.1..=3.0).text("motor strength"));
                 ui.horizontal(|ui| {
                     ui.label("physical:");
-                    ui.checkbox(&mut physical.physical_regions[0], "legs");
-                    ui.checkbox(&mut physical.physical_regions[1], "body");
-                    ui.checkbox(&mut physical.physical_regions[2], "arms");
+                    ui.checkbox(&mut tune.physical.physical_regions[0], "legs");
+                    ui.checkbox(&mut tune.physical.physical_regions[1], "body");
+                    ui.checkbox(&mut tune.physical.physical_regions[2], "arms");
                 });
-                for (n, e) in physical.track_err.iter().filter(|(_, e)| *e > 0.5) {
+                for (n, e) in tune.physical.track_err.iter().filter(|(_, e)| *e > 0.5) {
                     theme::stat(ui, &format!("{n} lags its key"), format!("{e:.1} deg"), if *e > 15.0 { theme::BAD } else if *e > 6.0 { theme::WARN } else { theme::GOOD });
                 }
                 ui.horizontal(|ui| {
@@ -798,21 +824,47 @@ fn ui(
                     ui.label(egui::RichText::new(format!("playing: {}", now.join(" + "))).size(11.5).color(theme::TEAL));
                     ui.add(egui::Slider::new(&mut possession.seq_fade, 0.05..=0.6).text("crossfade s"));
                 }
-                if physical.on {
-                    theme::stat(ui, "State", if physical.standing { format!("standing, pelvis {:.2} m", physical.pelvis_h) } else { format!("fallen, pelvis {:.2} m", physical.pelvis_h) }, if physical.standing { theme::GOOD } else { theme::BAD });
+                if tune.physical.on {
+                    theme::stat(ui, "State", if tune.physical.standing { format!("standing, pelvis {:.2} m", tune.physical.pelvis_h) } else { format!("fallen, pelvis {:.2} m", tune.physical.pelvis_h) }, if tune.physical.standing { theme::GOOD } else { theme::BAD });
                 }
-                crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
+                    ui.add(egui::Slider::new(&mut tune.physical.damping, 0.2..=2.0).text("motor damping ratio"));
+                    ui.add(egui::Slider::new(&mut tune.physical.hip_gain, 0.0..=2.0).text("hip upright motor"));
+                    ui.add(egui::Slider::new(&mut tune.physical.balance_pos, 0.0..=2.0).text("balance: centre of mass offset"));
+                    ui.add(egui::Slider::new(&mut tune.physical.balance_vel, 0.0..=1.0).text("balance: centre of mass speed"));
+                    ui.add(egui::Slider::new(&mut tune.physical.assist_kp, 50.0..=800.0).text("assist stiffness"));
+                    ui.add(egui::Slider::new(&mut tune.physical.assist_kd, 5.0..=80.0).text("assist damping"));
+                });
+                egui::CollapsingHeader::new(egui::RichText::new("Motion tuning (hero and NPC walkers)").color(theme::TEAL)).show(ui, |ui| {
+                    ui.label(egui::RichText::new("The drag motor, speeds and turn rate shape how every character moves; the clip speeds keep feet on the ground.").size(11.0).color(theme::MUTED));
+                    crate::panel::tuning_section(ui, &mut tune.sim);
+                });
+                egui::CollapsingHeader::new(egui::RichText::new("Animation tuning").color(theme::TEAL)).show(ui, |ui| {
+                    crate::panel::anim_tuning(ui, &mut tune.anim);
+                });
+                egui::CollapsingHeader::new(egui::RichText::new("Life layers (look, hands, breath, lean)").color(theme::TEAL)).show(ui, |ui| {
+                    let l = &mut *tune.life;
+                    ui.add(egui::Slider::new(&mut l.look_speed, 2.0..=30.0).text("head look speed"));
+                    ui.add(egui::Slider::new(&mut l.look_scale, 0.0..=1.5).text("head look range x"));
+                    ui.add(egui::Slider::new(&mut l.grip_ease, 1.0..=40.0).text("grip ease"));
+                    ui.add(egui::Slider::new(&mut l.curl_scale, 0.0..=1.3).text("finger curl at a fist x"));
+                    ui.add(egui::Slider::new(&mut l.thumb_scale, 0.0..=1.5).text("thumb curl x"));
+                    ui.add(egui::Slider::new(&mut l.breath_chest_deg, 0.0..=6.0).text("breath chest deg"));
+                    ui.add(egui::Slider::new(&mut l.breath_shoulder_deg, 0.0..=8.0).text("breath shoulders deg"));
+                    ui.add(egui::Slider::new(&mut l.breath_rest, 0.2..=3.0).text("breath rate at rest"));
+                    ui.add(egui::Slider::new(&mut l.breath_max, 1.0..=8.0).text("breath rate exerted"));
+                    ui.add(egui::Slider::new(&mut l.lean_speed_deg, 0.0..=3.0).text("lean deg per m/s"));
+                    ui.add(egui::Slider::new(&mut l.lean_accel_deg, 0.0..=3.0).text("lean deg per m/s2"));
+                    if ui.button("Life defaults").clicked() {
+                        *l = crate::procedural::LifeTuning::default();
+                    }
+                });
+                egui::CollapsingHeader::new(egui::RichText::new("Clip editor: speed, trim and blend of any clip; save variants").color(theme::TEAL)).default_open(true).show(ui, |ui| {
+                    clip_editor(ui, studio, kit, lib.as_deref_mut());
+                });
             }
-            2 => {
-                theme::section(ui, "Motion tuning (live: hero and NPC walkers)");
-                ui.label(egui::RichText::new("The drag motor, speeds and turn rate shape how every character moves; the clip speeds keep feet on the ground.").size(11.0).color(theme::MUTED));
-                crate::panel::tuning_section(ui, &mut sim);
-                theme::section(ui, "Animation tuning");
-                crate::panel::anim_tuning(ui, &mut anim);
-            }
-            3 => moveset_tab(ui, studio, kit, lib.as_deref()),
-            4 => corrections_tab(ui, &mut corr),
-            5 => {
+            2 => moveset_tab(ui, studio, kit, lib.as_deref()),
+            3 => corrections_tab(ui, &mut corr),
+            4 => {
                 theme::section(ui, "Patterns across clips and models");
                 ui.label(egui::RichText::new("Repeated fixes become library-wide rules; repeated notes show where the pipeline is wrong.").size(11.0).color(theme::MUTED));
                 let notes = read_notes();
@@ -877,7 +929,7 @@ fn ui(
                     studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
-            6 => {
+            5 => {
                 theme::section(ui, "Notes sent to Claude");
                 for n in read_notes().iter().rev().take(30) {
                     ui.label(egui::RichText::new(format!("{}  {} @ {:.2}s  {}", n["model"].as_str().unwrap_or(""), n["clip"].as_str().unwrap_or(""), n["time"].as_f64().unwrap_or(0.0), n["bone"].as_str().unwrap_or(""))).size(11.0).color(theme::MUTED));
@@ -885,7 +937,7 @@ fn ui(
                     ui.separator();
                 }
             }
-            7 => {
+            6 => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
                 for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {
@@ -919,11 +971,11 @@ fn ui(
                 let loading = studio.model.as_ref().map(|m| format!("{:?}", assets.get_load_state(&assets.load::<Gltf>(m.clone()))));
                 theme::stat(ui, "Stage model load", loading.unwrap_or_else(|| "-".into()), theme::MUTED);
                 theme::section(ui, "Simulation");
-                theme::stat(ui, "Tick", format!("{}", sim.world.tick), theme::PAPER);
-                theme::stat(ui, "Fighters", format!("{}", sim.world.fighters.len()), theme::PAPER);
-                theme::stat(ui, "Projectiles", format!("{}", sim.world.projectiles.len()), theme::PAPER);
-                theme::stat(ui, "Obstacles", format!("{}", sim.world.obstacles.len()), theme::PAPER);
-                theme::stat(ui, "State hash", format!("{:016x}", sim.world.state_hash()), theme::MUTED);
+                theme::stat(ui, "Tick", format!("{}", tune.sim.world.tick), theme::PAPER);
+                theme::stat(ui, "Fighters", format!("{}", tune.sim.world.fighters.len()), theme::PAPER);
+                theme::stat(ui, "Projectiles", format!("{}", tune.sim.world.projectiles.len()), theme::PAPER);
+                theme::stat(ui, "Obstacles", format!("{}", tune.sim.world.obstacles.len()), theme::PAPER);
+                theme::stat(ui, "State hash", format!("{:016x}", tune.sim.world.state_hash()), theme::MUTED);
             }
         });
     });
@@ -1067,7 +1119,7 @@ fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
         let f = add_filter.to_lowercase();
         let mut picked = None;
         egui::ScrollArea::vertical().id_salt("move_add").max_height(120.0).show(ui, |ui| {
-            for (n, _) in lib.map(|l| l.clips.as_slice()).unwrap_or_default().iter().filter(|(n, _)| !f.is_empty() && n.to_lowercase().contains(&f)).take(40) {
+            for n in lib.map(|l| l.names()).unwrap_or_default().iter().filter(|n| !f.is_empty() && n.to_lowercase().contains(&f)).take(40) {
                 if ui.selectable_label(false, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
                     picked = Some(n.clone());
                 }
@@ -1093,6 +1145,85 @@ fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
     if reset {
         let _ = std::fs::remove_file(&path);
         studio.moveset = None;
+    }
+}
+
+/// Edit the selected clip's speed, kept part and blend-in, or save it as a new named variant that the moveset
+/// and the game can use like any clip. Edits apply live; Save writes assets/clip_edits.json.
+fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: Option<&mut AnimLibrary>) {
+    let Some(lib) = lib else {
+        ui.label("The hero library is still loading.");
+        return;
+    };
+    let clip = studio.clip.clone().unwrap_or_default();
+    if clip.is_empty() || lib.node(&clip).is_none() {
+        ui.label(egui::RichText::new("Pick a hero clip on the left (Hero library ticked) to edit it.").color(theme::MUTED));
+    } else {
+        let mut e = lib.edit(&clip);
+        let before = e.clone();
+        let base = lib.base(&clip).to_owned();
+        ui.label(egui::RichText::new(if base == clip { clip.clone() } else { format!("{clip}  (variant of {base})") }).strong().color(theme::PAPER));
+        ui.add(egui::Slider::new(&mut e.speed, 0.25..=3.0).text("speed"));
+        ui.add(egui::Slider::new(&mut e.trim[0], 0.0..=0.9).text("start (fraction)"));
+        ui.add(egui::Slider::new(&mut e.trim[1], 0.1..=1.0).text("end (fraction)"));
+        e.trim[0] = e.trim[0].min(e.trim[1] - 0.05);
+        let mut own_blend = e.blend_in.is_some();
+        ui.horizontal(|ui| {
+            ui.checkbox(&mut own_blend, "own blend-in");
+            let mut b = e.blend_in.unwrap_or(0.12);
+            if own_blend {
+                ui.add(egui::Slider::new(&mut b, 0.0..=0.5).text("s"));
+            }
+            e.blend_in = own_blend.then_some(b);
+        });
+        if e != before {
+            lib.edits.insert(clip.clone(), e.clone());
+        }
+        theme::stat(ui, "plays for", format!("{:.2} s", lib.duration(&clip)), theme::PAPER);
+        ui.horizontal(|ui| {
+            ui.add(egui::TextEdit::singleline(&mut studio.variant_name).hint_text("variant name").desired_width(160.0));
+            let name = studio.variant_name.trim().to_owned();
+            if theme::button(ui, kit, "Save as variant", false).clicked() && !name.is_empty() && lib.node(&name).is_none() {
+                lib.edits.insert(name.clone(), crate::anim::ClipEdit { base: Some(base.clone()), ..e.clone() });
+                crate::anim::save_clip_edits(&lib.edits);
+                studio.status = format!("Variant {name} saved; add it to a move in the Moveset tab");
+                studio.clip = Some(name);
+                studio.variant_name.clear();
+            }
+        });
+        ui.horizontal(|ui| {
+            if theme::button(ui, kit, "Save edits", false).clicked() {
+                crate::anim::save_clip_edits(&lib.edits);
+                studio.status = "Clip edits saved to assets/clip_edits.json".into();
+            }
+            if theme::button(ui, kit, "Reset this clip", false).clicked() {
+                if base == clip {
+                    lib.edits.remove(&clip);
+                } else {
+                    lib.edits.insert(clip.clone(), crate::anim::ClipEdit { base: Some(base.clone()), ..default() });
+                }
+            }
+        });
+    }
+    let variants: Vec<(String, String)> = lib.edits.iter().filter_map(|(n, e)| e.base.clone().map(|b| (n.clone(), b))).collect();
+    if !variants.is_empty() {
+        theme::section(ui, "Variants");
+        let mut drop = None;
+        for (n, b) in &variants {
+            ui.horizontal(|ui| {
+                if ui.selectable_label(studio.clip.as_deref() == Some(n.as_str()), format!("{n}  <- {b}")).clicked() {
+                    studio.clip = Some(n.clone());
+                    studio.time = 0.0;
+                }
+                if ui.small_button("delete").clicked() {
+                    drop = Some(n.clone());
+                }
+            });
+        }
+        if let Some(n) = drop {
+            lib.edits.remove(&n);
+            crate::anim::save_clip_edits(&lib.edits);
+        }
     }
 }
 

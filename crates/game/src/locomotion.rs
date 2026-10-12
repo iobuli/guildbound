@@ -101,7 +101,7 @@ pub fn animate(player: &mut AnimationPlayer, lib: &AnimLibrary, map: &Locomotion
         active.set_weight(*w);
         if *gait_synced {
             let phase = (m.gait_phase + lib.left_strike(clip)).rem_euclid(1.0);
-            active.set_speed(0.0).set_seek_time(phase * lib.duration(clip));
+            active.set_speed(0.0).set_seek_time(lib.seek(clip, phase * lib.duration(clip)));
         } else {
             active.set_speed(1.0);
         }
