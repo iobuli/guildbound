@@ -7,6 +7,10 @@
 //! knee authority; the Patterns tab groups corrections and notes across clips and models and can promote a
 //! repeated fix to a library-wide rule. The HUD tab moves HUD elements and saves the layout. Engine tab:
 //! frame time, entities, assets, sim and physics. All of it is readable through gb.studio.
+//!
+//! Claude's side of the loop is Tools/blender/pose_audit.py: every clip of every model, every frame, against
+//! the same rules, with each finding marked as inherited from the source clip or introduced by our pipeline.
+//! Its digest (collab/pose_audit.json) shows in the Patterns tab; clicking a pattern stages its worst case.
 use std::collections::{BTreeMap, HashMap};
 use std::io::Write as _;
 
@@ -158,6 +162,8 @@ pub struct Studio {
     spawn_request: Option<String>,
     /// Remote open/close (gb.studio), handled like F2.
     pub toggle_request: bool,
+    /// Last pose audit (collab/pose_audit.json), read when the Studio opens.
+    audit: Value,
 }
 
 impl Studio {
@@ -173,6 +179,7 @@ impl Default for Studio {
             clip: None, time: 0.0, duration: 1.0, playing: true, speed: 1.0, hero_clips: true, rules: true, yaw: 0.0, scale: 1.0,
             selected: None, note: String::new(), category: 0, offset: Vec3::ZERO, tab: 0, own: None, graph_attached: None,
             numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false,
+            audit: Value::Null,
         }
     }
 }
@@ -228,6 +235,7 @@ fn toggle(keys: Res<ButtonInput<KeyCode>>, mut studio: ResMut<Studio>, mut sim: 
     }
     studio.open = !studio.open;
     if studio.open {
+        studio.audit = read_audit();
         studio.was_paused = sim.paused;
         sim.paused = true;
         sim.clear_player_input();
@@ -487,6 +495,15 @@ pub fn patterns(corr: &Corrections, notes: &[Value]) -> Vec<Value> {
     out
 }
 
+fn read_audit() -> Value {
+    std::fs::read_to_string(format!("{}/collab/pose_audit.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+}
+
+/// The audit's pipeline-introduced patterns, compact (gb.studio and the Patterns tab).
+fn audit_patterns(audit: &Value) -> Vec<Value> {
+    audit["patterns"].as_array().map(|a| a.iter().take(40).cloned().collect()).unwrap_or_default()
+}
+
 fn read_notes() -> Vec<Value> {
     std::fs::read_to_string(format!("{}/collab/studio_notes.jsonl", crate::ROOT)).unwrap_or_default().lines().filter_map(|l| serde_json::from_str(l).ok()).collect()
 }
@@ -498,7 +515,7 @@ pub fn snapshot(world: &World) -> Value {
     let notes = read_notes();
     json!({"open": s.open, "model": s.model, "clip": s.clip, "time": s.time, "duration": s.duration, "hero_clips": s.hero_clips, "rules": s.rules,
            "selected": s.selected, "numbers": s.numbers, "corrections": corr.to_json()["corrections"], "patterns": patterns(corr, &notes),
-           "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len()})
+           "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len(), "audit_patterns": audit_patterns(&read_audit())})
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -614,6 +631,49 @@ fn ui(
                     } else {
                         theme::stat(ui, &format!("{bone}: {}", p["category"].as_str().unwrap_or("")), format!("{} notes", p["count"]), theme::TEAL);
                     }
+                }
+                theme::section(ui, "Pose audit (Claude)");
+                ui.horizontal(|ui| {
+                    ui.label(egui::RichText::new("Introduced by our pipeline; inherited source issues are left out. Click to stage the worst case.").size(11.0).color(theme::MUTED));
+                    if theme::button(ui, kit, "Reload", false).clicked() {
+                        studio.audit = read_audit();
+                    }
+                });
+                if let Some(models) = studio.audit["models"].as_object() {
+                    for (m, clips) in models {
+                        let n = clips.as_object().map_or(0, |c| c.len());
+                        let bad = clips.as_object().map_or(0, |c| c.values().filter(|v| v["issues"].as_u64().unwrap_or(0) > 0).count());
+                        theme::stat(ui, m, format!("{bad}/{n} clips flagged"), theme::MUTED);
+                    }
+                } else {
+                    ui.label(egui::RichText::new("No audit yet: run Tools/blender/pose_audit.py").color(theme::WARN));
+                }
+                let mut stage = None;
+                for p in audit_patterns(&studio.audit) {
+                    let (check, bone) = (p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
+                    let text = format!("{} {check} {bone}: {} clips, worst {:.3} @ {}", p["model"].as_str().unwrap_or(""), p["clips"], p["worst"].as_f64().unwrap_or(0.0), p["at"].as_str().unwrap_or(""));
+                    let color = if p["clips"].as_u64().unwrap_or(0) >= 3 { theme::BAD } else { theme::WARN };
+                    if ui.add(egui::Label::new(egui::RichText::new(text).size(11.5).color(color)).sense(egui::Sense::click())).clicked() {
+                        stage = Some(p.clone());
+                    }
+                }
+                if let Some(p) = stage {
+                    // "clip @t" -> stage that model, clip and normalized time, select the bone
+                    let at = p["at"].as_str().unwrap_or("");
+                    let (clip, t) = at.rsplit_once(" @").map_or((at, 0.0), |(c, t)| (c, t.parse::<f32>().unwrap_or(0.0)));
+                    let model = p["model"].as_str().unwrap_or("");
+                    let hero = matches!(model, "master.glb" | "fighter.glb");
+                    let path = if hero { "packs/hero/fighter.glb".to_owned() } else { format!("packs/npc/{model}") };
+                    if studio.model.as_deref() != Some(path.as_str()) {
+                        studio.spawn_request = Some(path);
+                    }
+                    studio.hero_clips = hero;
+                    let dur = if hero { lib.as_ref().map_or(1.0, |l| l.duration(clip)) } else { studio.own.as_ref().and_then(|(_, _, idx)| idx.get(clip)).map_or(1.0, |(_, d)| *d) };
+                    studio.clip = Some(clip.to_owned());
+                    studio.time = t * dur;
+                    studio.playing = false;
+                    studio.selected = p["bone"].as_str().and_then(|b| b.split("->").next()).filter(|b| b.starts_with("B_")).map(str::to_owned);
+                    studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
             3 => {

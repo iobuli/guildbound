@@ -98,6 +98,7 @@ def main():
     p.add_argument("--set", default="hero", choices=["hero", "npc"])
     p.add_argument("--source", default=os.path.join(ROOT, "assets", "packs", "_sources", "rpg_hero", "fighter.glb"))
     p.add_argument("--out", required=True)
+    p.add_argument("--only", default="", help="comma list of clip names (quick validation builds)")
     a = p.parse_args(sys.argv[sys.argv.index("--") + 1:])
     stage()
     for ob in list(bpy.data.objects):
@@ -164,6 +165,8 @@ def main():
             bpy.data.objects.remove(o, do_unlink=True)
         for act in [x for x in bpy.data.actions if x not in before]:
             bpy.data.actions.remove(act)
+        if a.only:
+            names = {k: v for k, v in names.items() if k in a.only.split(",")}
         take(a.source, names, {b: b for b in RPG_BONES}, root_bones=("Motion", "Motion"))
         # Human Basic Motions (Kevin Iglesias, HumanM rig): the non-combat set
         nc = {"nc_jump_begin": "HumanM@Jump01 - Begin", "nc_fall": "HumanM@Fall01", "nc_jump_land": "HumanM@Jump01 - Land"}
@@ -173,7 +176,7 @@ def main():
         for d in ("Forward", "ForwardRight", "ForwardLeft"):
             nc[f"nc_sprint_{d.lower()}"] = f"HumanM@Sprint01_{d}"
         files = {os.path.splitext(os.path.basename(f))[0]: f for f in glob.glob(os.path.join(HBM, "**", "*.fbx"), recursive=True) if "[RM]" not in f}
-        for name, stem in nc.items():
+        for name, stem in (nc.items() if not a.only else []):
             f = files.get(stem)
             if f is None:
                 report["skipped"].append(f"{name}: no {stem}")

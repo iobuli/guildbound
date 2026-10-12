@@ -14,7 +14,7 @@ import os
 import sys
 
 import bpy
-from mathutils import Matrix
+from mathutils import Matrix, Quaternion
 
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -212,6 +212,30 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bon
         s_frame = anatomical_frame(src, inv["B_Pelvis"], inv["B_Head"], inv["B_L_Foot"], inv["B_L_Toe0"])
         t_frame = anatomical_frame(tgt, "B_Pelvis", "B_Head", "B_L_Foot", "B_L_Toe0")
         alignment = t_frame @ s_frame.inverted()
+    # per mapped bone: rotation taking the target's rest limb direction onto the source's (world space). The
+    # direction runs from the bone's joint to its first mapped child's joint (glTF-imported bone tails are
+    # guesses and point anywhere); bones without a mapped child keep their rest (identity).
+    rest_align = {}
+    mapped = set(order)
+    # the anatomical chain: a bone's direction runs to this child joint (spine to neck, never to a clavicle)
+    chain = {"B_Pelvis": "B_Spine", "B_Spine": "B_Spine1", "B_Spine1": "B_Spine2", "B_Spine2": "B_Neck", "B_Neck": "B_Head"}
+    for side, hand in (("L", "B_L_Forearm.001"), ("R", "B_R_Hand")):
+        chain.update({f"B_{side}_Clavicle": f"B_{side}_UpperArm", f"B_{side}_UpperArm": f"B_{side}_Forearm", f"B_{side}_Forearm": hand,
+                      f"B_{side}_Thigh": f"B_{side}_Calf", f"B_{side}_Calf": f"B_{side}_Foot", f"B_{side}_Foot": f"B_{side}_Toe0"})
+    if "B_Spine2" in mapped and "B_Spine1" not in mapped:
+        chain["B_Spine"] = "B_Spine2"
+    for b in order:
+        tb = tgt.data.bones[b]
+        child = chain.get(b) if chain.get(b) in mapped else None
+        if child is None:
+            rest_align[b] = Quaternion()
+            continue
+        sb, sc = src.data.bones[inv[b]], src.data.bones[inv[child]]
+        s_dir = (sw @ sc.head_local) - (sw @ sb.head_local)
+        t_dir = (tw @ tgt.data.bones[child].head_local) - (tw @ tb.head_local)
+        if alignment is not None:
+            s_dir = alignment @ s_dir
+        rest_align[b] = t_dir.rotation_difference(s_dir) if s_dir.length > 1e-6 and t_dir.length > 1e-6 else Quaternion()
     for b in order:
         tgt.pose.bones[b].rotation_mode = "QUATERNION"
     tgt.animation_data_create()
@@ -222,6 +246,9 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bon
     act = bpy.data.actions.new(name)
     tgt.animation_data.action = act
     pelvis = "B_Pelvis"
+    contacts = [n for n in ("B_L_Calf", "B_R_Calf", "B_L_Foot", "B_R_Foot", "B_L_Toe0", "B_R_Toe0") if n in mapped]
+    floor = (tw @ tgt.data.bones["Motion"].head_local).z if "Motion" in tgt.data.bones else 0.0
+    translated = {fc.data_path.split('"')[1] for fc in fcurves(act_src) if fc.data_path.endswith(".location") and fc.data_path.startswith('pose.bones["')}
     for frame in range(start, end + 1):
         bpy.context.scene.frame_set(frame)
         correction = None
@@ -255,24 +282,49 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bon
             delta = s_world.to_quaternion() @ s_rest.to_quaternion().inverted()
             if alignment is not None:
                 delta = alignment @ delta @ alignment.inverted()
-            rot = delta @ t_rest.to_quaternion()
+            # Rest-pose alignment: turn the target bone's rest direction onto the source's rest direction first,
+            # so the final bone points where the source bone points even when the rest poses differ (T-pose vs
+            # A-pose arms). Without it the same delta aimed the arms elsewhere (boss Studio note, 2026-10-12).
+            rot = delta @ rest_align[b] @ t_rest.to_quaternion()
             if b == pelvis:
                 travel = s_world.translation - s_rest.translation
                 if alignment is not None:
                     travel = alignment @ travel
                 loc = t_rest.translation + travel * scale
             else:
+                # where the parent puts this joint (its own keyed location from earlier frames must not feed back)
+                t_pb.location = (0.0, 0.0, 0.0)
                 bpy.context.view_layer.update()
                 loc = (tw @ t_pb.matrix).translation
+                # authored joint translation (the RPG rig sways its spine base and offsets its neck): carry the
+                # source joint's offset from where its parent's pose puts its rest head (pose_audit: up to 27 deg
+                # pelvis-to-spine error in 40 clips without it)
+                sp = s_pb.parent
+                if sp is not None:
+                    expected = sw @ (sp.matrix @ (sp.bone.matrix_local.inverted() @ s_bone.head_local))
+                    if correction is not None:
+                        expected = correction @ expected
+                    dev = s_world.translation - expected
+                    if alignment is not None:
+                        dev = alignment @ dev
+                    loc = loc + dev * scale
             # Keep the target's world scale. Unit scale here turns a centimetre
             # rig into metre-sized bones, contaminating every descendant's pose.
             world = Matrix.LocRotScale(loc, rot, t_rest.to_scale())
             t_pb.matrix = tw.inverted() @ world
             key = start + (frame - start) * time_scale
             t_pb.keyframe_insert("rotation_quaternion", frame=key)
-            if b == pelvis:
+            if b == pelvis or inv[b] in translated:
                 t_pb.keyframe_insert("location", frame=key)
         bpy.context.view_layer.update()
+        # floor contact: other leg proportions can sink a kneeling or crouching body into the floor (death-kneel
+        # toes 12 cm under on the Ranger); lift the pelvis so no knee, ankle or ball goes below the root's floor
+        low = min((tw @ tgt.pose.bones[n].head).z for n in contacts)
+        if low < floor - 0.01 and pelvis in order:
+            ppb = tgt.pose.bones[pelvis]
+            ppb.matrix = tw.inverted() @ (Matrix.Translation((0.0, 0.0, floor - low)) @ (tw @ ppb.matrix))
+            ppb.keyframe_insert("location", frame=start + (frame - start) * time_scale)
+            bpy.context.view_layer.update()
     tgt.animation_data.action = None
     for b in order:
         pb = tgt.pose.bones[b]
@@ -398,6 +450,10 @@ def load_source(path, wanted):
     # glTF and FBX importers already convert source time into scene frames
     before_objs, before_acts = set(bpy.data.objects), set(bpy.data.actions)
     if ext in (".glb", ".gltf"):
+        # glTF stores seconds: import at the output rate so the bake samples every 30 fps source key (at the
+        # default 24 fps it sampled between keys and cut fast peaks; pose_audit showed 60-100 deg misses)
+        r = bpy.context.scene.render
+        r.fps, r.fps_base = OUT_FPS, 1.0
         bpy.ops.import_scene.gltf(filepath=path)
     else:
         bpy.ops.import_scene.fbx(filepath=path, use_anim=True)

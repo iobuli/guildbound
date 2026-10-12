@@ -13,11 +13,13 @@ use crate::anim::FighterRig;
 use crate::motion_math::world_transform;
 
 /// (segment start, joint, segment end, min bend deg, max bend deg). Bend 0 = the segments are in line.
+/// Calibrated on the Quaternius skeleton (hero and NPCs): its rest pose already bends the neck 30 deg and the
+/// upper chest 14 (the RPG rig: 4 and 5), so those limits sit higher than a straight-rest rig would need.
 pub const RULES: &[(&str, &str, &str, f32, f32)] = &[
     ("B_Pelvis", "B_Spine", "B_Spine1", 0.0, 40.0),
     ("B_Spine", "B_Spine1", "B_Spine2", 0.0, 35.0),
-    ("B_Spine1", "B_Spine2", "B_Neck", 0.0, 35.0),
-    ("B_Spine2", "B_Neck", "B_Head", 0.0, 55.0),
+    ("B_Spine1", "B_Spine2", "B_Neck", 0.0, 50.0),
+    ("B_Spine2", "B_Neck", "B_Head", 0.0, 70.0),
     ("B_L_Clavicle", "B_L_UpperArm", "B_L_Forearm", 0.0, 150.0),
     ("B_R_Clavicle", "B_R_UpperArm", "B_R_Forearm", 0.0, 150.0),
     // elbow: flexes up to 155 deg
@@ -26,9 +28,10 @@ pub const RULES: &[(&str, &str, &str, f32, f32)] = &[
     // wrist
     ("B_L_Forearm", "B_L_Forearm.001", "B_L_Finger2", 0.0, 80.0),
     ("B_R_Forearm", "B_R_Hand", "B_R_Finger2", 0.0, 80.0),
-    // ankle: the foot stays roughly across the shin (neutral about 90 deg), never folded into it or straight
-    ("B_L_Calf", "B_L_Foot", "B_L_Toe0", 40.0, 145.0),
-    ("B_R_Calf", "B_R_Foot", "B_R_Toe0", 40.0, 145.0),
+    // ankle: neutral about 70 deg on this skeleton (measured idle); push-off plantarflexes about 50 more
+    // (Kevin mocap reaches 22-31 in every run, 13 landing a jump), dorsiflexion stays well under 145
+    ("B_L_Calf", "B_L_Foot", "B_L_Toe0", 15.0, 145.0),
+    ("B_R_Calf", "B_R_Foot", "B_R_Toe0", 15.0, 145.0),
 ];
 
 #[derive(Resource)]
