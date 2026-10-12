@@ -169,7 +169,7 @@ def main():
             names = {k: v for k, v in names.items() if k in a.only.split(",")}
         take(a.source, names, {b: b for b in RPG_BONES}, root_bones=("Motion", "Motion"))
         # Human Basic Motions (Kevin Iglesias, HumanM rig): the non-combat set
-        nc = {"nc_jump_begin": "HumanM@Jump01 - Begin", "nc_fall": "HumanM@Fall01", "nc_jump_land": "HumanM@Jump01 - Land"}
+        nc = {"nc_idle": "HumanM@Idle01", "nc_jump_begin": "HumanM@Jump01 - Begin", "nc_fall": "HumanM@Fall01", "nc_jump_land": "HumanM@Jump01 - Land"}
         for kind in ("Walk", "Run"):
             for d in ("Forward", "ForwardRight", "Right", "BackwardRight", "Backward", "BackwardLeft", "Left", "ForwardLeft"):
                 nc[f"nc_{kind.lower()}_{d.lower()}"] = f"HumanM@{kind}01_{d}"

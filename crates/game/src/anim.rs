@@ -253,10 +253,11 @@ fn resolve_clusters(lib: &AnimLibrary) -> Vec<(&'static str, &'static str, Vec<S
         .iter()
         .map(|(name, limb, _, exact, fragments)| {
             let mut clips: Vec<String> = exact.iter().filter(|c| lib.node(c).is_some()).map(|c| c.to_string()).collect();
-            if hero && let Some(mapped) = mapping["combat"][*name].as_array() {
+            let curated = hero && mapping["combat"][*name].is_array();
+            if curated && let Some(mapped) = mapping["combat"][*name].as_array() {
                 clips = mapped.iter().filter_map(|c| c.as_str()).filter(|c| lib.node(c).is_some()).map(str::to_owned).collect();
             }
-            if clips.is_empty() {
+            if clips.is_empty() && !curated {
                 for frag in *fragments {
                     for (n, _) in &lib.clips {
                         if n.to_lowercase().contains(frag) && !clips.contains(n) {
@@ -548,6 +549,7 @@ pub fn on_rig_ready(
     mut rigs: Query<&mut FighterRig>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut commands: Commands,
+    libs: Res<Libraries>,
 ) {
     let Ok(mut rig) = rigs.get_mut(ready.entity) else { return };
     let mut rest = crate::procedural::RestPose::default();
@@ -590,7 +592,8 @@ pub fn on_rig_ready(
             }
         }
     }
-    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default()));
+    let profile = libs.current().map(|l| crate::rig_profile::RigProfile::load(&l.path)).unwrap_or_default();
+    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default(), profile));
 }
 
 /// In-place normalization at runtime: a dedicated root-motion bone keeps its vertical motion (hops, crouches)
@@ -973,7 +976,10 @@ pub fn drive_animation(
                 continue;
             }
         }
-        let stance = if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
+        // out of combat a relaxed standing idle (boss: sprint into the fight stance felt heavy); the fight
+        // stance comes with combat
+        let relaxed = !sim.world.in_combat(rig.fighter) && lib.node("nc_idle").is_some();
+        let stance = if relaxed { Some("nc_idle") } else if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
         let pose = match f.action.kind {
             guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
             guildbound_sim::ActionKind::Charge(_) => r.spell_charge.as_deref().or(stance),
