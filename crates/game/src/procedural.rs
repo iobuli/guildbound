@@ -271,11 +271,30 @@ fn lean(world: &mut World, by_name: &HashMap<String, Entity>, tilt: Vec3) {
     }
 }
 
+/// The world point under the mouse pointer: the cursor when it is free (menus, panels), the screen centre while
+/// the mouse steers the camera (cursor locked). The ground under the ray, or 25 m out when it points at the sky.
+fn pointer_target(world: &mut World) -> Option<Vec3> {
+    let cursor = world
+        .query_filtered::<&Window, With<bevy::window::PrimaryWindow>>()
+        .iter(world)
+        .next()
+        .and_then(|w| w.cursor_position());
+    let (camera, global) = world
+        .query_filtered::<(&Camera, &GlobalTransform), With<crate::camera::OrbitCamera>>()
+        .iter(world)
+        .next()?;
+    let at = cursor.or_else(|| camera.logical_viewport_size().map(|s| s * 0.5))?;
+    let ray = camera.viewport_to_world(global, at).ok()?;
+    let dir = ray.direction.as_vec3();
+    let ground = (dir.y < -0.02).then(|| -ray.origin.y / dir.y).filter(|t| (1.5..60.0).contains(t));
+    Some(ray.origin + dir * ground.unwrap_or(25.0))
+}
+
 /// Fighters: fists in a fight, open hands for magic, relaxed out of combat; eyes on the lock or strike target,
 /// otherwise the player looks where the camera looks (and down the road while running), others at the player.
 pub fn fighters(world: &mut World) {
     use guildbound_sim::ActionKind as K;
-    let cam = world.query_filtered::<&GlobalTransform, With<crate::camera::OrbitCamera>>().iter(world).next().map(|g| (g.translation(), g.forward().as_vec3()));
+    let aim = pointer_target(world);
     let mut q = world.query::<(Entity, &crate::anim::FighterRig)>();
     let rigs: Vec<(Entity, usize, Vec<Entity>, f32)> = q.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone(), r.chest_aim())).collect();
     let sim = world.resource::<crate::sim_bridge::Sim>();
@@ -302,14 +321,10 @@ pub fn fighters(world: &mut World) {
         } else if let Some(p) = f.lock_target.or(f.strike_target).and_then(head_of) {
             Some((p, 1.0))
         } else if i == 0 {
-            // player: down the road while moving fast, where the camera looks otherwise (no alternating
-            // glances: switching targets every second swung the head back and forth - boss, 2026-10-12)
+            // player: the head tracks the mouse pointer - the world point under it (boss, 2026-10-13); a little
+            // less at a sprint, where the run carries the head
             let speed = f.velocity.length();
-            if speed > 2.5 {
-                Some((me + Vec3::new(f.velocity.x, 0.0, f.velocity.z).normalize_or_zero() * 20.0, 0.5))
-            } else {
-                cam.map(|(_, dir)| (me + Vec3::new(dir.x, dir.y.clamp(-0.3, 0.3), dir.z) * 30.0, 0.6))
-            }
+            aim.map(|p| (p, if speed > 4.0 { 0.6 } else { 0.9 }))
         } else {
             head_of(0).filter(|p| (*p - me).length() < 8.0 && (*p - me).normalize_or_zero().dot(forward) > -0.2).map(|p| (p, 0.9))
         };

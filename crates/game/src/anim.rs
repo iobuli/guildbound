@@ -501,7 +501,7 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
         block_body: lib.find(&["bb_front_a", "block"], &[]),
         block_low: lib.find(&["lb_front_a", "block"], &[]),
         guard: lib.find(&["idle_a", "unarmed-idle"], &["static"]),
-        spell_charge: lib.find(&["unarmed-idle", "idle"], &["static"]),
+        spell_charge: lib.find(&["nc_idle", "unarmed-idle", "idle"], &["static"]),
         hit_body: lib.find(&["bd_front_a", "gethit-f2", "hit"], &[]),
         hit_low: lib.find(&["ld_front_a", "gethit-f2", "hit"], &[]),
         jump: lib.find(&["jump_start", "unarmed-jump", "jump"], &["flip", "land", "loop"]),
@@ -978,9 +978,9 @@ pub fn drive_animation(
                 continue;
             }
         }
-        // out of combat a relaxed standing idle (boss: sprint into the fight stance felt heavy); the fight
-        // stance comes with combat
-        let relaxed = !sim.world.in_combat(rig.fighter) && lib.node("nc_idle").is_some();
+        // the relaxed standing idle in and out of combat (boss, 2026-10-13: drop the Unarmed- fight idle); the
+        // fight reads from the fists and the guard pose, not from a held stance
+        let relaxed = lib.node("nc_idle").is_some();
         let stance = if relaxed { Some("nc_idle") } else if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
         let pose = match f.action.kind {
             guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
