@@ -75,7 +75,6 @@ pub struct Roles {
     pub block_body: Option<String>,
     pub block_low: Option<String>,
     pub guard: Option<String>,
-    pub ki_charge: Option<String>,
     pub spell_charge: Option<String>,
     pub hit_body: Option<String>,
     pub hit_low: Option<String>,
@@ -486,7 +485,6 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
         block_body: lib.find(&["bb_front_a", "block"], &[]),
         block_low: lib.find(&["lb_front_a", "block"], &[]),
         guard: lib.find(&["idle_a", "unarmed-idle"], &["static"]),
-        ki_charge: lib.find(&["unarmed-idle-static", "idle"], &[]),
         spell_charge: lib.find(&["unarmed-idle", "idle"], &["static"]),
         hit_body: lib.find(&["bd_front_a", "gethit-f2", "hit"], &[]),
         hit_low: lib.find(&["ld_front_a", "gethit-f2", "hit"], &[]),
@@ -517,7 +515,7 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
         lib.roles = Roles {
             idle: role("idle"), walk: role("walk"), run: role("run"), back: role("back"),
             hit: role("hit"), hit_body: role("hit_body"), hit_low: role("hit_low"), block: role("block"),
-            block_body: role("block_body"), block_low: role("block_low"), guard: role("guard"), ki_charge: role("ki_charge"), spell_charge: role("spell_charge"),
+            block_body: role("block_body"), block_low: role("block_low"), guard: role("guard"), spell_charge: role("spell_charge"),
             knockdown: role("knockdown"), getup: role("getup"), jump: role("jump"), fall: role("fall"), roll: role("roll"),
             dizzy: role("dizzy"), drink: role("drink"), hit_back: role("hit_back"), death: role("death"), death_backstab: role("death_backstab"),
             guard_break: role("guard_break"), staggered: role("staggered"), pickup: role("pickup"),
@@ -562,7 +560,17 @@ pub fn on_rig_ready(
             }
         }
         if let Ok(mut m) = mats.get_mut(e) {
-            m.0 = tint.clone();
+            // textured models (the Quaternius master character) keep their textures: the player as authored,
+            // others with the fighter colour multiplied in; untextured mannequins take the flat tint
+            match materials.get(&m.0).cloned() {
+                Some(mut mat) if mat.base_color_texture.is_some() => {
+                    if rig.fighter != 0 {
+                        mat.base_color = rig.color.mix(&Color::WHITE, 0.35);
+                        m.0 = materials.add(mat);
+                    }
+                }
+                _ => m.0 = tint.clone(),
+            }
         }
     }
 }
@@ -730,7 +738,7 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
                 }
             }
             let pick = |name: &str| CLUSTER_SPECS.iter().position(|c| c.0 == name);
-            let cluster = if spell.burst { "uppercut" } else { "cross" };
+            let cluster = if matches!(spell.kind, guildbound_sim::SpellKind::Nova) { "uppercut" } else { "cross" };
             let clip = [cluster, "jab"].iter().filter_map(|n| pick(n)).find_map(|i| cursor.next(lib, i));
             (clip, spell.prepare + spell.recovery)
         }
@@ -950,7 +958,6 @@ pub fn drive_animation(
         let stance = if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
         let pose = match f.action.kind {
             guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
-            guildbound_sim::ActionKind::KiCharge => r.ki_charge.as_deref().or(stance),
             guildbound_sim::ActionKind::Charge(_) => r.spell_charge.as_deref().or(stance),
             _ => stance,
         };
@@ -967,8 +974,14 @@ pub fn drive_animation(
             let d = (want - rig.loco_angle + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
             rig.loco_angle += d * (1.0 - (-14.0 * dt_anim).exp());
         }
-        let (walk_speed, run_speed) = (sim.world.tuning.walk_speed, sim.world.tuning.run_speed);
-        let gait = ((speed - walk_speed) / (run_speed - walk_speed).max(0.1)).clamp(0.0, 1.0);
+        let (walk_speed, run_speed, sprint_speed) = (sim.world.tuning.walk_speed, sim.world.tuning.run_speed, sim.world.tuning.sprint_speed);
+        // out of combat the relaxed set plays (walk -> jog -> sprint); in combat the RPG strafe set
+        let relaxed = sim.world.tuning.relaxed && !sim.world.in_combat(rig.fighter);
+        let gait = if speed <= run_speed || !relaxed {
+            ((speed - walk_speed) / (run_speed - walk_speed).max(0.1)).clamp(0.0, 1.0)
+        } else {
+            1.0 + ((speed - run_speed) / (sprint_speed - run_speed).max(0.1)).clamp(0.0, 1.0)
+        };
         let idle_k = (speed / 0.6).clamp(0.0, 1.0);
         let idle_w = 1.0 - idle_k * idle_k * (3.0 - 2.0 * idle_k);
         let mut set: Vec<(String, f32, bool)> = Vec::new(); // clip, weight, gait-synced
@@ -978,9 +991,9 @@ pub fn drive_animation(
             } else {
                 // A/B reference: snap to the nearest direction and to walk or run
                 let q = std::f32::consts::FRAC_PI_4;
-                ((rig.loco_angle / q).round() * q, if gait < 0.5 { 0.0 } else { 1.0 })
+                ((rig.loco_angle / q).round() * q, gait.round())
             };
-            for (clip, w) in locomotion.blend(&lib, angle, gait) {
+            for (clip, w) in locomotion.blend(&lib, angle, gait, relaxed) {
                 set.push((clip.to_owned(), w * (1.0 - idle_w), true));
             }
         }
@@ -1008,7 +1021,7 @@ pub fn drive_animation(
         let synced: f32 = nodes.iter().filter(|x| x.3).map(|x| x.2).sum();
         if synced > 1e-4 {
             let stride: f32 = nodes.iter().filter(|x| x.3).map(|x| {
-                let reference = if x.1.contains("Run") || x.1.contains("run") { settings.run_reference_speed } else { settings.reference_speed };
+                let reference = if x.1.contains("sprint") { sim.world.tuning.sprint_speed } else if x.1.contains("Run") || x.1.contains("run") { settings.run_reference_speed } else { settings.reference_speed };
                 lib.stride(&x.1, reference) * x.2
             }).sum::<f32>() / synced;
             rig.gait_phase = crate::controller::advance_phase(rig.gait_phase, travel, stride);

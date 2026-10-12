@@ -120,3 +120,11 @@ Avian creates 11 capsule bodies/10 limited joints for knockdown, inherits capped
 - Running uses a phase-synced blend space (two nearest of eight directions x walk/run, idle fade, left-foot-aligned phase) instead of snapping between single clips.
 - Boss assets: Quaternius MegaKits, UAL2, Base Characters, Bestiary (CC0), Wenrexa UI/icon packs (boss's licence), Cat Prisbrey's souls-like template (Unlicense + CC0). Zips stay in `assets/boss added assets/` and `assets/UI REWORK/` (git-ignored); extractions in `assets/packs/_sources/`.
 - Beta V2: the game is an open-world RPG. Bigger scope: world streaming beyond the courtyard, the Wenrexa UI rework, souls-like systems (quick slot, bonfire spawn sites, ladders/levers/gates, patrols), Bestiary mobs.
+
+## Decision 26: Beta V2 master (boss, 2026-10-12)
+- Master character = Quaternius Universal Base Character head + Modular Character Outfit (hero: Male Ranger) on the UAL skeleton with bones renamed to the RPG names; all hero clips retargeted onto it. NPCs use the same pipeline (peasants, rangers) and are presentation-only.
+- Cut: non-RPG idles (FightingMotions, caster, Kevin); the RPG stance is idle, guard and spell-charge pose.
+- Magic revamp: mana (120, regen x3 out of combat), five skills on keys 1-5 (Fireball, Chain Lightning, Frost Nova, Arcane Blink, Healing Light) with per-skill cooldowns; no ki blast, no ki charge. Hero and partner pools 150 hp.
+- A perfect parry answers by itself with the heavy counter blow (knockdown -> ragdoll).
+- Combat mode = locked on or fought within 5 s; exploring = jog by default, Shift sprints, relaxed clip set; combat = RPG strafe set.
+- HUD rebuilt on the Wenrexa hologram kit (vitals card, skill bar with icons/cooldowns/costs, quick slots R/T, target card).

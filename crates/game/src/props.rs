@@ -24,9 +24,17 @@ enum Body {
     /// Scenery out of reach: no collider.
     None,
     Static,
-    /// Knocked around by fighters (kg).
-    Dynamic(f32),
+    /// Knocked around by fighters: mass (kg) and a box (full size, m) present from the first frame. A collider
+    /// built from the mesh only appears once the scene has loaded; until then the body fell through the floor.
+    Crate(f32, [f32; 3]),
+    /// Upright cylinder: mass, radius, height.
+    Drum(f32, f32, f32),
 }
+
+/// Measured from the kits' glTF bounds (Crate_Wooden 1.08 x 1.20 x 1.16 at node scale 0.78; Barrel r 0.35, h 0.9),
+/// before the per-row scale.
+const CRATE: Body = Body::Crate(10.0, [0.84, 0.94, 0.90]);
+const BARREL: Body = Body::Drum(25.0, 0.35, 0.90);
 
 const PROPS: &str = "packs/_sources/quaternius/Fantasy_Props_MegaKit/Exports/glTF";
 const NATURE: &str = "packs/_sources/quaternius/Stylized_Nature_MegaKit/glTF";
@@ -37,13 +45,13 @@ const VILLAGE: &str = "packs/_sources/quaternius/Medieval_Village_MegaKit/Mediev
 /// Add a row to add a piece.
 const DRESSING: &[(&str, &str, f32, f32, f32, f32, Body)] = &[
     // knockable clutter inside the court (where the primitive crates were)
-    (PROPS, "Crate_Wooden", -3.0, 3.0, 10.0, 0.75, Body::Dynamic(10.0)),
-    (PROPS, "Crate_Wooden", -3.7, 3.4, -25.0, 0.75, Body::Dynamic(10.0)),
-    (PROPS, "Barrel", -3.3, 4.1, 0.0, 1.0, Body::Dynamic(25.0)),
-    (PROPS, "Crate_Wooden", 3.5, -2.5, 40.0, 0.75, Body::Dynamic(10.0)),
-    (PROPS, "Barrel_Apples", 4.1, -3.1, 0.0, 1.0, Body::Dynamic(30.0)),
-    (PROPS, "Crate_Wooden", 2.8, 3.8, -5.0, 0.75, Body::Dynamic(10.0)),
-    (PROPS, "Barrel", -4.2, -3.6, 0.0, 1.0, Body::Dynamic(25.0)),
+    (PROPS, "Crate_Wooden", -3.0, 3.0, 10.0, 0.75, CRATE),
+    (PROPS, "Crate_Wooden", -3.7, 3.4, -25.0, 0.75, CRATE),
+    (PROPS, "Barrel", -3.3, 4.1, 0.0, 1.0, BARREL),
+    (PROPS, "Crate_Wooden", 3.5, -2.5, 40.0, 0.75, CRATE),
+    (PROPS, "Barrel_Apples", 4.1, -3.1, 0.0, 1.0, BARREL),
+    (PROPS, "Crate_Wooden", 2.8, 3.8, -5.0, 0.75, CRATE),
+    (PROPS, "Barrel", -4.2, -3.6, 0.0, 1.0, BARREL),
     // training corner pieces, just inside the chalk line
     (PROPS, "Dummy", -8.6, -8.6, 45.0, 1.0, Body::Static),
     (PROPS, "Dummy", 8.6, 8.6, 225.0, 1.0, Body::Static),
@@ -134,7 +142,9 @@ pub fn world_scatter() -> Vec<(&'static str, String, f32, f32, f32, f32, f32)> {
 
 /// Sim obstacles for the open world: tree trunks and rocks from the scatter.
 pub fn obstacles() -> Vec<(guildbound_sim::V2, f32)> {
-    world_scatter().into_iter().filter(|e| e.6 > 0.0).map(|e| (guildbound_sim::V2::new(e.2, e.3), e.6)).collect()
+    let mut out: Vec<_> = world_scatter().into_iter().filter(|e| e.6 > 0.0).map(|e| (guildbound_sim::V2::new(e.2, e.3), e.6)).collect();
+    out.extend(crate::npc::obstacles());
+    out
 }
 
 pub fn spawn(mut commands: Commands, assets: Res<AssetServer>) {
@@ -142,15 +152,24 @@ pub fn spawn(mut commands: Commands, assets: Res<AssetServer>) {
     let hull = || ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh);
     let mut place = |path: String, x: f32, z: f32, yaw: f32, scale: f32, body: Body| {
         let scene: Handle<bevy::world_serialization::WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path));
-        let t = Transform::from_xyz(x, 0.0, z).with_rotation(Quat::from_rotation_y(yaw.to_radians())).with_scale(Vec3::splat(scale));
-        let mut e = commands.spawn((bevy::world_serialization::WorldAssetRoot(scene), t));
+        let rot = Quat::from_rotation_y(yaw.to_radians());
+        let view = (bevy::world_serialization::WorldAssetRoot(scene), Transform::from_scale(Vec3::splat(scale)));
         match body {
-            Body::None => {}
-            Body::Static => {
-                e.insert((RigidBody::Static, hull()));
+            Body::None => {
+                commands.spawn((view.0, Transform::from_xyz(x, 0.0, z).with_rotation(rot).with_scale(Vec3::splat(scale))));
             }
-            Body::Dynamic(kg) => {
-                e.insert((RigidBody::Dynamic, hull(), Mass(kg)));
+            Body::Static => {
+                commands.spawn((view.0, Transform::from_xyz(x, 0.0, z).with_rotation(rot).with_scale(Vec3::splat(scale)), RigidBody::Static, hull()));
+            }
+            Body::Crate(kg, [w, h, d]) => {
+                let half = 0.5 * h * scale;
+                commands.spawn((Transform::from_xyz(x, half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cuboid(w * scale, h * scale, d * scale), Mass(kg)))
+                    .with_child((view.0, view.1.with_translation(Vec3::Y * -half)));
+            }
+            Body::Drum(kg, r, h) => {
+                let half = 0.5 * h * scale;
+                commands.spawn((Transform::from_xyz(x, half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cylinder(r * scale, h * scale), Mass(kg)))
+                    .with_child((view.0, view.1.with_translation(Vec3::Y * -half)));
             }
         }
     };

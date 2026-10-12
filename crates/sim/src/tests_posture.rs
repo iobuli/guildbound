@@ -236,3 +236,56 @@ fn moving_cancels_late_recovery_only() {
     w.step(&[walk]);
     assert_eq!(w.fighters[0].action.kind, ActionKind::None);
 }
+
+#[test]
+fn a_perfect_parry_answers_with_a_heavy_counter_that_knocks_down() {
+    let mut w = duel(0.9);
+    w.step(&[jab(), Intent::default()]);
+    let mut parried = false;
+    for k in 0..200 {
+        let guard = Intent { guard_pressed: k == 4, guard: (4..10).contains(&k), ..Default::default() };
+        w.step(&[Intent::default(), guard]);
+        parried |= w.contacts.iter().any(|c| c.outcome == Outcome::Parried);
+        if w.contacts.iter().any(|c| c.attacker == 1 && c.defender == 0) {
+            break;
+        }
+    }
+    assert!(parried);
+    assert_eq!(w.fighters[1].last_move, Some(COUNTER_BLOW), "the parrier counters by itself");
+    assert!(matches!(w.fighters[0].action.kind, ActionKind::Knockdown | ActionKind::Dizzy), "{:?}", w.fighters[0].action.kind);
+}
+
+#[test]
+fn fighting_enters_combat_mode_which_lingers_then_ends() {
+    let mut w = duel(3.0);
+    assert!(!w.in_combat(0));
+    w.step(&[jab(), Intent::default()]);
+    assert!(w.in_combat(0));
+    for _ in 0..((w.combat.combat_linger / STEP) as usize + 5) {
+        w.step(&[]);
+    }
+    assert!(!w.in_combat(0));
+    w.fighters[0].lock_target = Some(1);
+    assert!(w.in_combat(0), "lock-on is combat");
+}
+
+#[test]
+fn relaxed_movement_jogs_and_sprints_out_of_combat_and_walks_in_it() {
+    let mut w = duel(30.0);
+    w.tuning.relaxed = true;
+    w.tuning.arena_half_size = 60.0;
+    let go = Intent { move_dir: V2::new(0.0, 1.0), ..Default::default() };
+    for _ in 0..240 {
+        w.step(&[go]);
+    }
+    assert!((w.fighters[0].velocity.length() - w.tuning.run_speed).abs() < 0.1, "jog");
+    for _ in 0..240 {
+        w.step(&[Intent { run: true, ..go }]);
+    }
+    assert!((w.fighters[0].velocity.length() - w.tuning.sprint_speed).abs() < 0.1, "sprint");
+    w.fighters[0].lock_target = Some(1);
+    for _ in 0..240 {
+        w.step(&[go]);
+    }
+    assert!((w.fighters[0].velocity.length() - w.tuning.walk_speed).abs() < 0.1, "combat walk");
+}

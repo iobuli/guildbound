@@ -64,7 +64,7 @@ const fn potion(name: &'static str, heal: f32, ki: f32) -> ItemDef {
 
 pub const ITEMS: &[ItemDef] = &[
     potion("healing draught", 35.0, 0.0),
-    potion("ki tonic", 0.0, 40.0),
+    potion("mana tonic", 0.0, 50.0),
     gear("hand wraps", Slot::Hands, 10.0, 0.0, 0.0),
     gear("iron knuckles", Slot::Hands, 25.0, 0.0, 0.0),
     gear("padded vest", Slot::Chest, 0.0, 20.0, 10.0),
@@ -76,7 +76,8 @@ pub const ITEMS: &[ItemDef] = &[
 ];
 
 pub const HEALING_DRAUGHT: ItemId = 0;
-pub const KI_TONIC: ItemId = 1;
+pub const MANA_TONIC: ItemId = 1;
+pub const KI_TONIC: ItemId = MANA_TONIC;
 pub const HAND_WRAPS: ItemId = 2;
 pub const IRON_KNUCKLES: ItemId = 3;
 pub const PADDED_VEST: ItemId = 4;

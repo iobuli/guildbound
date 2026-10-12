@@ -61,7 +61,7 @@ fn equip_swaps_with_the_bag_and_vitality_moves_max_hp() {
 fn consumables_restore_and_are_used_up() {
     let mut w = duel(3.0);
     w.fighters[0].hp = 50.0;
-    w.fighters[0].ki = 10.0;
+    w.fighters[0].mana = 10.0;
     w.fighters[0].kit.bag = vec![HEALING_DRAUGHT, KI_TONIC];
     w.step(&[bag(BagAction::Use(0))]);
     assert_eq!(w.fighters[0].action.kind, ActionKind::Drink(HEALING_DRAUGHT));
@@ -74,7 +74,7 @@ fn consumables_restore_and_are_used_up() {
     for _ in 0..140 {
         w.step(&[]);
     }
-    assert!(w.fighters[0].ki >= 50.0);
+    assert!(w.fighters[0].mana >= 50.0);
     assert!(w.fighters[0].kit.bag.is_empty());
 }
 

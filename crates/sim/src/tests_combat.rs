@@ -271,17 +271,22 @@ fn cast(slot: u8, held: bool) -> Intent {
 }
 
 #[test]
-fn ki_blast_flies_and_hits() {
-    let mut w = duel(5.0);
-    w.step(&[cast(1, false), Intent::default()]);
-    for _ in 0..120 {
-        w.step(&[Intent::default(), Intent::default()]);
+fn chain_lightning_jumps_to_nearby_enemies_with_falloff() {
+    let mut w = duel(4.0);
+    let m1 = crate::mobs::spawn(&mut w, V2::new(6.0, 1.0), 100.0);
+    let m2 = crate::mobs::spawn(&mut w, V2::new(8.0, -1.0), 100.0);
+    let far = crate::mobs::spawn(&mut w, V2::new(30.0, 0.0), 100.0);
+    w.fighters[0].lock_target = Some(1);
+    w.step(&[cast(crate::magic::CHAIN_LIGHTNING as u8, false)]);
+    for _ in 0..60 {
+        w.step(&[]);
     }
-    let c = w.contacts.first().copied().expect("ki blast reaches 5 m");
-    assert_eq!((c.source, c.outcome), (Source::Spell(crate::magic::KI_BLAST), Outcome::Hit));
-    assert!(w.fighters[0].ki < 60.0 + 4.0 * 2.0);
+    let hits: Vec<_> = w.contacts.iter().filter(|c| c.source == Source::Spell(crate::magic::CHAIN_LIGHTNING)).map(|c| (c.defender, c.damage)).collect();
+    assert_eq!(hits.iter().map(|h| h.0).collect::<Vec<_>>(), vec![1, m1, m2], "target then two jumps");
+    assert!(hits[1].1 < hits[0].1 && hits[2].1 < hits[1].1, "each jump hits softer: {hits:?}");
+    assert_eq!(w.fighters[far].hp, 100.0);
+    assert!(w.fighters[0].cooldowns[crate::magic::CHAIN_LIGHTNING] > 0.0);
 }
-
 #[test]
 fn charged_fireball_hits_harder_than_a_tap() {
     let dmg = |hold_ticks: usize| {
@@ -302,12 +307,12 @@ fn charged_fireball_hits_harder_than_a_tap() {
 }
 
 #[test]
-fn guard_blocks_magic_and_ki_gates_casting() {
+fn guard_blocks_magic_and_mana_and_cooldown_gate_casting() {
     let mut w = duel(5.0);
     for _ in 0..30 {
         w.step(&[Intent::default(), guard(false)]);
     }
-    w.step(&[cast(1, false), guard(false)]);
+    w.step(&[cast(0, false), guard(false)]);
     for _ in 0..120 {
         w.step(&[Intent::default(), guard(false)]);
     }
@@ -315,26 +320,63 @@ fn guard_blocks_magic_and_ki_gates_casting() {
     assert_eq!(w.fighters[1].hp, 100.0);
 
     let mut broke = duel(5.0);
-    broke.fighters[0].ki = 1.0;
-    broke.step(&[cast(2, false), Intent::default()]);
-    assert_eq!(broke.fighters[0].action.kind, ActionKind::None, "not enough ki: no cast");
+    broke.fighters[0].mana = 1.0;
+    broke.step(&[cast(1, false), Intent::default()]);
+    assert_eq!(broke.fighters[0].action.kind, ActionKind::None, "not enough mana: no cast");
+
+    let mut cd = duel(5.0);
+    cd.fighters[0].cooldowns[crate::magic::FROST_NOVA] = 2.0;
+    cd.step(&[cast(crate::magic::FROST_NOVA as u8, false), Intent::default()]);
+    assert_eq!(cd.fighters[0].action.kind, ActionKind::None, "on cooldown: no cast");
 }
 
 #[test]
-fn holding_q_charges_ki_and_burst_shoves_everyone() {
+fn frost_nova_freezes_everyone_close_and_blink_teleports() {
     let mut w = duel(1.5);
-    w.fighters[0].ki = 10.0;
-    for _ in 0..120 {
-        w.step(&[Intent { ki_charge: true, ..Default::default() }, Intent::default()]);
-    }
-    assert!(w.fighters[0].ki > 40.0, "ki {}", w.fighters[0].ki);
-    w.step(&[Intent::default(), Intent::default()]);
-    w.step(&[cast(3, false), Intent::default()]);
-    for _ in 0..60 {
+    w.step(&[cast(crate::magic::FROST_NOVA as u8, false), Intent::default()]);
+    for _ in 0..50 {
         w.step(&[Intent::default(), Intent::default()]);
     }
-    assert!(w.contacts.iter().any(|c| c.source == Source::Spell(crate::magic::BURST)));
-    assert!(w.fighters[1].position.x > 2.0, "burst pushes the target away");
+    let c = w.contacts.iter().find(|c| c.source == Source::Spell(crate::magic::FROST_NOVA)).copied().expect("nova hits");
+    assert_eq!(c.outcome, Outcome::Hit);
+
+    let mut b = duel(5.0);
+    let start = b.fighters[0].position;
+    b.step(&[Intent { cast: Some(crate::magic::BLINK as u8), move_dir: V2::new(0.0, 1.0), ..Default::default() }, Intent::default()]);
+    for _ in 0..30 {
+        b.step(&[Intent::default(), Intent::default()]);
+    }
+    let moved = b.fighters[0].position - start;
+    assert!((moved.z - 5.0).abs() < 0.2 && moved.x.abs() < 0.2, "blinked 5 m along the stick: {moved:?}");
+}
+
+#[test]
+fn healing_light_restores_hp_after_its_channel() {
+    let mut w = duel(8.0);
+    w.fighters[0].hp = 50.0;
+    w.step(&[cast(crate::magic::HEALING_LIGHT as u8, false), Intent::default()]);
+    assert_eq!(w.fighters[0].hp, 50.0, "nothing before the release");
+    for _ in 0..120 {
+        w.step(&[Intent::default(), Intent::default()]);
+    }
+    assert_eq!(w.fighters[0].hp, 90.0);
+}
+
+#[test]
+fn mana_regenerates_faster_out_of_combat() {
+    let rate = |fight: bool| {
+        let mut w = duel(8.0);
+        w.fighters[0].mana = 0.0;
+        if fight {
+            w.fighters[0].lock_target = Some(1);
+        }
+        for _ in 0..120 {
+            w.step(&[Intent::default(), Intent::default()]);
+        }
+        w.fighters[0].mana
+    };
+    let (combat, rest) = (rate(true), rate(false));
+    assert!((rest / combat - 3.0).abs() < 0.05, "rest {rest} vs combat {combat}");
 }
 
 #[test]
@@ -345,7 +387,7 @@ fn cancelling_held_input_never_releases_a_spell() {
         w.step(&[Intent { cast_held: true, ..Default::default() }, Intent::default()]);
     }
     assert!(matches!(w.fighters[0].action.kind, ActionKind::Charge(_)));
-    let ki = w.fighters[0].ki;
+    let ki = w.fighters[0].mana;
     w.cancel_held_action(0);
     for _ in 0..120 {
         w.step(&[Intent::default(), Intent::default()]);
@@ -353,7 +395,7 @@ fn cancelling_held_input_never_releases_a_spell() {
     assert!(w.projectiles.is_empty());
     assert!(w.contacts.is_empty());
     assert_eq!(w.fighters[1].hp, 100.0);
-    assert!(w.fighters[0].ki < ki + 5.0, "cancellation does not refund the spell cost");
+    assert!(w.fighters[0].mana < ki + 5.0, "cancellation does not refund the spell cost");
     assert_eq!(w.fighters[0].charge, 0.0);
 }
 
@@ -474,11 +516,11 @@ fn a_parry_counter_uses_its_own_move_and_consumes_the_window_on_hit() {
 #[test]
 fn homing_dash_spends_energy_and_buffers_a_rush_until_evade_ends() {
     let mut w = duel(5.0);
-    w.magic.ki_regen = 0.0;
+    w.magic.mana_regen = 0.0;
     w.fighters[0].lock_target = Some(1);
-    let energy = w.fighters[0].ki;
+    let energy = w.fighters[0].mana;
     w.step(&[Intent { step: true, run: true, ..Default::default() }, Intent::default()]);
-    assert_eq!(w.fighters[0].ki, energy - w.combat.homing_dash_cost);
+    assert_eq!(w.fighters[0].mana, energy - w.combat.homing_dash_cost);
     w.step(&[light(), Intent::default()]);
     assert_eq!(w.fighters[0].action.kind, ActionKind::Step);
     for _ in 0..45 {
@@ -494,12 +536,12 @@ fn homing_dash_spends_energy_and_buffers_a_rush_until_evade_ends() {
 #[test]
 fn empty_energy_keeps_the_free_step_available() {
     let mut w = duel(5.0);
-    w.magic.ki_regen = 0.0;
+    w.magic.mana_regen = 0.0;
     w.fighters[0].lock_target = Some(1);
-    w.fighters[0].ki = 0.0;
+    w.fighters[0].mana = 0.0;
     w.step(&[Intent { step: true, run: true, move_dir: V2::new(1.0, 0.0), ..Default::default() }, Intent::default()]);
     assert_eq!(w.fighters[0].action.kind, ActionKind::Step);
-    assert_eq!(w.fighters[0].ki, 0.0);
+    assert_eq!(w.fighters[0].mana, 0.0);
     assert!(w.fighters[0].velocity.length() < w.combat.step_speed * 1.1);
 }
 

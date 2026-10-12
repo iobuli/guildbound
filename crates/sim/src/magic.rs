@@ -1,7 +1,8 @@
-//! Magic: ki resource, spell table, casting and charging, projectiles, area bursts.
-//! Built from the GDD (D18: tap fire / hold to charge orange-blue-white, overheld burst, elements) and the
-//! BT3 study (ki charge on a held button, cheap fast ki blasts, a big charged shot). Deterministic like the
-//! rest of the sim: projectiles advance on the fixed step, hits resolve through the same guard rules as strikes.
+//! Magic (Beta V2 revamp, boss 2026-10-12): mana, a five-skill bar with per-skill cooldowns, and skills that
+//! each play differently: a chargeable homing fireball that explodes when charged, chain lightning that jumps
+//! between enemies, a frost nova that freezes everyone close, an arcane blink (short teleport with dodge
+//! frames) and a channelled healing light. No ki blast, no ki charge. Deterministic like the rest of the
+//! sim: projectiles advance on the fixed step, hits resolve through the same guard rules as strikes.
 
 use crate::combat::{ActionKind, Aim, Contact, Outcome, Source};
 use crate::{STEP, V2, World};
@@ -11,15 +12,32 @@ pub type SpellId = usize;
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Element {
     Fire,
-    Ki,
     Lightning,
-    Force,
+    Frost,
+    Arcane,
+    Holy,
+}
+
+/// What a skill does when it goes off.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub enum SpellKind {
+    /// A flying shot (homing if `homing` > 0); explodes over `area` when charged.
+    Projectile,
+    /// Instant hit on the target, then jumps to up to `jumps` more enemies within `jump_range` of the last.
+    Chain { jumps: u8, jump_range: f32, falloff: f32 },
+    /// Goes off around the caster over `area`.
+    Nova,
+    /// Teleport up to `distance` toward the stick (or facing); dodges while it happens.
+    Blink { distance: f32 },
+    /// Restores hp to the caster at release.
+    Heal { amount: f32 },
 }
 
 #[derive(Clone, Copy, Debug)]
 pub struct SpellDef {
     pub name: &'static str,
     pub element: Element,
+    pub kind: SpellKind,
     pub cost: f32,
     /// Wind-up before release, and recovery after it (s).
     pub prepare: f32,
@@ -35,41 +53,48 @@ pub struct SpellDef {
     pub stun: f32,
     /// Degrees per second a projectile turns toward its target (0 = straight).
     pub homing: f32,
-    /// Area radius on impact (or around the caster for a burst); 0 = single target.
+    /// Area radius on impact (or around the caster for a nova); 0 = single target.
     pub area: f32,
-    /// A burst goes off around the caster instead of flying.
-    pub burst: bool,
     pub cooldown: f32,
 }
 
 pub const FIREBALL: SpellId = 0;
-pub const KI_BLAST: SpellId = 1;
-pub const LIGHTNING: SpellId = 2;
-pub const BURST: SpellId = 3;
+pub const CHAIN_LIGHTNING: SpellId = 1;
+pub const FROST_NOVA: SpellId = 2;
+pub const BLINK: SpellId = 3;
+pub const HEALING_LIGHT: SpellId = 4;
+pub const SPELL_COUNT: usize = 5;
 
-pub const SPELLS: [SpellDef; 4] = [
-    SpellDef { name: "fireball", element: Element::Fire, cost: 12.0, prepare: 0.22, recovery: 0.30, max_charge: 2.0, speed: 14.0, radius: 0.25, range: 18.0, damage: 10.0, guard_drain: 15.0, push: 2.5, stun: 0.35, homing: 40.0, area: 1.5, burst: false, cooldown: 0.4 },
-    SpellDef { name: "ki blast", element: Element::Ki, cost: 4.0, prepare: 0.08, recovery: 0.12, max_charge: 0.0, speed: 20.0, radius: 0.15, range: 16.0, damage: 3.0, guard_drain: 5.0, push: 0.8, stun: 0.18, homing: 120.0, area: 0.0, burst: false, cooldown: 0.12 },
-    SpellDef { name: "lightning", element: Element::Lightning, cost: 18.0, prepare: 0.18, recovery: 0.35, max_charge: 0.0, speed: 32.0, radius: 0.2, range: 22.0, damage: 9.0, guard_drain: 20.0, push: 1.0, stun: 0.6, homing: 0.0, area: 0.0, burst: false, cooldown: 1.2 },
-    SpellDef { name: "burst", element: Element::Force, cost: 30.0, prepare: 0.30, recovery: 0.45, max_charge: 0.0, speed: 0.0, radius: 0.0, range: 0.0, damage: 8.0, guard_drain: 30.0, push: 7.0, stun: 0.5, homing: 0.0, area: 2.4, burst: true, cooldown: 3.0 },
+const fn spell(name: &'static str, element: Element, kind: SpellKind, cost: f32, prepare: f32, recovery: f32, cooldown: f32) -> SpellDef {
+    SpellDef { name, element, kind, cost, prepare, recovery, max_charge: 0.0, speed: 0.0, radius: 0.0, range: 0.0, damage: 0.0, guard_drain: 0.0, push: 0.0, stun: 0.0, homing: 0.0, area: 0.0, cooldown }
+}
+
+pub const SPELLS: [SpellDef; SPELL_COUNT] = [
+    SpellDef { max_charge: 1.5, speed: 14.0, radius: 0.25, range: 22.0, damage: 14.0, guard_drain: 18.0, push: 3.0, stun: 0.4, homing: 40.0, area: 1.8,
+        ..spell("fireball", Element::Fire, SpellKind::Projectile, 15.0, 0.22, 0.30, 1.0) },
+    SpellDef { range: 14.0, damage: 11.0, guard_drain: 20.0, push: 1.0, stun: 0.55,
+        ..spell("chain lightning", Element::Lightning, SpellKind::Chain { jumps: 2, jump_range: 5.0, falloff: 0.7 }, 20.0, 0.20, 0.35, 3.0) },
+    SpellDef { damage: 8.0, guard_drain: 25.0, push: 2.5, stun: 1.3, area: 3.0,
+        ..spell("frost nova", Element::Frost, SpellKind::Nova, 25.0, 0.28, 0.40, 8.0) },
+    spell("arcane blink", Element::Arcane, SpellKind::Blink { distance: 5.0 }, 15.0, 0.05, 0.15, 4.0),
+    spell("healing light", Element::Holy, SpellKind::Heal { amount: 40.0 }, 30.0, 0.65, 0.30, 10.0),
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct MagicTuning {
-    pub ki_max: f32,
-    pub ki_regen: f32,
-    /// Ki per second while holding the charge button (Q).
-    pub ki_charge_rate: f32,
+    pub mana_max: f32,
+    /// Mana per second in combat; out of combat it regenerates `rest_mult` times faster.
+    pub mana_regen: f32,
+    pub rest_mult: f32,
     /// A charged shot scales damage and size by 1 + this * charge01.
     pub charge_gain: f32,
 }
 
 impl Default for MagicTuning {
     fn default() -> Self {
-        Self { ki_max: 100.0, ki_regen: 4.0, ki_charge_rate: 35.0, charge_gain: 2.0 }
+        Self { mana_max: 120.0, mana_regen: 5.0, rest_mult: 3.0, charge_gain: 2.0 }
     }
 }
-
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Projectile {
     pub owner: usize,
@@ -92,7 +117,7 @@ impl World {
     /// Cancel a held action without releasing a projectile. Other committed actions
     /// keep their rule clock. Used when the input owner loses focus or opens a menu.
     pub fn cancel_held_action(&mut self, i: usize) {
-        if self.fighters.get(i).is_some_and(|f| matches!(f.action.kind, ActionKind::Charge(_) | ActionKind::HeavyCharge(_) | ActionKind::KiCharge | ActionKind::Guard)) {
+        if self.fighters.get(i).is_some_and(|f| matches!(f.action.kind, ActionKind::Charge(_) | ActionKind::HeavyCharge(_) | ActionKind::Guard)) {
             self.end_magic(i);
             self.fighters[i].parry_left = 0.0;
             self.fighters[i].heavy_charge = 0.0;
@@ -113,23 +138,18 @@ impl World {
         })
     }
 
-    /// Magic intent for one fighter: ki regen and charge, cast presses, charge holds. Called from think.
+    /// Magic intent for one fighter: mana regen, cooldowns, cast presses, charge holds. Called from think.
     pub(crate) fn think_magic(&mut self, i: usize, intent: &crate::Intent) -> bool {
         let m = self.magic;
+        let resting = !self.in_combat(i);
         let f = &mut self.fighters[i];
-        f.ki = (f.ki + m.ki_regen * STEP).min(m.ki_max);
-        f.spell_cooldown = (f.spell_cooldown - STEP).max(0.0);
+        let regen = if resting { m.mana_regen * m.rest_mult } else { m.mana_regen };
+        f.mana = (f.mana + regen * STEP).min(m.mana_max);
+        for cd in &mut f.cooldowns {
+            *cd = (*cd - STEP).max(0.0);
+        }
         let act = f.action;
         match act.kind {
-            ActionKind::KiCharge => {
-                if intent.ki_charge {
-                    f.ki = (f.ki + m.ki_charge_rate * STEP).min(m.ki_max);
-                    f.action.elapsed += STEP;
-                } else {
-                    self.end_magic(i);
-                }
-                return true;
-            }
             ActionKind::Charge(s) => {
                 let d = SPELLS[s];
                 let f = &mut self.fighters[i];
@@ -160,18 +180,23 @@ impl World {
         if !act.free() || f.height > 0.0 || f.crouch_left > 0.0 {
             return false;
         }
-        if intent.ki_charge {
-            self.begin(i, ActionKind::KiCharge);
-            return true;
-        }
         if let Some(slot) = intent.cast {
             let s = (slot as usize).min(SPELLS.len() - 1);
             let d = SPELLS[s];
             let f = &self.fighters[i];
-            if f.ki >= d.cost && f.spell_cooldown <= 0.0 {
-                self.fighters[i].ki -= d.cost;
+            if f.mana >= d.cost && f.cooldowns[s] <= 0.0 {
+                self.fighters[i].mana -= d.cost;
                 self.fighters[i].charge = 0.0;
-                if d.max_charge > 0.0 {
+                self.engage(i);
+                if let SpellKind::Blink { .. } = d.kind {
+                    // a blink goes where the stick points (or straight ahead), never at the target
+                    if intent.move_dir.length_squared() > 0.04 {
+                        self.fighters[i].facing = intent.move_dir.normalized();
+                    }
+                    self.seq += 1;
+                    let seq = self.seq;
+                    self.fighters[i].action = crate::Action { kind: ActionKind::Cast(s), elapsed: 0.0, length: 0.0, seq };
+                } else if d.max_charge > 0.0 {
                     // held: charge first; a tap releases on the next tick at zero charge
                     self.begin(i, ActionKind::Charge(s));
                 } else {
@@ -214,16 +239,56 @@ impl World {
 
     fn fire(&mut self, i: usize, s: SpellId, charge: f32) {
         let d = SPELLS[s];
-        self.fighters[i].spell_cooldown = d.cooldown;
-        if d.burst {
-            let center = self.fighters[i].position;
-            self.area(i, s, center, d.area, charge, true);
-            return;
+        self.fighters[i].cooldowns[s] = d.cooldown;
+        match d.kind {
+            SpellKind::Nova => {
+                let center = self.fighters[i].position;
+                self.area(i, s, center, d.area, charge);
+            }
+            SpellKind::Blink { distance } => {
+                let f = &mut self.fighters[i];
+                let half = self.tuning.arena_half_size - self.tuning.body_radius;
+                let to = f.position + f.facing * distance;
+                f.position = V2::new(to.x.clamp(-half, half), to.z.clamp(-half, half));
+                f.velocity = V2::ZERO;
+            }
+            SpellKind::Heal { amount } => {
+                let f = &mut self.fighters[i];
+                f.hp = (f.hp + amount).min(f.max_hp);
+            }
+            SpellKind::Chain { jumps, jump_range, falloff } => {
+                let Some(first) = self.fighters[i].strike_target.filter(|&t| (self.fighters[t].position - self.fighters[i].position).length() <= d.range) else { return };
+                let mut hit = vec![first];
+                let mut scale = 1.0;
+                let mut from = self.fighters[i].position;
+                let mut at = first;
+                loop {
+                    let to = self.fighters[at].position;
+                    let dir = (to - from).normalized();
+                    let dir = if dir.length_squared() > 0.0 { dir } else { self.fighters[i].facing };
+                    self.magic_hit_scaled(i, at, s, 0.0, to, dir, scale);
+                    if hit.len() > jumps as usize {
+                        break;
+                    }
+                    let next = (0..self.fighters.len())
+                        .filter(|&j| j != i && !hit.contains(&j) && self.fighters[j].hp > 0.0)
+                        .map(|j| (j, (self.fighters[j].position - to).length()))
+                        .filter(|&(_, dist)| dist <= jump_range)
+                        .min_by(|a, b| a.1.total_cmp(&b.1).then(a.0.cmp(&b.0)));
+                    let Some((j, _)) = next else { break };
+                    hit.push(j);
+                    from = to;
+                    at = j;
+                    scale *= falloff;
+                }
+            }
+            SpellKind::Projectile => {
+                let f = &self.fighters[i];
+                let target = f.strike_target;
+                let spawn = f.position + f.facing * (self.tuning.body_radius + d.radius + 0.1);
+                self.projectiles.push(Projectile { owner: i, spell: s, position: spawn, direction: f.facing, charge, traveled: 0.0, target, alive: true });
+            }
         }
-        let f = &self.fighters[i];
-        let target = f.strike_target;
-        let spawn = f.position + f.facing * (self.tuning.body_radius + d.radius + 0.1);
-        self.projectiles.push(Projectile { owner: i, spell: s, position: spawn, direction: f.facing, charge, traveled: 0.0, target, alive: true });
     }
 
     /// Advance every projectile one fixed step: homing, travel, first body hit, range and walls.
@@ -264,7 +329,7 @@ impl World {
                 p.alive = false;
                 self.projectiles[k] = p;
                 if d.area > 0.0 && p.charge > 0.05 {
-                    self.area(p.owner, p.spell, at, d.area * p.scale(gain).sqrt(), p.charge, false);
+                    self.area(p.owner, p.spell, at, d.area * p.scale(gain).sqrt(), p.charge);
                 } else {
                     self.magic_hit(p.owner, j, p.spell, p.charge, at, p.direction);
                 }
@@ -275,7 +340,7 @@ impl World {
                 p.alive = false;
                 if d.area > 0.0 && p.charge > 0.05 {
                     self.projectiles[k] = p;
-                    self.area(p.owner, p.spell, to, d.area * p.scale(gain).sqrt(), p.charge, false);
+                    self.area(p.owner, p.spell, to, d.area * p.scale(gain).sqrt(), p.charge);
                     continue;
                 }
             }
@@ -284,7 +349,7 @@ impl World {
         self.projectiles.retain(|p| p.alive);
     }
 
-    fn area(&mut self, owner: usize, s: SpellId, center: V2, radius: f32, charge: f32, burst: bool) {
+    fn area(&mut self, owner: usize, s: SpellId, center: V2, radius: f32, charge: f32) {
         for j in 0..self.fighters.len() {
             if j == owner || self.fighters[j].hp <= 0.0 {
                 continue;
@@ -297,7 +362,6 @@ impl World {
             let dir = if away.length_squared() > 1e-6 { away.normalized() } else { self.fighters[owner].facing };
             // falloff to half at the edge
             let falloff = 1.0 - 0.5 * (dist / radius.max(1e-3));
-            let _ = burst;
             self.magic_hit_scaled(owner, j, s, charge, center, dir, falloff);
         }
     }
@@ -344,6 +408,8 @@ impl World {
             Outcome::Hit
         };
         self.fighters[d].hit_stop = 0.04;
+        self.engage(d);
+        self.engage(owner);
         let share = if outcome == Outcome::Hit { self.posture.hit_share } else { self.posture.block_share };
         self.add_posture(d, def.guard_drain * scale * share, false, false);
         self.alarm(d, owner);

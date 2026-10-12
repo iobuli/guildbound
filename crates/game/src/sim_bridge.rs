@@ -43,9 +43,22 @@ pub struct Sim {
     acc: f32,
 }
 
+/// Skill bar keys: slots 1-5.
+pub const SKILL_KEYS: [KeyCode; 5] = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4, KeyCode::Digit5];
+
+/// The hero and the sparring partner carry bigger pools than mobs (boss: more HP and mana).
+fn heroic_pools(world: &mut gs::World) {
+    for f in world.fighters.iter_mut().take(2) {
+        f.base_hp = 150.0;
+        f.max_hp = 150.0;
+        f.hp = 150.0;
+    }
+}
+
 impl Sim {
     pub fn new() -> Self {
-        let mut world = gs::World::sparring(gs::Tuning { arena_half_size: crate::props::WORLD_HALF, ..gs::Tuning::default() });
+        let mut world = gs::World::sparring(gs::Tuning { arena_half_size: crate::props::WORLD_HALF, relaxed: true, ..gs::Tuning::default() });
+        heroic_pools(&mut world);
         world.stock_floor();
         world.obstacles = crate::props::obstacles();
         let n = world.fighters.len();
@@ -63,13 +76,14 @@ impl Sim {
         self.world.obstacles = crate::props::obstacles();
         // the player keeps what they carry and wear across a rematch
         self.world.fighters[0].kit = kit;
+        heroic_pools(&mut self.world);
         self.world.refresh_vitality(0);
         self.world.fighters[0].hp = self.world.fighters[0].max_hp;
         self.world.combat = combat;
         self.world.magic = magic;
         for f in &mut self.world.fighters {
             f.guard = combat.guard_max;
-            f.ki = f.ki.min(magic.ki_max);
+            f.mana = f.mana.min(magic.mana_max);
         }
         self.world.fighters[0].lock_target = lock.filter(|&i| i > 0 && i < self.world.fighters.len());
         self.scripted = vec![None; self.world.fighters.len()];
@@ -306,8 +320,7 @@ pub fn read_player_input(
         run: !typing && (keys.pressed(KeyCode::ShiftLeft) || keys.pressed(KeyCode::ShiftRight)),
         guard: guard_held,
         heavy_held: !typing && (keys.pressed(KeyCode::KeyF) || (mouse_ok && mouse.pressed(MouseButton::Back))),
-        cast_held: !typing && [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4].iter().any(|k| keys.pressed(*k)),
-        ki_charge: !typing && keys.pressed(KeyCode::KeyQ),
+        cast_held: !typing && SKILL_KEYS.iter().any(|k| keys.pressed(*k)),
         ..default()
     };
     // edges accumulate until a sim tick consumes them
@@ -318,7 +331,7 @@ pub fn read_player_input(
     e.step |= !typing && (keys.just_pressed(KeyCode::ControlLeft) || keys.just_pressed(KeyCode::ControlRight));
     e.jump |= !typing && keys.just_pressed(KeyCode::Space);
     // 1-4 cast the spell in that slot (hold to charge a chargeable one), Q held charges ki
-    let slots = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4];
+    let slots = SKILL_KEYS;
     if !typing {
         if let Some(k) = slots.iter().position(|k| keys.just_pressed(*k)) {
             e.cast = Some(k as u8);
@@ -326,6 +339,12 @@ pub fn read_player_input(
     }
     e.roll |= !typing && keys.just_pressed(KeyCode::KeyC);
     e.interact |= !typing && keys.just_pressed(KeyCode::KeyE);
+    // quick slots (souls-like): R drinks a healing draught, T a mana tonic, from wherever they sit in the bag
+    for (key, id) in [(KeyCode::KeyR, gs::rpg::HEALING_DRAUGHT), (KeyCode::KeyT, gs::rpg::MANA_TONIC)] {
+        if !typing && keys.just_pressed(key) && let Some(k) = sim.world.fighters[0].kit.bag.iter().position(|&b| b == id) {
+            sim.edges.bag = Some(gs::rpg::BagAction::Use(k as u8));
+        }
+    }
 }
 
 /// Fixed-step accumulator on real frame time, scaled by `speed`. Capped so a stall cannot spiral.
@@ -372,7 +391,7 @@ mod tests {
         let mob = sim.spawn_mob(gs::V2::new(5.0, 0.0));
         sim.world.fighters[0].lock_target = Some(mob);
         sim.world.combat.guard_max = 75.0;
-        sim.world.magic.ki_max = 80.0;
+        sim.world.magic.mana_max = 80.0;
         sim.keyboard.move_dir = gs::V2::new(1.0, 0.0);
         sim.edges.light = true;
         sim.pending_steps = 20;
@@ -382,7 +401,7 @@ mod tests {
         assert_eq!(sim.world.fighters.len(), 2);
         assert_eq!(sim.world.fighters[0].lock_target, None);
         assert_eq!(sim.world.combat.guard_max, 75.0);
-        assert_eq!(sim.world.magic.ki_max, 80.0);
+        assert_eq!(sim.world.magic.mana_max, 80.0);
         assert_eq!(sim.pending_steps, 0);
         assert!(sim.recent.is_empty());
         assert!(sim.scripted.iter().all(Option::is_none));

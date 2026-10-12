@@ -115,7 +115,7 @@ pub fn apply(world: &mut World) {
         if !support.rigs.contains_key(&rig) && let Some(state) = build(world, fighter, &bones) { support.rigs.insert(rig, state); }
         let Some(state) = support.rigs.get_mut(&rig) else { continue };
         let Some(f) = fighters.get(fighter) else { continue };
-        let allowed = matches!(f.action.kind, K::None | K::Guard | K::Strike(_) | K::HeavyCharge(_) | K::Charge(_) | K::Cast(_) | K::KiCharge)
+        let allowed = matches!(f.action.kind, K::None | K::Guard | K::Strike(_) | K::HeavyCharge(_) | K::Charge(_) | K::Cast(_))
             || (f.action.kind == K::GetUp && f.action.elapsed > 0.45);
         state.enabled = settings && allowed && f.hp > 0.0 && f.height <= 0.0 && f.crouch_left <= 0.0 && contact.is_some();
         if !state.enabled {

@@ -114,7 +114,7 @@ def main():
         assert pose()["rule_sample"], "strike did not use the rule clock"
         shot("beta-strike")
         step(75)
-        assert gb.call("gb.state")["fighters"][1]["hp"] < 100.0
+        assert gb.call("gb.state")["fighters"][1]["hp"] < gb.call("gb.state")["fighters"][1]["max_hp"]
         evidence["checks"].append({"kind": "strike_contact", "pass": True})
         reset()
         gb.call("gb.input", {"move": [0, 0], "cast": 0, "cast_held": True, "ticks": 120})

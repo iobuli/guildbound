@@ -150,7 +150,7 @@ pub fn mob_intent(world: &World, me: usize, brain: &mut MobBrain) -> Intent {
                 // keeper in its band: strafe around the target and throw ki blasts
                 intent.move_dir = to_target.normalized().rotated(std::f32::consts::FRAC_PI_2) * 0.6;
                 if f.action.free() && world.tick % 45 == (me as u64 * 7) % 45 {
-                    intent.cast = Some(1);
+                    intent.cast = Some(crate::magic::FIREBALL as u8);
                     intent.move_dir = V2::ZERO;
                 }
             }

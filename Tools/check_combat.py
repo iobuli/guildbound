@@ -72,7 +72,7 @@ def main():
             action(name)
             clips.append(mapped(name))
         step(100)
-        assert gb.call("gb.state")["fighters"][1]["hp"] <= 78.0
+        assert gb.call("gb.state")["fighters"][1]["hp"] <= gb.call("gb.state")["fighters"][1]["max_hp"] - 22.0
         result["checks"].append({"kind": "four_hit_rush", "poses": clips})
         result["checks"].append({"kind": "measured_contact_clock", "pose": snapshot, "expected_seek_s": expected_seek})
 
@@ -88,7 +88,7 @@ def main():
             after = mapped(cluster)
             assert before["clip"] == after["clip"], "smash changed clip on release"
             step(100)
-            assert gb.call("gb.state")["fighters"][1]["hp"] < 100.0
+            assert gb.call("gb.state")["fighters"][1]["hp"] < gb.call("gb.state")["fighters"][1]["max_hp"]
             result["checks"].append({"kind": "charged_" + name, "held": before, "released": after})
 
         near()

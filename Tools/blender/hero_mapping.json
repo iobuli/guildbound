@@ -105,7 +105,7 @@
     ]
   },
   "roles": {
-    "idle": "idle_Tiramis",
+    "idle": "Unarmed-Idle",
     "walk": "Unarmed-Strafe-Forward",
     "run": "Unarmed-Run-Forward",
     "back": "Unarmed-Strafe-Backward",
@@ -115,9 +115,8 @@
     "block": "hb_front_A",
     "block_body": "bb_front_A",
     "block_low": "lb_front_A",
-    "guard": "idle_A",
-    "ki_charge": "mage_cast_idle",
-    "spell_charge": "mage_fireball_load",
+    "guard": "Unarmed-Idle",
+    "spell_charge": "Unarmed-Idle",
     "knockdown": "Unarmed-Knockdown1",
     "getup": "Unarmed-Getup1",
     "jump": "Unarmed-Jump",
@@ -170,17 +169,23 @@
   },
   "spells": {
     "fireball": [
-      "mage_fireball"
+      "mx_magic_small"
     ],
     "fireball_charged": [
-      "mage_fireball_release"
+      "mx_magic_big"
     ],
-    "lightning": [
+    "chain lightning": [
       "mage_lightning_right",
       "mage_lightning_left"
     ],
-    "burst": [
+    "frost nova": [
       "mage_burst"
+    ],
+    "arcane blink": [
+      "mx_magic_small"
+    ],
+    "healing light": [
+      "mx_magic_beam"
     ]
   },
   "mixamo": {
@@ -291,5 +296,32 @@
         "ual_jump_land": "Jump_Land"
       }
     }
+  },
+  "locomotion_relaxed": {
+    "walk": [
+      "nc_walk_forward",
+      "nc_walk_forwardright",
+      "nc_walk_right",
+      "nc_walk_backwardright",
+      "nc_walk_backward",
+      "nc_walk_backwardleft",
+      "nc_walk_left",
+      "nc_walk_forwardleft"
+    ],
+    "run": [
+      "nc_run_forward",
+      "nc_run_forwardright",
+      "nc_run_right",
+      "nc_run_backwardright",
+      "nc_run_backward",
+      "nc_run_backwardleft",
+      "nc_run_left",
+      "nc_run_forwardleft"
+    ],
+    "sprint": [
+      "nc_sprint_forward",
+      "nc_sprint_forwardright",
+      "nc_sprint_forwardleft"
+    ]
   }
 }

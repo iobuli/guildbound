@@ -58,6 +58,7 @@ pub fn panel(
     app_state: Res<State<crate::menu::AppState>>,
     mut feedback: ResMut<crate::feedback::FeedbackSettings>,
     mut sfx: ResMut<crate::sfx::SfxSettings>,
+    icons: Option<Res<crate::hud::HudIcons>>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     if *app_state.get() == crate::menu::AppState::MainMenu {
@@ -68,7 +69,7 @@ pub fn panel(
     let left = if state.hidden { 0.0 } else { state.width };
     crate::hud::overhead_bars(&ctx, &sim, view.0, view.1);
     crate::hud::damage_numbers(&ctx, &sim, view.0, view.1);
-    if crate::hud::draw(&ctx, &sim, left) {
+    if crate::hud::draw(&ctx, &sim, left, icons.as_deref()) {
         sim.reset();
         sim.opponent = OpponentMode::Spar;
         sim.world.fighters[0].lock_target = Some(1);
@@ -233,7 +234,6 @@ pub fn action_name(f: &guildbound_sim::Fighter) -> String {
         K::HeavyCharge(m) => format!("smash {} {:.0}%", guildbound_sim::MOVES[m].name, f.heavy_charge * 100.0),
         K::Cast(s) => format!("cast {}", guildbound_sim::SPELLS[s].name),
         K::Charge(s) => format!("charging {} {:.0}%", guildbound_sim::SPELLS[s].name, f.charge * 100.0),
-        K::KiCharge => "charging ki".into(),
         k => format!("{k:?}").to_lowercase(),
     }
 }

@@ -11,7 +11,7 @@ pub mod posture;
 pub mod rpg;
 mod math;
 pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase, Source};
-pub use magic::{MagicTuning, Projectile, SPELLS};
+pub use magic::{MagicTuning, Projectile, SPELLS, SpellKind};
 pub use notice::{Notice, NoticeState, NoticeTuning};
 pub use posture::PostureTuning;
 pub use math::V2;
@@ -42,6 +42,10 @@ pub struct Tuning {
     pub walk_speed: f32,
     pub run_speed: f32,
     pub arena_half_size: f32,
+    /// Out of combat (no lock, combat timer run out) the stick jogs at run_speed and run sprints at
+    /// sprint_speed; in combat it walks and run runs. Off keeps the classic walk/run everywhere.
+    pub relaxed: bool,
+    pub sprint_speed: f32,
     /// Degrees per second a free fighter turns toward its movement.
     pub turn_rate: f32,
     /// m/s^2 gaining speed toward the input.
@@ -62,6 +66,8 @@ impl Default for Tuning {
             walk_speed: 2.1,
             run_speed: 4.0,
             arena_half_size: 10.0,
+            relaxed: false,
+            sprint_speed: 6.2,
             turn_rate: 720.0,
             accel: 12.0,
             decel: 9.0,
@@ -87,8 +93,6 @@ pub struct Intent {
     /// Spell slot pressed this tick (0-3 for keys 1-4), and whether that slot is still held.
     pub cast: Option<u8>,
     pub cast_held: bool,
-    /// Q held: charge ki.
-    pub ki_charge: bool,
     /// Held.
     pub guard: bool,
     /// E pressed: pick up or open what is in reach.
@@ -135,10 +139,13 @@ pub struct Fighter {
     pub parry_left: f32,
     pub counter_left: f32,
     pub block_stun: f32,
-    pub ki: f32,
+    pub mana: f32,
+    /// Seconds left of each skill's cooldown, by spell slot.
+    pub cooldowns: [f32; magic::SPELL_COUNT],
+    /// Seconds of combat left after the last attack, guard, cast or hit (lock-on also counts as combat).
+    pub combat_timer: f32,
     /// 0..1 charge of the spell being held or just released.
     pub charge: f32,
-    pub spell_cooldown: f32,
     /// 0..1 strength prepared by a held smash; presentation never determines it.
     pub heavy_charge: f32,
     pub(crate) parry_recharge: f32,
@@ -181,9 +188,10 @@ impl Fighter {
             parry_left: 0.0,
             counter_left: 0.0,
             block_stun: 0.0,
-            ki: 60.0,
+            mana: MagicTuning::default().mana_max,
+            cooldowns: [0.0; magic::SPELL_COUNT],
+            combat_timer: 0.0,
             charge: 0.0,
-            spell_cooldown: 0.0,
             heavy_charge: 0.0,
             parry_recharge: 0.0,
             step_cooldown: 0.0,
@@ -260,6 +268,17 @@ impl World {
         self.drop_loot();
     }
 
+    /// In combat: locked on, or fought within the last `combat.combat_linger` seconds.
+    pub fn in_combat(&self, i: usize) -> bool {
+        let f = &self.fighters[i];
+        f.lock_target.is_some() || f.combat_timer > 0.0
+    }
+
+    /// Mark a fighter as fighting (attack, guard, cast, hit taken or dealt).
+    pub(crate) fn engage(&mut self, i: usize) {
+        self.fighters[i].combat_timer = self.combat.combat_linger;
+    }
+
     /// Hand the contacts resolved since the last call to the caller.
     pub fn drain_contacts(&mut self) -> Vec<Contact> {
         std::mem::take(&mut self.contacts)
@@ -279,8 +298,11 @@ impl World {
         let steering = (action.free() || drinking) && f.hp > 0.0;
         let raw = if steering { intent.move_dir } else { V2::ZERO };
         let m = if raw.length_squared() > 1.0 { raw.normalized() } else { raw };
+        let relaxed = t.relaxed && !self.in_combat(i);
         let speed = if action.kind == ActionKind::Guard || drinking {
             self.combat.guard_walk_speed
+        } else if relaxed {
+            if intent.run { t.sprint_speed } else { t.run_speed }
         } else if intent.run {
             t.run_speed
         } else {
@@ -425,7 +447,7 @@ impl World {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
-            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.ki, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left, f.posture, f.posture_wait] {
+            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.mana, f.combat_timer, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left, f.posture, f.posture_wait] {
                 eat(v.to_bits() as u64);
             }
             let kind = match f.action.kind {
@@ -435,7 +457,7 @@ impl World {
                 ActionKind::HeavyCharge(m) => 0x2000 + m as u64,
                 ActionKind::HitStun => 2, ActionKind::BlockStun => 3, ActionKind::GuardBreak => 4,
                 ActionKind::Staggered => 5, ActionKind::Knockdown => 6, ActionKind::GetUp => 7,
-                ActionKind::Step => 8, ActionKind::Roll => 9, ActionKind::KiCharge => 10,
+                ActionKind::Step => 8, ActionKind::Roll => 9,
                 ActionKind::Charge(s) => 0x3000 + s as u64, ActionKind::Cast(s) => 0x4000 + s as u64,
                 ActionKind::Dizzy => 11, ActionKind::Drink(id) => 0x5000 + id as u64,
             };

@@ -129,7 +129,12 @@ pub fn play(mut commands: Commands, sim: Res<Sim>, settings: Res<SfxSettings>, t
             }
             (Outcome::Blocked, _) => sfx.play(&mut commands, "synth/block", 0.65 * g, salt),
             (_, Source::Spell(s)) => {
-                let cue = if guildbound_sim::SPELLS[s].name.contains("light") { "synth/lightning_hit" } else if guildbound_sim::SPELLS[s].name.contains("fire") { "synth/fire_hit" } else { "synth/arcane_hit" };
+                let cue = match guildbound_sim::SPELLS[s].element {
+                    guildbound_sim::magic::Element::Lightning => "synth/lightning_hit",
+                    guildbound_sim::magic::Element::Fire => "synth/fire_hit",
+                    guildbound_sim::magic::Element::Frost => "synth/ice_hit",
+                    _ => "synth/arcane_hit",
+                };
                 sfx.play(&mut commands, cue, 0.8 * g, salt);
             }
             (Outcome::CounterHit, _) | (Outcome::Hit, _) => {
@@ -159,11 +164,16 @@ pub fn play(mut commands: Commands, sim: Res<Sim>, settings: Res<SfxSettings>, t
                     sfx.play(&mut commands, cue, (if d.heavy { 0.6 } else { 0.4 }) * g, salt);
                 }
                 ActionKind::Cast(s) => {
-                    let name = guildbound_sim::SPELLS[s].name;
-                    let cue = if name.contains("light") { "synth/lightning_cast" } else if name.contains("fire") { "synth/fire_cast" } else { "synth/arcane_cast" };
+                    let cue = match guildbound_sim::SPELLS[s].element {
+                        guildbound_sim::magic::Element::Lightning => "synth/lightning_cast",
+                        guildbound_sim::magic::Element::Fire => "synth/fire_cast",
+                        guildbound_sim::magic::Element::Frost => "synth/ice_cast",
+                        guildbound_sim::magic::Element::Holy => "synth/rank_up",
+                        guildbound_sim::magic::Element::Arcane => "synth/arcane_cast",
+                    };
                     sfx.play(&mut commands, cue, 0.6 * g, salt);
                 }
-                ActionKind::Charge(_) | ActionKind::KiCharge => sfx.play(&mut commands, "combat/charge", 0.35 * g, salt),
+                ActionKind::Charge(_) => sfx.play(&mut commands, "combat/charge", 0.35 * g, salt),
                 ActionKind::Step => sfx.play(&mut commands, "combat/dash", 0.5 * g, salt),
                 ActionKind::Roll => sfx.play(&mut commands, "kenney/cloth", 0.6 * g, salt),
                 ActionKind::Dizzy => sfx.play(&mut commands, "synth/awaken", 0.7 * g, salt),

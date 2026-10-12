@@ -108,8 +108,6 @@ pub enum ActionKind {
     Step,
     /// C roll: a longer, lower dodge with a longer evade window.
     Roll,
-    /// Q held: charging ki, open to attack.
-    KiCharge,
     /// Posture broken: open to a deathblow.
     Dizzy,
     /// Drinking a consumable; walks slowly, the item works at the commit point.
@@ -251,6 +249,8 @@ pub struct CombatTuning {
     pub heavy_damage_gain: f32,
     pub heavy_push_gain: f32,
     pub homing_dash_cost: f32,
+    /// Seconds a fighter stays in combat mode after fighting.
+    pub combat_linger: f32,
 }
 
 impl Default for CombatTuning {
@@ -293,6 +293,7 @@ impl Default for CombatTuning {
             heavy_damage_gain: 1.0,
             heavy_push_gain: 1.0,
             homing_dash_cost: 8.0,
+            combat_linger: 5.0,
         }
     }
 }
@@ -407,6 +408,13 @@ impl World {
         self.recover_posture(i);
         {
             let f = &mut self.fighters[i];
+            f.combat_timer = (f.combat_timer - STEP).max(0.0);
+        }
+        if intent.guard || intent.light || intent.heavy {
+            self.engage(i);
+        }
+        {
+            let f = &mut self.fighters[i];
             f.parry_left = (f.parry_left - STEP).max(0.0);
             f.parry_recharge = (f.parry_recharge - STEP).max(0.0);
             f.counter_left = (f.counter_left - STEP).max(0.0);
@@ -473,7 +481,7 @@ impl World {
                 } else if intent.step && self.fighters[i].step_cooldown <= 0.0 {
                     // step toward the stick, or back away from the facing with no stick
                     // Shift + Ctrl: homing dash at the lock target (or the nearest fighter ahead), BT3-style
-                    let homing = if intent.run && self.fighters[i].ki >= c.homing_dash_cost {
+                    let homing = if intent.run && self.fighters[i].mana >= c.homing_dash_cost {
                         self.fighters[i].lock_target.or_else(|| self.strike_target(i)).filter(|&t| t != i && t < self.fighters.len() && self.fighters[t].hp > 0.0 && (self.fighters[t].position - self.fighters[i].position).length() > 1.2)
                     } else { None };
                     let f = &self.fighters[i];
@@ -487,7 +495,7 @@ impl World {
                     f.velocity = dir * speed;
                     if homing.is_some() {
                         f.facing = dir;
-                        f.ki -= c.homing_dash_cost;
+                        f.mana -= c.homing_dash_cost;
                     }
                     f.step_cooldown = c.step_time + c.step_cooldown;
                 } else if let Some(p) = press {
@@ -655,6 +663,7 @@ impl World {
             let evading = match o.action.kind {
                 ActionKind::Step => o.action.elapsed >= c.evade_from && o.action.elapsed <= c.evade_to,
                 ActionKind::Roll => o.action.elapsed >= c.evade_from && o.action.elapsed <= c.roll_time * 0.7,
+                ActionKind::Cast(crate::magic::BLINK) => true,
                 _ => false,
             };
             if evading {
@@ -713,6 +722,14 @@ impl World {
             let p = self.posture;
             self.add_posture(a, p.parried + def.guard_drain, false, true);
             self.add_posture(d, p.parry_cost, true, false);
+            // a perfect parry answers by itself: the parrier steps into a heavy counter blow that knocks the
+            // attacker down (presentation ragdolls the knockdown)
+            let to = self.fighters[a].position - self.fighters[d].position;
+            if to.length_squared() > 1e-6 {
+                self.fighters[d].facing = to.normalized();
+            }
+            self.start_strike(d, COUNTER_BLOW);
+            self.fighters[d].strike_target = Some(a);
             Outcome::Parried
         } else if tgt.action.kind == ActionKind::Guard && tgt.guard > 0.0 && frontal {
             let t = &mut self.fighters[d];
@@ -755,6 +772,8 @@ impl World {
             if counter { Outcome::CounterHit } else { Outcome::Hit }
         };
         self.alarm(d, a);
+        self.engage(a);
+        self.engage(d);
         let stop = match outcome {
             Outcome::Hit | Outcome::CounterHit | Outcome::GuardBroken => def.hit_stop,
             Outcome::Blocked => def.hit_stop * 0.6,

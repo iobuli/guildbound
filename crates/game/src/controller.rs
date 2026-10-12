@@ -8,15 +8,24 @@ use crate::anim::AnimLibrary;
 
 #[derive(Resource)]
 pub struct LocomotionMap {
+    /// Combat (locked on or fighting): the RPG strafe set.
     walk: [String; 8],
     run: [String; 8],
+    /// Out of combat: relaxed walk/run in eight directions, sprint forward (other directions fall back to run).
+    relaxed_walk: [String; 8],
+    relaxed_run: [String; 8],
+    sprint: [String; 8],
 }
 
 impl Default for LocomotionMap {
     fn default() -> Self {
         let map: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
-        let read = |kind: &str| std::array::from_fn(|i| map["locomotion"][kind][i].as_str().expect("eight locomotion clips").to_owned());
-        Self { walk: read("walk"), run: read("run") }
+        let read = |set: &str, kind: &str| std::array::from_fn(|i| map[set][kind][i].as_str().unwrap_or_default().to_owned());
+        let relaxed_run: [String; 8] = read("locomotion_relaxed", "run");
+        let fwd = |i: usize| map["locomotion_relaxed"]["sprint"][i].as_str().map(str::to_owned);
+        // sprint clips exist for forward (0), forward-right (1) and forward-left (7)
+        let sprint = std::array::from_fn(|d| match d { 0 => fwd(0), 1 => fwd(1), 7 => fwd(2), _ => None }.unwrap_or_else(|| relaxed_run[d].clone()));
+        Self { walk: read("locomotion", "walk"), run: read("locomotion", "run"), relaxed_walk: read("locomotion_relaxed", "walk"), relaxed_run, sprint }
     }
 }
 
@@ -24,16 +33,18 @@ impl LocomotionMap {
     /// Weighted gait clips for a travel angle (radians from facing, + = right) and gait 0 (walk) .. 1 (run):
     /// the two nearest of eight directions, each at walk and run. Missing clips drop out and the rest
     /// renormalize.
-    pub fn blend<'a>(&'a self, lib: &AnimLibrary, angle: f32, gait: f32) -> Vec<(&'a str, f32)> {
+    pub fn blend<'a>(&'a self, lib: &AnimLibrary, angle: f32, gait: f32, relaxed: bool) -> Vec<(&'a str, f32)> {
         let (a, b, t) = pair(angle);
-        let mut out: Vec<(&str, f32)> = [
-            (&self.walk[a], (1.0 - t) * (1.0 - gait)),
-            (&self.walk[b], t * (1.0 - gait)),
-            (&self.run[a], (1.0 - t) * gait),
-            (&self.run[b], t * gait),
-        ]
-        .into_iter()
-        .filter(|(c, w)| *w > 1e-3 && lib.node(c).is_some())
+        // gait 0..1 = walk..run; relaxed adds 1..2 = run..sprint
+        let levels: [(&[String; 8], f32); 3] = if relaxed {
+            [(&self.relaxed_walk, (1.0 - gait).max(0.0)), (&self.relaxed_run, 1.0 - (gait - 1.0).abs()), (&self.sprint, (gait - 1.0).max(0.0))]
+        } else {
+            [(&self.walk, 1.0 - gait.min(1.0)), (&self.run, gait.min(1.0)), (&self.run, 0.0)]
+        };
+        let mut out: Vec<(&str, f32)> = levels
+            .iter()
+            .flat_map(|&(set, w)| [(&set[a], (1.0 - t) * w), (&set[b], t * w)])
+        .filter(|(c, w)| *w > 1e-3 && !c.is_empty() && lib.node(c).is_some())
         .map(|(c, w)| (c.as_str(), w))
         .collect();
         let total: f32 = out.iter().map(|x| x.1).sum();
@@ -72,6 +83,13 @@ mod tests {
         assert_eq!((a, b), (7, 0));
         assert!((t - 0.5).abs() < 1e-5);
         assert_eq!(pair(std::f32::consts::PI).0, 4);
+    }
+
+    #[test]
+    fn hero_mapping_names_every_relaxed_direction() {
+        let m = LocomotionMap::default();
+        assert!(m.relaxed_walk.iter().chain(&m.relaxed_run).chain(&m.sprint).all(|c| c.starts_with("nc_")), "{:?}", m.sprint);
+        assert_eq!(m.sprint[4], m.relaxed_run[4], "no backward sprint: run instead");
     }
 
     #[test]

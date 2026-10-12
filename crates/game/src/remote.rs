@@ -181,7 +181,7 @@ fn state_json(sim: &Sim) -> Value {
             "velocity": [f.velocity.x, f.velocity.z],
             "facing": [f.facing.x, f.facing.z],
             "hp": f.hp, "max_hp": f.max_hp,
-            "height": f.height, "vertical": f.vertical, "guard": f.guard, "ki": f.ki,
+            "height": f.height, "vertical": f.vertical, "guard": f.guard, "mana": f.mana,
             "action": crate::panel::action_name(f), "action_elapsed": f.action.elapsed,
             "chain": f.chain, "heavy_charge": f.heavy_charge,
             "lock_target": f.lock_target,
@@ -280,7 +280,7 @@ fn gb_input(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     let flag = |k: &str| p.get(k).and_then(Value::as_bool).unwrap_or(false);
     let cast = p.get("cast").and_then(Value::as_u64).map(|s| s as u8);
     if cast.is_some_and(|s| s as usize >= gs::SPELLS.len()) { return Err(bad("cast must be a spell slot 0..3")); }
-    let intent = gs::Intent { move_dir: gs::V2::new(x, z), run, light: flag("light"), heavy: flag("heavy"), heavy_held: flag("heavy_held"), step: flag("step"), jump: flag("jump"), roll: flag("roll"), guard: flag("guard"), guard_pressed: flag("guard"), cast, cast_held: flag("cast_held"), ki_charge: flag("ki_charge"), ..Default::default() };
+    let intent = gs::Intent { move_dir: gs::V2::new(x, z), run, light: flag("light"), heavy: flag("heavy"), heavy_held: flag("heavy_held"), step: flag("step"), jump: flag("jump"), roll: flag("roll"), guard: flag("guard"), guard_pressed: flag("guard"), cast, cast_held: flag("cast_held"), ..Default::default() };
     *slot = Some(Scripted { intent, ticks_left: ticks });
     Ok(json!({ "fighter": i, "ticks": ticks }))
 }

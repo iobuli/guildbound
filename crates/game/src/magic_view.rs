@@ -26,9 +26,10 @@ pub fn element_color(e: Element, charge: f32) -> LinearRgba {
             let (orange, blue, white) = (LinearRgba::rgb(4.0, 1.2, 0.2), LinearRgba::rgb(0.6, 1.6, 6.0), LinearRgba::rgb(6.0, 6.0, 6.0));
             if charge < 0.5 { orange.mix(&blue, charge * 2.0) } else { blue.mix(&white, (charge - 0.5) * 2.0) }
         }
-        Element::Ki => LinearRgba::rgb(5.0, 4.5, 1.6),
         Element::Lightning => LinearRgba::rgb(1.2, 3.5, 7.0),
-        Element::Force => LinearRgba::rgb(3.5, 1.2, 5.0),
+        Element::Frost => LinearRgba::rgb(1.6, 4.0, 6.0),
+        Element::Arcane => LinearRgba::rgb(3.5, 1.2, 5.0),
+        Element::Holy => LinearRgba::rgb(5.0, 4.6, 2.0),
     }
 }
 
@@ -58,7 +59,7 @@ pub fn sync_orbs(
         let fallback = Vec3::new(f.position.x, 1.25 + f.height, f.position.z) + Vec3::new(f.facing.x, 0.0, f.facing.z) * 0.55;
         let mut points = Vec::new();
         if let Some(rig) = rigs.iter().find(|r| r.fighter == i) {
-            let lightning = matches!(f.action.kind, gs::ActionKind::Cast(gs::magic::LIGHTNING));
+            let lightning = matches!(f.action.kind, gs::ActionKind::Cast(gs::magic::CHAIN_LIGHTNING));
             let left = rig.one_shot.as_ref().is_some_and(|c| c.ends_with("_left"));
             for &bone in &rig.bones {
                 if let Ok((name, transform)) = bones.get(bone) {
@@ -106,25 +107,40 @@ pub fn sync_orbs(
     }
 }
 
-/// Ki aura while charging, burst shockwaves, magic sparks.
+/// Skill effects drawn from sim state: healing light rising while it channels, the frost nova ring, chain
+/// lightning bolts (caster -> first victim -> each jump), the blink's departure ring.
 pub fn draw_magic(sim: Res<Sim>, mut gizmos: Gizmos) {
     let now = sim.world.tick as f32 * gs::STEP;
+    let flat = |p: gs::V2, y: f32| Vec3::new(p.x, y, p.z);
+    let ring = |c: Vec3| Isometry3d::new(c, Quat::from_rotation_x(std::f32::consts::FRAC_PI_2));
     for f in &sim.world.fighters {
-        if f.action.kind == gs::ActionKind::KiCharge {
-            let base = Vec3::new(f.position.x, 0.05, f.position.z);
+        if f.action.kind == gs::ActionKind::Cast(gs::magic::HEALING_LIGHT) {
             for k in 0..3 {
-                let phase = (now * 1.6 + k as f32 / 3.0).fract();
-                let iso = Isometry3d::new(base + Vec3::Y * phase * 2.0, Quat::from_rotation_x(std::f32::consts::FRAC_PI_2));
-                gizmos.circle(iso, 0.55 - phase * 0.2, Color::srgba(1.0, 0.9, 0.3, 1.0 - phase));
+                let phase = (now * 1.4 + k as f32 / 3.0).fract();
+                gizmos.circle(ring(flat(f.position, 0.05 + phase * 2.0)), 0.6 - phase * 0.25, Color::srgba(1.0, 0.95, 0.5, 1.0 - phase));
             }
         }
     }
+    let mut chain_from: Vec<(u64, Vec3)> = Vec::new();
     for (c, at) in &sim.recent {
         let age = now - at;
-        if c.source == gs::Source::Spell(gs::magic::BURST) && age < 0.35 {
+        if c.source == gs::Source::Spell(gs::magic::FROST_NOVA) && age < 0.4 {
             let src = &sim.world.fighters[c.attacker];
-            let iso = Isometry3d::new(Vec3::new(src.position.x, 0.1, src.position.z), Quat::from_rotation_x(std::f32::consts::FRAC_PI_2));
-            gizmos.circle(iso, 0.4 + age / 0.35 * SPELLS[gs::magic::BURST].area, Color::srgba(0.8, 0.4, 1.0, 1.0 - age / 0.35));
+            gizmos.circle(ring(flat(src.position, 0.1)), 0.4 + age / 0.4 * SPELLS[gs::magic::FROST_NOVA].area, Color::srgba(0.6, 0.9, 1.0, 1.0 - age / 0.4));
+        }
+        if c.source == gs::Source::Spell(gs::magic::CHAIN_LIGHTNING) && age < 0.25 {
+            // contacts of one cast share a tick and arrive in jump order
+            let start = chain_from.iter().find(|(t, _)| *t == c.tick).map(|x| x.1).unwrap_or_else(|| flat(sim.world.fighters[c.attacker].position, 1.3));
+            let end = flat(c.point, 1.2);
+            let mut prev = start;
+            for k in 1..=6 {
+                let t = k as f32 / 6.0;
+                let jitter = if k < 6 { Vec3::new(((c.tick + k) as f32 * 12.9898).sin(), ((c.tick + k) as f32 * 78.233).sin() * 0.6, ((c.tick + k) as f32 * 37.719).cos()) * 0.18 } else { Vec3::ZERO };
+                let p = start.lerp(end, t) + jitter;
+                gizmos.line(prev, p, Color::srgba(0.7, 0.85, 1.0, 1.0 - age / 0.25));
+                prev = p;
+            }
+            if let Some(e) = chain_from.iter_mut().find(|(t, _)| *t == c.tick) { e.1 = end; } else { chain_from.push((c.tick, end)); }
         }
     }
     for p in &sim.world.projectiles {

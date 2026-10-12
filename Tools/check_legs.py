@@ -84,7 +84,7 @@ def run_config(name, d, run):
         geo, clip = player_geo()
         f = s["fighters"][0]
         sup = gb.call("gb.support")
-        feet = next((r["feet"] for r in sup.get("fighters", []) if r.get("enabled")), None)
+        feet = next((r["feet"] for r in sup.get("fighters", []) if r.get("enabled") and r.get("fighter") == 0), None)
         geo["_planted"] = [ft["weight"] > 0.5 for ft in feet] if feet else None
         samples.append((geo, f, clip))
     rows = {"clips": sorted({c for _, _, c in samples if c})}

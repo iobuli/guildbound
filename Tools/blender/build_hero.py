@@ -191,9 +191,11 @@ def anatomical_frame(rig, hip, head, foot, toe):
     return Matrix((right, forward, up)).transposed().to_quaternion()
 
 
-def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0):
+def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bones=None):
     """time_scale maps source frames to scene frames (scene fps / source fps) for actions taken raw from
-    a .blend authored at another frame rate."""
+    a .blend authored at another frame rate. root_bones = (source root, target root): carry the source's
+    root-motion bone travel onto the target's root bone, so the pelvis keeps only its motion relative to the
+    root (the game pins the root; travel left on the pelvis would walk the body inside the clip)."""
     act_src = src.animation_data.action if src.animation_data else None
     if act_src is None:
         return None
@@ -230,6 +232,17 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0):
             # quarter-turn absent from the bind bones. Remove that conversion
             # before solving local motion, then map the rest coordinate axes.
             correction = root_rest @ root_pose.inverted()
+        if root_bones:
+            sr, tr = root_bones
+            travel = (sw @ src.pose.bones[sr].matrix).translation - (sw @ src.data.bones[sr].matrix_local).translation
+            t_rr = tw @ tgt.data.bones[tr].matrix_local
+            rpb = tgt.pose.bones[tr]
+            rpb.rotation_mode = "QUATERNION"
+            rpb.matrix = tw.inverted() @ Matrix.LocRotScale(t_rr.translation + travel * scale, t_rr.to_quaternion(), t_rr.to_scale())
+            key = start + (frame - start) * time_scale
+            rpb.keyframe_insert("location", frame=key)
+            rpb.keyframe_insert("rotation_quaternion", frame=key)
+            bpy.context.view_layer.update()
         for b in order:
             s_name = inv[b]
             s_pb, s_bone = src.pose.bones[s_name], src.data.bones[s_name]

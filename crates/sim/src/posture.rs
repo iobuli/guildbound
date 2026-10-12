@@ -149,7 +149,7 @@ impl World {
     /// knocked down) never reaches it, so nothing is lost.
     pub(crate) fn advance_drink(&mut self, i: usize, id: ItemId) {
         let commit = self.posture.drink_time * self.posture.drink_commit;
-        let ki_max = self.magic.ki_max;
+        let mana_max = self.magic.mana_max;
         let f = &mut self.fighters[i];
         let before = f.action.elapsed;
         f.action.elapsed += STEP;
@@ -159,7 +159,7 @@ impl World {
         {
             f.kit.bag.remove(k);
             f.hp = (f.hp + heal).min(f.max_hp);
-            f.ki = (f.ki + ki).min(ki_max);
+            f.mana = (f.mana + ki).min(mana_max);
         }
     }
 }

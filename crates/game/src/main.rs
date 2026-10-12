@@ -17,6 +17,7 @@ mod magic_view;
 mod menu;
 mod motion_timing;
 mod motion_math;
+mod npc;
 mod panel;
 mod props;
 mod ragdoll;
@@ -68,9 +69,10 @@ fn main() {
         .init_resource::<support::SupportSettings>()
         .init_resource::<guard_ik::GuardIk>()
         .init_resource::<sfx::SfxSettings>()
+        .init_resource::<npc::NpcLibraries>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, announce))
-        .add_systems(PostStartup, (props::spawn, magic_view::setup))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
+        .add_systems(PostStartup, (props::spawn, magic_view::setup, npc::spawn))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
         .add_systems(
@@ -94,6 +96,8 @@ fn main() {
                 magic_view::draw_magic,
                 camera::orbit,
                 sfx::play,
+                npc::build_graphs,
+                npc::drive,
             )
                 .chain(),
         )
