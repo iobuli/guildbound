@@ -88,6 +88,11 @@ pub struct Possession {
     pub overrides: BTreeMap<String, BoneOverride>,
     pub aims: BTreeMap<String, Vec3>,
     pub grip: Option<[f32; 2]>,
+    /// Posing respects anatomy: a hand pose that takes the selected bone's joint (or its knee) out of range is
+    /// refused and the bone stays at its last legal angle.
+    pub anatomy_lock: bool,
+    /// The bone being posed and the direction of the last drag step per axis (for the anatomical lock).
+    pub last_good: Option<(String, Vec3)>,
     /// With no hand-set grip: fists in fighting clips, open hands for magic, relaxed otherwise.
     pub auto_hands: bool,
     pub look: LookMode,
@@ -109,7 +114,7 @@ pub struct Possession {
 impl Default for Possession {
     fn default() -> Self {
         Self {
-            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, sequence: Vec::new(), seq_fade: 0.25, seq_time: 0.0, seq_now: Vec::new(), clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, auto_hands: true,
+            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, sequence: Vec::new(), seq_fade: 0.25, seq_time: 0.0, seq_now: Vec::new(), clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, anatomy_lock: true, last_good: None, auto_hands: true,
             look: LookMode::Off, lean: false, breath: false, mass_kg: 75.0, readout: Readout::default(), last: None, history: VecDeque::new(),
             bone_filter: String::new(), status: String::new(),
             motion: None, plant_anchors: [None; 2],
@@ -152,7 +157,7 @@ impl Possession {
 }
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 1.0, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
+    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 2.5, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
         .init_resource::<crate::procedural::LifeTuning>().add_systems(Update, draw);
 }
 
@@ -668,6 +673,8 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     });
 
     theme::section(ui, "Life layers (Overgrowth)");
+    ui.checkbox(&mut p.anatomy_lock, "Anatomical lock (posing stops at each joint's range)");
+    ui.label(egui::RichText::new("Pose the selected bone: hold 1, 2 or 3 and drag with the middle mouse button (X, Y, Z).").size(11.0).color(theme::MUTED));
     ui.checkbox(&mut p.auto_hands, "Auto hands (fists to fight, open to cast)");
     let mut drive_hands = p.grip.is_some();
     ui.checkbox(&mut drive_hands, "Set grip by hand");

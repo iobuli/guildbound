@@ -484,24 +484,44 @@ fn pick(
 
 /// Pose by hand: with a bone selected, right-drag on the stage rotates it (sideways turns, up/down tilts) and the
 /// wheel rolls it; each change goes into the Possession override on top of the clip.
+/// Pose by hand: hold 1, 2 or 3 and drag with the middle mouse button to turn the selected bone about its X, Y
+/// or Z axis (on top of the clip). With the anatomical lock on, a step that takes the joint out of range is
+/// undone, so the bone stops at its limit.
 fn drag_bone(
     studio: Res<Studio>,
     mouse: Res<ButtonInput<MouseButton>>,
+    keys: Res<ButtonInput<KeyCode>>,
     motion: Res<bevy::input::mouse::AccumulatedMouseMotion>,
-    scroll: Res<bevy::input::mouse::AccumulatedMouseScroll>,
     wants: Res<bevy_egui::input::EguiWantsInput>,
     mut possession: ResMut<crate::possession::Possession>,
 ) {
-    let Some(bone) = studio.selected.clone().filter(|_| studio.open && !wants.wants_any_pointer_input()) else { return };
-    let drag = if mouse.pressed(MouseButton::Right) { motion.delta } else { Vec2::ZERO };
-    let roll = scroll.delta.y;
-    if drag == Vec2::ZERO && roll == 0.0 {
+    let Some(bone) = studio.selected.clone().filter(|_| studio.open) else { return };
+    let axis = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3].iter().position(|k| keys.pressed(*k));
+    let (Some(axis), true) = (axis, mouse.pressed(MouseButton::Middle) && !wants.wants_any_pointer_input()) else { return };
+    let step = (motion.delta.x - motion.delta.y) * 0.4;
+    if step == 0.0 {
         return;
     }
+    // the lock reads the final pose (after support and the authority rules): when this bone's joint is pinned
+    // at its anatomical limit, a step the same way as the one that pinned it is refused; back is always free
+    let n = &studio.numbers;
+    let joint_pinned = n["joints"].as_array().into_iter().flatten().filter(|j| j["joint"].as_str() == Some(bone.as_str())).any(|j| {
+        let (b, lo, hi) = (j["bend_deg"].as_f64().unwrap_or(0.0), j["range"][0].as_f64().unwrap_or(0.0), j["range"][1].as_f64().unwrap_or(180.0));
+        b >= hi - 1.0 || (lo > 0.0 && b <= lo + 1.0)
+    });
+    let side = bone.strip_prefix("B_").and_then(|s| s.strip_suffix("_Calf").or_else(|| s.strip_suffix("_Thigh")));
+    let knee_pinned = side.is_some_and(|sd| n["legs"].as_array().into_iter().flatten().any(|l| {
+        l["side"].as_str() == Some(sd) && (l["knee_flex_deg"].as_f64().unwrap_or(0.0) >= crate::knee::MAX_FLEX_DEG as f64 - 1.0 || l["knee_backward"] == true)
+    }));
+    if possession.anatomy_lock && (joint_pinned || knee_pinned)
+        && possession.last_good.as_ref().is_some_and(|(b, e)| *b == bone && e[axis].signum() == step.signum() && e[axis] != 0.0)
+    {
+        return;
+    }
+    // remember the direction of travel on this axis (the step that may pin the joint)
+    possession.last_good = Some((bone.clone(), { let mut d = Vec3::ZERO; d[axis] = step.signum(); d }));
     let o = possession.overrides.entry(bone).or_insert(crate::possession::BoneOverride { euler: Vec3::ZERO, absolute: false });
-    o.euler.y = (o.euler.y + drag.x * 0.35).clamp(-180.0, 180.0);
-    o.euler.x = (o.euler.x + drag.y * 0.35).clamp(-180.0, 180.0);
-    o.euler.z = (o.euler.z + roll * 3.0).clamp(-180.0, 180.0);
+    o.euler[axis] = (o.euler[axis] + step).clamp(-180.0, 180.0);
 }
 
 /// Skeleton overlay: teal bones, red where a joint is outside its range, gold for the selection.

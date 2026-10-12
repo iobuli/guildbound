@@ -119,7 +119,9 @@ pub fn orbit(
     }
 
     let over_panel = !panel.hidden && win.cursor_position().is_some_and(|p| p.x <= panel.width);
-    let looking = steer || (!over_panel && buttons.pressed(MouseButton::Middle));
+    // in the Studio, 1/2/3 + middle drag poses a bone instead of orbiting
+    let posing = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3].iter().any(|k| keys.pressed(*k));
+    let looking = steer || (!over_panel && !posing && buttons.pressed(MouseButton::Middle));
     let me = &sim.world.fighters[0];
     let lock = me.lock_target.and_then(|j| sim.world.fighters.get(j)).filter(|t| t.hp > 0.0);
     if in_menu {
