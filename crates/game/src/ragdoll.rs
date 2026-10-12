@@ -91,9 +91,18 @@ fn build(world: &mut World, bones: &[Entity], fighter: usize) -> Option<Doll> {
             if matches!(start_name, "B_L_Forearm" | "B_R_Forearm" | "B_L_Calf" | "B_R_Calf") {
                 let parent_direction = parent_pose.rotation * Vec3::Y;
                 let direction = delta.normalize_or(Vec3::Y);
-                let axis = parent_direction.cross(direction).normalize_or(hinge_fallback);
-                let bend = parent_direction.dot(direction).clamp(-1.0, 1.0).acos();
-                let flex = if start_name.ends_with("Calf") { 2.4 } else { 2.6 };
+                let knee = start_name.ends_with("Calf");
+                // Knees are anatomical hinges (boss rule, knee.rs): the axis is the body's side axis, so
+                // flexion only swings the shin back; never an axis taken from a pose that may be straight
+                // or bent backwards. Elbows keep the axis of their current bend.
+                let axis = if knee { -hinge_fallback } else { parent_direction.cross(direction).normalize_or(hinge_fallback) };
+                let bend = if knee {
+                    // signed flexion about the side axis; negative = hyperextended
+                    axis.dot(parent_direction.cross(direction)).atan2(parent_direction.dot(direction))
+                } else {
+                    parent_direction.dot(direction).clamp(-1.0, 1.0).acos()
+                };
+                let flex = if knee { crate::knee::MAX_FLEX_DEG.to_radians() } else { 2.6 };
                 let joint = RevoluteJoint::new(parent_body, body)
                     .with_local_anchor1(anchor1)
                     .with_local_anchor2(anchor2)

@@ -9,6 +9,8 @@ mod feed;
 mod feedback;
 mod hud;
 mod ik;
+mod joints;
+mod knee;
 mod guard_ik;
 mod loot_view;
 mod magic_view;
@@ -78,7 +80,6 @@ fn main() {
                 menu::trace_close_requests,
                 sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing)),
                 sim_bridge::step_sim,
-                arena::resize,
                 sim_bridge::ensure_views,
                 props::drive_bodies,
                 sim_bridge::sync_views,
@@ -98,7 +99,7 @@ fn main() {
         )
         .add_systems(
             PostUpdate,
-            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
+            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, joints::apply, knee::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))

@@ -217,6 +217,12 @@ fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     if let Some(v) = p.get("blend_space").and_then(Value::as_bool) {
         world.resource_mut::<crate::anim::AnimSettings>().blend_space = v;
     }
+    if let Some(v) = p.get("joint_rule").and_then(Value::as_bool) {
+        world.get_resource_or_insert_with(crate::joints::JointAuthority::default).enabled = v;
+    }
+    if let Some(v) = p.get("knee_rule").and_then(Value::as_bool) {
+        world.get_resource_or_insert_with(crate::knee::KneeStats::default).enabled = v;
+    }
     if let Some(hidden) = p.get("dev_panel").and_then(Value::as_bool) {
         world.resource_mut::<crate::panel::PanelState>().hidden = !hidden;
     }

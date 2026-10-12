@@ -255,7 +255,7 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.add(egui::DragValue::new(&mut t.body_radius).speed(0.01).range(0.1..=1.0));
         ui.end_row();
         ui.label("arena half m");
-        ui.add(egui::DragValue::new(&mut t.arena_half_size).speed(0.1).range(2.0..=20.0));
+        ui.add(egui::DragValue::new(&mut t.arena_half_size).speed(0.1).range(2.0..=80.0));
         ui.end_row();
         ui.label("motor");
         ui.horizontal(|ui| {

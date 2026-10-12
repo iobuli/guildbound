@@ -214,6 +214,8 @@ pub struct World {
     pub chests: Vec<rpg::Chest>,
     /// Bumped whenever pickups or chests change, so presentation rebuilds their views only then.
     pub loot_rev: u32,
+    /// Static round obstacles (centre, radius m): tree trunks, rocks. Fighters slide around them.
+    pub obstacles: Vec<(V2, f32)>,
     pub(crate) seq: u32,
 }
 
@@ -224,7 +226,7 @@ impl World {
             Fighter::new(V2::new(0.0, -1.5), V2::new(0.0, 1.0), 100.0),
             Fighter::new(V2::new(0.0, 1.5), V2::new(0.0, -1.0), 100.0),
         ];
-        Self { tuning, combat: CombatTuning::default(), magic: MagicTuning::default(), posture: PostureTuning::default(), notice: NoticeTuning::default(), fighters, projectiles: Vec::new(), tick: 0, contacts: Vec::new(), pickups: Vec::new(), chests: Vec::new(), loot_rev: 0, seq: 0 }
+        Self { tuning, combat: CombatTuning::default(), magic: MagicTuning::default(), posture: PostureTuning::default(), notice: NoticeTuning::default(), fighters, projectiles: Vec::new(), tick: 0, contacts: Vec::new(), pickups: Vec::new(), chests: Vec::new(), loot_rev: 0, obstacles: Vec::new(), seq: 0 }
     }
 
     /// Advance one fixed step. Missing intents count as idle.
@@ -373,6 +375,24 @@ impl World {
                 let push = dir * ((min - len) * 0.5);
                 self.fighters[i].position = self.fighters[i].position - push;
                 self.fighters[j].position = self.fighters[j].position + push;
+            }
+        }
+        // obstacles: push out along the normal and drop the velocity into it, keeping the slide along it
+        let r = self.tuning.body_radius;
+        for f in &mut self.fighters {
+            for &(c, radius) in &self.obstacles {
+                let d = f.position - c;
+                let len = d.length();
+                let min = radius + r;
+                if len >= min {
+                    continue;
+                }
+                let n = if len > 1e-5 { d / len } else { V2::new(1.0, 0.0) };
+                f.position = c + n * min;
+                let into = f.velocity.dot(n);
+                if into < 0.0 {
+                    f.velocity = f.velocity - n * into;
+                }
             }
         }
         // one world constraint per tick, from the pre-motion position, so separation never pushes through a wall

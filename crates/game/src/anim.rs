@@ -411,7 +411,11 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
         serde_json::json!({"fighter": rig.fighter, "clip": clip, "seek_s": seek, "gait_phase": rig.gait_phase, "contact_timing": contact,
                           "bones": rig.bones.len(), "finite": finite, "pose_hash": format!("{hash:016x}"), "rule_sample": rig.rule_sample, "geometry": geometry})
     }).collect();
-    serde_json::json!({"fighters": rows})
+    let knees = world.get_resource::<crate::knee::KneeStats>().copied().unwrap_or_default();
+    let auth = world.get_resource::<crate::joints::JointAuthority>();
+    let joint_rule = auth.map(|a| serde_json::json!({"enabled": a.enabled, "evaluated": a.evaluated, "corrected": a.corrected, "worst_excess_deg": a.worst_excess_deg,
+        "player": a.readings.iter().map(|(n, bend)| serde_json::json!([n, bend.round()])).collect::<Vec<_>>()}));
+    serde_json::json!({"fighters": rows, "joint_rule": joint_rule, "knee_rule": {"enabled": knees.enabled, "checked": knees.checked, "backward_fixed": knees.backward, "overflex_fixed": knees.overflex}})
 }
 
 /// The pack model under a fighter view. Pack models face +Z; the view faces -Z (Bevy forward).
@@ -570,13 +574,14 @@ pub fn lock_root_motion(world: &mut World) {
     let mut query = world.query::<(Entity, &FighterRig)>();
     let rigs: Vec<_> = query.iter(world).map(|(e, r)| (e, r.fighter, r.root_lock, r.pelvis, r.one_shot.is_some(), r.bones.clone())).collect();
     for (entity, fighter, root, pelvis, committed, bones) in rigs {
-        let Some((position, airborne)) = world.resource::<Sim>().world.fighters.get(fighter).map(|f| (f.position, f.height > 0.0 || f.crouch_left > 0.0)) else { continue };
+        let Some(position) = world.resource::<Sim>().world.fighters.get(fighter).map(|f| f.position) else { continue };
         if let Some((bone, rest)) = root {
-            let parent = world.get::<ChildOf>(bone).map(|p| p.parent());
-            let up = parent.and_then(|p| world_transform(world, p)).map(|p| p.affine().inverse().transform_vector3(Vec3::Y).normalize_or_zero()).unwrap_or(Vec3::Y);
+            // The sim owns all translation. Motion carries no vertical motion in any hero clip (measured: 0.000 m
+            // range across all 130), so pin it to rest. Keeping its "vertical" part through a parent-derived up
+            // axis leaked root travel into height whenever the body leaned (0.43 m pelvis sag at a 5 deg run lean,
+            // released at the cycle wrap as an 83 deg knee pop).
             if let Some(mut pose) = world.get_mut::<Transform>(bone) {
-                let delta = pose.translation - rest;
-                pose.translation = if airborne { rest } else { rest + up * delta.dot(up) };
+                pose.translation = rest;
             }
         }
         if committed && let Some((bone, _)) = pelvis
@@ -955,7 +960,9 @@ pub fn drive_animation(
         // agree across the blend and the stride follows the blended clips (no direction or gait pops).
         let dt_anim = if f.hit_stop > 0.0 { 0.0 } else { sim.frame_step_s };
         if speed > 0.05 {
-            let right = guildbound_sim::V2::new(f.facing.z, -f.facing.x);
+            // the character's right: forward x up = (fz, 0, -fx) x ... -> (-fz, fx) on the ground plane.
+            // (facing +Z with +Y up has its right at -X; the old (fz, -fx) was the left, measured as slip)
+            let right = guildbound_sim::V2::new(-f.facing.z, f.facing.x);
             let want = f.velocity.dot(right).atan2(f.velocity.dot(f.facing));
             let d = (want - rig.loco_angle + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
             rig.loco_angle += d * (1.0 - (-14.0 * dt_anim).exp());

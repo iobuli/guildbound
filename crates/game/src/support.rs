@@ -165,6 +165,14 @@ pub fn apply(world: &mut World) {
         {
             pelvis.translation += parent_pose.affine().inverse().transform_vector3(Vec3::Y * state.drop);
         }
+        // body forward from the hip line: the knee's fallback direction when a leg is near straight
+        let body_forward = match (world_transform(world, state.legs[0].joints[0]), world_transform(world, state.legs[1].joints[0])) {
+            (Some(l), Some(r)) => {
+                let left = l.translation() - r.translation();
+                Vec3::new(left.x, 0.0, left.z).normalize_or_zero().cross(Vec3::Y).normalize_or(facing)
+            }
+            _ => facing,
+        };
         for (i, leg) in state.legs.iter_mut().enumerate() {
             let Some(pose) = world_transform(world, leg.joints[2]) else { continue };
             let (_, rotation, _) = pose.to_scale_rotation_translation();
@@ -172,8 +180,19 @@ pub fn apply(world: &mut World) {
             let mut target = raw.lerp(leg.lock.anchor, leg.lock.weight);
             target.y = target.y.max(sole_height[i]);
             let wanted_rotation = rotation.slerp(leg.lock.rotation, leg.lock.weight).normalize();
-            if let Some(solution) = ik::apply(world, leg.joints, target, leg.pole, facing, leg.lengths) {
-                if actor_dt > 0.0 { leg.pole = solution.pole; }
+            // Pole from this frame's animated knee (its offset off the hip-target line), never last frame's
+            // solution: a reused pole collapses when a running leg straightens and the knee flips sides.
+            if let (Some(h), Some(k)) = (world_transform(world, leg.joints[0]), world_transform(world, leg.joints[1])) {
+                let axis = (target - h.translation()).normalize_or(Vec3::NEG_Y);
+                let off = k.translation() - h.translation();
+                let off = off - axis * off.dot(axis);
+                let fwd = (body_forward - axis * body_forward.dot(axis)).normalize_or(body_forward);
+                // blend toward the body forward as the knee offset vanishes (smooth, no switch)
+                let w = (off.length() / 0.06).clamp(0.0, 1.0);
+                let pole = (off.normalize_or(fwd) * w + fwd * (1.0 - w)).normalize_or(fwd);
+                leg.pole = if pole.dot(fwd) < 0.0 && off.length() < 0.03 { fwd } else { pole };
+            }
+            if ik::apply(world, leg.joints, target, leg.pole, body_forward, leg.lengths).is_some() {
                 ik::rotate_world(world, leg.joints[2], wanted_rotation);
             }
             if let (Some(a), Some(b), Some(c)) = (world_transform(world, leg.joints[0]), world_transform(world, leg.joints[1]), world_transform(world, leg.joints[2])) {

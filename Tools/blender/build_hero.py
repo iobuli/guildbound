@@ -44,7 +44,93 @@ def armature_of(objs):
     return next((ob for ob in objs if ob.type == "ARMATURE"), None)
 
 
-def push(rig, act, name):
+# Every clip is stored and exported at one rate. The FBX importer switches the scene fps to each file's
+# rate, so a clip baked under one import and exported under another was time-scaled and undersampled
+# (the RPG run cycle came out as 8 samples over 0.28 s instead of 25 over 0.8 s). push() re-times each
+# action from the scene fps current at its bake to OUT_FPS; export runs at OUT_FPS.
+OUT_FPS = 30
+
+
+def scene_fps():
+    r = bpy.context.scene.render
+    return r.fps / r.fps_base
+
+
+def fcurves(act):
+    out = list(getattr(act, "fcurves", []) or [])
+    for layer in getattr(act, "layers", []):
+        for strip in layer.strips:
+            for bag in getattr(strip, "channelbags", []):
+                out.extend(bag.fcurves)
+    return out
+
+
+def retime(act, src_fps):
+    k = OUT_FPS / src_fps
+    if abs(k - 1.0) < 1e-6:
+        return
+    for fc in fcurves(act):
+        for kp in fc.keyframe_points:
+            kp.co[0] *= k
+            kp.handle_left[0] *= k
+            kp.handle_right[0] *= k
+        fc.update()
+
+
+def cyclic(name):
+    loco = {c for names in HERO_MAPPING["locomotion"].values() for c in names}
+    low = name.lower()
+    return name in loco or "idle" in low or "loop" in low or name in ("mx_dizzy", "ual_sprint", "mage_cast_idle")
+
+
+def close_loop(act):
+    """Make the last frame equal the first by spreading each bone's seam error linearly over the cycle
+    (rotation by slerp from identity, translation by lerp); the root-travel bone keeps its travel.
+    Returns the largest bone seam angle (rad) removed."""
+    from mathutils import Quaternion, Vector
+    start, end = act.frame_range
+    span = max(end - start, 1e-6)
+    by_bone = {}
+    for fc in fcurves(act):
+        if fc.data_path.startswith('pose.bones["'):
+            bone = fc.data_path.split('"')[1]
+            by_bone.setdefault(bone, {}).setdefault(fc.data_path.rsplit(".", 1)[-1], {})[fc.array_index] = fc
+    worst = 0.0
+    for bone, kinds in by_bone.items():
+        rot = kinds.get("rotation_quaternion")
+        if rot and len(rot) == 4:
+            q0 = Quaternion([rot[i].evaluate(start) for i in range(4)])
+            q1 = Quaternion([rot[i].evaluate(end) for i in range(4)])
+            if q0.dot(q1) < 0:
+                q1.negate()
+            err = q0 @ q1.inverted()
+            worst = max(worst, err.angle)
+            n = len(rot[0].keyframe_points)
+            if all(len(rot[i].keyframe_points) == n for i in range(4)):
+                for k in range(n):
+                    f = rot[0].keyframe_points[k].co[0]
+                    q = Quaternion().slerp(err, (f - start) / span) @ Quaternion([rot[i].keyframe_points[k].co[1] for i in range(4)])
+                    for i in range(4):
+                        kp = rot[i].keyframe_points[k]
+                        kp.co[1] = kp.handle_left[1] = kp.handle_right[1] = q[i]
+        loc = kinds.get("location")
+        if loc and len(loc) == 3 and bone != "Motion":
+            err = Vector([loc[i].evaluate(start) for i in range(3)]) - Vector([loc[i].evaluate(end) for i in range(3)])
+            for i in range(3):
+                for kp in loc[i].keyframe_points:
+                    kp.co[1] += err[i] * (kp.co[0] - start) / span
+                    kp.handle_left[1] = kp.handle_right[1] = kp.co[1]
+    for fc in fcurves(act):
+        fc.update()
+    return worst
+
+
+def push(rig, act, name, report=None):
+    retime(act, scene_fps())
+    if cyclic(name):
+        seam = close_loop(act)
+        if report is not None:
+            report.setdefault("loop_closed_rad", {})[name] = round(seam, 4)
     act.name = name
     act.use_fake_user = True
     track = rig.animation_data.nla_tracks.new()
@@ -236,7 +322,7 @@ def main():
         act = bake_from_empties(rig, objs, name)
         (report["clips"] if act else report["skipped"]).append(name)
         if act:
-            push(rig, act, name)
+            push(rig, act, name, report)
         for ob in objs:
             bpy.data.objects.remove(ob, do_unlink=True)
 
@@ -250,7 +336,7 @@ def main():
         act = retarget(src, rig, name, FM_TO_RPG) if src else None
         (report["clips"] if act else report["skipped"]).append(name)
         if act:
-            push(rig, act, name)
+            push(rig, act, name, report)
         for ob in objs:
             bpy.data.objects.remove(ob, do_unlink=True)
         for act_left in [x for x in bpy.data.actions if x.users == 0 and not x.use_fake_user]:
@@ -271,7 +357,7 @@ def append_mage(archive, rig, report):
         act = retarget(src, rig, name, mage["bones"], motion_root="B-root") if src else None
         if not act:
             raise ValueError(f"{name}: mage source has no armature/action")
-        push(rig, act, name)
+        push(rig, act, name, report)
         report["clips"].append(name)
         for ob in objs:
             bpy.data.objects.remove(ob, do_unlink=True)
@@ -328,7 +414,7 @@ def append_sources(section, reference, rig, report):
             if hasattr(src.animation_data, "action_slot") and len(getattr(act_src, "slots", [])) > 0:
                 src.animation_data.action_slot = act_src.slots[0]
             act = retarget(src, rig, name, mx["bones"], time_scale=time_scale)
-            push(rig, act, name)
+            push(rig, act, name, report)
             report["clips"].append(name)
         for ob in objs:
             bpy.data.objects.remove(ob, do_unlink=True)
@@ -339,6 +425,8 @@ def append_sources(section, reference, rig, report):
 
 def export_hero(rig, output, report):
     rig.animation_data.use_nla = True
+    bpy.context.scene.render.fps = OUT_FPS
+    bpy.context.scene.render.fps_base = 1.0
     os.makedirs(os.path.dirname(os.path.abspath(output)), exist_ok=True)
     bpy.ops.export_scene.gltf(filepath=output, export_format="GLB", export_animations=True,
                               export_animation_mode="NLA_TRACKS", export_force_sampling=True, export_skins=True, export_yup=True)

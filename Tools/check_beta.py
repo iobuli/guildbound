@@ -70,7 +70,10 @@ def main():
                 f = state["fighters"][0]
                 x, z = f["velocity"]
                 fx, fz = f["facing"]
-                actual = round(math.atan2(x * fz - z * fx, x * fx + z * fz) / (math.pi / 4)) % 8
+                # side component along the character's right (-fz, fx): facing +Z with +Y up has its right
+                # at -X. The old (fz, -fx) was the left and mirrored every side clip (measured: planted-foot
+                # slip 3x-10x higher on side/diagonal moves, Tools/check_legs.py).
+                actual = round(math.atan2(z * fx - x * fz, x * fx + z * fz) / (math.pi / 4)) % 8
                 snapshot = pose()
                 kind = "run" if running else "walk"
                 assert snapshot["clip"] == expected[kind][actual], (kind, i, snapshot)

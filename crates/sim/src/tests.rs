@@ -189,3 +189,19 @@ fn drag_reversal_plants_before_moving_back() {
     assert!(furthest > x0 + 0.05, "momentum carries the body on before it turns");
     assert!(w.fighters[0].velocity.x < -3.9, "then it runs back at full speed");
 }
+
+#[test]
+fn fighters_slide_around_obstacles_and_never_enter_them() {
+    let mut w = World::sparring(Tuning::default());
+    w.fighters[1].position = V2::new(8.0, 8.0);
+    w.fighters[0].position = V2::new(0.0, -3.0);
+    w.obstacles.push((V2::new(0.05, 0.0), 0.5));
+    let run = Intent { move_dir: V2::new(0.0, 1.0), run: true, ..Default::default() };
+    let mut min_gap = f32::MAX;
+    for _ in 0..360 {
+        w.step(&[run]);
+        min_gap = min_gap.min((w.fighters[0].position - V2::new(0.05, 0.0)).length());
+    }
+    assert!(min_gap >= 0.5 + w.tuning.body_radius - 1e-4, "entered the obstacle: {min_gap}");
+    assert!(w.fighters[0].position.z > 2.0, "slid past it: {:?}", w.fighters[0].position);
+}

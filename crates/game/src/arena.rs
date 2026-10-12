@@ -1,8 +1,7 @@
 //! A code-built practice courtyard: quiet combat floor, visible limits, four
-//! entrances and paired guild markers. Geometry follows the sim's arena size.
+//! entrances and paired guild markers. Fixed 20 m square at the centre of the open world.
 //! Decoration never introduces a second movement or collision authority.
 use bevy::prelude::*;
-use crate::sim_bridge::Sim;
 
 #[derive(Component)]
 pub struct Courtyard;
@@ -37,12 +36,4 @@ pub fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mater
             }
         }
     });
-}
-
-pub fn resize(sim: Res<Sim>, mut court: Query<&mut Transform, With<Courtyard>>) {
-    if !sim.is_changed() { return; }
-    for mut t in &mut court {
-        let scale = sim.world.tuning.arena_half_size / 10.0;
-        t.scale = Vec3::new(scale, 1.0, scale);
-    }
 }

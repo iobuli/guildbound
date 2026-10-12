@@ -45,8 +45,9 @@ pub struct Sim {
 
 impl Sim {
     pub fn new() -> Self {
-        let mut world = gs::World::sparring(gs::Tuning::default());
+        let mut world = gs::World::sparring(gs::Tuning { arena_half_size: crate::props::WORLD_HALF, ..gs::Tuning::default() });
         world.stock_floor();
+        world.obstacles = crate::props::obstacles();
         let n = world.fighters.len();
         Self { world, paused: false, speed: 1.0, pending_steps: 0, opponent: OpponentMode::Idle, scripted: vec![None; n], keyboard: gs::Intent::default(), edges: gs::Intent::default(), recent: Vec::new(), brains: vec![None; n], frame_step_s: 0.0, acc: 0.0 }
     }
@@ -59,6 +60,7 @@ impl Sim {
         let kit = self.world.fighters[0].kit.clone();
         self.world = gs::World::sparring(tuning);
         self.world.stock_floor();
+        self.world.obstacles = crate::props::obstacles();
         // the player keeps what they carry and wear across a rematch
         self.world.fighters[0].kit = kit;
         self.world.refresh_vitality(0);

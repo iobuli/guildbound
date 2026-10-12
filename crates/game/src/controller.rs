@@ -20,15 +20,6 @@ impl Default for LocomotionMap {
     }
 }
 
-/// Forward, forward-right, right, backward-right, backward, backward-left,
-/// left, forward-left. Derived from velocity, so braking keeps its real gait.
-#[cfg(test)]
-fn direction(velocity: guildbound_sim::V2, facing: guildbound_sim::V2) -> usize {
-    let right = guildbound_sim::V2::new(facing.z, -facing.x);
-    let angle = velocity.dot(right).atan2(velocity.dot(facing));
-    (angle / std::f32::consts::FRAC_PI_4).round().rem_euclid(8.0) as usize
-}
-
 impl LocomotionMap {
     /// Weighted gait clips for a travel angle (radians from facing, + = right) and gait 0 (walk) .. 1 (run):
     /// the two nearest of eight directions, each at walk and run. Missing clips drop out and the rest
@@ -70,17 +61,6 @@ pub fn advance_phase(phase: f32, distance_m: f32, stride_m: f32) -> f32 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use guildbound_sim::V2;
-
-    #[test]
-    fn eight_directions_follow_the_actor_when_it_turns() {
-        for facing in [V2::new(0.0, 1.0), V2::new(1.0, 0.0)] {
-            let right = V2::new(facing.z, -facing.x);
-            for (i, (x, z)) in [(0.0, 1.0), (1.0, 1.0), (1.0, 0.0), (1.0, -1.0), (0.0, -1.0), (-1.0, -1.0), (-1.0, 0.0), (-1.0, 1.0)].into_iter().enumerate() {
-                assert_eq!(direction(right * x + facing * z, facing), i);
-            }
-        }
-    }
 
     #[test]
     fn blend_pairs_follow_the_angle() {

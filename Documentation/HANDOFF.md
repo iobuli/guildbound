@@ -1,6 +1,14 @@
 # Guildbound - handoff, 2026-10-11
 
-## Current state: Bevy (read first; everything below this section is the Unity era)
+## Latest (2026-10-12, Claude, absorb + legs pass) - read first
+- **Hero:** RPG Character is the only model and the nucleus; 130 clips (RPG native, FightingMotions, Kevin mage, Mixamo set from Snaiel's Godot prototype, Quaternius UAL1+UAL2). Rebuilt from source with `Tools/blender/build_hero.py` (never `--extend-hero` round-trips: each one dropped a sample). Every clip is re-timed to 30 fps at bake (FBX imports switch the scene fps; the old hero had 8-9 samples per 0.8 s run cycle) and cyclic clips are loop-closed (seam 0.000 m). Audit: `check_hero_mapping.py` pass.
+- **Locomotion:** phase-synced 8-direction walk/run blend space aligned on each clip's left-foot plant; character right is (-fz, fx) (the old sign mirrored every side clip). Root `Motion` is pinned to rest (it carries no motion in any clip; the old vertical keep leaked travel into an 0.43 m pelvis sag under lean = the 83 deg knee pop). Support IK takes its knee pole from the animated knee each frame.
+- **Pose rules (boss):** `joints.rs` soft segment-angle limits on spine/neck/arms/wrists/ankles (roll-invariant; this rig flips bone roll so local limits are meaningless); `knee.rs` hinge: forward only, no hyperextension, max 135 deg flexion, foot kept. Ragdoll knees use the anatomical side axis with the same limit.
+- **Measured (Tools/check_legs.py, live):** mean planted-foot slip 0.41 m/s over 16 walk/run directions (was 3.09), worst knee pop 28 deg (was 83). Controller 20/20, spells 3/3. **Open:** combat check fails on the ragdoll hinge-axis assert (0.151 rad vs 0.12; constant offset, likely hinge axis frames at creation; predates the legs pass).
+- **World:** 60 m open world (sim bound `props::WORLD_HALF`), courtyard at the centre, deterministic Quaternius scatter (trees, rocks, plants, market clearing NE) with tree/rock obstacles in the sim. Sim also has posture/deathblow/backstab/notice/crits/timed drinks (`posture.rs`, `notice.rs`); audio `sfx.rs`.
+- **Next (Beta V2):** Wenrexa UI rework, souls-like systems from Cat's template, Bestiary mobs, ragdoll hinge fix. Rules: commit every change, verify live before claiming, ask before push.
+
+## Earlier Bevy state (before the absorb pass)
 - **Engine:** Bevy 0.19.1 (Rust 1.99 stable, MSVC), code only, pinned per Decision 22. Boss dropped Unity on 2026-10-11. Branch `build/bevy`.
 - **Workspace:** `crates/sim` = `guildbound_sim`, the engine-independent fixed-step motor, combat, magic and mob core (42 sim tests). `crates/game` = `guildbound`, the playable beta plus dev panel (9 controller/bridge/menu/motion tests). `.cargo/config.toml` caps builds at 6 jobs.
 - **Run it:** double-click `play.cmd`, or `cargo run -p guildbound`. Menu: Spar fights a partner; Practice leaves the partner idle. Esc pauses; Tab opens the boss's dev panel (pause/step/reset/speed, live tuning, animation inspection, overlays and feed).

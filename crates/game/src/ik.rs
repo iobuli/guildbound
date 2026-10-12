@@ -5,7 +5,6 @@ use crate::motion_math::world_transform;
 pub struct Solution {
     pub knee: Vec3,
     pub tip: Vec3,
-    pub pole: Vec3,
 }
 
 pub fn solve(root: Vec3, target: Vec3, previous_pole: Vec3, fallback: Vec3, lengths: [f32; 2]) -> Solution {
@@ -22,7 +21,7 @@ pub fn solve(root: Vec3, target: Vec3, previous_pole: Vec3, fallback: Vec3, leng
     pole = pole.normalize_or(Vec3::Z);
     let along = (a * a - b * b + distance * distance) / (2.0 * distance);
     let height = (a * a - along * along).max(0.0).sqrt();
-    Solution { knee: root + axis * along + pole * height, tip: root + axis * distance, pole }
+    Solution { knee: root + axis * along + pole * height, tip: root + axis * distance }
 }
 
 pub fn rotate_world(world: &mut World, bone: Entity, rotation: Quat) -> Option<()> {
@@ -64,7 +63,7 @@ mod tests {
             assert!((s.knee.distance(root) - 0.45).abs() < 1e-4);
             assert!((s.tip.distance(s.knee) - 0.42).abs() < 1e-4);
             assert!(s.knee.is_finite() && s.tip.is_finite());
-            assert!(s.pole.dot(Vec3::Z) >= 0.0);
+            assert!((s.knee - root).dot(Vec3::Z) >= -1e-4, "knee stays on the pole side");
         }
     }
 

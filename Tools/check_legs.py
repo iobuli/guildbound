@@ -83,6 +83,9 @@ def run_config(name, d, run):
         s = step(2)
         geo, clip = player_geo()
         f = s["fighters"][0]
+        sup = gb.call("gb.support")
+        feet = next((r["feet"] for r in sup.get("fighters", []) if r.get("enabled")), None)
+        geo["_planted"] = [ft["weight"] > 0.5 for ft in feet] if feet else None
         samples.append((geo, f, clip))
     rows = {"clips": sorted({c for _, _, c in samples if c})}
     # travel angle vs facing, from the sim
@@ -96,6 +99,7 @@ def run_config(name, d, run):
         floor = min(hs)
         prev = None
         prev_knee = None
+        prev_planted = False
         for g, fi, _ in samples:
             p = g[foot]
             knee = angle(g[thigh], g[calf], g[foot])
@@ -103,10 +107,11 @@ def run_config(name, d, run):
             if prev_knee is not None:
                 pops = max(pops, abs(knee - prev_knee))
             prev_knee = knee
-            planted = p[1] < floor + 0.03
-            if planted and prev is not None and prev[1] < floor + 0.03:
+            planted = g["_planted"][0 if side == "L" else 1] if g.get("_planted") else p[1] < floor + 0.005
+            if planted and prev is not None and prev_planted:
                 slips.append(math.hypot(p[0] - prev[0], p[2] - prev[2]) / (2 * STEP))
             prev = p
+            prev_planted = planted
             pen.append(p[1])
             v = fi["velocity"]
             if planted and math.hypot(*v) > 0.3:
@@ -124,23 +129,35 @@ def run_config(name, d, run):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--modes", default="blend,snap")
+    ap.add_argument("--modes", default="blend,snap", help="comma list of blend, snap")
+    ap.add_argument("--support", default="on", choices=["on", "off"], help="foot support IK during the run")
+    ap.add_argument("--rules", default="on", choices=["on", "off"], help="joint authority + knee hinge layers")
+    ap.add_argument("--dirs", default="", help="comma list of direction names to run (default all)")
+    ap.add_argument("--gaits", default="walk,run")
     a = ap.parse_args()
     OUT.mkdir(parents=True, exist_ok=True)
     gb.call("gb.control", {"state": "play", "dev_panel": False})
+    gb.call("gb.support", {"enabled": a.support == "on"})
+    gb.call("gb.control", {"joint_rule": a.rules == "on", "knee_rule": a.rules == "on"})
     result = {}
     try:
         for mode in a.modes.split(","):
-            gb.call("gb.control", {"blend_space": mode == "blend"})
+            gb.call("gb.control", {"blend_space": mode != "snap"})
             result[mode] = {}
             for gait, run in (("walk", False), ("run", True)):
+                if gait not in a.gaits.split(","):
+                    continue
                 for name, d in DIRS.items():
+                    if a.dirs and name not in a.dirs.split(","):
+                        continue
                     r = run_config(name, d, run)
                     result[mode][f"{gait}_{name}"] = r
                     print(mode, gait, name, json.dumps(r))
     finally:
         gb.call("gb.control", {"blend_space": True, "reset": True, "pause": False, "state": "menu"})
-    (OUT / "legs.json").write_text(json.dumps(result, indent=2))
+        gb.call("gb.support", {"enabled": True})
+        gb.call("gb.control", {"joint_rule": True, "knee_rule": True})
+    (OUT / f"legs_{a.modes.replace(',', '_')}_support_{a.support}_rules_{a.rules}.json").write_text(json.dumps(result, indent=2))
     for mode, rows in result.items():
         bad = [k for k, r in rows.items() if not r["pass"]]
         slip = sum(r["planted_slip_mps"] for r in rows.values()) / len(rows)
