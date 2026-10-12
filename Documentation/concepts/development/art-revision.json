@@ -1,0 +1,11 @@
+{
+  "id": "CS-CHR-06-R2",
+  "file": "Documentation/concepts/development/trained-builds-v2.png",
+  "prompt": "Edit the existing six-character FreeGuild early/trained build sheet. Preserve layout, early row, identity, caster column, labels, faceted matte clothing language and canonical body/limb length. Change TRAINED FIGHTER: visibly narrower waist, compact athletic legs, broader upper-back shoulder WRAP surface, strong crossed cloth straps, compact staggered loaded stance. Change TRAINED HEAVY: clearly fuller hips and thighs through PADDED CLOTH silhouette, squared short vest with broad HORIZONTAL reinforcement bands, no crossed shoulder straps, lower stable wide stance; keep shoulders normal, hands/feet same size and arm reach unchanged. Heavy identity should read through bottom-heavy mass, fighter through compact upper-body diagonal structure. Update only their corresponding black front and side silhouettes along the bottom to precisely match changed figures. All three trained builds must be easy to tell apart without color. No new armour, weapons, glow, stats or external IP. This is an art-target revision, not proof of a 20m gameplay test.",
+  "refs": [
+    "D:/New folder (4)/guildbound/Documentation/concepts/development/trained-builds.png"
+  ],
+  "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-88e91503-b11f-4e27-9ced-4405c13dbcbe.png",
+  "approval_state": "draft-for-boss-review",
+  "review": "Edited fighter to narrower waist and crossed straps; heavy to padded horizontal torso/hip/thigh mass. Silhouette row updated. Improved art separation, not a 10/20m Unity review pass; costume/contact envelope still requires testing."
+}

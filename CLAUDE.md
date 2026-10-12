@@ -1,5 +1,3 @@
-> ACTIVE TASK (2026-10-11): First-Principles Tandem GDD Loop. Read TANDEM_CLAUDE.manifest.md / TANDEM_CODEX.manifest.md and TANDEM_REASONING.log first; they override the rest of this file for that task.
-
 # CLAUDE.md
 # Based on drona23/claude-token-efficient (MIT), coding profile.
 
@@ -23,12 +21,11 @@
 - No em dashes, smart quotes, or decorative Unicode symbols. Plain hyphens and straight quotes only.
 
 ## Guildbound (Bevy)
+- Engine: Bevy (Rust), code only, no editor. Branch `build/bevy`. Unity was dropped 2026-10-11 (tag `unity-final`, read with `git show unity-final:<path>`).
+- Start from Documentation/HANDOFF.md. Read Documentation/ALPHA_LESSONS.md and MASTER.md (section 4 math) only when the task needs them. GDD of record is the last MASTER_GDD block in TANDEM_REASONING.log (large: grep it, never read it whole).
+- Combat sim is a plain Rust crate (`crates/sim`, no Bevy types) so `cargo test` runs it headless; `crates/game` is Bevy presentation. Pin the Bevy version and check API names against its docs, not memory.
+- Old engines are reference only: `_OldGodot/` zip (git-ignored) and the `unity-final` tag. Never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code. Asset Store packs: the boss holds the licences (Decision 21 in collab/DECISIONS.md); converted content stays git-ignored in assets/packs/.
+- Team: the user is the boss (direction, scope, art). Claude does the dev work end to end. Codex is not in the loop; collab/ is history plus DECISIONS.md. No subagents or workflows unless the boss asks.
+- Boss tests in the viewer: after a change, `cargo build -p guildbound`, relaunch, report what changed, read boss notes from collab/devfeed.log. No screenshot loops.
+- Commit only when the boss says. Never commit asset packs, target/, or _OldGodot/. Ask before any push.
 - If the user is Joe (or says so), read JOE.md first.
-- Engine: Bevy (Rust), code only, no editor. Unity was dropped 2026-10-11; the last Unity state is tag `unity-final` (read old files with `git show unity-final:<path>`). Branch `build/bevy`.
-- Read Documentation/ALPHA_LESSONS.md first (what to keep, what bit us, Unity -> Bevy translation), then Documentation/HANDOFF.md and Documentation/MASTER.md (section 4 math is engine-independent).
-- Keep the combat sim a plain Rust crate (no Bevy types) so `cargo test` runs it headless; Bevy is presentation. Pin the Bevy version and check API names against its docs, not memory.
-- Old engines are reference only: `_OldGodot/` zip (git-ignored) and the `unity-final` tag. Never copy GPL code (Lugaru, Wasted, Naikari, Illarion) and never use asset-pack demo scripts as our code. Asset Store packs: the boss holds the licences (Decision 21); converted content stays git-ignored in assets/packs/.
-- Team: the user is the boss (direction, scope, art). Codex = creative dev. Claude = logical dev (architecture, verification, tests, licensing, risk).
-- Coordinate with Codex only through collab/CHANNEL.md (append-only, `## [agent] YYYY-MM-DD HH:MM - topic`, four parts: Done / Review / Needs / Next), collab/TASKS.md (owners), collab/DECISIONS.md.
-- After posting, wait with `powershell -NoProfile -File Tools/collab_wait.ps1 -Me claude` (0 = new entry, 3 = timeout, 2 = user STOP). A direct user message always wins. Honour pauses and brainstorm-only requests.
-- Codex delivers code uncommitted; Claude verifies (`cargo build`, `cargo test`, smoke) and commits. Never commit asset packs, target/, or _OldGodot/. Ask the boss before any push.

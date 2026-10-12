@@ -55,7 +55,20 @@ Source: `reference/overgrowth` (sparse: `Source/Physics`, `Data/Scripts`).
 
 ---
 
-## FATE (WildTangent) - pending
+## FATE (WildTangent) - read 2026-10-12
 
-Download in progress to `reference/fate_download/`. To read for: monster behaviour and spawning, skills and
-spell progression, inventory and loot tables, the town-dungeon loop, pets. Same rule: notes here, our own code.
+Source: `reference/fate/FATE/Source/DEV` (outside the repo). Studied for mechanics only; nothing copied.
+
+| System | Finding (our words) | Guildbound use | Status |
+|---|---|---|---|
+| Monster brain | A state machine: wander, hunt, approach, attack, flee, get-range, cast, pick up item, return to town (pets), unique idle. Re-checks target validity every update (dead, out of active range, same faction or neutral -> drop target). | Mob AI for the open world: same states, our deterministic sim. | planned |
+| Aggro and leash | Attention radius starts a hunt; a larger follow radius ends it (leash), unless the monster has a master. Paths refresh at most once per second. | Mob aggro/leash; matches the alpha 2 OpponentPost spec (watch 12 m, leash 20 m). | planned |
+| Tactics | Melee monsters close in; mage-type monsters keep 25-60% of their attention radius and reposition to a random open spot near the target, rarely re-picking. | Caster mobs that kite; melee mobs that rush; pairs well with our elements. | planned |
+| Spell roles | Monsters pick spells by role: attack, summon, banish, defend, heal self, heal minions. | Mob skill kits by role. | planned |
+| Monster ranks | Higher-rank monsters give 1.1-1.2x experience and 5-10x item rarity; rarer to spawn (10-20x). | Champion/elite mobs; feeds the Hunter's Card rank ladder. | planned |
+| Item quality | Grades Normal, Superior, Exceptional, Flawless prefix the name and scale stats; separate Magical / Unique / Artifact tiers; some items need identifying. | Item quality tiers on our ItemDef (Decision 6). | planned |
+| Damage types | Piercing, slashing, crushing, magical, fire, ice, electric, undead; items add typed damage bonuses. | Typed damage; fire and electric already exist in our GDD. | planned |
+| Sockets | Items carry socket counts; gems add effects. | Socketed gear as a crafting sink. | later |
+| Effects | Each effect is passive (while equipped) or on use, with a target: user, character, area, item, user's pets. | Item and skill effect model (Decision 7 EffectDef). | planned |
+| Inventory | 11 equipment slots (head, chest, both hands, arm, gloves, neck, feet, two rings, belt) plus 5 quick slots; bag items occupy a width x height grid. | Inventory page; our quick slots map to keys 1-4. | planned |
+| Dungeons | Generator pipeline: carve a corridor maze, sparsify dead ends, place scored rooms (rectangular, oval, ring), pits, reconnect isolated rooms, doors, props, exits. | Procedural dungeons beneath the open world; same staged pipeline in our own code. | planned |

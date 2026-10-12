@@ -1,0 +1,176 @@
+{
+  "schema": 1,
+  "library": "hero",
+  "source_rig": "FightingMotions",
+  "target_rig": "RPG Character",
+  "bones": {
+    "Hip": "B_Pelvis",
+    "Body": "B_Spine",
+    "Chest": "B_Spine2",
+    "Collar_L": "B_L_Clavicle",
+    "Shoulder_L": "B_L_UpperArm",
+    "ForeArm_L": "B_L_Forearm",
+    "Hand_L": "B_L_Forearm.001",
+    "Collar_R": "B_R_Clavicle",
+    "Shoulder_R": "B_R_UpperArm",
+    "ForeArm_R": "B_R_Forearm",
+    "Hand_R": "B_R_Hand",
+    "Neck": "B_Neck",
+    "Head": "B_Head",
+    "Thigh_L": "B_L_Thigh",
+    "Shin_L": "B_L_Calf",
+    "Foot_L": "B_L_Foot",
+    "Toe_L": "B_L_Toe0",
+    "Thigh_R": "B_R_Thigh",
+    "Shin_R": "B_R_Calf",
+    "Foot_R": "B_R_Foot",
+    "Toe_R": "B_R_Toe0"
+  },
+  "locomotion": {
+    "walk": [
+      "Unarmed-Strafe-Forward",
+      "Unarmed-Strafe-Forward-Right",
+      "Unarmed-Strafe-Right",
+      "Unarmed-Strafe-Backward-Right",
+      "Unarmed-Strafe-Backward",
+      "Unarmed-Strafe-Backward-Left",
+      "Unarmed-Strafe-Left",
+      "Unarmed-Strafe-Forward-Left"
+    ],
+    "run": [
+      "Unarmed-Run-Forward",
+      "Unarmed-Run-Forward-Right",
+      "Unarmed-Run-Right",
+      "Unarmed-Run-Backward-Right",
+      "Unarmed-Run-Backward",
+      "Unarmed-Run-Backward-Left",
+      "Unarmed-Run-Left",
+      "Unarmed-Run-Forward-Left"
+    ]
+  },
+  "combat": {
+    "jab": [
+      "Unarmed-Attack-L1",
+      "hp_straight_left_A",
+      "hp_straight_left_Tiramis"
+    ],
+    "cross": [
+      "Unarmed-Attack-R1",
+      "hp_straight_right_A",
+      "hp_straight_right_A2"
+    ],
+    "hook": [
+      "Unarmed-Attack-L2",
+      "Unarmed-Attack-R2",
+      "hp_hook_left_A",
+      "bp_hook_right_A",
+      "hp_hook_left_Tiramis",
+      "bp_hook_right_A2"
+    ],
+    "uppercut": [
+      "Unarmed-Attack-L3",
+      "Unarmed-Attack-R3",
+      "hp_upper_right_A",
+      "bp_upper_left_A",
+      "hp_upper_right_A2",
+      "bp_upper_left_A2"
+    ],
+    "roundhouse": [
+      "hk_rh_right_A2",
+      "hk_rh_right_A"
+    ],
+    "side kick": [
+      "hk_side_left_A2",
+      "hk_side_left_A"
+    ],
+    "front kick": [
+      "bk_push_left_A"
+    ],
+    "low kick": [
+      "lk_rh_right_A2",
+      "lk_rh_left_A2",
+      "lk_rh_right_A",
+      "lk_rh_left_A",
+      "lk_rh_right_Tiramis"
+    ],
+    "counter": [
+      "bp_upper_left_A",
+      "bp_hook_right_A2",
+      "bk_rh_right_A2",
+      "bk_rh_right_A"
+    ],
+    "run punch": [
+      "Unarmed-Run-Forward-Attack1-Left",
+      "Unarmed-Run-Forward-Attack1-Right"
+    ]
+  },
+  "roles": {
+    "idle": "idle_Tiramis",
+    "walk": "Unarmed-Strafe-Forward",
+    "run": "Unarmed-Run-Forward",
+    "back": "Unarmed-Strafe-Backward",
+    "hit": "hd_front_A",
+    "hit_body": "bd_front_A",
+    "hit_low": "ld_front_A",
+    "block": "hb_front_A",
+    "block_body": "bb_front_A",
+    "block_low": "lb_front_A",
+    "guard": "idle_A",
+    "ki_charge": "mage_cast_idle",
+    "spell_charge": "mage_fireball_load",
+    "knockdown": "Unarmed-Knockdown1",
+    "getup": "Unarmed-Getup1",
+    "jump": "Unarmed-Jump",
+    "fall": "Unarmed-Fall",
+    "roll": "Unarmed-DiveRoll-Forward1"
+  },
+  "mage": {
+    "bones": {
+      "B-hips": "B_Pelvis",
+      "B-spine": "B_Spine",
+      "B-chest": "B_Spine2",
+      "B-shoulder.L": "B_L_Clavicle",
+      "B-upperArm.L": "B_L_UpperArm",
+      "B-forearm.L": "B_L_Forearm",
+      "B-hand.L": "B_L_Forearm.001",
+      "B-shoulder.R": "B_R_Clavicle",
+      "B-upperArm.R": "B_R_UpperArm",
+      "B-forearm.R": "B_R_Forearm",
+      "B-hand.R": "B_R_Hand",
+      "B-neck": "B_Neck",
+      "B-head": "B_Head",
+      "B-thigh.L": "B_L_Thigh",
+      "B-shin.L": "B_L_Calf",
+      "B-foot.L": "B_L_Foot",
+      "B-toe.L": "B_L_Toe0",
+      "B-thigh.R": "B_R_Thigh",
+      "B-shin.R": "B_R_Calf",
+      "B-foot.R": "B_R_Foot",
+      "B-toe.R": "B_R_Toe0"
+    },
+    "clips": {
+      "mage_fireball": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01.fbx",
+      "mage_fireball_load": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01 - Load.fbx",
+      "mage_fireball_release": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01 - Cast.fbx",
+      "mage_lightning_right": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect1H01_R.fbx",
+      "mage_lightning_left": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect1H01_L.fbx",
+      "mage_burst": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Omnidirectional/HumanM@MagicAttackOmni01.fbx",
+      "mage_cast_idle": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/HumanM@CastingIdle01.fbx"
+    }
+  },
+  "spells": {
+    "fireball": [
+      "mage_fireball"
+    ],
+    "fireball_charged": [
+      "mage_fireball_release"
+    ],
+    "lightning": [
+      "mage_lightning_right",
+      "mage_lightning_left"
+    ],
+    "burst": [
+      "mage_burst"
+    ]
+  }
+}

@@ -1,0 +1,8 @@
+PASS One active contract
+PASS No payout before recovery
+PASS First delivery pays once
+PASS Duplicate pays zero
+PASS Second service remains available
+PASS Cosmetic blend stays within envelope
+PASS Master fade protects text floor
+Browser presentation checks only; Unity gates pending.

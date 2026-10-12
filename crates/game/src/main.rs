@@ -2,11 +2,23 @@
 //! Run: `cargo run -p guildbound`. Remote: Bevy Remote Protocol on http://127.0.0.1:15702 (see Tools/gb.py).
 
 mod anim;
+mod arena;
 mod camera;
+mod controller;
 mod feed;
+mod feedback;
+mod hud;
+mod ik;
+mod magic_view;
+mod menu;
+mod motion_timing;
+mod motion_math;
 mod panel;
+mod props;
+mod ragdoll;
 mod remote;
 mod sim_bridge;
+mod support;
 
 use bevy::prelude::*;
 use bevy::remote::http::RemoteHttpPlugin;
@@ -23,7 +35,7 @@ fn main() {
             DefaultPlugins
                 .set(WindowPlugin {
                     primary_window: Some(Window {
-                        title: "Guildbound - dev".into(),
+                        title: "Guildbound - beta".into(),
                         resolution: (1600, 900).into(),
                         ..default()
                     }),
@@ -32,21 +44,38 @@ fn main() {
                 .set(AssetPlugin { file_path: format!("{ROOT}/assets"), ..default() }),
         )
         .add_plugins(EguiPlugin::default())
+        .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new().run_if(bevy::input::common_conditions::input_toggle_active(false, KeyCode::F1)))
+        .add_plugins(bevy_lunex::UiLunexPlugins)
+        .add_plugins(avian3d::prelude::PhysicsPlugins::new(PostUpdate))
+        .init_state::<menu::AppState>()
         .add_plugins((remote::plugin(), RemoteHttpPlugin::default()))
         .insert_resource(sim_bridge::Sim::new())
         .init_resource::<feed::DevFeed>()
         .init_resource::<remote::RemoteActivity>()
         .init_resource::<panel::PanelState>()
         .init_resource::<anim::AnimSettings>()
+        .init_resource::<controller::LocomotionMap>()
+        .init_resource::<feedback::FeedbackSettings>()
         .init_resource::<anim::AnimRequests>()
         .init_resource::<anim::ClusterCursor>()
+        .init_resource::<ragdoll::Ragdolls>()
+        .init_resource::<support::Support>()
+        .init_resource::<support::SupportSettings>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, camera::spawn, announce))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, announce))
+        .add_systems(PostStartup, (props::spawn, magic_view::setup))
+        .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
+        .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
         .add_systems(
             Update,
             (
-                sim_bridge::read_player_input,
+                menu::toggle_menu,
+                menu::trace_close_requests,
+                sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing)),
                 sim_bridge::step_sim,
+                arena::resize,
+                sim_bridge::ensure_views,
+                props::drive_bodies,
                 sim_bridge::sync_views,
                 anim::switch_library,
                 anim::build_library,
@@ -54,14 +83,17 @@ fn main() {
                 anim::lean,
                 sim_bridge::show_capsules,
                 sim_bridge::draw_gizmos,
+                magic_view::draw_magic,
                 camera::orbit,
             )
                 .chain(),
         )
         .add_systems(
             PostUpdate,
-            (anim::lock_root_motion, anim::inertialize).chain().after(bevy::app::AnimationSystems).before(bevy::transform::TransformSystems::Propagate),
+            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
+        .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
+        .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))
         .add_systems(EguiPrimaryContextPass, panel::panel)
         .run();
 }

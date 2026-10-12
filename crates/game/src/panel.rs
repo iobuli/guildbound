@@ -17,6 +17,9 @@ pub struct PanelState {
     pub show_velocity: bool,
     pub show_bodies: bool,
     pub show_capsules: bool,
+    /// Tab: hide the dev panel (play view); I: inventory window.
+    pub hidden: bool,
+    pub show_inventory: bool,
     draft: String,
     clip: String,
     clip_target: usize,
@@ -25,11 +28,13 @@ pub struct PanelState {
 impl Default for PanelState {
     fn default() -> Self {
         Self {
-            width: 340.0,
-            show_grid: true,
-            show_velocity: true,
+            width: 0.0,
+            show_grid: false,
+            show_velocity: false,
             show_bodies: false,
             show_capsules: false,
+            hidden: true,
+            show_inventory: false,
             draft: String::new(),
             clip: "hp_straight_left_A".into(),
             clip_target: 0,
@@ -49,8 +54,34 @@ pub fn panel(
     mut anim: ResMut<AnimSettings>,
     mut requests: ResMut<AnimRequests>,
     mut libs: ResMut<Libraries>,
+    app_state: Res<State<crate::menu::AppState>>,
+    mut feedback: ResMut<crate::feedback::FeedbackSettings>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
+    if *app_state.get() == crate::menu::AppState::MainMenu {
+        // the menu owns the screen: no HUD, no dev panel
+        state.width = 0.0;
+        return Ok(());
+    }
+    let left = if state.hidden { 0.0 } else { state.width };
+    if crate::hud::draw(&ctx, &sim, left) {
+        sim.reset();
+        sim.opponent = OpponentMode::Spar;
+        sim.world.fighters[0].lock_target = Some(1);
+        sim.paused = false;
+    }
+    if state.show_inventory {
+        let mut open = true;
+        egui::Window::new("Inventory").open(&mut open).default_pos([state.width + 20.0, 80.0]).show(&ctx, |ui| {
+            ui.label("Inventory is not available in this sparring build.");
+            ui.label("Use 1-4 for spells and hold Q to replenish energy.");
+        });
+        state.show_inventory = open;
+    }
+    if state.hidden {
+        state.width = 0.0;
+        return Ok(());
+    }
     let mut root = egui::Ui::new(
         ctx.clone(),
         "gb_root".into(),
@@ -59,11 +90,11 @@ pub fn panel(
     let width = egui::Panel::left("gb_dev")
         .default_size(340.0)
         .resizable(true)
-        .show(&mut root, |ui| {
+        .show_inside(&mut root, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Guildbound dev");
-                ui.label("WASD move (camera-relative), Shift run, right-drag orbit, wheel zoom, Space pause, . step");
-                ui.label("J jab, K cross, U hook, I uppercut, L roundhouse, O side kick, Y run punch | opp: H hit, N knockdown, G get up");
+                ui.label("WASD move, Shift run, Ctrl step, Shift+Ctrl homing dash (8 ki) | LMB rush, RMB guard/parry, F/Mouse4 smash (hold to charge; W/S rising/sweep), Mouse5 lock");
+                ui.label("Camera: middle-drag orbit, wheel zoom | P pause, . step | Tab hide panel, I inventory | Space jump, C roll | 1 fireball (hold = charge), 2 ki blast, 3 lightning, 4 burst, Q charge ki | E interact: coming");
                 ui.separator();
                 sim_section(ui, &mut sim);
                 ui.separator();
@@ -78,6 +109,7 @@ pub fn panel(
                     ui.checkbox(&mut state.show_bodies, "bodies");
                     ui.checkbox(&mut state.show_capsules, "capsules");
                 });
+                ui.add(egui::Slider::new(&mut feedback.shake_scale, 0.0..=1.0).text("camera shake"));
                 ui.separator();
                 anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
                 ui.separator();
@@ -122,6 +154,7 @@ fn fighters_section(ui: &mut egui::Ui, sim: &mut Sim, cam: &mut OrbitCamera) {
         ui.label("Opponent:");
         ui.radio_value(&mut sim.opponent, OpponentMode::Idle, "idle");
         ui.radio_value(&mut sim.opponent, OpponentMode::Chase, "chase");
+        ui.radio_value(&mut sim.opponent, OpponentMode::Spar, "spar (fights back)");
     });
     let mut lock = sim.world.fighters[0].lock_target.is_some();
     if ui.checkbox(&mut lock, "Player locks on opponent").changed() {
@@ -129,21 +162,74 @@ fn fighters_section(ui: &mut egui::Ui, sim: &mut Sim, cam: &mut OrbitCamera) {
     }
     ui.checkbox(&mut cam.follow_player, "Camera follows player");
     egui::Grid::new("fighters").striped(true).show(ui, |ui| {
-        for h in ["#", "pos x", "pos z", "speed", "facing", "hp", "script"] {
+        for h in ["#", "pos x", "pos z", "speed", "action", "hp", "guard"] {
             ui.label(h);
         }
         ui.end_row();
         for (i, f) in sim.world.fighters.iter().enumerate() {
-            ui.label(if i == 0 { "you" } else { "opp" });
+            ui.label(fighter_name(i));
             ui.monospace(format!("{:+.2}", f.position.x));
             ui.monospace(format!("{:+.2}", f.position.z));
             ui.monospace(format!("{:.2}", f.velocity.length()));
-            ui.monospace(format!("{:+.0} deg", f.facing.x.atan2(f.facing.z).to_degrees()));
+            ui.monospace(action_name(f));
             ui.monospace(format!("{:.0}/{:.0}", f.hp, f.max_hp));
-            ui.monospace(sim.scripted[i].map_or("-".into(), |s| format!("{} t", s.ticks_left)));
+            ui.monospace(format!("{:.0}", f.guard));
             ui.end_row();
         }
     });
+    ui.horizontal(|ui| {
+        if ui.button("Spawn mob").clicked() {
+            let k = sim.world.fighters.len() as f32;
+            let at = guildbound_sim::V2::new((k * 2.3).sin() * 6.0, (k * 1.7).cos() * 6.0);
+            sim.spawn_mob(at);
+        }
+        if ui.button("Spawn pack (3)").clicked() {
+            for j in 0..3 {
+                let at = guildbound_sim::V2::new(5.0 + j as f32, -5.0 + (j % 2) as f32 * 1.5);
+                sim.spawn_mob(at);
+            }
+        }
+        if ui.button("Heal all").clicked() {
+            for f in &mut sim.world.fighters {
+                f.hp = f.max_hp;
+                f.guard = sim.world.combat.guard_max;
+            }
+        }
+    });
+    egui::CollapsingHeader::new("Contacts (latest last)").default_open(true).show(ui, |ui| {
+        for (c, _) in &sim.recent {
+            let who = fighter_name;
+            ui.monospace(format!("t{} {} {} -> {} {:?}", c.tick, who(c.attacker), source_name(c.source), who(c.defender), c.outcome));
+        }
+    });
+}
+
+pub fn source_name(s: guildbound_sim::Source) -> &'static str {
+    match s {
+        guildbound_sim::Source::Move(m) => guildbound_sim::MOVES[m].name,
+        guildbound_sim::Source::Spell(sp) => guildbound_sim::SPELLS[sp].name,
+    }
+}
+
+pub fn fighter_name(i: usize) -> String {
+    match i {
+        0 => "you".into(),
+        1 => "opp".into(),
+        n => format!("mob {}", n - 1),
+    }
+}
+
+pub fn action_name(f: &guildbound_sim::Fighter) -> String {
+    use guildbound_sim::ActionKind as K;
+    match f.action.kind {
+        K::None => "free".into(),
+        K::Strike(m) => format!("{} ({:?})", guildbound_sim::MOVES[m].name, f.action.phase()).to_lowercase(),
+        K::HeavyCharge(m) => format!("smash {} {:.0}%", guildbound_sim::MOVES[m].name, f.heavy_charge * 100.0),
+        K::Cast(s) => format!("cast {}", guildbound_sim::SPELLS[s].name),
+        K::Charge(s) => format!("charging {} {:.0}%", guildbound_sim::SPELLS[s].name, f.charge * 100.0),
+        K::KiCharge => "charging ki".into(),
+        k => format!("{k:?}").to_lowercase(),
+    }
 }
 
 fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {

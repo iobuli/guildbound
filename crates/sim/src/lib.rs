@@ -4,8 +4,11 @@
 //! Nothing here reads a clock, a random source or a hash-map order: same inputs, same state.
 
 pub mod combat;
+pub mod magic;
+pub mod mobs;
 mod math;
-pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase};
+pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase, Source};
+pub use magic::{MagicTuning, Projectile, SPELLS};
 pub use math::V2;
 
 /// Fixed simulation step in seconds.
@@ -53,7 +56,7 @@ impl Default for Tuning {
             body_radius: 0.30,
             walk_speed: 2.1,
             run_speed: 4.0,
-            arena_half_size: 6.0,
+            arena_half_size: 10.0,
             turn_rate: 720.0,
             accel: 12.0,
             decel: 9.0,
@@ -70,7 +73,17 @@ pub struct Intent {
     /// Press edges (true for exactly one tick).
     pub light: bool,
     pub heavy: bool,
+    /// Held heavy (Mouse4/F): wind up a smash; releasing commits it.
+    pub heavy_held: bool,
     pub guard_pressed: bool,
+    pub step: bool,
+    pub jump: bool,
+    pub roll: bool,
+    /// Spell slot pressed this tick (0-3 for keys 1-4), and whether that slot is still held.
+    pub cast: Option<u8>,
+    pub cast_held: bool,
+    /// Q held: charge ki.
+    pub ki_charge: bool,
     /// Held.
     pub guard: bool,
 }
@@ -81,6 +94,11 @@ pub struct Fighter {
     pub velocity: V2,
     /// Velocity change over the last tick (m/s^2); presentation reads it for lean and weight shift.
     pub accel: V2,
+    /// Height above the ground (m) and vertical speed (m/s). 0 = grounded.
+    pub height: f32,
+    pub vertical: f32,
+    /// Pre-jump crouch left (s); the take-off fires when it reaches 0.
+    pub crouch_left: f32,
     pub facing: V2,
     pub hp: f32,
     pub max_hp: f32,
@@ -91,12 +109,21 @@ pub struct Fighter {
     /// Light-string depth of the current string (0 = first hit).
     pub chain: u8,
     pub last_move: Option<combat::MoveId>,
+    /// The fighter the current strike tracks, if any.
+    pub strike_target: Option<usize>,
     /// Seconds left: hit-stop freeze, parry window, counter window, block stun.
     pub hit_stop: f32,
     pub parry_left: f32,
     pub counter_left: f32,
     pub block_stun: f32,
+    pub ki: f32,
+    /// 0..1 charge of the spell being held or just released.
+    pub charge: f32,
+    pub spell_cooldown: f32,
+    /// 0..1 strength prepared by a held smash; presentation never determines it.
+    pub heavy_charge: f32,
     pub(crate) parry_recharge: f32,
+    pub(crate) step_cooldown: f32,
     pub(crate) guard_regen_wait: f32,
     pub(crate) landed: bool,
     pub(crate) hit_mask: u64,
@@ -113,6 +140,9 @@ impl Fighter {
             position,
             velocity: V2::ZERO,
             accel: V2::ZERO,
+            height: 0.0,
+            vertical: 0.0,
+            crouch_left: 0.0,
             facing,
             hp,
             max_hp: hp,
@@ -121,11 +151,17 @@ impl Fighter {
             guard: CombatTuning::default().guard_max,
             chain: 0,
             last_move: None,
+            strike_target: None,
             hit_stop: 0.0,
             parry_left: 0.0,
             counter_left: 0.0,
             block_stun: 0.0,
+            ki: 60.0,
+            charge: 0.0,
+            spell_cooldown: 0.0,
+            heavy_charge: 0.0,
             parry_recharge: 0.0,
+            step_cooldown: 0.0,
             guard_regen_wait: 0.0,
             landed: false,
             hit_mask: 0,
@@ -141,7 +177,9 @@ impl Fighter {
 pub struct World {
     pub tuning: Tuning,
     pub combat: CombatTuning,
+    pub magic: MagicTuning,
     pub fighters: Vec<Fighter>,
+    pub projectiles: Vec<Projectile>,
     pub tick: u64,
     /// Contacts resolved since the presentation last drained them.
     pub contacts: Vec<Contact>,
@@ -155,7 +193,7 @@ impl World {
             Fighter::new(V2::new(0.0, -1.5), V2::new(0.0, 1.0), 100.0),
             Fighter::new(V2::new(0.0, 1.5), V2::new(0.0, -1.0), 100.0),
         ];
-        Self { tuning, combat: CombatTuning::default(), fighters, tick: 0, contacts: Vec::new(), seq: 0 }
+        Self { tuning, combat: CombatTuning::default(), magic: MagicTuning::default(), fighters, projectiles: Vec::new(), tick: 0, contacts: Vec::new(), seq: 0 }
     }
 
     /// Advance one fixed step. Missing intents count as idle.
@@ -176,6 +214,7 @@ impl World {
         for i in 0..self.fighters.len() {
             self.sweep(i);
         }
+        self.advance_projectiles();
     }
 
     /// Hand the contacts resolved since the last call to the caller.
@@ -244,13 +283,31 @@ impl World {
         f.velocity = if m.length_squared() <= 1e-8 && next.length_squared() < 1e-6 { V2::ZERO } else { next };
         f.accel = (f.velocity - v) / STEP;
         f.position = f.position + f.velocity * STEP;
+        // vertical: pre-jump crouch, then a ballistic arc; air keeps its momentum
+        let (g, jump_speed) = (self.combat.gravity, self.combat.jump_speed);
+        if f.crouch_left > 0.0 {
+            f.crouch_left -= STEP;
+            if f.crouch_left <= 0.0 {
+                f.crouch_left = 0.0;
+                // a running take-off goes a little higher (Overgrowth: jump scales with speed)
+                f.vertical = jump_speed * (1.0 + 0.15 * (f.velocity.length() / 4.0).min(1.0));
+            }
+        }
+        if f.height > 0.0 || f.vertical > 0.0 {
+            f.vertical -= g * STEP;
+            f.height += f.vertical * STEP;
+            if f.height <= 0.0 {
+                f.height = 0.0;
+                f.vertical = 0.0;
+            }
+        }
 
         if !steering {
             // committed actions keep their facing (strike retarget is bounded in combat::think)
         } else if let Some(target) = lock {
             let to = target - f.position;
             if to.length_squared() > 1e-6 {
-                f.facing = to.normalized();
+                f.facing = turn_toward(f.facing, to.normalized(), max_turn * 0.75);
             }
         } else if m.length_squared() > 1e-4 {
             // face where the player is steering, so a reversal visibly plants and turns
@@ -306,9 +363,21 @@ impl World {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
-            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed] {
+            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.ki, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left] {
                 eat(v.to_bits() as u64);
             }
+            let kind = match f.action.kind {
+                ActionKind::None => 0,
+                ActionKind::Guard => 1,
+                ActionKind::Strike(m) => 0x1000 + m as u64,
+                ActionKind::HeavyCharge(m) => 0x2000 + m as u64,
+                ActionKind::HitStun => 2, ActionKind::BlockStun => 3, ActionKind::GuardBreak => 4,
+                ActionKind::Staggered => 5, ActionKind::Knockdown => 6, ActionKind::GetUp => 7,
+                ActionKind::Step => 8, ActionKind::Roll => 9, ActionKind::KiCharge => 10,
+                ActionKind::Charge(s) => 0x3000 + s as u64, ActionKind::Cast(s) => 0x4000 + s as u64,
+            };
+            eat(kind);
+            eat(f.buffered.map_or(u64::MAX, |p| u64::from(p.heavy) | ((p.dir as u64) << 1) | (u64::from(p.held) << 3)));
             eat(f.action.seq as u64);
             eat(f.chain as u64);
         }

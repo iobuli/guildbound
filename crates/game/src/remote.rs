@@ -30,6 +30,53 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.clips", gb_clips)
         .with_method_main("gb.anim", gb_anim)
         .with_method_main("gb.library", gb_library)
+        .with_method_main("gb.presentation", gb_presentation)
+        .with_method_main("gb.menu_pointer", gb_menu_pointer)
+        .with_method_main("gb.physics", gb_physics)
+        .with_method_main("gb.support", gb_support)
+}
+
+fn gb_support(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.support");
+    if let Some(enabled) = p.as_ref().and_then(|p| p["enabled"].as_bool()) { world.resource_mut::<crate::support::SupportSettings>().enabled = enabled; }
+    Ok(crate::support::snapshot(world))
+}
+
+fn gb_physics(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.physics");
+    Ok(crate::ragdoll::snapshot(world))
+}
+
+/// Exercise the actual menu Pointer<Over/Out/Click> observers, not a state shortcut.
+/// {button?: displayed name, event?: "over"|"out"|"click"}; no button lists actions.
+fn gb_menu_pointer(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    use bevy::picking::{backend::HitData, pointer::{Location, PointerButton, PointerId}};
+    touch(world, "gb.menu_pointer");
+    let mut query = world.query_filtered::<(Entity, &Name), With<crate::menu::MenuButton>>();
+    let buttons: Vec<_> = query.iter(world).map(|(e, n)| (e, n.to_string())).collect();
+    if let Some(name) = p.as_ref().and_then(|p| p["button"].as_str()) {
+        let entity = buttons.iter().find(|(_, n)| n == name).map(|(e, _)| *e).ok_or_else(|| bad("button is not in the active menu"))?;
+        let event = p.as_ref().and_then(|p| p["event"].as_str()).unwrap_or("over");
+        if name == "Quit" && event == "click" { return Err(bad("Quit click is excluded from the live regression probe")); }
+        let window = world.query_filtered::<Entity, With<bevy::window::PrimaryWindow>>().iter(world).next().ok_or_else(|| bad("no primary window"))?;
+        let camera = world.query_filtered::<Entity, With<bevy_lunex::UiSourceCamera<0>>>().iter(world).next().ok_or_else(|| bad("no menu camera"))?;
+        let location = Location { target: bevy::camera::RenderTarget::Window(bevy::window::WindowRef::Entity(window)).normalize(Some(window)).ok_or_else(|| bad("no window target"))?, position: Vec2::ZERO };
+        let hit = HitData::new(camera, 0.0, None, None);
+        match event {
+            "over" => world.trigger(Pointer::new(PointerId::Mouse, location, Over { hit }, entity)),
+            "out" => world.trigger(Pointer::new(PointerId::Mouse, location, Out { hit }, entity)),
+            "click" => world.trigger(Pointer::new(PointerId::Mouse, location, Click { button: PointerButton::Primary, hit, duration: std::time::Duration::from_millis(80), count: 1 }, entity)),
+            _ => return Err(bad("event must be over, out or click")),
+        }
+        world.flush();
+    }
+    Ok(json!({"buttons": buttons.iter().map(|(_, name)| name).collect::<Vec<_>>()}))
+}
+
+/// Read-only animation/pose inspection for controller smoke checks.
+fn gb_presentation(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.presentation");
+    Ok(crate::anim::snapshot(world))
 }
 
 /// {select?: name or index}. Lists the converted packs; selecting one swaps every fighter's model and clips.
@@ -102,12 +149,16 @@ fn state_json(sim: &Sim) -> Value {
         "speed": sim.speed,
         "hash": format!("{:016x}", sim.world.state_hash()),
         "opponent": format!("{:?}", sim.opponent).to_lowercase(),
+        "projectiles": sim.world.projectiles.iter().filter(|p| p.alive).map(|p| json!({"owner": p.owner, "spell": gs::SPELLS[p.spell].name, "position": [p.position.x, p.position.z], "charge": p.charge})).collect::<Vec<_>>(),
         "fighters": sim.world.fighters.iter().enumerate().map(|(i, f)| json!({
             "index": i,
             "position": [f.position.x, f.position.z],
             "velocity": [f.velocity.x, f.velocity.z],
             "facing": [f.facing.x, f.facing.z],
             "hp": f.hp, "max_hp": f.max_hp,
+            "height": f.height, "vertical": f.vertical, "guard": f.guard, "ki": f.ki,
+            "action": crate::panel::action_name(f), "action_elapsed": f.action.elapsed,
+            "chain": f.chain, "heavy_charge": f.heavy_charge,
             "lock_target": f.lock_target,
             "scripted_ticks_left": sim.scripted[i].map(|s| s.ticks_left),
         })).collect::<Vec<_>>(),
@@ -122,13 +173,25 @@ fn state_json(sim: &Sim) -> Value {
 
 fn gb_state(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.state");
-    Ok(state_json(world.resource::<Sim>()))
+    let mut state = state_json(world.resource::<Sim>());
+    state["app_state"] = json!(format!("{:?}", world.resource::<State<crate::menu::AppState>>().get()));
+    state["dev_panel"] = json!(!world.resource::<crate::panel::PanelState>().hidden);
+    Ok(state)
 }
 
 /// {pause?: bool, step?: n, speed?: f, reset?: bool, opponent?: "idle"|"chase", lock?: bool}
 fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.control");
     let p = p.unwrap_or_default();
+    match p.get("state").and_then(Value::as_str) {
+        Some("play") => world.resource_mut::<NextState<crate::menu::AppState>>().set(crate::menu::AppState::Playing),
+        Some("menu") => world.resource_mut::<NextState<crate::menu::AppState>>().set(crate::menu::AppState::MainMenu),
+        Some(_) => return Err(bad("state must be play or menu")),
+        None => {}
+    }
+    if let Some(hidden) = p.get("dev_panel").and_then(Value::as_bool) {
+        world.resource_mut::<crate::panel::PanelState>().hidden = !hidden;
+    }
     let mut sim = world.resource_mut::<Sim>();
     if p.get("reset").and_then(Value::as_bool) == Some(true) {
         sim.reset();
@@ -143,11 +206,19 @@ fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
         sim.opponent = match v {
             "idle" => OpponentMode::Idle,
             "chase" => OpponentMode::Chase,
+            "spar" => OpponentMode::Spar,
             _ => return Err(bad("opponent must be idle or chase")),
         };
     }
     if let Some(v) = p.get("lock").and_then(Value::as_bool) {
         sim.world.fighters[0].lock_target = v.then_some(1);
+    }
+    // after any reset, so the new mobs survive it
+    if let Some(n) = p.get("spawn_mobs").and_then(Value::as_u64) {
+        for j in 0..n {
+            let at = gs::V2::new(4.0 + j as f32 * 1.4, -4.0 + (j % 2) as f32 * 1.6);
+            sim.spawn_mob(at);
+        }
     }
     if let Some(n) = p.get("step").and_then(Value::as_u64) {
         if !sim.paused {
@@ -158,7 +229,7 @@ fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     Ok(state_json(&sim))
 }
 
-/// {fighter?: 0, move: [x, z], run?: false, ticks?: 60}. Overrides that fighter's intent for N sim ticks.
+/// {fighter?: 0, move: [x, z], run?, light?, heavy?, step?, guard?, ticks?: 60}. Overrides that fighter's intent for N sim ticks; presses fire on the first tick.
 fn gb_input(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.input");
     let p = p.ok_or_else(|| bad("params required"))?;
@@ -172,7 +243,11 @@ fn gb_input(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     let run = p.get("run").and_then(Value::as_bool).unwrap_or(false);
     let mut sim = world.resource_mut::<Sim>();
     let slot = sim.scripted.get_mut(i).ok_or_else(|| bad(format!("no fighter {i}")))?;
-    *slot = Some(Scripted { intent: gs::Intent { move_dir: gs::V2::new(x, z), run }, ticks_left: ticks });
+    let flag = |k: &str| p.get(k).and_then(Value::as_bool).unwrap_or(false);
+    let cast = p.get("cast").and_then(Value::as_u64).map(|s| s as u8);
+    if cast.is_some_and(|s| s as usize >= gs::SPELLS.len()) { return Err(bad("cast must be a spell slot 0..3")); }
+    let intent = gs::Intent { move_dir: gs::V2::new(x, z), run, light: flag("light"), heavy: flag("heavy"), heavy_held: flag("heavy_held"), step: flag("step"), jump: flag("jump"), roll: flag("roll"), guard: flag("guard"), guard_pressed: flag("guard"), cast, cast_held: flag("cast_held"), ki_charge: flag("ki_charge"), ..Default::default() };
+    *slot = Some(Scripted { intent, ticks_left: ticks });
     Ok(json!({ "fighter": i, "ticks": ticks }))
 }
 

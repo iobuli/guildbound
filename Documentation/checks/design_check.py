@@ -35,13 +35,6 @@ def ip_hits(text):
     return {w: t.count(w) for w in IP_TERMS if w in t}
 
 
-# C01 manifests identical
-a, b = (os.path.join(ROOT, f) for f in ("TANDEM_CLAUDE.manifest.md", "TANDEM_CODEX.manifest.md"))
-if os.path.exists(a) and os.path.exists(b):
-    rec("C01 manifests identical", "PASS" if read(a) == read(b) else "FAIL", "TANDEM_CLAUDE/CODEX manifests")
-else:
-    rec("C01 manifests identical", "FAIL", "manifest missing")
-
 log = read(LOG) if os.path.exists(LOG) else ""
 # C02 master GDD present, 12 sections in order
 gdd = last_block(log, "MASTER_GDD")

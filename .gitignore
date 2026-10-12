@@ -3,7 +3,6 @@
 **/target/
 *.pdb
 
-# Leftover Unity cache (locked by a running MCP bridge on 2026-10-11); delete once free
 Library/
 
 .vs/
@@ -29,3 +28,13 @@ __pycache__/
 
 # Converted Asset Store pack content (boss holds the licences; no raw redistribution in the repo)
 assets/packs/
+
+# Generated exports (rebuild with Documentation/concepts/build_atlas.py etc.), too big for git
+Documentation/FreeGuild-*.pdf
+Documentation/FreeGuild-Design-Atlas.html
+Documentation/FreeGuild-Motion-Lab.html
+# Codex experiment render dumps (local only)
+Documentation/experiments/codex_motion_lab/
+Documentation/experiments/codex_character_lab/
+# Scraped third-party reference material: never commit
+Documentation/example from online*/

@@ -1,4 +1,4 @@
-"""Claude's remote for the running Guildbound dev build (Bevy Remote Protocol, http://127.0.0.1:15702).
+"""Local remote client for the running Guildbound beta (Bevy Remote Protocol, http://127.0.0.1:15702).
 
 python -I Tools/gb.py state                      sim state as JSON
 python -I Tools/gb.py feed [SINCE]               feed entries (boss messages) from index SINCE
@@ -6,14 +6,23 @@ python -I Tools/gb.py say TEXT...                post to the in-game feed as cla
 python -I Tools/gb.py pause | resume | reset
 python -I Tools/gb.py step [N]                   step N ticks (pauses first)
 python -I Tools/gb.py speed X
-python -I Tools/gb.py opponent idle|chase
+python -I Tools/gb.py opponent idle|chase|spar
 python -I Tools/gb.py input FIGHTER X Z [TICKS] [run]   hold a move intent for TICKS sim ticks
 python -I Tools/gb.py tuning KEY=VAL ...         e.g. walk_speed=2.4 model=drag (or defaults=1)
 python -I Tools/gb.py clips                      animation clip names
+python -I Tools/gb.py call gb.presentation       active clips, seek times and pose hashes
+python -I Tools/gb.py call gb.physics            ragdoll bodies, joints, stability and pose hashes
 python -I Tools/gb.py anim CLIP [FIGHTER]        play a clip once on fighter (default 0)
 python -I Tools/gb.py library [NAME|INDEX]       list packs, or switch every fighter's model + clips
 python -I Tools/gb.py shot [PATH]                screenshot, default Documentation/checks/live/latest.png
 python -I Tools/gb.py call METHOD [JSON]         any BRP method, e.g. world.query
+
+gb.control also accepts state=play|menu, dev_panel=true|false and lock=true|false.
+gb.input also accepts jump, roll, light, heavy, heavy_held, guard, step, cast=0..3,
+cast_held and ki_charge. Press edges fire once on the script's first tick.
+python -I Tools/check_beta.py runs the live controller verification.
+python -I Tools/check_combat.py checks live combos, smash and dash animations.
+python -I Tools/check_spells.py checks mage fireball/lightning and launch timing.
 """
 import json
 import sys

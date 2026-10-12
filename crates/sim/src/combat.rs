@@ -17,6 +17,14 @@ pub enum Reaction {
     Knockdown,
 }
 
+/// Where on the target a strike lands; drives tracking height and the reaction played.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Aim {
+    Head,
+    Body,
+    Low,
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct MoveDef {
     pub name: &'static str,
@@ -37,6 +45,7 @@ pub struct MoveDef {
     pub hit_stun: f32,
     pub hit_stop: f32,
     pub reaction: Reaction,
+    pub aim: Aim,
 }
 
 impl MoveDef {
@@ -55,28 +64,30 @@ pub const ROUNDHOUSE: MoveId = 6;
 pub const RISING: MoveId = 7;
 pub const SWEEP: MoveId = 8;
 pub const RUN_PUNCH: MoveId = 9;
+pub const COUNTER_BLOW: MoveId = 10;
 
 /// Light string by depth (caps at four), heavy finishers by depth and direction (Decisions 15-17).
 pub const LIGHT_STRING: [MoveId; 4] = [JAB, CROSS, HOOK, UPPERCUT];
 
 const fn mv(
     name: &'static str, cluster: &'static str, heavy: bool, startup: f32, active: f32, recovery: f32, reach: f32,
-    damage: f32, guard_drain: f32, push: f32, lunge: f32, hit_stun: f32, hit_stop: f32, reaction: Reaction,
+    damage: f32, guard_drain: f32, push: f32, lunge: f32, hit_stun: f32, hit_stop: f32, reaction: Reaction, aim: Aim,
 ) -> MoveDef {
-    MoveDef { name, cluster, heavy, startup, active, recovery, reach, damage, guard_drain, push, lunge, hit_stun, hit_stop, reaction }
+    MoveDef { name, cluster, heavy, startup, active, recovery, reach, damage, guard_drain, push, lunge, hit_stun, hit_stop, reaction, aim }
 }
 
-pub const MOVES: [MoveDef; 10] = [
-    mv("jab", "jab", false, 0.10, 0.05, 0.18, 0.80, 4.0, 8.0, 1.5, 1.0, 0.28, 0.05, Reaction::Stun),
-    mv("cross", "cross", false, 0.11, 0.05, 0.20, 0.85, 5.0, 9.0, 1.8, 1.2, 0.30, 0.06, Reaction::Stun),
-    mv("hook", "hook", false, 0.13, 0.06, 0.22, 0.80, 6.0, 10.0, 2.2, 1.0, 0.32, 0.07, Reaction::Stun),
-    mv("uppercut", "uppercut", false, 0.15, 0.06, 0.28, 0.80, 7.0, 12.0, 2.5, 0.8, 0.36, 0.08, Reaction::Stun),
-    mv("front kick", "side kick", true, 0.22, 0.07, 0.36, 0.95, 9.0, 25.0, 4.5, 1.6, 0.45, 0.10, Reaction::Stun),
-    mv("low kick", "roundhouse", true, 0.20, 0.07, 0.34, 0.90, 8.0, 22.0, 3.0, 1.2, 0.40, 0.09, Reaction::Stun),
-    mv("roundhouse", "roundhouse", true, 0.26, 0.08, 0.40, 1.00, 12.0, 35.0, 6.0, 1.4, 0.50, 0.12, Reaction::Knockdown),
-    mv("rising", "uppercut", true, 0.24, 0.08, 0.42, 0.90, 11.0, 30.0, 5.0, 1.0, 0.50, 0.11, Reaction::Knockdown),
-    mv("sweep", "roundhouse", true, 0.22, 0.08, 0.40, 1.00, 9.0, 25.0, 2.0, 0.8, 0.45, 0.10, Reaction::Knockdown),
-    mv("run punch", "run punch", false, 0.12, 0.06, 0.26, 0.90, 7.0, 14.0, 4.0, 0.0, 0.35, 0.08, Reaction::Stun),
+pub const MOVES: [MoveDef; 11] = [
+    mv("jab", "jab", false, 0.10, 0.05, 0.18, 0.80, 4.0, 8.0, 1.5, 1.0, 0.28, 0.05, Reaction::Stun, Aim::Head),
+    mv("cross", "cross", false, 0.11, 0.05, 0.20, 0.85, 5.0, 9.0, 1.8, 1.2, 0.30, 0.06, Reaction::Stun, Aim::Head),
+    mv("hook", "hook", false, 0.13, 0.06, 0.22, 0.80, 6.0, 10.0, 2.2, 1.0, 0.32, 0.07, Reaction::Stun, Aim::Head),
+    mv("uppercut", "uppercut", false, 0.15, 0.06, 0.28, 0.80, 7.0, 12.0, 2.5, 0.8, 0.36, 0.08, Reaction::Stun, Aim::Body),
+    mv("front kick", "front kick", true, 0.22, 0.07, 0.36, 0.95, 9.0, 25.0, 4.5, 1.6, 0.45, 0.10, Reaction::Stun, Aim::Body),
+    mv("low kick", "low kick", true, 0.20, 0.07, 0.34, 0.90, 8.0, 22.0, 3.0, 1.2, 0.40, 0.09, Reaction::Stun, Aim::Low),
+    mv("roundhouse", "roundhouse", true, 0.26, 0.08, 0.40, 1.00, 12.0, 35.0, 6.0, 1.4, 0.50, 0.12, Reaction::Knockdown, Aim::Head),
+    mv("rising", "uppercut", true, 0.24, 0.08, 0.42, 0.90, 11.0, 30.0, 5.0, 1.0, 0.50, 0.11, Reaction::Knockdown, Aim::Body),
+    mv("sweep", "low kick", true, 0.22, 0.08, 0.40, 1.00, 9.0, 25.0, 2.0, 0.8, 0.45, 0.10, Reaction::Knockdown, Aim::Low),
+    mv("run punch", "run punch", false, 0.12, 0.06, 0.26, 0.90, 7.0, 14.0, 4.0, 0.0, 0.35, 0.08, Reaction::Stun, Aim::Head),
+    mv("counter blow", "counter", true, 0.11, 0.06, 0.32, 0.90, 8.0, 24.0, 5.0, 1.2, 0.45, 0.10, Reaction::Knockdown, Aim::Body),
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -84,6 +95,8 @@ pub enum ActionKind {
     None,
     Guard,
     Strike(MoveId),
+    /// Hold a heavy before committing its selected, directional finisher.
+    HeavyCharge(MoveId),
     HitStun,
     BlockStun,
     GuardBreak,
@@ -91,6 +104,23 @@ pub enum ActionKind {
     Staggered,
     Knockdown,
     GetUp,
+    /// Ctrl step/dash: an impulse the motor carries, invulnerable inside the evade window.
+    Step,
+    /// C roll: a longer, lower dodge with a longer evade window.
+    Roll,
+    /// Q held: charging ki, open to attack.
+    KiCharge,
+    /// A spell key held: charging a chargeable spell.
+    Charge(crate::magic::SpellId),
+    /// Casting a spell: wind-up, release, recovery.
+    Cast(crate::magic::SpellId),
+}
+
+/// What caused a contact.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Source {
+    Move(MoveId),
+    Spell(crate::magic::SpellId),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -158,9 +188,10 @@ pub enum Outcome {
 pub struct Contact {
     pub attacker: usize,
     pub defender: usize,
-    pub mv: MoveId,
+    pub source: Source,
     pub outcome: Outcome,
     pub point: V2,
+    pub aim: Aim,
     pub tick: u64,
 }
 
@@ -187,7 +218,30 @@ pub struct CombatTuning {
     pub fist_start: f32,
     /// Degrees an unlocked strike may turn toward the stick during its wind-up.
     pub retarget_max: f32,
+    /// A strike with a target tracks it during the wind-up at this rate (deg/s), up to track_max from its start.
+    pub track_rate: f32,
+    pub track_max: f32,
+    /// Range within which an unlocked strike picks the nearest fighter ahead as its target (m), and the cone (deg).
+    pub track_range: f32,
+    pub track_cone: f32,
+    /// Largest step-in a strike takes to close on its target (m).
+    pub max_step_in: f32,
     pub counter_hit_mult: f32,
+    /// Step/dash: launch speed (the motor's coast decides the distance), duration, evade window, cooldown.
+    pub step_speed: f32,
+    pub step_time: f32,
+    pub evade_from: f32,
+    pub evade_to: f32,
+    pub step_cooldown: f32,
+    pub roll_speed: f32,
+    pub roll_time: f32,
+    pub gravity: f32,
+    pub jump_speed: f32,
+    pub pre_jump: f32,
+    pub heavy_charge_time: f32,
+    pub heavy_damage_gain: f32,
+    pub heavy_push_gain: f32,
+    pub homing_dash_cost: f32,
 }
 
 impl Default for CombatTuning {
@@ -210,7 +264,26 @@ impl Default for CombatTuning {
             fist_radius: 0.10,
             fist_start: 0.20,
             retarget_max: 15.0,
+            track_rate: 540.0,
+            track_max: 60.0,
+            track_range: 2.4,
+            track_cone: 75.0,
+            max_step_in: 0.9,
             counter_hit_mult: 1.5,
+            step_speed: 5.5,
+            step_time: 0.32,
+            evade_from: 0.03,
+            evade_to: 0.20,
+            roll_speed: 7.0,
+            roll_time: 0.55,
+            gravity: 22.0,
+            jump_speed: 7.0,
+            pre_jump: 0.05,
+            step_cooldown: 0.35,
+            heavy_charge_time: 0.7,
+            heavy_damage_gain: 1.0,
+            heavy_push_gain: 1.0,
+            homing_dash_cost: 8.0,
         }
     }
 }
@@ -220,6 +293,7 @@ impl Default for CombatTuning {
 pub struct Press {
     pub heavy: bool,
     pub dir: StrikeDir,
+    pub held: bool,
 }
 
 impl World {
@@ -231,13 +305,53 @@ impl World {
         f.landed = false;
         f.fist_prev = None;
         f.start_facing = f.facing;
+        f.buffered = None;
+    }
+
+    /// The fighter a strike tracks: the lock target, else the nearest living fighter ahead within range.
+    fn strike_target(&self, i: usize) -> Option<usize> {
+        let f = &self.fighters[i];
+        if let Some(t) = f.lock_target.filter(|&t| t < self.fighters.len() && self.fighters[t].hp > 0.0) {
+            return Some(t);
+        }
+        let cone = self.combat.track_cone.to_radians();
+        self.fighters
+            .iter()
+            .enumerate()
+            .filter(|(j, o)| *j != i && o.hp > 0.0)
+            .map(|(j, o)| (j, o.position - f.position))
+            .filter(|(_, d)| d.length() <= self.combat.track_range && f.facing.signed_angle_to(d.normalized()).abs() <= cone)
+            .min_by(|a, b| a.1.length().total_cmp(&b.1.length()))
+            .map(|(j, _)| j)
     }
 
     fn start_strike(&mut self, i: usize, mv: MoveId) {
         self.new_action(i, ActionKind::Strike(mv), 0.0);
+        let target = self.strike_target(i);
+        let d = MOVES[mv];
+        let c = self.combat;
+        let (model, half_life, decel) = (self.tuning.model, self.tuning.coast_half_life, self.tuning.decel);
+        let tpos = target.map(|t| self.fighters[t].position);
         let f = &mut self.fighters[i];
-        f.velocity = f.velocity + f.facing * MOVES[mv].lunge;
+        f.heavy_charge = 0.0;
+        f.strike_target = target;
         f.last_move = Some(mv);
+        match tpos {
+            Some(p) => {
+                // step in exactly far enough that the tip reaches the target (no stretching, no overshoot)
+                let to = p - f.position;
+                let close = (to.length() - d.reach * 0.85).clamp(0.0, c.max_step_in);
+                let speed = match model {
+                    crate::MotorModel::Drag => close * std::f32::consts::LN_2 / half_life.max(1e-3),
+                    crate::MotorModel::Linear => (2.0 * decel * close).sqrt(),
+                };
+                let dir = to.normalized();
+                // keep sideways momentum from a run, replace the forward part with the measured step
+                let along = f.velocity.dot(dir).max(0.0);
+                f.velocity = f.velocity - dir * along + dir * along.max(speed);
+            }
+            None => f.velocity = f.velocity + f.facing * d.lunge,
+        }
     }
 
     /// Choose the move for a press from the current string, the run speed and the held direction.
@@ -256,6 +370,7 @@ impl World {
                 },
             };
         }
+        if !chained && f.counter_left > 0.0 { return COUNTER_BLOW; }
         if !chained && f.velocity.length() > split {
             return RUN_PUNCH;
         }
@@ -265,7 +380,14 @@ impl World {
     fn press(&mut self, i: usize, press: Press, chained: bool) {
         let mv = self.pick(i, press, chained);
         let chain = if chained { self.fighters[i].chain + 1 } else { 0 };
-        self.start_strike(i, mv);
+        if press.heavy && press.held {
+            let target = self.strike_target(i);
+            self.new_action(i, ActionKind::HeavyCharge(mv), self.combat.heavy_charge_time);
+            self.fighters[i].strike_target = target;
+            self.fighters[i].heavy_charge = 0.0;
+        } else {
+            self.start_strike(i, mv);
+        }
         // heavies finish the string; the light string caps at four
         self.fighters[i].chain = if MOVES[mv].heavy { 3 } else { chain.min(3) };
     }
@@ -279,6 +401,7 @@ impl World {
             f.parry_recharge = (f.parry_recharge - STEP).max(0.0);
             f.counter_left = (f.counter_left - STEP).max(0.0);
             f.block_stun = (f.block_stun - STEP).max(0.0);
+            f.step_cooldown = (f.step_cooldown - STEP).max(0.0);
             if f.action.kind != ActionKind::Guard {
                 if f.guard_regen_wait > 0.0 {
                     f.guard_regen_wait = (f.guard_regen_wait - STEP).max(0.0);
@@ -295,14 +418,21 @@ impl World {
         if self.fighters[i].hp <= 0.0 {
             return;
         }
+        if self.think_magic(i, intent) {
+            return;
+        }
         if self.fighters[i].block_stun > 0.0 && self.fighters[i].action.kind == ActionKind::Guard {
             // a blocked hit pins the guard for a moment: no strike, no dropping guard
             return;
         }
-        let press = if intent.heavy {
-            Some(Press { heavy: true, dir: self.dir_of(i, intent) })
+        // grounded strikes only (Decision 14: no aerial attacks)
+        let airborne = self.fighters[i].height > 0.0 || self.fighters[i].crouch_left > 0.0;
+        let press = if airborne {
+            None
+        } else if intent.heavy {
+            Some(Press { heavy: true, dir: self.dir_of(i, intent), held: intent.heavy_held })
         } else if intent.light {
-            Some(Press { heavy: false, dir: StrikeDir::Neutral })
+            Some(Press { heavy: false, dir: StrikeDir::Neutral, held: false })
         } else {
             None
         };
@@ -319,7 +449,38 @@ impl World {
         let act = self.fighters[i].action;
         match act.kind {
             ActionKind::None | ActionKind::Guard => {
-                if let Some(p) = press {
+                let grounded = self.fighters[i].height <= 0.0 && self.fighters[i].crouch_left <= 0.0;
+                if intent.jump && grounded && act.kind == ActionKind::None {
+                    self.fighters[i].crouch_left = c.pre_jump;
+                } else if intent.roll && grounded && self.fighters[i].step_cooldown <= 0.0 {
+                    let f = &self.fighters[i];
+                    let dir = if intent.move_dir.length_squared() > 0.04 { intent.move_dir.normalized() } else { f.facing };
+                    self.new_action(i, ActionKind::Roll, c.roll_time);
+                    let f = &mut self.fighters[i];
+                    f.velocity = dir * c.roll_speed;
+                    f.facing = dir;
+                    f.step_cooldown = c.roll_time + c.step_cooldown;
+                } else if intent.step && self.fighters[i].step_cooldown <= 0.0 {
+                    // step toward the stick, or back away from the facing with no stick
+                    // Shift + Ctrl: homing dash at the lock target (or the nearest fighter ahead), BT3-style
+                    let homing = if intent.run && self.fighters[i].ki >= c.homing_dash_cost {
+                        self.fighters[i].lock_target.or_else(|| self.strike_target(i)).filter(|&t| t != i && t < self.fighters.len() && self.fighters[t].hp > 0.0 && (self.fighters[t].position - self.fighters[i].position).length() > 1.2)
+                    } else { None };
+                    let f = &self.fighters[i];
+                    let (dir, speed) = match homing.map(|t| self.fighters[t].position - f.position) {
+                        Some(to) if to.length() > 1.2 => (to.normalized(), c.step_speed * 1.7),
+                        _ if intent.move_dir.length_squared() > 0.04 => (intent.move_dir.normalized(), c.step_speed),
+                        _ => (f.facing * -1.0, c.step_speed),
+                    };
+                    self.new_action(i, ActionKind::Step, c.step_time);
+                    let f = &mut self.fighters[i];
+                    f.velocity = dir * speed;
+                    if homing.is_some() {
+                        f.facing = dir;
+                        f.ki -= c.homing_dash_cost;
+                    }
+                    f.step_cooldown = c.step_time + c.step_cooldown;
+                } else if let Some(p) = press {
                     // a counter window (after a parry) or a fresh press starts a new string
                     if act.kind == ActionKind::Guard {
                         self.fighters[i].guard_regen_wait = c.guard_regen_delay;
@@ -334,6 +495,18 @@ impl World {
                     self.new_action(i, ActionKind::None, 0.0);
                 }
             }
+            ActionKind::HeavyCharge(mv) => {
+                let f = &mut self.fighters[i];
+                f.action.elapsed += STEP;
+                f.heavy_charge = (f.action.elapsed / c.heavy_charge_time.max(STEP)).clamp(0.0, 1.0);
+                if !intent.heavy_held || f.heavy_charge >= 1.0 {
+                    let charge = f.heavy_charge;
+                    self.start_strike(i, mv);
+                    self.fighters[i].heavy_charge = charge;
+                    // The held anticipation already covered this part of wind-up.
+                    self.fighters[i].action.elapsed = MOVES[mv].startup * 0.75 * charge;
+                }
+            }
             ActionKind::Strike(mv) => {
                 let d = MOVES[mv];
                 // hit-confirm cancel: a strike that landed may cancel its recovery into the next one
@@ -345,12 +518,33 @@ impl World {
                         self.press(i, p, true);
                         return;
                     }
-                    if in_recovery && d.total() - act.elapsed <= c.buffer {
+                    // Queue during the final anticipation/contact interval as
+                    // well as recovery. A queue cannot bypass the hit-confirm gate.
+                    if d.total() - act.elapsed <= c.buffer {
                         self.fighters[i].buffered = Some(p);
                     }
                 }
-                // wind-up retarget toward the stick, bounded, unlocked only
-                if act.phase() == Phase::Startup && self.fighters[i].lock_target.is_none() && intent.move_dir.length_squared() > 0.04 {
+                if act.phase() == Phase::Recovery && self.fighters[i].landed && !d.heavy
+                    && let Some(p) = self.fighters[i].buffered
+                    && (p.heavy || self.fighters[i].chain < 3)
+                {
+                    self.fighters[i].buffered = None;
+                    self.press(i, p, true);
+                    return;
+                }
+                // wind-up tracking: turn toward the target's position (bounded), so the strike flows from
+                // wherever the body was into the target
+                if act.phase() == Phase::Startup && let Some(t) = self.fighters[i].strike_target {
+                    let tp = self.fighters[t].position;
+                    let f = &mut self.fighters[i];
+                    let to = tp - f.position;
+                    if to.length_squared() > 1e-4 {
+                        let turned = crate::turn_toward(f.facing, to.normalized(), c.track_rate * STEP);
+                        let off = f.start_facing.signed_angle_to(turned);
+                        let max = c.track_max.to_radians();
+                        f.facing = if off.abs() <= max { turned } else { f.start_facing.rotated(max.copysign(off)) };
+                    }
+                } else if act.phase() == Phase::Startup && self.fighters[i].lock_target.is_none() && intent.move_dir.length_squared() > 0.04 {
                     let f = &mut self.fighters[i];
                     let turned = crate::turn_toward(f.facing, intent.move_dir.normalized(), self.tuning.turn_rate * STEP);
                     let off = f.start_facing.signed_angle_to(turned);
@@ -361,6 +555,17 @@ impl World {
                 if self.fighters[i].action.elapsed >= d.total() {
                     self.finish(i, true);
                 }
+            }
+            ActionKind::Step => {
+                if let Some(p) = press { self.fighters[i].buffered = Some(p); }
+                if act.elapsed >= c.evade_to && let Some(p) = self.fighters[i].buffered.take() {
+                    // A rush-in commits only after the evade window. It cannot
+                    // carry the step's invulnerability into an attacking state.
+                    self.press(i, p, false);
+                    return;
+                }
+                self.fighters[i].action.elapsed += STEP;
+                if self.fighters[i].action.elapsed >= act.length { self.finish(i, false); }
             }
             _ => {
                 self.fighters[i].action.elapsed += STEP;
@@ -419,6 +624,14 @@ impl World {
             if j == a || o.hp <= 0.0 || f.hit_mask & (1 << j) != 0 {
                 continue;
             }
+            let evading = match o.action.kind {
+                ActionKind::Step => o.action.elapsed >= c.evade_from && o.action.elapsed <= c.evade_to,
+                ActionKind::Roll => o.action.elapsed >= c.evade_from && o.action.elapsed <= c.roll_time * 0.7,
+                _ => false,
+            };
+            if evading {
+                continue;
+            }
             let s = segment_param(from, tip, o.position);
             let closest = from + (tip - from) * s;
             if (o.position - closest).length() <= c.fist_radius + self.tuning.body_radius && best.is_none_or(|(_, bs)| s < bs) {
@@ -444,6 +657,8 @@ impl World {
     fn resolve(&mut self, a: usize, d: usize, mv: MoveId, point: V2) {
         let c = self.combat;
         let def = MOVES[mv];
+        let charge = self.fighters[a].heavy_charge;
+        let push = def.push * (1.0 + c.heavy_push_gain * charge);
         let dir = (self.fighters[d].position - self.fighters[a].position).normalized();
         let dir = if dir.length_squared() > 0.0 { dir } else { self.fighters[a].facing };
         let frontal = self.frontal(d, self.fighters[a].position);
@@ -458,8 +673,8 @@ impl World {
             Outcome::Parried
         } else if tgt.action.kind == ActionKind::Guard && tgt.guard > 0.0 && frontal {
             let t = &mut self.fighters[d];
-            t.guard -= def.guard_drain;
-            t.velocity = t.velocity + dir * (def.push / 3.0);
+            t.guard = if charge >= 1.0 { 0.0 } else { t.guard - def.guard_drain * (1.0 + 3.0 * charge) };
+            t.velocity = t.velocity + dir * (push / 3.0);
             if t.guard <= 0.0 {
                 t.guard = 0.0;
                 t.guard_regen_wait = c.guard_regen_delay;
@@ -471,15 +686,16 @@ impl World {
             }
         } else {
             // caught in the wind-up of their own strike, or during a counter window: counter-hit
-            let counter = matches!(tgt.action.kind, ActionKind::Strike(_)) && tgt.action.phase() == Phase::Startup
+            let counter = (matches!(tgt.action.kind, ActionKind::Strike(_)) && tgt.action.phase() == Phase::Startup)
+                || matches!(tgt.action.kind, ActionKind::HeavyCharge(_))
                 || self.fighters[a].counter_left > 0.0;
-            let damage = def.damage * if counter { c.counter_hit_mult } else { 1.0 };
+            let damage = def.damage * (1.0 + c.heavy_damage_gain * charge) * if counter { c.counter_hit_mult } else { 1.0 };
             let t = &mut self.fighters[d];
             t.hp = (t.hp - damage).max(0.0);
-            t.velocity = t.velocity + dir * def.push;
+            t.velocity = t.velocity + dir * push;
             if t.hp <= 0.0 {
                 self.new_action(d, ActionKind::Knockdown, c.knockdown_time * 3.0);
-            } else if def.reaction == Reaction::Knockdown {
+            } else if def.reaction == Reaction::Knockdown || charge >= 1.0 {
                 self.new_action(d, ActionKind::Knockdown, c.knockdown_time);
             } else {
                 self.new_action(d, ActionKind::HitStun, def.hit_stun);
@@ -498,7 +714,7 @@ impl World {
         if outcome == Outcome::Blocked && self.fighters[d].action.kind == ActionKind::Guard {
             self.fighters[d].block_stun = c.block_stun;
         }
-        self.contacts.push(Contact { attacker: a, defender: d, mv, outcome, point, tick: self.tick });
+        self.contacts.push(Contact { attacker: a, defender: d, source: Source::Move(mv), outcome, point, aim: def.aim, tick: self.tick });
     }
 }
 
@@ -512,8 +728,58 @@ fn segment_param(a: V2, b: V2, p: V2) -> f32 {
     ((p - a).dot(ab) / len2).clamp(0.0, 1.0)
 }
 
-/// Sparring partner: approaches to range, throws jab strings and the odd heavy, guards when the player
-/// winds up. Deterministic (driven by the tick, no randomness) so replays hold.
+/// Defensive read shared by the sparring partner and melee mobs: what to do about `t` this tick.
+/// Deterministic (beats come from the tick), so replays hold.
+pub fn defend(world: &World, me: usize, t: usize, skill: f32) -> Option<crate::Intent> {
+    let (f, o) = (&world.fighters[me], &world.fighters[t]);
+    let dist = (o.position - f.position).length();
+    let mut intent = crate::Intent::default();
+    let beat = |salt: u64| ((world.tick / 6).wrapping_mul(2654435761).wrapping_add(salt * 97 + me as u64 * 31) % 100) as f32 / 100.0;
+    if let ActionKind::Strike(m) = o.action.kind {
+        let d = MOVES[m];
+        let incoming = o.action.phase() == Phase::Startup && dist < d.reach + d.lunge.max(0.6) + 0.4;
+        if incoming && f.action.free() {
+            let left = d.startup - o.action.elapsed;
+            // a late tap is a parry; otherwise hold guard; low skill sometimes just eats it
+            if left < 0.09 && beat(1) < skill * 0.5 {
+                intent.guard = true;
+                intent.guard_pressed = true;
+            } else if beat(2) < skill {
+                intent.guard = true;
+                intent.guard_pressed = f.action.kind != ActionKind::Guard;
+            } else if beat(3) < skill * 0.3 {
+                intent.step = true;
+                intent.move_dir = (f.position - o.position).normalized().rotated(1.2);
+            }
+            return Some(intent);
+        }
+    }
+    // guard nearly broken: get out
+    if f.guard < 30.0 && dist < 2.0 && f.action.free() {
+        intent.move_dir = (f.position - o.position).normalized();
+        intent.step = beat(4) < 0.2;
+        return Some(intent);
+    }
+    // just blocked something: punish
+    if world.contacts.iter().any(|c| c.defender == me && c.outcome == Outcome::Blocked) && beat(5) < skill {
+        intent.light = true;
+        return Some(intent);
+    }
+    // a parry opened a counter window: take it
+    if f.counter_left > 0.0 {
+        intent.heavy = beat(6) < 0.4;
+        intent.light = !intent.heavy;
+        return Some(intent);
+    }
+    // keep guard up a moment while the attacker is still swinging
+    if matches!(o.action.kind, ActionKind::Strike(_)) && f.action.kind == ActionKind::Guard && dist < 1.8 {
+        intent.guard = true;
+        return Some(intent);
+    }
+    None
+}
+
+/// Sparring partner: approaches to range, throws strings and the odd heavy, defends with `defend`.
 pub fn spar_intent(world: &World, me: usize, target: usize) -> crate::Intent {
     let (f, t) = (&world.fighters[me], &world.fighters[target]);
     let to = t.position - f.position;
@@ -522,20 +788,27 @@ pub fn spar_intent(world: &World, me: usize, target: usize) -> crate::Intent {
     if f.hp <= 0.0 || t.hp <= 0.0 {
         return intent;
     }
-    let player_winding_up = matches!(t.action.kind, ActionKind::Strike(_)) && t.action.phase() == Phase::Startup;
+    if matches!(f.action.kind, ActionKind::HeavyCharge(_)) {
+        intent.heavy_held = f.action.elapsed < world.combat.heavy_charge_time * 0.75;
+        return intent;
+    }
+    if let Some(d) = defend(world, me, target, 0.7) {
+        return d;
+    }
     let beat = (world.tick / 30) % 8;
     if dist > 1.05 {
         intent.move_dir = to.normalized();
         intent.run = dist > 4.0;
-    } else if player_winding_up && beat % 3 == 0 {
-        intent.guard = true;
-        intent.guard_pressed = f.action.kind != ActionKind::Guard;
     } else if f.action.free() || matches!(f.action.kind, ActionKind::Strike(_)) {
         let press_tick = world.tick % 18 == 0;
         if beat == 7 {
             intent.heavy = press_tick;
+            intent.heavy_held = press_tick;
         } else if beat >= 2 {
             intent.light = press_tick;
+        } else {
+            // circle while resetting
+            intent.move_dir = to.normalized().rotated(std::f32::consts::FRAC_PI_2) * 0.6;
         }
     }
     intent
