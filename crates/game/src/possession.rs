@@ -453,9 +453,10 @@ pub fn snapshot(world: &World, with_bones: bool) -> Value {
                     "balance_estimate_only": true, "balance_margin_m": r.margin, "dynamic_margin_m": r.dynamic_margin, "feet_down": r.support.len() >= 3, "accel_g": r.acc.length() / 9.81},
         "numbers": s.numbers,
     });
-    let pb = world.resource::<PhysicalBody>();
+    if let Some(pb) = world.get_resource::<PhysicalBody>() {
     out["physical"] = json!({"regions_physical": {"legs": pb.physical_regions[0], "body": pb.physical_regions[1], "arms": pb.physical_regions[2]},
         "tracking_error_deg": pb.track_err.iter().map(|(n, e)| (n.clone(), json!((e * 10.0).round() / 10.0))).collect::<serde_json::Map<_, _>>(), "on": pb.on, "built": pb.doll.is_some(), "assist": pb.assist, "motor": pb.motor, "standing": pb.standing, "pelvis_height_m": pb.pelvis_h});
+    }
     if let Some((root, bones)) = stage(world) {
         out["clearance"] = crate::body_clearance::snapshot(world, root, &bones);
         out["clip_support"] = if p.motion.is_none() { crate::support::stage_snapshot(world) } else { Value::Null };
@@ -565,8 +566,7 @@ pub fn command(world: &mut World, p: &Value) -> Result<String, String> {
             }
         }
     }
-    {
-        let mut pb = world.resource_mut::<PhysicalBody>();
+    if let Some(mut pb) = world.get_resource_mut::<PhysicalBody>() {
         if let Some(v) = p.get("physical").and_then(Value::as_bool) { pb.on = v; }
         if let Some(v) = p.get("assist").and_then(Value::as_f64) { pb.assist = (v as f32).clamp(0.0, 1.0); }
         if let Some(v) = p.get("motor").and_then(Value::as_f64) { pb.motor = (v as f32).clamp(0.0, 4.0); }
