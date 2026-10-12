@@ -9,6 +9,8 @@ mod feed;
 mod feedback;
 mod hud;
 mod ik;
+mod guard_ik;
+mod loot_view;
 mod magic_view;
 mod menu;
 mod motion_timing;
@@ -17,6 +19,7 @@ mod panel;
 mod props;
 mod ragdoll;
 mod remote;
+mod sfx;
 mod sim_bridge;
 mod support;
 
@@ -61,8 +64,10 @@ fn main() {
         .init_resource::<ragdoll::Ragdolls>()
         .init_resource::<support::Support>()
         .init_resource::<support::SupportSettings>()
+        .init_resource::<guard_ik::GuardIk>()
+        .init_resource::<sfx::SfxSettings>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, announce))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, announce))
         .add_systems(PostStartup, (props::spawn, magic_view::setup))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
@@ -83,14 +88,17 @@ fn main() {
                 anim::lean,
                 sim_bridge::show_capsules,
                 sim_bridge::draw_gizmos,
+                loot_view::sync,
+                loot_view::bob,
                 magic_view::draw_magic,
                 camera::orbit,
+                sfx::play,
             )
                 .chain(),
         )
         .add_systems(
             PostUpdate,
-            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
+            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))

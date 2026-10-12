@@ -317,6 +317,7 @@ impl World {
             to.length_squared() < 1e-6 || f.facing.signed_angle_to(to.normalized()).abs() <= c.guard_arc.to_radians()
         };
         let guarding = self.fighters[d].action.kind == ActionKind::Guard && self.fighters[d].guard > 0.0 && frontal;
+        let mut damage = 0.0;
         let outcome = if guarding {
             let t = &mut self.fighters[d];
             t.guard -= def.guard_drain * scale;
@@ -332,8 +333,9 @@ impl World {
                 Outcome::Blocked
             }
         } else {
+            damage = crate::rpg::mitigate(def.damage * scale, self.fighters[owner].kit.stats(), self.fighters[d].kit.stats());
             let t = &mut self.fighters[d];
-            t.hp = (t.hp - def.damage * scale).max(0.0);
+            t.hp = (t.hp - damage).max(0.0);
             t.velocity = t.velocity + dir * def.push * scale;
             self.seq += 1;
             let seq = self.seq;
@@ -342,6 +344,9 @@ impl World {
             Outcome::Hit
         };
         self.fighters[d].hit_stop = 0.04;
-        self.contacts.push(Contact { attacker: owner, defender: d, source: Source::Spell(s), outcome, point, aim: Aim::Body, tick: self.tick });
+        let share = if outcome == Outcome::Hit { self.posture.hit_share } else { self.posture.block_share };
+        self.add_posture(d, def.guard_drain * scale * share, false, false);
+        self.alarm(d, owner);
+        self.contacts.push(Contact { attacker: owner, defender: d, source: Source::Spell(s), outcome, point, aim: Aim::Body, tick: self.tick, damage, crit: false });
     }
 }

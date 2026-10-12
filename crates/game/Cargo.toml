@@ -6,7 +6,7 @@ publish.workspace = true
 
 [dependencies]
 guildbound_sim = { path = "../sim" }
-bevy = { version = "=0.19.1", features = ["bevy_remote"] }
+bevy = { version = "=0.19.1", features = ["bevy_remote", "wav"] }
 bevy_egui = "=0.40.1"
 bevy-inspector-egui = "=0.37.0"
 avian3d = "=0.7.0"

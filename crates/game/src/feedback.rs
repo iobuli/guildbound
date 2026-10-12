@@ -27,6 +27,7 @@ pub fn profile(outcome: Outcome) -> ImpactProfile {
         Outcome::CounterHit => (Color::srgb(1.0, 0.77, 0.28), 0.085, 0.34, 0.28, "COUNTER HIT"),
         Outcome::GuardBroken => (Color::srgb(1.0, 0.40, 0.22), 0.10, 0.40, 0.32, "GUARD BREAK"),
         Outcome::Parried => (Color::srgb(0.50, 1.0, 0.78), 0.075, 0.32, 0.26, "PARRY"),
+        Outcome::Deathblow => (Color::srgb(0.85, 0.08, 0.10), 0.16, 0.55, 0.45, "DEATHBLOW"),
     };
     ImpactProfile { color, shake_m, radius_m, duration_s, label }
 }

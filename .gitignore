@@ -38,3 +38,7 @@ Documentation/experiments/codex_motion_lab/
 Documentation/experiments/codex_character_lab/
 # Scraped third-party reference material: never commit
 Documentation/example from online*/
+
+# Boss-supplied store kits (Quaternius zips) and their extractions: local only
+assets/boss added assets/
+assets/UI REWORK/

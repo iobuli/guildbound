@@ -34,6 +34,31 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.menu_pointer", gb_menu_pointer)
         .with_method_main("gb.physics", gb_physics)
         .with_method_main("gb.support", gb_support)
+        .with_method_main("gb.guard", gb_guard)
+        .with_method_main("gb.loot", gb_loot)
+}
+
+fn gb_guard(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.guard");
+    Ok(crate::guard_ik::snapshot(world))
+}
+
+/// Player kit, pickups and chests.
+fn gb_loot(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {
+    use guildbound_sim::rpg::ITEMS;
+    touch(world, "gb.loot");
+    let w = &world.resource::<crate::sim_bridge::Sim>().world;
+    let name = |id: &u8| ITEMS[*id as usize].name;
+    let f = &w.fighters[0];
+    let st = f.kit.stats();
+    Ok(serde_json::json!({
+        "bag": f.kit.bag.iter().map(name).collect::<Vec<_>>(),
+        "worn": f.kit.worn.iter().map(|w| w.as_ref().map(name)).collect::<Vec<_>>(),
+        "stats": {"power": st.power, "armor": st.armor, "vitality": st.vitality, "hp": f.hp, "max_hp": f.max_hp},
+        "pickups": w.pickups.iter().map(|p| serde_json::json!({"item": name(&p.item), "at": [p.position.x, p.position.z]})).collect::<Vec<_>>(),
+        "chests": w.chests.iter().map(|c| serde_json::json!({"at": [c.position.x, c.position.z], "open": c.open, "loot": c.loot.iter().map(name).collect::<Vec<_>>()})).collect::<Vec<_>>(),
+        "reachable": format!("{:?}", w.reachable(0)),
+    }))
 }
 
 fn gb_support(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
@@ -188,6 +213,9 @@ fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
         Some("menu") => world.resource_mut::<NextState<crate::menu::AppState>>().set(crate::menu::AppState::MainMenu),
         Some(_) => return Err(bad("state must be play or menu")),
         None => {}
+    }
+    if let Some(v) = p.get("blend_space").and_then(Value::as_bool) {
+        world.resource_mut::<crate::anim::AnimSettings>().blend_space = v;
     }
     if let Some(hidden) = p.get("dev_panel").and_then(Value::as_bool) {
         world.resource_mut::<crate::panel::PanelState>().hidden = !hidden;

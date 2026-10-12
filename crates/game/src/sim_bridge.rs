@@ -45,7 +45,8 @@ pub struct Sim {
 
 impl Sim {
     pub fn new() -> Self {
-        let world = gs::World::sparring(gs::Tuning::default());
+        let mut world = gs::World::sparring(gs::Tuning::default());
+        world.stock_floor();
         let n = world.fighters.len();
         Self { world, paused: false, speed: 1.0, pending_steps: 0, opponent: OpponentMode::Idle, scripted: vec![None; n], keyboard: gs::Intent::default(), edges: gs::Intent::default(), recent: Vec::new(), brains: vec![None; n], frame_step_s: 0.0, acc: 0.0 }
     }
@@ -55,7 +56,13 @@ impl Sim {
         let combat = self.world.combat;
         let magic = self.world.magic;
         let lock = self.world.fighters[0].lock_target;
+        let kit = self.world.fighters[0].kit.clone();
         self.world = gs::World::sparring(tuning);
+        self.world.stock_floor();
+        // the player keeps what they carry and wear across a rematch
+        self.world.fighters[0].kit = kit;
+        self.world.refresh_vitality(0);
+        self.world.fighters[0].hp = self.world.fighters[0].max_hp;
         self.world.combat = combat;
         self.world.magic = magic;
         for f in &mut self.world.fighters {
@@ -90,6 +97,7 @@ impl Sim {
             std::mem::take(&mut self.edges)
         };
         (player.light, player.heavy, player.guard_pressed, player.step, player.jump, player.roll, player.cast) = (e.light, e.heavy, e.guard_pressed, e.step, e.jump, e.roll, e.cast);
+        (player.interact, player.bag) = (e.interact, e.bag);
         let mut intents = vec![player, self.opponent_intent()];
         for i in 2..self.world.fighters.len() {
             let intent = match self.brains.get_mut(i).and_then(|b| b.as_mut()) {
@@ -115,6 +123,8 @@ impl Sim {
                 s.intent.roll = false;
                 s.intent.guard_pressed = false;
                 s.intent.cast = None;
+                s.intent.interact = false;
+                s.intent.bag = None;
                 s.ticks_left -= 1;
                 if s.ticks_left == 0 {
                     *slot = None;
@@ -127,6 +137,8 @@ impl Sim {
     /// Add a mob near `at`; melee or keeper tactics alternate.
     pub fn spawn_mob(&mut self, at: gs::V2) -> usize {
         let i = gs::mobs::spawn(&mut self.world, at, 60.0);
+        const DROPS: [gs::rpg::ItemId; 5] = [gs::rpg::HEALING_DRAUGHT, gs::rpg::LEATHER_CAP, gs::rpg::KI_TONIC, gs::rpg::TRAVEL_BOOTS, gs::rpg::QUILTED_TROUSERS];
+        self.world.fighters[i].loot = Some(DROPS[i % DROPS.len()]);
         let tactics = if i % 2 == 0 { gs::mobs::Tactics::Melee } else { gs::mobs::Tactics::Keeper };
         self.brains.resize(self.world.fighters.len(), None);
         self.scripted.resize(self.world.fighters.len(), None);
@@ -227,7 +239,7 @@ pub fn show_capsules(panel: Res<PanelState>, mut capsules: Query<&mut Visibility
 
 /// Keymap (Decision 18 + boss 2026-10-12): WASD move (camera-relative), Shift run, LMB light, RMB guard
 /// (tap = parry), Mouse4 heavy (W/S + Mouse4 = rising/sweep), Mouse5 lock-on, Ctrl step/dash.
-/// Space jump, C crouch/roll, Q ki, E interact, 1-4 skills are bound for upcoming systems.
+/// Space jump, C crouch/roll, Q ki, E interact (pick up / open), 1-4 spells.
 /// I inventory, Tab menu (dev panel), P pause, . step one tick while paused.
 pub fn read_player_input(
     keys: Res<ButtonInput<KeyCode>>,
@@ -311,6 +323,7 @@ pub fn read_player_input(
         }
     }
     e.roll |= !typing && keys.just_pressed(KeyCode::KeyC);
+    e.interact |= !typing && keys.just_pressed(KeyCode::KeyE);
 }
 
 /// Fixed-step accumulator on real frame time, scaled by `speed`. Capped so a stall cannot spiral.
@@ -362,7 +375,7 @@ mod tests {
         sim.edges.light = true;
         sim.pending_steps = 20;
         sim.scripted[0] = Some(Scripted { intent: sim.keyboard, ticks_left: 60 });
-        sim.recent.push((gs::Contact { attacker: 0, defender: 1, source: gs::Source::Move(gs::combat::JAB), outcome: gs::Outcome::Hit, point: gs::V2::ZERO, aim: gs::combat::Aim::Head, tick: 1 }, 0.0));
+        sim.recent.push((gs::Contact { attacker: 0, defender: 1, source: gs::Source::Move(gs::combat::JAB), outcome: gs::Outcome::Hit, point: gs::V2::ZERO, aim: gs::combat::Aim::Head, tick: 1, damage: 4.0, crit: false }, 0.0));
         sim.reset();
         assert_eq!(sim.world.fighters.len(), 2);
         assert_eq!(sim.world.fighters[0].lock_target, None);

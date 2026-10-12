@@ -16,6 +16,14 @@
 | 12 | Expanded BT3-inspired controller and animation math | codex | implemented: four-hit rush, hit-confirm buffers, charged directional smash, counter blow, energy-cost dash rush; continuous phase matching and analytical aim/lean springs; Tools/check_combat.py verifies live |
 | 13 | Overgrowth-inspired knockdown physics and procedural pipeline | codex | implemented: 11 dynamic RPG capsules, 10 limited joints, impact momentum, pause/step physics clock, eased get-up and cleanup; live stability probe gb.physics; anatomical hinges/self-collision/foot IK incomplete |
 | 14 | Mage fireball/lightning on the RPG hero | codex | implemented: 7 retargeted mage clips, hand-mounted charge orbs, phase-aware driver, measured projectile launch point and readable fireball release; 3 live mage checks pass |
+| 15 | Absorb pass: Sekiro prototype, UE5 melee, RPG template, souls-like template; `absorb` skill | claude | done: posture/dizzy/deathblow/backstab/notice/crit/move-cancel/timed drinks in sim (58 tests); study notes |
+| 16 | RPG hero as nucleus: retarget non-idle Mixamo + UAL1/UAL2 clips, fps fix, audit | claude | done: 130 clips, audit pass; source packs moved to assets/packs/_sources |
+| 17 | Smooth running: phase-synced 8-direction walk/run blend space with idle fade | claude | implemented, needs boss review in the viewer |
+| 18 | Game feel: trauma shake, damage numbers, posture bars, notice markers, Kenney audio layer | claude | implemented, needs boss review |
+| 19 | Courtyard dressing from Quaternius kits (props, nature, village fence), convex-hull physics | claude | implemented, needs boss review |
+| 20 | Beta V2: Wenrexa UI rework (HUD, inventory, menus, icons) | claude | next |
+| 21 | Beta V2: open world beyond the courtyard (streamed terrain, village, nature), Bestiary mobs | claude | planned |
+| 22 | Beta V2: souls-like systems from Cat's template (quick slot, spawn sites, ladders/levers/gates, patrols, dodge-or-sprint key) | claude | planned |
 
 Unity tasks 1-12 closed with the engine change on 2026-10-11; history: `git show unity-final:collab/TASKS.md`.
 Aura was Unity-only, so its task/design/review authority ended with Unity. Review authority sits with the boss until reassigned.

@@ -29,7 +29,8 @@ def args():
     p.add_argument("--archive", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--height", type=float, default=1.8)
-    p.add_argument("--extend-hero", help="Add mage clips to an already built hero GLB without rebaking existing clips")
+    p.add_argument("--extend-hero", help="Add mage and Mixamo clips to an already built hero GLB without rebaking the rest")
+    p.add_argument("--reference", default="D:/New folder (4)/reference", help="root of the cloned reference repos (Mixamo sources)")
     return p.parse_args(argv)
 
 
@@ -104,7 +105,9 @@ def anatomical_frame(rig, hip, head, foot, toe):
     return Matrix((right, forward, up)).transposed().to_quaternion()
 
 
-def retarget(src, tgt, name, mapping, motion_root=None):
+def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0):
+    """time_scale maps source frames to scene frames (scene fps / source fps) for actions taken raw from
+    a .blend authored at another frame rate."""
     act_src = src.animation_data.action if src.animation_data else None
     if act_src is None:
         return None
@@ -166,9 +169,10 @@ def retarget(src, tgt, name, mapping, motion_root=None):
             # rig into metre-sized bones, contaminating every descendant's pose.
             world = Matrix.LocRotScale(loc, rot, t_rest.to_scale())
             t_pb.matrix = tw.inverted() @ world
-            t_pb.keyframe_insert("rotation_quaternion", frame=frame)
+            key = start + (frame - start) * time_scale
+            t_pb.keyframe_insert("rotation_quaternion", frame=key)
             if b == pelvis:
-                t_pb.keyframe_insert("location", frame=frame)
+                t_pb.keyframe_insert("location", frame=key)
         bpy.context.view_layer.update()
     tgt.animation_data.action = None
     for b in order:
@@ -206,13 +210,16 @@ def main():
         for track in list(rig.animation_data.nla_tracks):
             rig.animation_data.nla_tracks.remove(track)
         rig.animation_data.action = None
+        appended = set(HERO_MAPPING["mage"]["clips"]) | {n for sec in EXTRA_SECTIONS for clips in HERO_MAPPING[sec]["sources"].values() for n in clips}
         for act in existing:
-            if act.name not in HERO_MAPPING["mage"]["clips"]:
+            if act.name not in appended:
                 push(rig, act, act.name)
                 report["clips"].append(act.name)
             else:
                 bpy.data.actions.remove(act)
         append_mage(a.archive, rig, report)
+        for sec in EXTRA_SECTIONS:
+            append_sources(sec, a.reference, rig, report)
         export_hero(rig, a.out, report)
         return
 
@@ -250,6 +257,8 @@ def main():
             bpy.data.actions.remove(act_left)
 
     append_mage(a.archive, rig, report)
+    for sec in EXTRA_SECTIONS:
+        append_sources(sec, a.reference, rig, report)
     report["normalize_scale"] = normalize(model, a.height)
     export_hero(rig, a.out, report)
 
@@ -266,6 +275,66 @@ def append_mage(archive, rig, report):
         report["clips"].append(name)
         for ob in objs:
             bpy.data.objects.remove(ob, do_unlink=True)
+
+
+EXTRA_SECTIONS = ("mixamo", "ual")
+
+
+def load_source(path, wanted):
+    """Armature objects, the wanted actions by name, and scene fps / source fps."""
+    ext = os.path.splitext(path)[1].lower()
+    if ext == ".blend":
+        with bpy.data.libraries.load(path, link=False) as (src_data, dst):
+            dst.objects = list(src_data.objects)
+            dst.actions = [n for n in src_data.actions if n in wanted]
+            dst.scenes = src_data.scenes[:1]
+        src_fps = dst.scenes[0].render.fps / dst.scenes[0].render.fps_base if dst.scenes else bpy.context.scene.render.fps
+        for sc in dst.scenes:
+            bpy.data.scenes.remove(sc)
+        objs = [ob for ob in dst.objects if ob is not None]
+        for ob in objs:
+            bpy.context.scene.collection.objects.link(ob)
+        acts = {a.name: a for a in dst.actions if a is not None}
+        return objs, acts, (bpy.context.scene.render.fps / bpy.context.scene.render.fps_base) / src_fps
+    # glTF and FBX importers already convert source time into scene frames
+    before_objs, before_acts = set(bpy.data.objects), set(bpy.data.actions)
+    if ext in (".glb", ".gltf"):
+        bpy.ops.import_scene.gltf(filepath=path)
+    else:
+        bpy.ops.import_scene.fbx(filepath=path, use_anim=True)
+    objs = [ob for ob in bpy.data.objects if ob not in before_objs]
+    acts = {a.name: a for a in bpy.data.actions if a not in before_acts}
+    return objs, acts, 1.0
+
+
+def append_sources(section, reference, rig, report):
+    """Clips from another rig family, retargeted onto the hero. Paths are relative to `reference`
+    (absolute paths are used as they are)."""
+    mx = HERO_MAPPING[section]
+    for relative, clips in mx["sources"].items():
+        path = os.path.join(reference, relative)
+        objs, acts, time_scale = load_source(path, set(clips.values()))
+        src = max((ob for ob in objs if ob.type == "ARMATURE"), key=lambda r: len(r.data.bones))
+        src.animation_data_create()
+        # imported NLA strips would stack on top of the action being sampled
+        for t in list(src.animation_data.nla_tracks):
+            src.animation_data.nla_tracks.remove(t)
+        for name, action in clips.items():
+            act_src = acts.get(action)
+            if act_src is None:
+                report["skipped"].append(f"{name}: no action {action!r} in {relative}")
+                continue
+            src.animation_data.action = act_src
+            if hasattr(src.animation_data, "action_slot") and len(getattr(act_src, "slots", [])) > 0:
+                src.animation_data.action_slot = act_src.slots[0]
+            act = retarget(src, rig, name, mx["bones"], time_scale=time_scale)
+            push(rig, act, name)
+            report["clips"].append(name)
+        for ob in objs:
+            bpy.data.objects.remove(ob, do_unlink=True)
+        for act in acts.values():
+            if not act.use_fake_user:
+                bpy.data.actions.remove(act)
 
 
 def export_hero(rig, output, report):

@@ -72,3 +72,27 @@ Source: `reference/fate/FATE/Source/DEV` (outside the repo). Studied for mechani
 | Effects | Each effect is passive (while equipped) or on use, with a target: user, character, area, item, user's pets. | Item and skill effect model (Decision 7 EffectDef). | planned |
 | Inventory | 11 equipment slots (head, chest, both hands, arm, gloves, neck, feet, two rings, belt) plus 5 quick slots; bag items occupy a width x height grid. | Inventory page; our quick slots map to keys 1-4. | planned |
 | Dungeons | Generator pipeline: carve a corridor maze, sparsify dead ends, place scored rooms (rectangular, oval, ring), pits, reconnect isolated rooms, doors, props, exits. | Procedural dungeons beneath the open world; same staged pipeline in our own code. | planned |
+
+## Brackeys RPG-Tutorial and ML-Agents-Fighting-Animations (2026-10-12)
+Clones (reference only): `D:/New folder (4)/reference/brackeys-rpg/repo`, `.../mlagents-fighting/repo`. Neither repo has a licence file, so all rights are reserved: nothing copied, ideas only.
+- Brackeys (Unity C#): stat = base + sum of equipped modifiers, equip swaps with the bag, consumables, ground pickups, chest, overhead health bars. Ours: `crates/sim/src/rpg.rs` (power % / armor 100/(100+a) / vitality, deterministic via `Intent.interact` + `Intent.bag`), `crates/game/src/loot_view.rs`, inventory window in `panel.rs`, `hud::overhead_bars`.
+- ML-Agents fighting (Unity, ML-Agents R12): an RL agent pushes a katana to meet the attacker's blade, arm IK follows. Ours is analytic and unarmed: `crates/game/src/guard_ik.rs` puts both forearms on the attacker's striking forearm while guarding/parrying. Presentation only; the sim decides the block. No training pipeline.
+
+## Absorb pass 2026-10-12: Sekiro prototype, UE5 melee, RPG template, Quaternius, souls-like template
+Clones (reference only, D:/New folder (4)/reference/): `Godot4ThirdPersonCombatPrototype` (Snaiel, MIT), `ue5-rpg-melee-combat-system` (Mustafa-Kum, no licence: ideas only), `RPG-template` (Lakshman-YT: store page only, the controller is a paid EULA product; feature list read, nothing downloaded), `cats-souls-like` (Cat Prisbrey, Unlicense + CC0 assets). `RPG-Tutorial` / `ML-Agents-Fighting-Animations` were re-cloned; already absorbed above.
+
+### Snaiel Godot Sekiro-style prototype (MIT) -> built
+- Instability (posture) fills from hits, blocks, parries; parrying a hit adds a little to the parrier, being parried adds a lot to the attacker; reduction pauses after each gain, then drains a share of max per second. Full = dizzy; dizzy from a parry is short and finisher-ready, dizzy from damage is long; a hit on a dizzy enemy is a one-shot finisher; leaving dizzy keeps 70% of the meter.
+- Notice: idle -> getting suspicious -> suspicious (walk to last seen) -> getting aggro -> aggro, gauge rate from an inner/outer cone (angle and distance), instant aggro in the inner cone, aggro drops after 20 s out of sight. Off-screen triangles.
+- Backstab: within 1.5 m, behind the victim (>125 deg from its facing), victim not aggro -> instant kill.
+- Parry spam: window shrinks 0.2/0.1/0.05/0 s on repeated presses inside a 0.4 s cooldown. Health flask: charges, drink animation, heal at a mid-animation signal, interruptible.
+- Ours (fused, improved): `crates/sim/src/posture.rs` fuses instability with our guard meter (guard still absorbs blocks; posture is the separate balance meter), recovery scales with hp and guarding, parry can never break the parrier, deathblow covers dizzy and backstab in one rule; `notice.rs` is one 0..2 gauge (no five state nodes), running is heard outside the cone, alert decays to suspicious (searching) instead of straight to idle. Our parry recharge already covers spam. Consumables became timed, interruptible drinks (item kept if cut short).
+### UE5 melee (no licence, ideas only) -> partly built
+- Ref-counted notify windows (combo, move-interrupt, ability-interrupt, hit), 0.2 s input buffer, separate light/heavy combo indices with a reset delay, crit roll + crit text styling (no rise, scale punch), per-weapon hit stop and camera shake, in-combat flag with a 5 s exit timer, cast bar with a commit point.
+- Ours: move-cancel of late recovery (`posture.move_cancel`), deterministic crits (`Stats.crit`, duelist's gloves), damage numbers with crit punch (`hud::damage_numbers`). Planned: in-combat state, cast commit bar.
+### RPG-template feature list (EULA, read only)
+- Bow aim with time slow, crouch, directional hit reactions, idle head look, circular stamina, dynamic crosshair, target dummies. Ours: directional hit reaction (`mx_hit_back` when struck from behind), Quaternius training dummies. Planned: bow/aim, stamina ring.
+### Assets absorbed onto the RPG hero (nucleus)
+- Mixamo set from the Godot prototype (19 clips: dizzy, deaths, finisher, hits, kneel, block, magic, turns) and Quaternius UAL1+UAL2 (22 clips: consume, guard break, knockback, chest/interact/pickup, punches, roll, sprint, slide, throw, get-up). Weapon, zombie, farming and locomotion sets omitted (RPG walk/run stays the nucleus). Retargeting fixed a 30-vs-24 fps bug for .blend sources. Hero: 130 clips, audit pass.
+- Audio: Kenney CC0 recordings and the alpha's synthesized cues (assets/audio, credits inside) drive `crates/game/src/sfx.rs`.
+- Quaternius MegaKits (CC0, boss's kits): courtyard dressing table in `props.rs`. Wenrexa UI and icon packs: extracted to assets/packs/_sources/ui for the Beta V2 HUD.

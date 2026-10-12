@@ -107,7 +107,8 @@ pub fn orbit(
     let k = 1.0 - (-8.0 * dt).exp();
     orbit.focus = orbit.focus.lerp(target_focus, k);
 
-    // hit shake: recent contacts, decaying over 0.18 s
+    // hit shake as trauma: each contact adds trauma (0.1 m of profile shake = 1.0) that decays over 0.35 s;
+    // the offset is trauma squared, so light hits barely move the view and deathblows punch
     let now = time.elapsed_secs();
     let contact_now = sim.world.tick as f32 * gs::STEP;
     let trauma: f32 = sim
@@ -116,12 +117,13 @@ pub fn orbit(
         .filter(|(c, _)| c.attacker == 0 || c.defender == 0)
         .map(|(c, at)| {
             let age = contact_now - at;
-            let strength = crate::feedback::profile(c.outcome).shake_m;
-            if age < 0.18 { strength * (1.0 - age / 0.18) } else { 0.0 }
+            let t = crate::feedback::profile(c.outcome).shake_m / 0.1;
+            if age < 0.35 { t * (1.0 - age / 0.35) } else { 0.0 }
         })
         .sum::<f32>()
-        .min(0.2);
-    let shake = Vec3::new((now * 71.0).sin(), (now * 53.0).sin(), (now * 61.0).cos()) * if sim.paused || in_menu { 0.0 } else { trauma * feedback.shake_scale };
+        .min(1.0);
+    let wobble = Vec3::new((now * 37.0).sin() + 0.5 * (now * 91.0).sin(), (now * 43.0).sin(), (now * 29.0).cos() + 0.5 * (now * 77.0).cos());
+    let shake = wobble * 0.14 * trauma * trauma * if sim.paused || in_menu { 0.0 } else { feedback.shake_scale };
 
     let (sy, cy) = orbit.yaw.sin_cos();
     let (sp, cp) = orbit.pitch.sin_cos();

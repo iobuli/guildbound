@@ -50,12 +50,14 @@ pub fn panel(
     remote: Res<RemoteActivity>,
     time: Res<Time<Real>>,
     mut cam: Single<&mut OrbitCamera>,
+    view: Single<(&Camera, &GlobalTransform), With<OrbitCamera>>,
     lib: Option<Res<AnimLibrary>>,
     mut anim: ResMut<AnimSettings>,
     mut requests: ResMut<AnimRequests>,
     mut libs: ResMut<Libraries>,
     app_state: Res<State<crate::menu::AppState>>,
     mut feedback: ResMut<crate::feedback::FeedbackSettings>,
+    mut sfx: ResMut<crate::sfx::SfxSettings>,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     if *app_state.get() == crate::menu::AppState::MainMenu {
@@ -64,6 +66,8 @@ pub fn panel(
         return Ok(());
     }
     let left = if state.hidden { 0.0 } else { state.width };
+    crate::hud::overhead_bars(&ctx, &sim, view.0, view.1);
+    crate::hud::damage_numbers(&ctx, &sim, view.0, view.1);
     if crate::hud::draw(&ctx, &sim, left) {
         sim.reset();
         sim.opponent = OpponentMode::Spar;
@@ -73,8 +77,9 @@ pub fn panel(
     if state.show_inventory {
         let mut open = true;
         egui::Window::new("Inventory").open(&mut open).default_pos([state.width + 20.0, 80.0]).show(&ctx, |ui| {
-            ui.label("Inventory is not available in this sparring build.");
-            ui.label("Use 1-4 for spells and hold Q to replenish energy.");
+            if let Some(action) = inventory_ui(ui, &sim) {
+                sim.edges.bag = Some(action);
+            }
         });
         state.show_inventory = open;
     }
@@ -94,7 +99,7 @@ pub fn panel(
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui.heading("Guildbound dev");
                 ui.label("WASD move, Shift run, Ctrl step, Shift+Ctrl homing dash (8 ki) | LMB rush, RMB guard/parry, F/Mouse4 smash (hold to charge; W/S rising/sweep), Mouse5 lock");
-                ui.label("Camera: middle-drag orbit, wheel zoom | P pause, . step | Tab hide panel, I inventory | Space jump, C roll | 1 fireball (hold = charge), 2 ki blast, 3 lightning, 4 burst, Q charge ki | E interact: coming");
+                ui.label("Camera: middle-drag orbit, wheel zoom | P pause, . step | Tab hide panel, I inventory | Space jump, C roll | 1 fireball (hold = charge), 2 ki blast, 3 lightning, 4 burst, Q charge ki | E pick up / open");
                 ui.separator();
                 sim_section(ui, &mut sim);
                 ui.separator();
@@ -110,6 +115,7 @@ pub fn panel(
                     ui.checkbox(&mut state.show_capsules, "capsules");
                 });
                 ui.add(egui::Slider::new(&mut feedback.shake_scale, 0.0..=1.0).text("camera shake"));
+                ui.add(egui::Slider::new(&mut sfx.volume, 0.0..=1.0).text("sound volume"));
                 ui.separator();
                 anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
                 ui.separator();
@@ -375,4 +381,51 @@ fn feed_section(ui: &mut egui::Ui, feed: &mut DevFeed, draft: &mut String, tick:
         feed.post("boss", draft.trim(), tick);
         draft.clear();
     }
+}
+
+/// Equipment slots, totals and the bag. Returns the click as a sim action (applied on the next tick).
+fn inventory_ui(ui: &mut egui::Ui, sim: &Sim) -> Option<guildbound_sim::rpg::BagAction> {
+    use guildbound_sim::rpg::{BAG_SIZE, BagAction, ITEMS, ItemKind, SLOTS};
+    let f = &sim.world.fighters[0];
+    let st = f.kit.stats();
+    let mut act = None;
+    ui.label(egui::RichText::new("Equipped").strong());
+    egui::Grid::new("worn").num_columns(2).show(ui, |ui| {
+        for slot in SLOTS {
+            ui.label(format!("{slot:?}"));
+            match f.kit.worn_in(slot) {
+                Some(id) => {
+                    if ui.button(ITEMS[id as usize].name).on_hover_text("click to unequip").clicked() {
+                        act = Some(BagAction::Unequip(slot));
+                    }
+                }
+                None => { ui.weak("-"); }
+            }
+            ui.end_row();
+        }
+    });
+    ui.label(format!("Power +{:.0}%   Armor {:.0}   Health {:.0} / {:.0}", st.power, st.armor, f.hp, f.max_hp));
+    ui.separator();
+    ui.label(egui::RichText::new(format!("Bag  {} / {BAG_SIZE}", f.kit.bag.len())).strong());
+    if f.kit.bag.is_empty() {
+        ui.weak("Empty. Walk over items and press E.");
+    }
+    for (k, &id) in f.kit.bag.iter().enumerate() {
+        let def = &ITEMS[id as usize];
+        ui.horizontal(|ui| {
+            let (verb, info) = match def.kind {
+                ItemKind::Consumable { heal, ki } => ("Use", if heal > 0.0 { format!("+{heal:.0} hp") } else { format!("+{ki:.0} ki") }),
+                ItemKind::Gear(slot) => ("Equip", format!("{slot:?}  pow {:.0} arm {:.0} vit {:.0}", def.mods.power, def.mods.armor, def.mods.vitality)),
+            };
+            ui.label(def.name);
+            ui.weak(info);
+            if ui.small_button(verb).clicked() {
+                act = Some(BagAction::Use(k as u8));
+            }
+            if ui.small_button("Drop").clicked() {
+                act = Some(BagAction::Drop(k as u8));
+            }
+        });
+    }
+    act
 }

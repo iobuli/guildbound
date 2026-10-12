@@ -6,9 +6,14 @@
 pub mod combat;
 pub mod magic;
 pub mod mobs;
+pub mod notice;
+pub mod posture;
+pub mod rpg;
 mod math;
 pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase, Source};
 pub use magic::{MagicTuning, Projectile, SPELLS};
+pub use notice::{Notice, NoticeState, NoticeTuning};
+pub use posture::PostureTuning;
 pub use math::V2;
 
 /// Fixed simulation step in seconds.
@@ -86,6 +91,10 @@ pub struct Intent {
     pub ki_charge: bool,
     /// Held.
     pub guard: bool,
+    /// E pressed: pick up or open what is in reach.
+    pub interact: bool,
+    /// One inventory change this tick.
+    pub bag: Option<rpg::BagAction>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -102,10 +111,20 @@ pub struct Fighter {
     pub facing: V2,
     pub hp: f32,
     pub max_hp: f32,
+    /// Max hp before vitality from gear.
+    pub base_hp: f32,
+    pub kit: rpg::Kit,
+    /// Dropped as a pickup when this fighter goes down.
+    pub loot: Option<rpg::ItemId>,
     /// Index of the fighter this one faces while free (strafe), if any.
     pub lock_target: Option<usize>,
     pub action: Action,
     pub guard: f32,
+    /// Balance 0..posture.max; full = dizzy (posture.rs).
+    pub posture: f32,
+    pub(crate) posture_wait: f32,
+    /// Mobs only: awareness of the players (notice.rs).
+    pub notice: Option<Notice>,
     /// Light-string depth of the current string (0 = first hit).
     pub chain: u8,
     pub last_move: Option<combat::MoveId>,
@@ -146,9 +165,15 @@ impl Fighter {
             facing,
             hp,
             max_hp: hp,
+            base_hp: hp,
+            kit: rpg::Kit::default(),
+            loot: None,
             lock_target: None,
             action: Action::IDLE,
             guard: CombatTuning::default().guard_max,
+            posture: 0.0,
+            posture_wait: 0.0,
+            notice: None,
             chain: 0,
             last_move: None,
             strike_target: None,
@@ -178,11 +203,17 @@ pub struct World {
     pub tuning: Tuning,
     pub combat: CombatTuning,
     pub magic: MagicTuning,
+    pub posture: PostureTuning,
+    pub notice: NoticeTuning,
     pub fighters: Vec<Fighter>,
     pub projectiles: Vec<Projectile>,
     pub tick: u64,
     /// Contacts resolved since the presentation last drained them.
     pub contacts: Vec<Contact>,
+    pub pickups: Vec<rpg::Pickup>,
+    pub chests: Vec<rpg::Chest>,
+    /// Bumped whenever pickups or chests change, so presentation rebuilds their views only then.
+    pub loot_rev: u32,
     pub(crate) seq: u32,
 }
 
@@ -193,7 +224,7 @@ impl World {
             Fighter::new(V2::new(0.0, -1.5), V2::new(0.0, 1.0), 100.0),
             Fighter::new(V2::new(0.0, 1.5), V2::new(0.0, -1.0), 100.0),
         ];
-        Self { tuning, combat: CombatTuning::default(), magic: MagicTuning::default(), fighters, projectiles: Vec::new(), tick: 0, contacts: Vec::new(), seq: 0 }
+        Self { tuning, combat: CombatTuning::default(), magic: MagicTuning::default(), posture: PostureTuning::default(), notice: NoticeTuning::default(), fighters, projectiles: Vec::new(), tick: 0, contacts: Vec::new(), pickups: Vec::new(), chests: Vec::new(), loot_rev: 0, seq: 0 }
     }
 
     /// Advance one fixed step. Missing intents count as idle.
@@ -203,7 +234,16 @@ impl World {
             f.move_from = f.position;
         }
         for i in 0..self.fighters.len() {
+            self.update_notice(i);
+        }
+        for i in 0..self.fighters.len() {
             let intent = intents.get(i).copied().unwrap_or_default();
+            if let Some(action) = intent.bag {
+                self.bag_action(i, action);
+            }
+            if intent.interact {
+                self.interact(i);
+            }
             self.think(i, &intent);
         }
         for i in 0..self.fighters.len() {
@@ -215,6 +255,7 @@ impl World {
             self.sweep(i);
         }
         self.advance_projectiles();
+        self.drop_loot();
     }
 
     /// Hand the contacts resolved since the last call to the caller.
@@ -232,10 +273,11 @@ impl World {
         }
         let action = f.action;
         // strikes, stuns and knockdowns coast on momentum (run carry, knockback); guard walks slowly
-        let steering = action.free() && f.hp > 0.0;
+        let drinking = matches!(action.kind, ActionKind::Drink(_));
+        let steering = (action.free() || drinking) && f.hp > 0.0;
         let raw = if steering { intent.move_dir } else { V2::ZERO };
         let m = if raw.length_squared() > 1.0 { raw.normalized() } else { raw };
-        let speed = if action.kind == ActionKind::Guard {
+        let speed = if action.kind == ActionKind::Guard || drinking {
             self.combat.guard_walk_speed
         } else if intent.run {
             t.run_speed
@@ -363,7 +405,7 @@ impl World {
                 eat(v.to_bits() as u64);
             }
             eat(f.lock_target.map_or(u64::MAX, |j| j as u64));
-            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.ki, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left] {
+            for v in [f.guard, f.hit_stop, f.parry_left, f.counter_left, f.action.elapsed, f.action.length, f.ki, f.charge, f.heavy_charge, f.height, f.vertical, f.crouch_left, f.posture, f.posture_wait] {
                 eat(v.to_bits() as u64);
             }
             let kind = match f.action.kind {
@@ -375,11 +417,31 @@ impl World {
                 ActionKind::Staggered => 5, ActionKind::Knockdown => 6, ActionKind::GetUp => 7,
                 ActionKind::Step => 8, ActionKind::Roll => 9, ActionKind::KiCharge => 10,
                 ActionKind::Charge(s) => 0x3000 + s as u64, ActionKind::Cast(s) => 0x4000 + s as u64,
+                ActionKind::Dizzy => 11, ActionKind::Drink(id) => 0x5000 + id as u64,
             };
+            if let Some(n) = f.notice {
+                eat(n.level.to_bits() as u64 | ((n.state as u64) << 32));
+                eat(n.lost.to_bits() as u64 | (n.target.map_or(0xffff, |t| t as u64) << 32));
+            }
             eat(kind);
             eat(f.buffered.map_or(u64::MAX, |p| u64::from(p.heavy) | ((p.dir as u64) << 1) | (u64::from(p.held) << 3)));
             eat(f.action.seq as u64);
             eat(f.chain as u64);
+            eat(f.kit.bag.len() as u64);
+            for &id in &f.kit.bag {
+                eat(id as u64);
+            }
+            for w in f.kit.worn {
+                eat(w.map_or(u64::MAX, u64::from));
+            }
+            eat(f.base_hp.to_bits() as u64);
+        }
+        for p in &self.pickups {
+            eat(p.item as u64 | ((p.position.x.to_bits() as u64) << 8));
+            eat(p.position.z.to_bits() as u64);
+        }
+        for c in &self.chests {
+            eat(c.open as u64);
         }
         h
     }
@@ -397,3 +459,9 @@ mod tests;
 
 #[cfg(test)]
 mod tests_combat;
+
+#[cfg(test)]
+mod tests_rpg;
+
+#[cfg(test)]
+mod tests_posture;

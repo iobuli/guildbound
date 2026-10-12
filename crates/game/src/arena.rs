@@ -25,15 +25,7 @@ pub fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mater
             block(Vec3::new(0.0, 0.005, side * 9.85), Vec3::new(20.0, 0.01, 0.22), &chalk);
             // Starting lines and segmented inner court markings.
             block(Vec3::new(0.0, 0.008, side * 1.5), Vec3::new(1.0, 0.016, 0.06), &chalk);
-            for along in [-7.5, -4.0, 4.0, 7.5] {
-                for (x, z) in [(side * 10.5, along), (along, side * 10.5)] {
-                    block(Vec3::new(x, 0.55, z), Vec3::new(0.18, 1.1, 0.18), &wood);
-                }
-            }
-            for along in [-5.75, 5.75] {
-                block(Vec3::new(side * 10.5, 0.72, along), Vec3::new(0.10, 0.10, 3.5), &wood);
-                block(Vec3::new(along, 0.72, side * 10.5), Vec3::new(3.5, 0.10, 0.10), &wood);
-            }
+            // the fence itself is dressing (props.rs: Quaternius village fence sections)
             for x in [-10.8, 10.8] {
                 let z = side * 10.8;
                 block(Vec3::new(x, 0.18, z), Vec3::new(0.9, 0.36, 0.9), &border);

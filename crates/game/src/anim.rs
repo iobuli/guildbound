@@ -82,6 +82,14 @@ pub struct Roles {
     pub jump: Option<String>,
     pub fall: Option<String>,
     pub roll: Option<String>,
+    pub dizzy: Option<String>,
+    pub drink: Option<String>,
+    pub hit_back: Option<String>,
+    pub death: Option<String>,
+    pub death_backstab: Option<String>,
+    pub guard_break: Option<String>,
+    pub staggered: Option<String>,
+    pub pickup: Option<String>,
 }
 
 #[derive(Resource)]
@@ -144,6 +152,27 @@ impl AnimLibrary {
         Some(std::array::from_fn(|i| curve[first][i] + (curve[next][i] - curve[first][i]) * sample.fract()))
     }
 
+    /// Phase (0..1) at which the left foot plants in a cyclic gait clip: the onset of its longest
+    /// left-contact run. Locomotion clips are aligned on it so blends never mix opposite footfalls.
+    pub fn left_strike(&self, name: &str) -> f32 {
+        let Some(curve) = self.foot_contacts.get(name) else { return 0.0 };
+        let n = curve.len() - 1; // last sample repeats the first
+        if n < 2 {
+            return 0.0;
+        }
+        let down = |k: usize| curve[k % n][0] > 0.5;
+        let mut best = (0usize, 0usize);
+        for k in 0..n {
+            if down(k) && !down(k + n - 1) {
+                let run = (0..n).take_while(|&j| down(k + j)).count();
+                if run > best.1 {
+                    best = (k, run);
+                }
+            }
+        }
+        best.0 as f32 / n as f32
+    }
+
     fn strike_time(&self, clip: &str, m: guildbound_sim::combat::MoveId, clock: f32, fallback_rate: f32) -> f32 {
         let mv = &guildbound_sim::MOVES[m];
         self.contact_timing.get(clip).map_or(clock * fallback_rate, |timing| timing.sample(clock, mv.startup, mv.active, mv.recovery, self.duration(clip)))
@@ -170,6 +199,8 @@ pub struct AnimSettings {
     pub stance_idle: String,
     /// true: inertialize (start the new clip, ease out the pose offset from the last frame). false: crossfade.
     pub inertialize: bool,
+    /// Locomotion blend space (true) or the nearest single clip (false), for A/B checks.
+    pub blend_space: bool,
     /// Body lean (rad) per m/s^2 of acceleration, per m/s of speed (lean into a run), and its limit.
     pub lean_per_accel: f32,
     pub lean_per_speed: f32,
@@ -184,6 +215,7 @@ impl Default for AnimSettings {
             blend_seconds: 0.2,
             stance_idle: "idle_Tiramis".into(),
             inertialize: true,
+            blend_space: true,
             lean_per_accel: 0.018,
             lean_per_speed: 0.02,
             lean_max: 0.22,
@@ -293,6 +325,11 @@ pub struct FighterRig {
     last_tick: u64,
     prepared_clip: Option<(guildbound_sim::combat::MoveId, String)>,
     transition_s: f32,
+    /// Bag size last frame (usize::MAX until first seen): growth plays the pickup clip.
+    bag_len: usize,
+    /// Nodes in the locomotion blend last frame, and the smoothed travel angle relative to facing.
+    loco: Vec<AnimationNodeIndex>,
+    loco_angle: f32,
 }
 
 impl FighterRig {
@@ -338,6 +375,9 @@ impl FighterRig {
             last_tick: 0,
             prepared_clip: None,
             transition_s: 0.2,
+            bag_len: usize::MAX,
+            loco: Vec::new(),
+            loco_angle: 0.0,
         }
     }
 }
@@ -354,7 +394,8 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
         let mut geometry = serde_json::Map::new();
         for &bone in &rig.bones {
             if let Some(name) = world.get::<Name>(bone)
-                && matches!(name.as_str(), "Motion" | "B_Pelvis" | "B_Head" | "B_L_Foot" | "B_R_Foot" | "B_L_Forearm.001" | "B_R_Hand")
+                && matches!(name.as_str(), "Motion" | "B_Pelvis" | "B_Head" | "B_L_Foot" | "B_R_Foot" | "B_L_Forearm.001" | "B_R_Hand"
+                    | "B_L_Thigh" | "B_R_Thigh" | "B_L_Calf" | "B_R_Calf" | "B_L_Toe0" | "B_R_Toe0")
                 && let Some(global) = world.get::<GlobalTransform>(bone)
             {
                 geometry.insert(name.to_string(), serde_json::json!(global.translation().to_array()));
@@ -384,7 +425,7 @@ pub fn spawn_rig(commands: &mut Commands, view: Entity, fighter: usize, scene: H
 }
 
 pub fn load_library(mut commands: Commands, assets: Res<AssetServer>, libs: Res<Libraries>) {
-    let path = libs.current().map_or("packs/fighting_motions/fighter.glb".to_owned(), |l| l.path.clone());
+    let path = libs.current().map_or("packs/hero/fighter.glb".to_owned(), |l| l.path.clone());
     commands.insert_resource(AnimLibrary::load(&assets, &path));
 }
 
@@ -448,6 +489,14 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
         jump: lib.find(&["jump_start", "unarmed-jump", "jump"], &["flip", "land", "loop"]),
         fall: lib.find(&["jump_loop", "unarmed-fall", "fall"], &[]),
         roll: lib.find(&["diveroll", "roll"], &["_rm"]),
+        dizzy: lib.find(&["mx_dizzy", "dizzy", "stunned"], &[]),
+        drink: lib.find(&["mx_drink", "drink"], &[]),
+        hit_back: lib.find(&["mx_hit_back", "gethit-b"], &[]),
+        death: lib.find(&["mx_death", "death"], &["backstab", "kneel"]),
+        death_backstab: lib.find(&["mx_death_backstab"], &[]),
+        guard_break: lib.find(&["ual_guard_break", "shield_break"], &[]),
+        staggered: lib.find(&["ual_hit_knockback", "knockback"], &["knockdown"]),
+        pickup: lib.find(&["ual_pickup", "pickup"], &[]),
     };
     // The merged hero has a verified semantic map shared with the offline
     // converter. Keep fuzzy name discovery only for other inspectable packs.
@@ -466,6 +515,8 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
             hit: role("hit"), hit_body: role("hit_body"), hit_low: role("hit_low"), block: role("block"),
             block_body: role("block_body"), block_low: role("block_low"), guard: role("guard"), ki_charge: role("ki_charge"), spell_charge: role("spell_charge"),
             knockdown: role("knockdown"), getup: role("getup"), jump: role("jump"), fall: role("fall"), roll: role("roll"),
+            dizzy: role("dizzy"), drink: role("drink"), hit_back: role("hit_back"), death: role("death"), death_backstab: role("death_backstab"),
+            guard_break: role("guard_break"), staggered: role("staggered"), pickup: role("pickup"),
         };
     }
     lib.clusters = resolve_clusters(&lib);
@@ -615,7 +666,18 @@ pub fn procedural_layers(
 
 /// The clip for a sim action, and how long it must last: strikes play their cluster's next variant,
 /// reactions play the library's role clips.
-fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim::Fighter, aim: Option<guildbound_sim::combat::Aim>) -> Option<(String, f32)> {
+/// What the last contact on this fighter tells the reaction picker.
+#[derive(Clone, Copy, Default)]
+struct LastHit {
+    aim: Option<guildbound_sim::combat::Aim>,
+    from_behind: bool,
+    deathblow: bool,
+}
+
+fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim::Fighter, hit: LastHit) -> Option<(String, f32)> {
+    let aim = hit.aim;
+    // looping or long-form clips play at their own speed; the sim's action ends them
+    let natural = |clip: &Option<String>| clip.clone().map(|c| { let d = lib.duration(&c); (c, d) });
     use guildbound_sim::ActionKind as K;
     let r = &lib.roles;
     let (clip, length) = match f.action.kind {
@@ -625,6 +687,13 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
             let fallback = if mv.heavy { "roundhouse" } else { "cross" };
             let clip = [mv.cluster, fallback, "jab"].iter().filter_map(|n| pick(n)).find_map(|i| cursor.next(lib, i));
             (clip, mv.total())
+        }
+        K::HitStun if hit.from_behind && r.hit_back.is_some() => (r.hit_back.clone(), f.action.length),
+        K::Dizzy => return natural(&r.dizzy).or_else(|| r.hit_body.clone().map(|c| (c, f.action.length))),
+        K::Drink(_) => (r.drink.clone(), f.action.length),
+        K::Knockdown if f.hp <= 0.0 => {
+            let clip = if hit.deathblow && hit.from_behind { r.death_backstab.clone().or(r.death.clone()) } else { r.death.clone() };
+            return natural(&clip).or_else(|| r.knockdown.clone().map(|c| (c, f.action.length)));
         }
         K::HitStun => {
             // head, body or low reaction from where the hit landed
@@ -636,7 +705,8 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
             };
             (clip.or(r.hit.clone()), f.action.length)
         }
-        K::Staggered | K::GuardBreak => (r.hit_body.clone().or(r.hit.clone()), f.action.length),
+        K::GuardBreak => (r.guard_break.clone().or(r.hit_body.clone()).or(r.hit.clone()), f.action.length),
+        K::Staggered => (r.staggered.clone().or(r.hit_body.clone()).or(r.hit.clone()), f.action.length),
         K::Knockdown => (r.knockdown.clone(), f.action.length),
         K::GetUp => (r.getup.clone(), f.action.length),
         // Fire/lightning use mage clips; ki retains its quick punching motion.
@@ -692,7 +762,6 @@ pub fn drive_animation(
 ) {
     let Some(graph) = &lib.graph else { return };
     let blend = Duration::from_secs_f32(settings.blend_seconds.max(0.01));
-    let walk_run_split = 0.5 * (sim.world.tuning.walk_speed + sim.world.tuning.run_speed);
     for mut rig in &mut rigs {
         let Some(player_entity) = rig.player else { continue };
         if !rig.attached {
@@ -727,7 +796,12 @@ pub fn drive_animation(
         rig.last_position = Some(f.position);
 
         let me = rig.fighter;
-        for (_, clip) in requests.0.iter().filter(|(i, _)| *i == me) {
+        // picking something up plays the pickup motion as a free (cancellable) one-shot
+        let bag = f.kit.bag.len();
+        let picked = bag > rig.bag_len && f.action.free() && rig.bag_len != usize::MAX;
+        rig.bag_len = bag;
+        let pickup = lib.roles.pickup.clone().filter(|_| picked).map(|c| (me, c));
+        for (_, clip) in requests.0.iter().filter(|(i, _)| *i == me).chain(pickup.iter()) {
             if let Some(node) = lib.node(clip) {
                 if settings.inertialize {
                     player.stop_all();
@@ -748,12 +822,15 @@ pub fn drive_animation(
         if f.action.seq != rig.action_seq || f.action.kind != rig.action_kind {
             rig.action_seq = f.action.seq;
             rig.action_kind = f.action.kind;
-            let aim = sim.recent.iter().rev().find(|(c, _)| c.defender == me).map(|(c, _)| c.aim);
+            let hit = sim.recent.iter().rev().find(|(c, _)| c.defender == me).map(|(c, _)| {
+                let from = sim.world.fighters.get(c.attacker).map_or(f.position, |a| a.position) - f.position;
+                LastHit { aim: Some(c.aim), from_behind: from.dot(f.facing) < 0.0, deathblow: c.outcome == guildbound_sim::Outcome::Deathblow }
+            }).unwrap_or_default();
             let chosen = match f.action.kind {
                 guildbound_sim::ActionKind::Strike(m) if rig.prepared_clip.as_ref().is_some_and(|(id, _)| *id == m) => {
                     rig.prepared_clip.take().map(|(_, clip)| (clip, guildbound_sim::MOVES[m].total()))
                 }
-                _ => action_clip(&lib, &mut cursor, f, aim),
+                _ => action_clip(&lib, &mut cursor, f, hit),
             };
             if let Some((clip, length)) = chosen {
                 rig.prepared_clip = match f.action.kind {
@@ -866,46 +943,82 @@ pub fn drive_animation(
             }
         }
         let stance = if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
-        let (wanted, reference) = if speed < 0.1 {
-            let pose = match f.action.kind {
-                guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
-                guildbound_sim::ActionKind::KiCharge => r.ki_charge.as_deref().or(stance),
-                guildbound_sim::ActionKind::Charge(_) => r.spell_charge.as_deref().or(stance),
-                _ => stance,
-            };
-            (pose, 0.0)
-        } else {
-            let running = speed > walk_run_split;
-            (locomotion.clip(&lib, f.velocity, f.facing, running), if running { settings.run_reference_speed } else { settings.reference_speed })
+        let pose = match f.action.kind {
+            guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
+            guildbound_sim::ActionKind::KiCharge => r.ki_charge.as_deref().or(stance),
+            guildbound_sim::ActionKind::Charge(_) => r.spell_charge.as_deref().or(stance),
+            _ => stance,
         };
-        let Some(node) = wanted.and_then(|w| lib.node(w)) else { continue };
-        if rig.current != Some(node) {
+        // Blend space: the two nearest of eight directions, each at walk and at run, weighted by the
+        // smoothed travel angle and by speed between walk and run; the stance fades in below 0.6 m/s.
+        // Every gait clip is sampled at one shared phase aligned on its left-foot plant, so footfalls
+        // agree across the blend and the stride follows the blended clips (no direction or gait pops).
+        let dt_anim = if f.hit_stop > 0.0 { 0.0 } else { sim.frame_step_s };
+        if speed > 0.05 {
+            let right = guildbound_sim::V2::new(f.facing.z, -f.facing.x);
+            let want = f.velocity.dot(right).atan2(f.velocity.dot(f.facing));
+            let d = (want - rig.loco_angle + std::f32::consts::PI).rem_euclid(std::f32::consts::TAU) - std::f32::consts::PI;
+            rig.loco_angle += d * (1.0 - (-14.0 * dt_anim).exp());
+        }
+        let (walk_speed, run_speed) = (sim.world.tuning.walk_speed, sim.world.tuning.run_speed);
+        let gait = ((speed - walk_speed) / (run_speed - walk_speed).max(0.1)).clamp(0.0, 1.0);
+        let idle_k = (speed / 0.6).clamp(0.0, 1.0);
+        let idle_w = 1.0 - idle_k * idle_k * (3.0 - 2.0 * idle_k);
+        let mut set: Vec<(String, f32, bool)> = Vec::new(); // clip, weight, gait-synced
+        if idle_w < 0.999 {
+            let (angle, gait) = if settings.blend_space {
+                (rig.loco_angle, gait)
+            } else {
+                // A/B reference: snap to the nearest direction and to walk or run
+                let q = std::f32::consts::FRAC_PI_4;
+                ((rig.loco_angle / q).round() * q, if gait < 0.5 { 0.0 } else { 1.0 })
+            };
+            for (clip, w) in locomotion.blend(&lib, angle, gait) {
+                set.push((clip.to_owned(), w * (1.0 - idle_w), true));
+            }
+        }
+        if let Some(p) = pose.filter(|_| idle_w > 0.001 || set.is_empty()) {
+            let w = if set.is_empty() { 1.0 } else { idle_w };
+            set.push((p.to_owned(), w, false));
+        }
+        let nodes: Vec<(AnimationNodeIndex, String, f32, bool)> = set.into_iter().filter_map(|(c, w, g)| lib.node(&c).map(|n| (n, c, w, g))).collect();
+        let Some(dominant) = nodes.iter().max_by(|a, b| a.2.total_cmp(&b.2)).map(|x| x.0) else { continue };
+        let entering = rig.loco.is_empty() || rig.current.is_none_or(|c| !rig.loco.contains(&c)) || !rig.loco.iter().all(|n| player.is_playing_animation(*n));
+        if entering {
             let first_pose = rig.current.is_none();
             rig.transition_s = settings.blend_seconds;
-            if settings.inertialize {
-                player.stop_all();
-                player.start(node).repeat();
-                // An imported bind pose is not an outgoing gameplay pose.
-                // Blending from it while the initial menu is paused leaves the
-                // hero in a T-pose indefinitely because no sim time advances.
-                rig.pending_inertia = !first_pose;
-            } else {
-                transitions.play(&mut player, node, blend).repeat();
-            }
-            rig.current = Some(node);
+            player.stop_all();
+            rig.loco.clear();
+            // An imported bind pose is not an outgoing gameplay pose: never inertialize from it.
+            rig.pending_inertia = settings.inertialize && !first_pose;
         }
-        let rate = if sim.paused || f.hit_stop > 0.0 { 0.0 } else { sim.speed };
-        if reference > 0.0 {
-            let stride = lib.stride(wanted.unwrap(), reference);
+        for &old in &rig.loco {
+            if !nodes.iter().any(|x| x.0 == old) {
+                player.stop(old);
+            }
+        }
+        // shared gait phase advances by distance over the blended stride
+        let synced: f32 = nodes.iter().filter(|x| x.3).map(|x| x.2).sum();
+        if synced > 1e-4 {
+            let stride: f32 = nodes.iter().filter(|x| x.3).map(|x| {
+                let reference = if x.1.contains("Run") || x.1.contains("run") { settings.run_reference_speed } else { settings.reference_speed };
+                lib.stride(&x.1, reference) * x.2
+            }).sum::<f32>() / synced;
             rig.gait_phase = crate::controller::advance_phase(rig.gait_phase, travel, stride);
         }
-        if let Some(active) = player.animation_mut(node) {
-            if reference > 0.0 {
-                active.set_speed(0.0).set_seek_time(rig.gait_phase * lib.duration(wanted.unwrap()));
+        let rate = if sim.paused || f.hit_stop > 0.0 { 0.0 } else { sim.speed };
+        for (node, clip, w, synced_clip) in &nodes {
+            let active = player.play(*node).repeat();
+            active.set_weight(*w);
+            if *synced_clip {
+                let phase = (rig.gait_phase + lib.left_strike(clip)).rem_euclid(1.0);
+                active.set_speed(0.0).set_seek_time(phase * lib.duration(clip));
             } else {
                 active.set_speed(rate);
             }
         }
+        rig.loco = nodes.iter().map(|x| x.0).collect();
+        rig.current = Some(dominant);
     }
     requests.0.clear();
 }

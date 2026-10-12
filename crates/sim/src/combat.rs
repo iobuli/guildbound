@@ -110,6 +110,10 @@ pub enum ActionKind {
     Roll,
     /// Q held: charging ki, open to attack.
     KiCharge,
+    /// Posture broken: open to a deathblow.
+    Dizzy,
+    /// Drinking a consumable; walks slowly, the item works at the commit point.
+    Drink(crate::rpg::ItemId),
     /// A spell key held: charging a chargeable spell.
     Charge(crate::magic::SpellId),
     /// Casting a spell: wind-up, release, recovery.
@@ -181,6 +185,8 @@ pub enum Outcome {
     Blocked,
     GuardBroken,
     Parried,
+    /// Struck while dizzy, or from behind while unaware: down in one.
+    Deathblow,
 }
 
 /// One resolved contact, for presentation (sparks, sound, camera). Never read back by the rules.
@@ -193,6 +199,9 @@ pub struct Contact {
     pub point: V2,
     pub aim: Aim,
     pub tick: u64,
+    /// Hp taken (after armor), and whether it was a critical hit.
+    pub damage: f32,
+    pub crit: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -297,7 +306,7 @@ pub struct Press {
 }
 
 impl World {
-    fn new_action(&mut self, i: usize, kind: ActionKind, length: f32) {
+    pub(crate) fn new_action(&mut self, i: usize, kind: ActionKind, length: f32) {
         self.seq += 1;
         let f = &mut self.fighters[i];
         f.action = Action { kind, elapsed: 0.0, length, seq: self.seq };
@@ -395,6 +404,7 @@ impl World {
     /// Timers, intent and the action clock for one fighter. Called before the motor.
     pub(crate) fn think(&mut self, i: usize, intent: &crate::Intent) {
         let c = self.combat;
+        self.recover_posture(i);
         {
             let f = &mut self.fighters[i];
             f.parry_left = (f.parry_left - STEP).max(0.0);
@@ -532,6 +542,14 @@ impl World {
                     self.press(i, p, true);
                     return;
                 }
+                // late recovery: moving cancels the rest of the strike (UE5 move-interrupt window)
+                let cancel_from = d.startup + d.active + d.recovery * self.posture.move_cancel;
+                if act.elapsed >= cancel_from && press.is_none() && self.fighters[i].buffered.is_none()
+                    && intent.move_dir.length_squared() > 0.04
+                {
+                    self.finish(i, true);
+                    return;
+                }
                 // wind-up tracking: turn toward the target's position (bounded), so the strike flows from
                 // wherever the body was into the target
                 if act.phase() == Phase::Startup && let Some(t) = self.fighters[i].strike_target {
@@ -567,11 +585,21 @@ impl World {
                 self.fighters[i].action.elapsed += STEP;
                 if self.fighters[i].action.elapsed >= act.length { self.finish(i, false); }
             }
+            ActionKind::Drink(id) => {
+                self.advance_drink(i, id);
+                if self.fighters[i].action.elapsed >= act.length {
+                    self.finish(i, false);
+                }
+            }
             _ => {
                 self.fighters[i].action.elapsed += STEP;
                 if self.fighters[i].action.elapsed >= act.length {
                     if act.kind == ActionKind::Knockdown {
                         self.new_action(i, ActionKind::GetUp, c.get_up_time);
+                    } else if act.kind == ActionKind::Dizzy {
+                        self.fighters[i].posture = self.posture.max * self.posture.after_dizzy;
+                        self.fighters[i].posture_wait = self.posture.wait;
+                        self.finish(i, false);
                     } else {
                         self.finish(i, false);
                     }
@@ -664,18 +692,33 @@ impl World {
         let frontal = self.frontal(d, self.fighters[a].position);
         let tgt = self.fighters[d].clone();
 
-        let outcome = if tgt.parry_left > 0.0 && frontal && tgt.action.free() {
-            // parry: the attacker is thrown off balance, the defender gets a counter window
+        let mut damage = 0.0;
+        let mut crit = false;
+        let outcome = if self.deathblow(a, d) {
+            // posture broken, or caught unaware from behind: down in one
+            let t = &mut self.fighters[d];
+            damage = t.hp;
+            t.hp = 0.0;
+            t.posture = 0.0;
+            t.velocity = t.velocity + dir * push;
+            self.new_action(d, ActionKind::Knockdown, c.knockdown_time * 3.0);
+            self.fighters[a].landed = true;
+            Outcome::Deathblow
+        } else if tgt.parry_left > 0.0 && frontal && tgt.action.free() {
+            // parry: the attacker is thrown off balance and loses posture, the defender gets a counter window
             self.new_action(a, ActionKind::Staggered, c.stagger_time);
             let t = &mut self.fighters[d];
             t.parry_left = 0.0;
             t.counter_left = c.counter_window;
+            let p = self.posture;
+            self.add_posture(a, p.parried + def.guard_drain, false, true);
+            self.add_posture(d, p.parry_cost, true, false);
             Outcome::Parried
         } else if tgt.action.kind == ActionKind::Guard && tgt.guard > 0.0 && frontal {
             let t = &mut self.fighters[d];
             t.guard = if charge >= 1.0 { 0.0 } else { t.guard - def.guard_drain * (1.0 + 3.0 * charge) };
             t.velocity = t.velocity + dir * (push / 3.0);
-            if t.guard <= 0.0 {
+            let o = if t.guard <= 0.0 {
                 t.guard = 0.0;
                 t.guard_regen_wait = c.guard_regen_delay;
                 self.new_action(d, ActionKind::GuardBreak, c.guard_break_time);
@@ -683,13 +726,19 @@ impl World {
             } else {
                 t.guard_regen_wait = c.guard_regen_delay;
                 Outcome::Blocked
-            }
+            };
+            self.add_posture(d, def.guard_drain * self.posture.block_share * (1.0 + charge), false, false);
+            o
         } else {
             // caught in the wind-up of their own strike, or during a counter window: counter-hit
             let counter = (matches!(tgt.action.kind, ActionKind::Strike(_)) && tgt.action.phase() == Phase::Startup)
                 || matches!(tgt.action.kind, ActionKind::HeavyCharge(_))
                 || self.fighters[a].counter_left > 0.0;
-            let damage = def.damage * (1.0 + c.heavy_damage_gain * charge) * if counter { c.counter_hit_mult } else { 1.0 };
+            crit = self.crit(a, d);
+            let raw = def.damage * (1.0 + c.heavy_damage_gain * charge)
+                * if counter { c.counter_hit_mult } else { 1.0 }
+                * if crit { self.posture.crit_mult } else { 1.0 };
+            damage = crate::rpg::mitigate(raw, self.fighters[a].kit.stats(), tgt.kit.stats());
             let t = &mut self.fighters[d];
             t.hp = (t.hp - damage).max(0.0);
             t.velocity = t.velocity + dir * push;
@@ -702,19 +751,22 @@ impl World {
             }
             self.fighters[a].landed = true;
             self.fighters[a].counter_left = 0.0;
+            self.add_posture(d, def.guard_drain * self.posture.hit_share * (1.0 + charge), false, false);
             if counter { Outcome::CounterHit } else { Outcome::Hit }
         };
+        self.alarm(d, a);
         let stop = match outcome {
             Outcome::Hit | Outcome::CounterHit | Outcome::GuardBroken => def.hit_stop,
             Outcome::Blocked => def.hit_stop * 0.6,
             Outcome::Parried => def.hit_stop * 1.5,
+            Outcome::Deathblow => def.hit_stop * 2.5,
         };
         self.fighters[a].hit_stop = stop;
         self.fighters[d].hit_stop = stop;
         if outcome == Outcome::Blocked && self.fighters[d].action.kind == ActionKind::Guard {
             self.fighters[d].block_stun = c.block_stun;
         }
-        self.contacts.push(Contact { attacker: a, defender: d, source: Source::Move(mv), outcome, point, aim: def.aim, tick: self.tick });
+        self.contacts.push(Contact { attacker: a, defender: d, source: Source::Move(mv), outcome, point, aim: def.aim, tick: self.tick, damage, crit });
     }
 }
 

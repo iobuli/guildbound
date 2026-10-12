@@ -4,6 +4,7 @@
 //! the tick and the mob's index, so replays hold.
 
 use crate::combat::ActionKind;
+use crate::notice::{Notice, NoticeState};
 use crate::{Intent, V2, World};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -81,14 +82,32 @@ pub fn mob_intent(world: &World, me: usize, brain: &mut MobBrain) -> Intent {
         brain.state = MobState::Hunt;
     }
 
+    // awareness (notice.rs) decides when a hunt starts; a mob without it falls back to the attention radius
+    let notice = f.notice;
+    let alert = notice.is_some_and(|n| n.state == NoticeState::Alert);
+    if let Some(j) = notice.filter(|_| alert).and_then(|n| n.target) {
+        brain.target = j;
+    }
+    let spotted = match notice {
+        Some(_) => alert,
+        None => dist < brain.attention,
+    };
     brain.state = match brain.state {
-        MobState::Wander if dist < brain.attention && t.hp > 0.0 => MobState::Hunt,
+        MobState::Wander if spotted && t.hp > 0.0 => MobState::Hunt,
+        MobState::Hunt if notice.is_some() && !alert => MobState::Wander,
         MobState::Hunt if from_home > brain.leash || t.hp <= 0.0 => MobState::Return,
         MobState::Return if from_home < 1.0 => MobState::Wander,
         s => s,
     };
 
     match brain.state {
+        MobState::Wander if notice.is_some_and(|n| n.state == NoticeState::Suspicious) => {
+            // suspicious: walk to where the target was last seen and look around
+            let d = notice.unwrap().last_seen - f.position;
+            if d.length() > 0.8 {
+                intent.move_dir = d.normalized() * 0.45;
+            }
+        }
         MobState::Wander => {
             if world.tick >= brain.next_think || (f.position - brain.wander_to).length() < 0.4 {
                 let a = unit(world.tick, me as u64) * std::f32::consts::TAU;
@@ -144,6 +163,8 @@ pub fn mob_intent(world: &World, me: usize, brain: &mut MobBrain) -> Intent {
 pub fn spawn(world: &mut World, at: V2, hp: f32) -> usize {
     let facing = (world.fighters[0].position - at).normalized();
     let facing = if facing.length_squared() > 0.0 { facing } else { V2::new(0.0, 1.0) };
-    world.fighters.push(crate::Fighter::new(at, facing, hp));
+    let mut f = crate::Fighter::new(at, facing, hp);
+    f.notice = Some(Notice::default());
+    world.fighters.push(f);
     world.fighters.len() - 1
 }
