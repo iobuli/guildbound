@@ -263,10 +263,15 @@ pub fn read_player_input(
     wants: Res<EguiWantsInput>,
     window: Single<&Window, With<bevy::window::PrimaryWindow>>,
     camera: Single<&Transform, With<OrbitCamera>>,
+    flick: Res<bevy::input::mouse::AccumulatedMouseMotion>,
+    studio: Res<crate::studio::Studio>,
     mut panel: ResMut<PanelState>,
     mut sim: ResMut<Sim>,
     mut had_focus: Local<bool>,
 ) {
+    if studio.open {
+        return;
+    }
     if !window.focused {
         if *had_focus {
             sim.clear_player_input();
@@ -294,8 +299,14 @@ pub fn read_player_input(
             sim.pending_steps += 1;
         }
         if mouse.just_pressed(MouseButton::Forward) {
+            // lock-on toggles; it takes the fighter nearest the screen centre in front of the camera
             let lock = sim.world.fighters[0].lock_target;
-            sim.world.fighters[0].lock_target = if lock.is_some() { None } else { Some(1) };
+            sim.world.fighters[0].lock_target = if lock.is_some() { None } else { crate::camera::pick_target(&sim.world, &camera, None, None) };
+        }
+        // while locked, a hard mouse flick switches to the next target left or right (Snaiel's lock-on)
+        if let Some(cur) = sim.world.fighters[0].lock_target && flick.delta.x.abs() > 60.0 {
+            let next = crate::camera::pick_target(&sim.world, &camera, Some(cur), Some(flick.delta.x.signum()));
+            sim.world.fighters[0].lock_target = next;
         }
     }
     if sim.paused && sim.pending_steps == 0 {

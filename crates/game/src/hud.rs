@@ -50,7 +50,15 @@ fn bar(p: &egui::Painter, icons: Option<&HudIcons>, rect: egui::Rect, k: f32, fi
     p.text(inner.right_center() - egui::vec2(4.0, 0.0), egui::Align2::RIGHT_CENTER, value, egui::FontId::proportional(11.0), PAPER);
 }
 
-pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>) -> bool {
+/// Everything the HUD needs beyond the sim, bundled so the panel system stays within its parameter limit.
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct HudParams<'w> {
+    pub icons: Option<bevy::prelude::Res<'w, HudIcons>>,
+    pub layout: bevy::prelude::Res<'w, crate::studio::HudLayout>,
+    pub studio: bevy::prelude::Res<'w, crate::studio::Studio>,
+}
+
+pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>, layout: &crate::studio::HudLayout) -> bool {
     let screen = ctx.viewport_rect();
     let player = &sim.world.fighters[0];
     let w = &sim.world;
@@ -58,7 +66,8 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>)
     let in_combat = w.in_combat(0);
 
     // vitals card, bottom left
-    let card = egui::Rect::from_min_size(egui::pos2(left + 18.0, screen.bottom() - 150.0), egui::vec2(330.0, 132.0));
+    let sc = layout.scale.clamp(0.5, 2.0);
+    let card = egui::Rect::from_min_size(egui::pos2(left + 18.0 + layout.vitals[0], screen.bottom() - 150.0 * sc + layout.vitals[1]), egui::vec2(330.0, 132.0) * sc);
     if let Some(i) = icons {
         p.image(i.panel, card, UV, egui::Color32::from_white_alpha(235));
     } else {
@@ -67,7 +76,7 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>)
     let mode = if in_combat { ("COMBAT", RED) } else { ("EXPLORING", TEAL) };
     p.text(card.min + egui::vec2(18.0, 14.0), egui::Align2::LEFT_TOP, "GUILDBOUND RANGER", egui::FontId::proportional(13.0), PAPER);
     p.text(egui::pos2(card.right() - 18.0, card.top() + 14.0), egui::Align2::RIGHT_TOP, mode.0, egui::FontId::proportional(12.0), mode.1);
-    let row = |k: f32| egui::Rect::from_min_size(card.min + egui::vec2(16.0, 36.0 + k * 22.0), egui::vec2(card.width() - 32.0, 20.0));
+    let row = |k: f32| egui::Rect::from_min_size(card.min + egui::vec2(16.0, 36.0 + k * 22.0) * sc, egui::vec2(card.width() - 32.0 * sc, 20.0 * sc));
     bar(&p, icons, row(0.0), player.hp / player.max_hp.max(1.0), RED, "HEALTH", &format!("{:.0} / {:.0}", player.hp, player.max_hp));
     bar(&p, icons, row(1.0), player.mana / w.magic.mana_max.max(1.0), MANA, "MANA", &format!("{:.0} / {:.0}", player.mana, w.magic.mana_max));
     bar(&p, icons, row(2.0), player.guard / w.combat.guard_max.max(1.0), TEAL, "GUARD", "");
@@ -75,12 +84,12 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>)
     bar(&p, icons, row(3.0), pk, posture_color(pk), if player.action.kind == guildbound_sim::ActionKind::Dizzy { "POSTURE BROKEN" } else { "POSTURE" }, "");
 
     // skill bar + quick slots, bottom centre
-    let cell = 58.0;
-    let gap = 8.0;
+    let cell = 58.0 * sc;
+    let gap = 8.0 * sc;
     let n = guildbound_sim::magic::SPELL_COUNT as f32;
     let total = n * cell + (n - 1.0) * gap + 2.0 * (cell + gap) + 14.0;
-    let x0 = left + (screen.width() - left - total) * 0.5;
-    let y0 = screen.bottom() - cell - 26.0;
+    let x0 = left + (screen.width() - left - total) * 0.5 + layout.skills[0];
+    let y0 = screen.bottom() - cell - 26.0 + layout.skills[1];
     for (s, spell) in guildbound_sim::SPELLS.iter().enumerate() {
         let r = egui::Rect::from_min_size(egui::pos2(x0 + s as f32 * (cell + gap), y0), egui::vec2(cell, cell));
         let cd = player.cooldowns[s];
@@ -122,7 +131,7 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>)
     let target = player.lock_target.filter(|&i| i != 0 && i < w.fighters.len()).or_else(|| in_combat.then_some(1).filter(|&i| i < w.fighters.len()));
     if let Some(t) = target {
         let f = &w.fighters[t];
-        let r = egui::Rect::from_center_size(egui::pos2(left + (screen.width() - left) * 0.5, 46.0), egui::vec2(380.0, 64.0));
+        let r = egui::Rect::from_center_size(egui::pos2(left + (screen.width() - left) * 0.5 + layout.target[0], 46.0 + layout.target[1]), egui::vec2(380.0, 64.0) * sc);
         if let Some(i) = icons {
             p.image(i.panel, r, UV, egui::Color32::from_white_alpha(220));
         }

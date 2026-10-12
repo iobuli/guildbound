@@ -13,7 +13,7 @@ use crate::anim::FighterRig;
 use crate::motion_math::world_transform;
 
 /// (segment start, joint, segment end, min bend deg, max bend deg). Bend 0 = the segments are in line.
-const RULES: &[(&str, &str, &str, f32, f32)] = &[
+pub const RULES: &[(&str, &str, &str, f32, f32)] = &[
     ("B_Pelvis", "B_Spine", "B_Spine1", 0.0, 40.0),
     ("B_Spine", "B_Spine1", "B_Spine2", 0.0, 35.0),
     ("B_Spine1", "B_Spine2", "B_Neck", 0.0, 35.0),
@@ -63,7 +63,9 @@ pub fn soft_range(x: f32, lo: f32, hi: f32) -> f32 {
 pub fn apply(world: &mut World) {
     let mut auth = world.remove_resource::<JointAuthority>().unwrap_or_default();
     let mut query = world.query::<&FighterRig>();
-    let rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
+    let mut rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
+    let mut studio = world.query::<&crate::studio::StudioRig>();
+    rigs.extend(studio.iter(world).filter(|r| r.rules).map(|r| (usize::MAX, r.bones.clone())));
     auth.readings.clear();
     for (fighter, bones) in rigs {
         let find = |world: &World, n: &str| bones.iter().copied().find(|&e| world.get::<Name>(e).is_some_and(|x| x.as_str() == n));

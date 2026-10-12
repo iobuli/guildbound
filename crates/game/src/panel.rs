@@ -58,7 +58,7 @@ pub fn panel(
     app_state: Res<State<crate::menu::AppState>>,
     mut feedback: ResMut<crate::feedback::FeedbackSettings>,
     mut sfx: ResMut<crate::sfx::SfxSettings>,
-    icons: Option<Res<crate::hud::HudIcons>>,
+    hud: crate::hud::HudParams,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     if *app_state.get() == crate::menu::AppState::MainMenu {
@@ -69,7 +69,7 @@ pub fn panel(
     let left = if state.hidden { 0.0 } else { state.width };
     crate::hud::overhead_bars(&ctx, &sim, view.0, view.1);
     crate::hud::damage_numbers(&ctx, &sim, view.0, view.1);
-    if crate::hud::draw(&ctx, &sim, left, icons.as_deref()) {
+    if !hud.studio.open && crate::hud::draw(&ctx, &sim, left, hud.icons.as_deref(), &hud.layout) {
         sim.reset();
         sim.opponent = OpponentMode::Spar;
         sim.world.fighters[0].lock_target = Some(1);

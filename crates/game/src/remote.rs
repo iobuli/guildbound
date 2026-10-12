@@ -35,7 +35,29 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.physics", gb_physics)
         .with_method_main("gb.support", gb_support)
         .with_method_main("gb.guard", gb_guard)
+        .with_method_main("gb.studio", gb_studio)
         .with_method_main("gb.loot", gb_loot)
+}
+
+/// Studio state and the boss's notes/corrections/patterns. Optional {open, spawn, clip, time, hero_clips, rules, select}.
+fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.studio");
+    if let Some(p) = p {
+        let open = p.get("open").and_then(Value::as_bool);
+        {
+            let mut s = world.resource_mut::<crate::studio::Studio>();
+            if let Some(v) = p.get("spawn").and_then(Value::as_str) { s.request_spawn(v.to_owned()); }
+            if let Some(v) = p.get("clip").and_then(Value::as_str) { s.clip = Some(v.to_owned()); s.time = 0.0; }
+            if let Some(v) = p.get("time").and_then(Value::as_f64) { s.time = v as f32; s.playing = false; }
+            if let Some(v) = p.get("hero_clips").and_then(Value::as_bool) { s.hero_clips = v; }
+            if let Some(v) = p.get("rules").and_then(Value::as_bool) { s.rules = v; }
+            if let Some(v) = p.get("select").and_then(Value::as_str) { s.selected = Some(v.to_owned()); }
+        }
+        if let Some(o) = open && o != world.resource::<crate::studio::Studio>().open {
+            world.resource_mut::<crate::studio::Studio>().toggle_request = true;
+        }
+    }
+    Ok(crate::studio::snapshot(world))
 }
 
 fn gb_guard(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {

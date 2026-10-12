@@ -110,7 +110,7 @@ pub fn world_scatter() -> Vec<(&'static str, String, f32, f32, f32, f32, f32)> {
     let market = (30.0f32, 30.0f32);
     let clear = |x: f32, z: f32, pad: f32| {
         let r = (x * x + z * z).sqrt();
-        r < 17.0 + pad || x.abs() < 2.5 + pad || z.abs() < 2.5 + pad || ((x - market.0).powi(2) + (z - market.1).powi(2)).sqrt() < 9.0 + pad
+        r < 17.0 + pad || (x - crate::studio::STAGE.x).hypot(z - crate::studio::STAGE.z) < 7.0 + pad || x.abs() < 2.5 + pad || z.abs() < 2.5 + pad || ((x - market.0).powi(2) + (z - market.1).powi(2)).sqrt() < 9.0 + pad
             || x.abs() > WORLD_HALF - 2.0 || z.abs() > WORLD_HALF - 2.0
     };
     let mut out = Vec::new();

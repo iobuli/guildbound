@@ -52,7 +52,15 @@ pub fn apply(world: &mut World) {
     let sim = world.resource::<Sim>();
     let facings: Vec<Vec3> = sim.world.fighters.iter().map(|f| Vec3::new(f.facing.x, 0.0, f.facing.z)).collect();
     let mut query = world.query::<&FighterRig>();
-    let rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
+    let mut rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
+    // the Studio stage model obeys the same hinge (its facing comes from its own transform)
+    let mut studio = world.query::<(&crate::studio::StudioRig, &Transform)>();
+    let stage: Vec<(Vec3, Vec<Entity>)> = studio.iter(world).filter(|(r, _)| r.rules).map(|(r, t)| (t.rotation * Vec3::Z, r.bones.clone())).collect();
+    let mut facings = facings;
+    for (f, bones) in stage {
+        facings.push(f);
+        rigs.push((facings.len() - 1, bones));
+    }
     let mut stats = world.get_resource::<KneeStats>().copied().unwrap_or_default();
     if !stats.enabled {
         return;

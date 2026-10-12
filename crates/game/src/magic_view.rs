@@ -41,7 +41,7 @@ pub fn sync_orbs(
     mut materials: ResMut<Assets<StandardMaterial>>,
     rigs: Query<&crate::anim::FighterRig>,
     bones: Query<(&Name, &GlobalTransform), Without<Orb>>,
-    mut orbs: Query<(Entity, &Orb, &mut Transform, &mut GlobalTransform, &MeshMaterial3d<StandardMaterial>, &mut PointLight)>,
+    mut orbs: Query<(Entity, &Orb, &mut Transform, &mut GlobalTransform, &MeshMaterial3d<StandardMaterial>, &mut PointLight, &mut Visibility)>,
 ) {
     let gain = sim.world.magic.charge_gain;
     // what should be lit this frame: (position, radius, colour)
@@ -78,9 +78,10 @@ pub fn sync_orbs(
         }
     }
     let mut have: Vec<_> = orbs.iter_mut().collect();
+    have.sort_by_key(|h| h.1.0);
     have.sort_by_key(|o| o.1.0);
     for (k, (pos, r, color)) in wanted.iter().enumerate() {
-        if let Some((_, _, t, global, mat, light)) = have.get_mut(k) {
+        if let Some((_, _, t, global, mat, light, _)) = have.get_mut(k) {
             t.translation = *pos;
             t.scale = Vec3::splat(*r);
             **global = GlobalTransform::from(**t);
@@ -100,9 +101,14 @@ pub fn sync_orbs(
             ));
         }
     }
-    for (e, o, ..) in &orbs {
+    // Pooled for good: hide spares instead of despawning. A light spawned and despawned before Bevy applies
+    // its queued bounding-sphere insert panicked the app (charge -> release in the same frame).
+    for (_, o, _, _, _, mut light, mut vis) in &mut orbs {
         if o.0 >= wanted.len() {
-            commands.entity(e).despawn();
+            *vis = Visibility::Hidden;
+            light.intensity = 0.0;
+        } else {
+            *vis = Visibility::Inherited;
         }
     }
 }

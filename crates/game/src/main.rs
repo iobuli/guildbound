@@ -24,6 +24,8 @@ mod ragdoll;
 mod remote;
 mod sfx;
 mod sim_bridge;
+mod studio;
+mod ui_theme;
 mod support;
 
 use bevy::prelude::*;
@@ -50,6 +52,7 @@ fn main() {
                 .set(AssetPlugin { file_path: format!("{ROOT}/assets"), ..default() }),
         )
         .add_plugins(EguiPlugin::default())
+        .add_plugins(studio::plugin)
         .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new().run_if(bevy::input::common_conditions::input_toggle_active(false, KeyCode::F1)))
         .add_plugins(bevy_lunex::UiLunexPlugins)
         .add_plugins(avian3d::prelude::PhysicsPlugins::new(PostUpdate))
@@ -71,7 +74,7 @@ fn main() {
         .init_resource::<sfx::SfxSettings>()
         .init_resource::<npc::NpcLibraries>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, ui_theme::load, announce))
         .add_systems(PostStartup, (props::spawn, magic_view::setup, npc::spawn))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
@@ -103,7 +106,7 @@ fn main() {
         )
         .add_systems(
             PostUpdate,
-            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, joints::apply, knee::apply, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
+            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, studio::apply_corrections, joints::apply, knee::apply, studio::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))
