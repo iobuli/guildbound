@@ -30,7 +30,7 @@ use crate::ui_theme::{self as theme, Kit};
 /// Where models are staged: a cleared spot north-west of the courtyard.
 pub const STAGE: Vec3 = Vec3::new(-30.0, 0.0, 30.0);
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
-const TABS: [&str; 7] = ["Inspect", "Possession", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+const TABS: [&str; 8] = ["Inspect", "Possession", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -164,6 +164,9 @@ pub struct Studio {
     pub toggle_request: bool,
     /// Last pose audit (collab/pose_audit.json), read when the Studio opens.
     audit: Value,
+    /// Moveset picks: move -> (clip, enabled), and the move a clip is being added to.
+    moveset: Option<BTreeMap<String, Vec<(String, bool)>>>,
+    move_add: (String, String),
 }
 
 impl Studio {
@@ -180,6 +183,8 @@ impl Default for Studio {
             selected: None, note: String::new(), category: 0, offset: Vec3::ZERO, tab: 0, own: None, graph_attached: None,
             numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false,
             audit: Value::Null,
+            moveset: None,
+            move_add: (String::new(), String::new()),
         }
     }
 }
@@ -651,8 +656,9 @@ fn ui(
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
                 crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
             }
-            2 => corrections_tab(ui, &mut corr),
-            3 => {
+            2 => moveset_tab(ui, studio, kit, lib.as_deref()),
+            3 => corrections_tab(ui, &mut corr),
+            4 => {
                 theme::section(ui, "Patterns across clips and models");
                 ui.label(egui::RichText::new("Repeated fixes become library-wide rules; repeated notes show where the pipeline is wrong.").size(11.0).color(theme::MUTED));
                 let notes = read_notes();
@@ -717,7 +723,7 @@ fn ui(
                     studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
-            4 => {
+            5 => {
                 theme::section(ui, "Notes sent to Claude");
                 for n in read_notes().iter().rev().take(30) {
                     ui.label(egui::RichText::new(format!("{}  {} @ {:.2}s  {}", n["model"].as_str().unwrap_or(""), n["clip"].as_str().unwrap_or(""), n["time"].as_f64().unwrap_or(0.0), n["bone"].as_str().unwrap_or(""))).size(11.0).color(theme::MUTED));
@@ -725,7 +731,7 @@ fn ui(
                     ui.separator();
                 }
             }
-            5 => {
+            6 => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
                 for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {
@@ -866,6 +872,73 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: 
         feed.post("boss", &format!("@studio {} [{} | {} @ {:.2}s | {}] {}", CATEGORIES[studio.category], studio.model.as_deref().unwrap_or("-"), studio.clip.as_deref().unwrap_or("-"), studio.time, bone, studio.note.trim()), tick);
         studio.note.clear();
         studio.status = "Note sent with the full pose numbers".into();
+    }
+}
+
+/// Pick which clips each combo move plays (ticked = used, unticked = omitted); saved to assets/moveset.json,
+/// read when the game builds its move clusters (relaunch to apply).
+fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: Option<&AnimLibrary>) {
+    theme::section(ui, "Moveset: clips per combo move");
+    let path = format!("{}/assets/moveset.json", crate::ROOT);
+    if studio.moveset.is_none() {
+        let base: Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).unwrap_or_default();
+        let saved: Value = std::fs::read_to_string(&path).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+        let mut m = BTreeMap::new();
+        for (name, clips) in base["combat"].as_object().into_iter().flatten() {
+            let all: Vec<String> = clips.as_array().into_iter().flatten().filter_map(|c| c.as_str().map(str::to_owned)).collect();
+            let on: Option<Vec<String>> = saved["moves"][name].as_array().map(|a| a.iter().filter_map(|c| c.as_str().map(str::to_owned)).collect());
+            let mut rows: Vec<(String, bool)> = all.iter().map(|c| (c.clone(), on.as_ref().is_none_or(|o| o.contains(c)))).collect();
+            for c in on.into_iter().flatten().filter(|c| !all.contains(c)) {
+                rows.push((c, true));
+            }
+            m.insert(name.clone(), rows);
+        }
+        studio.moveset = Some(m);
+    }
+    let (add_move, add_filter) = (&mut studio.move_add.0, &mut studio.move_add.1);
+    let Some(moves) = studio.moveset.as_mut() else { return };
+    for (name, rows) in moves.iter_mut() {
+        egui::CollapsingHeader::new(egui::RichText::new(format!("{name}  ({} of {})", rows.iter().filter(|r| r.1).count(), rows.len())).color(theme::PAPER)).id_salt(name.as_str()).show(ui, |ui| {
+            for (clip, on) in rows.iter_mut() {
+                ui.checkbox(on, egui::RichText::new(clip.as_str()).size(11.5));
+            }
+            if ui.small_button("add a clip...").clicked() {
+                *add_move = name.clone();
+            }
+        });
+    }
+    if !add_move.is_empty() {
+        ui.label(egui::RichText::new(format!("Add to {add_move}:")).color(theme::TEAL));
+        ui.add(egui::TextEdit::singleline(add_filter).hint_text("filter hero clips"));
+        let f = add_filter.to_lowercase();
+        let mut picked = None;
+        egui::ScrollArea::vertical().id_salt("move_add").max_height(120.0).show(ui, |ui| {
+            for (n, _) in lib.map(|l| l.clips.as_slice()).unwrap_or_default().iter().filter(|(n, _)| !f.is_empty() && n.to_lowercase().contains(&f)).take(40) {
+                if ui.selectable_label(false, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
+                    picked = Some(n.clone());
+                }
+            }
+        });
+        if let Some(c) = picked
+            && let Some(rows) = moves.get_mut(add_move.as_str())
+        {
+            rows.push((c, true));
+            add_move.clear();
+        }
+    }
+    let out: serde_json::Map<String, Value> = moves.iter().map(|(n, rows)| (n.clone(), json!(rows.iter().filter(|r| r.1).map(|r| r.0.clone()).collect::<Vec<_>>()))).collect();
+    let (mut save, mut reset) = (false, false);
+    ui.horizontal(|ui| {
+        save = theme::button(ui, kit, "Save moveset", false).clicked();
+        reset = theme::button(ui, kit, "Reset", false).clicked();
+    });
+    if save {
+        let _ = std::fs::write(&path, serde_json::to_string_pretty(&json!({"moves": out})).unwrap_or_default());
+        studio.status = "Moveset saved to assets/moveset.json; relaunch to fight with it".into();
+    }
+    if reset {
+        let _ = std::fs::remove_file(&path);
+        studio.moveset = None;
     }
 }
 

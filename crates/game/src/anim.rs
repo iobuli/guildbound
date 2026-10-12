@@ -240,7 +240,15 @@ pub const CLUSTER_SPECS: &[(&str, &str, &str, &[&str], &[&str])] = &[
 
 fn resolve_clusters(lib: &AnimLibrary) -> Vec<(&'static str, &'static str, Vec<String>)> {
     let hero = lib.node("Unarmed-Idle").is_some() && lib.node("hp_straight_left_A").is_some();
-    let mapping: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
+    let mut mapping: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
+    // the boss's moveset picks (Studio Moveset tab) replace a move's clip list when present
+    if let Some(picks) = std::fs::read_to_string(format!("{}/assets/moveset.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
+        && let Some(moves) = picks["moves"].as_object()
+    {
+        for (m, clips) in moves {
+            mapping["combat"][m] = clips.clone();
+        }
+    }
     CLUSTER_SPECS
         .iter()
         .map(|(name, limb, _, exact, fragments)| {
