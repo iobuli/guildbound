@@ -20,9 +20,29 @@ const PITCH_RANGE: f32 = 0.8;
 const CURL: [f32; 3] = [1.4, 1.65, 1.2];
 const THUMB_CURL: [f32; 3] = [0.35, 0.6, 0.5];
 
-/// Local rotations of a rig's bones as the scene spawned them (the bind pose), captured when the model is ready.
+/// Local rotations and offsets of a rig's bones as the scene spawned them (the bind pose), captured when ready.
 #[derive(Component, Default)]
-pub struct RestPose(pub HashMap<Entity, Quat>);
+pub struct RestPose(pub HashMap<Entity, Quat>, pub HashMap<Entity, Vec3>);
+
+/// Bones keep their bind length: every bone but the root and the hips sits at its bind offset from its parent.
+/// A source clip's joint translations stretched the Ranger's neck (boss, 2026-10-12: "head stretched"); a bone
+/// that changes length is never anatomical. Runs after every pose layer that only rotates.
+pub fn bone_lengths(world: &mut World) {
+    let mut q = world.query::<&RestPose>();
+    let jobs: Vec<(Entity, Vec3)> = q
+        .iter(world)
+        .flat_map(|r| r.1.iter().filter(|(e, _)| world.get::<ChildOf>(**e).is_some_and(|p| r.1.contains_key(&p.parent()))).map(|(e, p)| (*e, *p)).collect::<Vec<_>>())
+        .collect();
+    for (e, offset) in jobs {
+        let free = world.get::<Name>(e).is_some_and(|n| {
+            let n = n.as_str().to_lowercase();
+            matches!(n.as_str(), "motion" | "root" | "root_m" | "hip" | "hips") || n.ends_with("pelvis")
+        });
+        if !free && let Some(mut t) = world.get_mut::<Transform>(e) {
+            t.translation = offset;
+        }
+    }
+}
 
 /// Per-rig state of the life layers.
 #[derive(Component, Default)]
@@ -313,7 +333,7 @@ mod tests {
         let t2 = bone(&mut world, "thumb_02_l", Some(t1), Vec3::new(0.03, 0.02, 0.015));
         let t3 = bone(&mut world, "thumb_03_l", Some(t2), Vec3::new(0.028, 0.017, 0.014));
         bones.extend([t1, t2, t3]);
-        let rest = RestPose(bones.iter().map(|&e| (e, Quat::IDENTITY)).collect());
+        let rest = RestPose(bones.iter().map(|&e| (e, Quat::IDENTITY)).collect(), HashMap::new());
         world.entity_mut(root).insert((rest, Life { grip: [1.0, 1.0], ..default() }));
         let open: Vec<Vec3> = tips.iter().map(|&t| pos(&world, t).unwrap()).collect();
         apply(&mut world, root, &bones, &Drive { grip: Some([1.0, 1.0]), ..drive() });

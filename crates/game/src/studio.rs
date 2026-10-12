@@ -286,6 +286,7 @@ fn on_ready(
         if let Ok(t) = targets.get(e) {
             rig.bones.push(e);
             rest.0.insert(e, t.rotation);
+            rest.1.insert(e, t.translation);
         }
     }
     commands.entity(ready.entity).insert((rest, crate::procedural::Life::default()));
@@ -445,10 +446,14 @@ pub fn measure(world: &mut World) {
     for side in ["L", "R"] {
         if let (Some(h), Some(k), Some(a)) = (pos(&format!("B_{side}_Thigh")), pos(&format!("B_{side}_Calf")), pos(&format!("B_{side}_Foot"))) {
             let flex = 180.0 - (h - k).angle_between(a - k).to_degrees();
-            let fwd = world.get::<Transform>(e).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
-            let line = (a - h).normalize_or_zero();
-            let off = (k - h) - line * (k - h).dot(line);
-            let backward = off.dot(fwd) < -0.03;
+            // the same test the knee rule uses: the knee faces the pelvis's forward (hip line x up), not the
+            // stage's facing (a strafing or turning pelvis read as a backward knee)
+            let facing = world.get::<Transform>(e).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
+            let heading = match (pos("B_L_Thigh"), pos("B_R_Thigh")) {
+                (Some(l), Some(r)) => Vec3::new(l.x - r.x, 0.0, l.z - r.z).normalize_or_zero().cross(Vec3::Y).normalize_or(facing),
+                _ => facing,
+            };
+            let backward = crate::knee::fix(h, k, a, [h.distance(k), k.distance(a)], heading).is_some_and(|f| f.2);
             if backward || flex > crate::knee::MAX_FLEX_DEG + 0.5 {
                 violations.push(format!("B_{side}_Calf"));
             }
@@ -537,7 +542,12 @@ pub fn snapshot(world: &World) -> Value {
     let s = world.resource::<Studio>();
     let corr = world.resource::<Corrections>();
     let notes = read_notes();
-    json!({"open": s.open, "model": s.model, "clip": s.clip, "time": s.time, "duration": s.duration, "hero_clips": s.hero_clips, "rules": s.rules,
+    let clip_list: Vec<String> = if s.hero_clips {
+        world.get_resource::<AnimLibrary>().map(|l| l.clips.iter().map(|(n, _)| n.clone()).collect()).unwrap_or_default()
+    } else {
+        s.own.as_ref().map(|(_, _, idx)| idx.keys().cloned().collect()).unwrap_or_default()
+    };
+    json!({"open": s.open, "model": s.model, "clip": s.clip, "time": s.time, "duration": s.duration, "hero_clips": s.hero_clips, "rules": s.rules, "clip_list": clip_list,
            "selected": s.selected, "numbers": s.numbers, "corrections": corr.to_json()["corrections"], "patterns": patterns(corr, &notes),
            "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len(), "audit_patterns": audit_patterns(&read_audit())})
 }

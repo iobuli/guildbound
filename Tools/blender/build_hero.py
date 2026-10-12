@@ -125,8 +125,32 @@ def close_loop(act):
     return worst
 
 
+def despike(act, bone="B_Pelvis", limit=0.15):
+    """A single-frame jump of the pelvis that comes straight back (the RPG Unarmed-Jump drops 0.42 m for one frame
+    then rises 0.55) is a pop on screen: soften it into a three-frame dip. Returns the number of keys changed."""
+    changed = 0
+    for fc in fcurves(act):
+        if fc.data_path != f'pose.bones["{bone}"].location':
+            continue
+        k = fc.keyframe_points
+        vals = [p.co[1] for p in k]
+        for i in range(1, len(vals) - 1):
+            d_prev, d_next = vals[i] - vals[i - 1], vals[i] - vals[i + 1]
+            if abs(d_prev) > limit and abs(d_next) > limit and d_prev * d_next > 0:
+                spike = vals[i] - (vals[i - 1] + vals[i + 1]) / 2
+                k[i].co[1] = vals[i] - spike * 0.5
+                k[i - 1].co[1] = vals[i - 1] + spike * 0.25
+                k[i + 1].co[1] = vals[i + 1] + spike * 0.25
+                changed += 1
+        fc.update()
+    return changed
+
+
 def push(rig, act, name, report=None):
     retime(act, scene_fps())
+    spikes = despike(act)
+    if spikes and report is not None:
+        report.setdefault("despiked", {})[name] = spikes
     if cyclic(name):
         seam = close_loop(act)
         if report is not None:
@@ -248,7 +272,6 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bon
     pelvis = "B_Pelvis"
     contacts = [n for n in ("B_L_Calf", "B_R_Calf", "B_L_Foot", "B_R_Foot", "B_L_Toe0", "B_R_Toe0") if n in mapped]
     floor = (tw @ tgt.data.bones["Motion"].head_local).z if "Motion" in tgt.data.bones else 0.0
-    translated = {fc.data_path.split('"')[1] for fc in fcurves(act_src) if fc.data_path.endswith(".location") and fc.data_path.startswith('pose.bones["')}
     for frame in range(start, end + 1):
         bpy.context.scene.frame_set(frame)
         correction = None
@@ -296,25 +319,15 @@ def retarget(src, tgt, name, mapping, motion_root=None, time_scale=1.0, root_bon
                 t_pb.location = (0.0, 0.0, 0.0)
                 bpy.context.view_layer.update()
                 loc = (tw @ t_pb.matrix).translation
-                # authored joint translation (the RPG rig sways its spine base and offsets its neck): carry the
-                # source joint's offset from where its parent's pose puts its rest head (pose_audit: up to 27 deg
-                # pelvis-to-spine error in 40 clips without it)
-                sp = s_pb.parent
-                if sp is not None:
-                    expected = sw @ (sp.matrix @ (sp.bone.matrix_local.inverted() @ s_bone.head_local))
-                    if correction is not None:
-                        expected = correction @ expected
-                    dev = s_world.translation - expected
-                    if alignment is not None:
-                        dev = alignment @ dev
-                    loc = loc + dev * scale
+                # no joint translation is carried: the RPG source holds its neck 3 cm off its bind and sways its spine
+                # base, and carried onto the Ranger that stretched the neck (boss, 2026-10-12); bones keep their length
             # Keep the target's world scale. Unit scale here turns a centimetre
             # rig into metre-sized bones, contaminating every descendant's pose.
             world = Matrix.LocRotScale(loc, rot, t_rest.to_scale())
             t_pb.matrix = tw.inverted() @ world
             key = start + (frame - start) * time_scale
             t_pb.keyframe_insert("rotation_quaternion", frame=key)
-            if b == pelvis or inv[b] in translated:
+            if b == pelvis:
                 t_pb.keyframe_insert("location", frame=key)
         bpy.context.view_layer.update()
         # floor contact: other leg proportions can sink a kneeling or crouching body into the floor (death-kneel

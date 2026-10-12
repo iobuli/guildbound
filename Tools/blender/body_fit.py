@@ -143,4 +143,5 @@ def main():
         print("CLIP_CHECK", spec, worst)
 
 
-main()
+if __name__ == "__main__":
+    main()

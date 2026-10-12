@@ -162,6 +162,12 @@ def audit_clip(model, name, poses, src_poses=None):
         i = max(range(len(steps)), key=lambda n: steps[n])
         if steps[i] > 25.0 and steps[i] > 4.0 * max(med, 1.0):
             emit("pop", k, steps[i], f"{steps[i]:.0f} deg in one frame (median {med:.1f})", poses[i + 1][0])
+    # pelvis height pop: one frame away and straight back by more than 15 cm
+    hz = [P["B_Pelvis"].z for _, P in poses if "B_Pelvis" in P]
+    for i in range(1, len(hz) - 1):
+        a_, b_ = hz[i] - hz[i - 1], hz[i] - hz[i + 1]
+        if abs(a_) > 0.15 and abs(b_) > 0.15 and a_ * b_ > 0:
+            emit("pelvis_pop", "B_Pelvis", min(abs(a_), abs(b_)), f"{a_:+.2f} m then back at frame {i}", poses[i][0])
     low = name.lower()
     if seq and low.split("-")[-1] not in ("start", "end") and any(c in low for c in CYCLIC) and "to" not in low.split("-"):
         seam = max((math.degrees(seq[0][k].angle(seq[-1][k])) for k in seq[0] if k in seq[-1]), default=0.0)
@@ -224,7 +230,7 @@ def audit_kevin():
     return findings, clips
 
 
-METRES = ("ground", "torso", "knee_back")
+METRES = ("ground", "torso", "knee_back", "pelvis_pop")
 
 
 def mark_introduced(findings, baseline):

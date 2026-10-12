@@ -65,8 +65,11 @@ pub struct Readout {
     pub ang: Vec3,
     pub ke: f32,
     pub support: Vec<Vec2>,
-    /// Signed distance (m) of the centre of mass inside the support polygon; None when no foot is down.
+    /// Signed distance (m) of the centre of mass inside the support polygon; None when nothing is down.
     pub margin: Option<f32>,
+    /// The same for the extrapolated centre of mass (position + velocity / sqrt(g/h), Hof 2005): a moving
+    /// body is balanced when this point is over its support, wherever the centre of mass itself is.
+    pub dynamic_margin: Option<f32>,
 }
 
 #[derive(Resource)]
@@ -79,6 +82,8 @@ pub struct Possession {
     pub overrides: BTreeMap<String, BoneOverride>,
     pub aims: BTreeMap<String, Vec3>,
     pub grip: Option<[f32; 2]>,
+    /// With no hand-set grip: fists in fighting clips, open hands for magic, relaxed otherwise.
+    pub auto_hands: bool,
     pub look: LookMode,
     pub lean: bool,
     pub breath: bool,
@@ -95,7 +100,7 @@ pub struct Possession {
 impl Default for Possession {
     fn default() -> Self {
         Self {
-            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None,
+            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, auto_hands: true,
             look: LookMode::Off, lean: false, breath: false, mass_kg: 75.0, readout: Readout::default(), last: None, history: VecDeque::new(),
             bone_filter: String::new(), status: String::new(),
         }
@@ -162,7 +167,8 @@ pub fn apply(world: &mut World) {
     if !p.enabled || !world.resource::<Studio>().open {
         return;
     }
-    let (overrides, aims, grip, look, lean, breath) = (p.overrides.clone(), p.aims.clone(), p.grip, p.look, p.lean, p.breath);
+    let (overrides, aims, look, lean, breath) = (p.overrides.clone(), p.aims.clone(), p.look, p.lean, p.breath);
+    let grip = p.grip.or_else(|| p.auto_hands.then(|| clip_grip(world.resource::<Studio>().clip.as_deref().unwrap_or(""))));
     let r = p.readout.clone();
     let dt = 1.0 / p.fps.clamp(1.0, 240.0);
     let Some((root, bones)) = stage(world) else { return };
@@ -207,6 +213,22 @@ pub fn apply(world: &mut World) {
     crate::procedural::apply(world, root, &bones, &drive);
 }
 
+/// The hands a clip implies: fists to fight, open to cast, relaxed otherwise.
+pub fn clip_grip(clip: &str) -> [f32; 2] {
+    let c = clip.to_lowercase();
+    let fight = ["attack", "strafe", "punch", "kick", "block", "guard", "hp_", "bp_", "hk_", "lk_", "bk_", "hb_", "lb_", "bb_", "hd_", "ld_", "bd_", "finisher", "parry"];
+    let down = ["knockdown", "getup", "fall", "death", "dizzy"].iter().any(|f| c.contains(f));
+    if c.starts_with("mage") || c.contains("magic") || c.contains("cast") || c.contains("spell") {
+        [0.1, 0.1]
+    } else if down {
+        [0.45, 0.45]
+    } else if c.starts_with("unarmed-") || fight.iter().any(|f| c.contains(f)) {
+        [1.0, 1.0]
+    } else {
+        [0.35, 0.35]
+    }
+}
+
 /// Physics readout of the final stage pose (runs after the authority rules).
 pub fn measure(world: &mut World) {
     if !world.resource::<Studio>().open {
@@ -240,6 +262,12 @@ pub fn measure(world: &mut World) {
             }
         }
     }
+    // a body on its hands, knees, hips or back is supported by them too (getting up, knocked down)
+    for (n, reach) in [("B_L_Calf", 0.12), ("B_R_Calf", 0.12), ("B_L_Forearm.001", 0.1), ("B_R_Hand", 0.1), ("B_Pelvis", 0.2), ("B_Spine2", 0.2), ("B_Head", 0.16)] {
+        if let Some(p) = pos(n).filter(|p| p.y - floor < reach) {
+            support.push(Vec2::new(p.x, p.z));
+        }
+    }
     let hull = convex_hull(support);
     let margin = (hull.len() >= 3).then(|| inside_margin(&hull, Vec2::new(com.x, com.z)));
     let (clip, time) = {
@@ -249,6 +277,7 @@ pub fn measure(world: &mut World) {
     let mut p = world.resource_mut::<Possession>();
     let mass = p.mass_kg;
     let mut r = Readout { valid: false, com, support: hull, margin, ..default() };
+    let had_vel = p.readout.valid;
     if let Some((lc, lt, lcom, lvel, lpts)) = &p.last {
         let dt = time - lt;
         if *lc == clip && dt.abs() < 1e-5 {
@@ -258,7 +287,8 @@ pub fn measure(world: &mut World) {
         if *lc == clip && dt > 0.0 && dt < 0.25 && lpts.len() == points.len() {
             r.valid = true;
             r.vel = (com - *lcom) / dt;
-            r.acc = (r.vel - *lvel) / dt;
+            // the first moving sample has no earlier velocity to differ from
+            r.acc = if had_vel { (r.vel - *lvel) / dt } else { Vec3::ZERO };
             let unit = mass / total;
             for ((pt, lp), m) in points.iter().zip(lpts).zip(&masses) {
                 let v = (*pt - *lp) / dt;
@@ -266,6 +296,11 @@ pub fn measure(world: &mut World) {
                 r.ke += 0.5 * m * unit * v.length_squared();
             }
         }
+    }
+    if r.valid && r.support.len() >= 3 {
+        let h = (com.y - floor).max(0.2);
+        let x = com + r.vel * (h / 9.81).sqrt();
+        r.dynamic_margin = Some(inside_margin(&r.support, Vec2::new(x.x, x.z)));
     }
     p.last = Some((clip, time, com, r.vel, points));
     if r.valid {
@@ -395,7 +430,7 @@ pub fn snapshot(world: &World, with_bones: bool) -> Value {
         "lean": p.lean, "breath": p.breath,
         "physics": {"mass_kg": p.mass_kg, "valid": r.valid, "com": v3(r.com), "com_height_m": r.com.y - crate::studio::STAGE.y, "velocity": v3(r.vel), "speed_mps": r.vel.length(),
                     "momentum_kgmps": r.vel.length() * p.mass_kg, "accel": v3(r.acc), "angular_momentum": v3(r.ang), "kinetic_j": r.ke,
-                    "balance_margin_m": r.margin, "feet_down": r.support.len() >= 3},
+                    "balance_margin_m": r.margin, "dynamic_margin_m": r.dynamic_margin, "feet_down": r.support.len() >= 3, "accel_g": r.acc.length() / 9.81},
         "numbers": s.numbers,
     });
     if with_bones && let Some((_, bones)) = stage(world) {
@@ -404,9 +439,9 @@ pub fn snapshot(world: &World, with_bones: bool) -> Value {
             .filter_map(|&e| {
                 let name = world.get::<Name>(e)?.as_str().to_owned();
                 let parent = world.get::<ChildOf>(e).and_then(|c| world.get::<Name>(c.parent())).map(|n| n.as_str().to_owned());
-                let g = world_transform(world, e)?.translation();
+                let (_, wr, g) = world_transform(world, e)?.to_scale_rotation_translation();
                 let (x, y, z) = world.get::<Transform>(e)?.rotation.to_euler(EulerRot::XYZ);
-                Some(json!({"bone": name, "parent": parent, "world": v3(g), "local_euler_deg": [x.to_degrees().round(), y.to_degrees().round(), z.to_degrees().round()]}))
+                Some(json!({"bone": name, "parent": parent, "world": v3(g), "world_rot": wr.to_array(), "local_euler_deg": [x.to_degrees().round(), y.to_degrees().round(), z.to_degrees().round()]}))
             })
             .collect();
         out["bones"] = json!(rows);
@@ -425,6 +460,7 @@ pub fn command(world: &mut World, p: &Value) -> String {
         if let Some(v) = p.get("step").and_then(Value::as_i64) { pos.pending_steps += v as i32; }
         if let Some(v) = p.get("lean").and_then(Value::as_bool) { pos.lean = v; }
         if let Some(v) = p.get("breath").and_then(Value::as_bool) { pos.breath = v; }
+        if let Some(v) = p.get("auto_hands").and_then(Value::as_bool) { pos.auto_hands = v; }
         if let Some(v) = p.get("mass_kg").and_then(Value::as_f64) { pos.mass_kg = v as f32; }
         match p.get("grip") {
             Some(Value::Array(a)) if a.len() == 2 => pos.grip = Some([a[0].as_f64().unwrap_or(0.0) as f32, a[1].as_f64().unwrap_or(0.0) as f32]),
@@ -543,8 +579,9 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     });
 
     theme::section(ui, "Life layers (Overgrowth)");
+    ui.checkbox(&mut p.auto_hands, "Auto hands (fists to fight, open to cast)");
     let mut drive_hands = p.grip.is_some();
-    ui.checkbox(&mut drive_hands, "Drive hands");
+    ui.checkbox(&mut drive_hands, "Set grip by hand");
     match (drive_hands, p.grip.as_mut()) {
         (true, Some(g)) => {
             ui.add(egui::Slider::new(&mut g[0], 0.0..=1.0).text("left grip"));
@@ -575,12 +612,13 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     theme::stat(ui, "Acceleration", if r.valid { format!("{:.2} m/s2", r.acc.length()) } else { "-".into() }, theme::PAPER);
     theme::stat(ui, "Angular momentum", if r.valid { format!("{:.2} kg m2/s", r.ang.length()) } else { "-".into() }, theme::PAPER);
     theme::stat(ui, "Kinetic energy", if r.valid { format!("{:.1} J", r.ke) } else { "-".into() }, theme::PAPER);
-    let (text, col) = match r.margin {
-        None => ("airborne / no foot down".to_owned(), theme::MUTED),
+    let (text, col) = match r.dynamic_margin.or(r.margin) {
+        None => ("airborne / nothing down".to_owned(), theme::MUTED),
         Some(m) if m >= 0.0 => (format!("balanced, {:.1} cm inside", m * 100.0), theme::GOOD),
         Some(m) => (format!("falling, {:.1} cm outside", -m * 100.0), theme::BAD),
     };
-    theme::stat(ui, "Balance", text, col);
+    theme::stat(ui, "Balance (moving)", text, col);
+    theme::stat(ui, "Centre of mass over support", r.margin.map_or("-".into(), |m| format!("{:.1} cm", m * 100.0)), theme::MUTED);
     if p.history.len() > 2 {
         let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 56.0), egui::Sense::hover());
         let top = p.history.iter().map(|h| h.0).fold(0.5_f32, f32::max);

@@ -555,6 +555,7 @@ pub fn on_rig_ready(
         if let Ok((name, t)) = targets.get(e) {
             rig.bones.push(e);
             rest.0.insert(e, t.rotation);
+            rest.1.insert(e, t.translation);
             if rig.root_lock.is_none() && matches!(name.as_str(), "Motion" | "motion" | "root" | "Root_M") {
                 rig.root_lock = Some((e, t.translation));
             }

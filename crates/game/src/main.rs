@@ -109,7 +109,7 @@ fn main() {
         )
         .add_systems(
             PostUpdate,
-            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, procedural::fighters, studio::apply_corrections, possession::apply, joints::apply, knee::apply, studio::measure, possession::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
+            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, procedural::fighters, studio::apply_corrections, possession::apply, joints::apply, knee::apply, procedural::bone_lengths, studio::measure, possession::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))
