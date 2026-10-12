@@ -274,6 +274,7 @@ fn lean(world: &mut World, by_name: &HashMap<String, Entity>, tilt: Vec3) {
 /// The world point under the mouse pointer: the cursor when it is free (menus, panels), the screen centre while
 /// the mouse steers the camera (cursor locked). The ground under the ray, or 25 m out when it points at the sky.
 fn pointer_target(world: &mut World) -> Option<Vec3> {
+    let focus = world.query::<&crate::camera::OrbitCamera>().iter(world).next().map_or(4.0, |c| c.distance);
     let cursor = world
         .query_filtered::<&Window, With<bevy::window::PrimaryWindow>>()
         .iter(world)
@@ -286,8 +287,11 @@ fn pointer_target(world: &mut World) -> Option<Vec3> {
     let at = cursor.or_else(|| camera.logical_viewport_size().map(|s| s * 0.5))?;
     let ray = camera.viewport_to_world(global, at).ok()?;
     let dir = ray.direction.as_vec3();
-    let ground = (dir.y < -0.02).then(|| -ray.origin.y / dir.y).filter(|t| (1.5..60.0).contains(t));
-    Some(ray.origin + dir * ground.unwrap_or(25.0))
+    // a third-person camera's centre ray passes through the hero: aim beyond him (the camera's focus distance
+    // plus 12 m), never at the ground at his own feet, or every camera move swings the head around itself
+    let near = focus + 12.0;
+    let ground = (dir.y < -0.02).then(|| -ray.origin.y / dir.y).filter(|t| (near..80.0).contains(t));
+    Some(ray.origin + dir * ground.unwrap_or(near))
 }
 
 /// Fighters: fists in a fight, open hands for magic, relaxed out of combat; eyes on the lock or strike target,

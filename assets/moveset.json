@@ -1,28 +1,37 @@
 {
   "moves": {
-    "counter": [
-      "bp_upper_left_A",
-      "bp_hook_right_A2",
-      "bk_rh_right_A2",
-      "bk_rh_right_A"
+    "jab": [
+      "ual_punch_jab",
+      "hp_straight_left_A",
+      "hp_straight_left_Tiramis"
     ],
     "cross": [
-      "Unarmed-Attack-R1",
+      "ual_punch_cross",
       "hp_straight_right_A",
       "hp_straight_right_A2"
     ],
-    "front kick": [
-      "lk_rh_left_A"
-    ],
     "hook": [
-      "Unarmed-Attack-L2",
-      "Unarmed-Attack-R2",
-      "hp_hook_left_A"
+      "hp_hook_left_A",
+      "bp_hook_right_A",
+      "hp_hook_left_Tiramis",
+      "bp_hook_right_A2"
     ],
-    "jab": [
-      "Unarmed-Attack-L1",
-      "hp_straight_left_A",
-      "hp_straight_left_Tiramis"
+    "uppercut": [
+      "hp_upper_right_A",
+      "bp_upper_left_A",
+      "hp_upper_right_A2",
+      "bp_upper_left_A2"
+    ],
+    "roundhouse": [
+      "hk_rh_right_A2",
+      "hk_rh_right_A"
+    ],
+    "side kick": [
+      "hk_side_left_A2",
+      "hk_side_left_A"
+    ],
+    "front kick": [
+      "bk_push_left_A"
     ],
     "low kick": [
       "lk_rh_right_A2",
@@ -31,25 +40,15 @@
       "lk_rh_left_A",
       "lk_rh_right_Tiramis"
     ],
-    "roundhouse": [
-      "hk_rh_right_A2",
-      "hk_rh_right_A"
+    "counter": [
+      "bp_upper_left_A",
+      "bp_hook_right_A2",
+      "bk_rh_right_A2",
+      "bk_rh_right_A"
     ],
     "run punch": [
-      "Unarmed-Run-Forward-Attack1-Left",
-      "Unarmed-Run-Forward-Attack1-Right"
-    ],
-    "side kick": [
-      "hk_side_left_A2",
-      "hk_side_left_A"
-    ],
-    "uppercut": [
-      "Unarmed-Attack-L3",
-      "Unarmed-Attack-R3",
-      "hp_upper_right_A",
-      "bp_upper_left_A",
-      "hp_upper_right_A2",
-      "bp_upper_left_A2"
+      "ual_punch_cross",
+      "hp_straight_right_A2"
     ]
   }
 }

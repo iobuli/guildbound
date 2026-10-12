@@ -772,12 +772,13 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
         }
         K::Roll => (r.roll.clone().or(r.walk.clone()), f.action.length),
         K::Step => {
-            let right = guildbound_sim::V2::new(f.facing.z, -f.facing.x);
+            // the character's right is (-fz, fx) (the same fix as the locomotion blend; (fz, -fx) is the left)
+            let right = guildbound_sim::V2::new(-f.facing.z, f.facing.x);
             let sideways = f.velocity.dot(right);
             let forward = f.velocity.dot(f.facing);
             let name = if sideways.abs() > forward.abs() {
-                if sideways > 0.0 { "Unarmed-Strafe-Right" } else { "Unarmed-Strafe-Left" }
-            } else if forward > 0.0 { "Unarmed-Strafe-Forward" } else { "Unarmed-Strafe-Backward" };
+                if sideways > 0.0 { "nc_run_right" } else { "nc_run_left" }
+            } else if forward > 0.0 { "nc_run_forward" } else { "nc_run_backward" };
             (lib.node(name).map(|_| name.to_owned()).or(r.walk.clone()), f.action.length)
         }
         _ => (None, 0.0),

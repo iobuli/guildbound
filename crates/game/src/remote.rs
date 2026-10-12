@@ -59,7 +59,7 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
             if let Some(v) = p.get("hero_clips").and_then(Value::as_bool) { s.hero_clips = v; }
             if let Some(v) = p.get("rules").and_then(Value::as_bool) { s.rules = v; }
             if let Some(v) = p.get("select").and_then(Value::as_str) { s.selected = Some(v.to_owned()); }
-            if let Some(v) = p.get("tab").and_then(Value::as_u64).filter(|v| *v < 8) { s.tab = v as usize; }
+            if let Some(v) = p.get("tab").and_then(Value::as_u64).filter(|v| *v < 9) { s.tab = v as usize; }
         }
         if let Some(o) = open && o != world.resource::<crate::studio::Studio>().open {
             world.resource_mut::<crate::studio::Studio>().toggle_request = true;

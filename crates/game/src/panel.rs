@@ -238,7 +238,7 @@ pub fn action_name(f: &guildbound_sim::Fighter) -> String {
     }
 }
 
-fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
+pub fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
     ui.label(egui::RichText::new("Tuning (live)").strong());
     let t = &mut sim.world.tuning;
     egui::Grid::new("tuning").show(ui, |ui| {
@@ -247,6 +247,12 @@ fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.end_row();
         ui.label("run m/s");
         ui.add(egui::DragValue::new(&mut t.run_speed).speed(0.05).range(0.1..=15.0));
+        ui.end_row();
+        ui.label("sprint m/s");
+        ui.add(egui::DragValue::new(&mut t.sprint_speed).speed(0.05).range(0.1..=20.0));
+        ui.end_row();
+        ui.label("relaxed out of combat");
+        ui.checkbox(&mut t.relaxed, "jog / sprint set");
         ui.end_row();
         ui.label("turn deg/s");
         ui.add(egui::DragValue::new(&mut t.turn_rate).speed(5.0).range(30.0..=2000.0));
@@ -338,12 +344,22 @@ fn anim_section(
             }
         });
     });
+    anim_tuning(ui, anim);
+}
+
+/// Animation tuning: shared by the dev panel and the Studio's Tuning tab.
+pub fn anim_tuning(ui: &mut egui::Ui, anim: &mut AnimSettings) {
     ui.checkbox(&mut anim.inertialize, "smooth transitions (inertialize from last pose)");
+    ui.checkbox(&mut anim.blend_space, "locomotion blend space (off: nearest single clip)");
     ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk clip m/s at 1x"));
     ui.add(egui::Slider::new(&mut anim.run_reference_speed, 1.0..=8.0).text("run clip m/s at 1x"));
     ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
     ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean rad per m/s2"));
     ui.add(egui::Slider::new(&mut anim.lean_per_speed, 0.0..=0.06).text("lean rad per m/s (run lean)"));
+    ui.add(egui::Slider::new(&mut anim.lean_max, 0.0..=0.5).text("lean limit rad"));
+    if ui.button("Animation defaults").clicked() {
+        *anim = AnimSettings::default();
+    }
 }
 
 fn link_section(ui: &mut egui::Ui, remote: &RemoteActivity, now: f64) {

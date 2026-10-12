@@ -28,48 +28,44 @@
   },
   "locomotion": {
     "walk": [
-      "Unarmed-Strafe-Forward",
-      "Unarmed-Strafe-Forward-Right",
-      "Unarmed-Strafe-Right",
-      "Unarmed-Strafe-Backward-Right",
-      "Unarmed-Strafe-Backward",
-      "Unarmed-Strafe-Backward-Left",
-      "Unarmed-Strafe-Left",
-      "Unarmed-Strafe-Forward-Left"
+      "nc_walk_forward",
+      "nc_walk_forwardright",
+      "nc_walk_right",
+      "nc_walk_backwardright",
+      "nc_walk_backward",
+      "nc_walk_backwardleft",
+      "nc_walk_left",
+      "nc_walk_forwardleft"
     ],
     "run": [
-      "Unarmed-Run-Forward",
-      "Unarmed-Run-Forward-Right",
-      "Unarmed-Run-Right",
-      "Unarmed-Run-Backward-Right",
-      "Unarmed-Run-Backward",
-      "Unarmed-Run-Backward-Left",
-      "Unarmed-Run-Left",
-      "Unarmed-Run-Forward-Left"
+      "nc_run_forward",
+      "nc_run_forwardright",
+      "nc_run_right",
+      "nc_run_backwardright",
+      "nc_run_backward",
+      "nc_run_backwardleft",
+      "nc_run_left",
+      "nc_run_forwardleft"
     ]
   },
   "combat": {
     "jab": [
-      "Unarmed-Attack-L1",
+      "ual_punch_jab",
       "hp_straight_left_A",
       "hp_straight_left_Tiramis"
     ],
     "cross": [
-      "Unarmed-Attack-R1",
+      "ual_punch_cross",
       "hp_straight_right_A",
       "hp_straight_right_A2"
     ],
     "hook": [
-      "Unarmed-Attack-L2",
-      "Unarmed-Attack-R2",
       "hp_hook_left_A",
       "bp_hook_right_A",
       "hp_hook_left_Tiramis",
       "bp_hook_right_A2"
     ],
     "uppercut": [
-      "Unarmed-Attack-L3",
-      "Unarmed-Attack-R3",
       "hp_upper_right_A",
       "bp_upper_left_A",
       "hp_upper_right_A2",
@@ -100,28 +96,28 @@
       "bk_rh_right_A"
     ],
     "run punch": [
-      "Unarmed-Run-Forward-Attack1-Left",
-      "Unarmed-Run-Forward-Attack1-Right"
+      "ual_punch_cross",
+      "hp_straight_right_A2"
     ]
   },
   "roles": {
-    "idle": "Unarmed-Idle",
-    "walk": "Unarmed-Strafe-Forward",
-    "run": "Unarmed-Run-Forward",
-    "back": "Unarmed-Strafe-Backward",
+    "idle": "nc_idle",
+    "walk": "nc_walk_forward",
+    "run": "nc_run_forward",
+    "back": "nc_walk_backward",
     "hit": "hd_front_A",
     "hit_body": "bd_front_A",
     "hit_low": "ld_front_A",
     "block": "hb_front_A",
     "block_body": "bb_front_A",
     "block_low": "lb_front_A",
-    "guard": "Unarmed-Idle",
-    "spell_charge": "Unarmed-Idle",
-    "knockdown": "Unarmed-Knockdown1",
-    "getup": "Unarmed-Getup1",
-    "jump": "Unarmed-Jump",
-    "fall": "Unarmed-Fall",
-    "roll": "Unarmed-DiveRoll-Forward1",
+    "guard": "mx_block",
+    "spell_charge": "nc_idle",
+    "knockdown": "knockdown_A",
+    "getup": "getup_A",
+    "jump": "nc_jump_begin",
+    "fall": "nc_fall",
+    "roll": "ual_roll",
     "dizzy": "mx_dizzy",
     "drink": "ual_consume",
     "hit_back": "mx_hit_back",

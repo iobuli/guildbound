@@ -30,7 +30,7 @@ use crate::ui_theme::{self as theme, Kit};
 /// Where models are staged: a cleared spot north-west of the courtyard.
 pub const STAGE: Vec3 = Vec3::new(-30.0, 0.0, 30.0);
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
-const TABS: [&str; 8] = ["Inspect", "Possession", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+const TABS: [&str; 9] = ["Inspect", "Possession", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -207,7 +207,7 @@ pub fn plugin(app: &mut App) {
         .insert_resource(HudLayout::load())
         .init_resource::<Studio>()
         .add_systems(Startup, scan)
-        .add_systems(Update, (toggle, spawn_model, drive, pick, draw_skeleton).chain())
+        .add_systems(Update, (toggle, spawn_model, drive, pick, drag_bone, draw_skeleton).chain())
         .add_systems(bevy_egui::EguiPrimaryContextPass, ui);
 }
 
@@ -472,6 +472,28 @@ fn pick(
     }
 }
 
+/// Pose by hand: with a bone selected, right-drag on the stage rotates it (sideways turns, up/down tilts) and the
+/// wheel rolls it; each change goes into the Possession override on top of the clip.
+fn drag_bone(
+    studio: Res<Studio>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    motion: Res<bevy::input::mouse::AccumulatedMouseMotion>,
+    scroll: Res<bevy::input::mouse::AccumulatedMouseScroll>,
+    wants: Res<bevy_egui::input::EguiWantsInput>,
+    mut possession: ResMut<crate::possession::Possession>,
+) {
+    let Some(bone) = studio.selected.clone().filter(|_| studio.open && !wants.wants_any_pointer_input()) else { return };
+    let drag = if mouse.pressed(MouseButton::Right) { motion.delta } else { Vec2::ZERO };
+    let roll = scroll.delta.y;
+    if drag == Vec2::ZERO && roll == 0.0 {
+        return;
+    }
+    let o = possession.overrides.entry(bone).or_insert(crate::possession::BoneOverride { euler: Vec3::ZERO, absolute: false });
+    o.euler.y = (o.euler.y + drag.x * 0.35).clamp(-180.0, 180.0);
+    o.euler.x = (o.euler.x + drag.y * 0.35).clamp(-180.0, 180.0);
+    o.euler.z = (o.euler.z + roll * 3.0).clamp(-180.0, 180.0);
+}
+
 /// Skeleton overlay: teal bones, red where a joint is outside its range, gold for the selection.
 fn draw_skeleton(studio: Res<Studio>, rigs: Query<&StudioRig>, bones: Query<(&Name, &GlobalTransform, Option<&ChildOf>)>, mut gizmos: Gizmos<StudioGizmos>) {
     if !studio.open {
@@ -649,7 +671,7 @@ fn ui(
     diag: Res<DiagnosticsStore>,
     kit: Option<Res<Kit>>,
     lib: Option<Res<AnimLibrary>>,
-    sim: Res<Sim>,
+    mut sim: ResMut<Sim>,
     mut feed: ResMut<crate::feed::DevFeed>,
     assets: Res<AssetServer>,
     bodies: Query<(), With<avian3d::prelude::RigidBody>>,
@@ -657,6 +679,7 @@ fn ui(
     mut physical: ResMut<crate::possession::PhysicalBody>,
     names: Query<&Name>,
     rigs: Query<&StudioRig>,
+    mut anim: ResMut<crate::anim::AnimSettings>,
 ) -> Result {
     if !studio.open {
         return Ok(());
@@ -760,7 +783,7 @@ fn ui(
                 }
                 ui.horizontal(|ui| {
                     if theme::button(ui, kit, "Play run > jump > punch", !possession.sequence.is_empty()).clicked() {
-                        possession.sequence = vec!["Unarmed-Run-Forward".into(), "Unarmed-Jump".into(), "Unarmed-Attack-R1".into()];
+                        possession.sequence = vec!["nc_run_forward".into(), "nc_jump_begin".into(), "ual_punch_cross".into()];
                         possession.seq_time = 0.0;
                         studio.playing = true;
                     }
@@ -780,9 +803,16 @@ fn ui(
                 }
                 crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
             }
-            2 => moveset_tab(ui, studio, kit, lib.as_deref()),
-            3 => corrections_tab(ui, &mut corr),
-            4 => {
+            2 => {
+                theme::section(ui, "Motion tuning (live: hero and NPC walkers)");
+                ui.label(egui::RichText::new("The drag motor, speeds and turn rate shape how every character moves; the clip speeds keep feet on the ground.").size(11.0).color(theme::MUTED));
+                crate::panel::tuning_section(ui, &mut sim);
+                theme::section(ui, "Animation tuning");
+                crate::panel::anim_tuning(ui, &mut anim);
+            }
+            3 => moveset_tab(ui, studio, kit, lib.as_deref()),
+            4 => corrections_tab(ui, &mut corr),
+            5 => {
                 theme::section(ui, "Patterns across clips and models");
                 ui.label(egui::RichText::new("Repeated fixes become library-wide rules; repeated notes show where the pipeline is wrong.").size(11.0).color(theme::MUTED));
                 let notes = read_notes();
@@ -847,7 +877,7 @@ fn ui(
                     studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
-            5 => {
+            6 => {
                 theme::section(ui, "Notes sent to Claude");
                 for n in read_notes().iter().rev().take(30) {
                     ui.label(egui::RichText::new(format!("{}  {} @ {:.2}s  {}", n["model"].as_str().unwrap_or(""), n["clip"].as_str().unwrap_or(""), n["time"].as_f64().unwrap_or(0.0), n["bone"].as_str().unwrap_or(""))).size(11.0).color(theme::MUTED));
@@ -855,7 +885,7 @@ fn ui(
                     ui.separator();
                 }
             }
-            6 => {
+            7 => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
                 for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {
