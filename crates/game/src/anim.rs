@@ -421,7 +421,9 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
             }
         }
         let contact = clip.and_then(|c| lib.contact_timing.get(c)).map(|t| serde_json::json!({"start": t.start, "peak": t.peak, "end": t.end, "duration_s": lib.duration(clip.unwrap())}));
+        let loco: Vec<&String> = rig.loco.iter().filter_map(|node| lib.clips.iter().find(|(_, n)| n == node).map(|(c, _)| c)).collect();
         serde_json::json!({"fighter": rig.fighter, "clip": clip, "seek_s": seek, "gait_phase": rig.gait_phase, "contact_timing": contact,
+                          "one_shot": rig.one_shot, "loco_clips": loco,
                           "bones": rig.bones.len(), "finite": finite, "pose_hash": format!("{hash:016x}"), "rule_sample": rig.rule_sample, "geometry": geometry})
     }).collect();
     let knees = world.get_resource::<crate::knee::KneeStats>().copied().unwrap_or_default();

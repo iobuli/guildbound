@@ -280,7 +280,6 @@ pub fn fighters(world: &mut World) {
     let rigs: Vec<(Entity, usize, Vec<Entity>, f32)> = q.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone(), r.chest_aim())).collect();
     let sim = world.resource::<crate::sim_bridge::Sim>();
     let dt = sim.frame_step_s;
-    let t = sim.world.tick as f32 / 120.0;
     let mut jobs = Vec::new();
     for (root, i, bones, chest_yaw) in rigs {
         let Some(f) = sim.world.fighters.get(i) else { continue };
@@ -303,13 +302,13 @@ pub fn fighters(world: &mut World) {
         } else if let Some(p) = f.lock_target.or(f.strike_target).and_then(head_of) {
             Some((p, 1.0))
         } else if i == 0 {
-            // player: where the camera looks; while running, glance down the road now and then
+            // player: down the road while moving fast, where the camera looks otherwise (no alternating
+            // glances: switching targets every second swung the head back and forth - boss, 2026-10-12)
             let speed = f.velocity.length();
-            let road = speed > 0.5 && (t * 3.0).sin() + (t * 2.3).sin() > 0.0;
-            if road {
-                Some((me + Vec3::new(f.velocity.x, 0.0, f.velocity.z).normalize_or_zero() * 20.0, 0.8))
+            if speed > 2.5 {
+                Some((me + Vec3::new(f.velocity.x, 0.0, f.velocity.z).normalize_or_zero() * 20.0, 0.5))
             } else {
-                cam.map(|(_, dir)| (me + dir * 30.0, 0.8))
+                cam.map(|(_, dir)| (me + Vec3::new(dir.x, dir.y.clamp(-0.3, 0.3), dir.z) * 30.0, 0.6))
             }
         } else {
             head_of(0).filter(|p| (*p - me).length() < 8.0 && (*p - me).normalize_or_zero().dot(forward) > -0.2).map(|p| (p, 0.9))

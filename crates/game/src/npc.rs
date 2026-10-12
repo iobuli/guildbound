@@ -3,8 +3,14 @@
 //! them. Each NPC loads its own GLB, gets an animation graph from that file's clips, and either holds an
 //! idle loop or walks a closed route. Standing NPCs are sim obstacles (props::obstacles) so fighters walk
 //! around them. Add a row to NPCS to add a person.
+//!
+//! Walkers move with the shared locomotion (locomotion.rs: the hero's tuned drag motor, turning and relaxed
+//! blend space on the hero library, which plays on these rigs because they share the hero's bone names); they
+//! ease in and out of their pace and pause at each corner. Everyone gets the life layers: breathing, relaxed
+//! hands on walkers, and a look at the player when near.
 use std::collections::HashMap;
 
+use bevy::animation::AnimationTargetId;
 use bevy::gltf::Gltf;
 use bevy::prelude::*;
 use bevy::world_serialization::{WorldAsset, WorldAssetRoot, WorldInstanceReady};
@@ -33,14 +39,28 @@ pub const NPCS: &[Row] = &[
     ("male_peasant", 14.0, 1.0, 0.0, "npc_walk", ROAD_EAST),
 ];
 
-const WALK_SPEED: f32 = 1.25;
+/// A walker's pace (m/s): the carrier dawdles, the east road walker jogs, the rest stroll.
+fn pace(row: usize) -> f32 {
+    match NPCS[row].4 {
+        "npc_carry" => 1.1,
+        _ if NPCS[row].5 == ROAD_EAST => 3.4,
+        _ => 1.35 + 0.2 * (row % 2) as f32,
+    }
+}
 
 #[derive(Component)]
 pub struct Npc {
     pub row: usize,
     leg: usize,
-    /// Distance along the current route leg (m).
-    along: f32,
+    mover: crate::locomotion::Mover,
+    /// Seconds left standing at a corner.
+    pause: f32,
+}
+
+/// The NPC's animated bones, for the life layers.
+#[derive(Component)]
+pub struct NpcRig {
+    bones: Vec<Entity>,
 }
 
 #[derive(Resource, Default)]
@@ -64,7 +84,7 @@ pub fn spawn(mut commands: Commands, assets: Res<AssetServer>, mut libs: ResMut<
         let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path));
         // pack models face +Z; turn them to the row's heading
         commands
-            .spawn((Npc { row: i, leg: 0, along: 0.0 }, WorldAssetRoot(scene), Transform::from_xyz(x, 0.0, z).with_rotation(Quat::from_rotation_y(yaw.to_radians()))))
+            .spawn((Npc { row: i, leg: 0, mover: crate::locomotion::Mover::new(yaw.to_radians()), pause: 0.0 }, WorldAssetRoot(scene), Transform::from_xyz(x, 0.0, z).with_rotation(Quat::from_rotation_y(yaw.to_radians()))))
             .observe(on_ready);
     }
 }
@@ -87,25 +107,67 @@ pub struct NpcPlayer {
     npc: Entity,
 }
 
-fn on_ready(ready: On<WorldInstanceReady>, mut commands: Commands, children: Query<&Children>, players: Query<(), With<AnimationPlayer>>) {
+fn on_ready(ready: On<WorldInstanceReady>, mut commands: Commands, children: Query<&Children>, players: Query<(), With<AnimationPlayer>>, targets: Query<&Transform, With<AnimationTargetId>>) {
+    let mut bones = Vec::new();
+    let mut rest = crate::procedural::RestPose::default();
     for e in children.iter_descendants(ready.entity) {
         if players.contains(e) {
             commands.entity(e).insert(NpcPlayer { npc: ready.entity });
         }
+        if let Ok(t) = targets.get(e) {
+            bones.push(e);
+            rest.0.insert(e, t.rotation);
+            rest.1.insert(e, t.translation);
+        }
     }
+    commands.entity(ready.entity).insert((NpcRig { bones }, rest, crate::procedural::Life::default()));
 }
 
 /// Attach the graph and start the row's loop once both the scene and the graph exist; walk the routes.
+#[allow(clippy::too_many_arguments)]
 pub fn drive(
     mut commands: Commands,
     libs: Res<NpcLibraries>,
+    hero: Res<crate::anim::AnimLibrary>,
+    settings: Res<crate::anim::AnimSettings>,
+    map: Res<crate::controller::LocomotionMap>,
+    sim: Res<crate::sim_bridge::Sim>,
     time: Res<Time>,
     mut npcs: Query<(&mut Npc, &mut Transform)>,
     mut players: Query<(Entity, &NpcPlayer, &mut AnimationPlayer, Option<&AnimationGraphHandle>)>,
 ) {
+    let tuning = &sim.world.tuning;
+    let dt = time.delta_secs();
     for (e, link, mut player, graph) in &mut players {
-        let Ok((npc, _)) = npcs.get(link.npc) else { continue };
-        let (model, .., clip, _) = NPCS[npc.row];
+        let Ok((mut npc, mut t)) = npcs.get_mut(link.npc) else { continue };
+        let (model, .., clip, route) = NPCS[npc.row];
+        if route.len() >= 2 && let Some(hero_graph) = hero.graph.clone() {
+            // walker: the shared motor and the hero's relaxed locomotion
+            if graph.is_none_or(|g| g.0 != hero_graph) {
+                commands.entity(e).insert(AnimationGraphHandle(hero_graph));
+                continue;
+            }
+            let mut pos = t.translation;
+            let next = (npc.leg + 1) % route.len();
+            let goal = Vec3::new(route[next].0, 0.0, route[next].1);
+            let want = if npc.pause > 0.0 {
+                npc.pause -= dt;
+                None
+            } else if pos.distance(goal) < 0.5 {
+                // arrived: stand a moment at the corner (deterministic per row and leg), then the next leg
+                npc.leg = next;
+                npc.pause = 1.2 + ((npc.row * 7 + npc.leg * 3) % 5) as f32 * 0.45;
+                None
+            } else {
+                Some(((goal - pos).normalize_or_zero(), pace(npc.row)))
+            };
+            let travelled = crate::locomotion::step(&mut npc.mover, &mut pos, want, tuning, dt);
+            t.translation = Vec3::new(pos.x, 0.0, pos.z);
+            t.rotation = Quat::from_rotation_y(npc.mover.yaw);
+            let idle = if hero.node("nc_idle").is_some() { "nc_idle" } else { "Unarmed-Idle" };
+            crate::locomotion::animate(&mut player, &hero, &map, &settings, tuning, &mut npc.mover, travelled, idle);
+            continue;
+        }
         let Some((handle, index)) = libs.graphs.get(model) else { continue };
         if graph.is_none() {
             commands.entity(e).insert(AnimationGraphHandle(handle.clone()));
@@ -117,25 +179,29 @@ pub fn drive(
             player.start(node).repeat().seek_to(offset * 2.0);
         }
     }
-    let dt = time.delta_secs();
-    for (mut npc, mut t) in &mut npcs {
-        let route = NPCS[npc.row].5;
-        if route.len() < 2 {
-            continue;
-        }
-        let a = Vec3::new(route[npc.leg].0, 0.0, route[npc.leg].1);
-        let next = (npc.leg + 1) % route.len();
-        let b = Vec3::new(route[next].0, 0.0, route[next].1);
-        let len = a.distance(b).max(0.01);
-        npc.along += WALK_SPEED * dt;
-        if npc.along >= len {
-            npc.along -= len;
-            npc.leg = next;
-            continue;
-        }
-        let dir = (b - a) / len;
-        t.translation = a + dir * npc.along;
-        let want = Quat::from_rotation_y(dir.x.atan2(dir.z));
-        t.rotation = t.rotation.slerp(want, (8.0 * dt).min(1.0));
+}
+
+/// Life layers on every NPC: breathing, relaxed hands on walkers, and a look at the player when near.
+pub fn life(world: &mut World) {
+    let player_head = world.resource::<crate::sim_bridge::Sim>().world.fighters.first().map(|f| Vec3::new(f.position.x, f.height + 1.55, f.position.z));
+    let dt = world.resource::<Time>().delta_secs();
+    let mut q = world.query::<(Entity, &Npc, &NpcRig, &Transform)>();
+    let jobs: Vec<_> = q.iter(world).map(|(e, n, r, t)| (e, NPCS[n.row].5.len() >= 2, n.mover.velocity.length(), r.bones.clone(), t.translation, t.rotation * Vec3::Z)).collect();
+    for (root, walker, speed, bones, at, forward) in jobs {
+        let look = player_head.filter(|p| {
+            let to = *p - (at + Vec3::Y * 1.55);
+            to.length() < 7.0 && to.normalize_or_zero().dot(forward) > -0.2
+        }).map(|p| (p, 0.9));
+        let drive = crate::procedural::Drive {
+            grip: walker.then_some([0.3, 0.3]),
+            look,
+            forward,
+            chest_yaw: 0.0,
+            breath: 1.0,
+            exertion: (speed / 6.0).clamp(0.0, 1.0),
+            lean: None,
+            dt,
+        };
+        crate::procedural::apply(world, root, &bones, &drive);
     }
 }

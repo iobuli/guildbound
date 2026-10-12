@@ -18,6 +18,7 @@ mod menu;
 mod motion_timing;
 mod motion_math;
 mod npc;
+mod locomotion;
 mod panel;
 mod possession;
 mod procedural;
@@ -118,6 +119,7 @@ fn main() {
             (anim::inertialize, anim::lock_root_motion, generated_motion::apply, procedural::bone_lengths, anim::procedural_layers, support::apply, guard_ik::apply, procedural::fighters, studio::apply_corrections, possession::apply, support::stage, generated_motion::plant_feet, joints::apply, body_clearance::apply, joints::apply, knee::apply, studio::measure, possession::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
+        .add_systems(PostUpdate, npc::life.after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First))
         .add_systems(PostUpdate, possession::physical_drive.after(possession::measure).before(ragdoll::prepare))
         .add_systems(PostUpdate, possession::physical_skin.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))
