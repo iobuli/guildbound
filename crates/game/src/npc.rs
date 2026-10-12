@@ -141,12 +141,9 @@ pub fn drive(
     for (e, link, mut player, graph) in &mut players {
         let Ok((mut npc, mut t)) = npcs.get_mut(link.npc) else { continue };
         let (model, .., clip, route) = NPCS[npc.row];
-        if route.len() >= 2 && let Some(hero_graph) = hero.graph.clone() {
-            // walker: the shared motor and the hero's relaxed locomotion
-            if graph.is_none_or(|g| g.0 != hero_graph) {
-                commands.entity(e).insert(AnimationGraphHandle(hero_graph));
-                continue;
-            }
+        if route.len() >= 2 {
+            // walker: the shared motor always moves it; it animates with the hero's relaxed locomotion once that
+            // library is loaded, with its own walk loop until then
             let mut pos = t.translation;
             let next = (npc.leg + 1) % route.len();
             let goal = Vec3::new(route[next].0, 0.0, route[next].1);
@@ -164,9 +161,18 @@ pub fn drive(
             let travelled = crate::locomotion::step(&mut npc.mover, &mut pos, want, tuning, dt);
             t.translation = Vec3::new(pos.x, 0.0, pos.z);
             t.rotation = Quat::from_rotation_y(npc.mover.yaw);
-            let idle = if hero.node("nc_idle").is_some() { "nc_idle" } else { "Unarmed-Idle" };
-            crate::locomotion::animate(&mut player, &hero, &map, &settings, tuning, &mut npc.mover, travelled, idle);
-            continue;
+            if let Some(hero_graph) = hero.graph.clone() {
+                if graph.is_none_or(|g| g.0 != hero_graph) {
+                    // anything started on the old graph would replay as an unrelated hero clip: start clean
+                    player.stop_all();
+                    npc.mover.clear_blend();
+                    commands.entity(e).insert(AnimationGraphHandle(hero_graph));
+                    continue;
+                }
+                let idle = if hero.node("nc_idle").is_some() { "nc_idle" } else { "Unarmed-Idle" };
+                crate::locomotion::animate(&mut player, &hero, &map, &settings, tuning, &mut npc.mover, travelled, idle);
+                continue;
+            }
         }
         let Some((handle, index)) = libs.graphs.get(model) else { continue };
         if graph.is_none() {

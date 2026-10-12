@@ -23,6 +23,11 @@ impl Mover {
         Self { yaw, ..default() }
     }
 
+    /// Forget the clips of the last blend (after the player's graph changed).
+    pub fn clear_blend(&mut self) {
+        self.loco.clear();
+    }
+
     pub fn forward(&self) -> Vec3 {
         Vec3::new(self.yaw.sin(), 0.0, self.yaw.cos())
     }

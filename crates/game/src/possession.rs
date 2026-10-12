@@ -113,7 +113,8 @@ impl Default for Possession {
             look: LookMode::Off, lean: false, breath: false, mass_kg: 75.0, readout: Readout::default(), last: None, history: VecDeque::new(),
             bone_filter: String::new(), status: String::new(),
             motion: None, plant_anchors: [None; 2],
-            reference_corrector: true,
+            // a Studio tool: on gameplay fighters it replaced the locomotion blend with one dominant clip
+            reference_corrector: false,
         }
     }
 }
@@ -290,7 +291,8 @@ pub fn measure(world: &mut World) {
     let margin = (hull.len() >= 3).then(|| inside_margin(&hull, Vec2::new(com.x, com.z)));
     let (clip, time) = {
         let s = world.resource::<Studio>();
-        (if world.resource::<Possession>().motion.is_some() { "generated motion".into() } else { s.clip.clone().unwrap_or_default() }, s.time)
+        let p = world.resource::<Possession>();
+        (if p.motion.is_some() { "generated motion".into() } else if !p.sequence.is_empty() { "blend sequence".into() } else { s.clip.clone().unwrap_or_default() }, s.time)
     };
     let mut p = world.resource_mut::<Possession>();
     let mass = p.mass_kg;
@@ -396,6 +398,10 @@ fn draw(studio: Res<Studio>, p: Res<Possession>, mut gizmos: Gizmos<StudioGizmos
 
 /// Offsets become correction keys at the current clip phase (merged into the ledger).
 pub fn save_corrections(p: &Possession, studio: &Studio, corr: &mut Corrections) -> usize {
+    // the pose under a generated motion or a blend sequence is not the selected clip at its phase
+    if p.motion.is_some() || !p.sequence.is_empty() {
+        return 0;
+    }
     let Some(clip) = studio.clip.clone() else { return 0 };
     let t = (studio.time / studio.duration.max(0.01)).clamp(0.0, 1.0);
     let mut n = 0;
@@ -763,6 +769,8 @@ mod tests {
 #[derive(Resource, Default)]
 pub struct PhysicalBody {
     doll: Option<crate::ragdoll::Doll>,
+    /// The stage root the doll was built for.
+    doll_root: Option<Entity>,
     pub on: bool,
     pub assist: f32,
     pub motor: f32,
@@ -798,7 +806,11 @@ pub fn physical_drive(world: &mut World) {
         return;
     }
     let (root, bones) = stage.unwrap();
-    if pb.doll.is_none() {
+    if pb.doll_root != Some(root) && let Some(mut d) = pb.doll.take() {
+        crate::ragdoll::remove_bodies(world, &mut d);
+    }
+    if pb.doll.is_none() && !bones.is_empty() {
+        pb.doll_root = Some(root);
         let fwd = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
         pb.doll = crate::ragdoll::build_with(world, &bones, usize::MAX, Vec3::ZERO, fwd);
         if pb.doll.is_none() {

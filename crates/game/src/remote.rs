@@ -49,6 +49,12 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
             let mut s = world.resource_mut::<crate::studio::Studio>();
             if let Some(v) = p.get("spawn").and_then(Value::as_str) { s.request_spawn(v.to_owned()); }
             if let Some(v) = p.get("clip").and_then(Value::as_str) { s.clip = Some(v.to_owned()); s.time = 0.0; }
+        }
+        if p.get("clip").and_then(Value::as_str).is_some() {
+            world.resource_mut::<crate::possession::Possession>().sequence.clear();
+        }
+        {
+            let mut s = world.resource_mut::<crate::studio::Studio>();
             if let Some(v) = p.get("time").and_then(Value::as_f64) { s.time = v as f32; s.playing = false; }
             if let Some(v) = p.get("hero_clips").and_then(Value::as_bool) { s.hero_clips = v; }
             if let Some(v) = p.get("rules").and_then(Value::as_bool) { s.rules = v; }

@@ -256,6 +256,7 @@ fn toggle(keys: Res<ButtonInput<KeyCode>>, mut studio: ResMut<Studio>, mut sim: 
 fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<AssetServer>, mut possession: ResMut<crate::possession::Possession>) {
     let Some(path) = studio.spawn_request.take() else { return };
     possession.motion = None;
+    possession.sequence.clear();
     possession.plant_anchors = [None; 2];
     possession.overrides.clear();
     possession.aims.clear();
@@ -370,49 +371,58 @@ pub fn drive(
         if clips.is_empty() {
             return;
         }
-        let fade = possession.seq_fade;
+        // a crossfade longer than half a clip would overlap its windows (weights jump, or a clip drops out)
+        let shortest = clips.iter().map(|c| c.2).fold(f32::INFINITY, f32::min);
+        let fade = possession.seq_fade.min(shortest * 0.45);
         let total: f32 = clips.iter().map(|c| c.2 - fade).sum::<f32>().max(0.1);
-        if studio.playing {
-            possession.seq_time = (possession.seq_time + time.delta_secs() * studio.speed).rem_euclid(total);
-        }
+        let advance = if studio.playing { time.delta_secs() * studio.speed } else { 0.0 };
+        possession.seq_time = (possession.seq_time + advance).rem_euclid(total);
         let mut start = 0.0;
-        let mut now = Vec::new();
-        for (i, (name, _, d)) in clips.iter().enumerate() {
+        let mut entries = Vec::new();
+        for (i, (_, _, d)) in clips.iter().enumerate() {
             let local = possession.seq_time - start;
             if (0.0..d - fade).contains(&local) {
-                // this clip, plus the next fading in over its last `fade` seconds
+                // this clip, plus the next fading in over its last `fade` seconds; a clip has already played
+                // `fade` seconds while fading in, so its own window continues from there (no pop at the loop)
                 let into = ((local - (d - 2.0 * fade)) / fade.max(1e-3)).clamp(0.0, 1.0);
-                now.push((i, local + fade.min(start), 1.0 - into));
-                let _ = name;
+                entries.push((i, local + fade, 1.0 - into));
                 if into > 0.0 {
-                    now.push(((i + 1) % clips.len(), local - (d - 2.0 * fade), into));
+                    entries.push(((i + 1) % clips.len(), local - (d - 2.0 * fade), into));
                 }
             }
             start += d - fade;
         }
-        // anything else still playing (the single clip from before) would hold the pose: stop it
-        let live: Vec<AnimationNodeIndex> = now.iter().map(|n| clips[n.0].1).collect();
-        let stale: Vec<AnimationNodeIndex> = player.playing_animations().map(|(n, _)| *n).filter(|n| !live.contains(n)).collect();
+        // one blend per animation node: a clip named twice in the sequence is one node
+        let mut active: Vec<(AnimationNodeIndex, usize, f32, f32)> = Vec::new();
+        for (i, t, w) in entries {
+            match active.iter_mut().find(|a| a.0 == clips[i].1) {
+                Some(a) => {
+                    if w > a.3 {
+                        (a.1, a.2) = (i, t);
+                    }
+                    a.3 += w;
+                }
+                None => active.push((clips[i].1, i, t, w)),
+            }
+        }
+        let stale: Vec<AnimationNodeIndex> = player.playing_animations().map(|(n, _)| *n).filter(|n| !active.iter().any(|a| a.0 == *n)).collect();
         for n in stale {
             player.stop(n);
         }
-        for (i, (_, node, _)) in clips.iter().enumerate() {
-            match now.iter().find(|n| n.0 == i) {
-                Some(&(_, t, w)) => {
-                    if !player.is_playing_animation(*node) {
-                        player.play(*node);
-                    }
-                    if let Some(a) = player.animation_mut(*node) {
-                        a.set_speed(0.0).set_seek_time(t.clamp(0.0, clips[i].2)).set_weight(w);
-                    }
-                }
-                None => {
-                    player.stop(*node);
-                }
+        for &(node, i, t, w) in &active {
+            if !player.is_playing_animation(node) {
+                player.play(node);
+            }
+            if let Some(a) = player.animation_mut(node) {
+                a.set_speed(0.0).set_seek_time(t.clamp(0.0, clips[i].2)).set_weight(w.min(1.0));
             }
         }
-        possession.seq_now = now.iter().map(|&(i, _, w)| (clips[i].0.clone(), w)).collect();
-        studio.clip = Some("sequence".into());
+        possession.seq_now = active.iter().map(|&(_, i, _, w)| (clips[i].0.clone(), w.min(1.0))).collect();
+        // studio.clip always names a real clip (the strongest one now), so ending the sequence any way leaves a
+        // playable selection; corrections and stage support stay off while a sequence plays
+        if let Some(&(_, i, _, _)) = active.iter().max_by(|a, b| a.3.total_cmp(&b.3)) {
+            studio.clip = Some(clips[i].0.clone());
+        }
         // the physics readout follows sequence time (velocity across the blends, not per clip)
         studio.time = possession.seq_time;
         studio.duration = total;
@@ -562,7 +572,8 @@ pub fn apply_corrections(world: &mut World) {
         }
     }
     let s = world.resource::<Studio>();
-    if world.resource::<crate::possession::Possession>().motion.is_none()
+    let p = world.resource::<crate::possession::Possession>();
+    if p.motion.is_none() && p.sequence.is_empty()
         && let (Some(e), Some(clip)) = (s.entity, s.clip.clone()) && let Some(r) = world.get::<StudioRig>(e) {
         jobs.push((clip, s.time / s.duration.max(0.01), r.bones.clone()));
     }
@@ -675,6 +686,7 @@ fn ui(
     });
 
     // asset browser
+    let mut picked_clip = false;
     egui::Panel::left("studio_assets").default_size(300.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
         theme::dock_backdrop(ui, kit, ui.max_rect());
         theme::section(ui, "Assets");
@@ -715,10 +727,16 @@ fn ui(
                 if ui.selectable_label(studio.clip.as_deref() == Some(n.as_str()), egui::RichText::new(format!("{n}   {d:.2}s")).size(11.5)).clicked() {
                     studio.clip = Some(n.clone());
                     studio.time = 0.0;
+                    picked_clip = true;
                 }
             }
         });
     });
+
+    // picking a clip ends a blend sequence
+    if picked_clip {
+        possession.sequence.clear();
+    }
 
     // inspector / tabs
     egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
@@ -747,8 +765,8 @@ fn ui(
                         studio.playing = true;
                     }
                     if theme::button(ui, kit, "Stop sequence", false).clicked() {
+                        // studio.clip already names the clip that was playing; stay on it
                         possession.sequence.clear();
-                        studio.clip = Some("Unarmed-Idle".into());
                         studio.time = 0.0;
                     }
                 });

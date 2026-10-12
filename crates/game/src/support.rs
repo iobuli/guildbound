@@ -85,7 +85,11 @@ pub struct StageSupport {
 /// Studio clips use their measured contact curves, rather than the COM balance estimate.
 pub fn stage(world: &mut World) {
     let s = world.resource::<crate::studio::Studio>();
-    if !s.open || world.resource::<crate::possession::Possession>().motion.is_some() { return; }
+    let p = world.resource::<crate::possession::Possession>();
+    let on = world.get_resource::<SupportSettings>().is_none_or(|x| x.enabled);
+    // off with the support switch, the stage's authority rules, Possession, or while a generated motion or a
+    // blend sequence owns the pose (its clip and phase are not the selected clip's)
+    if !s.open || !on || !s.rules || !p.enabled || p.motion.is_some() || !p.sequence.is_empty() { return; }
     let (Some(root), Some(clip), Some(path)) = (s.entity, s.clip.clone(), s.model.clone()) else { return };
     let time = s.time;
     let Some(bones) = world.get::<crate::studio::StudioRig>(root).map(|r| r.bones.clone()) else { return };
