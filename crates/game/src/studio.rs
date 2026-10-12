@@ -253,8 +253,12 @@ fn toggle(keys: Res<ButtonInput<KeyCode>>, mut studio: ResMut<Studio>, mut sim: 
     }
 }
 
-fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<AssetServer>) {
+fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<AssetServer>, mut possession: ResMut<crate::possession::Possession>) {
     let Some(path) = studio.spawn_request.take() else { return };
+    possession.motion = None;
+    possession.plant_anchors = [None; 2];
+    possession.overrides.clear();
+    possession.aims.clear();
     if let Some(e) = studio.entity.take() {
         commands.entity(e).despawn();
     }
@@ -280,6 +284,8 @@ fn on_ready(
     players: Query<(), With<AnimationPlayer>>,
     targets: Query<&Transform, With<AnimationTargetId>>,
     mut rigs: Query<&mut StudioRig>,
+    studio: Res<Studio>,
+    mut possession: ResMut<crate::possession::Possession>,
 ) {
     let Ok(mut rig) = rigs.get_mut(ready.entity) else { return };
     rig.bones.clear();
@@ -294,11 +300,13 @@ fn on_ready(
             rest.1.insert(e, t.translation);
         }
     }
-    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default()));
+    let profile = studio.model.as_deref().map(crate::rig_profile::RigProfile::load).unwrap_or_default();
+    possession.mass_kg = profile.mass_kg;
+    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default(), profile));
 }
 
 /// Build the model's own clip graph once loaded; attach the chosen graph; advance and seek the timeline.
-fn drive(
+pub fn drive(
     mut commands: Commands,
     mut studio: ResMut<Studio>,
     time: Res<Time>,
@@ -331,6 +339,13 @@ fn drive(
     rig.rules = studio.rules;
     let Some(pe) = rig.player else { return };
     let Ok(mut player) = players.get_mut(pe) else { return };
+    if let Some(motion) = possession.motion.as_ref().filter(|_| possession.enabled) {
+        studio.duration = motion.duration;
+        let (playing, speed, duration) = (studio.playing && studio.open, studio.speed, studio.duration);
+        possession.advance(&mut studio.time, playing, time.delta_secs(), speed, duration);
+        player.stop_all();
+        return;
+    }
     let source: Option<(Handle<AnimationGraph>, Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)> = if studio.hero_clips {
         lib.as_ref().and_then(|l| l.graph.clone()).map(|g| {
             let names: HashMap<String, (AnimationNodeIndex, f32)> = lib.as_ref().unwrap().clips.iter().map(|(n, node)| (n.clone(), (*node, lib.as_ref().unwrap().duration(n)))).collect();
@@ -349,12 +364,66 @@ fn drive(
         player.stop_all();
         return;
     }
+    if !possession.sequence.is_empty() {
+        // blend sequence: each clip plays through, crossfading into the next over the fade time; loops
+        let clips: Vec<(String, AnimationNodeIndex, f32)> = possession.sequence.iter().filter_map(|c| find(c).map(|(n, d)| (c.clone(), n, d.max(0.05)))).collect();
+        if clips.is_empty() {
+            return;
+        }
+        let fade = possession.seq_fade;
+        let total: f32 = clips.iter().map(|c| c.2 - fade).sum::<f32>().max(0.1);
+        if studio.playing {
+            possession.seq_time = (possession.seq_time + time.delta_secs() * studio.speed).rem_euclid(total);
+        }
+        let mut start = 0.0;
+        let mut now = Vec::new();
+        for (i, (name, _, d)) in clips.iter().enumerate() {
+            let local = possession.seq_time - start;
+            if (0.0..d - fade).contains(&local) {
+                // this clip, plus the next fading in over its last `fade` seconds
+                let into = ((local - (d - 2.0 * fade)) / fade.max(1e-3)).clamp(0.0, 1.0);
+                now.push((i, local + fade.min(start), 1.0 - into));
+                let _ = name;
+                if into > 0.0 {
+                    now.push(((i + 1) % clips.len(), local - (d - 2.0 * fade), into));
+                }
+            }
+            start += d - fade;
+        }
+        // anything else still playing (the single clip from before) would hold the pose: stop it
+        let live: Vec<AnimationNodeIndex> = now.iter().map(|n| clips[n.0].1).collect();
+        let stale: Vec<AnimationNodeIndex> = player.playing_animations().map(|(n, _)| *n).filter(|n| !live.contains(n)).collect();
+        for n in stale {
+            player.stop(n);
+        }
+        for (i, (_, node, _)) in clips.iter().enumerate() {
+            match now.iter().find(|n| n.0 == i) {
+                Some(&(_, t, w)) => {
+                    if !player.is_playing_animation(*node) {
+                        player.play(*node);
+                    }
+                    if let Some(a) = player.animation_mut(*node) {
+                        a.set_speed(0.0).set_seek_time(t.clamp(0.0, clips[i].2)).set_weight(w);
+                    }
+                }
+                None => {
+                    player.stop(*node);
+                }
+            }
+        }
+        possession.seq_now = now.iter().map(|&(i, _, w)| (clips[i].0.clone(), w)).collect();
+        studio.clip = Some("sequence".into());
+        // the physics readout follows sequence time (velocity across the blends, not per clip)
+        studio.time = possession.seq_time;
+        studio.duration = total;
+        return;
+    }
     let Some((node, dur)) = studio.clip.as_deref().and_then(|c| find(c)) else {
         player.stop_all();
         return;
     };
     studio.duration = dur.max(0.01);
-    let (playing, speed, duration) = (studio.playing, studio.speed, studio.duration);
+    let (playing, speed, duration) = (studio.playing && studio.open, studio.speed, studio.duration);
     possession.advance(&mut studio.time, playing, time.delta_secs(), speed, duration);
     if !player.is_playing_animation(node) {
         player.stop_all();
@@ -438,8 +507,10 @@ pub fn measure(world: &mut World) {
     let pos = |n: &str| find(n).and_then(|b| world_transform(world, b)).map(|t| t.translation());
     let mut joints = Vec::new();
     let mut violations = Vec::new();
-    for &(a, j, b, lo, hi) in crate::joints::RULES {
-        let (Some(pa), Some(pj), Some(pb)) = (pos(a), pos(j), pos(b)) else { continue };
+    let profile = world.get::<crate::rig_profile::RigProfile>(e).cloned().unwrap_or_default();
+    for rule in &profile.rules {
+        let (j, lo, hi) = (rule.joint.as_str(), rule.min, rule.max);
+        let (Some(pa), Some(pj), Some(pb)) = (pos(&rule.from), pos(j), pos(&rule.to)) else { continue };
         let bend = (pj - pa).normalize_or_zero().angle_between((pb - pj).normalize_or_zero()).to_degrees();
         let ok = bend >= lo - 0.5 && bend <= hi + 0.5;
         if !ok {
@@ -458,8 +529,8 @@ pub fn measure(world: &mut World) {
                 (Some(l), Some(r)) => Vec3::new(l.x - r.x, 0.0, l.z - r.z).normalize_or_zero().cross(Vec3::Y).normalize_or(facing),
                 _ => facing,
             };
-            let backward = crate::knee::fix(h, k, a, [h.distance(k), k.distance(a)], heading).is_some_and(|f| f.2);
-            if backward || flex > crate::knee::MAX_FLEX_DEG + 0.5 {
+            let backward = crate::knee::fix_with_limit(h, k, a, [h.distance(k), k.distance(a)], heading, profile.knee_max).is_some_and(|f| f.2);
+            if backward || flex > profile.knee_max + 0.5 {
                 violations.push(format!("B_{side}_Calf"));
             }
             legs.push(json!({"side": side, "knee_flex_deg": (flex * 10.0).round() / 10.0, "knee_backward": backward, "ankle_height_m": (a.y * 1000.0).round() / 1000.0}));
@@ -491,7 +562,8 @@ pub fn apply_corrections(world: &mut World) {
         }
     }
     let s = world.resource::<Studio>();
-    if let (Some(e), Some(clip)) = (s.entity, s.clip.clone()) && let Some(r) = world.get::<StudioRig>(e) {
+    if world.resource::<crate::possession::Possession>().motion.is_none()
+        && let (Some(e), Some(clip)) = (s.entity, s.clip.clone()) && let Some(r) = world.get::<StudioRig>(e) {
         jobs.push((clip, s.time / s.duration.max(0.01), r.bones.clone()));
     }
     let corr = world.resource::<Corrections>().list.clone();
@@ -571,6 +643,7 @@ fn ui(
     assets: Res<AssetServer>,
     bodies: Query<(), With<avian3d::prelude::RigidBody>>,
     mut possession: ResMut<crate::possession::Possession>,
+    mut physical: ResMut<crate::possession::PhysicalBody>,
     names: Query<&Name>,
     rigs: Query<&StudioRig>,
 ) -> Result {
@@ -654,6 +727,39 @@ fn ui(
             0 => inspect(ui, studio, &mut corr, kit, &mut feed, sim.world.tick),
             1 => {
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
+                theme::section(ui, "Physical body (motors track the clip; it must stand on its own feet)");
+                ui.checkbox(&mut physical.on, "Physical");
+                ui.add(egui::Slider::new(&mut physical.assist, 0.0..=1.0).text("assist (0 = pure physics)"));
+                ui.add(egui::Slider::new(&mut physical.motor, 0.1..=3.0).text("motor strength"));
+                ui.horizontal(|ui| {
+                    ui.label("physical:");
+                    ui.checkbox(&mut physical.physical_regions[0], "legs");
+                    ui.checkbox(&mut physical.physical_regions[1], "body");
+                    ui.checkbox(&mut physical.physical_regions[2], "arms");
+                });
+                for (n, e) in physical.track_err.iter().filter(|(_, e)| *e > 0.5) {
+                    theme::stat(ui, &format!("{n} lags its key"), format!("{e:.1} deg"), if *e > 15.0 { theme::BAD } else if *e > 6.0 { theme::WARN } else { theme::GOOD });
+                }
+                ui.horizontal(|ui| {
+                    if theme::button(ui, kit, "Play run > jump > punch", !possession.sequence.is_empty()).clicked() {
+                        possession.sequence = vec!["Unarmed-Run-Forward".into(), "Unarmed-Jump".into(), "Unarmed-Attack-R1".into()];
+                        possession.seq_time = 0.0;
+                        studio.playing = true;
+                    }
+                    if theme::button(ui, kit, "Stop sequence", false).clicked() {
+                        possession.sequence.clear();
+                        studio.clip = Some("Unarmed-Idle".into());
+                        studio.time = 0.0;
+                    }
+                });
+                if !possession.sequence.is_empty() {
+                    let now: Vec<String> = possession.seq_now.iter().map(|(c, w)| format!("{c} {:.0}%", w * 100.0)).collect();
+                    ui.label(egui::RichText::new(format!("playing: {}", now.join(" + "))).size(11.5).color(theme::TEAL));
+                    ui.add(egui::Slider::new(&mut possession.seq_fade, 0.05..=0.6).text("crossfade s"));
+                }
+                if physical.on {
+                    theme::stat(ui, "State", if physical.standing { format!("standing, pelvis {:.2} m", physical.pelvis_h) } else { format!("fallen, pelvis {:.2} m", physical.pelvis_h) }, if physical.standing { theme::GOOD } else { theme::BAD });
+                }
                 crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
             }
             2 => moveset_tab(ui, studio, kit, lib.as_deref()),

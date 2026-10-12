@@ -13,10 +13,12 @@ pub struct FighterBody(pub usize);
 
 /// Advance physics by the same time as rules, including pause/single-step.
 /// Substeps stay at or below 1/120s even during batched remote checks.
-pub fn physics_clock(sim: Res<Sim>, mut time: ResMut<Time<Physics>>, mut substeps: ResMut<SubstepCount>) {
+pub fn physics_clock(sim: Res<Sim>, real: Res<Time>, physical: Res<crate::possession::PhysicalBody>, mut time: ResMut<Time<Physics>>, mut substeps: ResMut<SubstepCount>) {
+    // the Studio pauses the sim; a Possession physical body still needs physics, on real time
+    let step = if physical.on { real.delta_secs().min(1.0 / 30.0) } else { sim.frame_step_s.max(0.0) };
     time.pause();
-    time.advance_by(std::time::Duration::from_secs_f32(sim.frame_step_s.max(0.0)));
-    substeps.0 = (sim.frame_step_s / guildbound_sim::STEP).ceil().max(2.0) as u32;
+    time.advance_by(std::time::Duration::from_secs_f32(step));
+    substeps.0 = (step / guildbound_sim::STEP).ceil().max(2.0) as u32;
 }
 
 #[derive(Clone, Copy)]

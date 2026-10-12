@@ -45,7 +45,7 @@ pub fn bone_lengths(world: &mut World) {
 }
 
 /// Per-rig state of the life layers.
-#[derive(Component, Default)]
+#[derive(Component, Default, Clone, Debug, PartialEq)]
 pub struct Life {
     pub grip: [f32; 2],
     /// Smoothed look (yaw, pitch) and its velocity, radians.
@@ -99,7 +99,7 @@ pub fn apply(world: &mut World, root: Entity, bones: &[Entity], d: &Drive) {
         }
     }
     let (want, amount) = match d.look {
-        Some((target, amount)) => (look_angles(world, &by_name, target, d.forward, d.chest_yaw, life.look.x), amount),
+        Some((target, amount)) => (look_angles(world, &by_name, target, d.forward, d.chest_yaw, life.look.x, look_limits(world, root)), amount),
         None => (Vec2::ZERO, 0.0),
     };
     let goal = want * amount.clamp(0.0, 1.0);
@@ -125,6 +125,33 @@ pub fn apply(world: &mut World, root: Entity, bones: &[Entity], d: &Drive) {
         lean(world, &by_name, life.tilt);
     }
     world.entity_mut(root).insert(life);
+}
+
+fn look_limits(world: &World, root: Entity) -> Vec2 {
+    world.get::<crate::rig_profile::RigProfile>(root).map_or(Vec2::new(YAW_RANGE, PITCH_RANGE), |p| p.look)
+}
+
+/// The stage is seekable: these layers depend on the sampled time, never render history.
+/// Gameplay retains the stateful springs in `apply`; generated motion supplies its own timed targets.
+pub fn sample(world: &mut World, root: Entity, bones: &[Entity], d: &Drive, time: f32) {
+    let by_name = names(world, bones);
+    if let Some(grip) = d.grip {
+        for (side, value) in grip.into_iter().enumerate() {
+            curl_hand(world, root, &by_name, side == 0, value.clamp(0.0, 1.0));
+        }
+    }
+    if let Some((target, amount)) = d.look {
+        let look = look_angles(world, &by_name, target, d.forward, d.chest_yaw, 0.0, look_limits(world, root));
+        turn_head(world, &by_name, d.forward, look * amount.clamp(0.0, 1.0));
+    }
+    if d.breath > 0.0 {
+        let rate = 0.9 + 4.0 * d.exertion.clamp(0.0, 1.0);
+        let lift = ((time * rate).sin() * 0.5 + 0.5) * (0.5 + 0.5 * rate / 4.9) * d.breath;
+        breathe(world, &by_name, d.forward, lift);
+    }
+    if let Some((vel, acc)) = d.lean {
+        lean(world, &by_name, Vec3::new(vel.x, 0.0, vel.z) * 0.5 + Vec3::new(acc.x, 0.0, acc.z));
+    }
 }
 
 /// Fingers back to rest, then curled toward the palm about the hand's knuckle axis.
@@ -181,7 +208,7 @@ fn curl_hand(world: &mut World, root: Entity, by_name: &HashMap<String, Entity>,
 }
 
 /// Wanted (yaw, pitch) toward a target, measured from the body forward minus what the chest already turned.
-fn look_angles(world: &World, by_name: &HashMap<String, Entity>, target: Vec3, forward: Vec3, chest_yaw: f32, current_yaw: f32) -> Vec2 {
+fn look_angles(world: &World, by_name: &HashMap<String, Entity>, target: Vec3, forward: Vec3, chest_yaw: f32, current_yaw: f32, limits: Vec2) -> Vec2 {
     let Some(head) = by_name.get("B_Head").and_then(|&e| pos(world, e)) else { return Vec2::ZERO };
     let to = target - head;
     let flat = Vec3::new(to.x, 0.0, to.z);
@@ -192,11 +219,11 @@ fn look_angles(world: &World, by_name: &HashMap<String, Entity>, target: Vec3, f
     let flat_n = flat.normalize();
     let mut yaw = f.cross(flat_n).y.atan2(f.dot(flat_n)) - chest_yaw;
     // behind the shoulder: keep the side the head is already on (Overgrowth's hysteresis)
-    if yaw.abs() > YAW_RANGE && current_yaw.abs() > 0.5 * YAW_RANGE && yaw.signum() != current_yaw.signum() {
-        yaw = current_yaw.signum() * YAW_RANGE;
+    if yaw.abs() > limits.x && current_yaw.abs() > 0.5 * limits.x && yaw.signum() != current_yaw.signum() {
+        yaw = current_yaw.signum() * limits.x;
     }
     let pitch = to.normalize().y.clamp(-1.0, 1.0).asin();
-    Vec2::new(yaw.clamp(-YAW_RANGE, YAW_RANGE), pitch.clamp(-PITCH_RANGE, PITCH_RANGE))
+    Vec2::new(yaw.clamp(-limits.x, limits.x), pitch.clamp(-limits.y, limits.y))
 }
 
 /// Yaw about world up and pitch about the body's right, half at the neck and half at the head.

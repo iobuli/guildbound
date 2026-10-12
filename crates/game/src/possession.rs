@@ -78,6 +78,12 @@ pub struct Possession {
     pub fixed: bool,
     pub fps: f32,
     pub pending_steps: i32,
+    /// Blend sequence: clips played back to back, each crossfading into the next over `seq_fade` seconds.
+    pub sequence: Vec<String>,
+    pub seq_fade: f32,
+    pub seq_time: f32,
+    /// (clip, weight) pairs playing this frame, for the readout.
+    pub seq_now: Vec<(String, f32)>,
     clock: f32,
     pub overrides: BTreeMap<String, BoneOverride>,
     pub aims: BTreeMap<String, Vec3>,
@@ -90,19 +96,24 @@ pub struct Possession {
     pub mass_kg: f32,
     pub readout: Readout,
     /// (clip, clip time, com, velocity, segment points) of the last distinct sample.
-    last: Option<(String, f32, Vec3, Vec3, Vec<Vec3>)>,
+    last: Option<(Entity, String, f32, Vec3, Vec3, Vec<Vec3>)>,
     /// Speed and momentum over the last samples, for the graph.
     pub history: VecDeque<(f32, f32)>,
     bone_filter: String,
     pub status: String,
+    pub motion: Option<crate::generated_motion::Motion>,
+    pub plant_anchors: [Option<Vec3>; 2],
+    pub reference_corrector: bool,
 }
 
 impl Default for Possession {
     fn default() -> Self {
         Self {
-            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, auto_hands: true,
+            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, sequence: Vec::new(), seq_fade: 0.25, seq_time: 0.0, seq_now: Vec::new(), clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, auto_hands: true,
             look: LookMode::Off, lean: false, breath: false, mass_kg: 75.0, readout: Readout::default(), last: None, history: VecDeque::new(),
             bone_filter: String::new(), status: String::new(),
+            motion: None, plant_anchors: [None; 2],
+            reference_corrector: true,
         }
     }
 }
@@ -124,10 +135,14 @@ impl Possession {
                 *time += dt * speed;
             }
         }
-        *time = time.rem_euclid(duration.max(0.01));
         if self.fixed && !playing {
             *time = (*time * fps).round() / fps;
         }
+        *time = if self.motion.as_ref().is_some_and(|m| !m.looping) {
+            time.clamp(0.0, duration)
+        } else {
+            time.rem_euclid(duration.max(0.01))
+        };
     }
 
     pub fn frame(&self, time: f32) -> i64 {
@@ -136,7 +151,7 @@ impl Possession {
 }
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Possession>().add_systems(Update, draw);
+    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 1.0, physical_regions: [true; 3], ..default() }).add_systems(Update, draw);
 }
 
 fn bone_map(world: &World, bones: &[Entity]) -> BTreeMap<String, Entity> {
@@ -168,12 +183,33 @@ pub fn apply(world: &mut World) {
         return;
     }
     let (overrides, aims, look, lean, breath) = (p.overrides.clone(), p.aims.clone(), p.look, p.lean, p.breath);
-    let grip = p.grip.or_else(|| p.auto_hands.then(|| clip_grip(world.resource::<Studio>().clip.as_deref().unwrap_or(""))));
-    let r = p.readout.clone();
-    let dt = 1.0 / p.fps.clamp(1.0, 240.0);
+    let time = world.resource::<Studio>().time;
+    let sample = p.motion.as_ref().map(|m| m.sample(time));
+    let grip = p.grip.or_else(|| sample.as_ref().and_then(|s| s.grip)).or_else(|| p.auto_hands.then(|| clip_grip(world.resource::<Studio>().clip.as_deref().unwrap_or(""))));
     let Some((root, bones)) = stage(world) else { return };
     let map = bone_map(world, &bones);
     let rest = world.get::<RestPose>(root).map(|r| r.0.clone()).unwrap_or_default();
+    let forward = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
+    let head = map.get("B_Head").and_then(|&e| world_transform(world, e)).map_or(Vec3::Y * 1.6, |t| t.translation());
+    let look = match look {
+        LookMode::Off => None,
+        LookMode::Point(p) => Some((p, 1.0)),
+        LookMode::Camera => world.query_filtered::<&GlobalTransform, With<crate::camera::OrbitCamera>>().iter(world).next().map(|g| (g.translation(), 1.0)),
+        LookMode::Wander => {
+            // a new gaze point in front every 0.8-2 s, from a hash of the slot (deterministic)
+            let slot = (time / 1.4).floor();
+            let h = |k: f32| ((slot * 12.9898 + k * 78.233).sin() * 43758.547).fract().abs();
+            let side = Vec3::Y.cross(forward).normalize_or_zero();
+            let dir = (forward * (0.6 + 0.4 * h(1.0)) + side * (h(2.0) * 2.0 - 1.0) * 0.8 + Vec3::Y * (h(3.0) * 0.6 - 0.3)).normalize_or_zero();
+            Some((head + dir * 10.0, 1.0))
+        }
+    };
+    let rotation = world.get::<Transform>(root).map_or(Quat::IDENTITY, |t| t.rotation);
+    let drive = Drive { grip, look, forward, chest_yaw: 0.0, breath: if breath { 1.0 } else { 0.0 },
+        exertion: sample.as_ref().map_or(0.0, |s| (s.velocity.length() / 6.0).min(1.0)),
+        lean: sample.as_ref().filter(|_| lean).map(|s| (rotation * s.velocity, rotation * s.acceleration)), dt: 0.0 };
+    crate::procedural::sample(world, root, &bones, &drive, time);
+    // Manual control wins over automatic fingers, head look and breathing; anatomy still runs afterwards.
     for (name, o) in &overrides {
         let Some(&e) = map.get(name) else { continue };
         let base = if o.absolute { rest.get(&e).copied() } else { world.get::<Transform>(e).map(|t| t.rotation) };
@@ -181,7 +217,7 @@ pub fn apply(world: &mut World) {
             t.rotation = (base * euler_quat(o.euler)).normalize();
         }
     }
-    let mut ordered: Vec<(usize, Entity, Vec3)> = aims.iter().filter_map(|(n, p)| map.get(n).map(|&e| (depth(world, e), e, *p))).collect();
+    let mut ordered: Vec<_> = aims.iter().filter_map(|(n, p)| map.get(n).map(|&e| (depth(world, e), e, *p))).collect();
     ordered.sort_by_key(|a| a.0);
     for (_, e, target) in ordered {
         let child = bones.iter().copied().find(|&c| world.get::<ChildOf>(c).is_some_and(|p| p.parent() == e));
@@ -193,24 +229,6 @@ pub fn apply(world: &mut World) {
             crate::ik::rotate_world(world, e, Quat::from_rotation_arc(cur, want) * rot);
         }
     }
-    let forward = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
-    let head = map.get("B_Head").and_then(|&e| world_transform(world, e)).map_or(Vec3::Y * 1.6, |t| t.translation());
-    let look = match look {
-        LookMode::Off => None,
-        LookMode::Point(p) => Some((p, 1.0)),
-        LookMode::Camera => world.query_filtered::<&GlobalTransform, With<crate::camera::OrbitCamera>>().iter(world).next().map(|g| (g.translation(), 1.0)),
-        LookMode::Wander => {
-            // a new gaze point in front every 0.8-2 s, from a hash of the slot (deterministic)
-            let t = world.resource::<Time>().elapsed_secs();
-            let slot = (t / 1.4).floor();
-            let h = |k: f32| ((slot * 12.9898 + k * 78.233).sin() * 43758.547).fract().abs();
-            let side = Vec3::Y.cross(forward).normalize_or_zero();
-            let dir = (forward * (0.6 + 0.4 * h(1.0)) + side * (h(2.0) * 2.0 - 1.0) * 0.8 + Vec3::Y * (h(3.0) * 0.6 - 0.3)).normalize_or_zero();
-            Some((head + dir * 10.0, 1.0))
-        }
-    };
-    let drive = Drive { grip, look, forward, chest_yaw: 0.0, breath: if breath { 1.0 } else { 0.0 }, exertion: (r.vel.length() / 6.0).min(1.0), lean: (lean && r.valid).then_some((r.vel, r.acc)), dt };
-    crate::procedural::apply(world, root, &bones, &drive);
 }
 
 /// The hands a clip implies: fists to fight, open to cast, relaxed otherwise.
@@ -234,7 +252,7 @@ pub fn measure(world: &mut World) {
     if !world.resource::<Studio>().open {
         return;
     }
-    let Some((_, bones)) = stage(world) else { return };
+    let Some((root, bones)) = stage(world) else { return };
     let map = bone_map(world, &bones);
     let pos = |n: &str| map.get(n).and_then(|&e| world_transform(world, e)).map(|t| t.translation());
     let mut points = Vec::new();
@@ -272,19 +290,19 @@ pub fn measure(world: &mut World) {
     let margin = (hull.len() >= 3).then(|| inside_margin(&hull, Vec2::new(com.x, com.z)));
     let (clip, time) = {
         let s = world.resource::<Studio>();
-        (s.clip.clone().unwrap_or_default(), s.time)
+        (if world.resource::<Possession>().motion.is_some() { "generated motion".into() } else { s.clip.clone().unwrap_or_default() }, s.time)
     };
     let mut p = world.resource_mut::<Possession>();
     let mass = p.mass_kg;
     let mut r = Readout { valid: false, com, support: hull, margin, ..default() };
     let had_vel = p.readout.valid;
-    if let Some((lc, lt, lcom, lvel, lpts)) = &p.last {
+    if let Some((lr, lc, lt, lcom, lvel, lpts)) = &p.last {
         let dt = time - lt;
-        if *lc == clip && dt.abs() < 1e-5 {
-            // same frame (fixed fps between steps): keep the last readout
+        if *lr == root && *lc == clip && dt.abs() < 1e-5 && *lpts == points {
+            // An unchanged frame preserves derivatives. Paused edits still refresh geometry below.
             return;
         }
-        if *lc == clip && dt > 0.0 && dt < 0.25 && lpts.len() == points.len() {
+        if *lr == root && *lc == clip && dt > 0.0 && dt < 0.25 && lpts.len() == points.len() {
             r.valid = true;
             r.vel = (com - *lcom) / dt;
             // the first moving sample has no earlier velocity to differ from
@@ -302,7 +320,7 @@ pub fn measure(world: &mut World) {
         let x = com + r.vel * (h / 9.81).sqrt();
         r.dynamic_margin = Some(inside_margin(&r.support, Vec2::new(x.x, x.z)));
     }
-    p.last = Some((clip, time, com, r.vel, points));
+    p.last = Some((root, clip, time, com, r.vel, points));
     if r.valid {
         let speed = r.vel.length();
         p.history.push_back((speed, speed * mass));
@@ -357,8 +375,7 @@ fn draw(studio: Res<Studio>, p: Res<Possession>, mut gizmos: Gizmos<StudioGizmos
     }
     let r = &p.readout;
     let floor = crate::studio::STAGE.y + 0.01;
-    let ok = r.margin.is_some_and(|m| m > 0.0);
-    let col = if r.margin.is_none() { Color::srgb(0.6, 0.7, 1.0) } else if ok { Color::srgb(0.43, 0.86, 0.5) } else { Color::srgb(1.0, 0.33, 0.28) };
+    let col = Color::srgb(0.6, 0.7, 1.0);
     gizmos.sphere(Isometry3d::from_translation(r.com), 0.035, col);
     gizmos.line(r.com, Vec3::new(r.com.x, floor, r.com.z), col.with_alpha(0.5));
     gizmos.circle(Isometry3d::new(Vec3::new(r.com.x, floor, r.com.z), Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), 0.03, col);
@@ -422,17 +439,32 @@ pub fn snapshot(world: &World, with_bones: bool) -> Value {
     let r = &p.readout;
     let v3 = |v: Vec3| [(v.x * 1000.0).round() / 1000.0, (v.y * 1000.0).round() / 1000.0, (v.z * 1000.0).round() / 1000.0];
     let mut out = json!({
+        "reference": crate::reference_pose::snapshot(world),
+        "playing": s.playing,
+        "motion": p.motion.as_ref().map(|m| json!({"keys": m.keys.len(), "duration_s": m.duration, "loop": m.looping, "plants": m.plants})),
         "enabled": p.enabled, "fixed": p.fixed, "fps": p.fps, "frame": p.frame(s.time), "frames": (s.duration * p.fps).round(),
         "model": s.model, "clip": s.clip, "time": s.time, "duration": s.duration,
         "overrides": p.overrides.iter().map(|(b, o)| (b.clone(), json!({"euler_deg": o.euler.to_array(), "absolute": o.absolute}))).collect::<serde_json::Map<_, _>>(),
         "aims": p.aims.iter().map(|(b, t)| (b.clone(), json!(t.to_array()))).collect::<serde_json::Map<_, _>>(),
         "grip": p.grip, "look": match p.look { LookMode::Off => json!("off"), LookMode::Camera => json!("camera"), LookMode::Wander => json!("wander"), LookMode::Point(t) => json!(t.to_array()) },
-        "lean": p.lean, "breath": p.breath,
+        "lean": p.lean, "breath": p.breath, "sequence": p.sequence, "sequence_time": p.seq_time, "blend": p.seq_now.iter().map(|(c, w)| json!([c, w])).collect::<Vec<_>>(),
         "physics": {"mass_kg": p.mass_kg, "valid": r.valid, "com": v3(r.com), "com_height_m": r.com.y - crate::studio::STAGE.y, "velocity": v3(r.vel), "speed_mps": r.vel.length(),
                     "momentum_kgmps": r.vel.length() * p.mass_kg, "accel": v3(r.acc), "angular_momentum": v3(r.ang), "kinetic_j": r.ke,
-                    "balance_margin_m": r.margin, "dynamic_margin_m": r.dynamic_margin, "feet_down": r.support.len() >= 3, "accel_g": r.acc.length() / 9.81},
+                    "balance_estimate_only": true, "balance_margin_m": r.margin, "dynamic_margin_m": r.dynamic_margin, "feet_down": r.support.len() >= 3, "accel_g": r.acc.length() / 9.81},
         "numbers": s.numbers,
     });
+    let pb = world.resource::<PhysicalBody>();
+    out["physical"] = json!({"regions_physical": {"legs": pb.physical_regions[0], "body": pb.physical_regions[1], "arms": pb.physical_regions[2]},
+        "tracking_error_deg": pb.track_err.iter().map(|(n, e)| (n.clone(), json!((e * 10.0).round() / 10.0))).collect::<serde_json::Map<_, _>>(), "on": pb.on, "built": pb.doll.is_some(), "assist": pb.assist, "motor": pb.motor, "standing": pb.standing, "pelvis_height_m": pb.pelvis_h});
+    if let Some((root, bones)) = stage(world) {
+        out["clearance"] = crate::body_clearance::snapshot(world, root, &bones);
+        out["clip_support"] = if p.motion.is_none() { crate::support::stage_snapshot(world) } else { Value::Null };
+        let map = bone_map(world, &bones);
+        out["foot_anchor_error_m"] = json!(["L", "R"].map(|side| {
+            let i = if side == "L" { 0 } else { 1 };
+            p.plant_anchors[i].and_then(|anchor| map.get(&format!("B_{side}_Foot")).and_then(|&e| world_transform(world, e)).map(|g| g.translation().distance(anchor)))
+        }));
+    }
     if with_bones && let Some((_, bones)) = stage(world) {
         let rows: Vec<Value> = bones
             .iter()
@@ -450,18 +482,49 @@ pub fn snapshot(world: &World, with_bones: bool) -> Value {
 }
 
 /// gb.possess commands. Returns a status line.
-pub fn command(world: &mut World, p: &Value) -> String {
+pub fn command(world: &mut World, p: &Value) -> Result<String, String> {
     let mut log = Vec::new();
+    if let Some(value) = p.get("motion") {
+        let motion = if value.is_null() { None } else {
+            let (_, bones) = stage(world).ok_or("load a stage model before submitting motion")?;
+            let known: Vec<_> = bone_map(world, &bones).into_keys().collect();
+            if known.is_empty() { return Err("stage model is still loading".into()); }
+            Some(crate::generated_motion::Motion::parse(value, &known)?)
+        };
+        let mut pos = world.resource_mut::<Possession>();
+        pos.motion = motion;
+        pos.plant_anchors = [None; 2];
+        pos.clock = 0.0;
+        pos.pending_steps = 0;
+        pos.last = None;
+        pos.history.clear();
+        pos.readout = Readout::default();
+        drop(pos);
+        let mut s = world.resource_mut::<Studio>();
+        s.time = 0.0;
+        s.playing = false;
+        s.tab = 1;
+        log.push("motion updated".into());
+    }
     {
         let mut pos = world.resource_mut::<Possession>();
         if let Some(v) = p.get("enable").and_then(Value::as_bool) { pos.enabled = v; }
+        if let Some(v) = p.get("reference_corrector").and_then(Value::as_bool) { pos.reference_corrector = v; }
         if let Some(v) = p.get("fixed").and_then(Value::as_bool) { pos.fixed = v; }
         if let Some(v) = p.get("fps").and_then(Value::as_f64) { pos.fps = (v as f32).clamp(1.0, 240.0); }
         if let Some(v) = p.get("step").and_then(Value::as_i64) { pos.pending_steps += v as i32; }
         if let Some(v) = p.get("lean").and_then(Value::as_bool) { pos.lean = v; }
+        if let Some(a) = p.get("sequence").and_then(Value::as_array) {
+            pos.sequence = a.iter().filter_map(|c| c.as_str().map(str::to_owned)).collect();
+            pos.seq_time = 0.0;
+        }
+        if let Some(v) = p.get("fade").and_then(Value::as_f64) { pos.seq_fade = (v as f32).clamp(0.0, 1.0); }
         if let Some(v) = p.get("breath").and_then(Value::as_bool) { pos.breath = v; }
         if let Some(v) = p.get("auto_hands").and_then(Value::as_bool) { pos.auto_hands = v; }
-        if let Some(v) = p.get("mass_kg").and_then(Value::as_f64) { pos.mass_kg = v as f32; }
+        if let Some(v) = p.get("mass_kg").and_then(Value::as_f64) {
+            pos.mass_kg = (v as f32).clamp(10.0, 300.0);
+            pos.last = None;
+        }
         match p.get("grip") {
             Some(Value::Array(a)) if a.len() == 2 => pos.grip = Some([a[0].as_f64().unwrap_or(0.0) as f32, a[1].as_f64().unwrap_or(0.0) as f32]),
             Some(Value::Null) => pos.grip = None,
@@ -502,12 +565,22 @@ pub fn command(world: &mut World, p: &Value) -> String {
             }
         }
     }
+    {
+        let mut pb = world.resource_mut::<PhysicalBody>();
+        if let Some(v) = p.get("physical").and_then(Value::as_bool) { pb.on = v; }
+        if let Some(v) = p.get("assist").and_then(Value::as_f64) { pb.assist = (v as f32).clamp(0.0, 1.0); }
+        if let Some(v) = p.get("motor").and_then(Value::as_f64) { pb.motor = (v as f32).clamp(0.0, 4.0); }
+        for (k, i) in [("legs", 0), ("body", 1), ("arms", 2)] {
+            if let Some(v) = p.get("physical_regions").and_then(|r| r.get(k)).and_then(Value::as_bool) { pb.physical_regions[i] = v; }
+        }
+    }
     if let Some(v) = p.get("frame").and_then(Value::as_i64) {
         let fps = world.resource::<Possession>().fps;
         let mut s = world.resource_mut::<Studio>();
         s.time = v as f32 / fps;
         s.playing = false;
     }
+    if let Some(v) = p.get("play").and_then(Value::as_bool) { world.resource_mut::<Studio>().playing = v; }
     if p.get("save").and_then(Value::as_str) == Some("correction") {
         world.resource_scope(|world, mut corr: Mut<Corrections>| {
             let n = save_corrections(world.resource::<Possession>(), world.resource::<Studio>(), &mut corr);
@@ -517,7 +590,7 @@ pub fn command(world: &mut World, p: &Value) -> String {
     if let Some(name) = p.get("pose").and_then(Value::as_str) {
         log.push(save_pose(world, name).map_or_else(|| "pose not saved".to_owned(), |path| format!("pose saved to {path}")));
     }
-    log.join("; ")
+    Ok(log.join("; "))
 }
 
 /// The Possession tab.
@@ -525,9 +598,18 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     theme::section(ui, "Possession");
     ui.horizontal(|ui| {
         ui.checkbox(&mut p.enabled, "Possess the stage model");
+        ui.checkbox(&mut p.reference_corrector, "Reference joint correction");
         ui.checkbox(&mut p.fixed, "Fixed fps");
         ui.add(egui::DragValue::new(&mut p.fps).range(1.0..=240.0).speed(1.0).suffix(" fps"));
     });
+    if let Some(motion) = &p.motion {
+        ui.label(egui::RichText::new(format!("Generated motion: {} keys, {:.2} s", motion.keys.len(), motion.duration)).color(theme::TEAL));
+        if theme::button(ui, kit, "Return to clip", false).clicked() {
+            p.motion = None;
+            studio.time = 0.0;
+            p.last = None;
+        }
+    }
     ui.horizontal(|ui| {
         let frames = (studio.duration * p.fps).round();
         ui.label(egui::RichText::new(format!("frame {} / {frames:.0}", p.frame(studio.time))).monospace().color(theme::TEAL));
@@ -599,11 +681,11 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
         }
     });
     ui.horizontal(|ui| {
-        ui.checkbox(&mut p.lean, "Lean into motion");
+        ui.checkbox(&mut p.lean, "Lean into generated motion");
         ui.checkbox(&mut p.breath, "Breathe");
     });
 
-    theme::section(ui, "Physics");
+    theme::section(ui, "Motion estimates");
     ui.add(egui::DragValue::new(&mut p.mass_kg).range(30.0..=200.0).speed(0.5).prefix("mass ").suffix(" kg"));
     let r = p.readout.clone();
     theme::stat(ui, "Centre of mass height", format!("{:.3} m", r.com.y - crate::studio::STAGE.y), theme::PAPER);
@@ -612,12 +694,13 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     theme::stat(ui, "Acceleration", if r.valid { format!("{:.2} m/s2", r.acc.length()) } else { "-".into() }, theme::PAPER);
     theme::stat(ui, "Angular momentum", if r.valid { format!("{:.2} kg m2/s", r.ang.length()) } else { "-".into() }, theme::PAPER);
     theme::stat(ui, "Kinetic energy", if r.valid { format!("{:.1} J", r.ke) } else { "-".into() }, theme::PAPER);
-    let (text, col) = match r.dynamic_margin.or(r.margin) {
-        None => ("airborne / nothing down".to_owned(), theme::MUTED),
-        Some(m) if m >= 0.0 => (format!("balanced, {:.1} cm inside", m * 100.0), theme::GOOD),
-        Some(m) => (format!("falling, {:.1} cm outside", -m * 100.0), theme::BAD),
+    let text = match r.dynamic_margin.or(r.margin) {
+        None => "no estimated support polygon".to_owned(),
+        Some(m) if m >= 0.0 => format!("{:.1} cm inside estimated support", m * 100.0),
+        Some(m) => format!("{:.1} cm outside estimated support", -m * 100.0),
     };
-    theme::stat(ui, "Balance (moving)", text, col);
+    theme::stat(ui, "Support estimate", text, theme::MUTED);
+    ui.label(egui::RichText::new("Diagnostic only; this does not establish balance or a fall.").size(10.5).color(theme::MUTED));
     theme::stat(ui, "Centre of mass over support", r.margin.map_or("-".into(), |m| format!("{:.1} cm", m * 100.0)), theme::MUTED);
     if p.history.len() > 2 {
         let (rect, _) = ui.allocate_exact_size(egui::vec2(ui.available_width(), 56.0), egui::Sense::hover());
@@ -672,4 +755,190 @@ mod tests {
         p.advance(&mut t, false, 0.0, 1.0, 2.0);
         assert_eq!(p.frame(t), 56, "steps wrap around the clip");
     }
+}
+
+/// The physical stage body (Possession "Physical"): ragdoll capsules and joints that track the clip with joint
+/// motors and must hold themselves up on their own feet. Assist (0..1) adds a pull on the pelvis toward the
+/// clip; at 0 it is pure physics, so whether it stands says how physically sound the clip is.
+#[derive(Resource, Default)]
+pub struct PhysicalBody {
+    doll: Option<crate::ragdoll::Doll>,
+    pub on: bool,
+    pub assist: f32,
+    pub motor: f32,
+    pub standing: bool,
+    pub pelvis_h: f32,
+    /// Which regions are physical (legs, body, arms); the rest follow the clip exactly as kinematic anchors.
+    pub physical_regions: [bool; 3],
+    /// Mean angle (deg) each physical limb lags its keyframe, by bone, for finding keys a body cannot follow.
+    pub track_err: Vec<(String, f32)>,
+}
+
+fn region(bone: &str) -> usize {
+    if bone.ends_with("_Thigh") || bone.ends_with("_Calf") || bone.ends_with("_Foot") {
+        0
+    } else if bone.contains("UpperArm") || bone.contains("Forearm") {
+        2
+    } else {
+        1
+    }
+}
+
+pub fn physical_drive(world: &mut World) {
+    use avian3d::prelude::*;
+    let mut pb = world.remove_resource::<PhysicalBody>().unwrap_or_default();
+    let open = world.resource::<Studio>().open;
+    let stage = stage(world);
+    let want = pb.on && open && stage.is_some();
+    if !want {
+        if let Some(mut d) = pb.doll.take() {
+            crate::ragdoll::remove_bodies(world, &mut d);
+        }
+        world.insert_resource(pb);
+        return;
+    }
+    let (root, bones) = stage.unwrap();
+    if pb.doll.is_none() {
+        let fwd = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
+        pb.doll = crate::ragdoll::build_with(world, &bones, usize::MAX, Vec3::ZERO, fwd);
+        if pb.doll.is_none() {
+            pb.on = false;
+        }
+    }
+    if let Some(doll) = &pb.doll {
+        // kinematic anchors: regions that follow the clip exactly
+        let mut anchored = Vec::new();
+        for link in &doll.links {
+            let name = world.get::<Name>(link.bone).map(|n| n.as_str().to_owned()).unwrap_or_default();
+            let physical = pb.physical_regions[region(&name)];
+            let want = if physical { RigidBody::Dynamic } else { RigidBody::Kinematic };
+            if world.get::<RigidBody>(link.body) != Some(&want) {
+                world.entity_mut(link.body).insert(want);
+            }
+            if !physical && let Some(bone) = world_transform(world, link.bone) {
+                let (_, br, bp) = bone.to_scale_rotation_translation();
+                let rot = br * link.rotation.inverse();
+                anchored.push((link.body, bp - rot * link.origin, rot));
+            }
+        }
+        for (body, pos, rot) in anchored {
+            if let Some(mut t) = world.get_mut::<Transform>(body) {
+                t.translation = pos;
+                t.rotation = rot;
+            }
+            if let Some(mut v) = world.get_mut::<LinearVelocity>(body) {
+                v.0 = Vec3::ZERO;
+            }
+        }
+        let kp = 420.0 * pb.motor.max(0.05);
+        let kd = 2.0 * kp.sqrt();
+        // balance (SIMBICON-style): the centre of mass drifting off the feet tilts the legs' targets toward the
+        // drift so the base moves under it
+        let body_pos = |w: &World, e: Entity| w.get::<Transform>(e).map(|t| t.translation);
+        let mut m_sum = 0.0;
+        let mut com = Vec3::ZERO;
+        let mut com_v = Vec3::ZERO;
+        for l in &doll.links {
+            let m = world.get::<Mass>(l.body).map_or(1.0, |m| m.0);
+            com += body_pos(world, l.body).unwrap_or_default() * m;
+            com_v += world.get::<LinearVelocity>(l.body).map_or(Vec3::ZERO, |v| v.0) * m;
+            m_sum += m;
+        }
+        com /= m_sum.max(1e-3);
+        com_v /= m_sum.max(1e-3);
+        let feet: Vec<Vec3> = doll.links.iter().filter(|l| world.get::<Name>(l.bone).is_some_and(|n| n.as_str().ends_with("_Foot"))).filter_map(|l| body_pos(world, l.body)).collect();
+        let base = if feet.is_empty() { com } else { feet.iter().sum::<Vec3>() / feet.len() as f32 };
+        let drift = Vec3::new(com.x - base.x, 0.0, com.z - base.z) * 0.8 + Vec3::new(com_v.x, 0.0, com_v.z) * 0.25;
+        let tilt = if drift.length() > 1e-4 { Quat::from_axis_angle(Vec3::Y.cross(drift).normalize(), drift.length().min(0.5)) } else { Quat::IDENTITY };
+        let mut jobs = Vec::new();
+        for (i, link) in doll.links.iter().enumerate() {
+            let (Some(bone), Some(body)) = (world_transform(world, link.bone), world.get::<Transform>(link.body).copied()) else { continue };
+            let (_, br, bp) = bone.to_scale_rotation_translation();
+            let mut target = br * link.rotation.inverse();
+            if world.get::<Name>(link.bone).is_some_and(|n| n.as_str().ends_with("_Thigh") || n.as_str().ends_with("_Calf")) {
+                target = tilt * target;
+            }
+            let mut err = target * body.rotation.inverse();
+            if err.w < 0.0 {
+                err = -err;
+            }
+            let (axis, angle) = err.to_axis_angle();
+            let w = world.get::<AngularVelocity>(link.body).map_or(Vec3::ZERO, |v| v.0);
+            let parent_w = link.parent.and_then(|p| world.get::<AngularVelocity>(doll.links[p].body)).map_or(Vec3::ZERO, |v| v.0);
+            let mut acc = axis * angle * kp - (w - parent_w) * kd;
+            let mut lin = Vec3::ZERO;
+            if link.parent.is_none() {
+                // the pelvis has no motor; only the assist holds it toward the clip
+                let centre = bp - target * link.origin;
+                let v = world.get::<LinearVelocity>(link.body).map_or(Vec3::ZERO, |v| v.0);
+                lin = ((centre - body.translation) * 300.0 - v * 35.0) * pb.assist;
+                // the pelvis's own motor reacts against the thighs (an internal hip torque: the floor has to carry it)
+                acc = axis * angle * kp * 0.6 - w * kd;
+            }
+            jobs.push((i, acc, lin));
+        }
+        // tracking error of the physical links (smoothed), the keyframes a body struggles to follow
+        let mut errs = Vec::new();
+        for link in &doll.links {
+            let name = world.get::<Name>(link.bone).map(|n| n.as_str().to_owned()).unwrap_or_default();
+            if !pb.physical_regions[region(&name)] {
+                continue;
+            }
+            if let (Some(bone), Some(body)) = (world_transform(world, link.bone), world.get::<Transform>(link.body)) {
+                let target = bone.to_scale_rotation_translation().1 * link.rotation.inverse();
+                let e = target.angle_between(body.rotation).to_degrees();
+                let prev = pb.track_err.iter().find(|(n, _)| *n == name).map_or(e, |p| p.1);
+                errs.push((name, prev + (e - prev) * 0.2));
+            }
+        }
+        pb.track_err = errs;
+        let jobs: Vec<_> = jobs.into_iter().filter(|(i, ..)| {
+            let name = world.get::<Name>(doll.links[*i].bone).map(|n| n.as_str().to_owned()).unwrap_or_default();
+            pb.physical_regions[region(&name)]
+        }).collect();
+        let mass = |w: &World, e: Entity| w.get::<Mass>(e).map_or(1.0, |m| m.0);
+        let mut q = world.query::<Forces>();
+        for (i, acc, lin) in jobs {
+            let link = &doll.links[i];
+            let ratio = link.parent.map(|p| mass(world, link.body) / mass(world, doll.links[p].body).max(0.1));
+            if let Ok(mut f) = q.get_mut(world, link.body) {
+                f.apply_angular_acceleration(acc);
+                if lin != Vec3::ZERO {
+                    f.apply_linear_acceleration(lin);
+                }
+            }
+            if link.parent.is_none() {
+                let thighs: Vec<Entity> = doll.links.iter().filter(|l| world.get::<Name>(l.bone).is_some_and(|n| n.as_str().ends_with("_Thigh"))).map(|l| l.body).collect();
+                let share = mass(world, link.body) / thighs.iter().map(|&t| mass(world, t)).sum::<f32>().max(0.1);
+                for t in thighs {
+                    if let Ok(mut f) = q.get_mut(world, t) {
+                        f.apply_angular_acceleration(-acc * share);
+                    }
+                }
+            }
+            // equal and opposite on the parent: motors are internal, balance has to come from the feet
+            if let (Some(p), Some(r)) = (link.parent, ratio)
+                && let Ok(mut f) = q.get_mut(world, doll.links[p].body)
+            {
+                f.apply_angular_acceleration(-acc * r);
+            }
+        }
+        if let Some(t) = world.get::<Transform>(doll.links[0].body) {
+            pb.pelvis_h = t.translation.y - crate::studio::STAGE.y;
+            pb.standing = pb.pelvis_h > 0.55;
+        }
+    }
+    world.insert_resource(pb);
+}
+
+/// After physics: the stage skin follows the bodies.
+pub fn physical_skin(world: &mut World) {
+    let mut pb = world.remove_resource::<PhysicalBody>().unwrap_or_default();
+    if let Some(doll) = pb.doll.as_mut() {
+        // only physical regions take their pose from the bodies; anchored regions keep the clip
+        let regions = pb.physical_regions;
+        let keep: Vec<bool> = doll.links.iter().map(|l| regions[region(world.get::<Name>(l.bone).map_or("", |n| n.as_str()))]).collect();
+        crate::ragdoll::skin_some(world, doll, &keep);
+    }
+    world.insert_resource(pb);
 }

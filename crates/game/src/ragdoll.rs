@@ -12,17 +12,18 @@ use crate::motion_math::world_transform;
 #[derive(Component)]
 struct RagdollBody;
 
-struct Link {
-    bone: Entity,
-    body: Entity,
-    origin: Vec3,
-    rotation: Quat,
+pub(crate) struct Link {
+    pub bone: Entity,
+    pub body: Entity,
+    pub origin: Vec3,
+    pub rotation: Quat,
+    pub parent: Option<usize>,
 }
 
-struct Doll {
+pub(crate) struct Doll {
     fighter: usize,
-    links: Vec<Link>,
-    joints: Vec<Entity>,
+    pub links: Vec<Link>,
+    pub joints: Vec<Entity>,
     last_pose: Vec<(Entity, Transform)>,
     recovering: Option<f32>,
 }
@@ -46,18 +47,28 @@ const SEGMENTS: &[(&str, &str, Option<usize>, f32, f32, f32)] = &[
     ("B_L_Calf", "B_L_Foot", Some(7), 0.07, 5.0, 0.85),
     ("B_R_Thigh", "B_R_Calf", Some(0), 0.085, 8.0, 1.0),
     ("B_R_Calf", "B_R_Foot", Some(9), 0.07, 5.0, 0.85),
+    // feet: a body stands on its soles, not on the ends of its shins
+    ("B_L_Foot", "B_L_Toe0", Some(8), 0.045, 1.2, 0.6),
+    ("B_R_Foot", "B_R_Toe0", Some(10), 0.045, 1.2, 0.6),
 ];
 
 /// Reconstruct current transforms, rather than using last frame's propagated
 /// globals. This also handles unanimated parents and the centimetre-scale rig.
 fn build(world: &mut World, bones: &[Entity], fighter: usize) -> Option<Doll> {
+    let f = &world.resource::<Sim>().world.fighters[fighter];
+    let velocity = Vec3::new(f.velocity.x, 0.0, f.velocity.z).clamp_length_max(12.0);
+    let facing = Vec3::new(f.facing.x, 0.0, f.facing.z);
+    build_with(world, bones, fighter, velocity, facing)
+}
+
+/// Capsule bodies and anatomical joints for a rig (fighters on a knockdown; the Studio stage when Possession
+/// makes it physical).
+pub(crate) fn build_with(world: &mut World, bones: &[Entity], fighter: usize, velocity: Vec3, facing: Vec3) -> Option<Doll> {
     let names: HashMap<_, _> = bones.iter().filter_map(|&e| world.get::<Name>(e).map(|n| (n.as_str().to_owned(), e))).collect();
     // Unknown rigs retain their authored knockdown; never guess bone paths.
     if !SEGMENTS.iter().all(|(a, b, ..)| names.contains_key(*a) && (b.is_empty() || names.contains_key(*b))) { return None; }
-    let f = &world.resource::<Sim>().world.fighters[fighter];
-    let velocity = Vec3::new(f.velocity.x, 0.0, f.velocity.z).clamp_length_max(12.0);
     let angular = Vec3::Y.cross(velocity) * 0.7;
-    let hinge_fallback = Vec3::new(f.facing.x, 0.0, f.facing.z).cross(Vec3::Y).normalize_or(Vec3::X);
+    let hinge_fallback = facing.cross(Vec3::Y).normalize_or(Vec3::X);
     let mut links = Vec::<Link>::new();
     let mut joints = Vec::new();
     for &(start_name, end_name, parent, radius, mass, swing) in SEGMENTS {
@@ -122,12 +133,12 @@ fn build(world: &mut World, bones: &[Entity], fighter: usize) -> Option<Doll> {
             joints.push(world.spawn((joint, JointCollisionDisabled)).id());
             }
         }
-        links.push(Link { bone, body, origin: rotation.inverse() * (start - center), rotation: rotation.inverse() * bone_rotation });
+        links.push(Link { bone, body, origin: rotation.inverse() * (start - center), rotation: rotation.inverse() * bone_rotation, parent });
     }
     Some(Doll { fighter, links, joints, last_pose: Vec::new(), recovering: None })
 }
 
-fn remove_bodies(world: &mut World, doll: &mut Doll) {
+pub(crate) fn remove_bodies(world: &mut World, doll: &mut Doll) {
     for entity in doll.joints.drain(..) { let _ = world.despawn(entity); }
     for link in &doll.links { let _ = world.despawn(link.body); }
 }
@@ -182,10 +193,25 @@ pub fn apply(world: &mut World) {
             if *elapsed >= 0.28 { done.push(rig); }
             continue;
         }
+        skin(world, doll);
+    }
+    for e in done { dolls.dolls.remove(&e); }
+    world.insert_resource(dolls);
+}
+
+/// Pose the skin from the bodies (parent first, so each link sees its just-written parent).
+pub(crate) fn skin(world: &mut World, doll: &mut Doll) {
+    let all = vec![true; doll.links.len()];
+    skin_some(world, doll, &all);
+}
+
+/// Skin only the links marked true (the rest keep their animated pose).
+pub(crate) fn skin_some(world: &mut World, doll: &mut Doll, keep: &[bool]) {
         doll.last_pose.clear();
-        // Segment order is parent first. current_world observes each just-written
-        // parent, avoiding a frame of lag or repeated scale multiplication.
-        for link in &doll.links {
+        for (i, link) in doll.links.iter().enumerate() {
+            if !keep.get(i).copied().unwrap_or(true) {
+                continue;
+            }
             let Some(body) = world.get::<Transform>(link.body).copied() else { continue };
             let Some(parent) = world.get::<ChildOf>(link.bone).map(|p| p.parent()) else { continue };
             let Some(parent_world) = world_transform(world, parent) else { continue };
@@ -198,9 +224,6 @@ pub fn apply(world: &mut World) {
                 doll.last_pose.push((link.bone, *pose));
             }
         }
-    }
-    for e in done { dolls.dolls.remove(&e); }
-    world.insert_resource(dolls);
 }
 
 pub fn snapshot(world: &mut World) -> serde_json::Value {

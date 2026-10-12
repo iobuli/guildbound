@@ -53,6 +53,7 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
             if let Some(v) = p.get("hero_clips").and_then(Value::as_bool) { s.hero_clips = v; }
             if let Some(v) = p.get("rules").and_then(Value::as_bool) { s.rules = v; }
             if let Some(v) = p.get("select").and_then(Value::as_str) { s.selected = Some(v.to_owned()); }
+            if let Some(v) = p.get("tab").and_then(Value::as_u64).filter(|v| *v < 8) { s.tab = v as usize; }
         }
         if let Some(o) = open && o != world.resource::<crate::studio::Studio>().open {
             world.resource_mut::<crate::studio::Studio>().toggle_request = true;
@@ -63,11 +64,12 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
 
 /// Possession: bone overrides/aims, fixed-fps stepping, life layers, physics. Params (all optional):
 /// {enable, fixed, fps, step, frame, set:{bone:[x,y,z]}, absolute, aim:{bone:[x,y,z]}, clear: true|[bones],
-///  grip:[l,r]|null, look:"off"|"camera"|"wander"|[x,y,z], lean, breath, mass_kg, save:"correction", pose:NAME, bones:true}
+///  grip:[l,r]|null, look:"off"|"camera"|"wander"|[x,y,z], lean, breath, mass_kg, save:"correction", pose:NAME, bones:true,
+///  motion:{keys:[{time,bones:{bone:[x,y,z]},pelvis_m:[x,y,z],grip:[l,r],hands_m:{left:[x,y,z],right:[x,y,z]}}],loop,plants:[left|right]}|null, play}
 fn gb_possess(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.possess");
     let p = p.unwrap_or(Value::Null);
-    let status = crate::possession::command(world, &p);
+    let status = crate::possession::command(world, &p).map_err(|e| bad(&e))?;
     let mut out = crate::possession::snapshot(world, p.get("bones").and_then(Value::as_bool).unwrap_or(false));
     out["status"] = Value::String(status);
     Ok(out)

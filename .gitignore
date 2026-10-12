@@ -1,4 +1,5 @@
 # Rust / Bevy
+/_LocalAI/
 /target/
 **/target/
 *.pdb

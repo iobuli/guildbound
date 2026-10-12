@@ -23,6 +23,10 @@ mod possession;
 mod procedural;
 mod props;
 mod ragdoll;
+mod rig_profile;
+mod generated_motion;
+mod body_clearance;
+mod reference_pose;
 mod remote;
 mod sfx;
 mod sim_bridge;
@@ -56,6 +60,7 @@ fn main() {
         .add_plugins(EguiPlugin::default())
         .add_plugins(studio::plugin)
         .add_plugins(possession::plugin)
+        .add_plugins(reference_pose::plugin)
         .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new().run_if(bevy::input::common_conditions::input_toggle_active(false, KeyCode::F1)))
         .add_plugins(bevy_lunex::UiLunexPlugins)
         .add_plugins(avian3d::prelude::PhysicsPlugins::new(PostUpdate))
@@ -73,6 +78,7 @@ fn main() {
         .init_resource::<ragdoll::Ragdolls>()
         .init_resource::<support::Support>()
         .init_resource::<support::SupportSettings>()
+        .init_resource::<support::StageSupport>()
         .init_resource::<guard_ik::GuardIk>()
         .init_resource::<sfx::SfxSettings>()
         .init_resource::<npc::NpcLibraries>()
@@ -109,9 +115,11 @@ fn main() {
         )
         .add_systems(
             PostUpdate,
-            (anim::inertialize, anim::lock_root_motion, anim::procedural_layers, support::apply, guard_ik::apply, procedural::fighters, studio::apply_corrections, possession::apply, joints::apply, knee::apply, procedural::bone_lengths, studio::measure, possession::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
+            (anim::inertialize, anim::lock_root_motion, generated_motion::apply, procedural::bone_lengths, anim::procedural_layers, support::apply, guard_ik::apply, procedural::fighters, studio::apply_corrections, possession::apply, support::stage, generated_motion::plant_feet, joints::apply, body_clearance::apply, joints::apply, knee::apply, studio::measure, possession::measure, ragdoll::prepare, props::physics_clock).chain().after(bevy::app::AnimationSystems).before(avian3d::prelude::PhysicsSystems::First),
         )
         .add_systems(PostUpdate, ragdoll::apply.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
+        .add_systems(PostUpdate, possession::physical_drive.after(possession::measure).before(ragdoll::prepare))
+        .add_systems(PostUpdate, possession::physical_skin.after(avian3d::prelude::PhysicsSystems::Last).before(bevy::transform::TransformSystems::Propagate))
         .add_systems(PostUpdate, magic_view::sync_orbs.after(bevy::transform::TransformSystems::Propagate))
         .add_systems(EguiPrimaryContextPass, panel::panel)
         .run();

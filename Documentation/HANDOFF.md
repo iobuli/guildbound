@@ -1,5 +1,7 @@
 # Guildbound - handoff, 2026-10-11
 
+Latest boss direction (2026-10-12): [Possession concept and animation decompiler/normalizer build request](CLAUDE_POSSESSION_CONCEPT.md). Runtime should be a local algorithm with no LLM dependency. The user wants clips grouped by movement family with k-means, then normalized to the target model's anatomy, guided by their weighted reference animation and physical constraints. The document ends with the explicit build request and evidence requirements. Changes remain uncommitted.
+
 ## Studio (F2 in play) - the boss <-> Claude animation loop
 - `crates/game/src/studio.rs` + `ui_theme.rs` (Wenrexa hologram theme for every screen). Asset browser over all 412 models in assets/packs, hero library or own clips on a timeline, live joint numbers (segment bends vs ranges, knee flexion/direction, ankle and pelvis heights), click-to-pick bones with a skeleton overlay, a corrections ledger (`assets/corrections.json`, per-clip per-bone keyed offsets applied live under the joint/knee authority), patterns across clips/models with promote-to-all, boss notes with full pose numbers (`collab/studio_notes.jsonl` + devfeed), HUD layout editor (`assets/ui/hud_layout.json`), engine diagnostics. Claude reads/drives it with `gb.studio`.
 - Camera rewritten (`camera.rs`): chest pivot + shoulder offset, look-ahead, lazy follow, lock-on framing, spring arm against static colliders and sim obstacles; lock-on picks the target nearest screen centre, mouse flick switches.

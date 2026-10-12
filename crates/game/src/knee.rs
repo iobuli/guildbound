@@ -28,7 +28,12 @@ impl Default for KneeStats {
 
 /// A correction for one leg: the new ankle target and the forward pole, or None if the leg is legal.
 /// `forward` is the direction the knee must face (the pelvis's forward). Knee interior angle 180 = straight.
+#[cfg(test)]
 pub fn fix(hip: Vec3, knee: Vec3, ankle: Vec3, lengths: [f32; 2], forward: Vec3) -> Option<(Vec3, Vec3, bool)> {
+    fix_with_limit(hip, knee, ankle, lengths, forward, MAX_FLEX_DEG)
+}
+
+pub fn fix_with_limit(hip: Vec3, knee: Vec3, ankle: Vec3, lengths: [f32; 2], forward: Vec3, max_flex: f32) -> Option<(Vec3, Vec3, bool)> {
     let [a, b] = lengths;
     let line = ankle - hip;
     let u = line.normalize_or(Vec3::NEG_Y);
@@ -38,7 +43,7 @@ pub fn fix(hip: Vec3, knee: Vec3, ankle: Vec3, lengths: [f32; 2], forward: Vec3)
     // interior angle at the knee from the current hip-ankle distance
     let d = line.length().clamp((a - b).abs() + 1e-4, a + b - 1e-4);
     let interior = ((a * a + b * b - d * d) / (2.0 * a * b)).clamp(-1.0, 1.0).acos();
-    let min_interior = (180.0 - MAX_FLEX_DEG).to_radians();
+    let min_interior = (180.0 - max_flex).to_radians();
     let overflex = interior < min_interior;
     if !backward && !overflex {
         return None;
@@ -51,21 +56,22 @@ pub fn fix(hip: Vec3, knee: Vec3, ankle: Vec3, lengths: [f32; 2], forward: Vec3)
 pub fn apply(world: &mut World) {
     let sim = world.resource::<Sim>();
     let facings: Vec<Vec3> = sim.world.fighters.iter().map(|f| Vec3::new(f.facing.x, 0.0, f.facing.z)).collect();
-    let mut query = world.query::<&FighterRig>();
-    let mut rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
+    let mut query = world.query::<(Entity, &FighterRig)>();
+    let mut rigs: Vec<_> = query.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone())).collect();
     // the Studio stage model obeys the same hinge (its facing comes from its own transform)
-    let mut studio = world.query::<(&crate::studio::StudioRig, &Transform)>();
-    let stage: Vec<(Vec3, Vec<Entity>)> = studio.iter(world).filter(|(r, _)| r.rules).map(|(r, t)| (t.rotation * Vec3::Z, r.bones.clone())).collect();
+    let mut studio = world.query::<(Entity, &crate::studio::StudioRig, &Transform)>();
+    let stage: Vec<_> = studio.iter(world).filter(|(_, r, _)| r.rules).map(|(e, r, t)| (e, t.rotation * Vec3::Z, r.bones.clone())).collect();
     let mut facings = facings;
-    for (f, bones) in stage {
+    for (e, f, bones) in stage {
         facings.push(f);
-        rigs.push((facings.len() - 1, bones));
+        rigs.push((e, facings.len() - 1, bones));
     }
     let mut stats = world.get_resource::<KneeStats>().copied().unwrap_or_default();
     if !stats.enabled {
         return;
     }
-    for (fighter, bones) in rigs {
+    for (root, fighter, bones) in rigs {
+        let max_flex = world.get::<crate::rig_profile::RigProfile>(root).map_or(MAX_FLEX_DEG, |p| p.knee_max);
         let Some(&facing) = facings.get(fighter) else { continue };
         let find = |world: &World, n: &str| bones.iter().copied().find(|&e| world.get::<Name>(e).is_some_and(|x| x.as_str() == n));
         for side in ["L", "R"] {
@@ -93,7 +99,7 @@ pub fn apply(world: &mut World) {
                 _ => facing,
             };
             stats.checked += 1;
-            let Some((target, pole, backward)) = fix(h, k, a, lengths, heading) else { continue };
+            let Some((target, pole, backward)) = fix_with_limit(h, k, a, lengths, heading, max_flex) else { continue };
             if backward { stats.backward += 1 } else { stats.overflex += 1 }
             let (_, foot_rotation, _) = f.to_scale_rotation_translation();
             crate::ik::apply(world, [hip, knee, foot], target, pole, heading, lengths);

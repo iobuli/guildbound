@@ -72,6 +72,97 @@ pub struct Support {
 pub struct SupportSettings { pub enabled: bool }
 impl Default for SupportSettings { fn default() -> Self { Self { enabled: true } } }
 
+#[derive(Resource, Default)]
+pub struct StageSupport {
+    root: Option<Entity>,
+    clip: String,
+    time: f32,
+    rig: Option<RigSupport>,
+    contacts: HashMap<String, Vec<[f32; 2]>>,
+    sole: [f32; 2],
+}
+
+/// Studio clips use their measured contact curves, rather than the COM balance estimate.
+pub fn stage(world: &mut World) {
+    let s = world.resource::<crate::studio::Studio>();
+    if !s.open || world.resource::<crate::possession::Possession>().motion.is_some() { return; }
+    let (Some(root), Some(clip), Some(path)) = (s.entity, s.clip.clone(), s.model.clone()) else { return };
+    let time = s.time;
+    let Some(bones) = world.get::<crate::studio::StudioRig>(root).map(|r| r.bones.clone()) else { return };
+    // The stage is an in-place preview, just like the fighter presentation.
+    let root_lock = world.get::<crate::procedural::RestPose>(root).and_then(|r| bones.iter().copied()
+        .find(|&e| world.get::<Name>(e).is_some_and(|n| n.as_str() == "Motion")).and_then(|e| r.1.get(&e).map(|&p| (e, p))));
+    if let Some((e, rest)) = root_lock && let Some(mut t) = world.get_mut::<Transform>(e) { t.translation = rest; }
+    let mut state = world.remove_resource::<StageSupport>().unwrap_or_default();
+    let duration = world.resource::<crate::studio::Studio>().duration.max(0.01);
+    let wrapped = time < state.time && state.time > duration - 0.2 && time < 0.2;
+    let reset = state.root != Some(root) || state.clip != clip || (time < state.time && !wrapped) || time - state.time > 0.2;
+    if state.root != Some(root) {
+        let data = std::fs::read_to_string(format!("{}/assets/{path}.motion.json", crate::ROOT)).ok()
+            .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
+        state.contacts = data.as_ref().filter(|v| v["verified"] == true).and_then(|v| v["foot_contacts"].as_object()).map(|curves| curves.iter().filter_map(|(n, rows)| {
+            let curve: Vec<_> = rows.as_array()?.iter().filter_map(|r| Some([r[0].as_f64()? as f32, r[1].as_f64()? as f32])).collect();
+            (curve.len() > 1).then(|| (n.clone(), curve))
+        }).collect()).unwrap_or_default();
+        state.sole = std::array::from_fn(|i| data.as_ref().and_then(|v| v["sole_height_m"][i].as_f64()).map_or(0.1, |h| h as f32));
+    }
+    if reset {
+        state.rig = build(world, 0, &bones);
+        state.root = Some(root);
+        state.clip = clip.clone();
+    }
+    let dt = if reset { 1.0 / 30.0 } else if wrapped { duration - state.time + time } else { (time - state.time).max(0.0) };
+    state.time = time;
+    let phase = time / world.resource::<crate::studio::Studio>().duration.max(0.01);
+    let contact: Option<[f32; 2]> = state.contacts.get(&clip).map(|curve| {
+        let f = phase.clamp(0.0, 1.0) * (curve.len() - 1) as f32;
+        let i = f.floor() as usize;
+        let j = (i + 1).min(curve.len() - 1);
+        std::array::from_fn(|s| curve[i][s] + (curve[j][s] - curve[i][s]) * f.fract())
+    });
+    if let (Some(rig), Some(contact)) = (&mut state.rig, contact) {
+        let forward = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
+        rig.enabled = true;
+        let mut required_drop = 0.0f32;
+        for (i, leg) in rig.legs.iter_mut().enumerate() {
+            let Some(p) = world_transform(world, leg.joints[2]) else { continue };
+            let rot = p.to_scale_rotation_translation().1;
+            leg.raw = p.translation();
+            leg.contact = contact[i];
+            leg.lock.step(leg.raw, ground_rotation(rot, leg.sole_up), crate::studio::STAGE.y + state.sole[i], contact[i], dt);
+            if leg.lock.weight > 0.5 && let Some(hip) = world_transform(world, leg.joints[0]) {
+                let delta = hip.translation() - leg.lock.anchor;
+                let reach = leg.lengths.iter().sum::<f32>() - 0.003;
+                let vertical = (reach * reach - Vec2::new(delta.x, delta.z).length_squared()).max(0.0).sqrt();
+                required_drop = required_drop.max((delta.y - vertical).max(0.0) * leg.lock.weight);
+            }
+        }
+        let drop = -required_drop.min(0.1);
+        if let Some(parent) = world.get::<ChildOf>(rig.pelvis).map(|p| p.parent()) && let Some(g) = world_transform(world, parent)
+            && let Some(mut t) = world.get_mut::<Transform>(rig.pelvis) {
+            t.translation += g.affine().inverse().transform_vector3(Vec3::Y * drop);
+        }
+        for leg in &mut rig.legs {
+            let Some(foot) = world_transform(world, leg.joints[2]) else { continue };
+            let rotation = foot.to_scale_rotation_translation().1.slerp(leg.lock.rotation, leg.lock.weight).normalize();
+            let target = foot.translation().lerp(leg.lock.anchor, leg.lock.weight);
+            let pole = match (world_transform(world, leg.joints[0]), world_transform(world, leg.joints[1])) {
+                (Some(h), Some(k)) => k.translation() - h.translation(), _ => forward,
+            };
+            ik::apply(world, leg.joints, target, pole, forward, leg.lengths);
+            ik::rotate_world(world, leg.joints[2], rotation);
+            leg.solved = world_transform(world, leg.joints[2]).map_or(target, |g| g.translation());
+        }
+    }
+    world.insert_resource(state);
+}
+
+pub fn stage_snapshot(world: &World) -> serde_json::Value {
+    let Some(s) = world.get_resource::<StageSupport>() else { return serde_json::Value::Null };
+    let Some(rig) = &s.rig else { return serde_json::Value::Null };
+    serde_json::json!({"clip":s.clip, "feet":rig.legs.iter().map(|l| serde_json::json!({"phase":format!("{:?}",l.lock.phase), "weight":l.lock.weight, "contact":l.contact, "anchor_error_m":l.solved.distance(l.lock.anchor)})).collect::<Vec<_>>()})
+}
+
 fn build(world: &World, fighter: usize, bones: &[Entity]) -> Option<RigSupport> {
     let names: HashMap<_, _> = bones.iter().filter_map(|&e| world.get::<Name>(e).map(|n| (n.as_str(), e))).collect();
     let leg = |hip: &str, knee: &str, foot: &str| -> Option<Leg> {

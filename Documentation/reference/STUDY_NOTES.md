@@ -126,3 +126,18 @@ Clones (reference only, D:/New folder (4)/reference/): `Godot4ThirdPersonCombatP
 Fusion: Overgrowth drives a few key poses with springs; we keep full clips but add the same spring layers on top,
 plus the authority rules (joints.rs, knee.rs) that Overgrowth does not have, and Possession gives the boss and Claude
 direct control over every bone with the physics readout (centre of mass, momentum, balance) Overgrowth never shows.
+
+## Grok workspace ideas (boss, assets/grok ideas, 2026-10-12)
+- Source: two Grok workspace zips; extracted to `D:/New folder (4)/reference/grok_ideas`. One is only Grok install
+  assets; the other is a React/TypeScript web prototype of the guild yard (src/lib/guild, src/components/guild).
+- Ideas worth taking (our own Rust, sim-side, integer maths):
+  - Prices in basis points (10000 = 1.00), rounded once per unit: quality multipliers (Standard 1.00, Refined 1.15,
+    Masterwork 1.30; effect strength 1.00/1.10/1.20), sell at 35%, guild rank F..S gives 1% buy discount and 1% sell
+    bonus per rank, stock scalar 0.85 at double target to 1.15 when empty. Feeds `rpg.rs` shop/loot values.
+  - Items with category, stack size, qualities, equip slots (head, torso, hands, legs, feet, main/off hand, trinket),
+    bound contract tokens that cannot be sold. Recipes at stations with a minimum rank, fee, inputs with minimum quality
+    (healing draught = herb + spring water + vial). Feeds the quick slots and a crafting bench.
+  - Moveset follows the equipped weapon: empty hand unarmed, sword + buckler = sword_shield, greatsword uses both
+    hands. Fits the Moveset tab: one clip set per moveset.
+  - Guild standing from claimed contracts (level from contract points).
+- Status: planned (economy and crafting in crates/sim with tests; moveset switch in anim.rs).

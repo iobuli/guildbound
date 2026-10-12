@@ -65,15 +65,17 @@ pub fn soft_range(x: f32, lo: f32, hi: f32) -> f32 {
 
 pub fn apply(world: &mut World) {
     let mut auth = world.remove_resource::<JointAuthority>().unwrap_or_default();
-    let mut query = world.query::<&FighterRig>();
-    let mut rigs: Vec<(usize, Vec<Entity>)> = query.iter(world).map(|r| (r.fighter, r.bones.clone())).collect();
-    let mut studio = world.query::<&crate::studio::StudioRig>();
-    rigs.extend(studio.iter(world).filter(|r| r.rules).map(|r| (usize::MAX, r.bones.clone())));
+    let mut query = world.query::<(Entity, &FighterRig)>();
+    let mut rigs: Vec<_> = query.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone())).collect();
+    let mut studio = world.query::<(Entity, &crate::studio::StudioRig)>();
+    rigs.extend(studio.iter(world).filter(|(_, r)| r.rules).map(|(e, r)| (e, usize::MAX, r.bones.clone())));
     auth.readings.clear();
-    for (fighter, bones) in rigs {
+    for (root, fighter, bones) in rigs {
         let find = |world: &World, n: &str| bones.iter().copied().find(|&e| world.get::<Name>(e).is_some_and(|x| x.as_str() == n));
-        for &(a, j, b, lo, hi) in RULES {
-            let (Some(ea), Some(ej), Some(eb)) = (find(world, a), find(world, j), find(world, b)) else { continue };
+        let profile = world.get::<crate::rig_profile::RigProfile>(root).cloned().unwrap_or_default();
+        for rule in &profile.rules {
+            let (j, lo, hi) = (rule.joint.as_str(), rule.min, rule.max);
+            let (Some(ea), Some(ej), Some(eb)) = (find(world, &rule.from), find(world, j), find(world, &rule.to)) else { continue };
             let (Some(pa), Some(pj), Some(pb)) = (world_transform(world, ea), world_transform(world, ej), world_transform(world, eb)) else { continue };
             let u = (pj.translation() - pa.translation()).normalize_or_zero();
             let v = (pb.translation() - pj.translation()).normalize_or_zero();
