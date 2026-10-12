@@ -341,6 +341,11 @@ impl FighterRig {
         Some((clip, phase))
     }
 
+    /// Yaw (radians about +Y) the chest aim layer turned this frame.
+    pub fn chest_aim(&self) -> f32 {
+        -self.aim
+    }
+
     pub fn new(fighter: usize, color: Color) -> Self {
         Self {
             fighter,
@@ -534,8 +539,10 @@ pub fn on_rig_ready(
     mut mats: Query<&mut MeshMaterial3d<StandardMaterial>>,
     mut rigs: Query<&mut FighterRig>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut commands: Commands,
 ) {
     let Ok(mut rig) = rigs.get_mut(ready.entity) else { return };
+    let mut rest = crate::procedural::RestPose::default();
     let tint = materials.add(StandardMaterial { base_color: rig.color, perceptual_roughness: 0.7, ..default() });
     rig.bones.clear();
     rig.root_lock = None;
@@ -547,6 +554,7 @@ pub fn on_rig_ready(
         }
         if let Ok((name, t)) = targets.get(e) {
             rig.bones.push(e);
+            rest.0.insert(e, t.rotation);
             if rig.root_lock.is_none() && matches!(name.as_str(), "Motion" | "motion" | "root" | "Root_M") {
                 rig.root_lock = Some((e, t.translation));
             }
@@ -573,6 +581,7 @@ pub fn on_rig_ready(
             }
         }
     }
+    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default()));
 }
 
 /// In-place normalization at runtime: a dedicated root-motion bone keeps its vertical motion (hops, crouches)

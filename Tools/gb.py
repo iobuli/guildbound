@@ -16,6 +16,9 @@ python -I Tools/gb.py anim CLIP [FIGHTER]        play a clip once on fighter (de
 python -I Tools/gb.py library [NAME|INDEX]       list packs, or switch every fighter's model + clips
 python -I Tools/gb.py shot [PATH]                screenshot, default Documentation/checks/live/latest.png
 python -I Tools/gb.py call METHOD [JSON]         any BRP method, e.g. world.query
+python -I Tools/gb.py call gb.possess [JSON]     Possession: {"set":{"B_L_UpperArm":[0,0,20]}, "aim":{bone:[x,y,z]}, "step":1,
+                                                 "frame":12, "fps":30, "grip":[1,1], "look":"camera", "lean":true, "breath":true,
+                                                 "save":"correction", "pose":"name", "clear":true, "bones":true}
 
 gb.control also accepts state=play|menu, dev_panel=true|false and lock=true|false.
 gb.input also accepts jump, roll, light, heavy, heavy_held, guard, step, cast=0..3,

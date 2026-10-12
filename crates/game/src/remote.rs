@@ -36,6 +36,7 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.support", gb_support)
         .with_method_main("gb.guard", gb_guard)
         .with_method_main("gb.studio", gb_studio)
+        .with_method_main("gb.possess", gb_possess)
         .with_method_main("gb.loot", gb_loot)
 }
 
@@ -58,6 +59,18 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
         }
     }
     Ok(crate::studio::snapshot(world))
+}
+
+/// Possession: bone overrides/aims, fixed-fps stepping, life layers, physics. Params (all optional):
+/// {enable, fixed, fps, step, frame, set:{bone:[x,y,z]}, absolute, aim:{bone:[x,y,z]}, clear: true|[bones],
+///  grip:[l,r]|null, look:"off"|"camera"|"wander"|[x,y,z], lean, breath, mass_kg, save:"correction", pose:NAME, bones:true}
+fn gb_possess(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.possess");
+    let p = p.unwrap_or(Value::Null);
+    let status = crate::possession::command(world, &p);
+    let mut out = crate::possession::snapshot(world, p.get("bones").and_then(Value::as_bool).unwrap_or(false));
+    out["status"] = Value::String(status);
+    Ok(out)
 }
 
 fn gb_guard(In(_): In<Option<Value>>, world: &mut World) -> BrpResult {

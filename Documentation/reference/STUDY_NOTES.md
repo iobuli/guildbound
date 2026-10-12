@@ -103,3 +103,26 @@ Clones (reference only, D:/New folder (4)/reference/): `Godot4ThirdPersonCombatP
 - **Kevin Iglesias Human Basic Motions FREE** (boss's asset): non-combat 8-direction walk/run, forward sprints, jump/fall; idles cut (boss: RPG idles only).
 - **Modular terrain collection** (OBJ, 305 pieces): extracted to `assets/packs/_sources/modular_terrain`; planned for the world blockout.
 - **Search finds** (cloned for reference): `vleue/vleue_navigator` (MIT/Apache, Polyanya navmesh from glTF or obstacle components; Bevy 0.18 at clone time) for mob/NPC pathfinding around the scatter; `janhohenheim/bevy_ahoy` (Bevy 0.19 kinematic controller) for ledge/step ideas; Mischief in Miniature (MIT/Apache, CC0 assets) noted. Rejected for now: bevior_tree (targets Bevy 0.15).
+
+## Overgrowth (Wolfire Games) - procedural life and physics, for Possession (2026-10-12)
+- Source: github.com/WolfireGames/overgrowth, sparse clone at `D:/New folder (4)/reference/overgrowth` (Data/Scripts).
+- Licence: Apache-2.0 for the code (README; assets under Proprietary/ are not ours to use). We adapted ideas and
+  numbers in our own Rust, no code copied, so no LICENSES.md row is needed.
+- Read: `aschar.as` UpdateEyeLookTarget, UpdateHeadLook, DoHeadIK, DoChestIK, UpdateTilt, HandleAccelTilt,
+  Breathe, UpdateItemFistGrip, SetActiveRagdollFallPose.
+
+| Mechanic (our words) | Numbers | Feeds | Status |
+|---|---|---|---|
+| Look target priority: forced/lock target's head, else the player's camera facing (far point), else an NPC's chosen character or an idle gaze re-picked every 0.8-2 s in the front half, mixed half with facing, +-0.3 vertical. A running player glances between run direction and camera when sin(3t)+sin(2.3t) > 0. | 0.8-2 s gaze slots | `procedural::fighters`, Possession look "wander" | built (deterministic hash instead of RNG) |
+| Head look strength 0 in flips, rolls and non-movement/attack states, reduced while flinching | - | `procedural::fighters` (busy states) | built |
+| Head turn: yaw/pitch from the head frame, yaw limit 1.3 x 0.7 rad for humans, pitch +-0.8, keep the old side when the target swings behind (hysteresis), springy with acceleration inertia, applied half at the neck and half at the head | 0.91 / 0.8 rad | `procedural::look_angles/turn_head` | built (critically damped spring, 11 rad/s) |
+| Chest follows the look partly (torso control 0.35-1 by stance, 0 in air, reduced while attacking) | head_range 1.0 rad | our chest aim spring in anim.rs already turns the chest to strike targets; the head subtracts it | fused |
+| Tilt into motion: target = velocity x 0.5 deg/(m/s) + smoothed acceleration x 1 deg/(m/s^2), ground only, eased (inertia 0.9 per 1/120 s) | 0.5, 1.0 | Possession lean; fighters already lean in anim.rs (0.02 rad/(m/s), 0.018 rad/(m/s^2)) | built |
+| Breathing: rate eases from 0.9 to 4.9 rad/s with speed (combat counts as half), amplitude grows with rate | 0.9-4.9 | `procedural::breathe` (chest pitch 1.6 deg, shoulders 2.5 deg) | built |
+| Fist grip when a hand holds something (morph target there) | 0/1 | finger curl by grip from the sim action: fists in strikes/guard, open for magic, relaxed out of combat | built (bone curl, eased) |
+| Active ragdoll on a fall: strength from speed (0.1 x speed, max 0.8), curl to a fetal pose near hazards, arms out front when the torso faces the hazard | 0.8 max | ragdoll.rs (perfect-parry knock): protective arms | planned |
+| Small random shake on head/torso targets (0.001-0.005 rad) for life | - | - | rejected for now (breathing gives the life; RNG not wanted) |
+
+Fusion: Overgrowth drives a few key poses with springs; we keep full clips but add the same spring layers on top,
+plus the authority rules (joints.rs, knee.rs) that Overgrowth does not have, and Possession gives the boss and Claude
+direct control over every bone with the physics readout (centre of mass, momentum, balance) Overgrowth never shows.

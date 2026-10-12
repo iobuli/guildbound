@@ -30,7 +30,7 @@ use crate::ui_theme::{self as theme, Kit};
 /// Where models are staged: a cleared spot north-west of the courtyard.
 pub const STAGE: Vec3 = Vec3::new(-30.0, 0.0, 30.0);
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
-const TABS: [&str; 6] = ["Inspect", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+const TABS: [&str; 7] = ["Inspect", "Possession", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -81,7 +81,7 @@ impl Corrections {
         json!({"corrections": self.list.iter().map(|c| json!({"clip": c.clip, "bone": c.bone, "keys": c.keys})).collect::<Vec<_>>()})
     }
 
-    fn save(&self) {
+    pub(crate) fn save(&self) {
         let _ = std::fs::write(Self::path(), serde_json::to_string_pretty(&self.to_json()).unwrap_or_default());
     }
 
@@ -139,7 +139,7 @@ pub struct Studio {
     filter: String,
     clip_filter: String,
     pub model: Option<String>,
-    entity: Option<Entity>,
+    pub(crate) entity: Option<Entity>,
     pub clip: Option<String>,
     pub time: f32,
     pub duration: f32,
@@ -268,17 +268,27 @@ fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<A
     studio.model = Some(path);
 }
 
-fn on_ready(ready: On<WorldInstanceReady>, children: Query<&Children>, players: Query<(), With<AnimationPlayer>>, targets: Query<(), With<AnimationTargetId>>, mut rigs: Query<&mut StudioRig>) {
+fn on_ready(
+    ready: On<WorldInstanceReady>,
+    mut commands: Commands,
+    children: Query<&Children>,
+    players: Query<(), With<AnimationPlayer>>,
+    targets: Query<&Transform, With<AnimationTargetId>>,
+    mut rigs: Query<&mut StudioRig>,
+) {
     let Ok(mut rig) = rigs.get_mut(ready.entity) else { return };
     rig.bones.clear();
+    let mut rest = crate::procedural::RestPose::default();
     for e in children.iter_descendants(ready.entity) {
         if players.contains(e) {
             rig.player = Some(e);
         }
-        if targets.contains(e) {
+        if let Ok(t) = targets.get(e) {
             rig.bones.push(e);
+            rest.0.insert(e, t.rotation);
         }
     }
+    commands.entity(ready.entity).insert((rest, crate::procedural::Life::default()));
 }
 
 /// Build the model's own clip graph once loaded; attach the chosen graph; advance and seek the timeline.
@@ -292,6 +302,7 @@ fn drive(
     lib: Option<Res<AnimLibrary>>,
     mut rigs: Query<&mut StudioRig>,
     mut players: Query<&mut AnimationPlayer>,
+    mut possession: ResMut<crate::possession::Possession>,
 ) {
     let studio = &mut *studio;
     if let Some((h, graph, index)) = &mut studio.own
@@ -337,9 +348,8 @@ fn drive(
         return;
     };
     studio.duration = dur.max(0.01);
-    if studio.playing {
-        studio.time = (studio.time + time.delta_secs() * studio.speed).rem_euclid(studio.duration);
-    }
+    let (playing, speed, duration) = (studio.playing, studio.speed, studio.duration);
+    possession.advance(&mut studio.time, playing, time.delta_secs(), speed, duration);
     if !player.is_playing_animation(node) {
         player.stop_all();
         player.play(node);
@@ -384,13 +394,27 @@ fn draw_skeleton(studio: Res<Studio>, rigs: Query<&StudioRig>, bones: Query<(&Na
     }
     let Some(rig) = studio.entity.and_then(|e| rigs.get(e).ok()) else { return };
     let bad: Vec<&str> = studio.numbers["violations"].as_array().map(|a| a.iter().filter_map(|v| v.as_str()).collect()).unwrap_or_default();
+    // body bones only: the root-motion bone rides on the floor (a line from it to the hips matches no body part)
+    // and leaf bones are export helpers; fingers are drawn dim so they can still be picked for Possession
+    let root = |n: &str| matches!(n, "Motion" | "motion" | "root" | "Root_M");
     for &b in &rig.bones {
         let Ok((name, g, parent)) = bones.get(b) else { continue };
-        if name.as_str().contains("Finger") {
+        if name.as_str().contains("_leaf") {
             continue;
         }
-        if let Some(p) = parent.map(|c| c.parent()).filter(|pe| rig.bones.contains(pe)).and_then(|pe| bones.get(pe).ok()) {
-            let col = if bad.contains(&name.as_str()) { Color::srgb(1.0, 0.3, 0.25) } else { Color::srgb(0.35, 0.86, 0.78) };
+        if root(name.as_str()) {
+            gizmos.circle(Isometry3d::new(g.translation() + Vec3::Y * 0.01, Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), 0.08, Color::srgba(0.95, 0.75, 0.3, 0.7));
+            continue;
+        }
+        if let Some(p) = parent.map(|c| c.parent()).filter(|pe| rig.bones.contains(pe)).and_then(|pe| bones.get(pe).ok()).filter(|p| !root(p.0.as_str())) {
+            let finger = ["index", "middle", "ring", "pinky", "thumb"].iter().any(|f| name.as_str().starts_with(f)) || name.as_str().contains("Finger");
+            let col = if bad.contains(&name.as_str()) {
+                Color::srgb(1.0, 0.3, 0.25)
+            } else if finger {
+                Color::srgba(0.35, 0.86, 0.78, 0.35)
+            } else {
+                Color::srgb(0.35, 0.86, 0.78)
+            };
             gizmos.line(p.1.translation(), g.translation(), col);
         }
         if studio.selected.as_deref() == Some(name.as_str()) {
@@ -531,6 +555,9 @@ fn ui(
     mut feed: ResMut<crate::feed::DevFeed>,
     assets: Res<AssetServer>,
     bodies: Query<(), With<avian3d::prelude::RigidBody>>,
+    mut possession: ResMut<crate::possession::Possession>,
+    names: Query<&Name>,
+    rigs: Query<&StudioRig>,
 ) -> Result {
     if !studio.open {
         return Ok(());
@@ -610,8 +637,12 @@ fn ui(
         theme::dock_backdrop(ui, kit, ui.max_rect());
         egui::ScrollArea::vertical().show(ui, |ui| match studio.tab {
             0 => inspect(ui, studio, &mut corr, kit, &mut feed, sim.world.tick),
-            1 => corrections_tab(ui, &mut corr),
-            2 => {
+            1 => {
+                let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
+                crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
+            }
+            2 => corrections_tab(ui, &mut corr),
+            3 => {
                 theme::section(ui, "Patterns across clips and models");
                 ui.label(egui::RichText::new("Repeated fixes become library-wide rules; repeated notes show where the pipeline is wrong.").size(11.0).color(theme::MUTED));
                 let notes = read_notes();
@@ -676,7 +707,7 @@ fn ui(
                     studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
-            3 => {
+            4 => {
                 theme::section(ui, "Notes sent to Claude");
                 for n in read_notes().iter().rev().take(30) {
                     ui.label(egui::RichText::new(format!("{}  {} @ {:.2}s  {}", n["model"].as_str().unwrap_or(""), n["clip"].as_str().unwrap_or(""), n["time"].as_f64().unwrap_or(0.0), n["bone"].as_str().unwrap_or(""))).size(11.0).color(theme::MUTED));
@@ -684,7 +715,7 @@ fn ui(
                     ui.separator();
                 }
             }
-            4 => {
+            5 => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
                 for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {
