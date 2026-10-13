@@ -112,12 +112,12 @@ pub fn panel(
                 ui.label(egui::RichText::new("View").strong());
                 ui.horizontal(|ui| {
                     ui.checkbox(&mut state.show_grid, "grid");
-                    ui.checkbox(&mut state.show_velocity, "velocity");
-                    ui.checkbox(&mut state.show_bodies, "bodies");
-                    ui.checkbox(&mut state.show_capsules, "capsules");
+                    ui.checkbox(&mut state.show_velocity, "movement arrows").on_hover_text("Show arrows for where each character is moving.");
+                    ui.checkbox(&mut state.show_bodies, "physics shapes").on_hover_text("Show the physics shapes of the bodies.");
+                    ui.checkbox(&mut state.show_capsules, "collision capsules").on_hover_text("Show the capsules used for character collisions.");
                 });
-                ui.add(egui::Slider::new(&mut feedback.shake_scale, 0.0..=1.0).text("camera shake"));
-                ui.add(egui::Slider::new(&mut sfx.volume, 0.0..=1.0).text("sound volume"));
+                ui.add(egui::Slider::new(&mut feedback.shake_scale, 0.0..=1.0).text("camera shake")).on_hover_text("How much the camera shakes when hits land.");
+                ui.add(egui::Slider::new(&mut sfx.volume, 0.0..=1.0).text("sound volume")).on_hover_text("Volume of the game sounds.");
                 ui.separator();
                 anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
                 ui.separator();
@@ -253,7 +253,7 @@ pub fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.add(egui::DragValue::new(&mut t.sprint_speed).speed(0.05).range(0.1..=20.0));
         ui.end_row();
         ui.label("relaxed out of combat");
-        ui.checkbox(&mut t.relaxed, "walk, run, held run sprints");
+        ui.checkbox(&mut t.relaxed, "relaxed movement").on_hover_text("Out of combat: walk normally, run with the run key, keep holding it to sprint.");
         ui.end_row();
         ui.label("turn smoothness 1/s");
         ui.add(egui::DragValue::new(&mut t.turn_stiffness).speed(0.2).range(2.0..=60.0));
@@ -359,14 +359,14 @@ fn anim_section(
 
 /// Animation tuning: shared by the dev panel and the Studio's Tuning tab.
 pub fn anim_tuning(ui: &mut egui::Ui, anim: &mut AnimSettings) {
-    ui.checkbox(&mut anim.inertialize, "smooth transitions (inertialize from last pose)");
-    ui.checkbox(&mut anim.blend_space, "locomotion blend space (off: nearest single clip)");
-    ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk clip m/s at 1x"));
-    ui.add(egui::Slider::new(&mut anim.run_reference_speed, 1.0..=8.0).text("run clip m/s at 1x"));
-    ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("blend s"));
-    ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean rad per m/s2"));
-    ui.add(egui::Slider::new(&mut anim.lean_per_speed, 0.0..=0.06).text("lean rad per m/s (run lean)"));
-    ui.add(egui::Slider::new(&mut anim.lean_max, 0.0..=0.5).text("lean limit rad"));
+    ui.checkbox(&mut anim.inertialize, "smooth transitions").on_hover_text("Ease out of the old pose when the animation changes, instead of snapping.");
+    ui.checkbox(&mut anim.blend_space, "blend walking directions").on_hover_text("Mix the walk animations for directions in between (off: use the closest single animation).");
+    ui.add(egui::Slider::new(&mut anim.reference_speed, 0.5..=4.0).text("walk animation speed")).on_hover_text("The ground speed the walk animation was made for; keeps the feet from sliding.");
+    ui.add(egui::Slider::new(&mut anim.run_reference_speed, 1.0..=8.0).text("run animation speed")).on_hover_text("The ground speed the run animation was made for; keeps the feet from sliding.");
+    ui.add(egui::Slider::new(&mut anim.blend_seconds, 0.02..=0.5).text("fade-in time (s)")).on_hover_text("Seconds to fade from the previous animation into this one.");
+    ui.add(egui::Slider::new(&mut anim.lean_per_accel, 0.0..=0.05).text("lean when speeding up")).on_hover_text("Extra lean while speeding up or slowing down.");
+    ui.add(egui::Slider::new(&mut anim.lean_per_speed, 0.0..=0.06).text("run lean")).on_hover_text("How far a running character leans for each unit of speed.");
+    ui.add(egui::Slider::new(&mut anim.lean_max, 0.0..=0.5).text("maximum lean")).on_hover_text("The furthest the body may lean (0.3 is about 17 degrees).");
     if ui.button("Animation defaults").clicked() {
         *anim = AnimSettings::default();
     }

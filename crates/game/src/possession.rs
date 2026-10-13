@@ -649,15 +649,16 @@ pub fn command(world: &mut World, p: &Value) -> Result<String, String> {
 /// The Possession tab.
 pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mut Corrections, bone_names: &[String]) {
     theme::section(ui, "Possession");
+    theme::hint(ui, "Pose any bone yourself: click a bone, then hold 1, 2 or 3 and drag with the middle mouse button to turn it.");
     ui.horizontal(|ui| {
-        ui.checkbox(&mut p.enabled, "Possess the stage model");
-        ui.checkbox(&mut p.reference_corrector, "Reference joint correction");
-        ui.checkbox(&mut p.fixed, "Fixed fps");
+        ui.checkbox(&mut p.enabled, "Take control of the model").on_hover_text("Grab any bone of the model on the stage and pose it yourself.");
+        ui.checkbox(&mut p.reference_corrector, "Fix joints from a reference").on_hover_text("Pull joint angles toward a known-good reference pose.");
+        ui.checkbox(&mut p.fixed, "Step in whole frames").on_hover_text("Play the animation one whole frame at a time at a set rate, for close inspection.");
         ui.add(egui::DragValue::new(&mut p.fps).range(1.0..=240.0).speed(1.0).suffix(" fps"));
     });
     if let Some(motion) = &p.motion {
         ui.label(egui::RichText::new(format!("Generated motion: {} keys, {:.2} s", motion.keys.len(), motion.duration)).color(theme::TEAL));
-        if theme::button(ui, "Return to clip", false).clicked() {
+        if theme::button(ui, "Return to clip", false).on_hover_text("Drop your pose and go back to the animation.").clicked() {
             p.motion = None;
             studio.time = 0.0;
             p.last = None;
@@ -689,8 +690,8 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
             ui.add(egui::DragValue::new(&mut o.euler.z).speed(0.5).prefix("z ").suffix(" deg"));
         });
         ui.horizontal(|ui| {
-            ui.checkbox(&mut o.absolute, "From bind pose");
-            if theme::button(ui, "Release bone", false).clicked() {
+            ui.checkbox(&mut o.absolute, "from the default pose").on_hover_text("Set this bone's angle from its default pose instead of adding to the animation.");
+            if theme::button(ui, "Release bone", false).on_hover_text("Give this bone back to the animation.").clicked() {
                 p.overrides.remove(&bone);
                 p.aims.remove(&bone);
                 o = before;
@@ -714,15 +715,16 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     });
 
     theme::section(ui, "Life layers (Overgrowth)");
-    ui.checkbox(&mut p.anatomy_lock, "Anatomical lock (posing stops at each joint's range)");
+    theme::hint(ui, "Small automatic movements that make characters feel alive: looking around, breathing, leaning, gripping.");
+    ui.checkbox(&mut p.anatomy_lock, "Natural limits when posing").on_hover_text("When you pose a bone, it stops at the joint's natural limit (no knees bending backwards).");
     ui.label(egui::RichText::new("Pose the selected bone: hold 1, 2 or 3 and drag with the middle mouse button (X, Y, Z).").size(11.0).color(theme::MUTED));
-    ui.checkbox(&mut p.auto_hands, "Auto hands (fists to fight, open to cast)");
+    ui.checkbox(&mut p.auto_hands, "Automatic hands").on_hover_text("Hands make fists to fight and open up to cast spells.");
     let mut drive_hands = p.grip.is_some();
-    ui.checkbox(&mut drive_hands, "Set grip by hand");
+    ui.checkbox(&mut drive_hands, "Set hands by hand").on_hover_text("Control each hand's grip yourself with the sliders.");
     match (drive_hands, p.grip.as_mut()) {
         (true, Some(g)) => {
-            ui.add(egui::Slider::new(&mut g[0], 0.0..=1.0).text("left grip"));
-            ui.add(egui::Slider::new(&mut g[1], 0.0..=1.0).text("right grip"));
+            ui.add(egui::Slider::new(&mut g[0], 0.0..=1.0).text("left hand")).on_hover_text("0 = open hand, 1 = fist.");
+            ui.add(egui::Slider::new(&mut g[1], 0.0..=1.0).text("right hand")).on_hover_text("0 = open hand, 1 = fist.");
         }
         (true, None) => p.grip = Some([1.0, 1.0]),
         (false, _) => p.grip = None,
@@ -736,19 +738,20 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
         }
     });
     ui.horizontal(|ui| {
-        ui.checkbox(&mut p.lean, "Lean into generated motion");
-        ui.checkbox(&mut p.breath, "Breathe");
+        ui.checkbox(&mut p.lean, "Lean into motion").on_hover_text("The body leans in the direction it moves.");
+        ui.checkbox(&mut p.breath, "Breathe").on_hover_text("The chest and shoulders rise and fall.");
     });
 
     theme::section(ui, "Pose clipboard");
+    theme::hint(ui, "Copy the current pose and paste it onto another animation or model.");
     ui.horizontal(|ui| {
-        if theme::button(ui, "Copy pose", false).clicked() {
+        if theme::button(ui, "Copy pose", false).on_hover_text("Copy the current pose of every bone.").clicked() {
             p.copy_request = true;
         }
-        if theme::button(ui, "Paste pose", p.clipboard.is_some()).clicked() && p.clipboard.is_some() {
+        if theme::button(ui, "Paste pose", p.clipboard.is_some()).on_hover_text("Put the copied pose onto the model.").clicked() && p.clipboard.is_some() {
             p.paste_request = true;
         }
-        if theme::button(ui, "Clear pose", false).clicked() {
+        if theme::button(ui, "Clear pose", false).on_hover_text("Remove the posed bones.").clicked() {
             p.overrides.clear();
             p.aims.clear();
         }
@@ -756,6 +759,7 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     ui.label(egui::RichText::new("Copy on one model, cycle to another (same skeleton), Paste: the pose carries over as bone overrides.").size(11.0).color(theme::MUTED));
 
     theme::section(ui, "Dimensions");
+    theme::hint(ui, "The model's measured size. Stretch or shrink limbs here.");
     let d = p.dims;
     theme::stat(ui, "height", format!("{:.3} m", d[0]), theme::PAPER);
     theme::stat(ui, "shoulder width", format!("{:.3} m", d[1]), theme::PAPER);
@@ -765,11 +769,12 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     for (i, label) in ["arm length x", "leg length x", "spine length x", "neck and head x"].iter().enumerate() {
         ui.add(egui::Slider::new(&mut p.dims_scale[i], 0.7..=1.3).text(*label));
     }
-    if theme::button(ui, "Reset dimensions", false).clicked() {
+    if theme::button(ui, "Reset dimensions", false).on_hover_text("Put every limb back to its original length.").clicked() {
         p.dims_scale = [1.0; 4];
     }
 
     theme::section(ui, "Motion estimates");
+    theme::hint(ui, "Speeds and forces measured from what the model is doing right now.");
     ui.add(egui::DragValue::new(&mut p.mass_kg).range(30.0..=200.0).speed(0.5).prefix("mass ").suffix(" kg"));
     let r = p.readout.clone();
     theme::stat(ui, "Centre of mass height", format!("{:.3} m", r.com.y - crate::studio::STAGE.y), theme::PAPER);
@@ -796,12 +801,13 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     }
 
     theme::section(ui, "Keep");
+    theme::hint(ui, "Which part of the animation plays.");
     ui.horizontal(|ui| {
-        if theme::button(ui, "Save as correction", false).clicked() {
+        if theme::button(ui, "Save as correction", false).on_hover_text("Save the bones you posed as a fix for this animation.").clicked() {
             let n = save_corrections(p, studio, corr);
             p.status = format!("{n} bone offsets saved as corrections at this frame");
         }
-        if theme::button(ui, "Release all", false).clicked() {
+        if theme::button(ui, "Release all", false).on_hover_text("Give every bone back to the animation.").clicked() {
             p.overrides.clear();
             p.aims.clear();
         }

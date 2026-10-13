@@ -33,6 +33,17 @@ pub const STAGE: Vec3 = Vec3::new(0.0, 0.0, 1500.0);
 
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
 pub const CREATOR_TAB: usize = 1;
+const TAB_HELP: [&str; 9] = [
+    "Inspect: see how each joint is bent and send Claude a note about anything that looks wrong.",
+    "Creator: build your own character from outfit parts, colour it, and save it as a playable model.",
+    "Tuning: change how characters move, animate and come alive. Changes apply straight away.",
+    "Moveset: choose which animations the fight moves use.",
+    "Corrections: the bone fixes you have saved, per animation.",
+    "Patterns: problems that repeat across animations, from your notes and Claude's audit.",
+    "Notes: the notes you have sent to Claude.",
+    "HUD Layout: move and resize the health, skill and target panels on screen.",
+    "Engine: performance numbers - frame rate, object counts and the game simulation.",
+];
 const TABS: [&str; 9] = ["Inspect", "Creator", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 #[derive(Clone, Debug, PartialEq)]
@@ -830,6 +841,11 @@ fn ui(
         });
     });
 
+    // what the open tab is for, in plain words
+    egui::Panel::top("studio_tab_help").frame(theme::dock().inner_margin(egui::Margin::symmetric(12, 4))).show_inside(&mut root, |ui| {
+        theme::hint(ui, TAB_HELP[studio.tab.min(TAB_HELP.len() - 1)]);
+    });
+
     // asset browser: models (characters, props, everything) and every animation by where it came from
     let mut picked_clip = false;
     egui::Panel::left("studio_assets").default_size(320.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
@@ -970,9 +986,9 @@ fn ui(
                     }
                 });
                 egui::CollapsingHeader::new(egui::RichText::new("Physical body: motors track the clip, it must stand on its own").color(theme::TEAL)).show(ui, |ui| {
-                ui.checkbox(&mut tune.physical.on, "Physical");
-                ui.add(egui::Slider::new(&mut tune.physical.assist, 0.0..=1.0).text("assist (0 = pure physics)"));
-                ui.add(egui::Slider::new(&mut tune.physical.motor, 0.1..=3.0).text("motor strength"));
+                ui.checkbox(&mut tune.physical.on, "Physics body").on_hover_text("Turn on the physical body: a ragdoll with muscles that follow the animation.");
+                ui.add(egui::Slider::new(&mut tune.physical.assist, 0.0..=1.0).text("helping hand")).on_hover_text("How much invisible help keeps the body upright. 0 = it has to balance by itself.");
+                ui.add(egui::Slider::new(&mut tune.physical.motor, 0.1..=3.0).text("muscle strength")).on_hover_text("How strongly the muscles pull the limbs toward the animation.");
                 ui.horizontal(|ui| {
                     ui.label("physical:");
                     ui.checkbox(&mut tune.physical.physical_regions[0], "legs");
@@ -983,12 +999,12 @@ fn ui(
                     theme::stat(ui, &format!("{n} lags its key"), format!("{e:.1} deg"), if *e > 15.0 { theme::BAD } else if *e > 6.0 { theme::WARN } else { theme::GOOD });
                 }
                 ui.horizontal(|ui| {
-                    if theme::button(ui, "Play run > jump > punch", !possession.sequence.is_empty()).clicked() {
+                    if theme::button(ui, "Play run > jump > punch", !possession.sequence.is_empty()).on_hover_text("Play three animations in a row with fades, to check the transitions.").clicked() {
                         possession.sequence = vec!["nc_run_forward".into(), "nc_jump_begin".into(), "ual_punch_cross".into()];
                         possession.seq_time = 0.0;
                         studio.playing = true;
                     }
-                    if theme::button(ui, "Stop sequence", false).clicked() {
+                    if theme::button(ui, "Stop sequence", false).on_hover_text("Stop the sequence and stay on the current animation.").clicked() {
                         // studio.clip already names the clip that was playing; stay on it
                         possession.sequence.clear();
                         studio.time = 0.0;
@@ -997,18 +1013,18 @@ fn ui(
                 if !possession.sequence.is_empty() {
                     let now: Vec<String> = possession.seq_now.iter().map(|(c, w)| format!("{c} {:.0}%", w * 100.0)).collect();
                     ui.label(egui::RichText::new(format!("playing: {}", now.join(" + "))).size(11.5).color(theme::TEAL));
-                    ui.add(egui::Slider::new(&mut possession.seq_fade, 0.05..=0.6).text("crossfade s"));
+                    ui.add(egui::Slider::new(&mut possession.seq_fade, 0.05..=0.6).text("fade between clips (s)")).on_hover_text("Seconds each clip in the sequence takes to fade into the next.");
                 }
                 if tune.physical.on {
                     theme::stat(ui, "State", if tune.physical.standing { format!("standing, pelvis {:.2} m", tune.physical.pelvis_h) } else { format!("fallen, pelvis {:.2} m", tune.physical.pelvis_h) }, if tune.physical.standing { theme::GOOD } else { theme::BAD });
                 }
-                    ui.add(egui::Slider::new(&mut tune.physical.weight, 0.0..=1.0).text("physics weight (0 = animation, 1 = physical)"));
-                    ui.add(egui::Slider::new(&mut tune.physical.damping, 0.2..=2.0).text("motor damping ratio"));
-                    ui.add(egui::Slider::new(&mut tune.physical.hip_gain, 0.0..=2.0).text("hip upright motor"));
-                    ui.add(egui::Slider::new(&mut tune.physical.balance_pos, 0.0..=2.0).text("balance: centre of mass offset"));
-                    ui.add(egui::Slider::new(&mut tune.physical.balance_vel, 0.0..=1.0).text("balance: centre of mass speed"));
-                    ui.add(egui::Slider::new(&mut tune.physical.assist_kp, 50.0..=800.0).text("assist stiffness"));
-                    ui.add(egui::Slider::new(&mut tune.physical.assist_kd, 5.0..=80.0).text("assist damping"));
+                    ui.add(egui::Slider::new(&mut tune.physical.weight, 0.0..=1.0).text("physics amount")).on_hover_text("0 = pure animation. 1 = the body is fully driven by physics and can stumble or fall.");
+                    ui.add(egui::Slider::new(&mut tune.physical.damping, 0.2..=2.0).text("muscle smoothness")).on_hover_text("How smoothly the muscles move the limbs (higher = less wobble).");
+                    ui.add(egui::Slider::new(&mut tune.physical.hip_gain, 0.0..=2.0).text("hip strength")).on_hover_text("How hard the hips push to stay upright.");
+                    ui.add(egui::Slider::new(&mut tune.physical.balance_pos, 0.0..=2.0).text("balance: weight over feet")).on_hover_text("How strongly the body shifts to keep its weight above its feet.");
+                    ui.add(egui::Slider::new(&mut tune.physical.balance_vel, 0.0..=1.0).text("balance: catch momentum")).on_hover_text("How much the body reacts to its weight moving, to stop a fall early.");
+                    ui.add(egui::Slider::new(&mut tune.physical.assist_kp, 50.0..=800.0).text("helping hand strength")).on_hover_text("How hard the helping hand pulls the body back to the pose.");
+                    ui.add(egui::Slider::new(&mut tune.physical.assist_kd, 5.0..=80.0).text("helping hand softness")).on_hover_text("How gently the helping hand corrects (higher = less bounce).");
                 });
                 egui::CollapsingHeader::new(egui::RichText::new("Motion tuning (hero and NPC walkers)").color(theme::TEAL)).show(ui, |ui| {
                     ui.label(egui::RichText::new("The drag motor, speeds and turn rate shape how every character moves; the clip speeds keep feet on the ground.").size(11.0).color(theme::MUTED));
@@ -1019,17 +1035,17 @@ fn ui(
                 });
                 egui::CollapsingHeader::new(egui::RichText::new("Life layers (look, hands, breath, lean)").color(theme::TEAL)).show(ui, |ui| {
                     let l = &mut *tune.life;
-                    ui.add(egui::Slider::new(&mut l.look_speed, 2.0..=30.0).text("head look speed"));
-                    ui.add(egui::Slider::new(&mut l.look_scale, 0.0..=1.5).text("head look range x"));
-                    ui.add(egui::Slider::new(&mut l.grip_ease, 1.0..=40.0).text("grip ease"));
-                    ui.add(egui::Slider::new(&mut l.curl_scale, 0.0..=1.3).text("finger curl at a fist x"));
-                    ui.add(egui::Slider::new(&mut l.thumb_scale, 0.0..=1.5).text("thumb curl x"));
-                    ui.add(egui::Slider::new(&mut l.breath_chest_deg, 0.0..=6.0).text("breath chest deg"));
-                    ui.add(egui::Slider::new(&mut l.breath_shoulder_deg, 0.0..=8.0).text("breath shoulders deg"));
-                    ui.add(egui::Slider::new(&mut l.breath_rest, 0.2..=3.0).text("breath rate at rest"));
-                    ui.add(egui::Slider::new(&mut l.breath_max, 1.0..=8.0).text("breath rate exerted"));
-                    ui.add(egui::Slider::new(&mut l.lean_speed_deg, 0.0..=3.0).text("lean deg per m/s"));
-                    ui.add(egui::Slider::new(&mut l.lean_accel_deg, 0.0..=3.0).text("lean deg per m/s2"));
+                    ui.add(egui::Slider::new(&mut l.look_speed, 2.0..=30.0).text("head turn speed")).on_hover_text("How fast the head turns to look at things.");
+                    ui.add(egui::Slider::new(&mut l.look_scale, 0.0..=1.5).text("how far the head turns")).on_hover_text("How far the head may turn to look at things (1 = natural range).");
+                    ui.add(egui::Slider::new(&mut l.grip_ease, 1.0..=40.0).text("hand open/close speed")).on_hover_text("How quickly hands open and close.");
+                    ui.add(egui::Slider::new(&mut l.curl_scale, 0.0..=1.3).text("fist tightness")).on_hover_text("How tightly the fingers close when making a fist.");
+                    ui.add(egui::Slider::new(&mut l.thumb_scale, 0.0..=1.5).text("thumb tightness")).on_hover_text("How far the thumb folds in a fist.");
+                    ui.add(egui::Slider::new(&mut l.breath_chest_deg, 0.0..=6.0).text("breathing: chest")).on_hover_text("How far the chest rises with each breath (degrees).");
+                    ui.add(egui::Slider::new(&mut l.breath_shoulder_deg, 0.0..=8.0).text("breathing: shoulders")).on_hover_text("How far the shoulders lift with each breath (degrees).");
+                    ui.add(egui::Slider::new(&mut l.breath_rest, 0.2..=3.0).text("breathing speed at rest")).on_hover_text("How fast the character breathes standing still.");
+                    ui.add(egui::Slider::new(&mut l.breath_max, 1.0..=8.0).text("breathing speed when tired")).on_hover_text("How fast the character breathes after running or fighting.");
+                    ui.add(egui::Slider::new(&mut l.lean_speed_deg, 0.0..=3.0).text("lean with speed")).on_hover_text("How far the body leans forward for each metre per second of speed.");
+                    ui.add(egui::Slider::new(&mut l.lean_accel_deg, 0.0..=3.0).text("lean when speeding up")).on_hover_text("Extra lean while speeding up or slowing down.");
                     if ui.button("Life defaults").clicked() {
                         *l = crate::procedural::LifeTuning::default();
                     }
@@ -1050,7 +1066,7 @@ fn ui(
                         let clips = p["clips"].as_array().map_or(0, |a| a.len());
                         let m = &p["mean_offset_deg"];
                         theme::stat(ui, &format!("{bone}: corrected in {clips} clips"), format!("{:.1} {:.1} {:.1}", m[0].as_f64().unwrap_or(0.0), m[1].as_f64().unwrap_or(0.0), m[2].as_f64().unwrap_or(0.0)), theme::WARN);
-                        if p["promotable"] == true && theme::button(ui, "Promote to all clips", false).clicked() {
+                        if p["promotable"] == true && theme::button(ui, "Promote to all clips", false).on_hover_text("Apply this fix to every animation, not just this one.").clicked() {
                             let o = [m[0].as_f64().unwrap_or(0.0) as f32, m[1].as_f64().unwrap_or(0.0) as f32, m[2].as_f64().unwrap_or(0.0) as f32];
                             corr.list.retain(|c| !(c.bone == bone && c.clip == "*"));
                             corr.list.push(Correction { clip: "*".into(), bone: bone.clone(), keys: vec![[0.0, o[0], o[1], o[2]]] });
@@ -1064,7 +1080,7 @@ fn ui(
                 theme::section(ui, "Pose audit (Claude)");
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Introduced by our pipeline; inherited source issues are left out. Click to stage the worst case.").size(11.0).color(theme::MUTED));
-                    if theme::button(ui, "Reload", false).clicked() {
+                    if theme::button(ui, "Reload", false).on_hover_text("Read the latest audit from disk.").clicked() {
                         studio.audit = read_audit();
                     }
                 });
@@ -1123,7 +1139,7 @@ fn ui(
                         ui.add(egui::DragValue::new(&mut v[1]).speed(1.0).prefix("y "));
                     });
                 }
-                ui.add(egui::Slider::new(&mut layout.scale, 0.6..=1.6).text("scale"));
+                ui.add(egui::Slider::new(&mut layout.scale, 0.6..=1.6).text("size")).on_hover_text("Size of the model.");
                 ui.horizontal(|ui| {
                     if theme::button(ui, "Save layout", false).clicked() {
                         layout.save();
@@ -1162,13 +1178,13 @@ fn ui(
             if theme::button(ui, if studio.playing { "Pause" } else { "Play" }, studio.playing).clicked() {
                 studio.playing = !studio.playing;
             }
-            ui.add(egui::Slider::new(&mut studio.speed, 0.05..=2.0).text("speed"));
+            ui.add(egui::Slider::new(&mut studio.speed, 0.05..=2.0).text("playback speed")).on_hover_text("1 = normal speed, 0.5 = half speed.");
             let dur = studio.duration;
             ui.spacing_mut().slider_width = (ui.available_width() - 260.0).max(120.0);
             if ui.add(egui::Slider::new(&mut studio.time, 0.0..=dur).text(format!("/ {dur:.2}s"))).dragged() {
                 studio.playing = false;
             }
-            ui.checkbox(&mut studio.rules, "Authority rules");
+            ui.checkbox(&mut studio.rules, "Keep joints natural").on_hover_text("Stop joints bending past their natural limits and knees bending backwards.");
         });
         ui.label(egui::RichText::new(format!("{}   |   {}   |   {}", studio.model.as_deref().unwrap_or("no model"), studio.clip.as_deref().unwrap_or("no clip"), studio.status)).size(11.0).color(theme::MUTED));
     });
@@ -1177,12 +1193,14 @@ fn ui(
 
 fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed: &mut crate::feed::DevFeed, tick: u64) {
     theme::section(ui, "Stage");
+    theme::hint(ui, "Turn and resize the model on the stage.");
     ui.horizontal(|ui| {
-        ui.add(egui::Slider::new(&mut studio.yaw, -180.0..=180.0).text("yaw"));
-        ui.add(egui::Slider::new(&mut studio.scale, 0.2..=3.0).text("scale"));
+        ui.add(egui::Slider::new(&mut studio.yaw, -180.0..=180.0).text("turn")).on_hover_text("Turn the model around (degrees).");
+        ui.add(egui::Slider::new(&mut studio.scale, 0.2..=3.0).text("size")).on_hover_text("Size of the model.");
     });
     let n = studio.numbers.clone();
     theme::section(ui, "Joint ranges (final pose)");
+    theme::hint(ui, "How far each joint is bent now, against its natural range. Red means outside it.");
     if let Some(js) = n["joints"].as_array() {
         for j in js {
             let ok = j["ok"] == true;
@@ -1216,7 +1234,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed:
     ui.add(egui::Slider::new(&mut studio.offset.z, -60.0..=60.0).text("z"));
     ui.horizontal(|ui| {
         let clip = studio.clip.clone().unwrap_or_default();
-        if theme::button(ui, "Key offset", false).clicked() && !clip.is_empty() {
+        if theme::button(ui, "Key offset", false).on_hover_text("Store this bone's turn at the current moment of the clip.").clicked() && !clip.is_empty() {
             let t = studio.time / studio.duration.max(0.01);
             let o = studio.offset;
             let entry = match corr.list.iter_mut().position(|c| c.clip == clip && c.bone == bone) {
@@ -1232,7 +1250,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed:
             corr.save();
             studio.status = format!("Keyed {bone} at {:.0}% of {clip}", t * 100.0);
         }
-        if theme::button(ui, "Clear bone", false).clicked() {
+        if theme::button(ui, "Clear bone", false).on_hover_text("Remove this bone's fix.").clicked() {
             corr.list.retain(|c| !(c.clip == clip && c.bone == bone));
             corr.save();
         }
@@ -1244,7 +1262,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed:
         }
     });
     ui.add(egui::TextEdit::multiline(&mut studio.note).desired_rows(3).hint_text("e.g. left shoulder rolls inward at the punch extension"));
-    if theme::button(ui, "Send note", false).clicked() && !studio.note.trim().is_empty() {
+    if theme::button(ui, "Send note", false).on_hover_text("Send this note, with the pose numbers, to Claude.").clicked() && !studio.note.trim().is_empty() {
         let note = json!({"text": studio.note.trim(), "category": CATEGORIES[studio.category], "model": studio.model, "clip": studio.clip, "time": studio.time,
                           "duration": studio.duration, "bone": bone, "hero_clips": studio.hero_clips, "rules": studio.rules, "numbers": studio.numbers});
         if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(format!("{}/collab/studio_notes.jsonl", crate::ROOT)) {
@@ -1260,6 +1278,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed:
 /// read when the game builds its move clusters (relaunch to apply).
 fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&AnimLibrary>) {
     theme::section(ui, "Moveset: clips per combo move");
+    theme::hint(ui, "Choose which animations each fight move may use; untick one to leave it out.");
     let path = format!("{}/assets/moveset.json", crate::ROOT);
     if studio.moveset.is_none() {
         let base: Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).unwrap_or_default();
@@ -1310,7 +1329,7 @@ fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&AnimLibrary>
     let out: serde_json::Map<String, Value> = moves.iter().map(|(n, rows)| (n.clone(), json!(rows.iter().filter(|r| r.1).map(|r| r.0.clone()).collect::<Vec<_>>()))).collect();
     let (mut save, mut reset) = (false, false);
     ui.horizontal(|ui| {
-        save = theme::button(ui, "Save moveset", false).clicked();
+        save = theme::button(ui, "Save moveset", false).on_hover_text("Save which animations each fight move uses (applies on the next start).").clicked();
         reset = theme::button(ui, "Reset", false).clicked();
     });
     if save {
@@ -1338,13 +1357,13 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibr
         let before = e.clone();
         let base = lib.base(&clip).to_owned();
         ui.label(egui::RichText::new(if base == clip { clip.clone() } else { format!("{clip}  (variant of {base})") }).strong().color(theme::PAPER));
-        ui.add(egui::Slider::new(&mut e.speed, 0.25..=3.0).text("speed"));
-        ui.add(egui::Slider::new(&mut e.trim[0], 0.0..=0.9).text("start (fraction)"));
-        ui.add(egui::Slider::new(&mut e.trim[1], 0.1..=1.0).text("end (fraction)"));
+        ui.add(egui::Slider::new(&mut e.speed, 0.25..=3.0).text("playback speed")).on_hover_text("1 = normal speed, 0.5 = half speed.");
+        ui.add(egui::Slider::new(&mut e.trim[0], 0.0..=0.9).text("cut start")).on_hover_text("Where the clip begins, as a fraction of its length (0 = the very start).");
+        ui.add(egui::Slider::new(&mut e.trim[1], 0.1..=1.0).text("cut end")).on_hover_text("Where the clip stops, as a fraction of its length (1 = the very end).");
         e.trim[0] = e.trim[0].min(e.trim[1] - 0.05);
         let mut own_blend = e.blend_in.is_some();
         ui.horizontal(|ui| {
-            ui.checkbox(&mut own_blend, "own blend-in");
+            ui.checkbox(&mut own_blend, "custom fade-in").on_hover_text("Give this clip its own fade-in time instead of the general one.");
             let mut b = e.blend_in.unwrap_or(0.12);
             if own_blend {
                 ui.add(egui::Slider::new(&mut b, 0.0..=0.5).text("s"));
@@ -1358,7 +1377,7 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibr
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut studio.variant_name).hint_text("variant name").desired_width(160.0));
             let name = studio.variant_name.trim().to_owned();
-            if theme::button(ui, "Save as variant", false).clicked() && !name.is_empty() && lib.node(&name).is_none() {
+            if theme::button(ui, "Save as variant", false).on_hover_text("Save a copy of this animation with your speed and cut points under a new name.").clicked() && !name.is_empty() && lib.node(&name).is_none() {
                 lib.edits.insert(name.clone(), crate::anim::ClipEdit { base: Some(base.clone()), ..e.clone() });
                 crate::anim::save_clip_edits(&lib.edits);
                 studio.status = format!("Variant {name} saved; add it to a move in the Moveset tab");
@@ -1367,11 +1386,11 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibr
             }
         });
         ui.horizontal(|ui| {
-            if theme::button(ui, "Save edits", false).clicked() {
+            if theme::button(ui, "Save edits", false).on_hover_text("Keep your speed and cut changes for this animation.").clicked() {
                 crate::anim::save_clip_edits(&lib.edits);
                 studio.status = "Clip edits saved to assets/clip_edits.json".into();
             }
-            if theme::button(ui, "Reset this clip", false).clicked() {
+            if theme::button(ui, "Reset this clip", false).on_hover_text("Undo your changes to this animation.").clicked() {
                 if base == clip {
                     lib.edits.remove(&clip);
                 } else {
@@ -1383,6 +1402,7 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibr
     let variants: Vec<(String, String)> = lib.edits.iter().filter_map(|(n, e)| e.base.clone().map(|b| (n.clone(), b))).collect();
     if !variants.is_empty() {
         theme::section(ui, "Variants");
+        theme::hint(ui, "A variant is a copy of an animation with your own speed and cut points.");
         let mut drop = None;
         for (n, b) in &variants {
             ui.horizontal(|ui| {
@@ -1404,6 +1424,7 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibr
 
 fn corrections_tab(ui: &mut egui::Ui, corr: &mut Corrections) {
     theme::section(ui, "Corrections ledger");
+    theme::hint(ui, "Saved fixes: small turns added to a bone during one animation (or all of them).");
     ui.label(egui::RichText::new("assets/corrections.json - applied live, under the joint and knee authority.").size(11.0).color(theme::MUTED));
     let mut drop = None;
     for (i, c) in corr.list.iter().enumerate() {
