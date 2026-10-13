@@ -954,6 +954,8 @@ pub fn drive_animation(
                 if let Some(node) = lib.node(&clip) {
                     rig.transition_s = match f.action.kind {
                         guildbound_sim::ActionKind::Strike(m) => (guildbound_sim::MOVES[m].startup * 0.65).clamp(0.035, settings.blend_seconds.max(0.035)),
+                        // casts flow in: a longer blend than other actions (boss: slower, more fluid magic)
+                        guildbound_sim::ActionKind::Cast(_) | guildbound_sim::ActionKind::Charge(_) => settings.blend_seconds.max(0.22),
                         _ => settings.blend_seconds.min(0.12),
                     };
                     if settings.inertialize {

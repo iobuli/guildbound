@@ -334,7 +334,8 @@ fn guard_blocks_magic_and_mana_and_cooldown_gate_casting() {
 fn frost_nova_freezes_everyone_close_and_blink_teleports() {
     let mut w = duel(1.5);
     w.step(&[cast(crate::magic::FROST_NOVA as u8, false), Intent::default()]);
-    for _ in 0..50 {
+    // wait out the nova's own wind-up (spell timings are tuned; the test follows them)
+    for _ in 0..(crate::magic::SPELLS[crate::magic::FROST_NOVA].prepare / crate::STEP) as usize + 10 {
         w.step(&[Intent::default(), Intent::default()]);
     }
     let c = w.contacts.iter().find(|c| c.source == Source::Spell(crate::magic::FROST_NOVA)).copied().expect("nova hits");

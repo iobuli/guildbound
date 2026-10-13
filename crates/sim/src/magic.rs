@@ -71,13 +71,13 @@ const fn spell(name: &'static str, element: Element, kind: SpellKind, cost: f32,
 
 pub const SPELLS: [SpellDef; SPELL_COUNT] = [
     SpellDef { max_charge: 1.5, speed: 14.0, radius: 0.25, range: 22.0, damage: 14.0, guard_drain: 18.0, push: 3.0, stun: 0.4, homing: 40.0, area: 1.8,
-        ..spell("fireball", Element::Fire, SpellKind::Projectile, 15.0, 0.22, 0.30, 1.0) },
+        ..spell("fireball", Element::Fire, SpellKind::Projectile, 15.0, 0.42, 0.50, 1.0) },
     SpellDef { range: 14.0, damage: 11.0, guard_drain: 20.0, push: 1.0, stun: 0.55,
-        ..spell("chain lightning", Element::Lightning, SpellKind::Chain { jumps: 2, jump_range: 5.0, falloff: 0.7 }, 20.0, 0.20, 0.35, 3.0) },
+        ..spell("chain lightning", Element::Lightning, SpellKind::Chain { jumps: 2, jump_range: 5.0, falloff: 0.7 }, 20.0, 0.40, 0.50, 3.0) },
     SpellDef { damage: 8.0, guard_drain: 25.0, push: 2.5, stun: 1.3, area: 3.0,
-        ..spell("frost nova", Element::Frost, SpellKind::Nova, 25.0, 0.28, 0.40, 8.0) },
-    spell("arcane blink", Element::Arcane, SpellKind::Blink { distance: 5.0 }, 15.0, 0.05, 0.15, 4.0),
-    spell("healing light", Element::Holy, SpellKind::Heal { amount: 40.0 }, 30.0, 0.65, 0.30, 10.0),
+        ..spell("frost nova", Element::Frost, SpellKind::Nova, 25.0, 0.50, 0.60, 8.0) },
+    spell("arcane blink", Element::Arcane, SpellKind::Blink { distance: 5.0 }, 15.0, 0.12, 0.30, 4.0),
+    spell("healing light", Element::Holy, SpellKind::Heal { amount: 40.0 }, 30.0, 0.90, 0.50, 10.0),
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
