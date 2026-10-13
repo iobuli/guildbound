@@ -54,12 +54,31 @@ pub struct RestPose(pub HashMap<Entity, Quat>, pub HashMap<Entity, Vec3>);
 /// A source clip's joint translations stretched the Ranger's neck (boss, 2026-10-12: "head stretched"); a bone
 /// that changes length is never anatomical. Runs after every pose layer that only rotates.
 pub fn bone_lengths(world: &mut World) {
-    let mut q = world.query::<&RestPose>();
-    let jobs: Vec<(Entity, Vec3)> = q
+    // the Studio stage model can have its limbs lengthened or shortened (Possession: Dimensions)
+    let scales = world.get_resource::<crate::possession::Possession>().map_or([1.0; 4], |p| p.dims_scale);
+    let mut q = world.query::<(&RestPose, Has<crate::studio::StudioRig>)>();
+    let jobs: Vec<(Entity, Vec3, bool)> = q
         .iter(world)
-        .flat_map(|r| r.1.iter().filter(|(e, _)| world.get::<ChildOf>(**e).is_some_and(|p| r.1.contains_key(&p.parent()))).map(|(e, p)| (*e, *p)).collect::<Vec<_>>())
+        .flat_map(|(r, stage)| r.1.iter().filter(|(e, _)| world.get::<ChildOf>(**e).is_some_and(|p| r.1.contains_key(&p.parent()))).map(|(e, p)| (*e, *p, stage)).collect::<Vec<_>>())
         .collect();
-    for (e, offset) in jobs {
+    for (e, offset, stage) in jobs {
+        let offset = if stage {
+            let n = world.get::<Name>(e).map(|n| n.as_str().to_owned()).unwrap_or_default();
+            let k = if n.ends_with("_Forearm") || n == "B_L_Forearm.001" || n == "B_R_Hand" {
+                scales[0]
+            } else if n.ends_with("_Calf") || n.ends_with("_Foot") {
+                scales[1]
+            } else if matches!(n.as_str(), "B_Spine1" | "B_Spine2" | "B_Neck") {
+                scales[2]
+            } else if n == "B_Head" {
+                scales[3]
+            } else {
+                1.0
+            };
+            offset * k
+        } else {
+            offset
+        };
         let free = world.get::<Name>(e).is_some_and(|n| {
             let n = n.as_str().to_lowercase();
             matches!(n.as_str(), "motion" | "root" | "root_m" | "hip" | "hips") || n.ends_with("pelvis")
@@ -360,7 +379,13 @@ pub fn fighters(world: &mut World) {
             // player: the head tracks the mouse pointer - the world point under it (boss, 2026-10-13); a little
             // less at a sprint, where the run carries the head
             let speed = f.velocity.length();
-            aim.map(|p| (p, if speed > 4.0 { 0.6 } else { 0.9 }))
+            // a point behind him (camera in front: its aim runs past his back) fades the look to straight
+            // ahead instead of twisting the head over the shoulder; fully on within 60 deg of his facing
+            aim.map(|p| {
+                let to = Vec3::new(p.x - me.x, 0.0, p.z - me.z).normalize_or_zero();
+                let ahead = ((to.dot(forward) - 0.1) / 0.4).clamp(0.0, 1.0);
+                (p, if speed > 4.0 { 0.6 } else { 0.9 } * ahead)
+            })
         } else {
             head_of(0).filter(|p| (*p - me).length() < 8.0 && (*p - me).normalize_or_zero().dot(forward) > -0.2).map(|p| (p, 0.9))
         };

@@ -27,8 +27,15 @@ use crate::motion_math::world_transform;
 use crate::sim_bridge::Sim;
 use crate::ui_theme::{self as theme, Kit};
 
-/// Where models are staged: a cleared spot north-west of the courtyard.
-pub const STAGE: Vec3 = Vec3::new(-30.0, 0.0, 30.0);
+/// Where models are staged: its own place 1.5 km from the world, past the camera's draw distance, so the Studio
+/// is a scene of its own (only the stage model, its floor and light), with or without the game behind it.
+pub const STAGE: Vec3 = Vec3::new(0.0, 0.0, 1500.0);
+
+/// The uniform Quaternius models (one skeleton: the hero, the NPC outfits, their kits), cycled first in the Studio.
+fn is_quaternius(path: &str) -> bool {
+    let l = path.to_lowercase();
+    l.starts_with("packs/hero/") || l.starts_with("packs/npc/") || l.contains("quaternius") || l.contains("universal_base") || l.contains("modular_character") || l.contains("bestiary")
+}
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
 const TABS: [&str; 8] = ["Inspect", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
@@ -162,6 +169,10 @@ pub struct Studio {
     spawn_request: Option<String>,
     /// Remote open/close (gb.studio), handled like F2.
     pub toggle_request: bool,
+    /// Opened from the main menu as its own scene: closing returns to the menu.
+    pub scene: bool,
+    /// The asset list and Prev/Next show only the uniform Quaternius models.
+    pub quaternius_only: bool,
     /// Last pose audit (collab/pose_audit.json), read when the Studio opens.
     audit: Value,
     /// Moveset picks: move -> (clip, enabled), and the move a clip is being added to.
@@ -183,7 +194,7 @@ impl Default for Studio {
             open: false, was_paused: false, assets: Vec::new(), filter: String::new(), clip_filter: String::new(), model: None, entity: None,
             clip: None, time: 0.0, duration: 1.0, playing: true, speed: 1.0, hero_clips: true, rules: true, yaw: 0.0, scale: 1.0,
             selected: None, note: String::new(), category: 0, offset: Vec3::ZERO, tab: 0, own: None, graph_attached: None,
-            numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false,
+            numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false, scene: false, quaternius_only: true,
             audit: Value::Null,
             moveset: None,
             variant_name: String::new(),
@@ -209,7 +220,7 @@ pub fn plugin(app: &mut App) {
         .insert_resource(Corrections::load())
         .insert_resource(HudLayout::load())
         .init_resource::<Studio>()
-        .add_systems(Startup, scan)
+        .add_systems(Startup, (scan, stage_set))
         .add_systems(Update, (toggle, spawn_model, drive, pick, drag_bone, draw_skeleton).chain())
         .add_systems(bevy_egui::EguiPrimaryContextPass, ui);
 }
@@ -236,12 +247,56 @@ fn scan(mut studio: ResMut<Studio>) {
     studio.assets = out;
 }
 
-fn toggle(keys: Res<ButtonInput<KeyCode>>, mut studio: ResMut<Studio>, mut sim: ResMut<Sim>, mut cam: Single<&mut crate::camera::OrbitCamera>, state: Res<State<crate::menu::AppState>>) {
+/// The stage's own floor (it carries the physical body) and light.
+fn stage_set(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    use avian3d::prelude::*;
+    commands.spawn((
+        Name::new("studio floor"),
+        Mesh3d(meshes.add(Circle::new(9.0))),
+        MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::srgb(0.11, 0.14, 0.15), perceptual_roughness: 0.9, ..default() })),
+        Transform::from_translation(STAGE).with_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2)),
+    ));
+    commands.spawn((
+        Name::new("studio floor collider"),
+        RigidBody::Static,
+        Collider::cuboid(18.0, 0.2, 18.0),
+        CollisionLayers::new(1u32, LayerMask::ALL),
+        Transform::from_translation(STAGE - Vec3::Y * 0.1),
+    ));
+    commands.spawn((
+        Name::new("studio key light"),
+        PointLight { intensity: 900_000.0, range: 30.0, shadow_maps_enabled: true, ..default() },
+        Transform::from_translation(STAGE + Vec3::new(2.5, 4.5, 3.0)),
+    ));
+    commands.spawn((
+        Name::new("studio fill light"),
+        PointLight { intensity: 250_000.0, range: 30.0, color: Color::srgb(0.7, 0.85, 1.0), ..default() },
+        Transform::from_translation(STAGE + Vec3::new(-3.5, 2.5, -2.0)),
+    ));
+}
+
+fn toggle(
+    keys: Res<ButtonInput<KeyCode>>,
+    mut studio: ResMut<Studio>,
+    mut sim: ResMut<Sim>,
+    mut cam: Single<&mut crate::camera::OrbitCamera>,
+    state: Res<State<crate::menu::AppState>>,
+    mut next: ResMut<NextState<crate::menu::AppState>>,
+) {
+    // a request from the menu waits for the game state to reach Playing (it is sent in the same frame)
+    if *state.get() != crate::menu::AppState::Playing {
+        return;
+    }
     let requested = std::mem::take(&mut studio.toggle_request);
-    if *state.get() != crate::menu::AppState::Playing || !(keys.just_pressed(KeyCode::F2) || requested) {
+    if !(keys.just_pressed(KeyCode::F2) || requested) {
         return;
     }
     studio.open = !studio.open;
+    if !studio.open && studio.scene {
+        // the Studio scene from the menu closes back to the menu
+        studio.scene = false;
+        next.set(crate::menu::AppState::MainMenu);
+    }
     if studio.open {
         studio.audit = read_audit();
         studio.was_paused = sim.paused;
@@ -740,7 +795,10 @@ fn ui(
             }
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let fps = diag.get(&FrameTimeDiagnosticsPlugin::FPS).and_then(|d| d.smoothed()).unwrap_or(0.0);
-                ui.label(egui::RichText::new(format!("{fps:.0} FPS  |  F2 close")).color(theme::MUTED));
+                ui.label(egui::RichText::new(format!("{fps:.0} FPS  |  F2 {}", if studio.scene { "back to menu" } else { "close" })).color(theme::MUTED));
+                if studio.scene && theme::button(ui, kit, "Back to menu", false).clicked() {
+                    studio.toggle_request = true;
+                }
             });
         });
     });
@@ -749,16 +807,38 @@ fn ui(
     let mut picked_clip = false;
     egui::Panel::left("studio_assets").default_size(300.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
         theme::dock_backdrop(ui, kit, ui.max_rect());
-        theme::section(ui, "Assets");
-        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("filter: hero, npc, Crate, Pine, Imp ..."));
-        ui.label(egui::RichText::new(format!("{} models", studio.assets.len())).size(11.0).color(theme::MUTED));
-        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.5).show(ui, |ui| {
-            let f = studio.filter.to_lowercase();
-            let mut shown = 0;
+        theme::section(ui, "Models");
+        // cycle the models (the uniform Quaternius set by default): the stage keeps clip and hero library
+        let f = studio.filter.to_lowercase();
+        let shown: Vec<String> = studio.assets.iter().filter(|a| (!studio.quaternius_only || is_quaternius(a)) && (f.is_empty() || a.to_lowercase().contains(&f))).cloned().collect();
+        ui.horizontal(|ui| {
+            let at = studio.model.as_ref().and_then(|m| shown.iter().position(|a| a == m));
+            let step = |k: isize| -> Option<String> {
+                if shown.is_empty() {
+                    return None;
+                }
+                let n = shown.len() as isize;
+                let i = at.map_or(0, |i| (i as isize + k).rem_euclid(n));
+                shown.get(i as usize).cloned()
+            };
+            if theme::button(ui, kit, "< Prev", false).clicked() && let Some(p) = step(-1) {
+                studio.spawn_request = Some(p);
+            }
+            if theme::button(ui, kit, "Next >", false).clicked() && let Some(p) = step(1) {
+                studio.spawn_request = Some(p);
+            }
+        });
+        ui.label(egui::RichText::new(studio.model.as_deref().map_or("no model".into(), |m| m.trim_start_matches("packs/").replace("_sources/", ""))).strong().color(theme::PAPER));
+        ui.checkbox(&mut studio.quaternius_only, "Quaternius models only (uniform rig)");
+        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("filter: hero, npc, peasant, ranger ..."));
+        ui.label(egui::RichText::new(format!("{} models", shown.len())).size(11.0).color(theme::MUTED));
+        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.4).show(ui, |ui| {
+            let mut shown_n = 0;
             let mut pick = None;
-            for a in studio.assets.iter().filter(|a| f.is_empty() || a.to_lowercase().contains(&f)) {
-                shown += 1;
-                if shown > 250 {
+            for a in &shown {
+                let shown = &mut shown_n;
+                *shown += 1;
+                if *shown > 250 {
                     ui.label(egui::RichText::new("... refine the filter").color(theme::MUTED));
                     break;
                 }
@@ -847,6 +927,7 @@ fn ui(
                 if tune.physical.on {
                     theme::stat(ui, "State", if tune.physical.standing { format!("standing, pelvis {:.2} m", tune.physical.pelvis_h) } else { format!("fallen, pelvis {:.2} m", tune.physical.pelvis_h) }, if tune.physical.standing { theme::GOOD } else { theme::BAD });
                 }
+                    ui.add(egui::Slider::new(&mut tune.physical.weight, 0.0..=1.0).text("physics weight (0 = animation, 1 = physical)"));
                     ui.add(egui::Slider::new(&mut tune.physical.damping, 0.2..=2.0).text("motor damping ratio"));
                     ui.add(egui::Slider::new(&mut tune.physical.hip_gain, 0.0..=2.0).text("hip upright motor"));
                     ui.add(egui::Slider::new(&mut tune.physical.balance_pos, 0.0..=2.0).text("balance: centre of mass offset"));

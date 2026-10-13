@@ -93,6 +93,14 @@ pub struct Possession {
     pub anatomy_lock: bool,
     /// The bone being posed and the direction of the last drag step per axis (for the anatomical lock).
     pub last_good: Option<(String, Vec3)>,
+    /// A copied pose (local rotations by bone name): pastes onto any model of the same skeleton.
+    pub clipboard: Option<BTreeMap<String, Quat>>,
+    pub copy_request: bool,
+    pub paste_request: bool,
+    /// Live dimensions of the stage model (m): height, shoulder width, arm, leg, torso.
+    pub dims: [f32; 5],
+    /// Length scales applied to the stage model: arms, legs, spine, neck/head.
+    pub dims_scale: [f32; 4],
     /// With no hand-set grip: fists in fighting clips, open hands for magic, relaxed otherwise.
     pub auto_hands: bool,
     pub look: LookMode,
@@ -114,7 +122,7 @@ pub struct Possession {
 impl Default for Possession {
     fn default() -> Self {
         Self {
-            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, sequence: Vec::new(), seq_fade: 0.25, seq_time: 0.0, seq_now: Vec::new(), clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, anatomy_lock: true, last_good: None, auto_hands: true,
+            enabled: true, fixed: true, fps: 30.0, pending_steps: 0, sequence: Vec::new(), seq_fade: 0.25, seq_time: 0.0, seq_now: Vec::new(), clock: 0.0, overrides: BTreeMap::new(), aims: BTreeMap::new(), grip: None, anatomy_lock: true, last_good: None, clipboard: None, copy_request: false, paste_request: false, dims: [0.0; 5], dims_scale: [1.0; 4], auto_hands: true,
             look: LookMode::Off, lean: false, breath: false, mass_kg: 75.0, readout: Readout::default(), last: None, history: VecDeque::new(),
             bone_filter: String::new(), status: String::new(),
             motion: None, plant_anchors: [None; 2],
@@ -157,7 +165,7 @@ impl Possession {
 }
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Possession>().insert_resource(PhysicalBody { assist: 0.5, motor: 2.5, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
+    app.init_resource::<Possession>().insert_resource(PhysicalBody { weight: 1.0, assist: 0.5, motor: 2.5, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
         .init_resource::<crate::procedural::LifeTuning>().add_systems(Update, draw);
 }
 
@@ -189,7 +197,7 @@ pub fn apply(world: &mut World) {
     if !p.enabled || !world.resource::<Studio>().open {
         return;
     }
-    let (overrides, aims, look, lean, breath) = (p.overrides.clone(), p.aims.clone(), p.look, p.lean, p.breath);
+    let (aims, look, lean, breath) = (p.aims.clone(), p.look, p.lean, p.breath);
     let time = world.resource::<Studio>().time;
     let sample = p.motion.as_ref().map(|m| m.sample(time));
     let grip = p.grip.or_else(|| sample.as_ref().and_then(|s| s.grip)).or_else(|| p.auto_hands.then(|| clip_grip(world.resource::<Studio>().clip.as_deref().unwrap_or(""))));
@@ -216,6 +224,22 @@ pub fn apply(world: &mut World) {
         exertion: sample.as_ref().map_or(0.0, |s| (s.velocity.length() / 6.0).min(1.0)),
         lean: sample.as_ref().filter(|_| lean).map(|s| (rotation * s.velocity, rotation * s.acceleration)), dt: 0.0 };
     crate::procedural::sample(world, root, &bones, &drive, time);
+    // paste a copied pose: every bone it names becomes an override from the bind pose
+    if world.resource::<Possession>().paste_request {
+        let clip = world.resource::<Possession>().clipboard.clone();
+        let mut p = world.resource_mut::<Possession>();
+        p.paste_request = false;
+        if let Some(clip) = clip {
+            for (name, q) in clip {
+                if let Some(&e) = map.get(&name) {
+                    let r = rest.get(&e).copied().unwrap_or(Quat::IDENTITY);
+                    let (x, y, z) = (r.inverse() * q).to_euler(EulerRot::XYZ);
+                    p.overrides.insert(name, BoneOverride { euler: Vec3::new(x.to_degrees(), y.to_degrees(), z.to_degrees()), absolute: true });
+                }
+            }
+        }
+    }
+    let overrides = world.resource::<Possession>().overrides.clone();
     // Manual control wins over automatic fingers, head look and breathing; anatomy still runs afterwards.
     for (name, o) in &overrides {
         let Some(&e) = map.get(name) else { continue };
@@ -261,6 +285,23 @@ pub fn measure(world: &mut World) {
     }
     let Some((root, bones)) = stage(world) else { return };
     let map = bone_map(world, &bones);
+    // copy the shown pose; measure the model's dimensions
+    if world.resource::<Possession>().copy_request {
+        let copied: BTreeMap<String, Quat> = map.iter().filter_map(|(n, &e)| world.get::<Transform>(e).map(|t| (n.clone(), t.rotation))).collect();
+        let mut p = world.resource_mut::<Possession>();
+        p.clipboard = Some(copied);
+        p.copy_request = false;
+        p.status = "Pose copied: load another model and Paste".into();
+    }
+    {
+        let at = |n: &str| map.get(n).and_then(|&e| world_transform(world, e)).map(|t| t.translation());
+        let d = |a: &str, b: &str| at(a).zip(at(b)).map_or(0.0, |(p, q)| p.distance(q));
+        let floor = crate::studio::STAGE.y;
+        let height = map.values().filter_map(|&e| world_transform(world, e)).map(|t| t.translation().y).fold(floor, f32::max) - floor + 0.1;
+        let dims = [height, d("B_L_UpperArm", "B_R_UpperArm"), d("B_L_UpperArm", "B_L_Forearm") + d("B_L_Forearm", "B_L_Forearm.001"),
+            d("B_L_Thigh", "B_L_Calf") + d("B_L_Calf", "B_L_Foot"), d("B_Pelvis", "B_Neck")];
+        world.resource_mut::<Possession>().dims = dims;
+    }
     let pos = |n: &str| map.get(n).and_then(|&e| world_transform(world, e)).map(|t| t.translation());
     let mut points = Vec::new();
     let mut masses = Vec::new();
@@ -699,6 +740,35 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
         ui.checkbox(&mut p.breath, "Breathe");
     });
 
+    theme::section(ui, "Pose clipboard");
+    ui.horizontal(|ui| {
+        if theme::button(ui, kit, "Copy pose", false).clicked() {
+            p.copy_request = true;
+        }
+        if theme::button(ui, kit, "Paste pose", p.clipboard.is_some()).clicked() && p.clipboard.is_some() {
+            p.paste_request = true;
+        }
+        if theme::button(ui, kit, "Clear pose", false).clicked() {
+            p.overrides.clear();
+            p.aims.clear();
+        }
+    });
+    ui.label(egui::RichText::new("Copy on one model, cycle to another (same skeleton), Paste: the pose carries over as bone overrides.").size(11.0).color(theme::MUTED));
+
+    theme::section(ui, "Dimensions");
+    let d = p.dims;
+    theme::stat(ui, "height", format!("{:.3} m", d[0]), theme::PAPER);
+    theme::stat(ui, "shoulder width", format!("{:.3} m", d[1]), theme::PAPER);
+    theme::stat(ui, "arm (shoulder to wrist)", format!("{:.3} m", d[2]), theme::PAPER);
+    theme::stat(ui, "leg (hip to ankle)", format!("{:.3} m", d[3]), theme::PAPER);
+    theme::stat(ui, "torso (pelvis to neck)", format!("{:.3} m", d[4]), theme::PAPER);
+    for (i, label) in ["arm length x", "leg length x", "spine length x", "neck and head x"].iter().enumerate() {
+        ui.add(egui::Slider::new(&mut p.dims_scale[i], 0.7..=1.3).text(*label));
+    }
+    if theme::button(ui, kit, "Reset dimensions", false).clicked() {
+        p.dims_scale = [1.0; 4];
+    }
+
     theme::section(ui, "Motion estimates");
     ui.add(egui::DragValue::new(&mut p.mass_kg).range(30.0..=200.0).speed(0.5).prefix("mass ").suffix(" kg"));
     let r = p.readout.clone();
@@ -779,6 +849,8 @@ pub struct PhysicalBody {
     doll: Option<crate::ragdoll::Doll>,
     /// The stage root the doll was built for.
     doll_root: Option<Entity>,
+    /// How much the shown pose follows the bodies: 0 = the animation, 1 = fully physical.
+    pub weight: f32,
     /// Damping ratio of the joint motors, the pelvis's own upright motor, the balance feedback on position and
     /// velocity (SIMBICON), and the assist pull's stiffness and damping.
     pub damping: f32,
@@ -966,7 +1038,7 @@ pub fn physical_skin(world: &mut World) {
         // only physical regions take their pose from the bodies; anchored regions keep the clip
         let regions = pb.physical_regions;
         let keep: Vec<bool> = doll.links.iter().map(|l| regions[region(world.get::<Name>(l.bone).map_or("", |n| n.as_str()))]).collect();
-        crate::ragdoll::skin_some(world, doll, &keep);
+        crate::ragdoll::skin_some(world, doll, &keep, pb.weight);
     }
     world.insert_resource(pb);
 }

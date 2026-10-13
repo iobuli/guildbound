@@ -95,7 +95,7 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<AssetServer>, mut sim: Res
             ));
 
             ui.spawn(UiLayout::window().pos(Rl((6.0, 32.0))).size(Rl((26.0, 44.0))).pack()).with_children(|ui| {
-                let buttons: &[&str] = if started { &["Resume", "New spar", "Practice", "Quit"] } else { &["Spar", "Practice", "Quit"] };
+                let buttons: &[&str] = if started { &["Resume", "New spar", "Practice", "Studio", "Quit"] } else { &["Spar", "Practice", "Studio", "Quit"] };
                 let (size, gap) = (14.0, 4.0);
                 for (k, name) in buttons.iter().enumerate() {
                     let mut button = ui.spawn((
@@ -159,6 +159,25 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<AssetServer>, mut sim: Res
                                 sim.reset();
                                 sim.opponent = crate::sim_bridge::OpponentMode::Idle;
                                 sim.world.fighters[0].lock_target = None;
+                                next.set(AppState::Playing);
+                            });
+                        }
+                        "Studio" => {
+                            // the Studio as its own scene: only the stage model, cycling the uniform Quaternius set
+                            button.observe(|event: On<Pointer<Click>>, mut next: ResMut<NextState<AppState>>, mut sim: ResMut<Sim>, mut studio: ResMut<crate::studio::Studio>| {
+                                if event.button != bevy::picking::pointer::PointerButton::Primary { return; }
+                                sim.reset();
+                                sim.opponent = crate::sim_bridge::OpponentMode::Idle;
+                                sim.world.fighters[0].lock_target = None;
+                                studio.scene = true;
+                                studio.quaternius_only = true;
+                                studio.hero_clips = true;
+                                if studio.model.is_none() {
+                                    studio.request_spawn("packs/hero/fighter.glb".into());
+                                }
+                                if !studio.open {
+                                    studio.toggle_request = true;
+                                }
                                 next.set(AppState::Playing);
                             });
                         }

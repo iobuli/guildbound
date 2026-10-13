@@ -202,11 +202,13 @@ pub fn apply(world: &mut World) {
 /// Pose the skin from the bodies (parent first, so each link sees its just-written parent).
 pub(crate) fn skin(world: &mut World, doll: &mut Doll) {
     let all = vec![true; doll.links.len()];
-    skin_some(world, doll, &all);
+    skin_some(world, doll, &all, 1.0);
 }
 
 /// Skin only the links marked true (the rest keep their animated pose).
-pub(crate) fn skin_some(world: &mut World, doll: &mut Doll, keep: &[bool]) {
+/// `weight` blends the animated pose (0) toward the bodies (1).
+pub(crate) fn skin_some(world: &mut World, doll: &mut Doll, keep: &[bool], weight: f32) {
+        let w = weight.clamp(0.0, 1.0);
         doll.last_pose.clear();
         for (i, link) in doll.links.iter().enumerate() {
             if !keep.get(i).copied().unwrap_or(true) {
@@ -219,8 +221,10 @@ pub(crate) fn skin_some(world: &mut World, doll: &mut Doll, keep: &[bool]) {
             let origin = body.translation + body.rotation * link.origin;
             let rotation = body.rotation * link.rotation;
             if let Some(mut pose) = world.get_mut::<Transform>(link.bone) {
-                pose.translation = parent_world.affine().inverse().transform_point3(origin);
-                pose.rotation = (parent_rotation.inverse() * rotation).normalize();
+                let t = parent_world.affine().inverse().transform_point3(origin);
+                let r = (parent_rotation.inverse() * rotation).normalize();
+                pose.translation = pose.translation.lerp(t, w);
+                pose.rotation = pose.rotation.slerp(r, w).normalize();
                 doll.last_pose.push((link.bone, *pose));
             }
         }
