@@ -3,21 +3,19 @@
 use bevy_egui::egui;
 use crate::sim_bridge::Sim;
 
-const INK: egui::Color32 = egui::Color32::from_rgb(18, 25, 27);
-const PAPER: egui::Color32 = egui::Color32::from_rgb(236, 230, 212);
+use crate::ui_theme::{BORDER, CARD, GLASS, MUTED, PAPER};
+
+const INK: egui::Color32 = egui::Color32::from_rgb(10, 10, 12);
 const GOLD: egui::Color32 = egui::Color32::from_rgb(242, 194, 88);
 const BLUE: egui::Color32 = egui::Color32::from_rgb(112, 181, 225);
 
 fn frame() -> egui::Frame {
-    egui::Frame::new().fill(INK.gamma_multiply(0.92)).inner_margin(12.0).corner_radius(4.0)
+    egui::Frame::new().fill(GLASS).stroke(egui::Stroke::new(1.0_f32, BORDER)).inner_margin(12.0).corner_radius(8.0)
 }
 
-/// Wenrexa hologram UI pieces (boss's UI rework kit), registered with egui once.
+/// Spell and potion icons (boss's UI kit), registered with egui once.
 #[derive(bevy::prelude::Resource)]
 pub struct HudIcons {
-    pub panel: egui::TextureId,
-    pub bar: egui::TextureId,
-    pub cell: egui::TextureId,
     pub spells: [egui::TextureId; guildbound_sim::magic::SPELL_COUNT],
     pub potion_red: egui::TextureId,
     pub potion_blue: egui::TextureId,
@@ -26,28 +24,26 @@ pub struct HudIcons {
 pub fn load_icons(mut commands: bevy::prelude::Commands, mut contexts: bevy_egui::EguiContexts, assets: bevy::prelude::Res<bevy::prelude::AssetServer>) {
     let mut add = |name: &str| contexts.add_image(bevy_egui::EguiTextureHandle::Strong(assets.load(format!("packs/_sources/ui/hud/{name}.png"))));
     let spells = ["fireball", "chain", "nova", "blink", "heal"].map(&mut add);
-    commands.insert_resource(HudIcons { panel: add("panel"), bar: add("bar"), cell: add("cell"), spells, potion_red: add("potion_red"), potion_blue: add("potion_blue") });
+    commands.insert_resource(HudIcons { spells, potion_red: add("potion_red"), potion_blue: add("potion_blue") });
 }
 
-const TEAL: egui::Color32 = egui::Color32::from_rgb(88, 220, 200);
+const TEAL: egui::Color32 = crate::ui_theme::TEAL;
 const RED: egui::Color32 = egui::Color32::from_rgb(206, 58, 52);
 const MANA: egui::Color32 = egui::Color32::from_rgb(70, 140, 240);
 const UV: egui::Rect = egui::Rect { min: egui::pos2(0.0, 0.0), max: egui::pos2(1.0, 1.0) };
 
-/// A hologram bar: the kit's capsule as the frame, a rounded fill inside, label and value on top.
-fn bar(p: &egui::Painter, icons: Option<&HudIcons>, rect: egui::Rect, k: f32, fill: egui::Color32, label: &str, value: &str) {
-    p.rect_filled(rect.shrink(2.0), 6.0, INK.gamma_multiply(0.85));
-    let inner = rect.shrink2(egui::vec2(6.0, 5.0));
-    let w = inner.width() * k.clamp(0.0, 1.0);
+/// A flat bar: label and value above a thin rounded track.
+fn bar(p: &egui::Painter, rect: egui::Rect, k: f32, fill: egui::Color32, label: &str, value: &str) {
+    let track = egui::Rect::from_min_max(egui::pos2(rect.left(), rect.bottom() - 6.0), rect.max);
+    if !label.is_empty() || !value.is_empty() {
+        p.text(rect.left_top(), egui::Align2::LEFT_TOP, label, egui::FontId::proportional(11.0), MUTED);
+        p.text(rect.right_top(), egui::Align2::RIGHT_TOP, value, egui::FontId::monospace(11.0), PAPER);
+    }
+    p.rect_filled(track, 3.0, CARD);
+    let w = track.width() * k.clamp(0.0, 1.0);
     if w > 0.5 {
-        p.rect_filled(egui::Rect::from_min_size(inner.min, egui::vec2(w, inner.height())), 4.0, fill);
-        p.rect_filled(egui::Rect::from_min_size(inner.min, egui::vec2(w, inner.height() * 0.4)), 4.0, egui::Color32::from_white_alpha(28));
+        p.rect_filled(egui::Rect::from_min_size(track.min, egui::vec2(w, track.height())), 3.0, fill);
     }
-    if let Some(i) = icons {
-        p.image(i.bar, rect, UV, egui::Color32::WHITE);
-    }
-    p.text(inner.left_center() + egui::vec2(4.0, 0.0), egui::Align2::LEFT_CENTER, label, egui::FontId::proportional(11.0), PAPER);
-    p.text(inner.right_center() - egui::vec2(4.0, 0.0), egui::Align2::RIGHT_CENTER, value, egui::FontId::proportional(11.0), PAPER);
 }
 
 /// Everything the HUD needs beyond the sim, bundled so the panel system stays within its parameter limit.
@@ -68,20 +64,19 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
     // vitals card, bottom left
     let sc = layout.scale.clamp(0.5, 2.0);
     let card = egui::Rect::from_min_size(egui::pos2(left + 18.0 + layout.vitals[0], screen.bottom() - 150.0 * sc + layout.vitals[1]), egui::vec2(330.0, 132.0) * sc);
-    if let Some(i) = icons {
-        p.image(i.panel, card, UV, egui::Color32::from_white_alpha(235));
-    } else {
-        p.rect_filled(card, 8.0, INK.gamma_multiply(0.9));
-    }
-    let mode = if in_combat { ("COMBAT", RED) } else { ("EXPLORING", TEAL) };
-    p.text(card.min + egui::vec2(18.0, 14.0), egui::Align2::LEFT_TOP, "GUILDBOUND RANGER", egui::FontId::proportional(13.0), PAPER);
-    p.text(egui::pos2(card.right() - 18.0, card.top() + 14.0), egui::Align2::RIGHT_TOP, mode.0, egui::FontId::proportional(12.0), mode.1);
+    p.rect(card, 10.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
+    let mode = if in_combat { ("Combat", RED) } else { ("Exploring", TEAL) };
+    p.text(card.min + egui::vec2(16.0, 12.0), egui::Align2::LEFT_TOP, "Ranger", egui::FontId::proportional(14.0), PAPER);
+    let tag = p.layout_no_wrap(mode.0.to_owned(), egui::FontId::proportional(11.0), mode.1);
+    let pill = egui::Rect::from_min_size(egui::pos2(card.right() - 16.0 - tag.size().x - 16.0, card.top() + 11.0), tag.size() + egui::vec2(16.0, 4.0));
+    p.rect(pill, 9.0, mode.1.gamma_multiply(0.15), egui::Stroke::new(1.0_f32, mode.1.gamma_multiply(0.5)), egui::StrokeKind::Inside);
+    p.galley(pill.center() - tag.size() * 0.5, tag, mode.1);
     let row = |k: f32| egui::Rect::from_min_size(card.min + egui::vec2(16.0, 36.0 + k * 22.0) * sc, egui::vec2(card.width() - 32.0 * sc, 20.0 * sc));
-    bar(&p, icons, row(0.0), player.hp / player.max_hp.max(1.0), RED, "HEALTH", &format!("{:.0} / {:.0}", player.hp, player.max_hp));
-    bar(&p, icons, row(1.0), player.mana / w.magic.mana_max.max(1.0), MANA, "MANA", &format!("{:.0} / {:.0}", player.mana, w.magic.mana_max));
-    bar(&p, icons, row(2.0), player.guard / w.combat.guard_max.max(1.0), TEAL, "GUARD", "");
+    bar(&p, row(0.0), player.hp / player.max_hp.max(1.0), RED, "HEALTH", &format!("{:.0} / {:.0}", player.hp, player.max_hp));
+    bar(&p, row(1.0), player.mana / w.magic.mana_max.max(1.0), MANA, "MANA", &format!("{:.0} / {:.0}", player.mana, w.magic.mana_max));
+    bar(&p, row(2.0), player.guard / w.combat.guard_max.max(1.0), TEAL, "GUARD", "");
     let pk = (player.posture / w.posture.max.max(1.0)).clamp(0.0, 1.0);
-    bar(&p, icons, row(3.0), pk, posture_color(pk), if player.action.kind == guildbound_sim::ActionKind::Dizzy { "POSTURE BROKEN" } else { "POSTURE" }, "");
+    bar(&p, row(3.0), pk, posture_color(pk), if player.action.kind == guildbound_sim::ActionKind::Dizzy { "POSTURE BROKEN" } else { "POSTURE" }, "");
 
     // skill bar + quick slots, bottom centre
     let cell = 58.0 * sc;
@@ -95,11 +90,9 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
         let cd = player.cooldowns[s];
         let ready = player.mana >= spell.cost && cd <= 0.0;
         let charging = matches!(player.action.kind, guildbound_sim::ActionKind::Charge(c) | guildbound_sim::ActionKind::Cast(c) if c == s);
+        p.rect(r, 8.0, GLASS, egui::Stroke::new(if charging { 1.5_f32 } else { 1.0 }, if charging { GOLD } else { BORDER }), egui::StrokeKind::Inside);
         if let Some(i) = icons {
-            p.image(i.spells[s], r.shrink(5.0), UV, if ready { egui::Color32::WHITE } else { egui::Color32::from_gray(90) });
-            p.image(i.cell, r, UV, if charging { GOLD } else { egui::Color32::WHITE });
-        } else {
-            p.rect_filled(r, 6.0, INK);
+            p.image(i.spells[s], r.shrink(7.0), UV, if ready { egui::Color32::WHITE } else { egui::Color32::from_gray(90) });
         }
         if cd > 0.0 {
             let k = (cd / spell.cooldown.max(0.01)).clamp(0.0, 1.0);
@@ -116,29 +109,27 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
     for (k, (id, key)) in [(guildbound_sim::rpg::HEALING_DRAUGHT, "R"), (guildbound_sim::rpg::MANA_TONIC, "T")].into_iter().enumerate() {
         let r = egui::Rect::from_min_size(egui::pos2(x0 + n * (cell + gap) + 14.0 + k as f32 * (cell + gap), y0), egui::vec2(cell, cell));
         let c = count(id);
+        p.rect(r, 8.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
         if let Some(i) = icons {
-            p.image(if k == 0 { i.potion_red } else { i.potion_blue }, r.shrink(8.0), UV, if c > 0 { egui::Color32::WHITE } else { egui::Color32::from_gray(80) });
-            p.image(i.cell, r, UV, egui::Color32::WHITE);
+            p.image(if k == 0 { i.potion_red } else { i.potion_blue }, r.shrink(10.0), UV, if c > 0 { egui::Color32::WHITE } else { egui::Color32::from_gray(80) });
         }
         p.text(r.left_top() + egui::vec2(6.0, 4.0), egui::Align2::LEFT_TOP, key, egui::FontId::proportional(12.0), GOLD);
         p.text(r.right_bottom() - egui::vec2(6.0, 4.0), egui::Align2::RIGHT_BOTTOM, format!("{c}"), egui::FontId::proportional(13.0), PAPER);
     }
     p.text(egui::pos2(x0 + total * 0.5, screen.bottom() - 8.0), egui::Align2::CENTER_BOTTOM,
         "WASD move  SHIFT sprint  MOUSE5 lock-on  LMB rush  F smash  RMB guard (tap = perfect parry)  CTRL step  C roll  E interact",
-        egui::FontId::proportional(11.0), PAPER.gamma_multiply(0.75));
+        egui::FontId::proportional(11.0), MUTED.gamma_multiply(0.8));
 
     // target card, top centre, while fighting
     let target = player.lock_target.filter(|&i| i != 0 && i < w.fighters.len()).or_else(|| in_combat.then_some(1).filter(|&i| i < w.fighters.len()));
     if let Some(t) = target {
         let f = &w.fighters[t];
         let r = egui::Rect::from_center_size(egui::pos2(left + (screen.width() - left) * 0.5 + layout.target[0], 46.0 + layout.target[1]), egui::vec2(380.0, 64.0) * sc);
-        if let Some(i) = icons {
-            p.image(i.panel, r, UV, egui::Color32::from_white_alpha(220));
-        }
-        let name = if t == 1 { "SPARRING PARTNER".to_owned() } else { format!("HOSTILE {}", t - 1) };
-        p.text(r.center_top() + egui::vec2(0.0, 8.0), egui::Align2::CENTER_TOP, name, egui::FontId::proportional(12.0), GOLD);
-        let hb = egui::Rect::from_min_size(r.min + egui::vec2(18.0, 26.0), egui::vec2(r.width() - 36.0, 18.0));
-        bar(&p, icons, hb, f.hp / f.max_hp.max(1.0), RED, "", &format!("{:.0}", f.hp));
+        p.rect(r, 10.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
+        let name = if t == 1 { "Sparring partner".to_owned() } else { format!("Hostile {}", t - 1) };
+        p.text(r.left_top() + egui::vec2(16.0, 10.0), egui::Align2::LEFT_TOP, name, egui::FontId::proportional(13.0), PAPER);
+        let hb = egui::Rect::from_min_size(r.min + egui::vec2(16.0, 28.0), egui::vec2(r.width() - 32.0, 18.0));
+        bar(&p, hb, f.hp / f.max_hp.max(1.0), RED, "", &format!("{:.0}", f.hp));
         let tk = (f.posture / w.posture.max.max(1.0)).clamp(0.0, 1.0);
         let pr = egui::Rect::from_center_size(hb.center_bottom() + egui::vec2(0.0, 7.0), egui::vec2(hb.width() * tk, 4.0));
         p.rect_filled(pr, 2.0, posture_color(tk));

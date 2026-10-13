@@ -37,7 +37,30 @@ fn is_quaternius(path: &str) -> bool {
     l.starts_with("packs/hero/") || l.starts_with("packs/npc/") || l.contains("quaternius") || l.contains("universal_base") || l.contains("modular_character") || l.contains("bestiary")
 }
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
-const TABS: [&str; 8] = ["Inspect", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+const TABS: [&str; 9] = ["Inspect", "Creator", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
+
+/// Asset browser group: (sort key, group title) from the path under assets/.
+fn group_of(path: &str) -> (u8, String) {
+    let p = path.trim_start_matches("packs/");
+    let mut it = p.split('/');
+    let first = it.next().unwrap_or("");
+    match first {
+        "custom" => (0, "Custom (Creator)".into()),
+        "hero" => (1, "Hero".into()),
+        "npc" => (2, "NPC".into()),
+        "_sources" => {
+            let src = it.next().unwrap_or("");
+            if src == "quaternius" {
+                (3, format!("Quaternius - {}", it.next().unwrap_or("").replace('_', " ")))
+            } else if src == "chars_staged" {
+                (4, format!("Quaternius - staged {}", it.next().unwrap_or("")))
+            } else {
+                (5, format!("Source - {}", src.replace('_', " ")))
+            }
+        }
+        x => (6, x.replace('_', " ")),
+    }
+}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -185,6 +208,17 @@ pub struct Studio {
 impl Studio {
     pub fn request_spawn(&mut self, path: String) {
         self.spawn_request = Some(path);
+    }
+
+    pub fn add_asset(&mut self, path: String) {
+        if !self.assets.contains(&path) {
+            self.assets.push(path);
+            self.assets.sort();
+        }
+    }
+
+    pub fn assets_in(&self, prefix: &str) -> Vec<String> {
+        self.assets.iter().filter(|a| a.starts_with(prefix)).cloned().collect()
     }
 }
 
@@ -747,6 +781,13 @@ pub fn snapshot(world: &World) -> Value {
            "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len(), "audit_patterns": audit_patterns(&read_audit())})
 }
 
+/// The Creator tab's state and the player's worn model.
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct CreatorParams<'w> {
+    creator: ResMut<'w, crate::creator::Creator>,
+    wear: ResMut<'w, crate::creator::Wear>,
+}
+
 /// Everything the Tuning tab edits live: sim motion tuning, animation tuning, life layers, the physical body.
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct TuningParams<'w> {
@@ -772,6 +813,7 @@ fn ui(
     names: Query<&Name>,
     rigs: Query<&StudioRig>,
     mut tune: TuningParams,
+    mut make: CreatorParams,
 ) -> Result {
     if !studio.open {
         return Ok(());
@@ -786,13 +828,10 @@ fn ui(
     egui::Panel::top("studio_bar").frame(theme::dock(kit)).show_inside(&mut root, |ui| {
         theme::dock_backdrop(ui, kit, ui.max_rect());
         ui.horizontal(|ui| {
-            ui.label(egui::RichText::new("GUILDBOUND STUDIO").size(15.0).strong().color(theme::TEAL));
-            ui.separator();
-            for (i, t) in TABS.iter().enumerate() {
-                if theme::button(ui, kit, t, studio.tab == i).clicked() {
-                    studio.tab = i;
-                }
-            }
+            ui.label(egui::RichText::new("Guildbound").size(15.0).strong().color(theme::PAPER));
+            ui.label(egui::RichText::new("Studio").size(15.0).color(theme::MUTED));
+            ui.add_space(10.0);
+            theme::tabs(ui, &TABS, &mut studio.tab);
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let fps = diag.get(&FrameTimeDiagnosticsPlugin::FPS).and_then(|d| d.smoothed()).unwrap_or(0.0);
                 ui.label(egui::RichText::new(format!("{fps:.0} FPS  |  F2 {}", if studio.scene { "back to menu" } else { "close" })).color(theme::MUTED));
@@ -832,20 +871,31 @@ fn ui(
         ui.checkbox(&mut studio.quaternius_only, "Quaternius models only (uniform rig)");
         ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("filter: hero, npc, peasant, ranger ..."));
         ui.label(egui::RichText::new(format!("{} models", shown.len())).size(11.0).color(theme::MUTED));
-        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.4).show(ui, |ui| {
-            let mut shown_n = 0;
-            let mut pick = None;
+        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.45).show(ui, |ui| {
+            // grouped by pack: custom, hero, NPC, then each source pack (models of one pack share a rig and style)
+            let mut groups: BTreeMap<(u8, String), Vec<&String>> = BTreeMap::new();
             for a in &shown {
-                let shown = &mut shown_n;
-                *shown += 1;
-                if *shown > 250 {
-                    ui.label(egui::RichText::new("... refine the filter").color(theme::MUTED));
-                    break;
-                }
-                let short = a.trim_start_matches("packs/").replace("_sources/", "");
-                if ui.selectable_label(studio.model.as_deref() == Some(a.as_str()), egui::RichText::new(short).size(11.5)).clicked() {
-                    pick = Some(a.clone());
-                }
+                groups.entry(group_of(a)).or_default().push(a);
+            }
+            let mut pick = None;
+            for ((_, title), list) in &groups {
+                let here = studio.model.as_ref().is_some_and(|m| list.iter().any(|a| *a == m));
+                egui::CollapsingHeader::new(egui::RichText::new(format!("{title}  ({})", list.len())).size(12.5).color(theme::PAPER))
+                    .id_salt(title)
+                    .default_open(here || groups.len() <= 3)
+                    .show(ui, |ui| {
+                        for a in list.iter().take(300) {
+                            let file = a.rsplit('/').next().unwrap_or(a);
+                            let folder = a.rsplit('/').nth(1).unwrap_or("");
+                            let r = ui.selectable_label(studio.model.as_deref() == Some(a.as_str()), egui::RichText::new(file.trim_end_matches(".glb").trim_end_matches(".gltf")).size(12.0));
+                            if r.on_hover_text(format!("{folder}/{file}")).clicked() {
+                                pick = Some((*a).clone());
+                            }
+                        }
+                        if list.len() > 300 {
+                            ui.label(egui::RichText::new("... refine the filter").color(theme::MUTED));
+                        }
+                    });
             }
             if let Some(p) = pick {
                 studio.spawn_request = Some(p);
@@ -859,7 +909,7 @@ fn ui(
         let names: Vec<(String, f32)> = if studio.hero_clips {
             lib.as_ref().map(|l| l.clips.iter().map(|(n, _)| (n.clone(), l.duration(n))).collect()).unwrap_or_default()
         } else {
-            studio.own.as_ref().map(|(_, _, idx)| idx.iter().map(|(n, (_, d))| (n.clone(), *d)).collect()).unwrap_or_default()
+            studio.own.as_ref().map(|(_, _, idx)| idx.iter().filter(|(n, _)| !n.starts_with("Unarmed-")).map(|(n, (_, d))| (n.clone(), *d)).collect()).unwrap_or_default()
         };
         egui::ScrollArea::vertical().id_salt("clips").show(ui, |ui| {
             let f = studio.clip_filter.to_lowercase();
@@ -881,9 +931,10 @@ fn ui(
     // inspector / tabs
     egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
         theme::dock_backdrop(ui, kit, ui.max_rect());
-        egui::ScrollArea::vertical().show(ui, |ui| match studio.tab {
-            0 => inspect(ui, studio, &mut corr, kit, &mut feed, tune.sim.world.tick),
-            1 => {
+        egui::ScrollArea::vertical().show(ui, |ui| match TABS[studio.tab.min(TABS.len() - 1)] {
+            "Creator" => crate::creator::tab(ui, &mut make.creator, studio, &mut make.wear, kit, &mut feed),
+            "Inspect" => inspect(ui, studio, &mut corr, kit, &mut feed, tune.sim.world.tick),
+            "Tuning" => {
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
                 egui::CollapsingHeader::new(egui::RichText::new("Possession: bones, fixed fps, life layers, physics readout").color(theme::TEAL)).default_open(true).show(ui, |ui| {
                     crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
@@ -963,9 +1014,9 @@ fn ui(
                     clip_editor(ui, studio, kit, lib.as_deref_mut());
                 });
             }
-            2 => moveset_tab(ui, studio, kit, lib.as_deref()),
-            3 => corrections_tab(ui, &mut corr),
-            4 => {
+            "Moveset" => moveset_tab(ui, studio, kit, lib.as_deref()),
+            "Corrections" => corrections_tab(ui, &mut corr),
+            "Patterns" => {
                 theme::section(ui, "Patterns across clips and models");
                 ui.label(egui::RichText::new("Repeated fixes become library-wide rules; repeated notes show where the pipeline is wrong.").size(11.0).color(theme::MUTED));
                 let notes = read_notes();
@@ -1030,7 +1081,7 @@ fn ui(
                     studio.status = format!("Audit: {} {} at {at}", p["check"].as_str().unwrap_or(""), p["bone"].as_str().unwrap_or(""));
                 }
             }
-            5 => {
+            "Notes" => {
                 theme::section(ui, "Notes sent to Claude");
                 for n in read_notes().iter().rev().take(30) {
                     ui.label(egui::RichText::new(format!("{}  {} @ {:.2}s  {}", n["model"].as_str().unwrap_or(""), n["clip"].as_str().unwrap_or(""), n["time"].as_f64().unwrap_or(0.0), n["bone"].as_str().unwrap_or(""))).size(11.0).color(theme::MUTED));
@@ -1038,7 +1089,7 @@ fn ui(
                     ui.separator();
                 }
             }
-            6 => {
+            "HUD Layout" => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
                 for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {

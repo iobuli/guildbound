@@ -45,6 +45,7 @@ def stage():
     """Copy the character folders to bracket-free paths (the glTF importer rejects '[' in paths)."""
     pairs = {
         "outfits": glob.glob(os.path.join(Q, "Modular_Character_Outfits", "*", "Exports", "glTF*", "Outfits"))[0],
+        "parts": glob.glob(os.path.join(Q, "Modular_Character_Outfits", "*", "Exports", "glTF*", "Modular Parts"))[0],
         "base": glob.glob(os.path.join(Q, "Universal_Base_Characters", "*", "Base Characters", "Godot - UE"))[0],
         "hair": glob.glob(os.path.join(Q, "Universal_Base_Characters", "*", "Hairstyles", "Rigged to Head Bone", "glTF*"))[0],
     }
@@ -76,6 +77,61 @@ def keep_head_only(mesh, rig):
     bm.free()
 
 
+# modular part slot -> base body bones (UE names) whose skin the part replaces; uncovered slots keep the base skin
+SLOT_BONES = {"Body": ("spine_01", "spine_02", "spine_03", "clavicle_"),
+              "Arms": ("upperarm_", "lowerarm_", "hand_", "thumb_", "index_", "middle_", "ring_", "pinky_"),
+              "Legs": ("pelvis", "thigh_", "calf_"),
+              "Feet": ("foot_", "ball_")}
+
+
+def slot_of(part):
+    """Male_Ranger_Feet_Boots -> Feet; Female_Ranger_Head_Hood -> Head; Male_Ranger_Acc_Pauldron -> Acc."""
+    words = part.split("_")[2:]
+    return words[0] if words else ""
+
+
+def cut_slots(mesh, slots):
+    """Delete the base skin under the chosen parts: a vertex goes when its strongest bone belongs to a covered slot.
+    Returns the new cut edge (world position, strongest bone of each kept vertex next to a deleted one)."""
+    prefixes = tuple(b for s in slots for b in SLOT_BONES.get(s, ()))
+    if not prefixes:
+        return []
+    names = {g.index: g.name for g in mesh.vertex_groups}
+    doomed_idx = set()
+    for v in mesh.data.vertices:
+        if v.groups:
+            g = max(v.groups, key=lambda g: g.weight)
+            if names.get(g.group, "").startswith(prefixes):
+                doomed_idx.add(v.index)
+    bm = bmesh.new()
+    bm.from_mesh(mesh.data)
+    bm.verts.ensure_lookup_table()
+    rim = {v.index for e in bm.edges if (e.verts[0].index in doomed_idx) != (e.verts[1].index in doomed_idx)
+           for v in e.verts if v.index not in doomed_idx}
+    mw = mesh.matrix_world
+    edge = [(mw @ mesh.data.vertices[i].co, names.get(max(mesh.data.vertices[i].groups, key=lambda g: g.weight).group, ""))
+            for i in rim]
+    bmesh.ops.delete(bm, geom=[bm.verts[i] for i in doomed_idx], context="VERTS")
+    bm.to_mesh(mesh.data)
+    bm.free()
+    return edge
+
+
+def uncovered(edge, meshes):
+    """Cut-edge vertices with no part vertex within 3 cm (a hole where the base skin was removed), per bone."""
+    from mathutils import kdtree
+    pts = [mw @ v.co for m in meshes for mw in [m.matrix_world] for v in m.data.vertices]
+    tree = kdtree.KDTree(len(pts))
+    for i, co in enumerate(pts):
+        tree.insert(co, i)
+    tree.balance()
+    holes = {}
+    for co, bone in edge:
+        if not pts or tree.find(co)[2] > 0.03:
+            holes[bone] = holes.get(bone, 0) + 1
+    return {"cut_edge_verts": len(edge), "uncovered": holes}
+
+
 def adopt(objs, rig):
     """Bind every mesh of another import to the master rig (same UAL skeleton) and drop its own rig."""
     for ob in objs:
@@ -95,7 +151,10 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("--outfit", default="Male_Ranger")
     p.add_argument("--hair", default="")
-    p.add_argument("--set", default="hero", choices=["hero", "npc"])
+    p.add_argument("--set", default="hero", choices=["hero", "npc", "none"])
+    # character creator: a base body and any modular parts (file stems in Modular Parts), instead of a whole outfit
+    p.add_argument("--base", default="", choices=["", "male", "female"])
+    p.add_argument("--parts", default="", help="comma list of modular part names, e.g. Male_Ranger_Body,Male_Peasant_Legs")
     p.add_argument("--source", default=os.path.join(ROOT, "assets", "packs", "_sources", "rpg_hero", "fighter.glb"))
     p.add_argument("--out", required=True)
     p.add_argument("--only", default="", help="comma list of clip names (quick validation builds)")
@@ -103,17 +162,35 @@ def main():
     stage()
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob, do_unlink=True)
-    female = a.outfit.startswith("Female")
+    female = a.base == "female" if a.base else a.outfit.startswith("Female")
     base = import_gltf(os.path.join(STAGE, "base", "Superhero_Female_FullBody.gltf" if female else "Superhero_Male_FullBody.gltf"))
     rig = hero.armature_of(base)
+    parts = [x.strip() for x in a.parts.split(",") if x.strip()]
+    cut_edge = []
     for ob in base:
         if ob.type == "MESH" and len(ob.data.vertices) > 2000:
-            keep_head_only(ob, rig)
-    adopt(import_gltf(os.path.join(STAGE, "outfits", f"{a.outfit}.gltf")), rig)
+            if parts:
+                cut_edge += cut_slots(ob, {slot_of(x) for x in parts})
+            else:
+                keep_head_only(ob, rig)
+    seams = None
+    if parts:
+        part_meshes = []
+        for part in parts:
+            path = os.path.join(STAGE, "parts", f"{part}.gltf")
+            if os.path.exists(path):
+                objs = import_gltf(path)
+                part_meshes += [o for o in objs if o.type == "MESH"]
+                adopt(objs, rig)
+            else:
+                print("PART_MISSING", part)
+        seams = uncovered(cut_edge, part_meshes)
+    else:
+        adopt(import_gltf(os.path.join(STAGE, "outfits", f"{a.outfit}.gltf")), rig)
     hair = a.hair or ("Hair_Long" if female else "Hair_SimpleParted")
     # the base head already carries eyebrows; add only the hairstyle
     path = os.path.join(STAGE, "hair", f"{hair}.gltf")
-    if os.path.exists(path):
+    if hair != "none" and os.path.exists(path):
         adopt(import_gltf(path), rig)
     # helper shapes shipped in the base file (an Icosphere spanning +-1 m) would break height normalization
     for ob in [o for o in bpy.data.objects if o.type == "MESH" and (len(o.data.vertices) < 100 or o.name.startswith("Icosphere"))]:
@@ -127,7 +204,7 @@ def main():
     rig.animation_data_create()
     rig.animation_data.action = None
     model = [o for o in bpy.data.objects]
-    report = {"outfit": a.outfit, "set": a.set, "clips": [], "skipped": []}
+    report = {"outfit": a.outfit if not a.parts else None, "base": "female" if female else "male", "parts": a.parts.split(",") if a.parts else [], "hair": hair, "set": a.set, "clips": [], "skipped": [], "seams": seams}
 
     def take(path, clips, mapping, motion_root=None, root_bones=None):
         objs, acts, time_scale = hero.load_source(path, set(clips.values()))
@@ -193,7 +270,7 @@ def main():
                 bpy.data.objects.remove(o, do_unlink=True)
             for x in [x for x in bpy.data.actions if x.users == 0 and not x.use_fake_user]:
                 bpy.data.actions.remove(x)
-    else:
+    elif a.set == "npc":
         for path, clips in NPC_CLIPS.items():
             take(path, clips, ual_map)
     # pauldrons follow the shoulder girdle, not only the upper arm (they cut into the chest otherwise)

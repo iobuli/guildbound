@@ -61,6 +61,7 @@ pub fn panel(
     hud: crate::hud::HudParams,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
+    crate::ui_theme::style(&ctx);
     if *app_state.get() == crate::menu::AppState::MainMenu {
         // the menu owns the screen: no HUD, no dev panel
         state.width = 0.0;

@@ -311,7 +311,7 @@ pub const CLUSTER_SPECS: &[(&str, &str, &str, &[&str], &[&str])] = &[
 ];
 
 fn resolve_clusters(lib: &AnimLibrary) -> Vec<(&'static str, &'static str, Vec<String>)> {
-    let hero = lib.node("Unarmed-Idle").is_some() && lib.node("hp_straight_left_A").is_some();
+    let hero = lib.node("nc_idle").is_some() && lib.node("hp_straight_left_A").is_some();
     let mut mapping: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
     // the boss's moveset picks (Studio Moveset tab) replace a move's clip list when present
     if let Some(picks) = std::fs::read_to_string(format!("{}/assets/moveset.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
@@ -511,13 +511,14 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
 }
 
 /// The pack model under a fighter view. Pack models face +Z; the view faces -Z (Bevy forward).
-pub fn spawn_rig(commands: &mut Commands, view: Entity, fighter: usize, scene: Handle<WorldAsset>) {
+pub fn spawn_rig(commands: &mut Commands, view: Entity, fighter: usize, scene: Handle<WorldAsset>) -> Entity {
     let color = color_of(fighter);
     let rig = commands
         .spawn((FighterRig::new(fighter, color), WorldAssetRoot(scene), Transform::from_rotation(Quat::from_rotation_y(std::f32::consts::PI))))
         .observe(on_rig_ready)
         .id();
     commands.entity(view).add_child(rig);
+    rig
 }
 
 pub fn load_library(mut commands: Commands, assets: Res<AssetServer>, libs: Res<Libraries>) {
@@ -557,7 +558,8 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
         return;
     }
     let Some(gltf) = gltfs.get(&lib.gltf) else { return };
-    let mut named: Vec<_> = gltf.named_animations.iter().map(|(n, h)| (n.to_string(), h.clone())).collect();
+    // the Unarmed- family is dropped (boss, 2026-10-13: it breaks the model); the nc_/ual_/mx_ clips replace it
+    let mut named: Vec<_> = gltf.named_animations.iter().filter(|(n, _)| !n.starts_with("Unarmed-")).map(|(n, h)| (n.to_string(), h.clone())).collect();
     named.sort_by(|a, b| a.0.cmp(&b.0));
     if named.iter().any(|(_, h)| clips.get(h).is_none()) {
         return; // wait until every clip has loaded so durations are known
@@ -595,7 +597,7 @@ pub fn build_library(mut lib: ResMut<AnimLibrary>, gltfs: Res<Assets<Gltf>>, cli
     };
     // The merged hero has a verified semantic map shared with the offline
     // converter. Keep fuzzy name discovery only for other inspectable packs.
-    if lib.node("Unarmed-Idle").is_some() && lib.node("hp_straight_left_A").is_some() {
+    if lib.node("nc_idle").is_some() && lib.node("hp_straight_left_A").is_some() {
         let mapping: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
         let role = |key: &str| {
             let name = mapping["roles"][key].as_str()?;
