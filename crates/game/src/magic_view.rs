@@ -52,11 +52,11 @@ pub fn sync_orbs(
         .map(|p| {
             let d = SPELLS[p.spell];
             let r = d.radius * p.scale(gain).sqrt();
-            (Vec3::new(p.position.x, 1.25, p.position.z), r, element_color(d.element, p.charge))
+            (Vec3::new(p.position.x, 1.25 + guildbound_sim::terrain::ground(p.position.x, p.position.z), p.position.z), r, element_color(d.element, p.charge))
         })
         .collect();
     for (i, f) in sim.world.fighters.iter().enumerate() {
-        let fallback = Vec3::new(f.position.x, 1.25 + f.height, f.position.z) + Vec3::new(f.facing.x, 0.0, f.facing.z) * 0.55;
+        let fallback = Vec3::new(f.position.x, 1.25 + f.height + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z) + Vec3::new(f.facing.x, 0.0, f.facing.z) * 0.55;
         let mut points = Vec::new();
         if let Some(rig) = rigs.iter().find(|r| r.fighter == i) {
             let lightning = matches!(f.action.kind, gs::ActionKind::Cast(gs::magic::CHAIN_LIGHTNING));
@@ -117,7 +117,7 @@ pub fn sync_orbs(
 /// lightning bolts (caster -> first victim -> each jump), the blink's departure ring.
 pub fn draw_magic(sim: Res<Sim>, mut gizmos: Gizmos) {
     let now = sim.world.tick as f32 * gs::STEP;
-    let flat = |p: gs::V2, y: f32| Vec3::new(p.x, y, p.z);
+    let flat = |p: gs::V2, y: f32| Vec3::new(p.x, y + gs::terrain::ground(p.x, p.z), p.z);
     let ring = |c: Vec3| Isometry3d::new(c, Quat::from_rotation_x(std::f32::consts::FRAC_PI_2));
     for f in &sim.world.fighters {
         if f.action.kind == gs::ActionKind::Cast(gs::magic::HEALING_LIGHT) {

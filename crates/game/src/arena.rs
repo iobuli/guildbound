@@ -13,7 +13,6 @@ pub fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mater
     let chalk = materials.add(StandardMaterial { base_color: Color::srgb(0.74, 0.65, 0.44), perceptual_roughness: 1.0, ..default() });
     let wood = materials.add(StandardMaterial { base_color: Color::srgb(0.23, 0.16, 0.10), perceptual_roughness: 0.9, ..default() });
     let cloth = materials.add(StandardMaterial { base_color: Color::srgb(0.16, 0.36, 0.36), perceptual_roughness: 0.95, ..default() });
-    commands.spawn((Mesh3d(meshes.add(Plane3d::default().mesh().size(200.0, 200.0))), MeshMaterial3d(border.clone()), Transform::from_xyz(0.0, -0.04, 0.0)));
     commands.spawn((Courtyard, Transform::default(), Visibility::default())).with_children(|p| {
         let mut block = |pos: Vec3, scale: Vec3, material: &Handle<StandardMaterial>| {
             p.spawn((Mesh3d(cube.clone()), MeshMaterial3d(material.clone()), Transform::from_translation(pos).with_scale(scale)));

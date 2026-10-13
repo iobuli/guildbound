@@ -233,7 +233,7 @@ pub fn apply(world: &mut World) {
             let (_, rotation, _) = pose.to_scale_rotation_translation();
             leg.raw = pose.translation();
             leg.contact = contact[i];
-            leg.lock.step(leg.raw, ground_rotation(rotation, leg.sole_up), sole_height[i], contact[i], actor_dt);
+            leg.lock.step(leg.raw, ground_rotation(rotation, leg.sole_up), sole_height[i] + guildbound_sim::terrain::ground(leg.raw.x, leg.raw.z), contact[i], actor_dt);
             if leg.lock.weight > 0.5 && let Some(hip) = world_transform(world, leg.joints[0]) {
                 let delta = hip.translation() - leg.lock.anchor;
                 let reach = leg.lengths.iter().sum::<f32>() - 0.003;

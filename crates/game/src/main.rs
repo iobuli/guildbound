@@ -7,6 +7,7 @@ mod camera;
 mod catalog;
 mod controller;
 mod creator;
+mod editor;
 mod feed;
 mod feedback;
 mod hud;
@@ -36,6 +37,7 @@ mod sim_bridge;
 mod studio;
 mod ui_theme;
 mod support;
+mod terrain;
 
 use bevy::prelude::*;
 use bevy::remote::http::RemoteHttpPlugin;
@@ -66,7 +68,7 @@ fn main() {
                 .set(AssetPlugin { file_path: format!("{ROOT}/assets"), ..default() }),
         )
         .add_plugins(EguiPlugin::default())
-        .add_plugins((studio::plugin, creator::plugin))
+        .add_plugins((studio::plugin, creator::plugin, editor::plugin))
         .add_plugins(possession::plugin)
         .add_plugins(reference_pose::plugin)
         .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new().run_if(bevy::input::common_conditions::input_toggle_active(false, KeyCode::F1)))
@@ -91,7 +93,7 @@ fn main() {
         .init_resource::<sfx::SfxSettings>()
         .init_resource::<npc::NpcLibraries>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, terrain::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
         .add_systems(PostStartup, (props::spawn, magic_view::setup, npc::spawn))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
@@ -100,7 +102,7 @@ fn main() {
             (
                 menu::toggle_menu,
                 menu::trace_close_requests,
-                sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing)),
+                sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing).and_then(camera::on_player)),
                 sim_bridge::step_sim,
                 sim_bridge::ensure_views,
                 props::drive_bodies,

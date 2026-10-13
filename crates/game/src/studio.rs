@@ -205,6 +205,11 @@ impl Studio {
         self.assets.sort_by(|a, b| a.path.cmp(&b.path));
     }
 
+    /// Every model without a skeleton (furniture, trees, buildings).
+    pub fn props(&self) -> Vec<String> {
+        self.assets.iter().filter(|a| !a.rigged).map(|a| a.path.clone()).collect()
+    }
+
     pub fn assets_in(&self, prefix: &str) -> Vec<String> {
         self.assets.iter().filter(|a| a.path.starts_with(prefix)).map(|a| a.path.clone()).collect()
     }
@@ -375,22 +380,13 @@ fn on_ready(
     rig.bones.clear();
     let mut rest = crate::procedural::RestPose::default();
     if !children.iter_descendants(ready.entity).any(|e| players.contains(e)) {
-        // the armature root: the node whose child is the skeleton's root bone
-        let root = children.iter_descendants(ready.entity).find(|&e| children.get(e).is_ok_and(|c| c.iter().any(|k| nodes.get(k).is_ok_and(|(n, _)| matches!(n.as_str(), "root" | "Motion" | "Root" | "Hips")))));
-        if let Some(root) = root {
-            commands.entity(root).insert(AnimationPlayer::default());
-            rig.player = Some(root);
-            let mut stack = vec![(root, Vec::<Name>::new())];
-            while let Some((e, mut path)) = stack.pop() {
-                let Ok((name, t)) = nodes.get(e) else { continue };
-                path.push(name.clone());
-                commands.entity(e).insert((AnimationTargetId::from_names(path.iter()), bevy::animation::AnimatedBy(root)));
+        let added = crate::anim::add_targets(&mut commands, ready.entity, &children, &nodes);
+        rig.player = added.first().copied();
+        for e in added {
+            if let Ok((_, t)) = nodes.get(e) {
                 rig.bones.push(e);
                 rest.0.insert(e, t.rotation);
                 rest.1.insert(e, t.translation);
-                for &k in children.get(e).into_iter().flatten() {
-                    stack.push((k, path.clone()));
-                }
             }
         }
     }

@@ -453,7 +453,7 @@ mod tests {
 pub fn sync_views(sim: Res<Sim>, mut views: Query<(&FighterView, &mut Transform)>) {
     for (view, mut t) in &mut views {
         let Some(f) = sim.world.fighters.get(view.0) else { continue };
-        t.translation = Vec3::new(f.position.x, f.height, f.position.z);
+        t.translation = Vec3::new(f.position.x, f.height + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         t.look_to(Vec3::new(f.facing.x, 0.0, f.facing.z), Vec3::Y);
     }
 }

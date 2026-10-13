@@ -518,6 +518,28 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
     serde_json::json!({"fighters": rows, "joint_rule": joint_rule, "knee_rule": {"enabled": knees.enabled, "checked": knees.checked, "backward_fixed": knees.backward, "overflex_fixed": knees.overflex}})
 }
 
+/// A model exported without clips has no animation player or bone targets (the glTF loader adds them only to
+/// animated files). Give it both, with targets named the way the loader names them (node names from the armature
+/// root down), so any clip library with the same skeleton drives it. Returns the player first, then every node.
+pub fn add_targets(commands: &mut Commands, scene: Entity, children: &Query<&Children>, nodes: &Query<(&Name, &Transform)>) -> Vec<Entity> {
+    // the armature root: the node whose child is the skeleton's root bone
+    let is_root_bone = |k: Entity| nodes.get(k).is_ok_and(|(n, _)| matches!(n.as_str(), "root" | "Motion" | "Root" | "Hips"));
+    let Some(root) = children.iter_descendants(scene).find(|&e| children.get(e).is_ok_and(|c| c.iter().any(is_root_bone))) else { return Vec::new() };
+    commands.entity(root).insert(AnimationPlayer::default());
+    let mut out = Vec::new();
+    let mut stack = vec![(root, Vec::<Name>::new())];
+    while let Some((e, mut path)) = stack.pop() {
+        let Ok((name, _)) = nodes.get(e) else { continue };
+        path.push(name.clone());
+        commands.entity(e).insert((AnimationTargetId::from_names(path.iter()), bevy::animation::AnimatedBy(root)));
+        out.push(e);
+        for &k in children.get(e).into_iter().flatten() {
+            stack.push((k, path.clone()));
+        }
+    }
+    out
+}
+
 /// The pack model under a fighter view. Pack models face +Z; the view faces -Z (Bevy forward).
 pub fn spawn_rig(commands: &mut Commands, view: Entity, fighter: usize, scene: Handle<WorldAsset>) -> Entity {
     let color = color_of(fighter);
@@ -634,6 +656,7 @@ pub fn on_rig_ready(
     children: Query<&Children>,
     players: Query<(), With<AnimationPlayer>>,
     targets: Query<(&Name, &Transform), With<AnimationTargetId>>,
+    nodes: Query<(&Name, &Transform)>,
     mut mats: Query<&mut MeshMaterial3d<StandardMaterial>>,
     mut rigs: Query<&mut FighterRig>,
     mut materials: ResMut<Assets<StandardMaterial>>,
@@ -647,11 +670,15 @@ pub fn on_rig_ready(
     rig.root_lock = None;
     rig.pelvis = None;
     rig.chest = None;
+    let added = if children.iter_descendants(ready.entity).any(|e| players.contains(e)) { Vec::new() } else { add_targets(&mut commands, ready.entity, &children, &nodes) };
+    if let Some(&player) = added.first() {
+        rig.player = Some(player);
+    }
     for e in children.iter_descendants(ready.entity) {
         if players.contains(e) {
             rig.player = Some(e);
         }
-        if let Ok((name, t)) = targets.get(e) {
+        if let Ok((name, t)) = if added.contains(&e) { nodes.get(e) } else { targets.get(e) } {
             rig.bones.push(e);
             rest.0.insert(e, t.rotation);
             rest.1.insert(e, t.translation);

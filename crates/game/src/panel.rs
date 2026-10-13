@@ -19,6 +19,8 @@ pub struct PanelState {
     pub show_capsules: bool,
     /// Tab: hide the dev panel (play view); I: inventory window.
     pub hidden: bool,
+    /// What the panel edits: 0 game rules, 1 the world, 2 debug views.
+    mode: usize,
     pub show_inventory: bool,
     draft: String,
     clip: String,
@@ -34,6 +36,7 @@ impl Default for PanelState {
             show_bodies: false,
             show_capsules: false,
             hidden: true,
+            mode: 0,
             show_inventory: false,
             draft: String::new(),
             clip: "hp_straight_left_A".into(),
@@ -41,6 +44,23 @@ impl Default for PanelState {
         }
     }
 }
+
+/// Settings and the world editor, bundled to stay within the system parameter limit.
+#[derive(bevy::ecs::system::SystemParam)]
+pub struct Tools<'w, 's> {
+    commands: Commands<'w, 's>,
+    assets: Res<'w, AssetServer>,
+    edit: ResMut<'w, crate::editor::WorldEdit>,
+    feedback: ResMut<'w, crate::feedback::FeedbackSettings>,
+    sfx: ResMut<'w, crate::sfx::SfxSettings>,
+}
+
+const MODES: [&str; 3] = ["Game", "World", "Debug"];
+const MODE_HELP: [&str; 3] = [
+    "Editing the game rules: the simulation, the fighters and how everyone moves.",
+    "Editing the world: fly the camera freely and place objects on the ground.",
+    "Debug views: overlays, the animation library, the link to Claude and the message feed.",
+];
 
 pub fn panel(
     mut contexts: EguiContexts,
@@ -56,8 +76,7 @@ pub fn panel(
     mut requests: ResMut<AnimRequests>,
     mut libs: ResMut<Libraries>,
     app_state: Res<State<crate::menu::AppState>>,
-    mut feedback: ResMut<crate::feedback::FeedbackSettings>,
-    mut sfx: ResMut<crate::sfx::SfxSettings>,
+    mut tools: Tools,
     hud: crate::hud::HudParams,
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
@@ -99,31 +118,45 @@ pub fn panel(
         .resizable(true)
         .show_inside(&mut root, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                ui.heading("Guildbound dev");
-                ui.label("WASD move, Shift run, Ctrl step, Shift+Ctrl homing dash (8 ki) | LMB rush, RMB guard/parry, F/Mouse4 smash (hold to charge; W/S rising/sweep), Mouse5 lock");
-                ui.label("Camera: middle-drag orbit, wheel zoom | P pause, . step | Tab hide panel, I inventory | Space jump, C roll | 1 fireball (hold = charge), 2 ki blast, 3 lightning, 4 burst, Q charge ki | E pick up / open");
+                crate::ui_theme::tabs(ui, &MODES, &mut state.mode);
+                ui.label(egui::RichText::new(MODE_HELP[state.mode.min(2)]).strong());
                 ui.separator();
-                sim_section(ui, &mut sim);
-                ui.separator();
-                fighters_section(ui, &mut sim, &mut cam);
-                ui.separator();
-                tuning_section(ui, &mut sim);
-                ui.separator();
-                ui.label(egui::RichText::new("View").strong());
-                ui.horizontal(|ui| {
-                    ui.checkbox(&mut state.show_grid, "grid");
-                    ui.checkbox(&mut state.show_velocity, "movement arrows").on_hover_text("Show arrows for where each character is moving.");
-                    ui.checkbox(&mut state.show_bodies, "physics shapes").on_hover_text("Show the physics shapes of the bodies.");
-                    ui.checkbox(&mut state.show_capsules, "collision capsules").on_hover_text("Show the capsules used for character collisions.");
-                });
-                ui.add(egui::Slider::new(&mut feedback.shake_scale, 0.0..=1.0).text("camera shake")).on_hover_text("How much the camera shakes when hits land.");
-                ui.add(egui::Slider::new(&mut sfx.volume, 0.0..=1.0).text("sound volume")).on_hover_text("Volume of the game sounds.");
-                ui.separator();
-                anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
-                ui.separator();
-                link_section(ui, &remote, time.elapsed_secs_f64());
-                ui.separator();
-                feed_section(ui, &mut feed, &mut state.draft, sim.world.tick);
+                match state.mode {
+                    0 => {
+                        ui.label("WASD move, Shift run, Ctrl step, Shift+Ctrl homing dash | LMB rush, RMB guard/parry, F/Mouse4 smash (hold to charge), Mouse5 lock | Space jump, C roll | 1-5 spells, R/T items | E pick up / open | P pause, . step | Tab this panel, I inventory");
+                        ui.separator();
+                        sim_section(ui, &mut sim);
+                        ui.separator();
+                        fighters_section(ui, &mut sim, &mut cam);
+                        ui.separator();
+                        tuning_section(ui, &mut sim);
+                    }
+                    1 => {
+                        let was = cam.noclip;
+                        let props = hud.studio.props();
+                        crate::editor::ui(ui, &mut tools.edit, &mut cam.noclip, &props, &mut tools.commands, &tools.assets);
+                        if cam.noclip && !was {
+                            sim.clear_player_input();
+                        }
+                    }
+                    _ => {
+                        ui.label(egui::RichText::new("View").strong());
+                        ui.horizontal(|ui| {
+                            ui.checkbox(&mut state.show_grid, "grid");
+                            ui.checkbox(&mut state.show_velocity, "movement arrows").on_hover_text("Show arrows for where each character is moving.");
+                            ui.checkbox(&mut state.show_bodies, "physics shapes").on_hover_text("Show the physics shapes of the bodies.");
+                            ui.checkbox(&mut state.show_capsules, "collision capsules").on_hover_text("Show the capsules used for character collisions.");
+                        });
+                        ui.add(egui::Slider::new(&mut tools.feedback.shake_scale, 0.0..=1.0).text("camera shake")).on_hover_text("How much the camera shakes when hits land.");
+                        ui.add(egui::Slider::new(&mut tools.sfx.volume, 0.0..=1.0).text("sound volume")).on_hover_text("Volume of the game sounds.");
+                        ui.separator();
+                        anim_section(ui, &mut libs, lib.as_deref(), &mut anim, &mut requests, &mut state);
+                        ui.separator();
+                        link_section(ui, &remote, time.elapsed_secs_f64());
+                        ui.separator();
+                        feed_section(ui, &mut feed, &mut state.draft, sim.world.tick);
+                    }
+                }
             });
         })
         .response

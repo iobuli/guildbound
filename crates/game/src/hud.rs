@@ -199,7 +199,7 @@ pub fn overhead_bars(ctx: &egui::Context, sim: &Sim, camera: &bevy::prelude::Cam
     let painter = ctx.layer_painter(egui::LayerId::background());
     for f in sim.world.fighters.iter().skip(1) {
         if f.hp <= 0.0 { continue; }
-        let head = bevy::prelude::Vec3::new(f.position.x, f.height + 2.15, f.position.z);
+        let head = bevy::prelude::Vec3::new(f.position.x, f.height + 2.15 + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         let Ok(p) = camera.world_to_viewport(cam_tf, head) else { continue };
         let (w, h) = (70.0, 7.0);
         let r = egui::Rect::from_center_size(egui::pos2(p.x, p.y), egui::vec2(w, h));
@@ -243,7 +243,7 @@ pub fn damage_numbers(ctx: &egui::Context, sim: &Sim, camera: &bevy::prelude::Ca
         }
         let Some(d) = sim.world.fighters.get(c.defender) else { continue };
         let rise = if c.crit { 0.0 } else { 0.6 * age };
-        let p3 = bevy::prelude::Vec3::new(c.point.x, d.height + 1.7 + rise, c.point.z);
+        let p3 = bevy::prelude::Vec3::new(c.point.x, d.height + 1.7 + rise + guildbound_sim::terrain::ground(c.point.x, c.point.z), c.point.z);
         let Ok(p) = camera.world_to_viewport(cam_tf, p3) else { continue };
         let fade = (1.0 - age / 0.9).clamp(0.0, 1.0);
         let (text, size, color) = match c.outcome {

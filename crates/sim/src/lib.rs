@@ -9,6 +9,7 @@ pub mod mobs;
 pub mod notice;
 pub mod posture;
 pub mod rpg;
+pub mod terrain;
 mod math;
 pub use combat::{Action, ActionKind, CombatTuning, Contact, MOVES, Outcome, Phase, Source};
 pub use magic::{MagicTuning, Projectile, SPELLS, SpellKind};

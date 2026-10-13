@@ -78,7 +78,7 @@ pub fn apply(world: &mut World) {
             (r.weight, r.velocity, r.threat) = (0.0, 0.0, None);
             continue;
         }
-        let me = Vec3::new(f.position.x, f.height, f.position.z);
+        let me = Vec3::new(f.position.x, f.height + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         let forward = Vec3::new(f.facing.x, 0.0, f.facing.z).normalize_or(Vec3::NEG_Z);
         let chest = me + Vec3::Y * 1.3;
         // the nearest live strike aimed at this fighter, still winding up or landing

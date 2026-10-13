@@ -84,7 +84,7 @@ pub fn spawn(mut commands: Commands, assets: Res<AssetServer>, mut libs: ResMut<
         let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path));
         // pack models face +Z; turn them to the row's heading
         commands
-            .spawn((Npc { row: i, leg: 0, mover: crate::locomotion::Mover::new(yaw.to_radians()), pause: 0.0 }, WorldAssetRoot(scene), Transform::from_xyz(x, 0.0, z).with_rotation(Quat::from_rotation_y(yaw.to_radians()))))
+            .spawn((Npc { row: i, leg: 0, mover: crate::locomotion::Mover::new(yaw.to_radians()), pause: 0.0 }, WorldAssetRoot(scene), Transform::from_xyz(x, guildbound_sim::terrain::ground(x, z), z).with_rotation(Quat::from_rotation_y(yaw.to_radians()))))
             .observe(on_ready);
     }
 }
@@ -159,7 +159,7 @@ pub fn drive(
                 Some(((goal - pos).normalize_or_zero(), pace(npc.row)))
             };
             let travelled = crate::locomotion::step(&mut npc.mover, &mut pos, want, tuning, dt);
-            t.translation = Vec3::new(pos.x, 0.0, pos.z);
+            t.translation = Vec3::new(pos.x, guildbound_sim::terrain::ground(pos.x, pos.z), pos.z);
             t.rotation = Quat::from_rotation_y(npc.mover.yaw);
             if let Some(hero_graph) = hero.graph.clone() {
                 if graph.is_none_or(|g| g.0 != hero_graph) {
@@ -189,7 +189,7 @@ pub fn drive(
 
 /// Life layers on every NPC: breathing, relaxed hands on walkers, and a look at the player when near.
 pub fn life(world: &mut World) {
-    let player_head = world.resource::<crate::sim_bridge::Sim>().world.fighters.first().map(|f| Vec3::new(f.position.x, f.height + 1.55, f.position.z));
+    let player_head = world.resource::<crate::sim_bridge::Sim>().world.fighters.first().map(|f| Vec3::new(f.position.x, f.height + 1.55 + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z));
     let dt = world.resource::<Time>().delta_secs();
     let mut q = world.query::<(Entity, &Npc, &NpcRig, &Transform)>();
     let jobs: Vec<_> = q.iter(world).map(|(e, n, r, t)| (e, NPCS[n.row].5.len() >= 2, n.mover.velocity.length(), r.bones.clone(), t.translation, t.rotation * Vec3::Z)).collect();

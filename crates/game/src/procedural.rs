@@ -367,8 +367,8 @@ pub fn fighters(world: &mut World) {
             _ if fight => [0.9, 0.9],
             _ => [0.3, 0.3],
         };
-        let head_of = |j: usize| sim.world.fighters.get(j).map(|o| Vec3::new(o.position.x, o.height + 1.55, o.position.z));
-        let me = Vec3::new(f.position.x, f.height + 1.55, f.position.z);
+        let head_of = |j: usize| sim.world.fighters.get(j).map(|o| Vec3::new(o.position.x, o.height + 1.55 + guildbound_sim::terrain::ground(o.position.x, o.position.z), o.position.z));
+        let me = Vec3::new(f.position.x, f.height + 1.55 + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         let forward = Vec3::new(f.facing.x, 0.0, f.facing.z);
         let busy = matches!(f.action.kind, K::Knockdown | K::GetUp | K::Roll | K::Step | K::HitStun | K::Dizzy);
         let look = if busy || f.hp <= 0.0 {

@@ -42,7 +42,7 @@ pub fn sync(
         let color = item_color(p.item);
         let mat = materials.add(StandardMaterial { base_color: color, emissive: (color.to_linear() * 2.0).into(), ..default() });
         let mesh = if matches!(ITEMS[p.item as usize].kind, ItemKind::Consumable { .. }) { flask.clone() } else { gem.clone() };
-        commands.spawn((LootView, PickupBob(k), Mesh3d(mesh), MeshMaterial3d(mat), Transform::from_xyz(p.position.x, 0.35, p.position.z)));
+        commands.spawn((LootView, PickupBob(k), Mesh3d(mesh), MeshMaterial3d(mat), Transform::from_xyz(p.position.x, 0.35 + guildbound_sim::terrain::ground(p.position.x, p.position.z), p.position.z)));
     }
     let wood = materials.add(StandardMaterial { base_color: Color::srgb(0.42, 0.27, 0.14), perceptual_roughness: 0.8, ..default() });
     let trim = materials.add(StandardMaterial { base_color: Color::srgb(0.8, 0.62, 0.25), metallic: 0.8, perceptual_roughness: 0.4, ..default() });
@@ -53,7 +53,7 @@ pub fn sync(
         // lid hinged at the back edge; open = tipped back
         let lid_rot = if c.open { Quat::from_rotation_x(-1.9) } else { Quat::IDENTITY };
         commands
-            .spawn((LootView, Transform::from_xyz(c.position.x, 0.0, c.position.z), Visibility::default()))
+            .spawn((LootView, Transform::from_xyz(c.position.x, guildbound_sim::terrain::ground(c.position.x, c.position.z), c.position.z), Visibility::default()))
             .with_children(|p| {
                 p.spawn((Mesh3d(body.clone()), MeshMaterial3d(wood.clone()), Transform::from_xyz(0.0, 0.25, 0.0)));
                 p.spawn((Mesh3d(band.clone()), MeshMaterial3d(trim.clone()), Transform::from_xyz(0.0, 0.42, 0.0)));
@@ -66,9 +66,10 @@ pub fn sync(
 pub fn bob(time: Res<Time>, sim: Res<Sim>, mut q: Query<(&PickupBob, &mut Transform)>) {
     let t = time.elapsed_secs();
     for (b, mut tr) in &mut q {
-        tr.translation.y = 0.35 + 0.06 * (t * 2.5 + b.0 as f32).sin();
+
         tr.rotation = Quat::from_rotation_y(t * 1.4 + b.0 as f32);
         if let Some(p) = sim.world.pickups.get(b.0) {
+            tr.translation.y = 0.35 + 0.06 * (t * 2.5 + b.0 as f32).sin() + guildbound_sim::terrain::ground(p.position.x, p.position.z);
             tr.translation.x = p.position.x;
             tr.translation.z = p.position.z;
         }

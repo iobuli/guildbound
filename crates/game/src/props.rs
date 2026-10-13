@@ -152,27 +152,27 @@ pub fn obstacles() -> Vec<(guildbound_sim::V2, f32)> {
 }
 
 pub fn spawn(mut commands: Commands, assets: Res<AssetServer>) {
-    commands.spawn((RigidBody::Static, Collider::half_space(Vec3::Y), Transform::default()));
     let hull = || ColliderConstructorHierarchy::new(ColliderConstructor::ConvexHullFromMesh);
     let mut place = |path: String, x: f32, z: f32, yaw: f32, scale: f32, body: Body| {
         let scene: Handle<bevy::world_serialization::WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path));
         let rot = Quat::from_rotation_y(yaw.to_radians());
+        let y = guildbound_sim::terrain::ground(x, z);
         let view = (bevy::world_serialization::WorldAssetRoot(scene), Transform::from_scale(Vec3::splat(scale)));
         match body {
             Body::None => {
-                commands.spawn((view.0, Transform::from_xyz(x, 0.0, z).with_rotation(rot).with_scale(Vec3::splat(scale))));
+                commands.spawn((view.0, Transform::from_xyz(x, y, z).with_rotation(rot).with_scale(Vec3::splat(scale))));
             }
             Body::Static => {
-                commands.spawn((view.0, Transform::from_xyz(x, 0.0, z).with_rotation(rot).with_scale(Vec3::splat(scale)), RigidBody::Static, hull()));
+                commands.spawn((view.0, Transform::from_xyz(x, y, z).with_rotation(rot).with_scale(Vec3::splat(scale)), RigidBody::Static, hull()));
             }
             Body::Crate(kg, [w, h, d]) => {
                 let half = 0.5 * h * scale;
-                commands.spawn((Transform::from_xyz(x, half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cuboid(w * scale, h * scale, d * scale), Mass(kg)))
+                commands.spawn((Transform::from_xyz(x, y + half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cuboid(w * scale, h * scale, d * scale), Mass(kg)))
                     .with_child((view.0, view.1.with_translation(Vec3::Y * -half)));
             }
             Body::Drum(kg, r, h) => {
                 let half = 0.5 * h * scale;
-                commands.spawn((Transform::from_xyz(x, half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cylinder(r * scale, h * scale), Mass(kg)))
+                commands.spawn((Transform::from_xyz(x, y + half + 0.002, z).with_rotation(rot), Visibility::default(), RigidBody::Dynamic, Collider::cylinder(r * scale, h * scale), Mass(kg)))
                     .with_child((view.0, view.1.with_translation(Vec3::Y * -half)));
             }
         }
@@ -197,7 +197,7 @@ pub fn drive_bodies(sim: Res<Sim>, mut bodies: Query<(&FighterBody, &Transform, 
     let dt = sim.frame_step_s.max(1e-4);
     for (b, t, mut v) in &mut bodies {
         let Some(f) = sim.world.fighters.get(b.0) else { continue };
-        let target = Vec3::new(f.position.x, 0.9 + f.height, f.position.z);
+        let target = Vec3::new(f.position.x, 0.9 + f.height + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         v.0 = (target - t.translation) / dt;
     }
 }

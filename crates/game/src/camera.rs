@@ -33,6 +33,8 @@ pub struct OrbitCamera {
     pub sensitivity: f32,
     /// Studio mode looks at this point instead of the player.
     pub studio_focus: Option<Vec3>,
+    /// World editor: the camera flies free of the player (WASD, Space/Ctrl, Shift faster, look with the mouse).
+    pub noclip: bool,
     /// Current (collision-shortened) boom length and seconds since the last mouse look.
     boom: f32,
     idle_look: f32,
@@ -46,7 +48,7 @@ pub fn spawn(mut commands: Commands) {
         // HDR + bloom so emissive magic glows
         bevy::camera::Hdr,
         bevy::post_process::bloom::Bloom::NATURAL,
-        OrbitCamera { yaw: 0.0, pitch: 0.32, distance: 4.4, focus: Vec3::new(0.0, 1.45, 0.0), follow_player: true, sensitivity: 0.0025, studio_focus: None, boom: 4.4, idle_look: 0.0 },
+        OrbitCamera { yaw: 0.0, pitch: 0.32, distance: 4.4, focus: Vec3::new(0.0, 1.45, 0.0), follow_player: true, sensitivity: 0.0025, studio_focus: None, noclip: false, boom: 4.4, idle_look: 0.0 },
         DistanceFog { color: SKY, falloff: FogFalloff::Linear { start: 40.0, end: 140.0 }, ..default() },
     ));
 }
@@ -119,6 +121,20 @@ pub fn orbit(
     }
 
     let over_panel = !panel.hidden && win.cursor_position().is_some_and(|p| p.x <= panel.width);
+    if orbit.noclip && !in_menu {
+        // look with the locked cursor in play view, or by holding the right mouse button with the panel open
+        if steer || (!over_panel && buttons.pressed(MouseButton::Right)) {
+            orbit.yaw -= motion.delta.x * orbit.sensitivity;
+            orbit.pitch = (orbit.pitch + motion.delta.y * orbit.sensitivity).clamp(-1.5, 1.5);
+        }
+        let rot = Quat::from_euler(EulerRot::YXZ, orbit.yaw, -orbit.pitch, 0.0);
+        let axis = |a: KeyCode, b: KeyCode| f32::from(keys.pressed(a)) - f32::from(keys.pressed(b));
+        let wish = rot * Vec3::new(axis(KeyCode::KeyD, KeyCode::KeyA), 0.0, axis(KeyCode::KeyS, KeyCode::KeyW)) + Vec3::Y * axis(KeyCode::Space, KeyCode::ControlLeft);
+        let speed = if keys.pressed(KeyCode::ShiftLeft) { 40.0 } else { 10.0 };
+        transform.translation += wish.normalize_or_zero() * speed * dt;
+        transform.rotation = rot;
+        return;
+    }
     // in the Studio, 1/2/3 + middle drag poses a bone instead of orbiting
     let posing = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3].iter().any(|k| keys.pressed(*k));
     let looking = steer || (!over_panel && !posing && buttons.pressed(MouseButton::Middle));
@@ -140,7 +156,7 @@ pub fn orbit(
 
     let combat = sim.world.in_combat(0);
     let vel = Vec3::new(me.velocity.x, 0.0, me.velocity.z);
-    let p = Vec3::new(me.position.x, 1.45 + me.height, me.position.z);
+    let p = Vec3::new(me.position.x, 1.45 + me.height + gs::terrain::ground(me.position.x, me.position.z), me.position.z);
     let (target_focus, mut distance) = if let Some(f) = orbit.studio_focus {
         (f, orbit.distance)
     } else {
@@ -156,10 +172,10 @@ pub fn orbit(
                         orbit.yaw += (err - 0.05 * err.signum()) * ease(4.0, dt);
                     }
                     // pitch so the target's head sits in the upper third: look down more when close
-                    let want_pitch = (0.42 - 0.035 * sep).clamp(0.12, 0.45) + 0.4 * ((me.height - t.height) / sep.max(1.0));
+                    let want_pitch = (0.42 - 0.035 * sep).clamp(0.12, 0.45) + 0.4 * ((me.height + gs::terrain::ground(me.position.x, me.position.z) - t.height - gs::terrain::ground(t.position.x, t.position.z)) / sep.max(1.0));
                     orbit.pitch += (want_pitch - orbit.pitch) * ease(3.0, dt);
                 }
-                let head = Vec3::new(t.position.x, 1.55 + t.height, t.position.z);
+                let head = Vec3::new(t.position.x, 1.55 + t.height + gs::terrain::ground(t.position.x, t.position.z), t.position.z);
                 (p.lerp(head, 0.3), orbit.distance.max(3.4 + sep * 0.45))
             }
             None if orbit.follow_player => {
@@ -234,6 +250,11 @@ pub fn orbit(
     }
 }
 
+/// Player input runs only while the camera is on the player.
+pub fn on_player(cam: Single<&OrbitCamera>) -> bool {
+    !cam.noclip
+}
+
 /// Lock-on target: the living fighter nearest the screen centre within 25 m in front of the camera.
 /// `side` = Some(+1/-1) picks the nearest target to the right/left of the current one (mouse flick).
 pub fn pick_target(sim: &gs::World, cam: &Transform, current: Option<usize>, side: Option<f32>) -> Option<usize> {
@@ -242,7 +263,7 @@ pub fn pick_target(sim: &gs::World, cam: &Transform, current: Option<usize>, sid
     let me = sim.fighters[0].position;
     let score = |j: usize| {
         let f = &sim.fighters[j];
-        let to = Vec3::new(f.position.x, 1.2 + f.height, f.position.z) - cam.translation;
+        let to = Vec3::new(f.position.x, 1.2 + f.height + gs::terrain::ground(f.position.x, f.position.z), f.position.z) - cam.translation;
         let d = (f.position - me).length();
         let ahead = to.normalize_or_zero().dot(fwd);
         (d <= 25.0 && ahead > 0.3).then(|| (j, ahead, to.normalize_or_zero().dot(right)))
