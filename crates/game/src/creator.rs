@@ -330,7 +330,7 @@ fn preview(mut commands: Commands, mut c: ResMut<Creator>, mut studio: ResMut<St
     let at = Transform::from_translation(STAGE).with_rotation(Quat::from_rotation_y(studio.yaw.to_radians()));
     for (f, slot) in files {
         let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(f));
-        c.preview.push(commands.spawn((Name::new("creator preview"), WorldAssetRoot(scene), at, Piece(slot))).id());
+        c.preview.push(commands.spawn((Name::new("creator preview"), WorldAssetRoot(scene), at, Piece(slot), crate::toon::NoToon)).id());
     }
 }
 
