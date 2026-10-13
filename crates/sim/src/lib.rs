@@ -48,6 +48,11 @@ pub struct Tuning {
     pub sprint_speed: f32,
     /// Relaxed: seconds of held run before the sprint.
     pub sprint_after_s: f32,
+    /// How quickly the facing settles on a new heading (1/s, critically damped; turn_rate still caps it).
+    pub turn_stiffness: f32,
+    /// Out of combat, how much the body travels along its facing rather than straight along the input (0..1):
+    /// a reversal plants, turns and pushes off instead of sliding backwards.
+    pub steer_follow: f32,
     /// Degrees per second a free fighter turns toward its movement.
     pub turn_rate: f32,
     /// m/s^2 gaining speed toward the input.
@@ -71,6 +76,8 @@ impl Default for Tuning {
             relaxed: false,
             sprint_speed: 6.2,
             sprint_after_s: 1.0,
+            turn_stiffness: 14.0,
+            steer_follow: 0.75,
             turn_rate: 720.0,
             accel: 12.0,
             decel: 9.0,
@@ -149,6 +156,8 @@ pub struct Fighter {
     pub combat_timer: f32,
     /// Seconds the run input has been held while moving (relaxed: run breaks into a sprint after a while).
     pub run_held: f32,
+    /// Turning speed of the facing (deg/s, signed): turns ease in and settle instead of snapping.
+    pub yaw_rate: f32,
     /// 0..1 charge of the spell being held or just released.
     pub charge: f32,
     /// 0..1 strength prepared by a held smash; presentation never determines it.
@@ -197,6 +206,7 @@ impl Fighter {
             cooldowns: [0.0; magic::SPELL_COUNT],
             combat_timer: 0.0,
             run_held: 0.0,
+            yaw_rate: 0.0,
             charge: 0.0,
             heavy_charge: 0.0,
             parry_recharge: 0.0,
@@ -318,6 +328,14 @@ impl World {
         } else {
             t.walk_speed
         };
+        // relaxed travel follows the facing (the input steers it); combat moves straight along the input
+        let m = if relaxed && m.length_squared() > 1e-8 {
+            let facing = self.fighters[i].facing;
+            let along = facing.dot(m.normalized()).max(0.0);
+            (facing * along * t.steer_follow + m.normalized() * (1.0 - t.steer_follow)) * m.length()
+        } else {
+            m
+        };
         let target = m * speed;
         let lock = self.fighters[i].lock_target.filter(|&j| j != i && j < self.fighters.len()).map(|j| self.fighters[j].position);
         let max_turn = t.turn_rate * STEP;
@@ -387,9 +405,11 @@ impl World {
             }
         } else if m.length_squared() > 1e-4 {
             // face where the player is steering, so a reversal visibly plants and turns
-            f.facing = turn_toward(f.facing, m.normalized(), max_turn);
+            f.facing = turn_smooth(f.facing, &mut f.yaw_rate, raw.normalized(), t.turn_rate, t.turn_stiffness);
         } else if f.velocity.length_squared() > 1e-2 {
-            f.facing = turn_toward(f.facing, f.velocity.normalized(), max_turn);
+            f.facing = turn_smooth(f.facing, &mut f.yaw_rate, f.velocity.normalized(), t.turn_rate, t.turn_stiffness);
+        } else {
+            f.yaw_rate = 0.0;
         }
     }
 
@@ -500,6 +520,17 @@ impl World {
 }
 
 /// Planar turn toward `to`, at most `max_degrees`. An exact reversal still turns, never flips.
+/// One step of a critically damped turn toward `to`: the turning speed builds and settles (no snap, no overshoot),
+/// capped at `max_deg_s`.
+pub fn turn_smooth(from: V2, rate: &mut f32, to: V2, max_deg_s: f32, omega: f32) -> V2 {
+    let angle = from.signed_angle_to(to).to_degrees();
+    *rate += (omega * omega * angle - 2.0 * omega * *rate) * STEP;
+    *rate = rate.clamp(-max_deg_s, max_deg_s);
+    let step = *rate * STEP;
+    let step = if step.signum() == angle.signum() && step.abs() > angle.abs() { angle } else { step };
+    from.rotated(step.to_radians())
+}
+
 pub fn turn_toward(from: V2, to: V2, max_degrees: f32) -> V2 {
     let angle = from.signed_angle_to(to);
     let max = max_degrees.to_radians();

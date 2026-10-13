@@ -108,7 +108,8 @@ fn turning_is_bounded_and_reversal_does_not_flip() {
     w.fighters[0].facing = V2::new(1.0, 0.0);
     let max = w.tuning.turn_rate * STEP;
     let mut prev = w.fighters[0].facing;
-    for _ in 0..30 {
+    // turns ease in and settle (critically damped heading), so a full reversal takes about half a second
+    for _ in 0..90 {
         w.step(&[Intent { move_dir: V2::new(-1.0, 0.0), run: false, ..Default::default() }]);
         let f = w.fighters[0].facing;
         assert!(prev.signed_angle_to(f).abs().to_degrees() <= max + 1e-3);
