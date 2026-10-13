@@ -110,13 +110,14 @@ impl Corrections {
 pub struct HudLayout {
     pub vitals: [f32; 2],
     pub skills: [f32; 2],
+    pub items: [f32; 2],
     pub target: [f32; 2],
     pub scale: f32,
 }
 
 impl Default for HudLayout {
     fn default() -> Self {
-        Self { vitals: [0.0, 0.0], skills: [0.0, 0.0], target: [0.0, 0.0], scale: 1.0 }
+        Self { vitals: [0.0, 0.0], skills: [0.0, 0.0], items: [0.0, 0.0], target: [0.0, 0.0], scale: 1.0 }
     }
 }
 
@@ -128,12 +129,12 @@ impl HudLayout {
     pub fn load() -> Self {
         let v = crate::read_json("assets/ui/hud_layout.json");
         let pair = |k: &str| [v[k][0].as_f64().unwrap_or(0.0) as f32, v[k][1].as_f64().unwrap_or(0.0) as f32];
-        Self { vitals: pair("vitals"), skills: pair("skills"), target: pair("target"), scale: v["scale"].as_f64().unwrap_or(1.0) as f32 }
+        Self { vitals: pair("vitals"), skills: pair("skills"), items: pair("items"), target: pair("target"), scale: v["scale"].as_f64().unwrap_or(1.0) as f32 }
     }
 
     fn save(&self) {
         let _ = std::fs::create_dir_all(format!("{}/assets/ui", crate::ROOT));
-        let _ = std::fs::write(Self::path(), serde_json::to_string_pretty(&json!({"vitals": self.vitals, "skills": self.skills, "target": self.target, "scale": self.scale})).unwrap_or_default());
+        let _ = std::fs::write(Self::path(), serde_json::to_string_pretty(&json!({"vitals": self.vitals, "skills": self.skills, "items": self.items, "target": self.target, "scale": self.scale})).unwrap_or_default());
     }
 }
 
@@ -1132,7 +1133,7 @@ fn ui(
             "HUD Layout" => {
                 theme::section(ui, "HUD layout");
                 let l = &mut *layout;
-                for (label, v) in [("Vitals card", &mut l.vitals), ("Skill bar", &mut l.skills), ("Target card", &mut l.target)] {
+                for (label, v) in [("Health card", &mut l.vitals), ("Spells panel", &mut l.skills), ("Item slots", &mut l.items), ("Target card", &mut l.target)] {
                     ui.label(label);
                     ui.horizontal(|ui| {
                         ui.add(egui::DragValue::new(&mut v[0]).speed(1.0).prefix("x "));

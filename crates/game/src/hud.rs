@@ -63,7 +63,7 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
 
     // vitals card, bottom left
     let sc = layout.scale.clamp(0.5, 2.0);
-    let card = egui::Rect::from_min_size(egui::pos2(left + 18.0 + layout.vitals[0], screen.bottom() - 150.0 * sc + layout.vitals[1]), egui::vec2(330.0, 132.0) * sc);
+    let card = egui::Rect::from_min_size(egui::pos2(left + 18.0 + layout.vitals[0], screen.bottom() - 128.0 * sc + layout.vitals[1]), egui::vec2(330.0, 110.0) * sc);
     p.rect(card, 10.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
     let mode = if in_combat { ("Combat", RED) } else { ("Exploring", TEAL) };
     p.text(card.min + egui::vec2(16.0, 12.0), egui::Align2::LEFT_TOP, "Ranger", egui::FontId::proportional(14.0), PAPER);
@@ -73,24 +73,30 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
     p.galley(pill.center() - tag.size() * 0.5, tag, mode.1);
     let row = |k: f32| egui::Rect::from_min_size(card.min + egui::vec2(16.0, 36.0 + k * 22.0) * sc, egui::vec2(card.width() - 32.0 * sc, 20.0 * sc));
     bar(&p, row(0.0), player.hp / player.max_hp.max(1.0), RED, "HEALTH", &format!("{:.0} / {:.0}", player.hp, player.max_hp));
-    bar(&p, row(1.0), player.mana / w.magic.mana_max.max(1.0), MANA, "MANA", &format!("{:.0} / {:.0}", player.mana, w.magic.mana_max));
-    bar(&p, row(2.0), player.guard / w.combat.guard_max.max(1.0), TEAL, "GUARD", "");
+    bar(&p, row(1.0), player.guard / w.combat.guard_max.max(1.0), TEAL, "GUARD", "");
     let pk = (player.posture / w.posture.max.max(1.0)).clamp(0.0, 1.0);
-    bar(&p, row(3.0), pk, posture_color(pk), if player.action.kind == guildbound_sim::ActionKind::Dizzy { "POSTURE BROKEN" } else { "POSTURE" }, "");
+    bar(&p, row(2.0), pk, posture_color(pk), if player.action.kind == guildbound_sim::ActionKind::Dizzy { "POSTURE BROKEN" } else { "POSTURE" }, "");
 
-    // skill bar + quick slots, bottom centre
-    let cell = 58.0 * sc;
-    let gap = 8.0 * sc;
+    // spells: their own panel, bottom right (mana, the five spells, charge), apart from the items
+    let cell = 52.0 * sc;
+    let gap = 6.0 * sc;
     let n = guildbound_sim::magic::SPELL_COUNT as f32;
-    let total = n * cell + (n - 1.0) * gap + 2.0 * (cell + gap) + 14.0;
-    let x0 = left + (screen.width() - left - total) * 0.5 + layout.skills[0];
-    let y0 = screen.bottom() - cell - 26.0 + layout.skills[1];
+    let spells = egui::Rect::from_min_size(
+        egui::pos2(screen.right() - 18.0 - (n * cell + (n - 1.0) * gap + 28.0 * sc) + layout.skills[0], screen.bottom() - 128.0 * sc + layout.skills[1]),
+        egui::vec2(n * cell + (n - 1.0) * gap + 28.0 * sc, 110.0 * sc),
+    );
+    p.rect(spells, 10.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
+    p.text(spells.min + egui::vec2(14.0, 10.0), egui::Align2::LEFT_TOP, "Spells", egui::FontId::proportional(13.0), PAPER);
+    bar(&p, egui::Rect::from_min_size(spells.min + egui::vec2(14.0 * sc, 28.0 * sc), egui::vec2(spells.width() - 28.0 * sc, 18.0 * sc)),
+        player.mana / w.magic.mana_max.max(1.0), MANA, "MANA", &format!("{:.0} / {:.0}", player.mana, w.magic.mana_max));
+    let x0 = spells.left() + 14.0 * sc;
+    let y0 = spells.bottom() - cell - 10.0 * sc;
     for (s, spell) in guildbound_sim::SPELLS.iter().enumerate() {
         let r = egui::Rect::from_min_size(egui::pos2(x0 + s as f32 * (cell + gap), y0), egui::vec2(cell, cell));
         let cd = player.cooldowns[s];
         let ready = player.mana >= spell.cost && cd <= 0.0;
         let charging = matches!(player.action.kind, guildbound_sim::ActionKind::Charge(c) | guildbound_sim::ActionKind::Cast(c) if c == s);
-        p.rect(r, 8.0, GLASS, egui::Stroke::new(if charging { 1.5_f32 } else { 1.0 }, if charging { GOLD } else { BORDER }), egui::StrokeKind::Inside);
+        p.rect(r, 8.0, CARD, egui::Stroke::new(if charging { 1.5_f32 } else { 1.0 }, if charging { GOLD } else { BORDER }), egui::StrokeKind::Inside);
         if let Some(i) = icons {
             p.image(i.spells[s], r.shrink(7.0), UV, if ready { egui::Color32::WHITE } else { egui::Color32::from_gray(90) });
         }
@@ -99,25 +105,31 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
             p.rect_filled(egui::Rect::from_min_max(egui::pos2(r.left() + 5.0, r.bottom() - 5.0 - (r.height() - 10.0) * k), r.max - egui::vec2(5.0, 5.0)), 4.0, egui::Color32::from_black_alpha(150));
             p.text(r.center(), egui::Align2::CENTER_CENTER, format!("{cd:.1}"), egui::FontId::proportional(15.0), PAPER);
         }
-        p.text(r.left_top() + egui::vec2(6.0, 4.0), egui::Align2::LEFT_TOP, format!("{}", s + 1), egui::FontId::proportional(12.0), GOLD);
-        p.text(r.center_bottom() + egui::vec2(0.0, 4.0), egui::Align2::CENTER_TOP, format!("{:.0}", spell.cost), egui::FontId::proportional(10.0), if player.mana >= spell.cost { MANA } else { RED });
+        p.text(r.left_top() + egui::vec2(5.0, 3.0), egui::Align2::LEFT_TOP, format!("{}", s + 1), egui::FontId::proportional(11.0), GOLD);
+        p.text(r.right_bottom() - egui::vec2(5.0, 3.0), egui::Align2::RIGHT_BOTTOM, format!("{:.0}", spell.cost), egui::FontId::proportional(10.0), if player.mana >= spell.cost { MANA } else { RED });
         if charging && player.charge > 0.0 {
-            p.rect_filled(egui::Rect::from_min_size(egui::pos2(r.left(), r.top() - 7.0), egui::vec2(cell * player.charge, 4.0)), 2.0, GOLD);
+            p.rect_filled(egui::Rect::from_min_size(egui::pos2(r.left(), r.top() - 6.0), egui::vec2(cell * player.charge, 3.0)), 2.0, GOLD);
         }
     }
+
+    // items: the quick slots, bottom centre
+    let slots = [(guildbound_sim::rpg::HEALING_DRAUGHT, "R"), (guildbound_sim::rpg::MANA_TONIC, "T")];
+    let width = slots.len() as f32 * (cell + gap) - gap;
+    let ix = left + (screen.width() - left - width) * 0.5 + layout.items[0];
+    let iy = screen.bottom() - cell - 30.0 + layout.items[1];
     let count = |id: guildbound_sim::rpg::ItemId| player.kit.bag.iter().filter(|&&b| b == id).count();
-    for (k, (id, key)) in [(guildbound_sim::rpg::HEALING_DRAUGHT, "R"), (guildbound_sim::rpg::MANA_TONIC, "T")].into_iter().enumerate() {
-        let r = egui::Rect::from_min_size(egui::pos2(x0 + n * (cell + gap) + 14.0 + k as f32 * (cell + gap), y0), egui::vec2(cell, cell));
+    for (k, (id, key)) in slots.into_iter().enumerate() {
+        let r = egui::Rect::from_min_size(egui::pos2(ix + k as f32 * (cell + gap), iy), egui::vec2(cell, cell));
         let c = count(id);
         p.rect(r, 8.0, GLASS, egui::Stroke::new(1.0_f32, BORDER), egui::StrokeKind::Inside);
         if let Some(i) = icons {
             p.image(if k == 0 { i.potion_red } else { i.potion_blue }, r.shrink(10.0), UV, if c > 0 { egui::Color32::WHITE } else { egui::Color32::from_gray(80) });
         }
-        p.text(r.left_top() + egui::vec2(6.0, 4.0), egui::Align2::LEFT_TOP, key, egui::FontId::proportional(12.0), GOLD);
-        p.text(r.right_bottom() - egui::vec2(6.0, 4.0), egui::Align2::RIGHT_BOTTOM, format!("{c}"), egui::FontId::proportional(13.0), PAPER);
+        p.text(r.left_top() + egui::vec2(5.0, 3.0), egui::Align2::LEFT_TOP, key, egui::FontId::proportional(11.0), GOLD);
+        p.text(r.right_bottom() - egui::vec2(5.0, 3.0), egui::Align2::RIGHT_BOTTOM, format!("{c}"), egui::FontId::proportional(12.0), PAPER);
     }
-    p.text(egui::pos2(x0 + total * 0.5, screen.bottom() - 8.0), egui::Align2::CENTER_BOTTOM,
-        "WASD move  SHIFT sprint  MOUSE5 lock-on  LMB rush  F smash  RMB guard (tap = perfect parry)  CTRL step  C roll  E interact",
+    p.text(egui::pos2(left + (screen.width() - left) * 0.5, screen.bottom() - 8.0), egui::Align2::CENTER_BOTTOM,
+        "WASD move  SHIFT sprint  MOUSE5 lock-on  LMB rush  F smash  RMB guard (tap = perfect parry)  CTRL step  C roll  E interact  1-5 spells  R/T items",
         egui::FontId::proportional(11.0), MUTED.gamma_multiply(0.8));
 
     // target card, top centre, while fighting

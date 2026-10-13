@@ -112,7 +112,7 @@
     "block_body": "bb_front_A",
     "block_low": "lb_front_A",
     "guard": "mx_block",
-    "spell_charge": "nc_idle",
+    "spell_charge": "u1_spell_simple_idle_loop",
     "knockdown": "knockdown_A",
     "getup": "getup_A",
     "jump": "nc_jump_begin",
@@ -165,7 +165,7 @@
   },
   "spells": {
     "fireball": [
-      "mx_magic_small"
+      "u1_spell_simple_shoot"
     ],
     "fireball_charged": [
       "mx_magic_big"
@@ -178,9 +178,11 @@
       "mage_burst"
     ],
     "arcane blink": [
+      "u1_spell_simple_exit",
       "mx_magic_small"
     ],
     "healing light": [
+      "u1_spell_simple_idle_loop",
       "mx_magic_beam"
     ]
   },
