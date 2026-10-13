@@ -38,6 +38,17 @@ pub fn plugin() -> RemotePlugin {
         .with_method_main("gb.studio", gb_studio)
         .with_method_main("gb.possess", gb_possess)
         .with_method_main("gb.loot", gb_loot)
+        .with_method_main("gb.brain", gb_brain)
+}
+
+/// PoseNet: {collect: true} samples the whole library into the training data; returns the status.
+fn gb_brain(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
+    touch(world, "gb.brain");
+    let mut b = world.resource_mut::<crate::brain::Brain>();
+    if p.as_ref().and_then(|p| p.get("collect")).and_then(Value::as_bool) == Some(true) {
+        b.collect_request = true;
+    }
+    Ok(json!({"status": b.status, "trained": b.net.is_some()}))
 }
 
 /// Studio state and the boss's notes/corrections/patterns. Optional {open, spawn, clip, time, hero_clips, rules, select}.

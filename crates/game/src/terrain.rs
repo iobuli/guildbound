@@ -46,7 +46,9 @@ fn chunk_mesh(x0: f32, z0: f32, step: f32) -> Mesh {
         for i in 0..=n {
             let (x, z) = (x0 + i as f32 * step, z0 + j as f32 * step);
             let nn = normal(x, z);
-            pos.push([x, ground(x, z), z]);
+            // under the courtyard's stone slab (top at 0) the ground sits 3 cm lower, or the two flicker
+            let under_slab = x.abs() <= 10.6 && z.abs() <= 10.6;
+            pos.push([x, ground(x, z) - if under_slab { 0.03 } else { 0.0 }, z]);
             nor.push(nn.to_array());
             col.push(colour(x, z, nn));
         }

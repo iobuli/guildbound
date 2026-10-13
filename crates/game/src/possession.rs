@@ -165,7 +165,7 @@ impl Possession {
 }
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Possession>().insert_resource(PhysicalBody { weight: 1.0, assist: 0.5, motor: 2.5, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
+    app.init_resource::<Possession>().insert_resource(PhysicalBody { weight: 1.0, assist: 0.5, motor: 2.5, follow: 0.0, contact_loss: true, strength: 1.0, physical_regions: [true; 3], damping: 1.0, hip_gain: 0.6, balance_pos: 0.8, balance_vel: 0.25, assist_kp: 300.0, assist_kd: 35.0, ..default() })
         .init_resource::<crate::procedural::LifeTuning>().add_systems(Update, draw);
 }
 
@@ -850,6 +850,9 @@ mod tests {
 /// The physical stage body (Possession "Physical"): ragdoll capsules and joints that track the clip with joint
 /// motors and must hold themselves up on their own feet. Assist (0..1) adds a pull on the pelvis toward the
 /// clip; at 0 it is pure physics, so whether it stands says how physically sound the clip is.
+/// From ashleve/ActiveRagdoll (MIT, C#): "follow" pulls every body toward where the animation puts it (a clamped
+/// PD on position), and strength drains while a limb other than the feet touches something (to 10%) and returns
+/// once free, so a knocked body goes limp and gathers itself.
 #[derive(Resource, Default)]
 pub struct PhysicalBody {
     doll: Option<crate::ragdoll::Doll>,
@@ -874,6 +877,11 @@ pub struct PhysicalBody {
     pub physical_regions: [bool; 3],
     /// Mean angle (deg) each physical limb lags its keyframe, by bone, for finding keys a body cannot follow.
     pub track_err: Vec<(String, f32)>,
+    /// 0..1: every body pulled toward its animated place (0 = joints only).
+    pub follow: f32,
+    /// Lose strength on contact and regain it after; the current strength (0.1..1).
+    pub contact_loss: bool,
+    pub strength: f32,
 }
 
 fn region(bone: &str) -> usize {
@@ -907,7 +915,12 @@ pub fn physical_drive(world: &mut World) {
         pb.doll_root = Some(root);
         let fwd = world.get::<Transform>(root).map_or(Vec3::Z, |t| t.rotation * Vec3::Z);
         pb.doll = crate::ragdoll::build_with(world, &bones, usize::MAX, Vec3::ZERO, fwd);
-        if pb.doll.is_none() {
+        if let Some(d) = &pb.doll {
+            for l in &d.links {
+                world.entity_mut(l.body).insert(CollidingEntities::default());
+            }
+            pb.strength = 1.0;
+        } else {
             pb.on = false;
         }
     }
@@ -936,7 +949,18 @@ pub fn physical_drive(world: &mut World) {
                 v.0 = Vec3::ZERO;
             }
         }
-        let kp = 420.0 * pb.motor.max(0.05);
+        // strength: drains while a limb other than the feet touches anything outside the doll, returns after
+        let dt = world.resource::<Time>().delta_secs().min(0.05);
+        let own: Vec<Entity> = doll.links.iter().map(|l| l.body).collect();
+        let touching = pb.contact_loss && doll.links.iter().any(|l| {
+            !world.get::<Name>(l.bone).is_some_and(|n| n.as_str().ends_with("_Foot") || n.as_str().ends_with("_Toe0"))
+                && world.get::<CollidingEntities>(l.body).is_some_and(|c| c.iter().any(|e| !own.contains(e)))
+        });
+        pb.strength = if touching { (pb.strength - 1.0 * dt).max(0.1) } else { (pb.strength + 0.35 * dt).min(1.0) };
+        if !pb.contact_loss {
+            pb.strength = 1.0;
+        }
+        let kp = 420.0 * pb.motor.max(0.05) * pb.strength;
         let kd = 2.0 * pb.damping * kp.sqrt();
         // balance (SIMBICON-style): the centre of mass drifting off the feet tilts the legs' targets toward the
         // drift so the base moves under it
@@ -973,6 +997,12 @@ pub fn physical_drive(world: &mut World) {
             let parent_w = link.parent.and_then(|p| world.get::<AngularVelocity>(doll.links[p].body)).map_or(Vec3::ZERO, |v| v.0);
             let mut acc = axis * angle * kp - (w - parent_w) * kd;
             let mut lin = Vec3::ZERO;
+            if pb.follow > 0.0 && link.parent.is_some() {
+                // follow: a critically damped pull of the body toward its animated place, capped like a muscle
+                let centre = bp - target * link.origin;
+                let v = world.get::<LinearVelocity>(link.body).map_or(Vec3::ZERO, |v| v.0);
+                lin = ((centre - body.translation) * 300.0 - v * 35.0).clamp_length_max(60.0) * pb.follow * pb.strength;
+            }
             if link.parent.is_none() {
                 // the pelvis has no motor; only the assist holds it toward the clip
                 let centre = bp - target * link.origin;

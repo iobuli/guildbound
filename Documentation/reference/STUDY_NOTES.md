@@ -163,3 +163,16 @@ direct control over every bone with the physics readout (centre of mass, momentu
 | Spells: four shapes (projectile, area, self, channel), each with wind-up -> release -> recovery; channel loops between; interrupt in wind-up cancels, in recovery resumes | sim magic.rs timings (already wind-up/release/recovery), anim clip choice per shape | fused: our spells already have the phases; animation choice per shape is the rework |
 | Abilities as data (registry), the spellbook a list of ids on the fighter, the spell bar references ids; items stay on the quick slots | magic.rs SPELLS table + a separate spell bar UI | planned |
 | Editor: noclip fly camera, click to place a prop on the surface, gizmo-free move/rotate by keys, save placements to a JSON the game loads | Tab dev mode | planned |
+
+## Absorb pass 2026-10-13 (2): Holden's Motion-Matching (C++, MIT) and ActiveRagdoll (C#, MIT)
+- Clones: `D:/New folder (4)/reference/Motion-Matching` (Daniel Holden 2021, MIT), `.../ActiveRagdoll` (Lucas Z.
+  2020, MIT), `.../Active-Ragdoll-Character` (no licence file: ideas only).
+- Motion-Matching / Learned Motion Matching: small MLPs (decompressor 512 hidden x 3, projector 512 x 4, stepper)
+  trained with AdamW (lr 1e-3, weight decay 1e-3), batch 32, and input noise of random strength per sample
+  (X + std * U(0,1) * N(0,1)) so the networks answer well off the data; exact spring dampers by half-life
+  (damping = 4 ln2 / halflife), inertialization as decaying offsets. Status: noise + AdamW built into posenet
+  (held-out loss 0.40 -> 0.34); a stepper (previous pose as input) is the next step for arm twist.
+- ActiveRagdoll: each body pulled toward the animated body's centre of mass by a clamped velocity-change PD,
+  joints drive toward the animated local rotation; strength lerps down on contact (1/s, floor 0.1) and back
+  after (0.05/s), death zeroes it for 4 s. Status: built into Possession's physical body (follow slider, go limp
+  on impact, strength readout), regain 0.35/s for gameplay.

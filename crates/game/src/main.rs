@@ -3,6 +3,7 @@
 
 mod anim;
 mod arena;
+mod brain;
 mod camera;
 mod catalog;
 mod controller;
@@ -68,7 +69,7 @@ fn main() {
                 .set(AssetPlugin { file_path: format!("{ROOT}/assets"), ..default() }),
         )
         .add_plugins(EguiPlugin::default())
-        .add_plugins((studio::plugin, creator::plugin, editor::plugin))
+        .add_plugins((studio::plugin, creator::plugin, editor::plugin, brain::plugin))
         .add_plugins(possession::plugin)
         .add_plugins(reference_pose::plugin)
         .add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::new().run_if(bevy::input::common_conditions::input_toggle_active(false, KeyCode::F1)))

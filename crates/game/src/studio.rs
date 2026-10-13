@@ -776,11 +776,12 @@ pub fn snapshot(world: &World) -> Value {
            "notes": notes.iter().rev().take(20).collect::<Vec<_>>(), "assets": s.assets.len(), "audit_patterns": audit_patterns(&read_audit())})
 }
 
-/// The Creator tab's state and the player's worn model.
+/// The Creator tab's state, the player's worn model and the pose network.
 #[derive(bevy::ecs::system::SystemParam)]
 pub struct CreatorParams<'w> {
     creator: ResMut<'w, crate::creator::Creator>,
     wear: ResMut<'w, crate::creator::Wear>,
+    brain: ResMut<'w, crate::brain::Brain>,
 }
 
 /// Everything the Tuning tab edits live: sim motion tuning, animation tuning, life layers, the physical body.
@@ -963,6 +964,7 @@ fn ui(
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
                 egui::CollapsingHeader::new(egui::RichText::new("Possession: bones, fixed fps, life layers, physics readout").color(theme::TEAL)).default_open(true).show(ui, |ui| {
                     crate::possession::tab(ui, &mut possession, studio, &mut corr, &bone_names);
+                    crate::brain::ui(ui, &mut make.brain);
                     if let Some(sel) = studio.numbers["selected"].as_object() {
                         theme::section(ui, "Selected bone (live)");
                         let v = |k: &str| sel.get(k).and_then(|a| a.as_array()).map(|a| a.iter().map(|x| format!("{:.2}", x.as_f64().unwrap_or(0.0))).collect::<Vec<_>>().join("  ")).unwrap_or_default();
@@ -1009,6 +1011,11 @@ fn ui(
                     ui.add(egui::Slider::new(&mut tune.physical.balance_pos, 0.0..=2.0).text("balance: weight over feet")).on_hover_text("How strongly the body shifts to keep its weight above its feet.");
                     ui.add(egui::Slider::new(&mut tune.physical.balance_vel, 0.0..=1.0).text("balance: catch momentum")).on_hover_text("How much the body reacts to its weight moving, to stop a fall early.");
                     ui.add(egui::Slider::new(&mut tune.physical.assist_kp, 50.0..=800.0).text("helping hand strength")).on_hover_text("How hard the helping hand pulls the body back to the pose.");
+                    ui.add(egui::Slider::new(&mut tune.physical.follow, 0.0..=1.0).text("follow the animation")).on_hover_text("Pull every body part toward where the animation puts it. 0 = only the joints follow it.");
+                    ui.checkbox(&mut tune.physical.contact_loss, "Go limp on impact").on_hover_text("Limbs lose strength while they touch something and get it back after, like being knocked.");
+                    if tune.physical.on {
+                        theme::stat(ui, "Strength", format!("{:.0}%", tune.physical.strength * 100.0), if tune.physical.strength > 0.8 { theme::GOOD } else { theme::WARN });
+                    }
                     ui.add(egui::Slider::new(&mut tune.physical.assist_kd, 5.0..=80.0).text("helping hand softness")).on_hover_text("How gently the helping hand corrects (higher = less bounce).");
                 });
                 egui::CollapsingHeader::new(egui::RichText::new("Motion tuning (hero and NPC walkers)").color(theme::TEAL)).show(ui, |ui| {
