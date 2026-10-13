@@ -101,9 +101,11 @@ pub struct ClipEdit {
     pub blend_in: Option<f32>,
 }
 
+static IDENTITY: ClipEdit = ClipEdit { base: None, speed: 1.0, trim: [0.0, 1.0], blend_in: None };
+
 impl Default for ClipEdit {
     fn default() -> Self {
-        Self { base: None, speed: 1.0, trim: [0.0, 1.0], blend_in: None }
+        IDENTITY.clone()
     }
 }
 
@@ -114,7 +116,7 @@ impl ClipEdit {
 }
 
 pub fn load_clip_edits() -> std::collections::BTreeMap<String, ClipEdit> {
-    let v: serde_json::Value = std::fs::read_to_string(format!("{}/assets/clip_edits.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+    let v = crate::read_json("assets/clip_edits.json");
     v.as_object().into_iter().flatten().map(|(name, e)| {
         let f = |k: &str, d: f32| e[k].as_f64().map_or(d, |x| x as f32);
         let trim = [f("trim_start", 0.0).clamp(0.0, 0.95), f("trim_end", 1.0).clamp(0.05, 1.0)];
@@ -150,12 +152,13 @@ pub struct AnimLibrary {
 
 impl AnimLibrary {
     fn load(assets: &AssetServer, path: &str) -> Self {
-        let motion = std::fs::read_to_string(format!("{}/assets/{path}.motion.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
-        let strides_m = motion.as_ref().filter(|m| m["verified"] == true).and_then(|m| m["strides_m"].as_object()).map(|m| m.iter().filter_map(|(name, v)| {
+        let motion = crate::read_json(&format!("assets/{path}.motion.json"));
+        let verified = motion["verified"] == true;
+        let strides_m = motion["strides_m"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, v)| {
             let stride = v.as_f64()? as f32;
             (stride.is_finite() && stride > 0.05).then(|| (name.clone(), stride))
         }).collect()).unwrap_or_default();
-        let contact_timing = motion.as_ref().filter(|m| m["verified"] == true).and_then(|m| m["strikes"].as_object()).map(|m| m.iter().filter_map(|(name, v)| {
+        let contact_timing = motion["strikes"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, v)| {
             let timing = crate::motion_timing::ContactTiming {
                 start: v["contact_start"].as_f64()? as f32,
                 peak: v["contact_peak"].as_f64()? as f32,
@@ -163,11 +166,11 @@ impl AnimLibrary {
             };
             timing.valid().then(|| (name.clone(), timing))
         }).collect()).unwrap_or_default();
-        let foot_contacts = motion.as_ref().filter(|m| m["verified"] == true).and_then(|m| m["foot_contacts"].as_object()).map(|m| m.iter().filter_map(|(name, value)| {
+        let foot_contacts = motion["foot_contacts"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, value)| {
             let curve: Vec<_> = value.as_array()?.iter().filter_map(|row| Some([row[0].as_f64()? as f32, row[1].as_f64()? as f32])).collect();
             (curve.len() >= 2 && curve.iter().flatten().all(|v| v.is_finite() && (0.0..=1.0).contains(v))).then(|| (name.clone(), curve))
         }).collect()).unwrap_or_default();
-        let sole_height_m = std::array::from_fn(|i| motion.as_ref().and_then(|m| m["sole_height_m"][i].as_f64()).map(|v| v as f32).filter(|v| v.is_finite() && (0.03..0.2).contains(v)).unwrap_or(0.1));
+        let sole_height_m = std::array::from_fn(|i| motion["sole_height_m"][i].as_f64().map(|v| v as f32).filter(|v| v.is_finite() && (0.03..0.2).contains(v)).unwrap_or(0.1));
         Self { gltf: assets.load(path.to_owned()), graph: None, clips: Vec::new(), durations: Vec::new(), roles: Roles::default(), clusters: Vec::new(), strides_m, contact_timing, foot_contacts, sole_height_m, edits: load_clip_edits() }
     }
 
@@ -176,8 +179,8 @@ impl AnimLibrary {
         self.edits.get(name).and_then(|e| e.base.as_deref()).unwrap_or(name)
     }
 
-    pub fn edit(&self, name: &str) -> ClipEdit {
-        self.edits.get(name).cloned().unwrap_or_default()
+    pub fn edit(&self, name: &str) -> &ClipEdit {
+        self.edits.get(name).unwrap_or(&IDENTITY)
     }
 
     /// Every playable name: the library's clips and the variants cut from them.
@@ -314,9 +317,7 @@ fn resolve_clusters(lib: &AnimLibrary) -> Vec<(&'static str, &'static str, Vec<S
     let hero = lib.node("nc_idle").is_some() && lib.node("hp_straight_left_A").is_some();
     let mut mapping: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
     // the boss's moveset picks (Studio Moveset tab) replace a move's clip list when present
-    if let Some(picks) = std::fs::read_to_string(format!("{}/assets/moveset.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok())
-        && let Some(moves) = picks["moves"].as_object()
-    {
+    if let Some(moves) = crate::read_json("assets/moveset.json")["moves"].as_object() {
         for (m, clips) in moves {
             mapping["combat"][m] = clips.clone();
         }

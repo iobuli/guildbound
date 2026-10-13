@@ -1087,28 +1087,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_hanabi"
-version = "0.19.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "516d188f4fe6f6a330d1449ab647919f9533af25696b54bf0b1fa0d45ef1b9ed"
-dependencies = [
- "anyhow",
- "bevy",
- "bitflags 2.13.2",
- "bytemuck",
- "fixedbitset",
- "getrandom 0.4.3",
- "naga",
- "naga_oil",
- "rand 0.10.3",
- "rand_pcg",
- "ron",
- "serde",
- "thiserror 2.0.21",
- "wgpu",
-]
-
-[[package]]
 name = "bevy_heavy"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1887,16 +1865,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bevy_text_animation"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "37064d796af2cb807cc088e9f0baf00c00460d3aacd1a48ff9850be394e22488"
-dependencies = [
- "bevy",
- "utf8_slice",
-]
-
-[[package]]
 name = "bevy_time"
 version = "0.19.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1909,20 +1877,6 @@ dependencies = [
  "crossbeam-channel",
  "log",
  "serde",
-]
-
-[[package]]
-name = "bevy_time_runner"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "13d4a4ad3990e6058427394b5e24223ec7f65b0d3fd06482f5f5b53d77e08556"
-dependencies = [
- "bevy_app",
- "bevy_ecs",
- "bevy_log",
- "bevy_reflect",
- "bevy_time",
- "rustc_version",
 ]
 
 [[package]]
@@ -1949,19 +1903,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea40784f1c6a3f61333064ea1d1c7663ef677c1ce46b5ca148c46c4a62c27e62"
 dependencies = [
  "bevy",
-]
-
-[[package]]
-name = "bevy_tween"
-version = "0.13.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e838a06f232e8f7f7e00fc6c245d7c6080a2a2b892f4cb397028af03a3749c39"
-dependencies = [
- "bevy",
- "bevy_math",
- "bevy_time_runner",
- "rustc_version",
- "tracing",
 ]
 
 [[package]]
@@ -2372,17 +2313,6 @@ name = "cfg_aliases"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f079e83a288787bcd14a6aea84cee5c87a67c5a3e660c30f557a3d24761b3527"
-
-[[package]]
-name = "chacha20"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "rand_core 0.10.1",
-]
 
 [[package]]
 name = "chiapos-chacha8"
@@ -3369,7 +3299,6 @@ dependencies = [
  "js-sys",
  "libc",
  "r-efi 6.0.0",
- "rand_core 0.10.1",
  "wasm-bindgen",
 ]
 
@@ -3568,10 +3497,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_egui",
- "bevy_hanabi",
  "bevy_lunex",
- "bevy_text_animation",
- "bevy_tween",
  "guildbound_sim",
  "serde_json",
 ]
@@ -5450,7 +5376,6 @@ version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
 dependencies = [
- "chacha20",
  "getrandom 0.4.3",
  "rand_core 0.10.1",
 ]
@@ -5488,15 +5413,6 @@ checksum = "4d431c2703ccf129de4d45253c03f49ebb22b97d6ad79ee3ecfc7e3f4862c1d8"
 dependencies = [
  "num-traits",
  "rand 0.10.3",
-]
-
-[[package]]
-name = "rand_pcg"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "caa0f4137e1c0a72f4c651489402276c8e8e1cf081f3b0ba156d2cbeef09e86a"
-dependencies = [
- "rand_core 0.10.1",
 ]
 
 [[package]]
@@ -6618,12 +6534,6 @@ name = "utf8_iter"
 version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b6c140620e7ffbb22c2dee59cafe6084a59b5ffc27a8859a5f0d494b5d52b6be"
-
-[[package]]
-name = "utf8_slice"
-version = "1.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44109e280ecf0f5d8e6ee671c0ee650008275c51dc9e494badd11fb39d785408"
 
 [[package]]
 name = "uuid"

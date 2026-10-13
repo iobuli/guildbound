@@ -47,8 +47,7 @@ impl Default for RigProfile {
 
 impl RigProfile {
     pub fn load(path: &str) -> Self {
-        let read = |suffix: &str| std::fs::read_to_string(format!("{}/assets/{path}.{suffix}.json", crate::ROOT)).ok()
-            .and_then(|s| serde_json::from_str::<Value>(&s).ok());
+        let read = |suffix: &str| Some(crate::read_json(&format!("assets/{path}.{suffix}.json"))).filter(|v| !v.is_null());
         let mut out = read("rig").map(|v| Self::from_json(&v)).unwrap_or_default();
         if let Some(body) = read("body") { out.read_body(&body["sections"], &body["limbs"]); }
         out

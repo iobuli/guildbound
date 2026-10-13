@@ -102,13 +102,12 @@ pub fn stage(world: &mut World) {
     let wrapped = time < state.time && state.time > duration - 0.2 && time < 0.2;
     let reset = state.root != Some(root) || state.clip != clip || (time < state.time && !wrapped) || time - state.time > 0.2;
     if state.root != Some(root) {
-        let data = std::fs::read_to_string(format!("{}/assets/{path}.motion.json", crate::ROOT)).ok()
-            .and_then(|s| serde_json::from_str::<serde_json::Value>(&s).ok());
-        state.contacts = data.as_ref().filter(|v| v["verified"] == true).and_then(|v| v["foot_contacts"].as_object()).map(|curves| curves.iter().filter_map(|(n, rows)| {
+        let data = crate::read_json(&format!("assets/{path}.motion.json"));
+        state.contacts = data["foot_contacts"].as_object().filter(|_| data["verified"] == true).map(|curves| curves.iter().filter_map(|(n, rows)| {
             let curve: Vec<_> = rows.as_array()?.iter().filter_map(|r| Some([r[0].as_f64()? as f32, r[1].as_f64()? as f32])).collect();
             (curve.len() > 1).then(|| (n.clone(), curve))
         }).collect()).unwrap_or_default();
-        state.sole = std::array::from_fn(|i| data.as_ref().and_then(|v| v["sole_height_m"][i].as_f64()).map_or(0.1, |h| h as f32));
+        state.sole = std::array::from_fn(|i| data["sole_height_m"][i].as_f64().map_or(0.1, |h| h as f32));
     }
     if reset {
         state.rig = build(world, 0, &bones);

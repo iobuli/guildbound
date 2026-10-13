@@ -11,6 +11,7 @@ import argparse
 import glob
 import json
 import os
+import subprocess
 import sys
 
 import bpy
@@ -514,6 +515,8 @@ def export_hero(rig, output, report):
                               export_animation_mode="NLA_TRACKS", export_force_sampling=True, export_skins=True, export_yup=True)
     with open(output + ".report.json", "w") as f:
         json.dump(report, f, indent=2)
+    # 4096 px outfit textures down to 2048 (Blender's Python has no PIL: the system Python does it)
+    subprocess.run(["python", "-I", os.path.join(os.path.dirname(__file__), "..", "shrink_glb.py"), output], check=False)
     print(f"HERO_DONE clips={len(report['clips'])} skipped={len(report['skipped'])} -> {output}")
 
 

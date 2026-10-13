@@ -132,6 +132,42 @@ def uncovered(edge, meshes):
     return {"cut_edge_verts": len(edge), "uncovered": holes}
 
 
+def srgb_to_linear(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def tint(objs, hexrgb):
+    """Multiply the base colour of these meshes by an sRGB hex colour. Each mesh gets its own material copy (outfit
+    parts share one atlas material), and the multiply is a Mix node the glTF exporter writes as baseColorFactor."""
+    rgb = tuple(srgb_to_linear(int(hexrgb[i:i + 2], 16) / 255.0) for i in (0, 2, 4))
+    for ob in objs:
+        if ob.type != "MESH":
+            continue
+        for ms in ob.material_slots:
+            if ms.material is None or not ms.material.use_nodes:
+                continue
+            m = ms.material.copy()
+            m.name = f"{ob.name}_{ms.material.name}"
+            ms.material = m
+            nt = m.node_tree
+            bsdf = next((n for n in nt.nodes if n.type == "BSDF_PRINCIPLED"), None)
+            if bsdf is None:
+                continue
+            inp = bsdf.inputs["Base Color"]
+            if inp.is_linked:
+                src = inp.links[0].from_socket
+                mix = nt.nodes.new("ShaderNodeMix")
+                mix.data_type = "RGBA"
+                mix.blend_type = "MULTIPLY"
+                mix.inputs[0].default_value = 1.0
+                nt.links.new(src, mix.inputs[6])
+                mix.inputs[7].default_value = (*rgb, 1.0)
+                nt.links.new(mix.outputs[2], inp)
+            else:
+                c = inp.default_value
+                inp.default_value = (c[0] * rgb[0], c[1] * rgb[1], c[2] * rgb[2], c[3])
+
+
 def adopt(objs, rig):
     """Bind every mesh of another import to the master rig (same UAL skeleton) and drop its own rig."""
     for ob in objs:
@@ -155,6 +191,7 @@ def main():
     # character creator: a base body and any modular parts (file stems in Modular Parts), instead of a whole outfit
     p.add_argument("--base", default="", choices=["", "male", "female"])
     p.add_argument("--parts", default="", help="comma list of modular part names, e.g. Male_Ranger_Body,Male_Peasant_Legs")
+    p.add_argument("--tints", default="", help="slot=rrggbb list (Head, Body, Arms, Legs, Feet, Acc, Hair, Skin), e.g. Body=b04040,Hair=302820")
     p.add_argument("--source", default=os.path.join(ROOT, "assets", "packs", "_sources", "rpg_hero", "fighter.glb"))
     p.add_argument("--out", required=True)
     p.add_argument("--only", default="", help="comma list of clip names (quick validation builds)")
@@ -167,6 +204,7 @@ def main():
     rig = hero.armature_of(base)
     parts = [x.strip() for x in a.parts.split(",") if x.strip()]
     cut_edge = []
+    slot_objs = {"Skin": [o for o in base if o.type == "MESH" and len(o.data.vertices) > 2000]}
     for ob in base:
         if ob.type == "MESH" and len(ob.data.vertices) > 2000:
             if parts:
@@ -181,6 +219,7 @@ def main():
             if os.path.exists(path):
                 objs = import_gltf(path)
                 part_meshes += [o for o in objs if o.type == "MESH"]
+                slot_objs.setdefault(slot_of(part), []).extend(o for o in objs if o.type == "MESH")
                 adopt(objs, rig)
             else:
                 print("PART_MISSING", part)
@@ -191,7 +230,13 @@ def main():
     # the base head already carries eyebrows; add only the hairstyle
     path = os.path.join(STAGE, "hair", f"{hair}.gltf")
     if hair != "none" and os.path.exists(path):
-        adopt(import_gltf(path), rig)
+        objs = import_gltf(path)
+        slot_objs["Hair"] = [o for o in objs if o.type == "MESH"]
+        adopt(objs, rig)
+    tints = dict(t.split("=", 1) for t in a.tints.split(",") if "=" in t)
+    for slot, hexrgb in tints.items():
+        if hexrgb.lower() != "ffffff":
+            tint([o for o in slot_objs.get(slot, []) if o.name in bpy.data.objects], hexrgb)
     # helper shapes shipped in the base file (an Icosphere spanning +-1 m) would break height normalization
     for ob in [o for o in bpy.data.objects if o.type == "MESH" and (len(o.data.vertices) < 100 or o.name.startswith("Icosphere"))]:
         bpy.data.objects.remove(ob, do_unlink=True)
@@ -204,7 +249,7 @@ def main():
     rig.animation_data_create()
     rig.animation_data.action = None
     model = [o for o in bpy.data.objects]
-    report = {"outfit": a.outfit if not a.parts else None, "base": "female" if female else "male", "parts": a.parts.split(",") if a.parts else [], "hair": hair, "set": a.set, "clips": [], "skipped": [], "seams": seams}
+    report = {"outfit": a.outfit if not a.parts else None, "base": "female" if female else "male", "parts": a.parts.split(",") if a.parts else [], "hair": hair, "set": a.set, "tints": a.tints, "clips": [], "skipped": [], "seams": seams}
 
     def take(path, clips, mapping, motion_root=None, root_bones=None):
         objs, acts, time_scale = hero.load_source(path, set(clips.values()))

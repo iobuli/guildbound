@@ -15,7 +15,7 @@ use serde_json::{Value, json};
 use crate::motion_math::world_transform;
 use crate::procedural::{Drive, RestPose};
 use crate::studio::{Correction, Corrections, Studio, StudioGizmos, StudioRig};
-use crate::ui_theme::{self as theme, Kit};
+use crate::ui_theme as theme;
 
 /// (proximal joint, distal joint, mass fraction, centre-of-mass fraction along the segment).
 /// Winter, Biomechanics and Motor Control of Human Movement, table 4.1; the head's centre sits above its joint.
@@ -647,7 +647,7 @@ pub fn command(world: &mut World, p: &Value) -> Result<String, String> {
 }
 
 /// The Possession tab.
-pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mut Corrections, kit: Option<&Kit>, bone_names: &[String]) {
+pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mut Corrections, bone_names: &[String]) {
     theme::section(ui, "Possession");
     ui.horizontal(|ui| {
         ui.checkbox(&mut p.enabled, "Possess the stage model");
@@ -657,7 +657,7 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     });
     if let Some(motion) = &p.motion {
         ui.label(egui::RichText::new(format!("Generated motion: {} keys, {:.2} s", motion.keys.len(), motion.duration)).color(theme::TEAL));
-        if theme::button(ui, kit, "Return to clip", false).clicked() {
+        if theme::button(ui, "Return to clip", false).clicked() {
             p.motion = None;
             studio.time = 0.0;
             p.last = None;
@@ -667,7 +667,7 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
         let frames = (studio.duration * p.fps).round();
         ui.label(egui::RichText::new(format!("frame {} / {frames:.0}", p.frame(studio.time))).monospace().color(theme::TEAL));
         for (label, step) in [("|<", i32::MIN), ("-1", -1), ("+1", 1), (">|", i32::MAX)] {
-            if theme::button(ui, kit, label, false).clicked() {
+            if theme::button(ui, label, false).clicked() {
                 studio.playing = false;
                 match step {
                     i32::MIN => studio.time = 0.0,
@@ -690,7 +690,7 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
         });
         ui.horizontal(|ui| {
             ui.checkbox(&mut o.absolute, "From bind pose");
-            if theme::button(ui, kit, "Release bone", false).clicked() {
+            if theme::button(ui, "Release bone", false).clicked() {
                 p.overrides.remove(&bone);
                 p.aims.remove(&bone);
                 o = before;
@@ -742,13 +742,13 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
 
     theme::section(ui, "Pose clipboard");
     ui.horizontal(|ui| {
-        if theme::button(ui, kit, "Copy pose", false).clicked() {
+        if theme::button(ui, "Copy pose", false).clicked() {
             p.copy_request = true;
         }
-        if theme::button(ui, kit, "Paste pose", p.clipboard.is_some()).clicked() && p.clipboard.is_some() {
+        if theme::button(ui, "Paste pose", p.clipboard.is_some()).clicked() && p.clipboard.is_some() {
             p.paste_request = true;
         }
-        if theme::button(ui, kit, "Clear pose", false).clicked() {
+        if theme::button(ui, "Clear pose", false).clicked() {
             p.overrides.clear();
             p.aims.clear();
         }
@@ -765,7 +765,7 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
     for (i, label) in ["arm length x", "leg length x", "spine length x", "neck and head x"].iter().enumerate() {
         ui.add(egui::Slider::new(&mut p.dims_scale[i], 0.7..=1.3).text(*label));
     }
-    if theme::button(ui, kit, "Reset dimensions", false).clicked() {
+    if theme::button(ui, "Reset dimensions", false).clicked() {
         p.dims_scale = [1.0; 4];
     }
 
@@ -797,11 +797,11 @@ pub fn tab(ui: &mut egui::Ui, p: &mut Possession, studio: &mut Studio, corr: &mu
 
     theme::section(ui, "Keep");
     ui.horizontal(|ui| {
-        if theme::button(ui, kit, "Save as correction", false).clicked() {
+        if theme::button(ui, "Save as correction", false).clicked() {
             let n = save_corrections(p, studio, corr);
             p.status = format!("{n} bone offsets saved as corrections at this frame");
         }
-        if theme::button(ui, kit, "Release all", false).clicked() {
+        if theme::button(ui, "Release all", false).clicked() {
             p.overrides.clear();
             p.aims.clear();
         }

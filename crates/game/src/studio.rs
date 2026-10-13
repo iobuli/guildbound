@@ -11,7 +11,7 @@
 //! Claude's side of the loop is Tools/blender/pose_audit.py: every clip of every model, every frame, against
 //! the same rules, with each finding marked as inherited from the source clip or introduced by our pipeline.
 //! Its digest (collab/pose_audit.json) shows in the Patterns tab; clicking a pattern stages its worst case.
-use std::collections::{BTreeMap, HashMap};
+use std::collections::BTreeMap;
 use std::io::Write as _;
 
 use bevy::animation::AnimationTargetId;
@@ -25,7 +25,7 @@ use serde_json::{Value, json};
 use crate::anim::AnimLibrary;
 use crate::motion_math::world_transform;
 use crate::sim_bridge::Sim;
-use crate::ui_theme::{self as theme, Kit};
+use crate::ui_theme as theme;
 
 /// Where models are staged: its own place 1.5 km from the world, past the camera's draw distance, so the Studio
 /// is a scene of its own (only the stage model, its floor and light), with or without the game behind it.
@@ -37,6 +37,7 @@ fn is_quaternius(path: &str) -> bool {
     l.starts_with("packs/hero/") || l.starts_with("packs/npc/") || l.contains("quaternius") || l.contains("universal_base") || l.contains("modular_character") || l.contains("bestiary")
 }
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
+pub const CREATOR_TAB: usize = 1;
 const TABS: [&str; 9] = ["Inspect", "Creator", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
 
 /// Asset browser group: (sort key, group title) from the path under assets/.
@@ -98,7 +99,7 @@ impl Corrections {
     }
 
     pub fn load() -> Self {
-        let v: Value = std::fs::read_to_string(Self::path()).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(json!({}));
+        let v = crate::read_json("assets/corrections.json");
         let list = v["corrections"].as_array().map(|a| a.iter().filter_map(|c| Some(Correction {
             clip: c["clip"].as_str()?.to_owned(),
             bone: c["bone"].as_str()?.to_owned(),
@@ -142,7 +143,7 @@ impl HudLayout {
     }
 
     pub fn load() -> Self {
-        let v: Value = std::fs::read_to_string(Self::path()).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(json!({}));
+        let v = crate::read_json("assets/ui/hud_layout.json");
         let pair = |k: &str| [v[k][0].as_f64().unwrap_or(0.0) as f32, v[k][1].as_f64().unwrap_or(0.0) as f32];
         Self { vitals: pair("vitals"), skills: pair("skills"), target: pair("target"), scale: v["scale"].as_f64().unwrap_or(1.0) as f32 }
     }
@@ -439,19 +440,11 @@ pub fn drive(
         player.stop_all();
         return;
     }
-    let source: Option<(Handle<AnimationGraph>, Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)> = if studio.hero_clips {
-        lib.as_ref().and_then(|l| l.graph.clone()).map(|g| {
-            let l = lib.as_ref().unwrap();
-            let names: HashMap<String, (AnimationNodeIndex, f32)> = l.names().into_iter().filter_map(|n| l.node(&n).map(|node| (n.clone(), (node, l.duration(&n))))).collect();
-            (g, Box::new(move |c: &str| names.get(c).copied()) as Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)
-        })
-    } else {
-        studio.own.as_ref().and_then(|(_, g, idx)| g.clone().map(|g| {
-            let idx = idx.clone();
-            (g, Box::new(move |c: &str| idx.get(c).copied()) as Box<dyn Fn(&str) -> Option<(AnimationNodeIndex, f32)>>)
-        }))
-    };
-    let Some((graph, find)) = source else { return };
+    let hero = studio.hero_clips;
+    let own = if hero { None } else { studio.own.as_ref().and_then(|(_, g, idx)| g.clone().map(|g| (g, idx.clone()))) };
+    let graph = if hero { lib.as_ref().and_then(|l| l.graph.clone()) } else { own.as_ref().map(|o| o.0.clone()) };
+    let Some(graph) = graph else { return };
+    let find = |c: &str| if hero { lib.as_ref().and_then(|l| l.node(c).map(|n| (n, l.duration(c)))) } else { own.as_ref().and_then(|o| o.1.get(c).copied()) };
     if studio.graph_attached != Some(graph.id()) {
         commands.entity(pe).insert(AnimationGraphHandle(graph.clone()));
         studio.graph_attached = Some(graph.id());
@@ -571,8 +564,6 @@ fn pick(
     }
 }
 
-/// Pose by hand: with a bone selected, right-drag on the stage rotates it (sideways turns, up/down tilts) and the
-/// wheel rolls it; each change goes into the Possession override on top of the clip.
 /// Pose by hand: hold 1, 2 or 3 and drag with the middle mouse button to turn the selected bone about its X, Y
 /// or Z axis (on top of the clip). With the anatomical lock on, a step that takes the joint out of range is
 /// undone, so the bone stops at its limit.
@@ -718,17 +709,17 @@ pub fn apply_corrections(world: &mut World) {
         && let (Some(e), Some(clip)) = (s.entity, s.clip.clone()) && let Some(r) = world.get::<StudioRig>(e) {
         jobs.push((clip, s.time / s.duration.max(0.01), r.bones.clone()));
     }
-    let corr = world.resource::<Corrections>().list.clone();
-    let ledger = Corrections { list: corr };
-    for (clip, t, bones) in jobs {
-        for b in bones {
-            let Some(name) = world.get::<Name>(b).map(|n| n.as_str().to_owned()) else { continue };
-            let o = ledger.offset(&clip, &name, t);
-            if o != Vec3::ZERO && let Some(mut tr) = world.get_mut::<Transform>(b) {
-                tr.rotation = (tr.rotation * Quat::from_euler(EulerRot::XYZ, o.x.to_radians(), o.y.to_radians(), o.z.to_radians())).normalize();
+    world.resource_scope(|world, ledger: Mut<Corrections>| {
+        for (clip, t, bones) in jobs {
+            for b in bones {
+                let Some(name) = world.get::<Name>(b).map(|n| n.as_str().to_owned()) else { continue };
+                let o = ledger.offset(&clip, &name, t);
+                if o != Vec3::ZERO && let Some(mut tr) = world.get_mut::<Transform>(b) {
+                    tr.rotation = (tr.rotation * Quat::from_euler(EulerRot::XYZ, o.x.to_radians(), o.y.to_radians(), o.z.to_radians())).normalize();
+                }
             }
         }
-    }
+    });
 }
 
 /// Group corrections by bone across clips, and notes by (bone, category) across models.
@@ -754,7 +745,7 @@ pub fn patterns(corr: &Corrections, notes: &[Value]) -> Vec<Value> {
 }
 
 fn read_audit() -> Value {
-    std::fs::read_to_string(format!("{}/collab/pose_audit.json", crate::ROOT)).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+    crate::read_json("collab/pose_audit.json")
 }
 
 /// The audit's pipeline-introduced patterns, compact (gb.studio and the Patterns tab).
@@ -804,7 +795,6 @@ fn ui(
     mut corr: ResMut<Corrections>,
     mut layout: ResMut<HudLayout>,
     diag: Res<DiagnosticsStore>,
-    kit: Option<Res<Kit>>,
     mut lib: Option<ResMut<AnimLibrary>>,
     mut feed: ResMut<crate::feed::DevFeed>,
     assets: Res<AssetServer>,
@@ -820,13 +810,11 @@ fn ui(
     }
     let ctx = contexts.ctx_mut()?.clone();
     theme::style(&ctx);
-    let kit = kit.as_deref();
     let studio = &mut *studio;
     let mut root = egui::Ui::new(ctx.clone(), "studio_root".into(), egui::UiBuilder::new().layer_id(egui::LayerId::background()).max_rect(ctx.viewport_rect()));
 
     // toolbar
-    egui::Panel::top("studio_bar").frame(theme::dock(kit)).show_inside(&mut root, |ui| {
-        theme::dock_backdrop(ui, kit, ui.max_rect());
+    egui::Panel::top("studio_bar").frame(theme::dock()).show_inside(&mut root, |ui| {
         ui.horizontal(|ui| {
             ui.label(egui::RichText::new("Guildbound").size(15.0).strong().color(theme::PAPER));
             ui.label(egui::RichText::new("Studio").size(15.0).color(theme::MUTED));
@@ -835,7 +823,7 @@ fn ui(
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 let fps = diag.get(&FrameTimeDiagnosticsPlugin::FPS).and_then(|d| d.smoothed()).unwrap_or(0.0);
                 ui.label(egui::RichText::new(format!("{fps:.0} FPS  |  F2 {}", if studio.scene { "back to menu" } else { "close" })).color(theme::MUTED));
-                if studio.scene && theme::button(ui, kit, "Back to menu", false).clicked() {
+                if studio.scene && theme::button(ui, "Back to menu", false).clicked() {
                     studio.toggle_request = true;
                 }
             });
@@ -844,8 +832,7 @@ fn ui(
 
     // asset browser
     let mut picked_clip = false;
-    egui::Panel::left("studio_assets").default_size(300.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
-        theme::dock_backdrop(ui, kit, ui.max_rect());
+    egui::Panel::left("studio_assets").default_size(300.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
         theme::section(ui, "Models");
         // cycle the models (the uniform Quaternius set by default): the stage keeps clip and hero library
         let f = studio.filter.to_lowercase();
@@ -860,10 +847,10 @@ fn ui(
                 let i = at.map_or(0, |i| (i as isize + k).rem_euclid(n));
                 shown.get(i as usize).cloned()
             };
-            if theme::button(ui, kit, "< Prev", false).clicked() && let Some(p) = step(-1) {
+            if theme::button(ui, "< Prev", false).clicked() && let Some(p) = step(-1) {
                 studio.spawn_request = Some(p);
             }
-            if theme::button(ui, kit, "Next >", false).clicked() && let Some(p) = step(1) {
+            if theme::button(ui, "Next >", false).clicked() && let Some(p) = step(1) {
                 studio.spawn_request = Some(p);
             }
         });
@@ -929,15 +916,14 @@ fn ui(
     }
 
     // inspector / tabs
-    egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock(kit)).show_inside(&mut root, |ui| {
-        theme::dock_backdrop(ui, kit, ui.max_rect());
+    egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| match TABS[studio.tab.min(TABS.len() - 1)] {
-            "Creator" => crate::creator::tab(ui, &mut make.creator, studio, &mut make.wear, kit, &mut feed),
-            "Inspect" => inspect(ui, studio, &mut corr, kit, &mut feed, tune.sim.world.tick),
+            "Creator" => crate::creator::tab(ui, &mut make.creator, studio, &mut make.wear, &mut feed),
+            "Inspect" => inspect(ui, studio, &mut corr, &mut feed, tune.sim.world.tick),
             "Tuning" => {
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
                 egui::CollapsingHeader::new(egui::RichText::new("Possession: bones, fixed fps, life layers, physics readout").color(theme::TEAL)).default_open(true).show(ui, |ui| {
-                    crate::possession::tab(ui, &mut possession, studio, &mut corr, kit, &bone_names);
+                    crate::possession::tab(ui, &mut possession, studio, &mut corr, &bone_names);
                     if let Some(sel) = studio.numbers["selected"].as_object() {
                         theme::section(ui, "Selected bone (live)");
                         let v = |k: &str| sel.get(k).and_then(|a| a.as_array()).map(|a| a.iter().map(|x| format!("{:.2}", x.as_f64().unwrap_or(0.0))).collect::<Vec<_>>().join("  ")).unwrap_or_default();
@@ -959,12 +945,12 @@ fn ui(
                     theme::stat(ui, &format!("{n} lags its key"), format!("{e:.1} deg"), if *e > 15.0 { theme::BAD } else if *e > 6.0 { theme::WARN } else { theme::GOOD });
                 }
                 ui.horizontal(|ui| {
-                    if theme::button(ui, kit, "Play run > jump > punch", !possession.sequence.is_empty()).clicked() {
+                    if theme::button(ui, "Play run > jump > punch", !possession.sequence.is_empty()).clicked() {
                         possession.sequence = vec!["nc_run_forward".into(), "nc_jump_begin".into(), "ual_punch_cross".into()];
                         possession.seq_time = 0.0;
                         studio.playing = true;
                     }
-                    if theme::button(ui, kit, "Stop sequence", false).clicked() {
+                    if theme::button(ui, "Stop sequence", false).clicked() {
                         // studio.clip already names the clip that was playing; stay on it
                         possession.sequence.clear();
                         studio.time = 0.0;
@@ -1011,10 +997,10 @@ fn ui(
                     }
                 });
                 egui::CollapsingHeader::new(egui::RichText::new("Clip editor: speed, trim and blend of any clip; save variants").color(theme::TEAL)).default_open(true).show(ui, |ui| {
-                    clip_editor(ui, studio, kit, lib.as_deref_mut());
+                    clip_editor(ui, studio, lib.as_deref_mut());
                 });
             }
-            "Moveset" => moveset_tab(ui, studio, kit, lib.as_deref()),
+            "Moveset" => moveset_tab(ui, studio, lib.as_deref()),
             "Corrections" => corrections_tab(ui, &mut corr),
             "Patterns" => {
                 theme::section(ui, "Patterns across clips and models");
@@ -1026,7 +1012,7 @@ fn ui(
                         let clips = p["clips"].as_array().map_or(0, |a| a.len());
                         let m = &p["mean_offset_deg"];
                         theme::stat(ui, &format!("{bone}: corrected in {clips} clips"), format!("{:.1} {:.1} {:.1}", m[0].as_f64().unwrap_or(0.0), m[1].as_f64().unwrap_or(0.0), m[2].as_f64().unwrap_or(0.0)), theme::WARN);
-                        if p["promotable"] == true && theme::button(ui, kit, "Promote to all clips", false).clicked() {
+                        if p["promotable"] == true && theme::button(ui, "Promote to all clips", false).clicked() {
                             let o = [m[0].as_f64().unwrap_or(0.0) as f32, m[1].as_f64().unwrap_or(0.0) as f32, m[2].as_f64().unwrap_or(0.0) as f32];
                             corr.list.retain(|c| !(c.bone == bone && c.clip == "*"));
                             corr.list.push(Correction { clip: "*".into(), bone: bone.clone(), keys: vec![[0.0, o[0], o[1], o[2]]] });
@@ -1040,7 +1026,7 @@ fn ui(
                 theme::section(ui, "Pose audit (Claude)");
                 ui.horizontal(|ui| {
                     ui.label(egui::RichText::new("Introduced by our pipeline; inherited source issues are left out. Click to stage the worst case.").size(11.0).color(theme::MUTED));
-                    if theme::button(ui, kit, "Reload", false).clicked() {
+                    if theme::button(ui, "Reload", false).clicked() {
                         studio.audit = read_audit();
                     }
                 });
@@ -1101,11 +1087,11 @@ fn ui(
                 }
                 ui.add(egui::Slider::new(&mut layout.scale, 0.6..=1.6).text("scale"));
                 ui.horizontal(|ui| {
-                    if theme::button(ui, kit, "Save layout", false).clicked() {
+                    if theme::button(ui, "Save layout", false).clicked() {
                         layout.save();
                         studio.status = "HUD layout saved to assets/ui/hud_layout.json".into();
                     }
-                    if theme::button(ui, kit, "Reset", false).clicked() {
+                    if theme::button(ui, "Reset", false).clicked() {
                         *layout = HudLayout::default();
                     }
                 });
@@ -1133,10 +1119,9 @@ fn ui(
     });
 
     // timeline
-    egui::Panel::bottom("studio_timeline").frame(theme::dock(kit)).show_inside(&mut root, |ui| {
-        theme::dock_backdrop(ui, kit, ui.max_rect());
+    egui::Panel::bottom("studio_timeline").frame(theme::dock()).show_inside(&mut root, |ui| {
         ui.horizontal(|ui| {
-            if theme::button(ui, kit, if studio.playing { "Pause" } else { "Play" }, studio.playing).clicked() {
+            if theme::button(ui, if studio.playing { "Pause" } else { "Play" }, studio.playing).clicked() {
                 studio.playing = !studio.playing;
             }
             ui.add(egui::Slider::new(&mut studio.speed, 0.05..=2.0).text("speed"));
@@ -1152,7 +1137,7 @@ fn ui(
     Ok(())
 }
 
-fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: Option<&Kit>, feed: &mut crate::feed::DevFeed, tick: u64) {
+fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed: &mut crate::feed::DevFeed, tick: u64) {
     theme::section(ui, "Stage");
     ui.horizontal(|ui| {
         ui.add(egui::Slider::new(&mut studio.yaw, -180.0..=180.0).text("yaw"));
@@ -1193,7 +1178,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: 
     ui.add(egui::Slider::new(&mut studio.offset.z, -60.0..=60.0).text("z"));
     ui.horizontal(|ui| {
         let clip = studio.clip.clone().unwrap_or_default();
-        if theme::button(ui, kit, "Key offset", false).clicked() && !clip.is_empty() {
+        if theme::button(ui, "Key offset", false).clicked() && !clip.is_empty() {
             let t = studio.time / studio.duration.max(0.01);
             let o = studio.offset;
             let entry = match corr.list.iter_mut().position(|c| c.clip == clip && c.bone == bone) {
@@ -1209,7 +1194,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: 
             corr.save();
             studio.status = format!("Keyed {bone} at {:.0}% of {clip}", t * 100.0);
         }
-        if theme::button(ui, kit, "Clear bone", false).clicked() {
+        if theme::button(ui, "Clear bone", false).clicked() {
             corr.list.retain(|c| !(c.clip == clip && c.bone == bone));
             corr.save();
         }
@@ -1221,7 +1206,7 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: 
         }
     });
     ui.add(egui::TextEdit::multiline(&mut studio.note).desired_rows(3).hint_text("e.g. left shoulder rolls inward at the punch extension"));
-    if theme::button(ui, kit, "Send note", false).clicked() && !studio.note.trim().is_empty() {
+    if theme::button(ui, "Send note", false).clicked() && !studio.note.trim().is_empty() {
         let note = json!({"text": studio.note.trim(), "category": CATEGORIES[studio.category], "model": studio.model, "clip": studio.clip, "time": studio.time,
                           "duration": studio.duration, "bone": bone, "hero_clips": studio.hero_clips, "rules": studio.rules, "numbers": studio.numbers});
         if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(format!("{}/collab/studio_notes.jsonl", crate::ROOT)) {
@@ -1235,12 +1220,12 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, kit: 
 
 /// Pick which clips each combo move plays (ticked = used, unticked = omitted); saved to assets/moveset.json,
 /// read when the game builds its move clusters (relaunch to apply).
-fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: Option<&AnimLibrary>) {
+fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&AnimLibrary>) {
     theme::section(ui, "Moveset: clips per combo move");
     let path = format!("{}/assets/moveset.json", crate::ROOT);
     if studio.moveset.is_none() {
         let base: Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).unwrap_or_default();
-        let saved: Value = std::fs::read_to_string(&path).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default();
+        let saved = crate::read_json("assets/moveset.json");
         let mut m = BTreeMap::new();
         for (name, clips) in base["combat"].as_object().into_iter().flatten() {
             let all: Vec<String> = clips.as_array().into_iter().flatten().filter_map(|c| c.as_str().map(str::to_owned)).collect();
@@ -1287,8 +1272,8 @@ fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
     let out: serde_json::Map<String, Value> = moves.iter().map(|(n, rows)| (n.clone(), json!(rows.iter().filter(|r| r.1).map(|r| r.0.clone()).collect::<Vec<_>>()))).collect();
     let (mut save, mut reset) = (false, false);
     ui.horizontal(|ui| {
-        save = theme::button(ui, kit, "Save moveset", false).clicked();
-        reset = theme::button(ui, kit, "Reset", false).clicked();
+        save = theme::button(ui, "Save moveset", false).clicked();
+        reset = theme::button(ui, "Reset", false).clicked();
     });
     if save {
         let _ = std::fs::write(&path, serde_json::to_string_pretty(&json!({"moves": out})).unwrap_or_default());
@@ -1302,7 +1287,7 @@ fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
 
 /// Edit the selected clip's speed, kept part and blend-in, or save it as a new named variant that the moveset
 /// and the game can use like any clip. Edits apply live; Save writes assets/clip_edits.json.
-fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: Option<&mut AnimLibrary>) {
+fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&mut AnimLibrary>) {
     let Some(lib) = lib else {
         ui.label("The hero library is still loading.");
         return;
@@ -1311,7 +1296,7 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
     if clip.is_empty() || lib.node(&clip).is_none() {
         ui.label(egui::RichText::new("Pick a hero clip on the left (Hero library ticked) to edit it.").color(theme::MUTED));
     } else {
-        let mut e = lib.edit(&clip);
+        let mut e = lib.edit(&clip).clone();
         let before = e.clone();
         let base = lib.base(&clip).to_owned();
         ui.label(egui::RichText::new(if base == clip { clip.clone() } else { format!("{clip}  (variant of {base})") }).strong().color(theme::PAPER));
@@ -1335,7 +1320,7 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
         ui.horizontal(|ui| {
             ui.add(egui::TextEdit::singleline(&mut studio.variant_name).hint_text("variant name").desired_width(160.0));
             let name = studio.variant_name.trim().to_owned();
-            if theme::button(ui, kit, "Save as variant", false).clicked() && !name.is_empty() && lib.node(&name).is_none() {
+            if theme::button(ui, "Save as variant", false).clicked() && !name.is_empty() && lib.node(&name).is_none() {
                 lib.edits.insert(name.clone(), crate::anim::ClipEdit { base: Some(base.clone()), ..e.clone() });
                 crate::anim::save_clip_edits(&lib.edits);
                 studio.status = format!("Variant {name} saved; add it to a move in the Moveset tab");
@@ -1344,11 +1329,11 @@ fn clip_editor(ui: &mut egui::Ui, studio: &mut Studio, kit: Option<&Kit>, lib: O
             }
         });
         ui.horizontal(|ui| {
-            if theme::button(ui, kit, "Save edits", false).clicked() {
+            if theme::button(ui, "Save edits", false).clicked() {
                 crate::anim::save_clip_edits(&lib.edits);
                 studio.status = "Clip edits saved to assets/clip_edits.json".into();
             }
-            if theme::button(ui, kit, "Reset this clip", false).clicked() {
+            if theme::button(ui, "Reset this clip", false).clicked() {
                 if base == clip {
                     lib.edits.remove(&clip);
                 } else {

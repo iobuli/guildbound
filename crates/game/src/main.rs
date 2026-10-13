@@ -43,6 +43,11 @@ use bevy_egui::{EguiPlugin, EguiPrimaryContextPass};
 /// Repo root, for files the boss and the agents share (feed log, screenshots).
 pub const ROOT: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
 
+/// A JSON file under the repo root; Null when missing or malformed (indexing Null yields Null).
+pub fn read_json(rel: &str) -> serde_json::Value {
+    std::fs::read_to_string(format!("{ROOT}/{rel}")).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or_default()
+}
+
 fn main() {
     App::new()
         .insert_resource(ClearColor(camera::SKY))
@@ -85,7 +90,7 @@ fn main() {
         .init_resource::<sfx::SfxSettings>()
         .init_resource::<npc::NpcLibraries>()
         .insert_resource(anim::Libraries::scan())
-        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, ui_theme::load, announce))
+        .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
         .add_systems(PostStartup, (props::spawn, magic_view::setup, npc::spawn))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)

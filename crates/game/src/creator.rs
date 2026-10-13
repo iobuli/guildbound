@@ -17,7 +17,7 @@ use bevy_egui::egui;
 use serde_json::{Value, json};
 
 use crate::studio::{STAGE, Studio};
-use crate::ui_theme::{self as theme, Kit};
+use crate::ui_theme as theme;
 
 const BLENDER: &str = "D:/blender.exe";
 const STAGED: &str = "packs/_sources/chars_staged";
@@ -59,7 +59,8 @@ pub struct Creator {
     report: Value,
     report_for: String,
     seed: u64,
-    scanned: bool,
+    /// Colour multiplied over each slot's texture (sRGB): Head, Body, Arms, Legs, Feet, Acc, Hair, Skin.
+    tints: BTreeMap<String, [u8; 3]>,
 }
 
 impl Default for Creator {
@@ -67,7 +68,8 @@ impl Default for Creator {
         Self {
             parts: Vec::new(), hair: Vec::new(), female: false, pick: BTreeMap::new(), acc: BTreeSet::new(),
             hair_pick: "Hair_SimpleParted".into(), name: "my_character".into(), show_base: true, preview: Vec::new(), dirty: false,
-            active: false, job: Arc::default(), report: Value::Null, report_for: String::new(), seed: 0x9e37_79b9_7f4a_7c15, scanned: false,
+            active: false, job: Arc::default(), report: Value::Null, report_for: String::new(), seed: 0x9e37_79b9_7f4a_7c15,
+            tints: BTreeMap::new(),
         }
     }
 }
@@ -78,14 +80,25 @@ pub struct Wear {
     pub model: Option<String>,
 }
 
+/// The model a player rig was spawned with (None = the default hero).
 #[derive(Component)]
-pub struct Worn(pub String);
+struct Worn(Option<String>);
+
+/// A preview piece and the tint slot it belongs to.
+#[derive(Component)]
+struct Piece(String);
+
+/// A preview mesh that has its own material copy (so tinting one part leaves the shared atlas alone).
+#[derive(Component)]
+struct OwnMaterial;
+
+const TINT_SLOTS: [&str; 8] = ["Skin", "Hair", "Head", "Body", "Arms", "Legs", "Feet", "Acc"];
 
 pub fn plugin(app: &mut App) {
-    let worn = std::fs::read_to_string(format!("{}/{WORN_FILE}", crate::ROOT)).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()).and_then(|v| v["model"].as_str().map(str::to_owned));
+    let worn = crate::read_json(WORN_FILE)["model"].as_str().map(str::to_owned);
     app.init_resource::<Creator>()
         .insert_resource(Wear { model: worn.filter(|m| std::path::Path::new(&format!("{}/assets/{m}", crate::ROOT)).exists()) })
-        .add_systems(Update, (preview, finish, wear));
+        .add_systems(Update, (preview, tint_preview, finish, wear));
 }
 
 fn abs(rel: &str) -> String {
@@ -125,7 +138,6 @@ fn scan(c: &mut Creator) {
         outfit(c, "Ranger");
         c.pick.insert("Head".into(), String::new());
     }
-    c.scanned = true;
 }
 
 /// Pick every slot (and accessory) of one outfit for the current body type.
@@ -237,6 +249,7 @@ fn export(c: &mut Creator) {
         "--base".into(), if c.female { "female" } else { "male" }.into(),
         "--parts".into(), chosen(c).join(","),
         "--hair".into(), c.hair_pick.clone(),
+        "--tints".into(), c.tints.iter().filter(|(_, v)| **v != [255, 255, 255]).map(|(k, v)| format!("{k}={:02x}{:02x}{:02x}", v[0], v[1], v[2])).collect::<Vec<_>>().join(","),
         "--set".into(), "none".into(),
         "--out".into(), format!("assets/{model}"),
     ]);
@@ -244,12 +257,15 @@ fn export(c: &mut Creator) {
 }
 
 fn read_report(model: &str) -> Value {
-    std::fs::read_to_string(abs(&format!("{model}.check.json"))).ok().and_then(|s| serde_json::from_str(&s).ok()).unwrap_or(Value::Null)
+    crate::read_json(&format!("assets/{model}.check.json"))
 }
 
 /// Load a custom model's recipe back into the picker (from its build report).
 fn load_recipe(c: &mut Creator, model: &str) {
-    let Some(r) = std::fs::read_to_string(abs(&format!("{model}.report.json"))).ok().and_then(|s| serde_json::from_str::<Value>(&s).ok()) else { return };
+    let r = crate::read_json(&format!("assets/{model}.report.json"));
+    if r.is_null() {
+        return;
+    }
     c.female = r["base"] == "female";
     c.pick.clear();
     c.acc.clear();
@@ -263,6 +279,14 @@ fn load_recipe(c: &mut Creator, model: &str) {
         }
     }
     c.hair_pick = r["hair"].as_str().unwrap_or("none").to_owned();
+    c.tints.clear();
+    for t in r["tints"].as_str().unwrap_or("").split(',') {
+        if let Some((k, h)) = t.split_once('=')
+            && let Ok(v) = u32::from_str_radix(h, 16)
+        {
+            c.tints.insert(k.to_owned(), [(v >> 16) as u8, (v >> 8) as u8, v as u8]);
+        }
+    }
     c.name = model.trim_start_matches("packs/custom/").trim_end_matches(".glb").to_owned();
     c.dirty = true;
 }
@@ -272,7 +296,7 @@ fn preview(mut commands: Commands, mut c: ResMut<Creator>, mut studio: ResMut<St
     if !studio.open {
         return;
     }
-    if !c.scanned {
+    if c.parts.is_empty() {
         scan(&mut c);
     }
     if studio.entity.is_some() && !c.preview.is_empty() && !c.dirty {
@@ -295,22 +319,62 @@ fn preview(mut commands: Commands, mut c: ResMut<Creator>, mut studio: ResMut<St
     studio.model = None;
     studio.status = "Creator preview: the base body shows under the parts; Export cuts it away where a part covers it".into();
     let base = if c.female { "Superhero_Female_FullBody" } else { "Superhero_Male_FullBody" };
-    let mut files: Vec<String> = chosen(&c).into_iter().map(|p| format!("{STAGED}/parts/{p}.gltf")).collect();
+    let slot_of = |p: &str| c.parts.iter().find(|x| x.name == p).map_or(String::new(), |x| x.slot.clone());
+    let mut files: Vec<(String, String)> = chosen(&c).into_iter().map(|p| (format!("{STAGED}/parts/{p}.gltf"), slot_of(&p))).collect();
     if c.show_base {
-        files.push(format!("{STAGED}/base/{base}.gltf"));
+        files.push((format!("{STAGED}/base/{base}.gltf"), "Skin".into()));
     }
     if c.hair_pick != "none" {
-        files.push(format!("{STAGED}/hair/{}.gltf", c.hair_pick));
+        files.push((format!("{STAGED}/hair/{}.gltf", c.hair_pick), "Hair".into()));
     }
     let at = Transform::from_translation(STAGE).with_rotation(Quat::from_rotation_y(studio.yaw.to_radians()));
-    for f in files {
+    for (f, slot) in files {
         let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(f));
-        c.preview.push(commands.spawn((Name::new("creator preview"), WorldAssetRoot(scene), at)).id());
+        c.preview.push(commands.spawn((Name::new("creator preview"), WorldAssetRoot(scene), at, Piece(slot))).id());
+    }
+}
+
+/// Live tint on the preview: each mesh gets its own material copy once, then its base colour follows the pick.
+/// On the base body only the skin mesh takes the skin tint (eyes and brows keep theirs).
+#[allow(clippy::type_complexity)]
+fn tint_preview(
+    mut commands: Commands,
+    c: Res<Creator>,
+    pieces: Query<(Entity, &Piece)>,
+    children: Query<&Children>,
+    names: Query<&Name>,
+    parents: Query<&ChildOf>,
+    mut mats: Query<(&mut MeshMaterial3d<StandardMaterial>, Has<OwnMaterial>)>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+) {
+    for (root, piece) in &pieces {
+        let rgb = c.tints.get(&piece.0).copied().unwrap_or([255, 255, 255]);
+        let color = Color::srgb_u8(rgb[0], rgb[1], rgb[2]);
+        for e in children.iter_descendants(root) {
+            let Ok((mut m, own)) = mats.get_mut(e) else { continue };
+            if piece.0 == "Skin" {
+                // the mesh node is the primitive's parent and carries the mesh name
+                let named = |x: Entity| names.get(x).is_ok_and(|n| n.as_str().starts_with("SuperHero"));
+                if !(named(e) || parents.get(e).is_ok_and(|p| named(p.parent()))) {
+                    continue;
+                }
+            }
+            if !own {
+                let Some(copy) = materials.get(&m.0).cloned() else { continue };
+                m.0 = materials.add(copy);
+                commands.entity(e).insert(OwnMaterial);
+            }
+            if materials.get(&m.0).is_some_and(|x| x.base_color != color)
+                && let Some(mut x) = materials.get_mut(&m.0)
+            {
+                x.base_color = color;
+            }
+        }
     }
 }
 
 /// A finished export or check: show the report; an export goes on the stage and into the model list.
-fn finish(mut c: ResMut<Creator>, mut studio: ResMut<Studio>, mut feed: ResMut<crate::feed::DevFeed>) {
+fn finish(mut c: ResMut<Creator>, mut studio: ResMut<Studio>) {
     let done = c.job.lock().unwrap().done.take();
     let Some((ok, model, export)) = done else { return };
     c.report = read_report(&model);
@@ -318,24 +382,22 @@ fn finish(mut c: ResMut<Creator>, mut studio: ResMut<Studio>, mut feed: ResMut<c
     if ok && export {
         studio.add_asset(model.clone());
         c.active = false;
-        studio.request_spawn(model.clone());
-        feed.post("creator", &format!("Exported {model} ({} parts)", chosen(&c).len()), 0);
+        studio.request_spawn(model);
     }
 }
 
 /// Fighter 0 wears the chosen custom model (re-applied whenever its rig is respawned).
 fn wear(mut commands: Commands, w: Res<Wear>, assets: Res<AssetServer>, rigs: Query<(Entity, &crate::anim::FighterRig, Option<&Worn>)>, views: Query<(Entity, &crate::sim_bridge::FighterView)>) {
     let Some((rig, _, worn)) = rigs.iter().find(|(_, r, _)| r.fighter == 0) else { return };
-    let want = w.model.as_deref();
-    if worn.map(|x| x.0.as_str()) == want {
+    // a rig without Worn was spawned by the game with the default hero
+    if worn.map_or(w.model.is_none(), |x| x.0 == w.model) {
         return;
     }
     let Some((view, _)) = views.iter().find(|(_, v)| v.0 == 0) else { return };
     commands.entity(rig).despawn();
-    let path = want.unwrap_or("packs/hero/fighter.glb").to_owned();
-    let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path.clone()));
-    let e = crate::anim::spawn_rig(&mut commands, view, 0, scene);
-    commands.entity(e).insert(Worn(want.map_or_else(String::new, str::to_owned)));
+    let path = w.model.clone().unwrap_or_else(|| "packs/hero/fighter.glb".into());
+    let e = crate::anim::spawn_rig(&mut commands, view, 0, assets.load(GltfAssetLabel::Scene(0).from_asset(path)));
+    commands.entity(e).insert(Worn(w.model.clone()));
 }
 
 fn set_worn(w: &mut Wear, model: Option<String>) {
@@ -345,9 +407,7 @@ fn set_worn(w: &mut Wear, model: Option<String>) {
 
 fn verdict_color(report: &Value) -> (egui::Color32, String) {
     let flags: Vec<&str> = report["flags"].as_array().into_iter().flatten().filter_map(|f| f.as_str()).collect();
-    if report.is_null() {
-        (theme::MUTED, "no check yet".into())
-    } else if flags.iter().any(|f| f.starts_with("missing") || f.starts_with("no geometry") || f.contains("no skin weight")) {
+    if flags.iter().any(|f| f.starts_with("missing") || f.starts_with("no geometry") || f.contains("no skin weight")) {
         (theme::BAD, format!("{} flags, structural", flags.len()))
     } else if flags.is_empty() {
         (theme::GOOD, "clean".into())
@@ -356,12 +416,12 @@ fn verdict_color(report: &Value) -> (egui::Color32, String) {
     }
 }
 
-pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut Wear, kit: Option<&Kit>, feed: &mut crate::feed::DevFeed) {
+pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut Wear, feed: &mut crate::feed::DevFeed) {
     let running = c.job.lock().unwrap().running;
     ui.horizontal(|ui| {
         ui.label(egui::RichText::new("Character creator").size(16.0).strong().color(theme::PAPER));
         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-            if theme::button(ui, kit, if c.active { "Previewing" } else { "Preview on stage" }, c.active).clicked() {
+            if theme::button(ui, if c.active { "Previewing" } else { "Preview on stage" }, c.active).clicked() {
                 c.active = true;
                 c.dirty = true;
             }
@@ -372,11 +432,11 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
     theme::section(ui, "Body");
     let before = (c.female, c.pick.clone(), c.acc.clone(), c.hair_pick.clone(), c.show_base);
     ui.horizontal(|ui| {
-        if theme::button(ui, kit, "Male", !c.female).clicked() && c.female {
+        if theme::button(ui, "Male", !c.female).clicked() && c.female {
             c.female = false;
             outfit(c, "Ranger");
         }
-        if theme::button(ui, kit, "Female", c.female).clicked() && !c.female {
+        if theme::button(ui, "Female", c.female).clicked() && !c.female {
             c.female = true;
             outfit(c, "Ranger");
         }
@@ -386,11 +446,11 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
     ui.horizontal_wrapped(|ui| {
         ui.label(egui::RichText::new("Full outfit:").size(12.0).color(theme::MUTED));
         for o in &outfits {
-            if theme::button(ui, kit, o, false).clicked() {
+            if theme::button(ui, o, false).clicked() {
                 outfit(c, o);
             }
         }
-        if theme::button(ui, kit, "Randomize", false).clicked() {
+        if theme::button(ui, "Randomize", false).clicked() {
             randomize(c);
         }
     });
@@ -448,6 +508,22 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
         c.dirty = true;
         c.active = true;
     }
+    theme::section(ui, "Colours");
+    ui.label(egui::RichText::new("Multiplied over each slot's texture; white keeps the original.").size(11.0).color(theme::MUTED));
+    ui.horizontal_wrapped(|ui| {
+        for slot in TINT_SLOTS {
+            let mut rgb = c.tints.get(slot).copied().unwrap_or([255, 255, 255]);
+            ui.label(egui::RichText::new(slot).size(12.0).color(theme::PAPER));
+            if egui::widgets::color_picker::color_edit_button_srgb(ui, &mut rgb).changed() {
+                c.tints.insert(slot.into(), rgb);
+            }
+            ui.add_space(6.0);
+        }
+    });
+    if theme::button(ui, "Reset colours", false).clicked() {
+        c.tints.clear();
+    }
+
     let uncovered: Vec<&str> = SLOTS[1..].iter().copied().filter(|s| c.pick.get(*s).is_none_or(|p| p.is_empty())).collect();
     if !uncovered.is_empty() {
         ui.label(egui::RichText::new(format!("Base skin shows on: {}", uncovered.join(", "))).size(11.5).color(theme::MUTED));
@@ -458,7 +534,7 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
         ui.label("Name");
         ui.add(egui::TextEdit::singleline(&mut c.name).desired_width(170.0));
         ui.add_enabled_ui(!running, |ui| {
-            if theme::button(ui, kit, "Export model", true).clicked() {
+            if theme::button(ui, "Export model", true).clicked() {
                 export(c);
             }
         });
@@ -492,24 +568,24 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
                 }
             });
             ui.horizontal_wrapped(|ui| {
-                if theme::button(ui, kit, "Stage", studio.model.as_deref() == Some(m.as_str())).clicked() {
+                if theme::button(ui, "Stage", studio.model.as_deref() == Some(m.as_str())).clicked() {
                     c.active = false;
                     studio.request_spawn(m.clone());
                 }
-                if theme::button(ui, kit, "Edit recipe", false).clicked() {
+                if theme::button(ui, "Edit recipe", false).clicked() {
                     load_recipe(c, &m);
                     c.active = true;
                 }
                 let worn = wear.model.as_deref() == Some(m.as_str());
-                if theme::button(ui, kit, if worn { "Take off" } else { "Wear (player)" }, false).clicked() {
+                if theme::button(ui, if worn { "Take off" } else { "Wear (player)" }, false).clicked() {
                     set_worn(wear, if worn { None } else { Some(m.clone()) });
                 }
                 ui.add_enabled_ui(!running, |ui| {
-                    if theme::button(ui, kit, "Check", false).clicked() {
+                    if theme::button(ui, "Check", false).clicked() {
                         spawn_job(&c.job, vec![check_args(&m)], m.clone(), false);
                     }
                 });
-                if theme::button(ui, kit, "Show report", c.report_for == m).clicked() {
+                if theme::button(ui, "Show report", c.report_for == m).clicked() {
                     c.report = read_report(&m);
                     c.report_for = m.clone();
                 }
@@ -527,7 +603,7 @@ pub fn tab(ui: &mut egui::Ui, c: &mut Creator, studio: &mut Studio, wear: &mut W
         let (color, text) = verdict_color(&r);
         ui.horizontal(|ui| {
             theme::badge(ui, &text, color);
-            if theme::button(ui, kit, "Send to Claude", false).clicked() {
+            if theme::button(ui, "Send to Claude", false).clicked() {
                 let flags: Vec<String> = r["flags"].as_array().into_iter().flatten().filter_map(|f| f.as_str().map(str::to_owned)).collect();
                 let summary = format!("MODEL CHECK {} for a good/okay/bad call: height {} m, {} tris, {} MB, coverage {}, flags: {}. Full report assets/{}.check.json",
                     c.report_for, r["height_m"], r["tris"], r["mb"], r["coverage"], if flags.is_empty() { "none".into() } else { flags.join(" | ") }, c.report_for);
