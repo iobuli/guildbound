@@ -196,6 +196,9 @@ def main():
     else:
         for path, clips in NPC_CLIPS.items():
             take(path, clips, ual_map)
+    # pauldrons follow the shoulder girdle, not only the upper arm (they cut into the chest otherwise)
+    import fix_skin
+    report["pauldron_reweighted"] = fix_skin.reweight_pauldrons(rig)
     report["normalize_scale"] = hero.normalize(model, 1.8)
     hero.export_hero(rig, os.path.abspath(a.out), report)
 
