@@ -1,6 +1,5 @@
 //! What every model file under assets/packs is, read once from its glTF header (no loading): a rigged character
-//! or a static prop, its animation clips, and its skeleton signature (the bone path down to the hips). Two files
-//! with the same signature share a skeleton, so the clips of one play on the other as they are.
+//! or a static prop, and its animation clips.
 use serde_json::Value;
 
 pub struct AssetInfo {
@@ -8,8 +7,6 @@ pub struct AssetInfo {
     pub path: String,
     pub rigged: bool,
     pub clips: Vec<String>,
-    /// e.g. "Armature/root/pelvis" (raw Quaternius and UAL) or "Armature/Motion/B_Pelvis" (our built models).
-    pub skeleton: String,
 }
 
 pub fn scan() -> Vec<AssetInfo> {
@@ -37,7 +34,7 @@ pub fn scan() -> Vec<AssetInfo> {
 pub fn read(file: &std::path::Path, path: String) -> AssetInfo {
     let j = header(file).unwrap_or_default();
     let clips = j["animations"].as_array().into_iter().flatten().filter_map(|a| a["name"].as_str()).filter(|n| !n.starts_with("Unarmed-")).map(str::to_owned).collect();
-    AssetInfo { rigged: j["skins"].as_array().is_some_and(|s| !s.is_empty()), skeleton: skeleton(&j), clips, path }
+    AssetInfo { rigged: j["skins"].as_array().is_some_and(|s| !s.is_empty()), clips, path }
 }
 
 /// The JSON chunk of a .glb, or the whole .gltf.
@@ -53,33 +50,6 @@ fn header(file: &std::path::Path) -> Option<Value> {
     let mut json = vec![0u8; len];
     f.read_exact(&mut json).ok()?;
     serde_json::from_slice(&json).ok()
-}
-
-/// Node names from the scene root down to the first skin's hip bone.
-fn skeleton(j: &Value) -> String {
-    let nodes = j["nodes"].as_array().map(Vec::as_slice).unwrap_or_default();
-    let name = |i: usize| nodes.get(i).and_then(|n| n["name"].as_str()).unwrap_or("?");
-    let Some(joints) = j["skins"][0]["joints"].as_array() else { return String::new() };
-    let hip = joints.iter().filter_map(|x| x.as_u64().map(|x| x as usize)).find(|&i| {
-        let n = name(i).to_lowercase();
-        n.ends_with("pelvis") || n == "hips" || n.ends_with(":hips")
-    });
-    let Some(mut at) = hip else { return String::new() };
-    let mut parent = vec![None; nodes.len()];
-    for (i, n) in nodes.iter().enumerate() {
-        for c in n["children"].as_array().into_iter().flatten().filter_map(|c| c.as_u64()) {
-            if let Some(p) = parent.get_mut(c as usize) {
-                *p = Some(i);
-            }
-        }
-    }
-    let mut path = vec![name(at)];
-    while let Some(p) = parent.get(at).copied().flatten() {
-        path.push(name(p));
-        at = p;
-    }
-    path.reverse();
-    path.join("/")
 }
 
 /// Browser group of a model: (sort key, title) from its path.

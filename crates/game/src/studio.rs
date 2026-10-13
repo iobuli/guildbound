@@ -31,6 +31,11 @@ use crate::ui_theme as theme;
 /// is a scene of its own (only the stage model, its floor and light), with or without the game behind it.
 pub const STAGE: Vec3 = Vec3::new(0.0, 0.0, 1500.0);
 
+/// Models the game itself uses (the hero, townsfolk, your Creator characters): they play the whole library.
+fn is_game_model(path: &str) -> bool {
+    ["packs/hero/", "packs/npc/", "packs/custom/"].iter().any(|p| path.starts_with(p))
+}
+
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
 pub const CREATOR_TAB: usize = 1;
 const TAB_HELP: [&str; 9] = [
@@ -151,7 +156,7 @@ pub struct Studio {
     pub open: bool,
     was_paused: bool,
     assets: Vec<crate::catalog::AssetInfo>,
-    /// Model browser tab: 0 characters (rigged), 1 props, 2 everything.
+    /// Model browser tab: 0 game models (play the whole library), 1 animated assets (their own clips), 2 props.
     browse: usize,
     /// The file whose clips play when not using the hero library (UAL1, UAL2, a creature pack ...).
     pub pack: Option<String>,
@@ -214,14 +219,7 @@ impl Studio {
         self.assets.iter().filter(|a| a.path.starts_with(prefix)).map(|a| a.path.clone()).collect()
     }
 
-    fn skeleton_of(&self, path: &str) -> &str {
-        self.assets.iter().find(|a| a.path == path).map_or("", |a| a.skeleton.as_str())
-    }
 
-    /// The hero library's skeleton (our built models share it).
-    fn hero_skeleton(&self) -> &str {
-        self.assets.iter().find(|a| a.path.starts_with("packs/hero/") && !a.clips.is_empty()).map_or("", |a| a.skeleton.as_str())
-    }
 }
 
 impl Default for Studio {
@@ -347,15 +345,13 @@ fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<A
     studio.entity = Some(e);
     studio.graph_attached = None;
     studio.time = 0.0;
-    // keep the chosen animation when it fits the new model; else its own clips, else the hero library
-    let skeleton = studio.skeleton_of(&path).to_owned();
-    let pack_fits = studio.pack.as_deref().is_some_and(|p| studio.skeleton_of(p) == skeleton);
-    if skeleton == studio.hero_skeleton() {
+    // a game model plays the whole library (and keeps the chosen clip); any other model plays its own clips
+    if is_game_model(&path) {
         if !studio.hero_clips {
             studio.clip = None;
         }
         studio.hero_clips = true;
-    } else if !(!studio.hero_clips && pack_fits) {
+    } else {
         studio.hero_clips = false;
         studio.pack = Some(path.clone());
         studio.clip = None;
@@ -847,11 +843,19 @@ fn ui(
     let mut picked_clip = false;
     egui::Panel::left("studio_assets").default_size(320.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
         theme::section(ui, "Models");
-        theme::tabs(ui, &["Characters", "Props", "All"], &mut studio.browse);
-        theme::hint(ui, ["Characters have a skeleton, so they can be animated.", "Props are objects that do not move: furniture, trees, buildings.", "Every model in the game's asset packs."][studio.browse.min(2)]);
+        theme::tabs(ui, &["Game models", "Assets", "Props"], &mut studio.browse);
+        theme::hint(ui, [
+            "Models the game uses. Every animation in the library plays on them.",
+            "Animated models from the packs. Each plays the animations it came with.",
+            "Objects that do not move: furniture, trees, buildings.",
+        ][studio.browse.min(2)]);
         let f = studio.filter.to_lowercase();
         let shown: Vec<String> = studio.assets.iter()
-            .filter(|a| match studio.browse { 0 => a.rigged, 1 => !a.rigged, _ => true } && (f.is_empty() || a.path.to_lowercase().contains(&f)))
+            .filter(|a| match studio.browse {
+                0 => is_game_model(&a.path),
+                1 => a.rigged && !a.clips.is_empty() && !is_game_model(&a.path),
+                _ => !a.rigged,
+            } && (f.is_empty() || a.path.to_lowercase().contains(&f)))
             .map(|a| a.path.clone()).collect();
         ui.horizontal(|ui| {
             let at = studio.model.as_ref().and_then(|m| shown.iter().position(|a| a == m));
@@ -864,9 +868,8 @@ fn ui(
             }
             ui.label(egui::RichText::new(format!("{} models", shown.len())).size(11.0).color(theme::MUTED));
         });
-        ui.label(egui::RichText::new(studio.model.as_deref().map_or("Nothing on the stage".into(), |m| m.rsplit('/').next().unwrap_or(m).to_owned())).strong().color(theme::PAPER));
-        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("search: ranger, tree, chair ..."));
-        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.42).show(ui, |ui| {
+        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("search by name"));
+        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.4).show(ui, |ui| {
             let mut groups: BTreeMap<(u8, String), Vec<&String>> = BTreeMap::new();
             for a in &shown {
                 groups.entry(crate::catalog::pack_of(a)).or_default().push(a);
@@ -876,7 +879,7 @@ fn ui(
                 let here = studio.model.as_ref().is_some_and(|m| list.iter().any(|a| *a == m));
                 egui::CollapsingHeader::new(egui::RichText::new(format!("{title}  ({})", list.len())).size(12.5).color(theme::PAPER))
                     .id_salt(title)
-                    .default_open(here || groups.len() <= 3)
+                    .default_open(here || groups.len() <= 4)
                     .show(ui, |ui| {
                         for a in list.iter().take(300) {
                             let file = a.rsplit('/').next().unwrap_or(a);
@@ -892,61 +895,46 @@ fn ui(
             }
         });
 
+        // the animations this model plays: the library for a game model, its own for an asset
+        let model = studio.model.clone().unwrap_or_default();
         theme::section(ui, "Animations");
-        theme::hint(ui, "Click an animation to play it on the model. Greyed-out groups were made for a different skeleton, so they cannot move this model.");
         ui.add(egui::TextEdit::singleline(&mut studio.clip_filter).hint_text("search: walk, sword, spell ..."));
-        let skeleton = studio.model.as_deref().map(|m| studio.skeleton_of(m).to_owned()).unwrap_or_default();
-        let hero_fits = !skeleton.is_empty() && skeleton == studio.hero_skeleton();
         let f = studio.clip_filter.to_lowercase();
         let wanted = |n: &str| f.is_empty() || n.to_lowercase().contains(&f);
         let mut chosen: Option<(Option<String>, String)> = None;
         egui::ScrollArea::vertical().id_salt("clips").show(ui, |ui| {
-            if skeleton.is_empty() {
-                theme::hint(ui, "This model has no skeleton, so it cannot be animated.");
-            }
-            // the hero library, by the pack each clip came from
-            let mut hero: BTreeMap<&str, Vec<(String, f32)>> = BTreeMap::new();
-            if let Some(l) = lib.as_ref() {
-                for n in l.names().into_iter().filter(|n| wanted(n)) {
-                    let group = if l.base(&n) != n { "Your variants" } else { crate::catalog::hero_group(&n) };
-                    let d = l.duration(&n);
-                    hero.entry(group).or_default().push((n, d));
+            if model.is_empty() {
+                theme::hint(ui, "Pick a model above.");
+            } else if is_game_model(&model) {
+                let mut hero: BTreeMap<&str, Vec<(String, f32)>> = BTreeMap::new();
+                if let Some(l) = lib.as_ref() {
+                    for n in l.names().into_iter().filter(|n| wanted(n)) {
+                        let group = if l.base(&n) != n { "Your variants" } else { crate::catalog::hero_group(&n) };
+                        let d = l.duration(&n);
+                        hero.entry(group).or_default().push((n, d));
+                    }
                 }
-            }
-            for (group, clips) in &hero {
-                ui.add_enabled_ui(hero_fits, |ui| {
-                    egui::CollapsingHeader::new(egui::RichText::new(format!("{group}  ({})", clips.len())).size(12.5))
-                        .id_salt(("hero", group))
-                        .show(ui, |ui| {
-                            for (n, d) in clips {
-                                let on = studio.hero_clips && studio.clip.as_deref() == Some(n.as_str());
-                                if ui.selectable_label(on, egui::RichText::new(format!("{n}   {d:.1}s")).size(11.5)).clicked() {
-                                    chosen = Some((None, n.clone()));
-                                }
+                for (group, clips) in &hero {
+                    egui::CollapsingHeader::new(egui::RichText::new(format!("{group}  ({})", clips.len())).size(12.5)).id_salt(("hero", group)).show(ui, |ui| {
+                        for (n, d) in clips {
+                            let on = studio.hero_clips && studio.clip.as_deref() == Some(n.as_str());
+                            if ui.selectable_label(on, egui::RichText::new(format!("{n}   {d:.1}s")).size(11.5)).clicked() {
+                                chosen = Some((None, n.clone()));
                             }
-                        });
-                }).response.on_disabled_hover_text("Made for the Guildbound skeleton (hero, townsfolk, your characters).");
-            }
-            // every other file with animations, as its own pack
-            for a in studio.assets.iter().filter(|a| !a.clips.is_empty() && !a.path.starts_with("packs/hero/")) {
-                let clips: Vec<&String> = a.clips.iter().filter(|n| wanted(n)).collect();
-                if clips.is_empty() {
-                    continue;
+                        }
+                    });
                 }
-                let fits = !skeleton.is_empty() && a.skeleton == skeleton;
-                let file = a.path.rsplit('/').next().unwrap_or(&a.path);
-                ui.add_enabled_ui(fits, |ui| {
-                    egui::CollapsingHeader::new(egui::RichText::new(format!("{}  ({})", file.trim_end_matches(".glb").trim_end_matches(".gltf"), clips.len())).size(12.5))
-                        .id_salt(("pack", &a.path))
-                        .show(ui, |ui| {
-                            for n in clips {
-                                let on = !studio.hero_clips && studio.pack.as_deref() == Some(a.path.as_str()) && studio.clip.as_deref() == Some(n.as_str());
-                                if ui.selectable_label(on, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
-                                    chosen = Some((Some(a.path.clone()), n.clone()));
-                                }
-                            }
-                        });
-                }).response.on_hover_text(a.path.as_str());
+            } else {
+                let own: Vec<String> = studio.assets.iter().find(|a| a.path == model).map(|a| a.clips.clone()).unwrap_or_default();
+                if own.is_empty() {
+                    theme::hint(ui, "This model has no animations.");
+                }
+                for n in own.iter().filter(|n| wanted(n)) {
+                    let on = studio.clip.as_deref() == Some(n.as_str());
+                    if ui.selectable_label(on, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
+                        chosen = Some((Some(model.clone()), n.clone()));
+                    }
+                }
             }
         });
         if let Some((pack, clip)) = chosen {
