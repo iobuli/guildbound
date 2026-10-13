@@ -31,37 +31,9 @@ use crate::ui_theme as theme;
 /// is a scene of its own (only the stage model, its floor and light), with or without the game behind it.
 pub const STAGE: Vec3 = Vec3::new(0.0, 0.0, 1500.0);
 
-/// The uniform Quaternius models (one skeleton: the hero, the NPC outfits, their kits), cycled first in the Studio.
-fn is_quaternius(path: &str) -> bool {
-    let l = path.to_lowercase();
-    l.starts_with("packs/hero/") || l.starts_with("packs/npc/") || l.contains("quaternius") || l.contains("universal_base") || l.contains("modular_character") || l.contains("bestiary")
-}
 const CATEGORIES: [&str; 8] = ["foot sliding", "knee / leg bend", "arm / shoulder", "spine / head", "clipping", "timing", "scale / proportions", "other"];
 pub const CREATOR_TAB: usize = 1;
 const TABS: [&str; 9] = ["Inspect", "Creator", "Tuning", "Moveset", "Corrections", "Patterns", "Notes", "HUD Layout", "Engine"];
-
-/// Asset browser group: (sort key, group title) from the path under assets/.
-fn group_of(path: &str) -> (u8, String) {
-    let p = path.trim_start_matches("packs/");
-    let mut it = p.split('/');
-    let first = it.next().unwrap_or("");
-    match first {
-        "custom" => (0, "Custom (Creator)".into()),
-        "hero" => (1, "Hero".into()),
-        "npc" => (2, "NPC".into()),
-        "_sources" => {
-            let src = it.next().unwrap_or("");
-            if src == "quaternius" {
-                (3, format!("Quaternius - {}", it.next().unwrap_or("").replace('_', " ")))
-            } else if src == "chars_staged" {
-                (4, format!("Quaternius - staged {}", it.next().unwrap_or("")))
-            } else {
-                (5, format!("Source - {}", src.replace('_', " ")))
-            }
-        }
-        x => (6, x.replace('_', " ")),
-    }
-}
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Correction {
@@ -166,7 +138,11 @@ pub struct StudioRig {
 pub struct Studio {
     pub open: bool,
     was_paused: bool,
-    assets: Vec<String>,
+    assets: Vec<crate::catalog::AssetInfo>,
+    /// Model browser tab: 0 characters (rigged), 1 props, 2 everything.
+    browse: usize,
+    /// The file whose clips play when not using the hero library (UAL1, UAL2, a creature pack ...).
+    pub pack: Option<String>,
     filter: String,
     clip_filter: String,
     pub model: Option<String>,
@@ -186,7 +162,8 @@ pub struct Studio {
     pub category: usize,
     pub offset: Vec3,
     pub tab: usize,
-    own: Option<(Handle<Gltf>, Option<Handle<AnimationGraph>>, BTreeMap<String, (AnimationNodeIndex, f32)>)>,
+    /// The clip pack in use: its file, glTF, graph and clip index.
+    own: Option<(String, Handle<Gltf>, Option<Handle<AnimationGraph>>, BTreeMap<String, (AnimationNodeIndex, f32)>)>,
     graph_attached: Option<AssetId<AnimationGraph>>,
     pub numbers: Value,
     pub status: String,
@@ -195,8 +172,6 @@ pub struct Studio {
     pub toggle_request: bool,
     /// Opened from the main menu as its own scene: closing returns to the menu.
     pub scene: bool,
-    /// The asset list and Prev/Next show only the uniform Quaternius models.
-    pub quaternius_only: bool,
     /// Last pose audit (collab/pose_audit.json), read when the Studio opens.
     audit: Value,
     /// Moveset picks: move -> (clip, enabled), and the move a clip is being added to.
@@ -212,14 +187,23 @@ impl Studio {
     }
 
     pub fn add_asset(&mut self, path: String) {
-        if !self.assets.contains(&path) {
-            self.assets.push(path);
-            self.assets.sort();
-        }
+        let info = crate::catalog::read(std::path::Path::new(&format!("{}/assets/{path}", crate::ROOT)), path);
+        self.assets.retain(|a| a.path != info.path);
+        self.assets.push(info);
+        self.assets.sort_by(|a, b| a.path.cmp(&b.path));
     }
 
     pub fn assets_in(&self, prefix: &str) -> Vec<String> {
-        self.assets.iter().filter(|a| a.starts_with(prefix)).cloned().collect()
+        self.assets.iter().filter(|a| a.path.starts_with(prefix)).map(|a| a.path.clone()).collect()
+    }
+
+    fn skeleton_of(&self, path: &str) -> &str {
+        self.assets.iter().find(|a| a.path == path).map_or("", |a| a.skeleton.as_str())
+    }
+
+    /// The hero library's skeleton (our built models share it).
+    fn hero_skeleton(&self) -> &str {
+        self.assets.iter().find(|a| a.path.starts_with("packs/hero/") && !a.clips.is_empty()).map_or("", |a| a.skeleton.as_str())
     }
 }
 
@@ -229,7 +213,7 @@ impl Default for Studio {
             open: false, was_paused: false, assets: Vec::new(), filter: String::new(), clip_filter: String::new(), model: None, entity: None,
             clip: None, time: 0.0, duration: 1.0, playing: true, speed: 1.0, hero_clips: true, rules: true, yaw: 0.0, scale: 1.0,
             selected: None, note: String::new(), category: 0, offset: Vec3::ZERO, tab: 0, own: None, graph_attached: None,
-            numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false, scene: false, quaternius_only: true,
+            numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false, scene: false, browse: 0, pack: None,
             audit: Value::Null,
             moveset: None,
             variant_name: String::new(),
@@ -261,25 +245,7 @@ pub fn plugin(app: &mut App) {
 }
 
 fn scan(mut studio: ResMut<Studio>) {
-    fn walk(dir: &std::path::Path, root: &std::path::Path, out: &mut Vec<String>) {
-        let Ok(rd) = std::fs::read_dir(dir) else { return };
-        for e in rd.flatten() {
-            let p = e.path();
-            if p.is_dir() {
-                walk(&p, root, out);
-            } else if p.extension().is_some_and(|x| x == "glb" || x == "gltf") {
-                let rel = p.strip_prefix(root).unwrap_or(&p).to_string_lossy().replace('\\', "/");
-                if !rel.contains('#') && !rel.contains("/Exports/FBX") {
-                    out.push(rel);
-                }
-            }
-        }
-    }
-    let root = std::path::PathBuf::from(format!("{}/assets", crate::ROOT));
-    let mut out = Vec::new();
-    walk(&root.join("packs"), &root, &mut out);
-    out.sort();
-    studio.assets = out;
+    studio.assets = crate::catalog::scan();
 }
 
 /// The stage's own floor (it carries the physical body) and light.
@@ -362,10 +328,21 @@ fn spawn_model(mut commands: Commands, mut studio: ResMut<Studio>, assets: Res<A
         .observe(on_ready)
         .id();
     studio.entity = Some(e);
-    studio.own = Some((assets.load(path.clone()), None, BTreeMap::new()));
     studio.graph_attached = None;
-    studio.clip = None;
     studio.time = 0.0;
+    // keep the chosen animation when it fits the new model; else its own clips, else the hero library
+    let skeleton = studio.skeleton_of(&path).to_owned();
+    let pack_fits = studio.pack.as_deref().is_some_and(|p| studio.skeleton_of(p) == skeleton);
+    if skeleton == studio.hero_skeleton() {
+        if !studio.hero_clips {
+            studio.clip = None;
+        }
+        studio.hero_clips = true;
+    } else if !(!studio.hero_clips && pack_fits) {
+        studio.hero_clips = false;
+        studio.pack = Some(path.clone());
+        studio.clip = None;
+    }
     studio.selected = None;
     studio.status = format!("Loaded {path}");
     studio.model = Some(path);
@@ -377,6 +354,7 @@ fn on_ready(
     children: Query<&Children>,
     players: Query<(), With<AnimationPlayer>>,
     targets: Query<&Transform, With<AnimationTargetId>>,
+    nodes: Query<(&Name, &Transform)>,
     mut rigs: Query<&mut StudioRig>,
     studio: Res<Studio>,
     mut possession: ResMut<crate::possession::Possession>,
@@ -384,6 +362,26 @@ fn on_ready(
     let Ok(mut rig) = rigs.get_mut(ready.entity) else { return };
     rig.bones.clear();
     let mut rest = crate::procedural::RestPose::default();
+    if !children.iter_descendants(ready.entity).any(|e| players.contains(e)) {
+        // the armature root: the node whose child is the skeleton's root bone
+        let root = children.iter_descendants(ready.entity).find(|&e| children.get(e).is_ok_and(|c| c.iter().any(|k| nodes.get(k).is_ok_and(|(n, _)| matches!(n.as_str(), "root" | "Motion" | "Root" | "Hips")))));
+        if let Some(root) = root {
+            commands.entity(root).insert(AnimationPlayer::default());
+            rig.player = Some(root);
+            let mut stack = vec![(root, Vec::<Name>::new())];
+            while let Some((e, mut path)) = stack.pop() {
+                let Ok((name, t)) = nodes.get(e) else { continue };
+                path.push(name.clone());
+                commands.entity(e).insert((AnimationTargetId::from_names(path.iter()), bevy::animation::AnimatedBy(root)));
+                rig.bones.push(e);
+                rest.0.insert(e, t.rotation);
+                rest.1.insert(e, t.translation);
+                for &k in children.get(e).into_iter().flatten() {
+                    stack.push((k, path.clone()));
+                }
+            }
+        }
+    }
     for e in children.iter_descendants(ready.entity) {
         if players.contains(e) {
             rig.player = Some(e);
@@ -403,6 +401,7 @@ fn on_ready(
 pub fn drive(
     mut commands: Commands,
     mut studio: ResMut<Studio>,
+    assets: Res<AssetServer>,
     time: Res<Time>,
     gltfs: Res<Assets<Gltf>>,
     clips: Res<Assets<AnimationClip>>,
@@ -413,7 +412,11 @@ pub fn drive(
     mut possession: ResMut<crate::possession::Possession>,
 ) {
     let studio = &mut *studio;
-    if let Some((h, graph, index)) = &mut studio.own
+    if !studio.hero_clips && let Some(p) = studio.pack.clone() && studio.own.as_ref().is_none_or(|o| o.0 != p) {
+        studio.own = Some((p.clone(), assets.load(p), None, BTreeMap::new()));
+        studio.graph_attached = None;
+    }
+    if let Some((_, h, graph, index)) = &mut studio.own
         && graph.is_none()
         && let Some(g) = gltfs.get(&*h)
     {
@@ -424,9 +427,6 @@ pub fn drive(
             index.insert(n.clone(), (node, clips.get(c).map_or(1.0, |c| c.duration())));
         }
         *graph = Some(graphs.add(gr));
-        if index.is_empty() {
-            studio.hero_clips = true;
-        }
     }
     let Some(e) = studio.entity else { return };
     let Ok(mut rig) = rigs.get_mut(e) else { return };
@@ -441,7 +441,7 @@ pub fn drive(
         return;
     }
     let hero = studio.hero_clips;
-    let own = if hero { None } else { studio.own.as_ref().and_then(|(_, g, idx)| g.clone().map(|g| (g, idx.clone()))) };
+    let own = if hero { None } else { studio.own.as_ref().and_then(|(_, _, g, idx)| g.clone().map(|g| (g, idx.clone()))) };
     let graph = if hero { lib.as_ref().and_then(|l| l.graph.clone()) } else { own.as_ref().map(|o| o.0.clone()) };
     let Some(graph) = graph else { return };
     let find = |c: &str| if hero { lib.as_ref().and_then(|l| l.node(c).map(|n| (n, l.duration(c)))) } else { own.as_ref().and_then(|o| o.1.get(c).copied()) };
@@ -765,7 +765,7 @@ pub fn snapshot(world: &World) -> Value {
     let clip_list: Vec<String> = if s.hero_clips {
         world.get_resource::<AnimLibrary>().map(|l| l.clips.iter().map(|(n, _)| n.clone()).collect()).unwrap_or_default()
     } else {
-        s.own.as_ref().map(|(_, _, idx)| idx.keys().cloned().collect()).unwrap_or_default()
+        s.own.as_ref().map(|o| o.3.keys().cloned().collect()).unwrap_or_default()
     };
     json!({"open": s.open, "model": s.model, "clip": s.clip, "time": s.time, "duration": s.duration, "hero_clips": s.hero_clips, "rules": s.rules, "clip_list": clip_list,
            "selected": s.selected, "numbers": s.numbers, "corrections": corr.to_json()["corrections"], "patterns": patterns(corr, &notes),
@@ -830,39 +830,33 @@ fn ui(
         });
     });
 
-    // asset browser
+    // asset browser: models (characters, props, everything) and every animation by where it came from
     let mut picked_clip = false;
-    egui::Panel::left("studio_assets").default_size(300.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
+    egui::Panel::left("studio_assets").default_size(320.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
         theme::section(ui, "Models");
-        // cycle the models (the uniform Quaternius set by default): the stage keeps clip and hero library
+        theme::tabs(ui, &["Characters", "Props", "All"], &mut studio.browse);
+        theme::hint(ui, ["Characters have a skeleton, so they can be animated.", "Props are objects that do not move: furniture, trees, buildings.", "Every model in the game's asset packs."][studio.browse.min(2)]);
         let f = studio.filter.to_lowercase();
-        let shown: Vec<String> = studio.assets.iter().filter(|a| (!studio.quaternius_only || is_quaternius(a)) && (f.is_empty() || a.to_lowercase().contains(&f))).cloned().collect();
+        let shown: Vec<String> = studio.assets.iter()
+            .filter(|a| match studio.browse { 0 => a.rigged, 1 => !a.rigged, _ => true } && (f.is_empty() || a.path.to_lowercase().contains(&f)))
+            .map(|a| a.path.clone()).collect();
         ui.horizontal(|ui| {
             let at = studio.model.as_ref().and_then(|m| shown.iter().position(|a| a == m));
-            let step = |k: isize| -> Option<String> {
-                if shown.is_empty() {
-                    return None;
-                }
-                let n = shown.len() as isize;
-                let i = at.map_or(0, |i| (i as isize + k).rem_euclid(n));
-                shown.get(i as usize).cloned()
-            };
-            if theme::button(ui, "< Prev", false).clicked() && let Some(p) = step(-1) {
+            let step = |k: isize| (!shown.is_empty()).then(|| shown[at.map_or(0, |i| (i as isize + k).rem_euclid(shown.len() as isize)) as usize].clone());
+            if theme::button(ui, "< Prev", false).on_hover_text("Show the previous model in this list").clicked() && let Some(p) = step(-1) {
                 studio.spawn_request = Some(p);
             }
-            if theme::button(ui, "Next >", false).clicked() && let Some(p) = step(1) {
+            if theme::button(ui, "Next >", false).on_hover_text("Show the next model in this list").clicked() && let Some(p) = step(1) {
                 studio.spawn_request = Some(p);
             }
+            ui.label(egui::RichText::new(format!("{} models", shown.len())).size(11.0).color(theme::MUTED));
         });
-        ui.label(egui::RichText::new(studio.model.as_deref().map_or("no model".into(), |m| m.trim_start_matches("packs/").replace("_sources/", ""))).strong().color(theme::PAPER));
-        ui.checkbox(&mut studio.quaternius_only, "Quaternius models only (uniform rig)");
-        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("filter: hero, npc, peasant, ranger ..."));
-        ui.label(egui::RichText::new(format!("{} models", shown.len())).size(11.0).color(theme::MUTED));
-        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.45).show(ui, |ui| {
-            // grouped by pack: custom, hero, NPC, then each source pack (models of one pack share a rig and style)
+        ui.label(egui::RichText::new(studio.model.as_deref().map_or("Nothing on the stage".into(), |m| m.rsplit('/').next().unwrap_or(m).to_owned())).strong().color(theme::PAPER));
+        ui.add(egui::TextEdit::singleline(&mut studio.filter).hint_text("search: ranger, tree, chair ..."));
+        egui::ScrollArea::vertical().id_salt("assets").max_height(ui.available_height() * 0.42).show(ui, |ui| {
             let mut groups: BTreeMap<(u8, String), Vec<&String>> = BTreeMap::new();
             for a in &shown {
-                groups.entry(group_of(a)).or_default().push(a);
+                groups.entry(crate::catalog::pack_of(a)).or_default().push(a);
             }
             let mut pick = None;
             for ((_, title), list) in &groups {
@@ -873,14 +867,10 @@ fn ui(
                     .show(ui, |ui| {
                         for a in list.iter().take(300) {
                             let file = a.rsplit('/').next().unwrap_or(a);
-                            let folder = a.rsplit('/').nth(1).unwrap_or("");
                             let r = ui.selectable_label(studio.model.as_deref() == Some(a.as_str()), egui::RichText::new(file.trim_end_matches(".glb").trim_end_matches(".gltf")).size(12.0));
-                            if r.on_hover_text(format!("{folder}/{file}")).clicked() {
+                            if r.on_hover_text(a.as_str()).clicked() {
                                 pick = Some((*a).clone());
                             }
-                        }
-                        if list.len() > 300 {
-                            ui.label(egui::RichText::new("... refine the filter").color(theme::MUTED));
                         }
                     });
             }
@@ -888,26 +878,74 @@ fn ui(
                 studio.spawn_request = Some(p);
             }
         });
-        theme::section(ui, "Clips");
-        ui.horizontal(|ui| {
-            ui.checkbox(&mut studio.hero_clips, "Hero library");
-            ui.add(egui::TextEdit::singleline(&mut studio.clip_filter).hint_text("filter clips"));
-        });
-        let names: Vec<(String, f32)> = if studio.hero_clips {
-            lib.as_ref().map(|l| l.clips.iter().map(|(n, _)| (n.clone(), l.duration(n))).collect()).unwrap_or_default()
-        } else {
-            studio.own.as_ref().map(|(_, _, idx)| idx.iter().filter(|(n, _)| !n.starts_with("Unarmed-")).map(|(n, (_, d))| (n.clone(), *d)).collect()).unwrap_or_default()
-        };
+
+        theme::section(ui, "Animations");
+        theme::hint(ui, "Click an animation to play it on the model. Greyed-out groups were made for a different skeleton, so they cannot move this model.");
+        ui.add(egui::TextEdit::singleline(&mut studio.clip_filter).hint_text("search: walk, sword, spell ..."));
+        let skeleton = studio.model.as_deref().map(|m| studio.skeleton_of(m).to_owned()).unwrap_or_default();
+        let hero_fits = !skeleton.is_empty() && skeleton == studio.hero_skeleton();
+        let f = studio.clip_filter.to_lowercase();
+        let wanted = |n: &str| f.is_empty() || n.to_lowercase().contains(&f);
+        let mut chosen: Option<(Option<String>, String)> = None;
         egui::ScrollArea::vertical().id_salt("clips").show(ui, |ui| {
-            let f = studio.clip_filter.to_lowercase();
-            for (n, d) in names.iter().filter(|(n, _)| f.is_empty() || n.to_lowercase().contains(&f)) {
-                if ui.selectable_label(studio.clip.as_deref() == Some(n.as_str()), egui::RichText::new(format!("{n}   {d:.2}s")).size(11.5)).clicked() {
-                    studio.clip = Some(n.clone());
-                    studio.time = 0.0;
-                    picked_clip = true;
+            if skeleton.is_empty() {
+                theme::hint(ui, "This model has no skeleton, so it cannot be animated.");
+            }
+            // the hero library, by the pack each clip came from
+            let mut hero: BTreeMap<&str, Vec<(String, f32)>> = BTreeMap::new();
+            if let Some(l) = lib.as_ref() {
+                for n in l.names().into_iter().filter(|n| wanted(n)) {
+                    let group = if l.base(&n) != n { "Your variants" } else { crate::catalog::hero_group(&n) };
+                    let d = l.duration(&n);
+                    hero.entry(group).or_default().push((n, d));
                 }
             }
+            for (group, clips) in &hero {
+                ui.add_enabled_ui(hero_fits, |ui| {
+                    egui::CollapsingHeader::new(egui::RichText::new(format!("{group}  ({})", clips.len())).size(12.5))
+                        .id_salt(("hero", group))
+                        .show(ui, |ui| {
+                            for (n, d) in clips {
+                                let on = studio.hero_clips && studio.clip.as_deref() == Some(n.as_str());
+                                if ui.selectable_label(on, egui::RichText::new(format!("{n}   {d:.1}s")).size(11.5)).clicked() {
+                                    chosen = Some((None, n.clone()));
+                                }
+                            }
+                        });
+                }).response.on_disabled_hover_text("Made for the Guildbound skeleton (hero, townsfolk, your characters).");
+            }
+            // every other file with animations, as its own pack
+            for a in studio.assets.iter().filter(|a| !a.clips.is_empty() && !a.path.starts_with("packs/hero/")) {
+                let clips: Vec<&String> = a.clips.iter().filter(|n| wanted(n)).collect();
+                if clips.is_empty() {
+                    continue;
+                }
+                let fits = !skeleton.is_empty() && a.skeleton == skeleton;
+                let file = a.path.rsplit('/').next().unwrap_or(&a.path);
+                ui.add_enabled_ui(fits, |ui| {
+                    egui::CollapsingHeader::new(egui::RichText::new(format!("{}  ({})", file.trim_end_matches(".glb").trim_end_matches(".gltf"), clips.len())).size(12.5))
+                        .id_salt(("pack", &a.path))
+                        .show(ui, |ui| {
+                            for n in clips {
+                                let on = !studio.hero_clips && studio.pack.as_deref() == Some(a.path.as_str()) && studio.clip.as_deref() == Some(n.as_str());
+                                if ui.selectable_label(on, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
+                                    chosen = Some((Some(a.path.clone()), n.clone()));
+                                }
+                            }
+                        });
+                }).response.on_hover_text(a.path.as_str());
+            }
         });
+        if let Some((pack, clip)) = chosen {
+            studio.hero_clips = pack.is_none();
+            if pack.is_some() {
+                studio.pack = pack;
+            }
+            studio.clip = Some(clip);
+            studio.time = 0.0;
+            studio.playing = true;
+            picked_clip = true;
+        }
     });
 
     // picking a clip ends a blend sequence
@@ -1059,7 +1097,7 @@ fn ui(
                         studio.spawn_request = Some(path);
                     }
                     studio.hero_clips = hero;
-                    let dur = if hero { lib.as_ref().map_or(1.0, |l| l.duration(clip)) } else { studio.own.as_ref().and_then(|(_, _, idx)| idx.get(clip)).map_or(1.0, |(_, d)| *d) };
+                    let dur = if hero { lib.as_ref().map_or(1.0, |l| l.duration(clip)) } else { studio.own.as_ref().and_then(|o| o.3.get(clip)).map_or(1.0, |(_, d)| *d) };
                     studio.clip = Some(clip.to_owned());
                     studio.time = t * dur;
                     studio.playing = false;

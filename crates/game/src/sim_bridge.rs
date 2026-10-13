@@ -217,7 +217,7 @@ pub fn ensure_views(
     }
     let have: Vec<usize> = views.iter().map(|(_, v)| v.0).collect();
     let r = sim.world.tuning.body_radius;
-    let model = libs.current().map(|l| assets.load(GltfAssetLabel::Scene(0).from_asset(l.path.clone())));
+    let model = libs.current().map(|l| assets.load(GltfAssetLabel::Scene(0).from_asset(l.body.clone())));
     for i in (0..n).filter(|i| !have.contains(i)) {
         let color = crate::anim::color_of(i);
         let mat = materials.add(StandardMaterial { base_color: color, ..default() });

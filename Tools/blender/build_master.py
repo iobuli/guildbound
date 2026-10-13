@@ -23,7 +23,7 @@ import build_hero as hero  # noqa: E402
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 Q = os.path.join(ROOT, "assets", "packs", "_sources", "quaternius")
 STAGE = os.path.join(ROOT, "assets", "packs", "_sources", "chars_staged")
-UAL1 = "D:/New folder (4)/guildbound-godot-loose/assets/animations/source/ual/UAL1_Standard.glb"
+UAL1 = os.path.join(Q, "Universal_Animation_Library_1", "UAL1_Standard.glb")
 UAL2 = os.path.join(Q, "Universal_Animation_Library_2", "Universal Animation Library 2[Standard]", "Unreal-Godot", "UAL2_Standard.glb")
 HBM = os.path.join(ROOT, "assets", "packs", "_sources", "kevin_human_basic", "Animations", "Male")
 
@@ -34,6 +34,9 @@ RENAME = {"root": "Motion", "pelvis": "B_Pelvis", "spine_01": "B_Spine", "spine_
 for s, S in (("l", "L"), ("r", "R")):
     RENAME.update({f"clavicle_{s}": f"B_{S}_Clavicle", f"upperarm_{s}": f"B_{S}_UpperArm", f"lowerarm_{s}": f"B_{S}_Forearm",
                    f"thigh_{s}": f"B_{S}_Thigh", f"calf_{s}": f"B_{S}_Calf", f"foot_{s}": f"B_{S}_Foot", f"ball_{s}": f"B_{S}_Toe0"})
+FINGERS = [f"{f}_0{i}_{s}" for f in ("thumb", "index", "middle", "ring", "pinky") for i in (1, 2, 3) for s in ("l", "r")]
+# UAL clips onto our renamed rig: same skeleton, so the body bones map by RENAME and the fingers keep their names
+UAL_MAP = {**{k: v for k, v in RENAME.items() if k not in ("root", "middle_01_l", "middle_01_r")}, **{f: f for f in FINGERS if f not in ("middle_01_l", "middle_01_r")}}
 RPG_BONES = sorted({v for v in RENAME.values() if v not in ("Motion", "B_L_Finger2", "B_R_Finger2")})
 
 NPC_CLIPS = {UAL1: {"npc_idle": "Idle_Loop", "npc_talk": "Idle_Talking_Loop", "npc_walk": "Walk_Loop", "npc_interact": "Interact"},
@@ -189,7 +192,8 @@ def main():
     p.add_argument("--hair", default="")
     p.add_argument("--set", default="hero", choices=["hero", "npc", "none"])
     # character creator: a base body and any modular parts (file stems in Modular Parts), instead of a whole outfit
-    p.add_argument("--base", default="", choices=["", "male", "female"])
+    # mannequin: the yellow UAL1 Mannequin as the whole body (no outfit, no hair)
+    p.add_argument("--base", default="", choices=["", "male", "female", "mannequin"])
     p.add_argument("--parts", default="", help="comma list of modular part names, e.g. Male_Ranger_Body,Male_Peasant_Legs")
     p.add_argument("--tints", default="", help="slot=rrggbb list (Head, Body, Arms, Legs, Feet, Acc, Hair, Skin), e.g. Body=b04040,Hair=302820")
     p.add_argument("--source", default=os.path.join(ROOT, "assets", "packs", "_sources", "rpg_hero", "fighter.glb"))
@@ -200,7 +204,11 @@ def main():
     for ob in list(bpy.data.objects):
         bpy.data.objects.remove(ob, do_unlink=True)
     female = a.base == "female" if a.base else a.outfit.startswith("Female")
-    base = import_gltf(os.path.join(STAGE, "base", "Superhero_Female_FullBody.gltf" if female else "Superhero_Male_FullBody.gltf"))
+    mannequin = a.base == "mannequin"
+    if mannequin:
+        base = import_gltf(UAL1)
+    else:
+        base = import_gltf(os.path.join(STAGE, "base", "Superhero_Female_FullBody.gltf" if female else "Superhero_Male_FullBody.gltf"))
     rig = hero.armature_of(base)
     parts = [x.strip() for x in a.parts.split(",") if x.strip()]
     cut_edge = []
@@ -209,7 +217,7 @@ def main():
         if ob.type == "MESH" and len(ob.data.vertices) > 2000:
             if parts:
                 cut_edge += cut_slots(ob, {slot_of(x) for x in parts})
-            else:
+            elif not mannequin:
                 keep_head_only(ob, rig)
     seams = None
     if parts:
@@ -224,9 +232,9 @@ def main():
             else:
                 print("PART_MISSING", part)
         seams = uncovered(cut_edge, part_meshes)
-    else:
+    elif not mannequin:
         adopt(import_gltf(os.path.join(STAGE, "outfits", f"{a.outfit}.gltf")), rig)
-    hair = a.hair or ("Hair_Long" if female else "Hair_SimpleParted")
+    hair = "none" if mannequin else a.hair or ("Hair_Long" if female else "Hair_SimpleParted")
     # the base head already carries eyebrows; add only the hairstyle
     path = os.path.join(STAGE, "hair", f"{hair}.gltf")
     if hair != "none" and os.path.exists(path):
@@ -249,7 +257,7 @@ def main():
     rig.animation_data_create()
     rig.animation_data.action = None
     model = [o for o in bpy.data.objects]
-    report = {"outfit": a.outfit if not a.parts else None, "base": "female" if female else "male", "parts": a.parts.split(",") if a.parts else [], "hair": hair, "set": a.set, "tints": a.tints, "clips": [], "skipped": [], "seams": seams}
+    report = {"outfit": a.outfit if not (a.parts or mannequin) else None, "base": a.base or ("female" if female else "male"), "parts": a.parts.split(",") if a.parts else [], "hair": hair, "set": a.set, "tints": a.tints, "clips": [], "skipped": [], "seams": seams}
 
     def take(path, clips, mapping, motion_root=None, root_bones=None):
         objs, acts, time_scale = hero.load_source(path, set(clips.values()))
@@ -274,7 +282,7 @@ def main():
             if not act.use_fake_user:
                 bpy.data.actions.remove(act)
 
-    ual_map = {k: RENAME[k] for k in RENAME if k not in ("root", "middle_01_l", "middle_01_r")}
+    ual_map = UAL_MAP
     if a.set == "hero":
         # the full RPG hero library: same bone names, different rest pose and proportions
         names = {}
@@ -325,4 +333,5 @@ def main():
     hero.export_hero(rig, os.path.abspath(a.out), report)
 
 
-main()
+if __name__ == "__main__":
+    main()

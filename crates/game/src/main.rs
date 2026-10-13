@@ -4,6 +4,7 @@
 mod anim;
 mod arena;
 mod camera;
+mod catalog;
 mod controller;
 mod creator;
 mod feed;

@@ -387,7 +387,7 @@ fn finish(mut c: ResMut<Creator>, mut studio: ResMut<Studio>) {
 }
 
 /// Fighter 0 wears the chosen custom model (re-applied whenever its rig is respawned).
-fn wear(mut commands: Commands, w: Res<Wear>, assets: Res<AssetServer>, rigs: Query<(Entity, &crate::anim::FighterRig, Option<&Worn>)>, views: Query<(Entity, &crate::sim_bridge::FighterView)>) {
+fn wear(mut commands: Commands, w: Res<Wear>, libs: Res<crate::anim::Libraries>, assets: Res<AssetServer>, rigs: Query<(Entity, &crate::anim::FighterRig, Option<&Worn>)>, views: Query<(Entity, &crate::sim_bridge::FighterView)>) {
     let Some((rig, _, worn)) = rigs.iter().find(|(_, r, _)| r.fighter == 0) else { return };
     // a rig without Worn was spawned by the game with the default hero
     if worn.map_or(w.model.is_none(), |x| x.0 == w.model) {
@@ -395,7 +395,7 @@ fn wear(mut commands: Commands, w: Res<Wear>, assets: Res<AssetServer>, rigs: Qu
     }
     let Some((view, _)) = views.iter().find(|(_, v)| v.0 == 0) else { return };
     commands.entity(rig).despawn();
-    let path = w.model.clone().unwrap_or_else(|| "packs/hero/fighter.glb".into());
+    let Some(path) = w.model.clone().or_else(|| libs.current().map(|l| l.body.clone())) else { return };
     let e = crate::anim::spawn_rig(&mut commands, view, 0, assets.load(GltfAssetLabel::Scene(0).from_asset(path)));
     commands.entity(e).insert(Worn(w.model.clone()));
 }

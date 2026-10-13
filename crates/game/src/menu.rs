@@ -196,10 +196,9 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<AssetServer>, mut sim: Res
                                 sim.opponent = crate::sim_bridge::OpponentMode::Idle;
                                 sim.world.fighters[0].lock_target = None;
                                 studio.scene = true;
-                                studio.quaternius_only = true;
                                 studio.hero_clips = true;
                                 if studio.model.is_none() {
-                                    studio.request_spawn("packs/hero/fighter.glb".into());
+                                    studio.request_spawn("packs/hero/mannequin.glb".into());
                                 }
                                 if !studio.open {
                                     studio.toggle_request = true;

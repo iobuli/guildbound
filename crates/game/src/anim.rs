@@ -23,7 +23,11 @@ pub fn color_of(i: usize) -> Color {
 
 pub struct LibraryEntry {
     pub name: String,
+    /// The clip library.
     pub path: String,
+    /// The model the fighters wear: the yellow UAL mannequin for the hero library (same skeleton, every clip
+    /// plays on it), else the library file itself.
+    pub body: String,
 }
 
 /// Every converted pack under assets/packs, and which one the fighters wear.
@@ -38,14 +42,17 @@ impl Libraries {
     pub fn scan() -> Self {
         let mut list = Vec::new();
         let packs = std::path::Path::new(crate::ROOT).join("assets/packs");
+        let mannequin = packs.join("hero/mannequin.glb").exists();
         if let Ok(dirs) = std::fs::read_dir(&packs) {
             for dir in dirs.flatten().filter(|d| d.path().is_dir()) {
                 let name = dir.file_name().to_string_lossy().to_string();
                 let Ok(files) = std::fs::read_dir(dir.path()) else { continue };
                 for file in files.flatten() {
                     let f = file.file_name().to_string_lossy().to_string();
-                    if f.ends_with(".glb") {
-                        list.push(LibraryEntry { name: name.clone(), path: format!("packs/{name}/{f}") });
+                    if f.ends_with(".glb") && f != "mannequin.glb" {
+                        let path = format!("packs/{name}/{f}");
+                        let body = if name == "hero" && mannequin { "packs/hero/mannequin.glb".to_owned() } else { path.clone() };
+                        list.push(LibraryEntry { name: name.clone(), path, body });
                     }
                 }
             }
@@ -542,13 +549,13 @@ pub fn switch_library(
         return;
     }
     libs.selected = i;
-    let path = libs.list[i].path.clone();
+    let (path, body) = (libs.list[i].path.clone(), libs.list[i].body.clone());
     *lib = AnimLibrary::load(&assets, &path);
     cursor.0.clear();
     for e in &rigs {
         commands.entity(e).despawn();
     }
-    let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(path));
+    let scene: Handle<WorldAsset> = assets.load(GltfAssetLabel::Scene(0).from_asset(body));
     for (view, v) in &views {
         spawn_rig(&mut commands, view, v.0, scene.clone());
     }
@@ -670,11 +677,13 @@ pub fn on_rig_ready(
                         m.0 = materials.add(mat);
                     }
                 }
+                // the player keeps the mannequin's own yellow; everyone else wears their fighter colour
+                _ if rig.fighter == 0 => {}
                 _ => m.0 = tint.clone(),
             }
         }
     }
-    let profile = libs.current().map(|l| crate::rig_profile::RigProfile::load(&l.path)).unwrap_or_default();
+    let profile = libs.current().map(|l| crate::rig_profile::RigProfile::load(&l.body)).unwrap_or_default();
     commands.entity(ready.entity).insert((rest, crate::procedural::Life::default(), profile));
 }
 

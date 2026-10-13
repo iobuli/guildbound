@@ -141,3 +141,25 @@ direct control over every bone with the physics readout (centre of mass, momentu
     hands. Fits the Moveset tab: one clip set per moveset.
   - Guild standing from claimed contracts (level from contract points).
 - Status: planned (economy and crafting in crates/sim with tests; moveset switch in anim.rs).
+
+## Absorb pass 2026-10-13: terrain, magic animation, ability/inventory, UAL1/UAL2, in-game editor
+- Sources: web search (no repos cloned: none fit the pinned Bevy 0.19.1). Terrain crates found target old Bevy:
+  bevy_mesh_terrain (0.15, avian 0.2), loddy LOD chunks (0.15), kurtkuehnert/bevy_terrain (UDLOD + chunked clipmap,
+  ~0.16 era, thesis code). Editors: space_editor (gizmo + scene/prefab save), jackdaw (early). Abilities:
+  leafwing_abilities (2022), bevy_pins (equip budget). Magic timing: Silver Key devlog (wind-up/strike/recovery),
+  Opsive magic modules (begin -> cast -> impact -> end; projectile, area, self, channel), WoW 7.3 cast revamp.
+- Local data beats the web for UAL: UAL1_Standard (45 clips) and UAL2_Standard (43) both carry the yellow Mannequin
+  mesh on one 65-bone UE skeleton (root, pelvis, spine_01..03, neck_01, Head, clavicle/upperarm/lowerarm/hand, five
+  fingers x 4, thigh/calf/foot/ball). Every raw Quaternius rig here shares the path Armature/root/pelvis (base
+  characters, outfits, Bestiary Imp/Puglin), so UAL clips bind to all of them with no retarget. Our built models
+  (hero, npc, custom) use Armature/Motion/B_* and play the hero library.
+- Bevy 0.19 glTF loader: AnimationTargetId = hash of the node names from the animation root (inclusive) down;
+  AnimatedBy(root) on each node; AnimationPlayer on the root. A model with no clips gets none of these, so the
+  Studio adds them itself (same path rule) to drive any rig with any compatible clip pack.
+
+| Mechanic (our words) | Feeds | Status |
+|---|---|---|
+| Terrain: chunked heightmap meshes from a deterministic height function (sum of smooth noise octaves, flattened plateau for the yard), ~1 m grid near, coarser far; vertex colours by slope/height (grass, dirt, rock) instead of a splat shader; avian heightfield collider per chunk; props sampled onto the surface | new terrain.rs + sim ground height | planned (this pass) |
+| Spells: four shapes (projectile, area, self, channel), each with wind-up -> release -> recovery; channel loops between; interrupt in wind-up cancels, in recovery resumes | sim magic.rs timings (already wind-up/release/recovery), anim clip choice per shape | fused: our spells already have the phases; animation choice per shape is the rework |
+| Abilities as data (registry), the spellbook a list of ids on the fighter, the spell bar references ids; items stay on the quick slots | magic.rs SPELLS table + a separate spell bar UI | planned |
+| Editor: noclip fly camera, click to place a prop on the surface, gizmo-free move/rotate by keys, save placements to a JSON the game loads | Tab dev mode | planned |

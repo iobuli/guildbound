@@ -88,6 +88,11 @@ pub fn section(ui: &mut egui::Ui, title: &str) {
     ui.add_space(6.0);
 }
 
+/// A short plain-language explanation under a heading.
+pub fn hint(ui: &mut egui::Ui, text: &str) {
+    ui.label(egui::RichText::new(text).size(11.5).color(MUTED));
+}
+
 /// Label/value row, value coloured.
 pub fn stat(ui: &mut egui::Ui, label: &str, value: impl Into<String>, color: egui::Color32) {
     ui.horizontal(|ui| {
