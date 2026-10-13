@@ -12,6 +12,7 @@ mod editor;
 mod feed;
 mod feedback;
 mod hud;
+mod inventory;
 mod ik;
 mod joints;
 mod knee;
@@ -21,6 +22,9 @@ mod magic_view;
 mod menu;
 mod motion_timing;
 mod motion_math;
+mod moveset;
+mod weapons;
+mod magic_fx;
 mod npc;
 mod locomotion;
 mod panel;
@@ -84,6 +88,8 @@ fn main() {
         .init_resource::<panel::PanelState>()
         .init_resource::<anim::AnimSettings>()
         .init_resource::<controller::LocomotionMap>()
+        .init_resource::<moveset::Moveset>()
+        .init_resource::<weapons::WeaponGrip>()
         .init_resource::<feedback::FeedbackSettings>()
         .init_resource::<anim::AnimRequests>()
         .init_resource::<anim::ClusterCursor>()
@@ -97,6 +103,10 @@ fn main() {
         .insert_resource(anim::Libraries::scan())
         .add_systems(Startup, (anim::load_library, sim_bridge::setup_scene, arena::spawn, terrain::spawn, camera::spawn, menu::spawn_ui_camera, sfx::load, hud::load_icons, announce))
         .add_systems(PostStartup, (props::spawn, magic_view::setup, npc::spawn))
+        .add_systems(Startup, magic_fx::setup)
+        .add_systems(Update, moveset::apply.after(anim::build_library).before(anim::drive_animation))
+        .add_systems(PostUpdate, weapons::sync.before(bevy::transform::TransformSystems::Propagate))
+        .add_systems(PostUpdate, magic_fx::update.after(magic_view::sync_orbs))
         .add_systems(OnEnter(menu::AppState::MainMenu), menu::spawn_menu)
         .add_systems(OnExit(menu::AppState::MainMenu), menu::despawn_menu)
         .add_systems(
@@ -104,7 +114,7 @@ fn main() {
             (
                 menu::toggle_menu,
                 menu::trace_close_requests,
-                sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing).and_then(camera::on_player)),
+                sim_bridge::read_player_input.run_if(in_state(menu::AppState::Playing)),
                 sim_bridge::step_sim,
                 sim_bridge::ensure_views,
                 props::drive_bodies,

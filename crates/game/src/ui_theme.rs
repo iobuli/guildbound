@@ -126,7 +126,7 @@ pub fn button(ui: &mut egui::Ui, text: &str, selected: bool) -> egui::Response {
 pub fn tabs(ui: &mut egui::Ui, labels: &[&str], at: &mut usize) {
     egui::Frame::new().fill(CARD).stroke(egui::Stroke::new(1.0_f32, BORDER)).corner_radius(8.0).inner_margin(3.0).show(ui, |ui| {
         ui.spacing_mut().item_spacing.x = 2.0;
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
             for (i, t) in labels.iter().enumerate() {
                 let on = *at == i;
                 let galley = ui.painter().layout_no_wrap((*t).to_owned(), egui::FontId::proportional(12.5), PAPER);

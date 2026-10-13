@@ -54,7 +54,7 @@ fn gb_brain(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
 /// Studio state and the boss's notes/corrections/patterns. Optional {open, spawn, clip, time, hero_clips, rules, select}.
 fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     touch(world, "gb.studio");
-    if let Some(p) = p {
+    if let Some(p) = &p {
         let open = p.get("open").and_then(Value::as_bool);
         {
             let mut s = world.resource_mut::<crate::studio::Studio>();
@@ -69,12 +69,23 @@ fn gb_studio(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
             if let Some(v) = p.get("time").and_then(Value::as_f64) { s.time = v as f32; s.playing = false; }
             if let Some(v) = p.get("hero_clips").and_then(Value::as_bool) { s.hero_clips = v; }
             if let Some(v) = p.get("rules").and_then(Value::as_bool) { s.rules = v; }
+            if let Some(v) = p.get("preview_weapon").and_then(Value::as_str) {
+                s.preview_weapon = match v { "sword" => Some(gs::rpg::Weapon::Sword), "axe" => Some(gs::rpg::Weapon::Axe), _ => None };
+            }
             if let Some(v) = p.get("select").and_then(Value::as_str) { s.selected = Some(v.to_owned()); }
-            if let Some(v) = p.get("tab").and_then(Value::as_u64).filter(|v| *v < 8) { s.tab = v as usize; }
+            if let Some(v) = p.get("tab").and_then(Value::as_u64).filter(|v| *v < 9) { s.tab = v as usize; }
         }
         if let Some(o) = open && o != world.resource::<crate::studio::Studio>().open {
             world.resource_mut::<crate::studio::Studio>().toggle_request = true;
         }
+    }
+    if p.as_ref().is_some_and(|p| p["use_as_player"] == true || p["play_test"] == true) {
+        let model = world.resource::<crate::studio::Studio>().model.clone();
+        let compatible = world.resource::<crate::studio::Studio>().entity.and_then(|e| world.get::<crate::studio::StudioRig>(e))
+            .is_some_and(|r| r.bones.iter().any(|&e| world.get::<Name>(e).is_some_and(|n| n.as_str() == "B_Pelvis")));
+        if !compatible { return Err(bad("choose a loaded game character with the shared skeleton")); }
+        crate::creator::set_worn(&mut world.resource_mut::<crate::creator::Wear>(), model);
+        if p.as_ref().is_some_and(|p| p["play_test"] == true) { world.resource_mut::<crate::studio::Studio>().play_test(); }
     }
     Ok(crate::studio::snapshot(world))
 }
@@ -277,6 +288,16 @@ fn gb_control(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     if let Some(v) = p.get("knee_rule").and_then(Value::as_bool) {
         world.get_resource_or_insert_with(crate::knee::KneeStats::default).enabled = v;
     }
+    if let Some(v) = p.get("inventory").and_then(Value::as_bool) {
+        let mut panel = world.resource_mut::<crate::panel::PanelState>();
+        panel.show_inventory = v;
+        panel.inventory.tab = 0;
+    }
+    if p.get("combo_guide").and_then(Value::as_bool) == Some(true) {
+        let mut panel = world.resource_mut::<crate::panel::PanelState>();
+        panel.show_inventory = true;
+        panel.inventory.tab = 1;
+    }
     if let Some(hidden) = p.get("dev_panel").and_then(Value::as_bool) {
         world.resource_mut::<crate::panel::PanelState>().hidden = !hidden;
     }
@@ -334,7 +355,7 @@ fn gb_input(In(p): In<Option<Value>>, world: &mut World) -> BrpResult {
     let flag = |k: &str| p.get(k).and_then(Value::as_bool).unwrap_or(false);
     let cast = p.get("cast").and_then(Value::as_u64).map(|s| s as u8);
     if cast.is_some_and(|s| s as usize >= gs::SPELLS.len()) { return Err(bad("cast must be a spell slot 0..3")); }
-    let intent = gs::Intent { move_dir: gs::V2::new(x, z), run, light: flag("light"), heavy: flag("heavy"), heavy_held: flag("heavy_held"), step: flag("step"), jump: flag("jump"), roll: flag("roll"), guard: flag("guard"), guard_pressed: flag("guard"), cast, cast_held: flag("cast_held"), ..Default::default() };
+    let intent = gs::Intent { move_dir: gs::V2::new(x, z), run, light: flag("light"), heavy: flag("heavy"), heavy_held: flag("heavy_held"), step: flag("step"), jump: flag("jump"), roll: flag("roll"), guard: flag("guard"), guard_pressed: flag("guard"), cast, cast_held: flag("cast_held"), interact: flag("interact"), bag: p.get("use_item").and_then(Value::as_u64).filter(|&i| i < gs::rpg::BAG_SIZE as u64).map(|i| gs::rpg::BagAction::Use(i as u8)), ..Default::default() };
     *slot = Some(Scripted { intent, ticks_left: ticks });
     Ok(json!({ "fighter": i, "ticks": ticks }))
 }

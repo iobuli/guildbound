@@ -100,6 +100,7 @@ pub struct Life {
     breath_rate: f32,
     pub tilt: Vec3,
     tilt_vel: Vec3,
+    walk_sway: f32,
 }
 
 /// What the layers should do this frame.
@@ -351,14 +352,14 @@ pub fn fighters(world: &mut World) {
     use guildbound_sim::ActionKind as K;
     let aim = pointer_target(world);
     let mut q = world.query::<(Entity, &crate::anim::FighterRig)>();
-    let rigs: Vec<(Entity, usize, Vec<Entity>, f32)> = q.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone(), r.chest_aim())).collect();
+    let rigs: Vec<_> = q.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone(), r.chest_aim(), r.gait_phase)).collect();
     let sim = world.resource::<crate::sim_bridge::Sim>();
     let dt = sim.frame_step_s;
     let mut jobs = Vec::new();
-    for (root, i, bones, chest_yaw) in rigs {
+    for (root, i, bones, chest_yaw, phase) in rigs {
         let Some(f) = sim.world.fighters.get(i) else { continue };
         let fight = sim.world.in_combat(i);
-        let grip = match f.action.kind {
+        let mut grip = match f.action.kind {
             K::Strike(_) | K::HeavyCharge(_) | K::Guard | K::GuardBreak | K::BlockStun | K::Staggered => [1.0, 1.0],
             K::Cast(_) | K::Charge(_) => [0.1, 0.1],
             K::Drink(_) => [0.35, 1.0],
@@ -367,6 +368,7 @@ pub fn fighters(world: &mut World) {
             _ if fight => [0.9, 0.9],
             _ => [0.3, 0.3],
         };
+        if f.kit.weapon().is_some() { grip[1] = 0.85; }
         let head_of = |j: usize| sim.world.fighters.get(j).map(|o| Vec3::new(o.position.x, o.height + 1.55 + guildbound_sim::terrain::ground(o.position.x, o.position.z), o.position.z));
         let me = Vec3::new(f.position.x, f.height + 1.55 + guildbound_sim::terrain::ground(f.position.x, f.position.z), f.position.z);
         let forward = Vec3::new(f.facing.x, 0.0, f.facing.z);
@@ -390,10 +392,30 @@ pub fn fighters(world: &mut World) {
             head_of(0).filter(|p| (*p - me).length() < 8.0 && (*p - me).normalize_or_zero().dot(forward) > -0.2).map(|p| (p, 0.9))
         };
         let exertion = (f.velocity.length() / 6.0).clamp(0.0, 1.0).max(if fight { 0.5 } else { 0.0 });
-        jobs.push((root, bones, Drive { grip: Some(grip), look, forward, chest_yaw, breath: 1.0, exertion, lean: None, dt }));
+        let speed = f.velocity.length();
+        let allowed = f.action.kind == K::None && f.height <= 0.0 && f.crouch_left <= 0.0 && f.hp > 0.0;
+        let walk = if allowed {
+            (speed / sim.world.tuning.walk_speed).clamp(0.0, 1.0)
+                * ((sim.world.tuning.run_speed - speed) / (sim.world.tuning.run_speed - sim.world.tuning.walk_speed).max(0.1)).clamp(0.0, 1.0)
+        } else { 0.0 };
+        jobs.push((root, bones, Drive { grip: Some(grip), look, forward, chest_yaw, breath: 1.0, exertion, lean: None, dt }, phase, walk, allowed, f.kit.weapon().is_some()));
     }
-    for (root, bones, d) in jobs {
+    for (root, bones, d, phase, walk, allowed, armed) in jobs {
         apply(world, root, &bones, &d);
+        let weight = if let Some(mut life) = world.get_mut::<Life>(root) {
+            life.walk_sway = if allowed { life.walk_sway + (walk - life.walk_sway) * (1.0 - (-d.dt * 12.0).exp()) } else { 0.0 };
+            life.walk_sway
+        } else { 0.0 };
+        let axis = d.forward.cross(Vec3::Y).normalize_or(Vec3::X);
+        let swing = (phase * std::f32::consts::TAU).sin() * 9f32.to_radians() * weight;
+        for (name, sign) in [("B_L_UpperArm", 1.0), ("B_R_UpperArm", -1.0)] {
+            if armed && sign < 0.0 { continue; }
+            if let Some(bone) = bones.iter().copied().find(|&e| world.get::<Name>(e).is_some_and(|n| n.as_str() == name))
+                && let Some(rotation) = rot(world, bone)
+            {
+                rotate_world(world, bone, Quat::from_axis_angle(axis, swing * sign) * rotation);
+            }
+        }
     }
 }
 

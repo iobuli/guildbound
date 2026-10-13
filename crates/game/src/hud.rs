@@ -128,9 +128,10 @@ pub fn draw(ctx: &egui::Context, sim: &Sim, left: f32, icons: Option<&HudIcons>,
         p.text(r.left_top() + egui::vec2(5.0, 3.0), egui::Align2::LEFT_TOP, key, egui::FontId::proportional(11.0), GOLD);
         p.text(r.right_bottom() - egui::vec2(5.0, 3.0), egui::Align2::RIGHT_BOTTOM, format!("{c}"), egui::FontId::proportional(12.0), PAPER);
     }
+    p.rect_filled(egui::Rect::from_min_max(egui::pos2(left, screen.bottom() - 25.0), screen.right_bottom()), 0.0, GLASS);
     p.text(egui::pos2(left + (screen.width() - left) * 0.5, screen.bottom() - 8.0), egui::Align2::CENTER_BOTTOM,
-        "WASD move  SHIFT sprint  MOUSE5 lock-on  LMB rush  F smash  RMB guard (tap = perfect parry)  CTRL step  C roll  E interact  1-5 spells  R/T items",
-        egui::FontId::proportional(11.0), MUTED.gamma_multiply(0.8));
+        "WASD walk  SHIFT run > build to sprint  MOUSE5 lock  LMB rush  F smash  RMB guard/parry  CTRL step  C roll  E interact  1-5 spells  R/T items  I inventory  H combos",
+        egui::FontId::proportional(11.0), PAPER);
 
     // target card, top centre, while fighting
     let target = player.lock_target.filter(|&i| i != 0 && i < w.fighters.len()).or_else(|| in_combat.then_some(1).filter(|&i| i < w.fighters.len()));

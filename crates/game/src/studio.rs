@@ -42,7 +42,7 @@ const TAB_HELP: [&str; 9] = [
     "Inspect: see how each joint is bent and send Claude a note about anything that looks wrong.",
     "Creator: build your own character from outfit parts, colour it, and save it as a playable model.",
     "Tuning: change how characters move, animate and come alive. Changes apply straight away.",
-    "Moveset: choose which animations the fight moves use.",
+    "Moveset: map movement, combat, reactions, magic and weapons. Preview and save your choices.",
     "Corrections: the bone fixes you have saved, per animation.",
     "Patterns: problems that repeat across animations, from your notes and Claude's audit.",
     "Notes: the notes you have sent to Claude.",
@@ -154,6 +154,11 @@ pub struct StudioRig {
 #[derive(Resource)]
 pub struct Studio {
     pub open: bool,
+    pub viewport: Option<egui::Rect>,
+    pub show_skeleton: bool,
+    pub reset_view: bool,
+    pub preview_weapon: Option<guildbound_sim::rpg::Weapon>,
+    preview_request: bool,
     was_paused: bool,
     assets: Vec<crate::catalog::AssetInfo>,
     /// Model browser tab: 0 game models (play the whole library), 1 animated assets (their own clips), 2 props.
@@ -192,15 +197,27 @@ pub struct Studio {
     /// Last pose audit (collab/pose_audit.json), read when the Studio opens.
     audit: Value,
     /// Moveset picks: move -> (clip, enabled), and the move a clip is being added to.
-    moveset: Option<BTreeMap<String, Vec<(String, bool)>>>,
     /// Name typed for a new clip variant in the clip editor.
     variant_name: String,
-    move_add: (String, String),
 }
 
 impl Studio {
+    pub fn preview_clip(&mut self, clip: String) {
+        if clip.contains("sword") { self.preview_weapon = Some(guildbound_sim::rpg::Weapon::Sword); }
+        self.clip = Some(clip);
+        self.hero_clips = true;
+        self.time = 0.0;
+        self.playing = true;
+        self.preview_request = true;
+    }
     pub fn request_spawn(&mut self, path: String) {
         self.spawn_request = Some(path);
+    }
+
+    pub fn play_test(&mut self) {
+        self.was_paused = false;
+        self.scene = false;
+        self.toggle_request = true;
     }
 
     pub fn add_asset(&mut self, path: String) {
@@ -225,14 +242,12 @@ impl Studio {
 impl Default for Studio {
     fn default() -> Self {
         Self {
-            open: false, was_paused: false, assets: Vec::new(), filter: String::new(), clip_filter: String::new(), model: None, entity: None,
+            open: false, viewport: None, show_skeleton: true, reset_view: false, preview_weapon: None, preview_request: false, was_paused: false, assets: Vec::new(), filter: String::new(), clip_filter: String::new(), model: None, entity: None,
             clip: None, time: 0.0, duration: 1.0, playing: true, speed: 1.0, hero_clips: true, rules: true, yaw: 0.0, scale: 1.0,
             selected: None, note: String::new(), category: 0, offset: Vec3::ZERO, tab: 0, own: None, graph_attached: None,
             numbers: json!({}), status: "F2 closes the Studio. Pick a model on the left.".into(), spawn_request: None, toggle_request: false, scene: false, browse: 0, pack: None,
             audit: Value::Null,
-            moveset: None,
             variant_name: String::new(),
-            move_add: (String::new(), String::new()),
         }
     }
 }
@@ -314,15 +329,24 @@ fn toggle(
         next.set(crate::menu::AppState::MainMenu);
     }
     if studio.open {
+        if studio.model.is_none() {
+            studio.request_spawn("packs/hero/master.glb".into());
+        }
+        if studio.clip.is_none() {
+            studio.clip = Some("nc_idle".into());
+        }
         studio.audit = read_audit();
         studio.was_paused = sim.paused;
         sim.paused = true;
         sim.clear_player_input();
         cam.studio_focus = Some(STAGE + Vec3::Y * 1.0);
+        cam.focus = STAGE + Vec3::Y * 1.0;
         cam.distance = 3.6;
     } else {
         sim.paused = studio.was_paused;
         cam.studio_focus = None;
+        let player = &sim.world.fighters[0];
+        cam.focus = Vec3::new(player.position.x, 1.45 + player.height + guildbound_sim::terrain::ground(player.position.x, player.position.z), player.position.z);
         cam.distance = 4.4;
     }
 }
@@ -416,6 +440,10 @@ pub fn drive(
     mut possession: ResMut<crate::possession::Possession>,
 ) {
     let studio = &mut *studio;
+    if std::mem::take(&mut studio.preview_request) {
+        possession.sequence.clear();
+        possession.motion = None;
+    }
     if !studio.hero_clips && let Some(p) = studio.pack.clone() && studio.own.as_ref().is_none_or(|o| o.0 != p) {
         studio.own = Some((p.clone(), assets.load(p), None, BTreeMap::new()));
         studio.graph_attached = None;
@@ -610,6 +638,7 @@ fn drag_bone(
 
 /// Skeleton overlay: teal bones, red where a joint is outside its range, gold for the selection.
 fn draw_skeleton(studio: Res<Studio>, rigs: Query<&StudioRig>, bones: Query<(&Name, &GlobalTransform, Option<&ChildOf>)>, mut gizmos: Gizmos<StudioGizmos>) {
+    if !studio.show_skeleton { return; }
     if !studio.open {
         return;
     }
@@ -791,6 +820,7 @@ pub struct TuningParams<'w> {
     anim: ResMut<'w, crate::anim::AnimSettings>,
     life: ResMut<'w, crate::procedural::LifeTuning>,
     physical: ResMut<'w, crate::possession::PhysicalBody>,
+    grip: ResMut<'w, crate::weapons::WeaponGrip>,
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -809,6 +839,7 @@ fn ui(
     rigs: Query<&StudioRig>,
     mut tune: TuningParams,
     mut make: CreatorParams,
+    mut mapping: ResMut<crate::moveset::Moveset>,
 ) -> Result {
     if !studio.open {
         return Ok(());
@@ -916,7 +947,7 @@ fn ui(
                     }
                 }
                 for (group, clips) in &hero {
-                    egui::CollapsingHeader::new(egui::RichText::new(format!("{group}  ({})", clips.len())).size(12.5)).id_salt(("hero", group)).show(ui, |ui| {
+                    egui::CollapsingHeader::new(egui::RichText::new(format!("{group}  ({})", clips.len())).size(12.5)).id_salt(("hero", group, f.clone())).default_open(!f.is_empty()).show(ui, |ui| {
                         for (n, d) in clips {
                             let on = studio.hero_clips && studio.clip.as_deref() == Some(n.as_str());
                             if ui.selectable_label(on, egui::RichText::new(format!("{n}   {d:.1}s")).size(11.5)).clicked() {
@@ -939,6 +970,7 @@ fn ui(
             }
         });
         if let Some((pack, clip)) = chosen {
+            if clip.contains("sword") { studio.preview_weapon = Some(guildbound_sim::rpg::Weapon::Sword); }
             studio.hero_clips = pack.is_none();
             if pack.is_some() {
                 studio.pack = pack;
@@ -959,7 +991,11 @@ fn ui(
     egui::Panel::right("studio_inspect").default_size(360.0).resizable(true).frame(theme::dock()).show_inside(&mut root, |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| match TABS[studio.tab.min(TABS.len() - 1)] {
             "Creator" => crate::creator::tab(ui, &mut make.creator, studio, &mut make.wear, &mut feed),
-            "Inspect" => inspect(ui, studio, &mut corr, &mut feed, tune.sim.world.tick),
+            "Inspect" => {
+                let playable = studio.entity.and_then(|e| rigs.get(e).ok()).is_some_and(|r| r.bones.iter().any(|&e| names.get(e).is_ok_and(|n| n.as_str() == "B_Pelvis")));
+                crate::weapons::ui(ui, studio, &mut tune.grip);
+                inspect(ui, studio, &mut corr, &mut feed, tune.sim.world.tick, &mut make.wear, playable);
+            }
             "Tuning" => {
                 let bone_names: Vec<String> = studio.entity.and_then(|e| rigs.get(e).ok()).map(|r| r.bones.iter().filter_map(|&b| names.get(b).ok().map(|n| n.as_str().to_owned())).collect()).unwrap_or_default();
                 egui::CollapsingHeader::new(egui::RichText::new("Possession: bones, fixed fps, life layers, physics readout").color(theme::TEAL)).default_open(true).show(ui, |ui| {
@@ -1046,7 +1082,7 @@ fn ui(
                     clip_editor(ui, studio, lib.as_deref_mut());
                 });
             }
-            "Moveset" => moveset_tab(ui, studio, lib.as_deref()),
+            "Moveset" => crate::moveset::ui(ui, &mut mapping, studio, lib.as_deref()),
             "Corrections" => corrections_tab(ui, &mut corr),
             "Patterns" => {
                 theme::section(ui, "Patterns across clips and models");
@@ -1166,24 +1202,41 @@ fn ui(
 
     // timeline
     egui::Panel::bottom("studio_timeline").frame(theme::dock()).show_inside(&mut root, |ui| {
-        ui.horizontal(|ui| {
+        ui.horizontal_wrapped(|ui| {
+            ui.spacing_mut().slider_width = 110.0;
             if theme::button(ui, if studio.playing { "Pause" } else { "Play" }, studio.playing).clicked() {
                 studio.playing = !studio.playing;
             }
             ui.add(egui::Slider::new(&mut studio.speed, 0.05..=2.0).text("playback speed")).on_hover_text("1 = normal speed, 0.5 = half speed.");
-            let dur = studio.duration;
-            ui.spacing_mut().slider_width = (ui.available_width() - 260.0).max(120.0);
-            if ui.add(egui::Slider::new(&mut studio.time, 0.0..=dur).text(format!("/ {dur:.2}s"))).dragged() {
-                studio.playing = false;
-            }
             ui.checkbox(&mut studio.rules, "Keep joints natural").on_hover_text("Stop joints bending past their natural limits and knees bending backwards.");
+            ui.checkbox(&mut studio.show_skeleton, "Skeleton");
+            if ui.small_button("Reset view").clicked() { studio.reset_view = true; }
         });
+        let dur = studio.duration;
+        ui.spacing_mut().slider_width = (ui.available_width() - 160.0).max(80.0);
+        if ui.add(egui::Slider::new(&mut studio.time, 0.0..=dur).text(format!("/ {dur:.2}s"))).dragged() {
+            studio.playing = false;
+        }
         ui.label(egui::RichText::new(format!("{}   |   {}   |   {}", studio.model.as_deref().unwrap_or("no model"), studio.clip.as_deref().unwrap_or("no clip"), studio.status)).size(11.0).color(theme::MUTED));
     });
+    studio.viewport = Some(root.available_rect_before_wrap());
     Ok(())
 }
 
-fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed: &mut crate::feed::DevFeed, tick: u64) {
+fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed: &mut crate::feed::DevFeed, tick: u64, wear: &mut crate::creator::Wear, playable: bool) {
+    theme::section(ui, "Play test this model");
+    theme::hint(ui, "Use the character on the stage as your player. Your animation mapping stays active.");
+    ui.add_enabled_ui(playable, |ui| {
+        if theme::button(ui, "Set as player model", false).clicked() {
+            crate::creator::set_worn(wear, studio.model.clone());
+            studio.status = "Player model saved".into();
+        }
+        if theme::button(ui, "Use model and play test", false).clicked() {
+            crate::creator::set_worn(wear, studio.model.clone());
+            studio.play_test();
+        }
+    });
+    if !playable { theme::hint(ui, "Choose a game character with the shared skeleton to play test."); }
     theme::section(ui, "Stage");
     theme::hint(ui, "Turn and resize the model on the stage.");
     ui.horizontal(|ui| {
@@ -1263,74 +1316,6 @@ fn inspect(ui: &mut egui::Ui, studio: &mut Studio, corr: &mut Corrections, feed:
         feed.post("boss", &format!("@studio {} [{} | {} @ {:.2}s | {}] {}", CATEGORIES[studio.category], studio.model.as_deref().unwrap_or("-"), studio.clip.as_deref().unwrap_or("-"), studio.time, bone, studio.note.trim()), tick);
         studio.note.clear();
         studio.status = "Note sent with the full pose numbers".into();
-    }
-}
-
-/// Pick which clips each combo move plays (ticked = used, unticked = omitted); saved to assets/moveset.json,
-/// read when the game builds its move clusters (relaunch to apply).
-fn moveset_tab(ui: &mut egui::Ui, studio: &mut Studio, lib: Option<&AnimLibrary>) {
-    theme::section(ui, "Moveset: clips per combo move");
-    theme::hint(ui, "Choose which animations each fight move may use; untick one to leave it out.");
-    let path = format!("{}/assets/moveset.json", crate::ROOT);
-    if studio.moveset.is_none() {
-        let base: Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).unwrap_or_default();
-        let saved = crate::read_json("assets/moveset.json");
-        let mut m = BTreeMap::new();
-        for (name, clips) in base["combat"].as_object().into_iter().flatten() {
-            let all: Vec<String> = clips.as_array().into_iter().flatten().filter_map(|c| c.as_str().map(str::to_owned)).collect();
-            let on: Option<Vec<String>> = saved["moves"][name].as_array().map(|a| a.iter().filter_map(|c| c.as_str().map(str::to_owned)).collect());
-            let mut rows: Vec<(String, bool)> = all.iter().map(|c| (c.clone(), on.as_ref().is_none_or(|o| o.contains(c)))).collect();
-            for c in on.into_iter().flatten().filter(|c| !all.contains(c)) {
-                rows.push((c, true));
-            }
-            m.insert(name.clone(), rows);
-        }
-        studio.moveset = Some(m);
-    }
-    let (add_move, add_filter) = (&mut studio.move_add.0, &mut studio.move_add.1);
-    let Some(moves) = studio.moveset.as_mut() else { return };
-    for (name, rows) in moves.iter_mut() {
-        egui::CollapsingHeader::new(egui::RichText::new(format!("{name}  ({} of {})", rows.iter().filter(|r| r.1).count(), rows.len())).color(theme::PAPER)).id_salt(name.as_str()).show(ui, |ui| {
-            for (clip, on) in rows.iter_mut() {
-                ui.checkbox(on, egui::RichText::new(clip.as_str()).size(11.5));
-            }
-            if ui.small_button("add a clip...").clicked() {
-                *add_move = name.clone();
-            }
-        });
-    }
-    if !add_move.is_empty() {
-        ui.label(egui::RichText::new(format!("Add to {add_move}:")).color(theme::TEAL));
-        ui.add(egui::TextEdit::singleline(add_filter).hint_text("filter hero clips"));
-        let f = add_filter.to_lowercase();
-        let mut picked = None;
-        egui::ScrollArea::vertical().id_salt("move_add").max_height(120.0).show(ui, |ui| {
-            for n in lib.map(|l| l.names()).unwrap_or_default().iter().filter(|n| !f.is_empty() && n.to_lowercase().contains(&f)).take(40) {
-                if ui.selectable_label(false, egui::RichText::new(n.as_str()).size(11.5)).clicked() {
-                    picked = Some(n.clone());
-                }
-            }
-        });
-        if let Some(c) = picked
-            && let Some(rows) = moves.get_mut(add_move.as_str())
-        {
-            rows.push((c, true));
-            add_move.clear();
-        }
-    }
-    let out: serde_json::Map<String, Value> = moves.iter().map(|(n, rows)| (n.clone(), json!(rows.iter().filter(|r| r.1).map(|r| r.0.clone()).collect::<Vec<_>>()))).collect();
-    let (mut save, mut reset) = (false, false);
-    ui.horizontal(|ui| {
-        save = theme::button(ui, "Save moveset", false).on_hover_text("Save which animations each fight move uses (applies on the next start).").clicked();
-        reset = theme::button(ui, "Reset", false).clicked();
-    });
-    if save {
-        let _ = std::fs::write(&path, serde_json::to_string_pretty(&json!({"moves": out})).unwrap_or_default());
-        studio.status = "Moveset saved to assets/moveset.json; relaunch to fight with it".into();
-    }
-    if reset {
-        let _ = std::fs::remove_file(&path);
-        studio.moveset = None;
     }
 }
 

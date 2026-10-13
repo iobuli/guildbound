@@ -30,6 +30,14 @@ impl Default for LocomotionMap {
 }
 
 impl LocomotionMap {
+    pub fn apply_mapping(&mut self, map: &serde_json::Value) {
+        for (set, group, kind) in [(&mut self.walk, "locomotion", "walk"), (&mut self.run, "locomotion", "run"), (&mut self.relaxed_walk, "locomotion_relaxed", "walk"), (&mut self.relaxed_run, "locomotion_relaxed", "run"), (&mut self.sprint, "locomotion_relaxed", "sprint")] {
+            for (i, clip) in set.iter_mut().enumerate() {
+                if let Some(name) = map[group][kind][i].as_str().filter(|s| !s.is_empty()) { *clip = name.to_owned(); }
+            }
+        }
+    }
+
     /// Weighted gait clips for a travel angle (radians from facing, + = right) and gait 0 (walk) .. 1 (run):
     /// the two nearest of eight directions, each at walk and run. Missing clips drop out and the rest
     /// renormalize.

@@ -1,0 +1,99 @@
+CLAUDE HANDOFF - CODEX ONE-OFF PASS - 2026-10-13
+
+Branch: build/bevy. Based on f19a7d6.
+Boss explicitly authorized this commit after asking Codex to finish for the day.
+No push requested or performed. No agents or workflows used.
+
+BOSS DIRECTION
+- Work from the running Bevy game and MASTER.md gameplay scope.
+- Make master.glb the player model, improve F2 usability and action mapping.
+- Add weapon support, enemy animation variety, existing magic effects, jump carry/roll.
+- Plain movement walks; Shift runs, then momentum builds into sprint.
+- Add walking arm sway and a brief physics pose at jump apex, keeping control.
+- Fix terrain effects on the model near the borders.
+- Finish with a real clickable inventory and all combat combo branches available.
+
+IMPLEMENTED
+- Moveset module: searchable action/animation mapping for movement, fight, reactions,
+  magic and weapons; preview, variants, live application and saved mapping.
+  Enemy animation choices are seeded per fighter and can be reshuffled.
+- F2 Inspector: set viewed shared-skeleton character as player and play test.
+  Default player is packs/hero/master.glb; shared animation library is fighter.glb.
+  Viewport bounds gate camera gestures. Opening/closing Studio snaps camera focus.
+  Search expands clip groups, timeline has its own row, tabs wrap, HUD is hidden.
+  Skeleton visibility/reset view and sword/axe preview with editable saved grip.
+- Inventory: I or HUD button opens a large character panel. Equipment slots,
+  20-slot bag grid, search/type filters, item details and stat comparisons.
+  Select then Equip/Use/Unequip/Drop; double-click gear to equip. Esc closes first.
+  Click actions enter the deterministic sim. Gear clicks work during pause via a
+  single step. Consumables still use the existing interruptible drinking action.
+  Combat continues during browsing. Existing rematch retention is preserved;
+  persistent inventory save/load was not added.
+- H/HUD button opens the combo guide; also available in F2 Moveset/Fight.
+  Four-hit rush, depth-dependent heavy branches, directional rising/sweep/side kick,
+  running opener, parry counter, charged heavies and weapon rush/finisher.
+  Side kick was mapped but unreachable: now sideways + heavy selects it.
+- Sword and axe: pickup/equip, stats/reach, real meshes attached to B_R_Hand.
+  Separate weapon action timings; complete u1_sword_attack for light and single
+  u2_sword_regular_c for heavy. Removed partial/whole-combo misuse from defaults.
+  Weapon guarding skips fist IK and preserves the gripping hand during walk sway.
+- Walk 1.65 m/s, run 4, sprint 6.2. Sprint requires grounded forward run momentum,
+  not just held Shift. Buildup resets on reversals, blocking and airborne movement;
+  sprint target rises smoothly. Jump carries horizontal velocity, with limited air
+  steering; fast free landings roll automatically.
+- Added subtle phase-synced walking arm sway. Brief Avian arm release at apex:
+  torso/legs stay kinematic, root stays owned by sim, rotations are bounded and
+  blend back. Knockdown/death retain the existing full ragdoll. Physics substeps
+  doubled (minimum 4) to stabilize the 13-body knockdown during landing.
+- Foot support clamps against local terrain height instead of world zero. Planted
+  soles align to sampled slope normals with bounded tilt; limb lengths retained.
+- Bounded billboard magic particle pool using three existing Kenney CC0 textures.
+  Cast/impact/healing effects. Orb is NoToon so its StandardMaterial remains
+  available: this fixes the previous every-frame orb/point-light leak.
+- Toon cached materials refresh when base materials change; unlit stays unlit.
+  F7/checkbox toggle, editor/input focus guards, inventory cursor release, NPC
+  waypoint distances in XZ and monotonic loot revision on reset.
+
+TIMING DATA / LOCAL ASSETS
+- assets/weapon_motion.json contains measured normalized contact start/peak/end.
+  It also carries the two missing UAL punch measurements, making them portable
+  despite the ignored GLB sidecar. Loader already merges this file for all clips.
+- Tools/measure_weapon_motion.py measures sword tip motion and preserves other
+  entries when regenerating. UAL punch timings were measured with the existing
+  strike_landmarks function in Blender (65 samples), not guessed.
+- Local assets/packs/hero/fighter.glb.motion.json also has those two punch entries.
+  No packs, archive content, target outputs or local AI settings are committed.
+- Full Tools/blender/check_hero_mapping.py audit currently expects the removed
+  Unarmed-Idle-Static clip and fails on the current fighter pack. The missing
+  punch timings were measured separately. Update its neutral lookup before
+  running that full audit again; this pass did not claim a full-pack audit.
+
+VERIFICATION COMPLETED
+- cargo check -p guildbound and cargo check -p guildbound --tests passed.
+- cargo test -p guildbound_sim: 71 passed.
+- cargo test -p guildbound: 36 passed, including egui pointer selection/equip/
+  unequip and filtered-bag index handling.
+- Tools/check_beta.py: 20 live checks passed.
+- Tools/check_combat.py: 9 live checks passed, including measured contact clocks,
+  four-hit chain, charged finishers, knockdown stability/pause/recovery and dash.
+- Tools/check_spells.py: 3 live checks passed earlier in the pass.
+- Live probes: master play test, sword pickup/equip/contact pose, stable orb lights,
+  walk/run/sprint, apex physics/control/cleanup and terrain limb lengths passed.
+- Last cargo build -p guildbound passed after inventory dimming layer correction.
+  Last inventory screenshot visually inspected. git diff --check clean.
+- Test scripts were updated for actual mana naming, current mapping, walking
+  approach time, spell release timing and 13-body ragdoll topology.
+
+MANUAL UI LIMITATION / NEXT REVIEW
+- Native Computer Use repeatedly denied Guildbound even after boss said 'I allow'.
+  No native mouse/scroll F2 session was completed. Do not report one as completed.
+  Runtime checks/screenshots used the game's own BRP API; inventory click handling
+  was tested in egui with pointer events. Boss can use the actual open game.
+- Have boss check sword grip/attack feel, walking sway, brief apex arm pose and
+  F2 scrolling/camera isolation. Do not expand scope unless boss asks.
+- The game is running with master as player and inventory open; a bronze sword
+  was collected into the bag for boss to click/equip. Close with I or Esc.
+- Known startup warnings: missing Epic Vulkan overlay JSON and extra glTF vertex
+  attributes. GPU/game starts; no game/shader crash observed in these checks.
+- Ignored target/codex-* scripts, evidence and screenshots are local diagnostics.
+  Existing untracked .agents/, .codex/ and assets/grok ideas/ were left alone.

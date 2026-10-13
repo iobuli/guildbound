@@ -22,9 +22,16 @@ pub struct PanelState {
     /// What the panel edits: 0 game rules, 1 the world, 2 debug views.
     mode: usize,
     pub show_inventory: bool,
+    pub inventory: crate::inventory::InventoryUi,
     draft: String,
     clip: String,
     clip_target: usize,
+}
+
+impl PanelState {
+    pub fn editing_world(&self) -> bool {
+        !self.hidden && self.mode == 1
+    }
 }
 
 impl Default for PanelState {
@@ -38,6 +45,7 @@ impl Default for PanelState {
             hidden: true,
             mode: 0,
             show_inventory: false,
+            inventory: Default::default(),
             draft: String::new(),
             clip: "hp_straight_left_A".into(),
             clip_target: 0,
@@ -53,6 +61,7 @@ pub struct Tools<'w, 's> {
     edit: ResMut<'w, crate::editor::WorldEdit>,
     feedback: ResMut<'w, crate::feedback::FeedbackSettings>,
     sfx: ResMut<'w, crate::sfx::SfxSettings>,
+    toon: ResMut<'w, crate::toon::ToonLook>,
 }
 
 const MODES: [&str; 3] = ["Game", "World", "Debug"];
@@ -81,28 +90,40 @@ pub fn panel(
 ) -> Result {
     let ctx = contexts.ctx_mut()?.clone();
     crate::ui_theme::style(&ctx);
-    if *app_state.get() == crate::menu::AppState::MainMenu {
+    if *app_state.get() == crate::menu::AppState::MainMenu || hud.studio.open {
         // the menu owns the screen: no HUD, no dev panel
         state.width = 0.0;
         return Ok(());
     }
     let left = if state.hidden { 0.0 } else { state.width };
-    crate::hud::overhead_bars(&ctx, &sim, view.0, view.1);
-    crate::hud::damage_numbers(&ctx, &sim, view.0, view.1);
-    if !hud.studio.open && crate::hud::draw(&ctx, &sim, left, hud.icons.as_deref(), &hud.layout) {
-        sim.reset();
-        sim.opponent = OpponentMode::Spar;
-        sim.world.fighters[0].lock_target = Some(1);
-        sim.paused = false;
+    if !state.show_inventory {
+        crate::hud::overhead_bars(&ctx, &sim, view.0, view.1);
+        crate::hud::damage_numbers(&ctx, &sim, view.0, view.1);
+        if crate::hud::draw(&ctx, &sim, left, hud.icons.as_deref(), &hud.layout) {
+            sim.reset();
+            sim.opponent = OpponentMode::Spar;
+            sim.world.fighters[0].lock_target = Some(1);
+            sim.paused = false;
+        }
+        egui::Area::new("player_tools".into()).anchor(egui::Align2::RIGHT_TOP, [-20.0, 20.0]).show(&ctx, |ui| {
+            ui.horizontal(|ui| {
+                for (tab, label) in [(0, "Inventory  [I]"), (1, "Combos  [H]")] {
+                    if ui.button(label).clicked() {
+                        state.inventory.tab = tab;
+                        state.show_inventory = true;
+                        sim.clear_player_input();
+                    }
+                }
+            });
+        });
     }
     if state.show_inventory {
-        let mut open = true;
-        egui::Window::new("Inventory").open(&mut open).default_pos([state.width + 20.0, 80.0]).show(&ctx, |ui| {
-            if let Some(action) = inventory_ui(ui, &sim) {
-                sim.edges.bag = Some(action);
-            }
-        });
-        state.show_inventory = open;
+        let (action, close) = crate::inventory::show(&ctx, &sim, &mut state.inventory, hud.icons.as_deref());
+        if let Some(action) = action {
+            sim.edges.bag = Some(action);
+            if sim.paused { sim.pending_steps += 1; }
+        }
+        if close { state.show_inventory = false; sim.clear_player_input(); }
     }
     if state.hidden {
         state.width = 0.0;
@@ -141,6 +162,7 @@ pub fn panel(
                     }
                     _ => {
                         ui.label(egui::RichText::new("View").strong());
+                        ui.checkbox(&mut tools.toon.on, "Toon lighting (F7)");
                         ui.horizontal(|ui| {
                             ui.checkbox(&mut state.show_grid, "grid");
                             ui.checkbox(&mut state.show_velocity, "movement arrows").on_hover_text("Show arrows for where each character is moving.");
@@ -286,7 +308,7 @@ pub fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.add(egui::DragValue::new(&mut t.sprint_speed).speed(0.05).range(0.1..=20.0));
         ui.end_row();
         ui.label("relaxed out of combat");
-        ui.checkbox(&mut t.relaxed, "relaxed movement").on_hover_text("Out of combat: walk normally, run with the run key, keep holding it to sprint.");
+        ui.checkbox(&mut t.relaxed, "relaxed movement").on_hover_text("Walk normally. Shift runs; sustained forward momentum builds into sprint outside combat.");
         ui.end_row();
         ui.label("turn smoothness 1/s");
         ui.add(egui::DragValue::new(&mut t.turn_stiffness).speed(0.2).range(2.0..=60.0));
@@ -294,7 +316,7 @@ pub fn tuning_section(ui: &mut egui::Ui, sim: &mut Sim) {
         ui.label("travel follows facing");
         ui.add(egui::Slider::new(&mut t.steer_follow, 0.0..=1.0));
         ui.end_row();
-        ui.label("sprint after held run s");
+        ui.label("sprint buildup at run speed s");
         ui.add(egui::DragValue::new(&mut t.sprint_after_s).speed(0.05).range(0.0..=5.0));
         ui.end_row();
         ui.label("turn deg/s");
@@ -440,51 +462,4 @@ fn feed_section(ui: &mut egui::Ui, feed: &mut DevFeed, draft: &mut String, tick:
         feed.post("boss", draft.trim(), tick);
         draft.clear();
     }
-}
-
-/// Equipment slots, totals and the bag. Returns the click as a sim action (applied on the next tick).
-fn inventory_ui(ui: &mut egui::Ui, sim: &Sim) -> Option<guildbound_sim::rpg::BagAction> {
-    use guildbound_sim::rpg::{BAG_SIZE, BagAction, ITEMS, ItemKind, SLOTS};
-    let f = &sim.world.fighters[0];
-    let st = f.kit.stats();
-    let mut act = None;
-    ui.label(egui::RichText::new("Equipped").strong());
-    egui::Grid::new("worn").num_columns(2).show(ui, |ui| {
-        for slot in SLOTS {
-            ui.label(format!("{slot:?}"));
-            match f.kit.worn_in(slot) {
-                Some(id) => {
-                    if ui.button(ITEMS[id as usize].name).on_hover_text("click to unequip").clicked() {
-                        act = Some(BagAction::Unequip(slot));
-                    }
-                }
-                None => { ui.weak("-"); }
-            }
-            ui.end_row();
-        }
-    });
-    ui.label(format!("Power +{:.0}%   Armor {:.0}   Health {:.0} / {:.0}", st.power, st.armor, f.hp, f.max_hp));
-    ui.separator();
-    ui.label(egui::RichText::new(format!("Bag  {} / {BAG_SIZE}", f.kit.bag.len())).strong());
-    if f.kit.bag.is_empty() {
-        ui.weak("Empty. Walk over items and press E.");
-    }
-    for (k, &id) in f.kit.bag.iter().enumerate() {
-        let def = &ITEMS[id as usize];
-        ui.horizontal(|ui| {
-            let (verb, info) = match def.kind {
-                ItemKind::Consumable { heal, ki } => ("Use", if heal > 0.0 { format!("+{heal:.0} hp") } else { format!("+{ki:.0} ki") }),
-                ItemKind::Gear(slot) => ("Equip", format!("{slot:?}  pow {:.0} arm {:.0} vit {:.0}", def.mods.power, def.mods.armor, def.mods.vitality)),
-            };
-            ui.label(def.name);
-            ui.weak(info);
-            if ui.small_button(verb).clicked() {
-                act = Some(BagAction::Use(k as u8));
-            }
-            if ui.small_button("Drop").clicked() {
-                act = Some(BagAction::Drop(k as u8));
-            }
-        });
-    }
-    act
 }

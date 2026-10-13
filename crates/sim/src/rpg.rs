@@ -31,9 +31,10 @@ pub enum Slot {
     Hands,
     Legs,
     Feet,
+    Weapon,
 }
 
-pub const SLOTS: [Slot; 5] = [Slot::Head, Slot::Chest, Slot::Hands, Slot::Legs, Slot::Feet];
+pub const SLOTS: [Slot; 6] = [Slot::Head, Slot::Chest, Slot::Hands, Slot::Legs, Slot::Feet, Slot::Weapon];
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum ItemKind {
@@ -73,6 +74,8 @@ pub const ITEMS: &[ItemDef] = &[
     gear("travel boots", Slot::Feet, 0.0, 5.0, 5.0),
     gear("quilted trousers", Slot::Legs, 0.0, 15.0, 5.0),
     keen("duelist's gloves", Slot::Hands, 5.0, 15.0),
+    gear("bronze sword", Slot::Weapon, 20.0, 0.0, 0.0),
+    gear("bronze axe", Slot::Weapon, 28.0, 0.0, 0.0),
 ];
 
 pub const HEALING_DRAUGHT: ItemId = 0;
@@ -86,6 +89,15 @@ pub const LEATHER_CAP: ItemId = 6;
 pub const TRAVEL_BOOTS: ItemId = 7;
 pub const QUILTED_TROUSERS: ItemId = 8;
 pub const DUELIST_GLOVES: ItemId = 9;
+pub const BRONZE_SWORD: ItemId = 10;
+pub const BRONZE_AXE: ItemId = 11;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Weapon { Sword, Axe }
+
+impl Weapon {
+    pub fn reach(self) -> f32 { match self { Self::Sword => 0.65, Self::Axe => 0.45 } }
+}
 
 pub const BAG_SIZE: usize = 20;
 /// Reach for picking up (m) and for opening a chest (m).
@@ -104,10 +116,13 @@ pub enum BagAction {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Kit {
     pub bag: Vec<ItemId>,
-    pub worn: [Option<ItemId>; 5],
+    pub worn: [Option<ItemId>; 6],
 }
 
 impl Kit {
+    pub fn weapon(&self) -> Option<Weapon> {
+        match self.worn_in(Slot::Weapon) { Some(BRONZE_SWORD) => Some(Weapon::Sword), Some(BRONZE_AXE) => Some(Weapon::Axe), _ => None }
+    }
     pub fn stats(&self) -> Stats {
         self.worn.iter().flatten().fold(Stats::default(), |s, &id| s.add(ITEMS[id as usize].mods))
     }
@@ -255,7 +270,7 @@ impl World {
     /// The sparring floor's stock: one chest and a few things lying around.
     pub fn stock_floor(&mut self) {
         self.chests.push(Chest { position: V2::new(5.5, 5.5), loot: vec![BRIGANDINE, IRON_KNUCKLES, HEALING_DRAUGHT], open: false });
-        for (item, x, z) in [(HAND_WRAPS, -1.5, -3.5), (HEALING_DRAUGHT, 2.0, -3.0), (PADDED_VEST, -5.0, 1.0), (KI_TONIC, 4.5, 0.5)] {
+        for (item, x, z) in [(HAND_WRAPS, -1.5, -3.5), (HEALING_DRAUGHT, 2.0, -3.0), (PADDED_VEST, -5.0, 1.0), (KI_TONIC, 4.5, 0.5), (BRONZE_SWORD, -1.0, -2.5), (BRONZE_AXE, 1.0, -2.5)] {
             self.pickups.push(Pickup { item, position: V2::new(x, z) });
         }
         self.loot_rev += 1;

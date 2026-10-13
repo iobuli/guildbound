@@ -33,13 +33,13 @@ def main():
         assert not released["projectiles"], "fireball launched before its cast point"
         release_pose = pose()
         assert release_pose["clip"] in MAP["spells"]["fireball_charged"] and release_pose["rule_sample"], release_pose
-        assert not step(20)["projectiles"]
+        assert not step(48)["projectiles"]
         launched = step(7)
         assert len(launched["projectiles"]) == 1 and launched["projectiles"][0]["spell"] == "fireball", launched
         launch_pose = pose()
         marks = launch_pose["contact_timing"]
         elapsed = launched["fighters"][0]["action_elapsed"]
-        expected = (marks["peak"] + (1 - marks["peak"]) * (elapsed - 0.22) / 0.30) * marks["duration_s"]
+        expected = (marks["peak"] + (1 - marks["peak"]) * (elapsed - 0.42) / 0.50) * marks["duration_s"]
         assert abs(launch_pose["seek_s"] - expected) < 0.002, (launch_pose, expected)
         beta.shot("beta-mage-fireball-launch")
         step(90)
@@ -51,7 +51,7 @@ def main():
         step(3)
         assert pose()["clip"] in MAP["spells"]["fireball"], pose()
         assert not gb.call("gb.state")["projectiles"]
-        step(28)
+        step(50)
         assert gb.call("gb.state")["projectiles"]
         evidence["checks"].append({"kind": "tap_fireball_mage_windup"})
 
@@ -64,7 +64,7 @@ def main():
             assert snapshot["clip"] in MAP["spells"]["chain lightning"] and snapshot["rule_sample"], snapshot
             assert gb.call("gb.state")["fighters"][1]["hp"] == gb.call("gb.state")["fighters"][1]["max_hp"], "chain lightning hits at its release, not before"
             beta.shot("beta-" + snapshot["clip"])
-            step(30)
+            step(42)
             assert gb.call("gb.state")["fighters"][1]["hp"] < gb.call("gb.state")["fighters"][1]["max_hp"]
             lightning.append(snapshot)
         assert lightning[0]["clip"] != lightning[1]["clip"], "chain lightning alternates casting hands"

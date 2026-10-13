@@ -14,6 +14,7 @@ use avian3d::prelude::{RigidBody, SpatialQuery, SpatialQueryFilter};
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll};
 use bevy::prelude::*;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
+use bevy_egui::input::EguiWantsInput;
 use guildbound_sim as gs;
 
 use crate::panel::PanelState;
@@ -101,6 +102,8 @@ pub fn orbit(
     spatial: SpatialQuery,
     bodies: Query<&RigidBody>,
     keys: Res<ButtonInput<KeyCode>>,
+    wants: Res<EguiWantsInput>,
+    mut studio_ui: ResMut<crate::studio::Studio>,
 ) {
     let in_menu = *state.get() == crate::menu::AppState::MainMenu;
     let (mut orbit, mut transform, mut projection) = cam.into_inner();
@@ -108,7 +111,13 @@ pub fn orbit(
     let dt = time.delta_secs().min(0.05);
     let ended = sim.world.fighters[0].hp <= 0.0;
     let studio = orbit.studio_focus.is_some();
-    let play = panel.hidden && win.focused && !in_menu && !ended && !studio;
+    if studio && std::mem::take(&mut studio_ui.reset_view) {
+        orbit.yaw = 0.0;
+        orbit.pitch = 0.32;
+        orbit.distance = 3.6;
+        orbit.boom = 3.6;
+    }
+    let play = panel.hidden && !panel.show_inventory && win.focused && !in_menu && !ended && !studio && !wants.wants_any_keyboard_input();
 
     // play mode locks the cursor; dev and studio modes free it, and holding Left Alt frees it in play so the
     // hero's head can follow the pointer (the camera holds still meanwhile)
@@ -120,10 +129,12 @@ pub fn orbit(
         cursor.visible = !steer;
     }
 
-    let over_panel = !panel.hidden && win.cursor_position().is_some_and(|p| p.x <= panel.width);
+    let over_studio = studio && !win.cursor_position().is_some_and(|p| studio_ui.viewport.is_some_and(|r| r.contains(bevy_egui::egui::pos2(p.x, p.y))));
+    let over_panel = over_studio || (!panel.hidden && win.cursor_position().is_some_and(|p| p.x <= panel.width)) || wants.wants_any_pointer_input();
+    let keyboard_ok = win.focused && !wants.wants_any_keyboard_input() && !panel.show_inventory;
     if orbit.noclip && !in_menu {
         // look with the locked cursor in play view, or by holding the right mouse button with the panel open
-        if steer || (!over_panel && buttons.pressed(MouseButton::Right)) {
+        if steer || (win.focused && !over_panel && buttons.pressed(MouseButton::Right)) {
             orbit.yaw -= motion.delta.x * orbit.sensitivity;
             orbit.pitch = (orbit.pitch + motion.delta.y * orbit.sensitivity).clamp(-1.5, 1.5);
         }
@@ -131,13 +142,15 @@ pub fn orbit(
         let axis = |a: KeyCode, b: KeyCode| f32::from(keys.pressed(a)) - f32::from(keys.pressed(b));
         let wish = rot * Vec3::new(axis(KeyCode::KeyD, KeyCode::KeyA), 0.0, axis(KeyCode::KeyS, KeyCode::KeyW)) + Vec3::Y * axis(KeyCode::Space, KeyCode::ControlLeft);
         let speed = if keys.pressed(KeyCode::ShiftLeft) { 40.0 } else { 10.0 };
-        transform.translation += wish.normalize_or_zero() * speed * dt;
+        if keyboard_ok {
+            transform.translation += wish.normalize_or_zero() * speed * dt;
+        }
         transform.rotation = rot;
         return;
     }
     // in the Studio, 1/2/3 + middle drag poses a bone instead of orbiting
     let posing = [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3].iter().any(|k| keys.pressed(*k));
-    let looking = steer || (!over_panel && !posing && buttons.pressed(MouseButton::Middle));
+    let looking = steer || (win.focused && !over_panel && !posing && buttons.pressed(MouseButton::Middle));
     let me = &sim.world.fighters[0];
     let lock = me.lock_target.and_then(|j| sim.world.fighters.get(j)).filter(|t| t.hp > 0.0);
     if in_menu {
@@ -248,11 +261,6 @@ pub fn orbit(
         let want = (55.0 + 6.0 * speed.clamp(0.0, 1.6)).to_radians();
         pp.fov += (want - pp.fov) * ease(5.0, dt);
     }
-}
-
-/// Player input runs only while the camera is on the player.
-pub fn on_player(cam: Single<&OrbitCamera>) -> bool {
-    !cam.noclip
 }
 
 /// Lock-on target: the living fighter nearest the screen centre within 25 m in front of the camera.

@@ -13,6 +13,29 @@ fn bag(action: BagAction) -> Intent {
     Intent { bag: Some(action), ..Default::default() }
 }
 
+#[test]
+fn weapons_equip_swap_and_extend_the_strike_reach() {
+    let mut unarmed = duel(1.6);
+    unarmed.combat.max_step_in = 0.0;
+    assert_eq!(first_hit(&mut unarmed), 0.0);
+    let mut armed = duel(1.6);
+    armed.combat.max_step_in = 0.0;
+    armed.fighters[0].kit.bag = vec![BRONZE_SWORD, BRONZE_AXE];
+    armed.step(&[bag(BagAction::Use(0))]);
+    assert_eq!(armed.fighters[0].kit.weapon(), Some(Weapon::Sword));
+    assert!(first_hit(&mut armed) > 0.0);
+    assert_eq!(armed.fighters[0].action.kind, ActionKind::Strike(WEAPON_SLASH));
+    assert!(MOVES[WEAPON_SLASH].startup > MOVES[JAB].startup);
+    let mut swap = duel(3.0);
+    swap.fighters[0].kit.bag = vec![BRONZE_SWORD, BRONZE_AXE];
+    swap.step(&[bag(BagAction::Use(0))]);
+    swap.step(&[bag(BagAction::Use(0))]);
+    assert_eq!(swap.fighters[0].kit.weapon(), Some(Weapon::Axe));
+    assert_eq!(swap.fighters[0].kit.bag, vec![BRONZE_SWORD]);
+    swap.step(&[bag(BagAction::Unequip(Slot::Weapon))]);
+    assert_eq!(swap.fighters[0].kit.weapon(), None);
+}
+
 fn first_hit(w: &mut World) -> f32 {
     let before = w.fighters[1].hp;
     w.step(&[Intent { light: true, ..Default::default() }, Intent::default()]);

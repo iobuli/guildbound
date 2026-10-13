@@ -132,7 +132,7 @@ pub fn stage(world: &mut World) {
             let rot = p.to_scale_rotation_translation().1;
             leg.raw = p.translation();
             leg.contact = contact[i];
-            leg.lock.step(leg.raw, ground_rotation(rot, leg.sole_up), crate::studio::STAGE.y + state.sole[i], contact[i], dt);
+            leg.lock.step(leg.raw, ground_rotation(rot, leg.sole_up, Vec3::Y), crate::studio::STAGE.y + state.sole[i], contact[i], dt);
             if leg.lock.weight > 0.5 && let Some(hip) = world_transform(world, leg.joints[0]) {
                 let delta = hip.translation() - leg.lock.anchor;
                 let reach = leg.lengths.iter().sum::<f32>() - 0.003;
@@ -182,8 +182,13 @@ fn build(world: &World, fighter: usize, bones: &[Entity]) -> Option<RigSupport> 
     Some(RigSupport { fighter, pelvis: *names.get("B_Pelvis")?, legs: [leg("B_L_Thigh", "B_L_Calf", "B_L_Foot")?, leg("B_R_Thigh", "B_R_Calf", "B_R_Foot")?], drop: 0.0, drop_velocity: 0.0, enabled: false, last_facing: Vec3::new(facing.x, 0.0, facing.z) })
 }
 
-fn ground_rotation(rotation: Quat, sole_up: Vec3) -> Quat {
-    let correction = Quat::from_rotation_arc((rotation * sole_up).normalize_or(Vec3::Y), Vec3::Y);
+fn ground_normal(x: f32, z: f32) -> Vec3 {
+    use guildbound_sim::terrain::ground;
+    Vec3::new(ground(x - 0.1, z) - ground(x + 0.1, z), 0.2, ground(x, z - 0.1) - ground(x, z + 0.1)).normalize_or(Vec3::Y)
+}
+
+fn ground_rotation(rotation: Quat, sole_up: Vec3, normal: Vec3) -> Quat {
+    let correction = Quat::from_rotation_arc((rotation * sole_up).normalize_or(Vec3::Y), normal);
     let (axis, angle) = correction.to_axis_angle();
     (Quat::from_axis_angle(axis, angle.min(30f32.to_radians())) * rotation).normalize()
 }
@@ -233,7 +238,7 @@ pub fn apply(world: &mut World) {
             let (_, rotation, _) = pose.to_scale_rotation_translation();
             leg.raw = pose.translation();
             leg.contact = contact[i];
-            leg.lock.step(leg.raw, ground_rotation(rotation, leg.sole_up), sole_height[i] + guildbound_sim::terrain::ground(leg.raw.x, leg.raw.z), contact[i], actor_dt);
+            leg.lock.step(leg.raw, ground_rotation(rotation, leg.sole_up, ground_normal(leg.raw.x, leg.raw.z)), sole_height[i] + guildbound_sim::terrain::ground(leg.raw.x, leg.raw.z), contact[i], actor_dt);
             if leg.lock.weight > 0.5 && let Some(hip) = world_transform(world, leg.joints[0]) {
                 let delta = hip.translation() - leg.lock.anchor;
                 let reach = leg.lengths.iter().sum::<f32>() - 0.003;
@@ -272,7 +277,7 @@ pub fn apply(world: &mut World) {
             let (_, rotation, _) = pose.to_scale_rotation_translation();
             let raw = pose.translation();
             let mut target = raw.lerp(leg.lock.anchor, leg.lock.weight);
-            target.y = target.y.max(sole_height[i]);
+            target.y = target.y.max(guildbound_sim::terrain::ground(target.x, target.z) + sole_height[i]);
             let wanted_rotation = rotation.slerp(leg.lock.rotation, leg.lock.weight).normalize();
             // Pole from this frame's animated knee (its offset off the hip-target line), never last frame's
             // solution: a reused pole collapses when a running leg straightens and the knee flips sides.
@@ -309,6 +314,18 @@ pub fn snapshot(world: &World) -> serde_json::Value {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn feet_align_to_terrain_with_a_bounded_tilt() {
+        assert_eq!(ground_normal(0.0, 0.0), Vec3::Y);
+        for (x, z) in [(59.0, 20.0), (-58.0, -40.0), (45.0, -59.0)] {
+            let normal = ground_normal(x, z);
+            assert!(normal.is_finite() && normal.y > 0.0);
+            let rotation = ground_rotation(Quat::IDENTITY, Vec3::Y, normal);
+            assert!(rotation.angle_between(Quat::IDENTITY) <= 30f32.to_radians() + 0.001);
+            assert!((rotation * Vec3::Y).dot(normal) > 0.99);
+        }
+    }
 
     #[test]
     fn anchor_is_written_once_and_jump_release_does_not_replant_mid_blend() {

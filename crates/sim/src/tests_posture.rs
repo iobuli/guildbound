@@ -296,3 +296,28 @@ fn relaxed_movement_walks_runs_and_sprints_on_a_held_run_out_of_combat() {
     }
     assert!((w.fighters[0].velocity.length() - w.tuning.walk_speed).abs() < 0.1, "combat walk");
 }
+
+#[test]
+fn sprint_requires_grounded_momentum_and_resets_at_a_wall_or_turn() {
+    let mut w = duel(30.0);
+    w.tuning.relaxed = true;
+    w.tuning.arena_half_size = 60.0;
+    let run = Intent { move_dir: V2::new(0.0, 1.0), run: true, ..Default::default() };
+    for _ in 0..240 { w.step(&[run]); }
+    assert!(w.fighters[0].velocity.length() > w.tuning.run_speed + 1.0);
+    w.step(&[Intent { move_dir: V2::new(0.0, -1.0), ..run }]);
+    assert_eq!(w.fighters[0].run_held, 0.0, "turning loses forward momentum");
+    w.fighters[0].position = V2::new(0.0, 59.7);
+    w.fighters[0].facing = V2::new(0.0, 1.0);
+    for _ in 0..240 { w.step(&[run]); }
+    assert_eq!(w.fighters[0].run_held, 0.0, "holding Shift into a border cannot charge sprint");
+    assert_eq!(w.fighters[0].velocity.z, 0.0);
+    w.fighters[0].position = V2::ZERO;
+    w.fighters[0].velocity = V2::new(0.0, 6.0);
+    w.fighters[0].height = 1.0;
+    w.fighters[0].vertical = 1.0;
+    w.fighters[0].run_held = 1.5;
+    w.step(&[run]);
+    assert_eq!(w.fighters[0].run_held, 0.0, "airborne movement does not charge sprint");
+    assert!(w.fighters[0].velocity.z > 5.9, "the jump still carries momentum");
+}

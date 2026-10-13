@@ -43,11 +43,10 @@ pub struct Tuning {
     pub walk_speed: f32,
     pub run_speed: f32,
     pub arena_half_size: f32,
-    /// Out of combat (no lock, combat timer run out) the stick jogs at run_speed and run sprints at
-    /// sprint_speed; in combat it walks and run runs. Off keeps the classic walk/run everywhere.
+    /// Out of combat, sustained running momentum builds into sprint. In combat, walk/run only.
     pub relaxed: bool,
     pub sprint_speed: f32,
-    /// Relaxed: seconds of held run before the sprint.
+    /// Seconds at running speed before sprint starts building.
     pub sprint_after_s: f32,
     /// How quickly the facing settles on a new heading (1/s, critically damped; turn_rate still caps it).
     pub turn_stiffness: f32,
@@ -71,7 +70,7 @@ impl Default for Tuning {
             drag_accel: 30.0,
             coast_half_life: 0.15,
             body_radius: 0.30,
-            walk_speed: 2.1,
+            walk_speed: 1.65,
             run_speed: 4.0,
             arena_half_size: 10.0,
             relaxed: false,
@@ -316,14 +315,18 @@ impl World {
         let raw = if steering { intent.move_dir } else { V2::ZERO };
         let m = if raw.length_squared() > 1.0 { raw.normalized() } else { raw };
         let relaxed = t.relaxed && !self.in_combat(i);
-        // out of combat the stick walks and run runs; holding run past sprint_after_s breaks into a sprint
-        // (boss QA, 2026-10-13: the stick jogging and run sprinting read as walk and run swapped)
-        let held = if intent.run && m.length_squared() > 1e-4 { self.fighters[i].run_held + STEP } else { 0.0 };
+        let momentum = relaxed && intent.run && action.kind == ActionKind::None
+            && f.height <= 0.0 && f.crouch_left <= 0.0 && m.length_squared() > 0.25
+            && f.velocity.dot(m.normalized()) >= t.run_speed * 0.85
+            && f.facing.dot(m.normalized()) >= 0.9;
+        let held = if momentum { (f.run_held + STEP).min(t.sprint_after_s + 0.6) } else { 0.0 };
         self.fighters[i].run_held = held;
         let speed = if action.kind == ActionKind::Guard || drinking {
             self.combat.guard_walk_speed
         } else if relaxed {
-            if !intent.run { t.walk_speed } else if held >= t.sprint_after_s { t.sprint_speed } else { t.run_speed }
+            if !intent.run { t.walk_speed } else {
+                t.run_speed + (t.sprint_speed - t.run_speed) * ((held - t.sprint_after_s) / 0.6).clamp(0.0, 1.0)
+            }
         } else if intent.run {
             t.run_speed
         } else {
@@ -345,7 +348,14 @@ impl World {
         let f = &mut self.fighters[i];
 
         let v = f.velocity;
-        let next = match model {
+        let airborne = f.height > 0.0 || f.vertical > 0.0;
+        let next = if airborne || f.crouch_left > 0.0 {
+            if m.length_squared() > 1e-8 {
+                let change = target - v;
+                let limit = 2.0 * STEP;
+                v + if change.length() > limit { change.normalized() * limit } else { change }
+            } else { v }
+        } else { match model {
             // momentum: velocity chases the input target at a bounded rate; which rate depends on what the body is doing
             MotorModel::Linear => {
                 let rate = if target.length_squared() < 1e-8 {
@@ -373,7 +383,7 @@ impl World {
                     v * 0.5f32.powf(STEP / coast_half_life.max(1e-3))
                 }
             }
-        };
+        }};
         // a coasting body comes to rest instead of creeping forever
         f.velocity = if m.length_squared() <= 1e-8 && next.length_squared() < 1e-6 { V2::ZERO } else { next };
         f.accel = (f.velocity - v) / STEP;
@@ -388,12 +398,14 @@ impl World {
                 f.vertical = jump_speed * (1.0 + 0.15 * (f.velocity.length() / 4.0).min(1.0));
             }
         }
+        let mut fast_landing = false;
         if f.height > 0.0 || f.vertical > 0.0 {
             f.vertical -= g * STEP;
             f.height += f.vertical * STEP;
             if f.height <= 0.0 {
                 f.height = 0.0;
                 f.vertical = 0.0;
+                fast_landing = airborne && f.velocity.length() >= t.run_speed * 1.2 && f.hp > 0.0 && action.kind == ActionKind::None;
             }
         }
 
@@ -411,6 +423,13 @@ impl World {
             f.facing = turn_smooth(f.facing, &mut f.yaw_rate, f.velocity.normalized(), t.turn_rate, t.turn_stiffness);
         } else {
             f.yaw_rate = 0.0;
+        }
+        if fast_landing {
+            self.new_action(i, ActionKind::Roll, self.combat.roll_time);
+            let f = &mut self.fighters[i];
+            f.facing = f.velocity.normalized();
+            f.start_facing = f.facing;
+            f.step_cooldown = self.combat.roll_time + self.combat.step_cooldown;
         }
     }
 

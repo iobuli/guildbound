@@ -149,6 +149,56 @@ fn landed_strings_chain_and_branch_by_depth() {
 }
 
 #[test]
+fn every_rush_depth_can_branch_to_every_directional_finisher() {
+    for depth in 0..=4 {
+        for (direction, expected) in [
+            (V2::ZERO, if depth <= 1 { FRONT_KICK } else if depth == 2 { LOW_KICK } else { ROUNDHOUSE }),
+            (V2::new(1.0, 0.0), RISING), (V2::new(-1.0, 0.0), SWEEP), (V2::new(0.0, 1.0), SIDE_KICK),
+        ] {
+            let mut w = duel(0.85);
+            let mut seen = Vec::new();
+            let mut last_seq = 0;
+            for tick in 0..400 {
+                w.fighters[1].position = w.fighters[0].position + V2::new(0.85, 0.0);
+                w.fighters[1].velocity = V2::ZERO;
+                let intent = if tick % 6 != 0 { Intent::default() }
+                    else if seen.len() == depth { heavy(direction) } else { light() };
+                w.step(&[intent]);
+                if let ActionKind::Strike(m) = w.fighters[0].action.kind && w.fighters[0].action.seq != last_seq {
+                    last_seq = w.fighters[0].action.seq;
+                    seen.push(m);
+                    if seen.len() == depth + 1 { break; }
+                }
+            }
+            assert_eq!(seen.last(), Some(&expected), "depth {depth}, direction {direction:?}: {seen:?}");
+            assert_eq!(seen.len(), depth + 1);
+        }
+    }
+}
+
+#[test]
+fn weapon_rush_chains_four_hits_into_a_heavy() {
+    let mut w = duel(0.85);
+    w.fighters[0].kit.worn[5] = Some(crate::rpg::BRONZE_SWORD);
+    let mut seen = Vec::new();
+    let mut last_seq = 0;
+    for tick in 0..600 {
+        w.fighters[1].hp = 1000.0;
+        w.fighters[1].position = w.fighters[0].position + V2::new(0.85, 0.0);
+        w.fighters[1].velocity = V2::ZERO;
+        let intent = if tick % 6 != 0 { Intent::default() }
+            else if seen.len() == 4 { heavy(V2::ZERO) } else { light() };
+        w.step(&[intent]);
+        if let ActionKind::Strike(m) = w.fighters[0].action.kind && w.fighters[0].action.seq != last_seq {
+            last_seq = w.fighters[0].action.seq;
+            seen.push(m);
+            if seen.len() == 5 { break; }
+        }
+    }
+    assert_eq!(seen, [WEAPON_SLASH, WEAPON_CROSS, WEAPON_SLASH, WEAPON_CROSS, WEAPON_HEAVY]);
+}
+
+#[test]
 fn whiffs_do_not_cancel() {
     let mut w = duel(2.5);
     w.step(&[light(), Intent::default()]);

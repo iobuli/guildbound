@@ -26,6 +26,8 @@ pub(crate) struct Doll {
     pub joints: Vec<Entity>,
     last_pose: Vec<(Entity, Transform)>,
     recovering: Option<f32>,
+    apex: bool,
+    apex_weight: f32,
 }
 
 #[derive(Resource, Default)]
@@ -135,7 +137,7 @@ pub(crate) fn build_with(world: &mut World, bones: &[Entity], fighter: usize, ve
         }
         links.push(Link { bone, body, origin: rotation.inverse() * (start - center), rotation: rotation.inverse() * bone_rotation, parent });
     }
-    Some(Doll { fighter, links, joints, last_pose: Vec::new(), recovering: None })
+    Some(Doll { fighter, links, joints, last_pose: Vec::new(), recovering: None, apex: false, apex_weight: 0.0 })
 }
 
 pub(crate) fn remove_bodies(world: &mut World, doll: &mut Doll) {
@@ -150,7 +152,8 @@ pub fn prepare(world: &mut World) {
     let sim = world.resource::<Sim>();
     let tick = sim.world.tick;
     let reset = tick < dolls.last_tick;
-    let states: Vec<_> = sim.world.fighters.iter().map(|f| (f.action.kind, f.hp, f.hit_stop)).collect();
+    let dt = sim.frame_step_s;
+    let states: Vec<_> = sim.world.fighters.iter().map(|f| (f.action.kind, f.hp, f.hit_stop, f.height, f.vertical, f.velocity, f.facing)).collect();
     dolls.last_tick = tick;
     let mut query = world.query::<(Entity, &FighterRig)>();
     let rigs: Vec<_> = query.iter(world).map(|(e, r)| (e, r.fighter, r.bones.clone())).collect();
@@ -159,10 +162,44 @@ pub fn prepare(world: &mut World) {
         if let Some(mut doll) = dolls.dolls.remove(&e) { remove_bodies(world, &mut doll); }
     }
     for (rig, fighter, bones) in rigs {
-        let Some(&(kind, hp, stop)) = states.get(fighter) else { continue };
+        let Some(&(kind, hp, stop, height, vertical, velocity, facing)) = states.get(fighter) else { continue };
         let down = kind == guildbound_sim::ActionKind::Knockdown || hp <= 0.0;
-        if down && stop <= 0.0 && !dolls.dolls.contains_key(&rig) {
-            if let Some(doll) = build(world, &bones, fighter) { dolls.dolls.insert(rig, doll); }
+        let apex = !down && kind == guildbound_sim::ActionKind::None && height > 0.35 && vertical.abs() < 2.0;
+        if down && dolls.dolls.get(&rig).is_some_and(|d| d.apex || d.recovering.is_some()) {
+            let mut old = dolls.dolls.remove(&rig).unwrap();
+            remove_bodies(world, &mut old);
+        }
+        if (down || apex) && stop <= 0.0 && !dolls.dolls.contains_key(&rig) {
+            let doll = if apex {
+                build_with(world, &bones, fighter, Vec3::new(velocity.x, vertical, velocity.z), Vec3::new(facing.x, 0.0, facing.z))
+            } else { build(world, &bones, fighter) };
+            if let Some(mut doll) = doll {
+                doll.apex = apex;
+                if apex {
+                    for (i, link) in doll.links.iter().enumerate() {
+                        if !(3..=6).contains(&i) { world.entity_mut(link.body).insert(RigidBody::Kinematic); }
+                        if let Some(mut angular) = world.get_mut::<AngularVelocity>(link.body) { angular.0 = Vec3::ZERO; }
+                    }
+                }
+                dolls.dolls.insert(rig, doll);
+            }
+        }
+        if apex && let Some(doll) = dolls.dolls.get_mut(&rig) && doll.apex && doll.recovering.is_none() {
+            let goal = 0.65 * (1.0 - vertical.abs() / 2.0);
+            doll.apex_weight += (goal - doll.apex_weight) * (1.0 - (-dt * 18.0).exp());
+            // Torso and legs follow the controlled jump. Only the arms are released to Avian.
+            for (i, link) in doll.links.iter().enumerate() {
+                if (3..=6).contains(&i) { continue; }
+                if let Some(bone) = world_transform(world, link.bone) {
+                    let (_, rotation, origin) = bone.to_scale_rotation_translation();
+                    let rotation = rotation * link.rotation.inverse();
+                    if let Some(mut body) = world.get_mut::<Transform>(link.body) {
+                        body.translation = origin - rotation * link.origin;
+                        body.rotation = rotation;
+                    }
+                    if let Some(mut v) = world.get_mut::<LinearVelocity>(link.body) { v.0 = Vec3::ZERO; }
+                }
+            }
         } else if !down && let Some(doll) = dolls.dolls.get_mut(&rig) {
             if doll.recovering.is_none() {
                 remove_bodies(world, doll);
@@ -193,7 +230,22 @@ pub fn apply(world: &mut World) {
             if *elapsed >= 0.28 { done.push(rig); }
             continue;
         }
-        skin(world, doll);
+        if doll.apex {
+            doll.last_pose.clear();
+            for link in &doll.links[3..=6] {
+                let Some(body) = world.get::<Transform>(link.body).copied() else { continue };
+                let Some(parent) = world.get::<ChildOf>(link.bone).map(|p| p.parent()) else { continue };
+                let Some(parent_pose) = world_transform(world, parent) else { continue };
+                let (_, parent_rotation, _) = parent_pose.to_scale_rotation_translation();
+                if let Some(mut pose) = world.get_mut::<Transform>(link.bone) {
+                    let rotation = (parent_rotation.inverse() * body.rotation * link.rotation).normalize();
+                    let angle = pose.rotation.angle_between(rotation);
+                    let limit = (25f32.to_radians() / angle.max(0.001)).min(1.0);
+                    pose.rotation = pose.rotation.slerp(rotation, doll.apex_weight * limit).normalize();
+                    doll.last_pose.push((link.bone, *pose));
+                }
+            }
+        } else { skin(world, doll); }
     }
     for e in done { dolls.dolls.remove(&e); }
     world.insert_resource(dolls);
@@ -278,7 +330,7 @@ pub fn snapshot(world: &mut World) -> serde_json::Value {
                 max_joint_error = max_joint_error.max(pa.distance(pb));
             }
         }
-        serde_json::json!({"fighter": doll.fighter, "bodies": bodies, "joints": doll.joints.len(), "hinges": hinges, "max_hinge_axis_error_rad": max_hinge_axis_error, "recovering": doll.recovering.is_some(), "finite": finite, "max_joint_error_m": max_joint_error, "max_speed_mps": max_speed, "min_center_y": min_y.is_finite().then_some(min_y), "hash": format!("{hash:016x}")})
+        serde_json::json!({"fighter": doll.fighter, "apex": doll.apex, "apex_weight": doll.apex_weight, "bodies": bodies, "joints": doll.joints.len(), "hinges": hinges, "max_hinge_axis_error_rad": max_hinge_axis_error, "recovering": doll.recovering.is_some(), "finite": finite, "max_joint_error_m": max_joint_error, "max_speed_mps": max_speed, "min_center_y": min_y.is_finite().then_some(min_y), "hash": format!("{hash:016x}")})
     }).collect();
     serde_json::json!({"ragdolls": rows, "physics_delta_s": world.resource::<Time<Physics>>().delta_secs()})
 }

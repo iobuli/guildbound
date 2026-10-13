@@ -21,8 +21,10 @@ def send(**flags):
 
 def near():
     reset()
-    send(move=[0, 1], ticks=136)
-    step(136)
+    import math
+    ticks = math.ceil(2.2 / gb.call("gb.state")["tuning"]["walk_speed"] * 120) + 12
+    send(move=[0, 1], ticks=ticks)
+    step(ticks)
     send(ticks=1)
     step(24)
 
@@ -106,7 +108,7 @@ def main():
         step(45)
         dolls = gb.call("gb.physics")["ragdolls"]
         assert len(dolls) == 1 and dolls[0]["fighter"] == 1, dolls
-        assert dolls[0]["bodies"] == 11 and dolls[0]["joints"] == 10 and dolls[0]["finite"], dolls
+        assert dolls[0]["bodies"] == 13 and dolls[0]["joints"] == 12 and dolls[0]["finite"], dolls
         assert dolls[0]["hinges"] == 4 and dolls[0]["max_hinge_axis_error_rad"] < 0.12, dolls
         assert dolls[0]["max_joint_error_m"] < 0.08 and dolls[0]["max_speed_mps"] < 15.0, dolls
         frozen = dolls[0]["hash"]
@@ -126,10 +128,10 @@ def main():
         result["checks"].append({"kind": "physical_knockdown_pause_and_recovery", "initial": dolls[0]})
 
         reset()
-        energy = gb.call("gb.state")["fighters"][0]["ki"]
+        energy = gb.call("gb.state")["fighters"][0]["mana"]
         send(step=True, run=True)
         state = step(1)
-        assert state["fighters"][0]["ki"] < energy - 7.0
+        assert state["fighters"][0]["mana"] < energy - 7.0
         send(light=True)
         assert step(1)["fighters"][0]["action"] == "step"
         action("run punch")

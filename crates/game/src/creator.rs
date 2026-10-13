@@ -400,7 +400,7 @@ fn wear(mut commands: Commands, w: Res<Wear>, libs: Res<crate::anim::Libraries>,
     commands.entity(e).insert(Worn(w.model.clone()));
 }
 
-fn set_worn(w: &mut Wear, model: Option<String>) {
+pub fn set_worn(w: &mut Wear, model: Option<String>) {
     let _ = std::fs::write(format!("{}/{WORN_FILE}", crate::ROOT), serde_json::to_string_pretty(&json!({"model": model})).unwrap_or_default());
     w.model = model;
 }

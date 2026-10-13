@@ -1,5 +1,31 @@
 use super::*;
 
+#[test]
+fn jumping_keeps_horizontal_momentum_after_releasing_movement() {
+    let mut w = World::sparring(Tuning::default());
+    w.fighters.truncate(1);
+    w.fighters[0].velocity = V2::new(5.5, 0.0);
+    w.step(&[Intent { jump: true, ..Default::default() }]);
+    for _ in 0..30 { w.step(&[]); }
+    assert!(w.fighters[0].height > 0.5);
+    assert!((w.fighters[0].velocity.x - 5.5).abs() < 1e-4);
+    for _ in 0..200 {
+        w.step(&[]);
+        if w.fighters[0].height <= 0.0 { break; }
+    }
+    assert_eq!(w.fighters[0].action.kind, ActionKind::Roll);
+}
+
+#[test]
+fn a_slow_jump_lands_without_an_automatic_roll() {
+    let mut w = World::sparring(Tuning::default());
+    w.fighters.truncate(1);
+    w.step(&[Intent { jump: true, ..Default::default() }]);
+    for _ in 0..200 { w.step(&[]); }
+    assert_eq!(w.fighters[0].height, 0.0);
+    assert_eq!(w.fighters[0].action.kind, ActionKind::None);
+}
+
 fn script(tick: u64) -> [Intent; 2] {
     // deterministic, varied input: walk, run, reversals, diagonals, idle
     let phase = (tick / 37) % 6;
@@ -41,7 +67,7 @@ fn walk_covers_walk_speed_per_second() {
     for _ in 0..120 {
         w.step(&walk);
     }
-    assert!((w.fighters[0].position.x - x0 - 2.1).abs() < 1e-3, "dx = {}", w.fighters[0].position.x - x0);
+    assert!((w.fighters[0].position.x - x0 - w.tuning.walk_speed).abs() < 1e-3, "dx = {}", w.fighters[0].position.x - x0);
 }
 
 #[test]

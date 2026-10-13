@@ -117,8 +117,20 @@ fn place(
     window: Single<&Window, With<bevy::window::PrimaryWindow>>,
     cam: Single<(&Camera, &GlobalTransform), With<crate::camera::OrbitCamera>>,
     mut ghosts: Query<&mut Transform, With<Ghost>>,
+    panel: Res<crate::panel::PanelState>,
+    state: Res<State<crate::menu::AppState>>,
+    studio: Res<crate::studio::Studio>,
 ) {
     let e = &mut *e;
+    if !panel.editing_world() || *state.get() != crate::menu::AppState::Playing || studio.open {
+        if e.placing.is_some() {
+            stop_placing(&mut commands, e);
+        }
+        return;
+    }
+    if !window.focused || wants.wants_any_keyboard_input() {
+        return;
+    }
     let free = !wants.wants_any_pointer_input();
     let hit = cursor_ground(&window, (cam.0, cam.1));
     if let Some(path) = e.placing.clone() {
@@ -190,7 +202,10 @@ fn respawn(commands: &mut Commands, assets: &AssetServer, e: &mut WorldEdit, i: 
     e.dirty = true;
 }
 
-fn draw(e: Res<WorldEdit>, mut gizmos: Gizmos) {
+fn draw(e: Res<WorldEdit>, panel: Res<crate::panel::PanelState>, state: Res<State<crate::menu::AppState>>, studio: Res<crate::studio::Studio>, mut gizmos: Gizmos) {
+    if !panel.editing_world() || *state.get() != crate::menu::AppState::Playing || studio.open {
+        return;
+    }
     if let Some(p) = e.selected.and_then(|i| e.placed.get(i)) {
         let c = Vec3::new(p.pos.x, crate::terrain::ground_at(Vec3::new(p.pos.x, 0.0, p.pos.y)) + 0.05, p.pos.y);
         gizmos.circle(Isometry3d::new(c, Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), 1.2 * p.scale.max(0.5), Color::srgb(1.0, 0.8, 0.3));

@@ -65,9 +65,30 @@ pub const RISING: MoveId = 7;
 pub const SWEEP: MoveId = 8;
 pub const RUN_PUNCH: MoveId = 9;
 pub const COUNTER_BLOW: MoveId = 10;
+pub const WEAPON_SLASH: MoveId = 11;
+pub const WEAPON_CROSS: MoveId = 12;
+pub const WEAPON_HEAVY: MoveId = 13;
+pub const SIDE_KICK: MoveId = 14;
 
 /// Light string by depth (caps at four), heavy finishers by depth and direction (Decisions 15-17).
 pub const LIGHT_STRING: [MoveId; 4] = [JAB, CROSS, HOOK, UPPERCUT];
+
+pub const COMBO_GUIDE: &[(&str, &str, &str)] = &[
+    ("Four-hit rush", "LMB > LMB > LMB > LMB", "Jab > cross > hook > uppercut"),
+    ("Quick front kick", "F / Mouse4", "Standalone neutral heavy"),
+    ("Rush into front kick", "LMB > F", "Jab > front kick"),
+    ("Rush into low kick", "LMB > LMB > F", "Jab > cross > low kick"),
+    ("Rush into roundhouse", "LMB > LMB > LMB > F", "Jab > cross > hook > roundhouse"),
+    ("Full rush finisher", "LMB > LMB > LMB > LMB > F", "Four hits into a roundhouse"),
+    ("Rising finisher", "Forward + F, standalone or after any rush hit", "Rising uppercut; knocks down"),
+    ("Sweep finisher", "Backward + F, standalone or after any rush hit", "Low sweep; knocks down"),
+    ("Side kick finisher", "Sideways + F, standalone or after any rush hit", "Side kick; breaks pressure"),
+    ("Running opener", "Run into LMB", "Run punch, then follow with the rush string"),
+    ("Perfect parry counter", "Tap RMB just before contact > LMB", "Fast counter blow in the counter window"),
+    ("Charged smash", "Hold F / Mouse4 > release", "Charge any directional finisher for more damage"),
+    ("Weapon rush", "Equip sword / axe > LMB four times", "Alternating slash and cross into a four-hit chain"),
+    ("Weapon finisher", "Equip sword / axe > F, or F after a rush hit", "Heavy weapon strike; hold to charge"),
+];
 
 const fn mv(
     name: &'static str, cluster: &'static str, heavy: bool, startup: f32, active: f32, recovery: f32, reach: f32,
@@ -76,7 +97,7 @@ const fn mv(
     MoveDef { name, cluster, heavy, startup, active, recovery, reach, damage, guard_drain, push, lunge, hit_stun, hit_stop, reaction, aim }
 }
 
-pub const MOVES: [MoveDef; 11] = [
+pub const MOVES: [MoveDef; 15] = [
     mv("jab", "jab", false, 0.10, 0.05, 0.18, 0.80, 4.0, 8.0, 1.5, 1.0, 0.28, 0.05, Reaction::Stun, Aim::Head),
     mv("cross", "cross", false, 0.11, 0.05, 0.20, 0.85, 5.0, 9.0, 1.8, 1.2, 0.30, 0.06, Reaction::Stun, Aim::Head),
     mv("hook", "hook", false, 0.13, 0.06, 0.22, 0.80, 6.0, 10.0, 2.2, 1.0, 0.32, 0.07, Reaction::Stun, Aim::Head),
@@ -88,6 +109,10 @@ pub const MOVES: [MoveDef; 11] = [
     mv("sweep", "low kick", true, 0.22, 0.08, 0.40, 1.00, 9.0, 25.0, 2.0, 0.8, 0.45, 0.10, Reaction::Knockdown, Aim::Low),
     mv("run punch", "run punch", false, 0.12, 0.06, 0.26, 0.90, 7.0, 14.0, 4.0, 0.0, 0.35, 0.08, Reaction::Stun, Aim::Head),
     mv("counter blow", "counter", true, 0.11, 0.06, 0.32, 0.90, 8.0, 24.0, 5.0, 1.2, 0.45, 0.10, Reaction::Knockdown, Aim::Body),
+    mv("weapon slash", "weapon light", false, 0.20, 0.10, 0.30, 0.80, 6.0, 12.0, 2.0, 0.7, 0.30, 0.06, Reaction::Stun, Aim::Body),
+    mv("weapon cross", "weapon light", false, 0.22, 0.10, 0.32, 0.80, 7.0, 14.0, 2.4, 0.7, 0.32, 0.07, Reaction::Stun, Aim::Body),
+    mv("weapon heavy", "weapon heavy", true, 0.40, 0.12, 0.48, 0.85, 12.0, 32.0, 4.0, 0.8, 0.45, 0.10, Reaction::Knockdown, Aim::Body),
+    mv("side kick", "side kick", true, 0.24, 0.08, 0.36, 1.00, 10.0, 28.0, 4.5, 1.0, 0.45, 0.10, Reaction::Stun, Aim::Body),
 ];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -174,6 +199,7 @@ pub enum StrikeDir {
     Neutral,
     Up,
     Down,
+    Side,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -338,7 +364,8 @@ impl World {
     fn start_strike(&mut self, i: usize, mv: MoveId) {
         self.new_action(i, ActionKind::Strike(mv), 0.0);
         let target = self.strike_target(i);
-        let d = MOVES[mv];
+        let mut d = MOVES[mv];
+        d.reach += self.fighters[i].kit.weapon().map_or(0.0, |w| w.reach());
         let c = self.combat;
         let (model, half_life, decel) = (self.tuning.model, self.tuning.coast_half_life, self.tuning.decel);
         let tpos = target.map(|t| self.fighters[t].position);
@@ -368,11 +395,16 @@ impl World {
     fn pick(&self, i: usize, press: Press, chained: bool) -> MoveId {
         let f = &self.fighters[i];
         let depth = if chained { f.chain + 1 } else { 0 } as usize;
+        if f.kit.weapon().is_some() {
+            return if press.heavy || (!chained && f.counter_left > 0.0) { WEAPON_HEAVY }
+                else if depth % 2 == 0 { WEAPON_SLASH } else { WEAPON_CROSS };
+        }
         let split = 0.5 * (self.tuning.walk_speed + self.tuning.run_speed);
         if press.heavy {
             return match press.dir {
                 StrikeDir::Up => RISING,
                 StrikeDir::Down => SWEEP,
+                StrikeDir::Side => SIDE_KICK,
                 StrikeDir::Neutral => match depth {
                     0 | 1 => FRONT_KICK,
                     2 => LOW_KICK,
@@ -634,6 +666,8 @@ impl World {
             StrikeDir::Up
         } else if along < -0.5 {
             StrikeDir::Down
+        } else if intent.move_dir.length_squared() > 0.25 {
+            StrikeDir::Side
         } else {
             StrikeDir::Neutral
         }
@@ -646,7 +680,8 @@ impl World {
         if f.hit_stop > 0.0 || f.hp <= 0.0 {
             return;
         }
-        let d = MOVES[mv];
+        let mut d = MOVES[mv];
+        d.reach += f.kit.weapon().map_or(0.0, |w| w.reach());
         let c = self.combat;
         let e = f.action.elapsed;
         if e < d.startup || e - STEP >= d.startup + d.active {

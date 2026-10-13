@@ -71,8 +71,10 @@ impl Sim {
         let magic = self.world.magic;
         let lock = self.world.fighters[0].lock_target;
         let kit = self.world.fighters[0].kit.clone();
+        let loot_rev = self.world.loot_rev;
         self.world = gs::World::sparring(tuning);
         self.world.stock_floor();
+        self.world.loot_rev = loot_rev.wrapping_add(1);
         self.world.obstacles = crate::props::obstacles();
         // the player keeps what they carry and wear across a rematch
         self.world.fighters[0].kit = kit;
@@ -262,13 +264,14 @@ pub fn read_player_input(
     mouse: Res<ButtonInput<MouseButton>>,
     wants: Res<EguiWantsInput>,
     window: Single<&Window, With<bevy::window::PrimaryWindow>>,
-    camera: Single<&Transform, With<OrbitCamera>>,
+    camera: Single<(&Transform, &OrbitCamera)>,
     flick: Res<bevy::input::mouse::AccumulatedMouseMotion>,
     studio: Res<crate::studio::Studio>,
     mut panel: ResMut<PanelState>,
     mut sim: ResMut<Sim>,
     mut had_focus: Local<bool>,
 ) {
+    let (camera, orbit) = camera.into_inner();
     if studio.open {
         return;
     }
@@ -290,7 +293,15 @@ pub fn read_player_input(
             panel.hidden = !panel.hidden;
         }
         if keys.just_pressed(KeyCode::KeyI) {
+            panel.inventory.tab = 0;
             panel.show_inventory = !panel.show_inventory;
+            sim.clear_player_input();
+        }
+        if keys.just_pressed(KeyCode::KeyH) {
+            let close = panel.show_inventory && panel.inventory.tab == 1;
+            panel.inventory.tab = 1;
+            panel.show_inventory = !close;
+            sim.clear_player_input();
         }
         if keys.just_pressed(KeyCode::KeyP) {
             sim.paused = !sim.paused;
@@ -298,20 +309,29 @@ pub fn read_player_input(
         if keys.just_pressed(KeyCode::Period) && sim.paused {
             sim.pending_steps += 1;
         }
-        if mouse.just_pressed(MouseButton::Forward) {
+        if !over_panel && !panel.show_inventory && mouse.just_pressed(MouseButton::Forward) {
             // lock-on toggles; it takes the fighter nearest the screen centre in front of the camera
             let lock = sim.world.fighters[0].lock_target;
-            sim.world.fighters[0].lock_target = if lock.is_some() { None } else { crate::camera::pick_target(&sim.world, &camera, None, None) };
+            sim.world.fighters[0].lock_target = if lock.is_some() { None } else { crate::camera::pick_target(&sim.world, camera, None, None) };
         }
         // while locked, a hard mouse flick switches to the next target left or right (Snaiel's lock-on)
-        if let Some(cur) = sim.world.fighters[0].lock_target && flick.delta.x.abs() > 60.0 {
-            let next = crate::camera::pick_target(&sim.world, &camera, Some(cur), Some(flick.delta.x.signum()));
+        if !over_panel && !panel.show_inventory && let Some(cur) = sim.world.fighters[0].lock_target && flick.delta.x.abs() > 60.0 {
+            let next = crate::camera::pick_target(&sim.world, camera, Some(cur), Some(flick.delta.x.signum()));
             sim.world.fighters[0].lock_target = next;
         }
     }
     if sim.paused && sim.pending_steps == 0 {
         sim.keyboard = gs::Intent::default();
-        sim.edges = gs::Intent::default();
+        let bag = sim.edges.bag;
+        sim.edges = gs::Intent { bag, ..default() };
+        return;
+    }
+    if panel.show_inventory {
+        sim.keyboard = gs::Intent::default();
+        return;
+    }
+    if panel.editing_world() || orbit.noclip {
+        sim.clear_player_input();
         return;
     }
     let fwd = camera.forward().as_vec3().with_y(0.0).normalize_or_zero();

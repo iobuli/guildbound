@@ -20,7 +20,7 @@ pub fn physics_clock(sim: Res<Sim>, real: Res<Time>, physical: Res<crate::posses
     let step = if staged { real.delta_secs().min(1.0 / 30.0) } else { sim.frame_step_s.max(0.0) };
     time.pause();
     time.advance_by(std::time::Duration::from_secs_f32(step));
-    substeps.0 = (step / guildbound_sim::STEP).ceil().max(2.0) as u32;
+    substeps.0 = (2.0 * step / guildbound_sim::STEP).ceil().max(4.0) as u32;
 }
 
 #[derive(Clone, Copy)]

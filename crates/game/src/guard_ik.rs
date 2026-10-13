@@ -72,7 +72,7 @@ pub fn apply(world: &mut World) {
         let i = state.rigs[&key].fighter;
         let Some(f) = fighters.get(i) else { continue };
         let guarding = f.action.kind == ActionKind::Guard || (f.parry_left > 0.0 && f.action.free());
-        if f.hp <= 0.0 || !(guarding || f.action.kind == ActionKind::None) {
+        if f.hp <= 0.0 || f.kit.weapon().is_some() || !(guarding || f.action.kind == ActionKind::None) {
             // knocked about, striking or casting: the clip owns the arms
             let r = state.rigs.get_mut(&key).unwrap();
             (r.weight, r.velocity, r.threat) = (0.0, 0.0, None);

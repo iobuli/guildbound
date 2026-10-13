@@ -150,13 +150,13 @@ pub fn drive(
             let want = if npc.pause > 0.0 {
                 npc.pause -= dt;
                 None
-            } else if pos.distance(goal) < 0.5 {
+            } else if pos.with_y(0.0).distance(goal) < 0.5 {
                 // arrived: stand a moment at the corner (deterministic per row and leg), then the next leg
                 npc.leg = next;
                 npc.pause = 1.2 + ((npc.row * 7 + npc.leg * 3) % 5) as f32 * 0.45;
                 None
             } else {
-                Some(((goal - pos).normalize_or_zero(), pace(npc.row)))
+                Some(((goal - pos).with_y(0.0).normalize_or_zero(), pace(npc.row)))
             };
             let travelled = crate::locomotion::step(&mut npc.mover, &mut pos, want, tuning, dt);
             t.translation = Vec3::new(pos.x, guildbound_sim::terrain::ground(pos.x, pos.z), pos.z);

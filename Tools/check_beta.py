@@ -60,7 +60,8 @@ def main():
         gb.call("gb.control", {"state": "play", "dev_panel": False})
         wait_for(lambda s: s["app_state"] == "Playing")
         reset()
-        expected = json.loads((ROOT / "Tools" / "blender" / "hero_mapping.json").read_text())["locomotion"]
+        mapping = json.loads((ROOT / "Tools" / "blender" / "hero_mapping.json").read_text())
+        expected = mapping["locomotion"]
         directions = [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]
         for running in [False, True]:
             for i, vector in enumerate(directions):
@@ -88,25 +89,26 @@ def main():
         air = step(28)
         assert air["fighters"][0]["height"] > 0.5
         jump_pose = pose()
-        assert jump_pose["clip"] == "Unarmed-Jump"
+        assert jump_pose["clip"] == mapping["roles"]["jump"]
         shot("beta-jump")
         step(32)
-        assert pose()["clip"] == "Unarmed-Fall"
+        assert pose()["clip"] == mapping["roles"]["fall"]
         landed = step(100)
         assert landed["fighters"][0]["height"] == 0.0
         evidence["checks"].append({"kind": "jump_fall_land", "pose": jump_pose})
         reset()
         gb.call("gb.input", {"move": [0, 0], "roll": True, "ticks": 1})
         roll_state = step(12)
-        assert pose()["clip"] == "Unarmed-DiveRoll-Forward1"
+        assert pose()["clip"] == mapping["roles"]["roll"]
         hip = pose()["geometry"]["B_Pelvis"]
         motor = roll_state["fighters"][0]["position"]
         assert math.dist([hip[0], hip[2]], motor) < 0.03, "roll pose travelled ahead of the motor"
         shot("beta-roll")
         evidence["checks"].append({"kind": "roll", "pose": pose()})
         reset()
-        gb.call("gb.input", {"move": [0, 1], "ticks": 136})
-        approach = step(136)
+        approach_ticks = math.ceil(2.2 / gb.call("gb.state")["tuning"]["walk_speed"] * 120) + 12
+        gb.call("gb.input", {"move": [0, 1], "ticks": approach_ticks})
+        approach = step(approach_ticks)
         a, b = approach["fighters"]
         assert math.dist(a["position"], b["position"]) < 1.1, "strike check must start in jab range"
         gb.call("gb.input", {"move": [0, 0], "light": True, "ticks": 1})

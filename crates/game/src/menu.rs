@@ -222,7 +222,7 @@ pub fn spawn_menu(mut commands: Commands, assets: Res<AssetServer>, mut sim: Res
                 UiLayout::window().pos(Rl((7.0, 94.0))).anchor(Anchor::CENTER_LEFT).pack(),
                 UiColor::from(MUTED),
                 UiTextSize::from(Rh(2.0)),
-                label(&assets, "esc menu  -  tab dev panel  -  f1 inspector", 40.0, false),
+                label(&assets, "esc menu  -  tab dev panel  -  f7 toon look", 40.0, false),
                 Pickable::IGNORE,
             ));
             for (i, text) in ["Spar - a partner who fights back", "Creator - build a character from parts", "WASD move   SHIFT sprint   CTRL step", "SPACE jump   C roll   RMB guard"].iter().enumerate() {
@@ -245,8 +245,20 @@ pub fn despawn_menu(mut commands: Commands, scene: Query<Entity, With<MenuScene>
 }
 
 /// Esc: play <-> menu (the menu doubles as the pause menu).
-pub fn toggle_menu(keys: Res<ButtonInput<KeyCode>>, state: Res<State<AppState>>, mut next: ResMut<NextState<AppState>>) {
-    if keys.just_pressed(KeyCode::Escape) {
+pub fn toggle_menu(
+    keys: Res<ButtonInput<KeyCode>>,
+    state: Res<State<AppState>>,
+    mut next: ResMut<NextState<AppState>>,
+    mut studio: ResMut<crate::studio::Studio>,
+    mut panel: ResMut<crate::panel::PanelState>,
+    window: Single<&Window, With<bevy::window::PrimaryWindow>>,
+) {
+    if window.focused && keys.just_pressed(KeyCode::Escape) {
+        if studio.open {
+            studio.toggle_request = true;
+            return;
+        }
+        if panel.show_inventory { panel.show_inventory = false; return; }
         next.set(match state.get() {
             AppState::Playing => AppState::MainMenu,
             AppState::MainMenu => AppState::Playing,

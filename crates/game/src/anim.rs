@@ -42,7 +42,7 @@ impl Libraries {
     pub fn scan() -> Self {
         let mut list = Vec::new();
         let packs = std::path::Path::new(crate::ROOT).join("assets/packs");
-        let mannequin = packs.join("hero/mannequin.glb").exists();
+        let master = packs.join("hero/master.glb").exists();
         if let Ok(dirs) = std::fs::read_dir(&packs) {
             for dir in dirs.flatten().filter(|d| d.path().is_dir()) {
                 let name = dir.file_name().to_string_lossy().to_string();
@@ -51,15 +51,15 @@ impl Libraries {
                     let f = file.file_name().to_string_lossy().to_string();
                     if f.ends_with(".glb") && f != "mannequin.glb" {
                         let path = format!("packs/{name}/{f}");
-                        let body = if name == "hero" && mannequin { "packs/hero/mannequin.glb".to_owned() } else { path.clone() };
+                        let body = if name == "hero" && master { "packs/hero/master.glb".to_owned() } else { path.clone() };
                         list.push(LibraryEntry { name: name.clone(), path, body });
                     }
                 }
             }
         }
-        list.sort_by(|a, b| a.name.cmp(&b.name));
+        list.sort_by(|a, b| a.name.cmp(&b.name).then(a.path.cmp(&b.path)));
         // the hero library (RPG rig + retargeted FightingMotions) is the default model when it exists
-        let selected = list.iter().position(|l| l.name == "hero").unwrap_or(0);
+        let selected = list.iter().position(|l| l.path == "packs/hero/fighter.glb").or_else(|| list.iter().position(|l| l.name == "hero")).unwrap_or(0);
         Self { list, selected, requested: None }
     }
 
@@ -165,7 +165,7 @@ impl AnimLibrary {
             let stride = v.as_f64()? as f32;
             (stride.is_finite() && stride > 0.05).then(|| (name.clone(), stride))
         }).collect()).unwrap_or_default();
-        let contact_timing = motion["strikes"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, v)| {
+        let mut contact_timing: std::collections::HashMap<String, crate::motion_timing::ContactTiming> = motion["strikes"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, v)| {
             let timing = crate::motion_timing::ContactTiming {
                 start: v["contact_start"].as_f64()? as f32,
                 peak: v["contact_peak"].as_f64()? as f32,
@@ -173,6 +173,12 @@ impl AnimLibrary {
             };
             timing.valid().then(|| (name.clone(), timing))
         }).collect()).unwrap_or_default();
+        let weapons = crate::read_json("assets/weapon_motion.json");
+        for (name, row) in weapons.as_object().into_iter().flatten() {
+            let Some(values) = row.as_array().filter(|v| v.len() == 3) else { continue };
+            let timing = crate::motion_timing::ContactTiming { start: values[0].as_f64().unwrap_or(0.0) as f32, peak: values[1].as_f64().unwrap_or(0.0) as f32, end: values[2].as_f64().unwrap_or(0.0) as f32 };
+            if timing.valid() { contact_timing.insert(name.clone(), timing); }
+        }
         let foot_contacts = motion["foot_contacts"].as_object().filter(|_| verified).map(|m| m.iter().filter_map(|(name, value)| {
             let curve: Vec<_> = value.as_array()?.iter().filter_map(|row| Some([row[0].as_f64()? as f32, row[1].as_f64()? as f32])).collect();
             (curve.len() >= 2 && curve.iter().flatten().all(|v| v.is_finite() && (0.0..=1.0).contains(v))).then(|| (name.clone(), curve))
@@ -408,13 +414,15 @@ pub struct FighterRig {
     block_tick: u64,
     rule_sample: bool,
     clip_time_s: f32,
-    gait_phase: f32,
+    pub(crate) gait_phase: f32,
     last_position: Option<guildbound_sim::V2>,
     last_tick: u64,
     prepared_clip: Option<(guildbound_sim::combat::MoveId, String)>,
     transition_s: f32,
     /// Bag size last frame (usize::MAX until first seen): growth plays the pickup clip.
     bag_len: usize,
+    was_airborne: bool,
+    open_chests: usize,
     /// Nodes in the locomotion blend last frame, and the smoothed travel angle relative to facing.
     loco: Vec<AnimationNodeIndex>,
     loco_angle: f32,
@@ -472,6 +480,8 @@ impl FighterRig {
             prepared_clip: None,
             transition_s: 0.2,
             bag_len: usize::MAX,
+            was_airborne: false,
+            open_chests: 0,
             loco: Vec::new(),
             loco_angle: 0.0,
             last_yaw: None,
@@ -826,7 +836,7 @@ struct LastHit {
     deathblow: bool,
 }
 
-fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim::Fighter, hit: LastHit) -> Option<(String, f32)> {
+fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim::Fighter, hit: LastHit, mapping: &crate::moveset::Moveset, fighter: usize) -> Option<(String, f32)> {
     let aim = hit.aim;
     // looping or long-form clips play at their own speed; the sim's action ends them
     let natural = |clip: &Option<String>| clip.clone().map(|c| { let d = lib.duration(&c); (c, d) });
@@ -835,6 +845,11 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
     let (clip, length) = match f.action.kind {
         K::Strike(m) | K::HeavyCharge(m) => {
             let mv = &guildbound_sim::MOVES[m];
+            if f.kit.weapon().is_some() {
+                let key = if mv.heavy { "heavy" } else { "light" };
+                if let Some(clip) = mapping.pick(lib, "weapons", key, fighter, f.action.seq) { return Some((clip, mv.total())); }
+            }
+            if fighter > 0 && let Some(clip) = mapping.pick(lib, "moves", mv.cluster, fighter, f.action.seq) { return Some((clip, mv.total())); }
             let pick = |name: &str| CLUSTER_SPECS.iter().position(|c| c.0 == name);
             let fallback = if mv.heavy { "roundhouse" } else { "cross" };
             let clip = [mv.cluster, fallback, "jab"].iter().filter_map(|n| pick(n)).find_map(|i| cursor.next(lib, i));
@@ -864,9 +879,8 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
         // Fire/lightning use mage clips; ki retains its quick punching motion.
         K::Cast(s) => {
             let spell = &guildbound_sim::SPELLS[s];
-            let map: serde_json::Value = serde_json::from_str(include_str!("../../../Tools/blender/hero_mapping.json")).expect("valid hero mapping");
             let key = if s == guildbound_sim::magic::FIREBALL && f.charge > 0.05 { "fireball_charged" } else { spell.name };
-            if let Some(names) = map["spells"][key].as_array() {
+            if let Some(names) = mapping.data["spells"][key].as_array() {
                 let available: Vec<_> = names.iter().filter_map(|n| n.as_str()).filter(|n| lib.node(n).is_some()).collect();
                 if !available.is_empty() {
                     let index = CLUSTER_SPECS.len() + s;
@@ -895,7 +909,10 @@ fn action_clip(lib: &AnimLibrary, cursor: &mut ClusterCursor, f: &guildbound_sim
             let name = if sideways.abs() > forward.abs() {
                 if sideways > 0.0 { "nc_run_right" } else { "nc_run_left" }
             } else if forward > 0.0 { "nc_run_forward" } else { "nc_run_backward" };
-            (lib.node(name).map(|_| name.to_owned()).or(r.walk.clone()), f.action.length)
+            let key = if sideways.abs() > forward.abs() { if sideways > 0.0 { "step_right" } else { "step_left" } } else if forward > 0.0 { "step_forward" } else { "step_back" };
+            let name = mapping.role(key, name);
+            let weapon = f.kit.weapon().and_then(|_| mapping.pick(lib, "weapons", "step", fighter, f.action.seq));
+            (weapon.or_else(|| lib.node(name).map(|_| name.to_owned())).or(r.walk.clone()), f.action.length)
         }
         _ => (None, 0.0),
     };
@@ -912,6 +929,7 @@ pub fn drive_animation(
     mut requests: ResMut<AnimRequests>,
     mut rigs: Query<&mut FighterRig>,
     mut players: Query<(&mut AnimationPlayer, Option<&mut AnimationTransitions>)>,
+    mapping: Res<crate::moveset::Moveset>,
 ) {
     let Some(graph) = &lib.graph else { return };
     let blend = Duration::from_secs_f32(settings.blend_seconds.max(0.01));
@@ -943,6 +961,8 @@ pub fn drive_animation(
             rig.aim = 0.0;
             rig.aim_vel = 0.0;
             rig.prepared_clip = None;
+            rig.was_airborne = false;
+            rig.open_chests = sim.world.chests.iter().filter(|c| c.open).count();
         }
         rig.last_tick = sim.world.tick;
         let travel = rig.last_position.map_or(0.0, |p| (f.position - p).length());
@@ -953,7 +973,16 @@ pub fn drive_animation(
         let bag = f.kit.bag.len();
         let picked = bag > rig.bag_len && f.action.free() && rig.bag_len != usize::MAX;
         rig.bag_len = bag;
-        let pickup = lib.roles.pickup.clone().filter(|_| picked).map(|c| (me, c));
+        let landed = rig.was_airborne && f.height <= 0.0 && f.vertical <= 0.0 && f.action.kind == guildbound_sim::ActionKind::None;
+        rig.was_airborne = f.height > 0.0 || f.vertical > 0.0;
+        let chests = sim.world.chests.iter().filter(|c| c.open).count();
+        let opened = me == 0 && chests > rig.open_chests && f.action.free();
+        rig.open_chests = chests;
+        let pickup = if landed {
+            Some((me, mapping.role("landing", "ual_jump_land").to_owned()))
+        } else if opened {
+            Some((me, mapping.role("interact", "ual_chest_open").to_owned()))
+        } else { lib.roles.pickup.clone().filter(|_| picked).map(|c| (me, c)) };
         for (_, clip) in requests.0.iter().filter(|(i, _)| *i == me).chain(pickup.iter()) {
             if let Some(node) = lib.node(clip) {
                 if settings.inertialize {
@@ -983,7 +1012,7 @@ pub fn drive_animation(
                 guildbound_sim::ActionKind::Strike(m) if rig.prepared_clip.as_ref().is_some_and(|(id, _)| *id == m) => {
                     rig.prepared_clip.take().map(|(_, clip)| (clip, guildbound_sim::MOVES[m].total()))
                 }
-                _ => action_clip(&lib, &mut cursor, f, hit),
+                _ => action_clip(&lib, &mut cursor, f, hit, &mapping, me),
             };
             if let Some((clip, length)) = chosen {
                 rig.prepared_clip = match f.action.kind {
@@ -1096,7 +1125,8 @@ pub fn drive_animation(
             // yaw grows toward +X from +Z; facing +Z the character's right is -X, so a growing yaw turns left
             let side = if rig.turn_acc > 0.0 { "left" } else { "right" };
             let size = if rig.turn_acc.abs() > 2.4 { 180 } else { 90 };
-            let clip = format!("mx_turn_{side}_{size}");
+            let default_clip = format!("mx_turn_{side}_{size}");
+            let clip = mapping.role(&format!("turn_{side}_{size}"), &default_clip).to_owned();
             if let Some(node) = lib.node(&clip) {
                 player.stop_all();
                 player.start(node);
@@ -1136,8 +1166,10 @@ pub fn drive_animation(
         // the relaxed standing idle in and out of combat (boss, 2026-10-13: drop the Unarmed- fight idle); the
         // fight reads from the fists and the guard pose, not from a held stance
         let relaxed = lib.node("nc_idle").is_some();
-        let stance = if relaxed { Some("nc_idle") } else if lib.node(&settings.stance_idle).is_some() { Some(settings.stance_idle.as_str()) } else { r.idle.as_deref() };
+        let weapon_stance = f.kit.weapon().and_then(|_| mapping.pick(&lib, "weapons", "idle", me, 0));
+        let stance = weapon_stance.as_deref().or(r.idle.as_deref()).or_else(|| if relaxed { Some("nc_idle") } else { Some(settings.stance_idle.as_str()) });
         let pose = match f.action.kind {
+            guildbound_sim::ActionKind::Guard if f.kit.weapon().is_some() => mapping.data["weapons"]["guard"][0].as_str().filter(|n| lib.node(n).is_some()).or(r.guard.as_deref()).or(stance),
             guildbound_sim::ActionKind::Guard => r.guard.as_deref().or(stance),
             guildbound_sim::ActionKind::Charge(_) => r.spell_charge.as_deref().or(stance),
             _ => stance,

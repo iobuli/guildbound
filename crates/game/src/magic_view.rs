@@ -78,7 +78,6 @@ pub fn sync_orbs(
         }
     }
     let mut have: Vec<_> = orbs.iter_mut().collect();
-    have.sort_by_key(|h| h.1.0);
     have.sort_by_key(|o| o.1.0);
     for (k, (pos, r, color)) in wanted.iter().enumerate() {
         if let Some((_, _, t, global, mat, light, _)) = have.get_mut(k) {
@@ -93,6 +92,7 @@ pub fn sync_orbs(
         } else {
             commands.spawn((
                 Orb(k),
+                crate::toon::NoToon,
                 Mesh3d(assets.mesh.clone()),
                 MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::BLACK, emissive: *color, unlit: false, ..default() })),
                 Transform::from_translation(*pos).with_scale(Vec3::splat(*r)),
@@ -151,7 +151,7 @@ pub fn draw_magic(sim: Res<Sim>, mut gizmos: Gizmos) {
     }
     for p in &sim.world.projectiles {
         let d = SPELLS[p.spell];
-        let head = Vec3::new(p.position.x, 1.25, p.position.z);
+        let head = flat(p.position, 1.25);
         let tail = head - Vec3::new(p.direction.x, 0.0, p.direction.z) * (0.4 + d.speed * 0.03);
         gizmos.line(head, tail, Color::LinearRgba(element_color(d.element, p.charge)));
     }
