@@ -156,7 +156,8 @@ pub struct Mover {
     pub air_time: f32,
     /// Landing impact 0..1, decays (drives squash + land key).
     pub landing: f32,
-    /// Locomotion cycle phase 0..1, advanced by travelled distance / stride.
+    /// Locomotion cycle phase 0..1. Advanced by `select` (travelled distance / blended track
+    /// stride), read by `select` only.
     pub phase: f32,
     pub crouch: bool,
     pub sprinting: bool,

@@ -40,6 +40,9 @@ pub struct Track {
     pub keys: Vec<Key>,
     /// For locomotion loops: normalized phase (0..1) where the LEFT foot plants.
     pub left_contact: Option<f32>,
+    /// For locomotion loops: ground distance covered by one full cycle (m), estimated from the
+    /// planted foot's sweep relative to the pelvis (in-place clips) or root travel. 0 otherwise.
+    pub stride: f32,
     /// The dense clip, kept for raw sampling, root travel and debugging.
     pub dense: Clip,
 }
