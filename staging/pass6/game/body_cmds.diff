@@ -1,0 +1,20 @@
+--- orig/body_cmds.rs	2026-10-15 01:38:21.860881014 +0100
++++ game/body_cmds.rs	2026-10-15 01:41:19.660881014 +0100
+@@ -219,13 +219,14 @@
+     world.insert_resource(track);
+ }
+ 
+-/// Visible banner while the agent holds the body and the user's gameplay input is locked out.
++/// Visible banner while the agent holds the body and the user's gameplay input is locked out. Bottom centre,
++/// above the status strip and click-through, so it never covers the Studio title or tab bar (pass 6).
+ fn banner(mut contexts: bevy_egui::EguiContexts, agent: Res<crate::agent::Agent>) {
+     if !agent.lock_input { return; }
+     let Ok(ctx) = contexts.ctx_mut() else { return };
+-    bevy_egui::egui::Area::new("agent_lock_banner".into()).anchor(bevy_egui::egui::Align2::CENTER_TOP, [0.0, 8.0]).order(bevy_egui::egui::Order::Foreground).show(ctx, |ui| {
++    bevy_egui::egui::Area::new("agent_lock_banner".into()).anchor(bevy_egui::egui::Align2::CENTER_BOTTOM, [0.0, -44.0]).interactable(false).order(bevy_egui::egui::Order::Foreground).show(ctx, |ui| {
+         bevy_egui::egui::Frame::new().fill(bevy_egui::egui::Color32::from_rgba_unmultiplied(150, 40, 30, 230)).inner_margin(10).corner_radius(6).show(ui, |ui| {
+-            ui.label(bevy_egui::egui::RichText::new(format!("AGENT CONTROL - your input is locked ({}). Esc or the Pose tab toggle exits.", agent.status)).size(15.0).strong().color(bevy_egui::egui::Color32::WHITE));
++            ui.label(bevy_egui::egui::RichText::new(format!("AGENT CONTROL - your input is locked ({}). Esc or the Pose tab toggle exits.", agent.status)).size(13.0).strong().color(bevy_egui::egui::Color32::WHITE));
+         });
+     });
+ }

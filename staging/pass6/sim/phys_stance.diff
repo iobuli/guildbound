@@ -1,0 +1,46 @@
+--- orig/phys_stance.rs	2026-10-15 01:38:21.860881014 +0100
++++ sim/phys_stance.rs	2026-10-15 01:38:21.872881014 +0100
+@@ -1,26 +1,9 @@
+-//! Physics: stance-leg gravity hold, contact hysteresis and ankle PD (amendment s7, s9, s10).
++//! Physics: stance weight shares (amendment s7). Contact moved to phys_balance::Contact and the
++//! gravity hold to phys_balance::gravity_ff in pass 6.
+ //! Extends phys_balance; pose order slot: Avian and ragdoll. Pure f32, bones in BoneIdx order.
+ 
+ use crate::phys_math::*;
+ 
+-/// Foot contact with hysteresis: lands below `down` m, lifts only above `up` m, and must hold a
+-/// state for `min_ticks` before it can flip again. Stops the 3 cm threshold flickering.
+-#[derive(Clone, Copy, Debug)]
+-pub struct Contact { pub planted: bool, pub held: u32 }
+-pub const DOWN_M: f32 = 0.03;
+-pub const UP_M: f32 = 0.05;
+-pub const MIN_TICKS: u32 = 6; // 50 ms at 120 Hz
+-
+-impl Contact {
+-    pub fn new() -> Self { Contact { planted: false, held: MIN_TICKS } }
+-    pub fn step(&mut self, sole_height: f32) -> bool {
+-        self.held = self.held.saturating_add(1);
+-        let want = if self.planted { sole_height < UP_M } else { sole_height < DOWN_M };
+-        if want != self.planted && self.held >= MIN_TICKS { self.planted = want; self.held = 0; }
+-        self.planted
+-    }
+-}
+-
+ /// Weight share per planted foot (sums to 1 across planted feet): inverse horizontal distance
+ /// from each foot to the COM, so the foot under the body carries more.
+ pub fn weight_shares(com: V3, feet: &[(V3, bool)]) -> Vec<f32> {
+@@ -31,14 +14,3 @@
+     let s: f32 = w.iter().sum();
+     if s > 0.0 { w.iter().map(|x| x / s).collect() } else { w }
+ }
+-
+-/// Gravity-hold torques for one stance leg (Jacobian transpose of the ground reaction):
+-/// the foot pushes up with F = share * m * g, so each joint must supply tau_j = (p_contact - p_j) x F
+-/// to keep the leg from buckling. `joints` are hip, knee, ankle world positions in that order.
+-/// Returns the torque each joint motor applies to its child (world frame).
+-pub fn leg_hold(joints: &[V3; 3], contact: V3, share: f32, body_mass: f32) -> [V3; 3] {
+-    let f = [0.0, share * body_mass * G, 0.0];
+-    let t = |j: V3| cross(sub(contact, j), f);
+-    [t(joints[0]), t(joints[1]), t(joints[2])]
+-}
+-

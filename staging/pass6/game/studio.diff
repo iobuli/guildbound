@@ -1,0 +1,26 @@
+--- orig/studio.rs	2026-10-15 01:38:21.860881014 +0100
++++ game/studio.rs	2026-10-15 01:43:22.808881014 +0100
+@@ -214,6 +214,9 @@
+         self.playing = true;
+         self.preview_request = true;
+     }
++    /// Remote tab switch (gb.studio `tab`): any index of TABS, including the Pose tab (POSE_TAB = 9).
++    /// Returns false for an out-of-range index so the handler can report it instead of ignoring it.
++    pub fn set_tab(&mut self, i: usize) -> bool { let ok = i < TABS.len(); if ok { self.tab = i; } ok }
+     pub fn request_spawn(&mut self, path: String) {
+         self.spawn_request = Some(path);
+     }
+@@ -304,9 +307,11 @@
+     commands.spawn((
+         Name::new("studio floor collider"),
+         RigidBody::Static,
+-        Collider::cuboid(18.0, 0.2, 18.0),
++        // 1 m thick box (top face at the stage): a fast foot that gets past the surface in one step is still
++        // inside the box and pushed back up, instead of leaving through a thin slab
++        Collider::cuboid(18.0, 1.0, 18.0),
+         CollisionLayers::new(1u32, LayerMask::ALL),
+-        Transform::from_translation(STAGE - Vec3::Y * 0.1),
++        Transform::from_translation(STAGE - Vec3::Y * 0.5),
+     ));
+     commands.spawn((
+         Name::new("studio key light"),
