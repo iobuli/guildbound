@@ -1,3 +1,0 @@
-Unity 6000.3.26f1
-PASS: canvas 1920x1080; board content 1024x664; serialized Button pointer-click + submit; slider callback; opacity floor; 6 nonblocking decorations.
-LIMIT: input callbacks tested via ExecuteEvents; end-to-end hardware input, in-game layout/contrast and game-state bindings pending.

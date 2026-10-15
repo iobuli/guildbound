@@ -1,8 +1,0 @@
-[package]
-name = "guildbound_sim"
-edition.workspace = true
-version.workspace = true
-publish.workspace = true
-
-# Deterministic combat core. No Bevy, no engine types: `cargo test -p guildbound_sim` runs it headless.
-[dependencies]

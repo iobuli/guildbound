@@ -1,9 +1,0 @@
-MODEL source:fighter.glb: 130 clips, 79 with issues
-MODEL source:kevin: 22 clips, 10 with issues
-MODEL fighter.glb: 148 clips, 88 with issues, source mean 0.2 deg
-MODEL male_peasant.glb: 9 clips, 0 with issues
-MODEL female_peasant.glb: 9 clips, 0 with issues
-MODEL female_ranger.glb: 9 clips, 0 with issues
-MODEL male_ranger.glb: 9 clips, 0 with issues
-PATTERNS introduced by the pipeline (model check bone: clips, worst @ clip t); 388 findings inherited from the source omitted
-  fighter.glb source B_Pelvis->B_Spine: 4, 11.3 @ Unarmed-Strafe-Backward-Right @0.542
