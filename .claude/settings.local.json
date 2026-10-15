@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git count-objects *)",
+      "Bash(mkdir -p anim/movesets)",
+      "Bash(cp __TRACKED_VAR__/quaternius/Universal_Animation_Library_1/UAL1_Standard.glb anim/ual1.glb)",
+      "Bash(cp '__TRACKED_VAR__/quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb' anim/ual2.glb)",
+      "Bash(cp __TRACKED_VAR__/sekiro_proto/ybot.glb anim/sekiro.glb)",
+      "Bash(python -I -)"
+    ]
+  }
+}

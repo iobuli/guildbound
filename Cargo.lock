@@ -3092,6 +3092,7 @@ dependencies = [
  "bevy",
  "gltf",
  "guildbound_sim",
+ "serde",
  "serde_json",
 ]
 
@@ -4657,10 +4658,6 @@ checksum = "10ab3eb7f3becc3a1cbc4f2c6f20267996cfc1a6467a873763411b136a122715"
 dependencies = [
  "portable-atomic",
 ]
-
-[[package]]
-name = "posenet"
-version = "0.1.0"
 
 [[package]]
 name = "potential_utf"

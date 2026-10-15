@@ -1,0 +1,74 @@
+{
+ "longsword": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 3 FREE\\Swordsman Warrior Mecanim Animation Pack\\Characters\\Swordsman.FBX",
+  "mesh": "Mesh-Swordsman-Weapon",
+  "length_m": 1.171,
+  "verts": 140
+ },
+ "greatsword": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 2 FREE\\2 Handed Warrior Mecanim Animation Pack\\Characters\\2Handed.FBX",
+  "mesh": "Mesh-TwoHanded-Weapon",
+  "length_m": 1.55,
+  "verts": 60
+ },
+ "warhammer": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 3 FREE\\Hammer Warrior Mecanim Animation Pack\\Characters\\Hammer.FBX",
+  "mesh": "Mesh-Hammer-Weapon",
+  "length_m": 1.35,
+  "verts": 64
+ },
+ "spear": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 3 FREE\\Spearman Warrior Mecanim Animation Pack\\Characters\\Spearman.FBX",
+  "mesh": "Mesh-Spearman-Weapon",
+  "length_m": 2.1,
+  "verts": 34
+ },
+ "glaive": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 1 FREE\\Ninja Warrior Mecanim Animation Pack\\Characters\\Ninja.FBX",
+  "mesh": "Mesh-Ninja-Weapon",
+  "length_m": 1.7,
+  "verts": 96
+ },
+ "knight_sword": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 2 FREE\\Knight Warrior Mecanim Animation Pack\\Characters\\Knight.FBX",
+  "mesh": "Mesh-Knight-Weapon",
+  "length_m": 1.101,
+  "verts": 70
+ },
+ "battle_staff": {
+  "source": "ExplosiveLLC\\Warrior Pack Bundle 2 FREE\\Mage Warrior Mecanim Animation Pack\\Characters\\Mage.FBX",
+  "mesh": "Mesh-Mage-Weapon",
+  "length_m": 1.5,
+  "verts": 34
+ },
+ "claymore": {
+  "source": "ExplosiveLLC\\RPG Character Mecanim Animation Pack FREE\\Models\\Weapons\\2Hand-Sword.FBX",
+  "mesh": "2Hand-Sword",
+  "length_m": 1.5,
+  "verts": 66
+ },
+ "mace": {
+  "source": "MoCapCentral\\MC_Sample\\Demo\\Objects\\Hammer\\SM_Prop_Hammer.fbx",
+  "mesh": "SM_Prop_Hammer",
+  "length_m": 0.75,
+  "verts": 32
+ },
+ "elder_staff": {
+  "source": "MoCapCentral\\MC_Sample\\Demo\\Objects\\Staff\\SM_Prop_Staff.fbx",
+  "mesh": "SM_Prop_Staff",
+  "length_m": 1.75,
+  "verts": 80
+ },
+ "shortsword": {
+  "source": "..\\..\\..\\guildbound\\assets\\packs\\_sources\\quaternius\\Fantasy_Props_MegaKit\\Exports\\glTF\\Sword_Bronze.gltf",
+  "mesh": "Sword_Bronze",
+  "length_m": 0.8,
+  "verts": 1517
+ },
+ "battleaxe": {
+  "source": "..\\..\\..\\guildbound\\assets\\packs\\_sources\\quaternius\\Fantasy_Props_MegaKit\\Exports\\glTF\\Axe_Bronze.gltf",
+  "mesh": "Axe_Bronze",
+  "length_m": 1.2,
+  "verts": 655
+ }
+}

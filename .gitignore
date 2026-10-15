@@ -1,7 +1,7 @@
 /target/
 /staging/
-/assets/packs/
+/assets/packs/*
+!/assets/packs/weapons/
 /assets/boss added assets/
 /assets/UI REWORK/
-/assets/anim/*.glb
 *.zip
