@@ -1,0 +1,18 @@
+{
+  "body_height_m": 1.6745526790618896,
+  "collider_radius_m": 0.22460201382637024,
+  "controller_half_height_m": 0.8372763395309448,
+  "hip_width_m": 0.22016946971416473,
+  "left_leg_m": [
+    0.4129679501056671,
+    0.4418489933013916
+  ],
+  "left_sole_offset_m": 0.09985053539276123,
+  "model": "Male Ranger",
+  "right_leg_m": [
+    0.4129679501056671,
+    0.4418489933013916
+  ],
+  "right_sole_offset_m": 0.09985053539276123,
+  "shoulder_width_m": 0.4083672761917114
+}

@@ -1,0 +1,18 @@
+{
+  "body_height_m": 1.6852552890777588,
+  "collider_radius_m": 0.20000000298023224,
+  "controller_half_height_m": 0.8426276445388794,
+  "hip_width_m": 0.22304198145866394,
+  "left_leg_m": [
+    0.4103096127510071,
+    0.4666067659854889
+  ],
+  "left_sole_offset_m": 0.08212053775787354,
+  "model": "Female Ranger",
+  "right_leg_m": [
+    0.4103096127510071,
+    0.4666067659854889
+  ],
+  "right_sole_offset_m": 0.08212053775787354,
+  "shoulder_width_m": 0.303529292345047
+}

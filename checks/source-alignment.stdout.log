@@ -1,0 +1,19 @@
+TUNING kp 1500 kd 55 kb 5 kbd 0.3 substeps 12 foot_damp 40 mu 0.8 k_com 0.11 ramp 12 | mass 79.4 kg
+[source] D:\gb_overhaul\crates\game/../../assets/packs/npc/male_peasant.glb: 13 mapped segments; motion ["idle", "walk"]
+[anim_rig] peasant: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot
+[source] D:\gb_overhaul\crates\game/../../assets/packs/npc/male_peasant.glb: 13 mapped segments; motion ["idle", "walk"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/npc/male_peasant.glb: 13 mapped segments; motion ["idle", "walk"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/npc/male_peasant.glb: 13 mapped segments; motion ["idle", "walk"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/npc/male_peasant.glb: 13 mapped segments; motion ["idle", "walk"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/master.glb: 13 mapped segments; motion ["idle", "walk", "run"]
+[anim_rig] master: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/master.glb: 13 mapped segments; motion ["idle", "walk", "run"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/master.glb: 13 mapped segments; motion ["idle", "walk", "run"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/mannequin.glb: 13 mapped segments; motion []
+[anim_rig] mannequin: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/mannequin.glb: 13 mapped segments; motion []
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/mannequin.glb: 13 mapped segments; motion []
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/fighter.glb: 13 mapped segments; motion ["idle", "walk", "run"]
+[anim_rig] hero: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/fighter.glb: 13 mapped segments; motion ["idle", "walk", "run"]
+[source] D:\gb_overhaul\crates\game/../../assets/packs/hero/fighter.glb: 13 mapped segments; motion ["idle", "walk", "run"]

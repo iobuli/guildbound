@@ -1,0 +1,18 @@
+{
+  "body_height_m": 1.7003257274627686,
+  "collider_radius_m": 0.20000000298023224,
+  "controller_half_height_m": 0.8501628637313843,
+  "hip_width_m": 0.22480161488056183,
+  "left_leg_m": [
+    0.4135465919971466,
+    0.47028785943984985
+  ],
+  "left_sole_offset_m": 0.07797634601593018,
+  "model": "Female Peasant",
+  "right_leg_m": [
+    0.4135465919971466,
+    0.47028785943984985
+  ],
+  "right_sole_offset_m": 0.07797634601593018,
+  "shoulder_width_m": 0.3059239387512207
+}

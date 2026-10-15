@@ -1,0 +1,20 @@
+{
+  "_note": "Mass shares = ragdoll.rs SEGMENTS (79.4 kg) normalised; per-rig totals from the team brief. Geometry (anchors, segment centres, shapes, the foot box) = gb_lab/src/ragdoll.rs stand rig (the one that passed bal/ro_5_0.3_12), y up, metres, rest rotations identity. Side 0 = L (+x), 1 = R (-x). Not an anthropometric source.",
+  "rigs": { "master": 75.0, "mannequin": 59.3, "hero": 58.9 },
+  "foot_box": { "half_length": 0.12, "half_width": 0.05, "half_height": 0.03 },
+  "joints": [
+    { "name": "B_Pelvis",     "parent": null, "role": "pelvis",     "share": 16.0, "anchor": [0.0, 1.0, 0.0],   "com": [0.0, 1.0, 0.0],   "shape": ["box", 0.3, 0.15, 0.2] },
+    { "name": "B_Spine2",     "parent": 0,    "role": "spine",      "share": 20.0, "anchor": [0.0, 1.08, 0.0],  "com": [0.0, 1.3, 0.0],   "shape": ["box", 0.3, 0.4, 0.2] },
+    { "name": "B_Head",       "parent": 1,    "role": "head",       "share": 5.0,  "anchor": [0.0, 1.51, 0.0],  "com": [0.0, 1.62, 0.0],  "shape": ["ball", 0.11] },
+    { "name": "B_L_UpperArm", "parent": 1,    "role": "shoulder_l", "share": 3.0,  "anchor": [0.17, 1.45, 0.0], "com": [0.32, 1.45, 0.0], "shape": ["capsule_x", 0.05, 0.16] },
+    { "name": "B_L_Forearm",  "parent": 3,    "role": "elbow_l",    "share": 2.0,  "anchor": [0.47, 1.45, 0.0], "com": [0.6, 1.45, 0.0],  "shape": ["capsule_x", 0.04, 0.18] },
+    { "name": "B_R_UpperArm", "parent": 1,    "role": "shoulder_r", "share": 3.0,  "anchor": [-0.17, 1.45, 0.0],"com": [-0.32, 1.45, 0.0],"shape": ["capsule_x", 0.05, 0.16] },
+    { "name": "B_R_Forearm",  "parent": 5,    "role": "elbow_r",    "share": 2.0,  "anchor": [-0.47, 1.45, 0.0],"com": [-0.6, 1.45, 0.0], "shape": ["capsule_x", 0.04, 0.18] },
+    { "name": "B_L_Thigh",    "parent": 0,    "role": "hip_l",      "share": 8.0,  "anchor": [0.1, 0.92, 0.0],  "com": [0.1, 0.72, 0.0],  "shape": ["capsule_y", 0.06, 0.28] },
+    { "name": "B_L_Calf",     "parent": 7,    "role": "knee_l",     "share": 5.0,  "anchor": [0.1, 0.52, 0.0],  "com": [0.1, 0.30, 0.0],  "shape": ["capsule_y", 0.05, 0.32] },
+    { "name": "B_R_Thigh",    "parent": 0,    "role": "hip_r",      "share": 8.0,  "anchor": [-0.1, 0.92, 0.0], "com": [-0.1, 0.72, 0.0], "shape": ["capsule_y", 0.06, 0.28] },
+    { "name": "B_R_Calf",     "parent": 9,    "role": "knee_r",     "share": 5.0,  "anchor": [-0.1, 0.52, 0.0], "com": [-0.1, 0.30, 0.0], "shape": ["capsule_y", 0.05, 0.32] },
+    { "name": "B_L_Foot",     "parent": 8,    "role": "ankle_l",    "share": 1.2,  "anchor": [0.1, 0.08, 0.0],  "com": [0.1, 0.03, 0.04], "shape": ["box", 0.1, 0.06, 0.24] },
+    { "name": "B_R_Foot",     "parent": 10,   "role": "ankle_r",    "share": 1.2,  "anchor": [-0.1, 0.08, 0.0], "com": [-0.1, 0.03, 0.04],"shape": ["box", 0.1, 0.06, 0.24] }
+  ]
+}

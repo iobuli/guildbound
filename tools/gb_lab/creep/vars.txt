@@ -1,0 +1,6 @@
+base --kb 5 --kbd 0.3 --kp 4000 --kd 126
+kb4 --kb 4 --kbd 0.3 --kp 4000 --kd 126
+kb6 --kb 6 --kbd 0.3 --kp 4000 --kd 126
+kbd6 --kb 5 --kbd 0.6 --kp 4000 --kd 126
+kp3200 --kb 5 --kbd 0.3 --kp 3200 --kd 113
+kp5000 --kb 5 --kbd 0.3 --kp 5000 --kd 141

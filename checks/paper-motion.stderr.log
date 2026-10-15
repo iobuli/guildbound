@@ -1,0 +1,108 @@
+2026-10-15T17:27:35.356043Z  INFO bevy_diagnostic::system_information_diagnostics_plugin::internal: SystemInfo { os: "Windows 11 Pro", kernel: "26200", cpu: "AMD Ryzen 7 3700X 8-Core Processor", core_count: "8", memory: "15.9 GiB" }
+2026-10-15T17:27:35.506763Z ERROR wgpu_hal::vulkan::instance: GENERAL [Loader Message (0x0)]
+	loader_get_json: Failed to open JSON file C:\Program Files (x86)\Epic Games\Epic Online Services\managedArtifacts\98bc04bc842e4906993fd6d6644ffb8d\EOSOverlayVkLayer-Win64.json
+2026-10-15T17:27:35.507219Z ERROR wgpu_hal::vulkan::instance: 	objects: (type: INSTANCE, hndl: 0x17dff4330e0, name: ?)
+2026-10-15T17:27:35.507859Z ERROR wgpu_hal::vulkan::instance: GENERAL [Loader Message (0x0)]
+	loader_get_json: Failed to open JSON file C:\Program Files (x86)\Epic Games\Launcher\Portal\Extras\Overlay\EOSOverlayVkLayer-Win32.json
+2026-10-15T17:27:35.507961Z ERROR wgpu_hal::vulkan::instance: 	objects: (type: INSTANCE, hndl: 0x17dff4330e0, name: ?)
+2026-10-15T17:27:35.508080Z ERROR wgpu_hal::vulkan::instance: GENERAL [Loader Message (0x0)]
+	loader_get_json: Failed to open JSON file C:\Program Files (x86)\Epic Games\Launcher\Portal\Extras\Overlay\EOSOverlayVkLayer-Win64.json
+2026-10-15T17:27:35.508171Z ERROR wgpu_hal::vulkan::instance: 	objects: (type: INSTANCE, hndl: 0x17dff4330e0, name: ?)
+2026-10-15T17:27:35.827429Z  INFO bevy_render::renderer: AdapterInfo { name: "NVIDIA GeForce RTX 3060", vendor: 4318, device: 9475, device_type: DiscreteGpu, device_pci_bus_id: "0000:2b:00.0", driver: "NVIDIA", driver_info: "610.62", backend: Vulkan, subgroup_min_size: 32, subgroup_max_size: 32, transient_saves_memory: false }
+2026-10-15T17:27:36.218666Z  INFO bevy_pbr::cluster: GPU clustering is supported on this device.
+2026-10-15T17:27:36.218893Z  INFO bevy_render::batching::gpu_preprocessing: GPU preprocessing is fully supported on this device.
+2026-10-15T17:27:36.219877Z  INFO bevy_winit::system: Creating new window Guildbound - overhaul (67v0)
+2026-10-15T17:27:37.070265Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.070598Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.070698Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.070975Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.071111Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.071203Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.077976Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.085540Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.090277Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.098569Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.102248Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.102821Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.102965Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.105658Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.105739Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.105908Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.106208Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.106326Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.106416Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.106624Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.106691Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.106781Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.106907Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.107025Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.107119Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.107359Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.107495Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.108255Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.109904Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.110034Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.110132Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.110320Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.110416Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.110985Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.111114Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.113571Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.113687Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.115083Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.120173Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.120272Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.120563Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.120390Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.121833Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.125825Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.126027Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.126205Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.126485Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.127292Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.131090Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.134042Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.134285Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.135487Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.135673Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.136023Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.136272Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.138746Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.141435Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.141611Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.141633Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.141759Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.141867Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_3
+2026-10-15T17:27:37.141988Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_3
+2026-10-15T17:27:37.143417Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.143520Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.143802Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.143913Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.145242Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.145337Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.146267Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.146388Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.147044Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.167058Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.167764Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.169091Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.171193Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.171390Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.172471Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.172637Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.174116Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.176940Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.177214Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.177211Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.180099Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.180221Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.180436Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.180584Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.180714Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_4
+2026-10-15T17:27:37.186300Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_1
+2026-10-15T17:27:37.186578Z  WARN bevy_gltf::loader: Unknown vertex attribute COLOR_2
+2026-10-15T17:27:37.186715Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_2
+2026-10-15T17:27:37.186814Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_3
+2026-10-15T17:27:37.186914Z  WARN bevy_gltf::loader: Unknown vertex attribute TEXCOORD_4
+2026-10-15T17:34:23.041778Z  INFO bevy_window::system: No windows are open, exiting
+2026-10-15T17:34:23.042023Z  INFO bevy_winit::system: Closing window 67v0

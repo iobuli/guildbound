@@ -1,0 +1,22 @@
+[package]
+name = "gb_lab"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+bevy = { version = "=0.19.1", default-features = false, features = ["std", "multi_threaded"] }
+avian3d = { version = "=0.7.0", default-features = false, features = ["3d", "f32", "parry-f32", "xpbd_joints", "parallel"] }
+
+# Windowed overlay demo (cargo run --release --features visual --bin visual). Headless lab build is unchanged.
+[features]
+visual = ["bevy/default_app", "bevy/3d_bevy_render", "bevy/ui_api", "bevy/ui_bevy_render", "bevy/bevy_winit", "bevy/x11", "bevy/default_font", "bevy/bevy_gizmos", "bevy/bevy_gizmos_render"]
+
+[[bin]]
+name = "gb_lab"
+path = "src/main.rs"
+
+[[bin]]
+name = "visual"
+path = "src/bin/visual.rs"
+required-features = ["visual"]

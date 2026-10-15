@@ -1,0 +1,3 @@
+[ranger] loading actual male_ranger.glb; native walk; character controller, not ragdoll
+[combat] female Ranger ready: 13 fitted body parts, independent grips, disarmable sword
+[ranger] 94 nodes, legs [0.41296795, 0.441849] / [0.41296795, 0.441849], sole offsets 0.08712685 / 0.08712685

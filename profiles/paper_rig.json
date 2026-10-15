@@ -1,0 +1,390 @@
+{
+  "canonical_rotation_xyzw": [
+    0.10802586376667023,
+    0.6988064646720886,
+    -0.10802585631608963,
+    0.6988064646720886
+  ],
+  "joint_count": 62,
+  "joints": [
+    {
+      "depth": 0,
+      "fine": false,
+      "name": "B_Pelvis",
+      "parent": null
+    },
+    {
+      "depth": 1,
+      "fine": false,
+      "name": "B_L_Thigh",
+      "parent": "B_Pelvis"
+    },
+    {
+      "depth": 1,
+      "fine": false,
+      "name": "B_R_Thigh",
+      "parent": "B_Pelvis"
+    },
+    {
+      "depth": 1,
+      "fine": false,
+      "name": "B_Spine",
+      "parent": "B_Pelvis"
+    },
+    {
+      "depth": 2,
+      "fine": false,
+      "name": "B_L_Calf",
+      "parent": "B_L_Thigh"
+    },
+    {
+      "depth": 2,
+      "fine": false,
+      "name": "B_R_Calf",
+      "parent": "B_R_Thigh"
+    },
+    {
+      "depth": 2,
+      "fine": false,
+      "name": "B_Spine1",
+      "parent": "B_Spine"
+    },
+    {
+      "depth": 3,
+      "fine": false,
+      "name": "B_L_Foot",
+      "parent": "B_L_Calf"
+    },
+    {
+      "depth": 3,
+      "fine": false,
+      "name": "B_R_Foot",
+      "parent": "B_R_Calf"
+    },
+    {
+      "depth": 3,
+      "fine": false,
+      "name": "B_Spine2",
+      "parent": "B_Spine1"
+    },
+    {
+      "depth": 4,
+      "fine": false,
+      "name": "B_L_Toe0",
+      "parent": "B_L_Foot"
+    },
+    {
+      "depth": 4,
+      "fine": false,
+      "name": "B_R_Toe0",
+      "parent": "B_R_Foot"
+    },
+    {
+      "depth": 4,
+      "fine": false,
+      "name": "B_L_Clavicle",
+      "parent": "B_Spine2"
+    },
+    {
+      "depth": 4,
+      "fine": false,
+      "name": "B_Neck",
+      "parent": "B_Spine2"
+    },
+    {
+      "depth": 4,
+      "fine": false,
+      "name": "B_R_Clavicle",
+      "parent": "B_Spine2"
+    },
+    {
+      "depth": 5,
+      "fine": false,
+      "name": "B_L_UpperArm",
+      "parent": "B_L_Clavicle"
+    },
+    {
+      "depth": 5,
+      "fine": false,
+      "name": "B_Head",
+      "parent": "B_Neck"
+    },
+    {
+      "depth": 5,
+      "fine": false,
+      "name": "B_R_UpperArm",
+      "parent": "B_R_Clavicle"
+    },
+    {
+      "depth": 6,
+      "fine": false,
+      "name": "B_L_Forearm",
+      "parent": "B_L_UpperArm"
+    },
+    {
+      "depth": 6,
+      "fine": false,
+      "name": "B_R_Forearm",
+      "parent": "B_R_UpperArm"
+    },
+    {
+      "depth": 7,
+      "fine": false,
+      "name": "B_L_Forearm.001",
+      "parent": "B_L_Forearm"
+    },
+    {
+      "depth": 7,
+      "fine": false,
+      "name": "B_R_Hand",
+      "parent": "B_R_Forearm"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "B_L_Finger2",
+      "parent": "B_L_Forearm.001"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "index_01_l",
+      "parent": "B_L_Forearm.001"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "pinky_01_l",
+      "parent": "B_L_Forearm.001"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "ring_01_l",
+      "parent": "B_L_Forearm.001"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "thumb_01_l",
+      "parent": "B_L_Forearm.001"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "B_R_Finger2",
+      "parent": "B_R_Hand"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "index_01_r",
+      "parent": "B_R_Hand"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "pinky_01_r",
+      "parent": "B_R_Hand"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "ring_01_r",
+      "parent": "B_R_Hand"
+    },
+    {
+      "depth": 8,
+      "fine": true,
+      "name": "thumb_01_r",
+      "parent": "B_R_Hand"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "middle_02_l",
+      "parent": "B_L_Finger2"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "index_02_l",
+      "parent": "index_01_l"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "pinky_02_l",
+      "parent": "pinky_01_l"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "ring_02_l",
+      "parent": "ring_01_l"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "thumb_02_l",
+      "parent": "thumb_01_l"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "middle_02_r",
+      "parent": "B_R_Finger2"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "index_02_r",
+      "parent": "index_01_r"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "pinky_02_r",
+      "parent": "pinky_01_r"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "ring_02_r",
+      "parent": "ring_01_r"
+    },
+    {
+      "depth": 9,
+      "fine": true,
+      "name": "thumb_02_r",
+      "parent": "thumb_01_r"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "middle_03_l",
+      "parent": "middle_02_l"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "index_03_l",
+      "parent": "index_02_l"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "pinky_03_l",
+      "parent": "pinky_02_l"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "ring_03_l",
+      "parent": "ring_02_l"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "thumb_03_l",
+      "parent": "thumb_02_l"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "middle_03_r",
+      "parent": "middle_02_r"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "index_03_r",
+      "parent": "index_02_r"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "pinky_03_r",
+      "parent": "pinky_02_r"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "ring_03_r",
+      "parent": "ring_02_r"
+    },
+    {
+      "depth": 10,
+      "fine": true,
+      "name": "thumb_03_r",
+      "parent": "thumb_02_r"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "middle_04_leaf_l",
+      "parent": "middle_03_l"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "index_04_leaf_l",
+      "parent": "index_03_l"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "pinky_04_leaf_l",
+      "parent": "pinky_03_l"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "ring_04_leaf_l",
+      "parent": "ring_03_l"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "thumb_04_leaf_l",
+      "parent": "thumb_03_l"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "middle_04_leaf_r",
+      "parent": "middle_03_r"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "index_04_leaf_r",
+      "parent": "index_03_r"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "pinky_04_leaf_r",
+      "parent": "pinky_03_r"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "ring_04_leaf_r",
+      "parent": "ring_03_r"
+    },
+    {
+      "depth": 11,
+      "fine": true,
+      "name": "thumb_04_leaf_r",
+      "parent": "thumb_03_r"
+    }
+  ],
+  "representation": "joint position concept + parent index, hierarchical order",
+  "runtime": "closed-form source/velocity/acceleration pose fit with graph-distance attention",
+  "sources": [
+    "D:/2508.10898v1.pdf",
+    "D:/2411.18197v3.pdf"
+  ],
+  "symmetric_pairs": 27
+}
