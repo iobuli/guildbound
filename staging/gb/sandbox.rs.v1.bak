@@ -1,0 +1,276 @@
+//! Milestone 0 live sandbox: boot straight into a locked T-pose ragdoll, balance it with
+//! `guildbound_sim::phys_balance`, write `target/live/metrics.jsonl` once a second, and draw
+//! the Physics tab. Pure maths lives in sim; this file only gathers ECS data and applies torque.
+//! Deterministic: Vec in a fixed bone order everywhere, no HashMap, whole ticks only.
+//!
+//! STAGED ON THE BOX, NEVER COMPILED AGAINST THE REPO. Every `TODO(verify)` marks an assumption
+//! about an existing repo API that must be checked before this goes in.
+
+use bevy::prelude::*;
+use bevy_egui::egui; // TODO(verify): repo uses bevy_egui re-export as in ui_theme.rs
+use guildbound_sim::phys_balance as pb;
+use std::io::Write;
+
+const METRICS_DIR: &str = "target/live";
+const METRICS_PATH: &str = "target/live/metrics.jsonl";
+const METRICS_EVERY: u64 = pb::TICK_HZ; // 120 ticks = 1 s
+/// Foot is "planted" when its lowest point is within this height of the ground (m).
+const CONTACT_EPS: f32 = 0.03;
+/// Half extents of the foot rectangle (x, z) used for support points around each planted foot.
+const FOOT_HALF: [f32; 2] = [0.05, 0.12];
+const GAINS: pb::BalanceGains = pb::BalanceGains { kp: 40.0, kd: 8.0 }; // TODO(tune): Physics to tune from metrics.jsonl
+/// Whole-body balance torque cap before the stance split (N m). TODO(tune) or derive from phys_mass.
+const BALANCE_LIMIT: f32 = 180.0;
+
+// ---------------------------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------------------------
+
+/// Sandbox state. Ticks are counted from the ragdoll-on moment so replay ramps identically.
+#[derive(Resource, Default)]
+pub struct Sandbox {
+    pub active: bool,
+    pub tick: u64,
+    /// Tick at which ragdoll turned on; `None` until the first ragdoll-on.
+    pub ragdoll_on_tick: Option<u64>,
+    pub balance_enabled: bool,
+    pub prev_com: Option<pb::V3>,
+    /// Previous world position of [left, right] foot.
+    pub prev_feet: [Option<pb::V3>; 2],
+    pub report: pb::BalanceReport,
+    /// Last torque written per stance motor: (bone, tau, limit). Fixed bone order.
+    pub last_torques: Vec<(u16, pb::V3, f32)>,
+    pub metrics_error: Option<String>,
+}
+
+/// Marker for a ragdoll body that belongs to the sandbox model, with its bone index and role.
+/// TODO(verify): the existing ragdoll spawn (anim.rs / body_cmds.rs `ragdoll_motors`, `RagdollTrack`)
+/// does not add this. Either add it there, or replace `gather` below with a query over RagdollTrack links.
+#[derive(Component, Clone, Copy, Debug)]
+pub struct SandboxBone {
+    pub bone: u16,
+    pub role: BoneRole,
+    /// Motor torque cap for this bone (N m), from body_cmds::torque_limit_for.
+    pub torque_limit: f32,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum BoneRole { Other, Foot(Side), StanceLeg(Side) /* thigh, shin */ }
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Side { Left = 0, Right = 1 }
+
+// ---------------------------------------------------------------------------------------------
+// Plugin
+// ---------------------------------------------------------------------------------------------
+
+pub fn plugin(app: &mut App) {
+    app.init_resource::<Sandbox>()
+        .add_systems(Startup, boot_sandbox)
+        // TODO(verify): spawn of the Studio model is async (glb load). `enter_ragdoll_when_ready`
+        // polls until the model + ragdoll links exist, then flips ragdoll on once.
+        .add_systems(Update, (enter_ragdoll_when_ready, esc_opens_f2))
+        .add_systems(FixedUpdate, balance_tick);
+    // TODO(verify): repo sets Time::<Fixed>::from_hz(120.0) already (amendment: 1/120 s tick).
+}
+
+/// (1) Boot: lock player input and request the Studio model in T-pose.
+fn boot_sandbox(mut sb: ResMut<Sandbox>, mut commands: Commands) {
+    sb.active = true;
+    sb.balance_enabled = true;
+    // TODO(verify): reuse agent.rs input lock. Assumed: `crate::agent::InputLock` resource with
+    // `locked: bool` (the same flag the Pose tab "Agent control" button sets, red banner, Esc unlock).
+    commands.insert_resource(crate::agent::InputLock { locked: true, reason: "sandbox".into() });
+    // TODO(verify): Studio spawn API. Assumed `crate::studio::SpawnStudioModel { profile, pose }` event/message.
+    // Bevy 0.19 uses Messages for buffered events; swap to `commands.trigger(...)` if the repo uses observers.
+    commands.write_message(crate::studio::SpawnStudioModel {
+        profile: crate::studio::RigProfile::Master,
+        pose: crate::studio::StartPose::TPose,
+    });
+}
+
+/// Turns ragdoll on once the model's ragdoll bodies exist, recording ragdoll-on tick.
+fn enter_ragdoll_when_ready(
+    mut sb: ResMut<Sandbox>,
+    bones: Query<&SandboxBone>,
+    mut commands: Commands,
+) {
+    if !sb.active || sb.ragdoll_on_tick.is_some() || bones.is_empty() { return; }
+    // TODO(verify): body_controller / Pose tab "Ragdoll" button path. Assumed command `RagdollSet(true)`.
+    // TODO(event_log): this should be an `Event::RagdollOn` appended to the log at `sb.tick`, and the
+    // ramp anchor read back from the log so replay matches.
+    commands.write_message(crate::body_cmds::RagdollSet(true));
+    sb.ragdoll_on_tick = Some(sb.tick);
+    sb.prev_com = None;
+    sb.prev_feet = [None, None];
+}
+
+/// Esc opens F2 Studio. If agent control is on, Esc stays the unlock key (agent.rs handles it);
+/// here we only open the Studio when it is closed.
+fn esc_opens_f2(keys: Res<ButtonInput<KeyCode>>, sb: Res<Sandbox>, mut studio: ResMut<crate::studio::StudioState>) {
+    // TODO(verify): `crate::studio::StudioState { open: bool, tab: StudioTab }` - name of F2 toggle resource.
+    if sb.active && keys.just_pressed(KeyCode::Escape) && !studio.open {
+        studio.open = true;
+    }
+}
+
+// ---------------------------------------------------------------------------------------------
+// (2) + (3) Fixed tick: COM, contacts, balance torque, metrics
+// ---------------------------------------------------------------------------------------------
+
+struct Gathered {
+    masses: Vec<pb::BoneMass>,
+    /// [left, right]: (world foot position, lowest y, planted)
+    feet: [Option<(pb::V3, bool)>; 2],
+    /// Stance-leg motors in bone order: (entity, bone, side, limit)
+    stance: Vec<(Entity, u16, Side, f32)>,
+}
+
+fn gather(
+    q: &Query<(Entity, &SandboxBone, &GlobalTransform, &avian3d::prelude::ComputedMass, &avian3d::prelude::ComputedCenterOfMass)>,
+) -> Gathered {
+    // TODO(verify): Avian 0.7 component names ComputedMass / ComputedCenterOfMass (local-space COM).
+    let mut rows: Vec<_> = q.iter().collect();
+    rows.sort_by_key(|r| r.1.bone); // fixed bone order regardless of ECS iteration order
+    let mut g = Gathered { masses: Vec::with_capacity(rows.len()), feet: [None, None], stance: Vec::new() };
+    for (e, b, gt, m, c) in rows {
+        let wc = gt.transform_point(c.0);
+        g.masses.push(pb::BoneMass { bone: b.bone, mass: m.value(), com: wc.to_array() });
+        match b.role {
+            BoneRole::Foot(s) => {
+                let p = gt.translation();
+                // TODO(verify): ground at y = 0 in the sandbox; use collider AABB min-y if feet are offset.
+                let planted = p.y <= CONTACT_EPS + 0.05;
+                g.feet[s as usize] = Some((p.to_array(), planted));
+            }
+            BoneRole::StanceLeg(s) => g.stance.push((e, b.bone, s, b.torque_limit)),
+            BoneRole::Other => {}
+        }
+    }
+    g
+}
+
+fn balance_tick(
+    mut sb: ResMut<Sandbox>,
+    bodies: Query<(Entity, &SandboxBone, &GlobalTransform, &avian3d::prelude::ComputedMass, &avian3d::prelude::ComputedCenterOfMass)>,
+    mut torque_q: Query<&mut avian3d::prelude::ConstantTorque>,
+    // TODO(verify): Avian 0.7 force API. If the repo uses `Forces` query data or `ExternalTorque`
+    // (pre-0.4 naming), swap here. Torque must be cleared/overwritten each tick, not accumulated.
+) {
+    if !sb.active { return; }
+    let tick = sb.tick;
+    sb.tick += 1;
+    let Some(on) = sb.ragdoll_on_tick else { return; };
+    let since_on = tick - on;
+
+    let g = gather(&bodies);
+    if g.masses.is_empty() { return; }
+    let (mass, com) = pb::body_com(&g.masses);
+    let dt = 1.0 / pb::TICK_HZ as f32;
+    let com_vel = match sb.prev_com {
+        Some(p) => [(com[0] - p[0]) / dt, (com[1] - p[1]) / dt, (com[2] - p[2]) / dt],
+        None => [0.0; 3],
+    };
+    sb.prev_com = Some(com);
+
+    // Support points: 4 corners of each planted foot, left then right (deterministic).
+    let mut pts: Vec<[f32; 2]> = Vec::with_capacity(8);
+    let mut slip = [0.0f32; 2];
+    let mut planted_sides: Vec<Side> = Vec::with_capacity(2);
+    for (i, side) in [Side::Left, Side::Right].into_iter().enumerate() {
+        if let Some((p, planted)) = g.feet[i] {
+            if planted {
+                planted_sides.push(side);
+                // TODO(improve): axis-aligned box; rotate by foot yaw for accuracy.
+                for (sx, sz) in [(-1.0, -1.0), (1.0, -1.0), (1.0, 1.0), (-1.0, 1.0)] {
+                    pts.push([p[0] + sx * FOOT_HALF[0], p[2] + sz * FOOT_HALF[1]]);
+                }
+            }
+            if let Some(prev) = sb.prev_feet[i] { slip[i] = pb::foot_slip(prev, p, planted); }
+            sb.prev_feet[i] = Some(p);
+        }
+    }
+    let poly = pb::support_polygon(&pts);
+    let margin = pb::stability_margin(&poly, [com[0], com[2]]);
+
+    let tau = if sb.balance_enabled {
+        pb::balance_torque(mass, com, com_vel, &poly, GAINS, since_on, BALANCE_LIMIT)
+    } else { [0.0; 3] };
+
+    // Split evenly across stance-leg motors on planted sides, each clamped to its own limit.
+    let stance: Vec<_> = g.stance.iter().filter(|s| planted_sides.contains(&s.2)).copied().collect();
+    let share = 1.0 / (stance.len().max(1) as f32);
+    let mut torques: Vec<(u16, pb::V3, f32)> = Vec::with_capacity(g.stance.len());
+    for &(e, bone, side, limit) in &g.stance {
+        let mut t = if planted_sides.contains(&side) { [tau[0] * share, 0.0, tau[2] * share] } else { [0.0; 3] };
+        let m = (t[0] * t[0] + t[2] * t[2]).sqrt();
+        if m > limit && m > 0.0 { let s = limit / m; t = [t[0] * s, 0.0, t[2] * s]; }
+        if let Ok(mut ct) = torque_q.get_mut(e) {
+            // Balance adds on top of the joint motor (motor is a joint, not this component), so
+            // overwriting ConstantTorque each tick is "adding to the stance motor" without accumulation.
+            // TODO(verify): no other system writes ConstantTorque on these bodies (motion_physics F6?).
+            ct.0 = Vec3::from_array(t);
+        }
+        // TODO(phys): saturation should use the motor's total (motor_torque + balance); here balance only.
+        torques.push((bone, t, limit));
+    }
+    let _ = stance;
+
+    sb.report = pb::BalanceReport {
+        tick,
+        com,
+        support: poly,
+        margin,
+        saturation: pb::saturation(&torques),
+        slip,
+        ramp: pb::ramp(since_on),
+    };
+    sb.last_torques = torques;
+
+    if tick % METRICS_EVERY == 0 {
+        let line = sb.report.json_line();
+        if let Err(e) = append_metrics(&line) { sb.metrics_error = Some(e.to_string()); }
+    }
+}
+
+/// Append one line; creates target/live on first write. Path is relative to the cwd
+/// (cargo run sets cwd to the workspace root). TODO(verify) cwd when launched from the exe.
+fn append_metrics(line: &str) -> std::io::Result<()> {
+    std::fs::create_dir_all(METRICS_DIR)?;
+    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(METRICS_PATH)?;
+    writeln!(f, "{line}")
+}
+
+// ---------------------------------------------------------------------------------------------
+// (4) Physics tab panel. Called by the F2 Studio tab bar when the Physics tab is selected.
+// TODO(verify): Studio tab dispatch; assumed `crate::studio` calls `sandbox::physics_tab(ui, &mut sb)`.
+// ---------------------------------------------------------------------------------------------
+
+pub fn physics_tab(ui: &mut egui::Ui, sb: &mut Sandbox, bone_name: impl Fn(u16) -> String) {
+    use crate::ui_theme as t;
+    let r = &sb.report;
+    t::panel(ui, "Balance", |ui| {
+        // TODO(verify): signature assumed `stat(ui, label: &str, value: String)`.
+        t::stat(ui, "Tick", format!("{}", r.tick));
+        t::stat(ui, "Ramp", format!("{:.2}", r.ramp));
+        t::stat(ui, "COM (m)", format!("{:.3}, {:.3}, {:.3}", r.com[0], r.com[1], r.com[2]));
+        let col = if r.margin >= 0.0 { t::ACCENT } else { t::DRIVER_COLORS[3] };
+        ui.label(egui::RichText::new(format!("Stability margin  {:+.3} m", r.margin)).size(t::FONT[1]).color(col));
+        t::stat(ui, "Support points", format!("{}", r.support.len()));
+        t::stat(ui, "Slip L / R (mm/tick)", format!("{:.2} / {:.2}", r.slip[0] * 1000.0, r.slip[1] * 1000.0));
+        ui.checkbox(&mut sb.balance_enabled, "Balance torque on");
+    });
+    t::panel(ui, "Torque saturation", |ui| {
+        if r.saturation.is_empty() { ui.label("No stance motors yet"); }
+        for &(b, s) in &r.saturation {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(bone_name(b)).size(t::FONT[0]));
+                let col = if s > 0.9 { t::DRIVER_COLORS[3] } else { t::ACCENT };
+                ui.add(egui::ProgressBar::new(s).desired_width(120.0).fill(col).text(format!("{:.0}%", s * 100.0)));
+            });
+        }
+    });
+    t::panel(ui, "Metrics file", |ui| {
+        ui.label(egui::RichText::new(METRICS_PATH).size(t::FONT[0]).monospace());
+        if let Some(e) = &sb.metrics_error { ui.colored_label(t::DRIVER_COLORS[3], e); }
+    });
+}

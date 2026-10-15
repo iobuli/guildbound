@@ -63,10 +63,12 @@ $$ \boldsymbol\omega_L = \frac{\log\big(Q(t{+}1)Q(t{-}1)^{-1}\big)}{2\Delta t},\
 \boldsymbol\alpha_L = \frac{\log\big(Q(t{+}1)Q(t)^{-1}\big)-\log\big(Q(t)Q(t{-}1)^{-1}\big)}{\Delta t^2}. $$
 These are rates of the *product*, so all cross terms between chain links are exact (no per-link sum). Note: these logs are left-differences, i.e. rates expressed in the frame where $Q$ is applied (the parent frame) [team].
 
-**World conversion** (`rates_to_world_rel(R_p, ω_p, ω_L, α_L)`):
+**World conversion** (`rates_to_world_rel(B_p, ω_p, ω_L, α_L)`; written first with a generic parent rotation $R_p$, see the frame fix below):
 $$ \boldsymbol\omega^\star = R_p\boldsymbol\omega_L,\qquad \boldsymbol\alpha^\star = R_p\boldsymbol\alpha_L + \boldsymbol\omega_p\times(R_p\boldsymbol\omega_L). $$
 *Derivation [team].* $\boldsymbol\omega^\star$ is the desired child-relative-to-parent velocity in world. Differentiate $\mathbf v(t) = R_p(t)\boldsymbol\omega_L(t)$ with $\dot R_p = [\boldsymbol\omega_p]_\times R_p$:
-$\dot{\mathbf v} = [\boldsymbol\omega_p]_\times R_p\boldsymbol\omega_L + R_p\dot{\boldsymbol\omega}_L = \boldsymbol\omega_p\times(R_p\boldsymbol\omega_L) + R_p\boldsymbol\alpha_L.$ The desired *absolute* child acceleration is then $\boldsymbol\alpha^\star + \dot{\boldsymbol\omega}_p$ (used in §5). The constant $O$ offsets do not change rates because $O_p$ is fixed in the parent frame; strictly $\boldsymbol\omega_L$ should be rotated by $O_p$ as well ($R_pO_p\boldsymbol\omega_L$) if the chain's rates are in the bone frame — the staged code passes $R_p$; check this at integration and log the residual [team, open].
+$\dot{\mathbf v} = [\boldsymbol\omega_p]_\times R_p\boldsymbol\omega_L + R_p\dot{\boldsymbol\omega}_L = \boldsymbol\omega_p\times(R_p\boldsymbol\omega_L) + R_p\boldsymbol\alpha_L.$ The desired *absolute* child acceleration is then $\boldsymbol\alpha^\star + \dot{\boldsymbol\omega}_p$ (used in §5). **Frame fix (ruling 2026-10-15 07:23; The Rust Expert, confirmed by Animation).** $\boldsymbol\omega_L,\boldsymbol\alpha_L$ are in the parent **bone** frame (`local_target` is bone-local), so the rotation passed to `rates_to_world_rel` must be $B_p = R_pO_p$ (parent capsule world rotation × bone offset), not $R_p$ — the same $R_pO_p$ that appears in $\boldsymbol\theta_{err}$:
+$$ \boldsymbol\omega^\star = B_p\boldsymbol\omega_L,\qquad \boldsymbol\alpha^\star = B_p\boldsymbol\alpha_L + \boldsymbol\omega_p\times(B_p\boldsymbol\omega_L). $$
+The derivation above holds with $R_p\to B_p$: $O_p$ is constant in the parent capsule frame, so $\dot B_p=[\boldsymbol\omega_p]_\times B_p$. Passing $R_p$ (pass 6 up to v3) leaves every $\boldsymbol\omega^\star,\boldsymbol\alpha^\star$ off by $O_p$ whenever $O_p\ne I$; pass 6 v4 passes $B_p$.
 
 Relative velocity: $\boldsymbol\omega_{rel} = \boldsymbol\omega_c - \boldsymbol\omega_p$. Damping error: $\boldsymbol\omega_{rel} - \boldsymbol\omega^\star$ (for a static pose $\boldsymbol\omega^\star=0$, which is what the lab and the stand test use).
 
@@ -135,6 +137,12 @@ $$ A_2=\sum_{i=1}^{n-2}\mathbf d_i\times\mathbf d_{i+1},\ \ \mathbf C = P_0 + \f
 $$ \boldsymbol\tau_{bal} = \sigma\,\big(k_b\,\mathbf e + k_{bd}\,\mathbf v\big)\times\hat y\;M g ,\qquad \sigma=+1. $$
 Units: $k_b$ dimensionless (fraction of $Mg$ per metre of offset, times metres → N·m), $k_{bd}$ in s. $\boldsymbol\tau_{bal}$ is the torque wanted *on the body above*; ankle joints get $-\boldsymbol\tau_{ankle}\,s_i$ on the foot, the hip of each stance leg (parent = pelvis) gets $-\boldsymbol\tau_{hip}\,s_i$. Lab finding: $\sigma=-1$ blows up (reported), so the sign is correct. Older `balance_torque` (unused in pass 6) was $\mathbf F=-M(k_p\mathbf e+k_d\mathbf v) - Mg\mathbf e/h$ at height $h$, $\boldsymbol\tau=(hF_z,0,-hF_x)$.
 
+**Weak COM pull** (lab `--com_pull`, Grok Bot's design; `gb_lab/tan/all.json`, `all2.json`). With $\mathbf x_0$ the COM at ragdoll-on, add to the balance torque
+$$ \boldsymbol\tau_{pull} = k_{com}\,M g\,\big((\mathbf x-\mathbf x_0)_{xz}\times\hat y\big),\qquad \boldsymbol\tau_{bal}\leftarrow\boldsymbol\tau_{bal}+\boldsymbol\tau_{pull}, $$
+then apply the same ankle-then-hip split. $k_{com}$ is dimensionless per metre like $k_b$, same sign convention ($\sigma=+1$), so it pushes the COM back toward its start point. Fade: $k_{com}\leftarrow k_{com}\,(1-\max(\text{strike\_boost}(t),\ a_{acro}))$, with $a_{acro}\in[0,1]$ Animation's `acro_active` weight from `AcroAbility`; when $a_{acro}$ returns to 0, reset $\mathbf x_0\leftarrow\mathbf x$ so the body doesn't snap back to its old spot [team] (Animation's proposal; not yet measured). **Setting, off by default**; the $k_{com}$ sweep 0.07–0.12 is pending.
+
+*Why a strong pull diverges.* The feet don't move, so the pull can only tilt the body over planted feet: it has no way to bring the support centre $\mathbf s$ back to $\mathbf x_0$. The two springs combine into one target $\frac{k_b\mathbf s+k_{com}\mathbf x_0}{k_b+k_{com}}$. Once the body has wandered (feet and all) by $\mathbf d=\mathbf s-\mathbf x_0$, that target sits $\frac{k_{com}}{k_b+k_{com}}|\mathbf d|$ off the support centre, toward the old spot. Balance then holds the COM away from the middle of the sole. For a small $k_{com}$ that offset is a few mm and the pull only takes energy out of the wander. For a large $k_{com}$ it reaches the foot half-length $d_{edge}$, the ankle torque hits $\tau_{cap}$, the rest goes to the hips, and the body falls toward the old point it can't reach. Lab: $k_{com}$ 0.05–0.1 helps, 0.2 starts to fail, ≥ 0.5 diverges.
+
 **Ankle-then-hip split** (`split_balance`, lab): ankles take up to $\tau_{cap} = \min(\sum c,1)\,M g\,d_{edge}$, $d_{edge}=0.12$ m (lab default; foot half-length), the remainder goes to the stance hips. Justification: the CoP must stay on the sole, so the ankle can supply at most weight × distance to the toe/heel edge (brief §3.4); beyond that, the hip/trunk (flywheel) channel (Pratt 2006 flywheel model, abstract and §V.D–E as noted) [team split]. A geometric $d_{edge}$ from the actual foot edges (`--geom_edge`) did not clearly help (reported).
 
 **Capture point** (Pratt et al. 2006 §V.C, Eq. 7–10; Linear Inverted Pendulum $\ddot x=(g/z_0)x$):
@@ -147,15 +155,17 @@ lab: $z_0 = \max(x_y - s_y, 0.3)$, error $\mathbf e+\mathbf v/\omega_0$, $\bolds
 
 **Sole height.** Lowest sole point in world $y$: lab = min over the 4 box-sole corners $\mathbf p+R(\pm0.05,-h_y,\pm0.12)$; pass 6 = exact lowest point of the capsule sole. **Rest offset:** the old live −2.65 cm sole rest height came from reading a capsule pitched by $\theta$ $r\sin\theta$ too low ($r=4.5$ cm, `pass6/game/sandbox.rs` comment); with the exact lowest point no offset subtraction is needed. In the lab, `rest_offset` means "spawn the body 5 mm above the floor" (`defs`), not a subtraction. Comparison: `ladder/r3` vs `r3_off` com_min 0.107/0.110, flips/s 12.5/12.2; `r4` vs `r4_off` 0.122/0.115, 12.0/11.9 (pre-fix runs, both fell): it explains none of the flips.
 
-**Hysteresis** (`contact_hysteresis`): on when $y_{sole}<0.01$ m, stays on while $y_{sole}\le0.025$ m. (`phys_stance::Contact` — 3 cm / 5 cm with a 6-tick hold — is the older version; pass 6 v1 `Contact` = 1 cm / 2.5 cm + 6-tick hold.)
+**Measured rest height** (`gb_lab/rerun/sole_*.json`): Avian's soft contact lets the sole sink $y_{rest}=-0.8$ cm at 12 substeps with contact frequency 1.5, and $-0.4$ cm at contact frequency 3. There is no contact flicker. The old −1.1 to −1.6 cm came from the old whole-body gravity_ff (§6). **Rule:** measure the contact thresholds from $y_{rest}$, and lift the rendered foot by $-y_{rest}$ so it doesn't show through the floor.
+
+**Hysteresis** (pass 6 `phys_balance::Contact`, `CONTACT_ON_M`/`CONTACT_OFF_M`): on when $y_{sole}-y_{rest}<0.01$ m, stays on while $y_{sole}-y_{rest}\le0.025$ m. (`phys_stance::Contact` — 3 cm / 5 cm with a 6-tick hold — is the older version; pass 6 `Contact` = 1 cm / 2.5 cm + 6-tick hold. The lab uses the same 1 / 2.5 cm thresholds without the hold.)
 
 **Filter** (one pole, per tick): $c_{t+1} = c_t + 0.25\,(b_t - c_t)$, $b_t\in\{0,1\}$. Time constant $-\Delta t/\ln(0.75)\approx 29$ ms; reaches 0.9 after 8 ticks.
 
 **Share.** Lab and pass 6: $s_i = c_i/\sum_j c_j$. Alternative (`phys_stance::weight_shares`): $w_i = 1/(d_{i}+0.02)$ with $d_i$ the horizontal foot-to-COM distance, normalised. $\sum s_i = 1$ over planted feet.
 
-**Foot damping** (setting, default off):
+**Foot damping** (**on by default**, $k=40$ N·s/m, absolute foot speed, cap $\mu=0.8$):
 $$ \mathbf F_i = -c_i\,k\,\mathbf v^{rel}_{xz},\qquad |\mathbf F_i|\le \mu\, s_i\min(\textstyle\sum c,1)\,Mg $$
-applied as a force on the foot (static-friction model). Absolute: $\mathbf v^{rel}=\mathbf v_{foot}$; COM-relative: $\mathbf v^{rel}=\mathbf v_{foot}-\dot{\mathbf x}$. Lab $\mu=0.8$ (`--mu`), pass 6 `FLOOR_MU = 0.75`, $k=40$ N·s/m.
+applied as a force on the foot (static-friction model). Absolute (the default): $\mathbf v^{rel}=\mathbf v_{foot}$; COM-relative (not used): $\mathbf v^{rel}=\mathbf v_{foot}-\dot{\mathbf x}$. Lab $\mu=0.8$ (`--mu`), pass 6 `FLOOR_MU = 0.75`, $k=40$ N·s/m.
 Results (40 s, $k_p$ 4000, $k_d$ 126):
 - 12 substeps, kb 5, kbd 0.3, absolute $k=40$ over 6 variants (`creep/a40__*`): drift_final 7.7–30.9 mm, com_min ≥ 0.979, 0.05 flips/s. No damping (`creep/none__*`): drift_final 30–384 mm. $k=30$ or $50$ fail some variants (`a30__kb4` 130 mm, `a50__kbd6` 69 mm).
 - 6 substeps, kb 3, kbd 0.3: none 609 mm; abs40 660 mm; rel20 655 mm; rel40 641 mm; rel60 643 mm (`rel/*__base`); 80 s: 74, 397, 253, 294, 482 mm. COM-relative keeps the body up but does not cut drift.
@@ -179,7 +189,7 @@ Restart allowed when ticks since the last start $\ge 18$ (6 hold + 12 cooldown).
 
 ## 11. Safety
 
-- **Fault cap (pass 6):** per joint, $|\boldsymbol\tau| > 3\,\text{m}\cdot Mg$ N·m (`SAFETY_LEVER_M = 3.0`, ≈ 2200 N·m at 75 kg) → clamp and log `fault`; non-finite $\boldsymbol\tau$ → zero and log. Never shapes motion. **Lab** fault counter is different: a requested *foot force* $>3Mg$ N; `fault_3Mg_ticks` was not written to the ss/rel JSON summaries (*not measured on disk*; reported 0).
+- **Fault cap (pass 6):** per joint, $|\boldsymbol\tau| > 3\,\text{m}\cdot Mg$ N·m (`SAFETY_LEVER_M = 3.0`, ≈ 2200 N·m at 75 kg) → clamp and log `fault`; non-finite $\boldsymbol\tau$ → zero and log. Never shapes motion. **Lab** fault counter is different: a requested *foot force* $>3Mg$ N; `fault_ticks` was not written to the ss/rel JSON summaries (*not measured on disk*; reported 0).
 - **NaN watchdog:** any non-finite position/velocity → log the first tick and freeze (Avian PR #651 notes velocity cascades to NaN in joint chains; released Avian clamps max speed only at integration, not in contact solving).
 - **Max angular speed:** `MaxAngularSpeed(50.0)` per capsule (pass 6 `MAX_SPIN`).
 - **CCD:** `SweptCcd::default()` + `SpeculativeMargin(0.05)` on feet and shins (pass 6). The lab has no CCD.
@@ -238,27 +248,32 @@ Lab body (`gb_lab/src/ragdoll.rs`): 13 bodies, $M=69.4$ kg [sum of `defs`: pelvi
 | **`bal/ro_5_0.3_12`** (= best) | kp 4000 kd 126 kb 5 kbd 0.3, 12 substeps | **0.981** | **0.993** | **0.052** (drift_max 0.384) | **0.05** | **0.644** |
 | `bal/ro_5_0.6_24` | kbd 0.6, 24 substeps | 0.987 | 0.995 | 0.315 | 0.05 | 0.713 |
 | `creep/a40__base` | best + abs foot damp 40, 12 ss | 0.981 | — | 0.015 | 0.05 | 0.634 |
+| `rerun/kb5_ss12` | 12 ss, kb 5 (no foot damping) | — | — | 0.034 | — | — |
+| `rerun/kb3_ss12` | 12 ss, kb 3 | — | — | 0.237 | — | — |
+| `rerun/kb3_ss24` | 24 ss, kb 3 | — | — | 0.326 | — | — |
+| `rerun/kb5_ss24` | 24 ss, kb 5 | — | — | 0.359 | — | — |
+| `rerun/kb3_ss6_cf3` | 6 ss, contact frequency 3 | — | — | 0.155 | — | 1.10 |
+| `rerun/kb5_ss6_cf3` | 6 ss, contact frequency 3 | — | — | 0.252 | — | 1.02 |
+| 6 ss, contact damping ×2 | — | falls | — | — | — | — |
 | `ss/6_4000_126_5_0` | best at 6 substeps | 0.136 | 0.516 | — | — | — |
 | `ss/6_4000_126_3_0` | kb 3, 6 ss | 0.965 | 0.988 | 0.609 | 0.05 | 0.611 |
 | `ss/6_8000_179_3_0` | kp 8000 kd 179, kb 3, 6 ss | 0.976 | 0.989 | 0.259 | 0.05 | 0.631 |
 | `ss/4_*` (all 24) | 4 substeps | ≤ 0.180 | — | — | — | — |
 
-(— = not in that file or not extracted. `diag/C2` stays up without balance but fails the pass mark on flips (1.45/s) and peak_sat (9.6). Run names `ro_*_12`/`_24` encode substeps; older files have no `substeps` field.) At 6 substeps, kb 5 falls for every $k_p$ tried (500–8000); kb 3 stands only for $k_p\ge3000$. Nothing stands at 4. The 3×3 vs scalar $I_{red}$ relative difference is 0.39–0.59 in every ss/rel run.
+(— = not in that file or not extracted. `diag/C2` stays up without balance but fails the pass mark on flips (1.45/s) and peak_sat (9.6). Run names `ro_*_12`/`_24` encode substeps; older files have no `substeps` field.) At 6 substeps, kb 5 falls for every $k_p$ tried (500–8000); kb 3 stands only for $k_p\ge3000$. Nothing stands at 4. **Substep check** (Grok Bot, avian3d 0.7.0 source, 40 s stand, 3×3 $I_{red}$): Avian 0.7 has no solver-iteration setting (`SolverConfig` only has contact settings), joint compliance already defaults to 0, and `SubstepCount` is one global resource, so there is no per-ragdoll option. `gb_lab/rerun/` (4800 ticks, $k_p$ 4000 / $k_d$ 126, no foot damping; all record `substeps`): only 12 substeps + kb 5 passes (3.4 cm, 0.6 ms/tick). 24 substeps drift 32.6 / 35.9 cm (kb 3 / kb 5), and contact frequency 3 at 6 substeps fails on drift and on peak_sat > 0.9. Since 24 substeps drift more than 12, so the leftover drift is wander, not solver error. Older runs have no `substeps` field. The 3×3 vs scalar $I_{red}$ relative difference is 0.39–0.59 in every ss/rel run.
 
-**Current best settings:** Stable PD (§4) with 3×3 $I_{red}$; $k_p=4000$, $k_d=126$; reaction-form gravity_ff; PD balance $k_b=5$, $k_{bd}=0.3$, ankle-then-hip; contact 1 / 2.5 cm, filter 0.25; no shaping clamp, fault cap $3Mg$·m; **12 substeps**; foot damping 40 (absolute) available, default off.
+**Creep fixes** (12 ss, kb 5; `gb_lab/tan/all.json`, `all2.json`): foot damping 40 alone passes 6/6 configs at 0.8–3.1 cm drift (40 s) but wanders 34 cm over 80 s. Pull $k_{com}=0.1$ + foot damping 40 passes 5/6 and holds 4.6 cm over 80 s. It fails at $k_p$ 5000 / $k_d$ 141 with 21 cm. The full Tan numerator $-(k_d+k_p\Delta t)\boldsymbol\omega_{rel}$ doesn't help (30–41 cm over 80 s), so the current form stays.
+
+**Current best settings:** Stable PD (§4) with 3×3 $I_{red}$; $k_p=4000$, $k_d=126$; reaction-form gravity_ff; PD balance $k_b=5$, $k_{bd}=0.3$, ankle-then-hip; contact 1 / 2.5 cm, filter 0.25; no shaping clamp, fault cap $3Mg$·m; **12 substeps, kb 5 (pass 6 ruling 2026-10-15 07:23)**; contact frequency 3 noted as the fallback for 6 substeps; **foot damping 40 on by default** (absolute, cap $\mu=0.8$); full Tan term off; COM pull $k_{com}=0.1$ optional, off by default, sweep 0.07–0.12 pending.
 
 **Open problems.**
-1. *Substeps 12 vs 6.* Pass 6 v2 ships `SUBSTEPS 6`, `KB 5`, which falls in the lab. Suspected cause: Avian joint stretch at fewer substeps (motor $\omega_nh$ is only ~0.1). `SubstepCount` is global (affects the whole game).
-2. *Creep.* ~1 cm/s with both feet planted; chaotic and solver-sensitive (16 substeps or friction 1.0 drift ~0.16 m, 80 s creeps to 0.34 m: reported). Motors-off lying body also creeps 1.2 cm in 2 s (`ladder/r0`).
-3. $R_pO_p$ vs $R_p$ in the rate conversion (§3) unverified.
-4. Strike, feed-forward, and the full Tan numerator: not measured.
+1. *Substeps (ruled).* Pass 6 v4 ships 12 substeps, kb 5 (about 0.1 ms/tick more than 6). Nothing passes at 6 in Avian 0.7. `SubstepCount` is global, so this costs the whole game.
+2. *Creep.* Being handled by foot damping 40 + optional pull (above); 80 s at $k_p$ 5000 still fails. Before: ~1 cm/s with both feet planted; chaotic and solver-sensitive (16 substeps or friction 1.0 drift ~0.16 m, 80 s creeps to 0.34 m: reported). Motors-off lying body also creeps 1.2 cm in 2 s (`ladder/r0`).
+3. $B_p=R_pO_p$ in the rate conversion (§3) is ruled and in pass 6 v4. The residual has not been measured.
+4. Strike and feed-forward not measured. Full Tan numerator measured: no help (above). Sole rest height: resolved (§8).
 
-**Next experiments.** (a) Per-body/per-joint stiffness to get 12-substep quality only on the ragdoll (check whether Avian 0.7 joint compliance / solver settings allow it). (b) 6 substeps + kb 3 + weak COM pull to start point. (c) Full Tan numerator $-(k_d+k_p\Delta t)\boldsymbol\omega_{rel}$ at 6 substeps. (d) Gate rows with `stable_pd3`/`reduced_inertia3` from `phys_balance.rs` (code now matches the lab's 3×3). (e) Jab/flare scenes once standing passes, logging $\boldsymbol\alpha$ jump and pose error.
+**Next experiments.** (a) Contact thresholds relative to the measured rest height (§8). (b) $k_{com}$ sweep 0.07–0.12 with foot damping 40, including $k_p$ 5000, at 80 s. (c) Pull fade by $(1-\text{strike\_boost})$ and the $\mathbf x_0$ reset in strike scenes. (d) Gate rows with `stable_pd3`/`reduced_inertia3` from `phys_balance.rs` (code now matches the lab's 3×3). (e) Jab/flare scenes once standing passes, logging $\boldsymbol\alpha$ jump and pose error.
 
 ## References (as verified in `hive/use/online_physics.md`)
 Tan, Liu, Turk, *Stable PD Controllers*, IEEE CG&A 31(4) 2011 (§3.1 Eq. 3/5, Eq. 10–11, §4.3 Eq. 14–15). Pratt, Carff, Drakunov, Goswami, *Capture Point*, Humanoids 2006 (§V.C Eq. 7–10). Coros et al. 2010 (abstract only). Avian 0.7 CCD docs; Avian PR #651. XCube §3, §3.1; Vox-E §3.3 Eq. 5; DynamicTree §4 Eq. 6–7.
 
-## Addendum (2026-10-15 07:23, team rulings)
-- **§3 frame fix:** target rates ω*, α* are in the parent bone frame, so `rates_to_world_rel` must be passed $B_p = R_p O_p$ (parent capsule world rotation × bone offset), not $R_p$. This matches θ_err. Pass 6 is being corrected (ruling by The Rust Expert, confirmed by Animation).
-- **§14 substep results (Grok Bot, avian3d 0.7.0, 3×3 I_red, 40 s stand):** 12 substeps + kb 5 → drift 3.4 cm, 0.6 ms/tick (only passing config). 12 + kb 3 → 0.24 m. 6 substeps + contact frequency 3 → kb 5 stands, kb 3 drift 0.15 m (fails). Contact damping ×2 → falls. 24 substeps → 0.33 m drift, so the residual is wander, not solver error. Avian 0.7 has no solver-iteration setting, joint compliance is already 0, and `SubstepCount` is global.
-- **Ruling:** pass 6 uses 12 substeps, kb 5. Foot damping 40 and the full Tan term $-k_p\,dt\,\omega_{rel}$ are settings that start off. Contact frequency 3 is the fallback for 6 substeps. Next lab runs: the full Tan term and a weak com pull back toward the start point.

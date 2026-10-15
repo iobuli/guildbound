@@ -261,15 +261,6 @@ pub fn split_balance(tau_bal: V3, feet: &[(f32, f32, f32)]) -> Vec<(V3, V3)> {
     }).collect()
 }
 
-/// Saturation with a floor on the cap so near-zero caps (lifted feet) don't blow up the ratio.
-pub fn sat_ratio(tau: V3, cap: f32) -> f32 { len(tau) / cap.max(1.0) }
-
-/// One-pole contact filter per tick (alpha 0.25) and hysteresis on sole height: on below 0.01 m, off above 0.025 m.
-pub fn filter_contact(c_filt: f32, c_raw: f32) -> f32 { c_filt + (c_raw - c_filt) * 0.25 }
-pub fn contact_hysteresis(was_on: bool, sole_height: f32) -> bool {
-    if was_on { sole_height <= 0.025 } else { sole_height < 0.01 }
-}
-
 #[cfg(test)]
 mod tests3 {
     use super::*;

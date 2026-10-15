@@ -1,0 +1,5 @@
+a20 --foot_damp 20
+a30 --foot_damp 30
+a40 --foot_damp 40
+a60 --foot_damp 60
+a75 --foot_damp 75

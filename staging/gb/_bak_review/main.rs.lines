@@ -1,0 +1,9 @@
+mod body_cmds;
+mod motion_physics;
+        .add_plugins(body_cmds::plugin)
+        .add_plugins(motion_physics::plugin)
+mod sandbox;        // plugin is added from studio.rs (already in the post-edit repo)
+mod studio_kit;     // F2 panel kit: tabs, bone tree, view toolbar, status strip, edit log, keys
+mod studio_trails;  // motion trails (gizmos only)
+        .add_plugins(studio_kit::plugin)
+        .add_plugins(studio_trails::plugin)

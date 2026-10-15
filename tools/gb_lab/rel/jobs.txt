@@ -1,0 +1,35 @@
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126  > rel/none__base.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 2.5 --kbd 0.3 --kp 4000 --kd 126  > rel/none__kb2.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3.5 --kbd 0.3 --kp 4000 --kd 126  > rel/none__kb3.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.6 --kp 4000 --kd 126  > rel/none__kbd0.6.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 3000 --kd 110  > rel/none__kp3000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 8000 --kd 179  > rel/none__kp8000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126  --ticks 9600 > rel/none__80s.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 > rel/abs40__base.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 2.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 > rel/abs40__kb2.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 > rel/abs40__kb3.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.6 --kp 4000 --kd 126 --foot_damp 40 > rel/abs40__kbd0.6.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 3000 --kd 110 --foot_damp 40 > rel/abs40__kp3000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 8000 --kd 179 --foot_damp 40 > rel/abs40__kp8000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 --ticks 9600 > rel/abs40__80s.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 20 --damp_rel > rel/rel20__base.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 2.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 20 --damp_rel > rel/rel20__kb2.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 20 --damp_rel > rel/rel20__kb3.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.6 --kp 4000 --kd 126 --foot_damp 20 --damp_rel > rel/rel20__kbd0.6.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 3000 --kd 110 --foot_damp 20 --damp_rel > rel/rel20__kp3000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 8000 --kd 179 --foot_damp 20 --damp_rel > rel/rel20__kp8000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 20 --damp_rel --ticks 9600 > rel/rel20__80s.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 --damp_rel > rel/rel40__base.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 2.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 --damp_rel > rel/rel40__kb2.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 --damp_rel > rel/rel40__kb3.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.6 --kp 4000 --kd 126 --foot_damp 40 --damp_rel > rel/rel40__kbd0.6.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 3000 --kd 110 --foot_damp 40 --damp_rel > rel/rel40__kp3000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 8000 --kd 179 --foot_damp 40 --damp_rel > rel/rel40__kp8000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 40 --damp_rel --ticks 9600 > rel/rel40__80s.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 60 --damp_rel > rel/rel60__base.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 2.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 60 --damp_rel > rel/rel60__kb2.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3.5 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 60 --damp_rel > rel/rel60__kb3.5.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.6 --kp 4000 --kd 126 --foot_damp 60 --damp_rel > rel/rel60__kbd0.6.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 3000 --kd 110 --foot_damp 60 --damp_rel > rel/rel60__kp3000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 8000 --kd 179 --foot_damp 60 --damp_rel > rel/rel60__kp8000.json
+target/release/gb_lab stand --scaled --no_clamp --balance --substeps 6 --kb 3 --kbd 0.3 --kp 4000 --kd 126 --foot_damp 60 --damp_rel --ticks 9600 > rel/rel60__80s.json

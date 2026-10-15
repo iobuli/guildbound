@@ -49,10 +49,11 @@ inline) or *reported* (said in the room, no file on disk). Nothing else.
 |---|---|---|
 | `GUILDBOUND_KP` / `KD` | 4000 / 126 ($\omega_n=63.2$ rad/s, $\zeta=0.996$ *computed*) | `bal/ro_5_0.3_12.json` |
 | `GUILDBOUND_KB` / `KBD` | 5 / 0.3 | same file; hub ruling 07:23 |
-| `GUILDBOUND_SUBSTEPS` | 12 (TODO ruling: substeps vs solver iterations) | ruling 07:23; PM addendum |
-| `GUILDBOUND_CONTACT_FREQ` | unset; **3** is the fallback when running 6 substeps | PM addendum (*reported*) |
+| `GUILDBOUND_SUBSTEPS` | 12 | ruling 07:23; PM §14 |
+| `GUILDBOUND_CONTACT_FREQ` | unset; **3** is the fallback when running 6 substeps | PM §14 (*reported*) |
 | `GUILDBOUND_TAN_FULL` | off | ruling 07:23 |
-| `GUILDBOUND_FOOT_DAMP` | off (on = 40 N·s/m) | ruling 07:23 |
+| `GUILDBOUND_FOOT_DAMP` | **abs** 40 N·s/m, cap 0.8·s·M·g (`rel`, `off` available) | v5, `tan/all.json` |
+| `GUILDBOUND_COM_PULL` | **0.11** built in for the test build (`off` disables) | v5, `tan/all2.json` |
 | contact on / off / hold / filter | 0.01 m / 0.025 m / 6 ticks / 0.25 | `phys_balance::Contact` |
 | fault cap | $3\,\text{m}\cdot Mg$ (`SAFETY_LEVER_M`) | `sandbox.rs` |
 | strike | Kp × 1.5 on arm joints (`STRIKE_KP_SCALE`) | `sandbox.rs` |
@@ -109,7 +110,7 @@ the world-frame difference (PM §3).
 ## 3. Rate transport $\omega^\star,\alpha^\star$ — frame fix
 
 $\boldsymbol\omega_L,\boldsymbol\alpha_L$ are expressed in the **parent bone** frame (AM §2, §4). The world rotation of that frame
-is $B_p=R_pO_p$, so (AM §4, PM addendum):
+is $B_p=R_pO_p$, so (AM §4, PM §3):
 $$\boldsymbol\omega^\star=B_p\boldsymbol\omega_L,\qquad \boldsymbol\alpha^\star=B_p\boldsymbol\alpha_L+\boldsymbol\omega_p\times(B_p\boldsymbol\omega_L).$$
 Derivation: $\frac{d}{dt}(B_p\boldsymbol\omega_L)=\dot B_p\boldsymbol\omega_L+B_p\dot{\boldsymbol\omega}_L$, and since $O_p$ is
 constant in the parent capsule frame, $\dot B_p=[\boldsymbol\omega_p]_\times B_p$. (The ω_p in the cross term is the same
@@ -194,9 +195,12 @@ $y_{sole}=y_{centre}-|(R\hat y)_y|\,h_{half}-r-y_{floor}$ (exact for a capsule),
 $c_{t+1}=c_t+0.25(b_t-c_t)$ (≈29 ms time constant, PM §8). $c$ (not $b$) drives gravity_ff, the split and the caps.
 Lab with the filter: 0.05 flips/s in every standing run listed here; pass mark < 1/s.
 
-## 8. Foot damping (setting, default off)
+## 8. Foot damping (v5: on by default, absolute)
 
-$$\mathbf F_i=-c_i\,40\,(\mathbf v_{foot,i}-\dot{\mathbf x})_{xz},\qquad|\mathbf F_i|\le0.75\,s_iMg$$
+Contact heights are $h-h_{rest}$, with $h_{rest}$ per foot = first-contact value at ragdoll-on, then the mean over ticks 1..60 (on < 1 cm, off > 2.5 cm).
+
+$$\mathbf F_i=-c_i\,40\,\mathbf v_{foot,i,xz},\qquad|\mathbf F_i|\le0.8\,s_iMg$$
+(`rel` mode uses $\mathbf v_{foot}-\dot{\mathbf x}$; v4 shipped `rel` with 0.75, see below for why v5 switched).
 applied as a force on the foot (static-friction stand-in, external, excluded from Στ). Lab differs: absolute
 velocity by default (`--damp_rel` for relative), $\mu=0.8$, share $c_i/\sum c\cdot\min(\sum c,1)$ (PM §8).
 Data, 12 substeps, kb 5: `creep/a40__base.json` drift_final 0.015 m vs `creep/none__base.json` 0.0342 m (both com_min ≈0.981).
@@ -243,7 +247,7 @@ All 40 s stand, kd paired with kp, foot damping 0 unless noted. `ss/` files carr
 | `bal/ro_5_0.6_24.json` | 24 (name) | 4000/126 | 5 (kbd 0.6) | 0.9871 | 0.9952 | 0.3152 | 0.05 | 0.713 |
 
 Summary of the ss grid (48 files): at 4 substeps nothing stands (com_min ≤ 0.180); at 6, kb 5 falls for every kp 500–8000,
-kb 3 stands only for kp ≥ 3000. *Reported, no file* (PM addendum): 12 + kb 3 → 0.24 m drift; 6 substeps + contact frequency 3
+kb 3 stands only for kp ≥ 3000. *Reported, no file* (PM §14): 12 + kb 3 → 0.24 m drift; 6 substeps + contact frequency 3
 → kb 5 stands; contact damping ×2 → falls; 24 substeps → 0.33 m; 12 substeps costs 0.6 ms/tick.
 
 **Open questions.**
@@ -255,3 +259,37 @@ kb 3 stands only for kp ≥ 3000. *Reported, no file* (PM addendum): 12 + kb 3 �
    into the floor by ~1–1.6 cm at rest — Avian contact margin/penetration? Contact thresholds (1 / 2.5 cm) sit close to it.
 5. Creep ~cm over 40 s even when standing; `ladder/r0.json` (motors off, lying) drifts 0.0117 m in 2 s, so some slide is in contacts, not motors.
 6. $B_p$ fix, feed-forward and strike: not measured (stand test has zero target rates).
+
+
+## 13. v5: absolute foot damping and COM pull (lab `gb_lab/tan/`)
+
+**COM pull** (`GUILDBOUND_COM_PULL` = $k_{com}$, 0.11 built in for the test build; lab `--com_pull`, `ragdoll.rs` lines 156–158):
+$$\boldsymbol\tau_{pull}=k_{com}\,Mg\,\big((\mathbf x-\mathbf x_0)_{xz}\times\hat y\big)\,\big(1-\max(b(t),a(t))\big),$$
+added to $\boldsymbol\tau_{bal}$ before the ankle-then-hip split (§6), so it uses the same caps and signs. $\mathbf x_0$ = COM at
+ragdoll-on; $b(t)$ = strike boost (§9); $a(t)\in[0,1]$ = `anim_acro_active::acro_active(tick, start, len, 12)` (smoothstep in/out over 12 ticks) for the clip set by `Sandbox::start_acro(len)`, 0 if none. When $a$ falls
+back to 0, $\mathbf x_0$ re-anchors to the current COM, so a move that legitimately relocates the body is not pulled back.
+Same form as the $k_b$ term with a fixed anchor instead of the support centre: a weak position spring on drift
+(dimensionless, like $k_b$). The lab has no fade and no re-anchor (its $\mathbf x_0$ is tick 1's COM).
+
+**Results** (12 substeps, kb 5, kbd 0.3, kp 4000/126; `drift_final` m at 40 s / 80 s; com_min ≥ 0.98 unless noted):
+
+| Variant (file, group) | 40 s | 80 s | peak_sat 40 s / 80 s |
+|---|---|---|---|
+| base (`all.json`) | 0.0342 | 0.218 | 0.644 / 0.856 |
+| base+fd40 (`all.json`) | 0.015 | 0.3375 | 0.634 / 1.018 |
+| tan (`all.json`) | 0.0532 | 0.4133 | 0.629 / 1.007 |
+| tan+fd40 (`all.json`) | 0.0657 | 0.3763 | 0.648 / 1.021 |
+| pull0.05 (`all2.json`) | 0.0658 | 0.2591 | 0.642 / 0.855 |
+| pull0.05+fd40 (`all2.json`) | 0.0345 | 0.207 | 0.633 / 0.731 |
+| **pull0.1** (`all2.json`) | 0.0194 | 0.0907 | 0.641 / 0.641 |
+| **pull0.1+fd40** (`all2.json`) | 0.0186 | **0.0465** | 0.631 / 0.702 |
+| tan+pull0.1 (`all2.json`) | 0.0051 | 0.0851 | 0.64 / 0.692 |
+| tan+pull0.1+fd40 (`all2.json`) | 0.3329 | 0.3002 | 0.698 / 0.698 |
+| pull0.5 (`all.json`) | 72.65 (com_min −294) | 403.96 (com_min −11223) | 5.19e6 / 6.77e6 |
+| pull1, pull2 (`all.json`) | diverged | diverged | ≥ 2.8e7 |
+
+Findings: $k_{com}=0.1$ with absolute damping 40 is the only row under 5 cm at 80 s; $k_{com}\ge0.5$ diverges (the spring
+overpowers the $k_b=5$ balance loop); Tan's full term helps alone at 40 s but breaks with fd40, so `TAN_FULL` stays off.
+Base+fd40 rises from 0.015 to 0.3375 m between 40 and 80 s, so damping alone does not stop slow wander, and the pull does.
+The 80 s peak_sat ≥ 1.0 rows (base+fd40, tan, tan+fd40) are against the lab's limit formula, not the pass 6 fault cap (§10).
+Open: sweep 0.07–0.12 not yet run; fade and re-anchor are untested (no strike/acro scene yet).

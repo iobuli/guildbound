@@ -17,20 +17,26 @@ Owner and hub: The Rust Expert. Every decision lands here; if code disagrees wit
 | Studio UI, panel kit, trails drawing | Grok Bot | systems split per panel, resources not globals |
 | Event log, replay, undo/redo | Hub (Grok Bot's undo routes through it) | `event_log` |
 
-## 3. Pipeline (each fixed step, 120 Hz, this order)
+## 3. Pipeline (each fixed step, 120 Hz, this order) — pass 6 v5 (maths: hive/SYSTEM_MATH.md)
 Steps 1-4 run in FixedPostUpdate `.before(PhysicsSystems::First)`; steps 6+ `.after(PhysicsSystems::Last)`.
 1. Input/events into `event_log` (Studio edits, BalanceSet, controller): the only source of truth.
-2. `apply_edits`: the only pose writer; abilities are layers by Priority (Limits > Balance > Style > Effort).
-3. Contact: subtract each sole's rest offset first, then (down < 3 cm, up > 5 cm, 6-tick hold) produces planted factor c in [0,1].
-4. Motor writer: per joint. Input is only apply_edits' final local: local_target = base_local · rot (base = accumulated pose for Additive/Masked, rest local for Replace).
-   - θ_err = log((R_p · O_p · local_target · O_c⁻¹) · R_c⁻¹), world-frame shortest arc; O defined by bone_world = capsule_world · O, measured once at load
-   - local_target = ordered product parent→child (left to right) of local_target,k over the skin-bone chain between the two capsule bones (spine, clavicle, twist); chain + O stored in anim_rig at load; Animation's chain_target(rig, from, to, pose) supplies it
-   - omega* = R_p omega_L ;  alpha* = R_p alpha_L + omega_p x (R_p omega_L)
-   - tau = I_w(alpha* + dω_p) + Kp θ_err + Kd(omega* - (ω_c - ω_p)) + ω_c x I_w ω_c + tau_hold + tau_bal,  I_w = R_c I_body R_cᵀ
-   - ONE clamp: legs k·g·(c·M_above + (1-c)·m_below)·l_com, k=1.2; arms margin·(I·α_eff + m·g·l_com), α_eff <= 1.5·α_max inside a strike window, max 6 ticks per strike, 12-tick cooldown, logged.
-   - tau_hold and ankle torque scale by c. Ankle clamp = c·share·M_total·g·d_edge (share = leg_hold weight share, sums to 1 over planted feet) (d_edge = ankle to the toe or heel edge the torque tips toward), so the foot never levers off. Balance off = tau_bal 0, tau_hold stays on.
-   - Strike boost: Physics' strike_boost(ticks): 1.0 for ticks 0-5, eased to 0 by tick 9, 12-tick cooldown, each boost logged as an event.
-   - Apply +tau to child, -tau to parent. Avian joint motors off on the sandbox body.
+2. `apply_edits`: the only pose writer; abilities are layers by Priority (Limits > Balance > Style > Effort). Stand test = rest only.
+3. Contact: exact lowest point of each foot capsule minus per-foot rest_h (first contact, then mean of ticks 1..60; the old −2.65 cm was r·sinθ); on below 1 cm, off above 2.5 cm, 6-tick hold; c filtered 0.25/tick.
+4. Motor writer: per joint, one torque per tick. Input is only apply_edits' final local (chain product parent→child, Animation's chain_target).
+   - θ_err = log((R_p · O_p · local_target · O_c⁻¹) · R_c⁻¹), O from bone_world = capsule_world · O (load check |θ_err| < 1e-4 at rest)
+   - transport with B_p = R_p·O_p: ω* = B_p ω_L ; α* = B_p α_L + ω_p × (B_p ω_L)
+   - Stable PD, 3x3: τ = I_red·(Kp θ_err − Kd(ω_rel − ω*))/(1 + Kd dt + Kp dt²) + I_red(α* + dω_p) + gravity_ff + balance;
+     I_red = (I_c⁻¹ + I_p⁻¹)⁻¹ from each body's OWN world inertia (phys_balance::reduced_inertia3/stable_pd3). Kp, Kd per unit inertia.
+     ω_c × I_w ω_c is DROPPED (Avian integrates it). Tan's full −Kp dt ω_rel term: GUILDBOUND_TAN_FULL, off.
+   - gravity_ff reaction form: (c_sub − p) × m_sub g up − c·(cop − p) × s M g up.
+   - balance: ((kb e + kbd ė) × up)·M g, split ankles first (sole-edge cap c·s·M·g·d_edge), remainder to stance hips, entered negated on the child.
+   - COM pull (GUILDBOUND_COM_PULL = k_com, 0.11 built in for the test build; `off` disables): k_com M g (com − com0)_xz × up, added to balance, × (1 − max(strike_boost, acro_active)); com0 re-anchors when acro_active (anim_acro_active, via Sandbox::start_acro) returns to 0.
+   - no shaping clamp: one fault cap per joint |τ| ≤ 3·M·g N·m, clamps and logs `fault` (NaN → 0 + log).
+   - Strike: Kp × 1.5 on arm joints for 6 ticks, eased to 0 by tick 9, 12-tick cooldown, each start logged. No cap is raised.
+   - Apply +τ to child, −τ to parent; Στ logged every tick (torque_sum.jsonl). Avian joint motors off on the sandbox body.
+   - Stance foot damping (default ON): F = −c·40·v_foot,xz (absolute), cap 0.8·s·M·g, external (not in Στ); `rel` mode optional.
+   - Defaults: Kp 4000, Kd 126, kb 5, kbd 0.3, 12 substeps (global SubstepCount; 6 + contact frequency 3 = fallback, ruling open), foot damp 40.
+   - Anti-tunnel: 1 m thick floor box, MaxAngularSpeed 50 rad/s per capsule, SweptCcd + speculative margin on feet/shins, first capsule below −0.1 m logged.
 5. Avian step.
 6. Report (metrics.jsonl every 120 ticks), then trails sampling (after report).
 Nothing in this chain may live in Update. Rendering uses TransformInterpolation.

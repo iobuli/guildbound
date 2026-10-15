@@ -1,6 +1,6 @@
 --- orig/sandbox.rs	2026-10-15 01:38:21.860881014 +0100
-+++ game/sandbox.rs	2026-10-15 07:24:05.545929974 +0100
-@@ -10,22 +10,71 @@
++++ game/sandbox.rs	2026-10-15 07:32:28.669929974 +0100
+@@ -10,22 +10,83 @@
  use guildbound_sim::event_log::{Event as LogEvent, EventLog, Tick as LogTick};
  use guildbound_sim::phys_balance as pb;
  use guildbound_sim::phys_stance as st;
@@ -26,9 +26,17 @@
 +const SAFETY_LEVER_M: f32 = 3.0;
 +/// Strike: Kp × STRIKE_KP_SCALE for 6 ticks, eased to ×1 by tick 9 (phys_mass::strike_boost), 12-tick cooldown.
 +const STRIKE_KP_SCALE: f32 = 1.5;
-+/// Stance foot lateral damping gain (N·s/m) when GUILDBOUND_FOOT_DAMP=on, and the floor friction it is capped by.
++/// Stance foot lateral damping gain (N·s/m) and the friction share it is capped by (both = gb_lab tan/ runs).
 +const FOOT_DAMP: f32 = 40.0;
-+const FLOOR_MU: f32 = 0.75;
++/// Built-in COM pull gain for this test build (lab best 0.1, sweep 0.07–0.12).
++const COM_PULL_DEFAULT: f32 = 0.11;
++/// Ticks after ragdoll-on over which the sole rest height is averaged.
++const REST_TICKS: u64 = 60;
++const FLOOR_MU: f32 = 0.8;
++
++/// GUILDBOUND_FOOT_DAMP: `abs` (default; damps the foot's own x,z velocity, as the lab), `rel` (foot − COM), `off`.
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub enum FootDamp { Off, Abs, Rel }
 +
 +/// Gains and substeps (env). Defaults = hub ruling 07:23 on the lab gate: kp 4000, kd 126, kb 5, kbd 0.3, 12 substeps
 +/// (bal/ro_5_0.3_12.json). Fallback if 12 substeps costs too much: 6 substeps + GUILDBOUND_CONTACT_FREQ=3 (kb 5).
@@ -36,20 +44,24 @@
 +/// kp = ω² (1/s²), kd = 2ζω (1/s): Stable PD scales them by the reduced inertia, so one pair fits every joint.
 +#[derive(Clone, Copy, Debug)]
 +pub struct Gains {
-+    pub kp: f32, pub kd: f32, pub kb: f32, pub kbd: f32, pub foot_damp: bool, pub substeps: u32,
++    pub kp: f32, pub kd: f32, pub kb: f32, pub kbd: f32, pub foot_damp: FootDamp, pub substeps: u32,
++    /// COM pull gain k_com (GUILDBOUND_COM_PULL, off by default; suggested 0.1, sweep 0.07–0.12). Dimensionless like kb.
++    pub k_com: Option<f32>,
 +    /// Tan et al. 2011 full numerator kp·θ − (kd + kp·dt)·ω_rel (GUILDBOUND_TAN_FULL=on). Off until the lab confirms it.
 +    pub tan_full: bool,
 +    /// Avian contact_frequency_factor override (GUILDBOUND_CONTACT_FREQ). Fallback 3.0 if substeps drop to 6.
 +    pub contact_freq: Option<f32>,
 +}
-+impl Default for Gains { fn default() -> Self { Gains { kp: 4000.0, kd: 126.0, kb: 5.0, kbd: 0.3, foot_damp: false, substeps: 12, tan_full: false, contact_freq: None } } }
++impl Default for Gains { fn default() -> Self { Gains { kp: 4000.0, kd: 126.0, kb: 5.0, kbd: 0.3, foot_damp: FootDamp::Abs, substeps: 12, tan_full: false, contact_freq: None, k_com: None } } }
 +impl Gains {
 +    pub fn from_env() -> Self {
 +        let d = Gains::default();
 +        let f = |k: &str, v: f32| std::env::var(k).ok().and_then(|s| s.parse().ok()).unwrap_or(v);
 +        Gains {
 +            kp: f("GUILDBOUND_KP", d.kp), kd: f("GUILDBOUND_KD", d.kd), kb: f("GUILDBOUND_KB", d.kb), kbd: f("GUILDBOUND_KBD", d.kbd),
-+            foot_damp: std::env::var("GUILDBOUND_FOOT_DAMP").is_ok_and(|v| v == "on"),
++            foot_damp: match std::env::var("GUILDBOUND_FOOT_DAMP").as_deref() { Ok("off") => FootDamp::Off, Ok("rel") => FootDamp::Rel, _ => FootDamp::Abs },
++            // test build: COM pull 0.11 built in; GUILDBOUND_COM_PULL=off (or 0) disables, a number overrides
++            k_com: match std::env::var("GUILDBOUND_COM_PULL") { Ok(v) => v.parse().ok().filter(|k: &f32| *k > 0.0), Err(_) => Some(COM_PULL_DEFAULT) },
 +            // TODO(ruling): 12 substeps (global); substeps vs solver iterations still open
 +            tan_full: std::env::var("GUILDBOUND_TAN_FULL").is_ok_and(|v| v == "on"),
 +            contact_freq: std::env::var("GUILDBOUND_CONTACT_FREQ").ok().and_then(|s| s.parse().ok()),
@@ -83,7 +95,7 @@
  
  /// Start-up mode. Sandbox (the default) boots locked with the ragdoll on; Paused leaves the old Studio boot.
  #[derive(Resource, Clone, Copy, Debug, PartialEq, Eq, Default)]
-@@ -45,7 +94,7 @@
+@@ -45,16 +106,54 @@
      pub balance_enabled: bool,
      pub started: bool,
      /// Foot contact with hysteresis (down < 3 cm, up > 5 cm, 6 ticks to flip), left/right.
@@ -92,7 +104,11 @@
      pub contact_flips: u64,
      pub knee_hold: f32,
      /// Raw sole heights above the stage floor (m), left/right, from the last step.
-@@ -53,8 +102,30 @@
+     pub sole: [f32; 2],
++    /// Sole rest height per foot (m): first-contact value at ragdoll-on, then the mean over ticks 1..=60 (locked at 60).
++    /// Contact thresholds are measured from it: on when h − rest_h < 1 cm, off when > 2.5 cm.
++    pub rest_h: [f32; 2],
++    pub rest_acc: [(f32, u32); 2],
      /// Motor writer rest rig (O offsets, chains), parent spin last tick, planted factor c per foot.
      pub rest: Option<RestRig>,
      pub prev_wp: Vec<Vec3>,
@@ -109,10 +125,22 @@
 +    pub strike_from: Option<u64>,
 +    /// Safety-cap faults since ragdoll-on (should stay 0).
 +    pub faults: u64,
++    /// COM pull anchor (x,z used), set at ragdoll-on and re-set when acro_active falls back to 0.
++    pub com0: Option<Vec3>,
++    /// 0..1 weight while an acro clip runs: anim_acro_active::acro_active(tick, start, len, ACRO_EASE_TICKS), 0 if none.
++    pub acro_active: f32,
++    /// Current acro clip (start tick, length in ticks), set by `start_acro` from the clip player.
++    pub acro_clip: Option<(u64, u64)>,
++    pub prev_acro: f32,
 +}
 +
 +impl Sandbox {
 +    /// Start a strike's Kp boost if the 12-tick cooldown allows it (logged). Returns whether it started.
++    /// Hook for the clip player: an acro clip of `len` ticks starts now (feeds acro_active, fades the COM pull).
++    pub fn start_acro(&mut self, len: u64) {
++        self.acro_clip = Some((self.tick, len));
++        info!("[motor] acro clip from tick {} for {len} ticks", self.tick);
++    }
 +    pub fn start_strike(&mut self) -> bool {
 +        let since = self.strike_from.map_or(u32::MAX, |t| self.tick.saturating_sub(t).min(u32::MAX as u64) as u32);
 +        if !guildbound_sim::phys_mass::strike_can_restart(since) { return false; }
@@ -124,7 +152,7 @@
  }
  
  /// What the Physics section in the Studio shows (the UI system has no spare parameter slots).
-@@ -75,6 +146,8 @@
+@@ -75,26 +174,45 @@
      app.init_resource::<Sandbox>()
          .init_resource::<BalanceRequest>()
          .init_resource::<StudioStartMode>()
@@ -133,19 +161,26 @@
          .add_message::<SetBalance>()
          .add_systems(Update, (boot, esc_opens_studio, forward_balance_request))
          // fixed 1/120 s physics step: toggle, contacts + balance + hold, then Avian, then the post-step report
-@@ -82,6 +155,11 @@
+         .add_systems(FixedPostUpdate, (balance_tick, apply_balance_toggle).chain().after(crate::possession::physical_drive).before(crate::props::physics_clock).before(PhysicsSystems::First))
          .add_systems(FixedPostUpdate, report.after(PhysicsSystems::Last));
- }
- 
++    // stand scene: Avian debug gizmos (colliders, contacts, joints) on by default, no setup needed
++    if std::env::var("GUILDBOUND_STAND").map_or(true, |v| v != "off") && !app.is_plugin_added::<avian3d::prelude::PhysicsDebugPlugin>() {
++        app.add_plugins(avian3d::prelude::PhysicsDebugPlugin::default());
++    }
++}
++
 +/// GUILDBOUND_CONTACT_FREQ: override Avian's contact stiffness factor (the 6-substep fallback is 3.0).
 +fn contact_freq_override(cfg: Option<ResMut<avian3d::dynamics::solver::SolverConfig>>) {
 +    if let (Some(f), Some(mut cfg)) = (Gains::from_env().contact_freq, cfg) { cfg.contact_frequency_factor = f; info!("[motor] contact_frequency_factor = {f}"); }
-+}
-+
+ }
+ 
  /// Once, at start: physical body on (fully physical), input locked. The Studio itself is opened by
  /// studio::open_at_startup with the mannequin on the stage.
- fn boot(mode: Res<StudioStartMode>, mut sb: ResMut<Sandbox>, mut body: ResMut<crate::possession::PhysicalBody>, mut agent: ResMut<crate::agent::Agent>) {
-@@ -91,10 +169,16 @@
+-fn boot(mode: Res<StudioStartMode>, mut sb: ResMut<Sandbox>, mut body: ResMut<crate::possession::PhysicalBody>, mut agent: ResMut<crate::agent::Agent>) {
++fn boot(mode: Res<StudioStartMode>, mut sb: ResMut<Sandbox>, mut body: ResMut<crate::possession::PhysicalBody>, mut agent: ResMut<crate::agent::Agent>, studio: Option<ResMut<crate::studio::Studio>>) {
+     if sb.started || *mode != StudioStartMode::Sandbox { return; }
+     sb.started = true;
+     sb.balance_enabled = true;
      // GUILDBOUND_BALANCE=off boots with balance off (logged like the Studio toggle)
      sb.balance_on = std::env::var("GUILDBOUND_BALANCE").map_or(true, |v| v != "off");
      if !sb.balance_on { let _ = sb.log.append(LogTick(0), LogEvent::BalanceSet { on: false }); }
@@ -154,6 +189,8 @@
 +    info!("[motor] gains {:?}", sb.gains);
 +    let stand = std::env::var("GUILDBOUND_STAND").map_or(true, |v| v != "off");
 +    if stand { sb.stand = Some(StandLock::default()); }
++    // stand scene opens with the debug overlay on: skeleton gizmos + Avian collider/contact gizmos (no env or headless setup)
++    if stand && let Some(mut st) = studio { st.show_skeleton = true; }
      body.on = true;
      body.weight = 1.0;
      body.physical_regions = [true; 3];
@@ -163,7 +200,7 @@
  }
  
  fn forward_balance_request(mut ctxs: bevy_egui::EguiContexts, mut req: ResMut<BalanceRequest>) {
-@@ -142,12 +226,15 @@
+@@ -142,12 +260,15 @@
          if name.ends_with("_Calf") { m.calves[s] = Some(link.body); m.knees[s] = Some(joint); }
          if name.ends_with("_Foot") {
              m.feet[s] = Some(link.body);
@@ -181,7 +218,7 @@
              let mid = (ankle + toe) * 0.5;
              m.contact_pt[s] = Vec3::new(mid.x, ground, mid.z);
              let along = Vec3::new(toe.x - ankle.x, 0.0, toe.z - ankle.z).normalize_or(Vec3::Z);
-@@ -161,6 +248,11 @@
+@@ -161,6 +282,11 @@
      m
  }
  
@@ -193,7 +230,7 @@
  /// Hinge axis error of the doll's revolute joints (same check as ragdoll::snapshot, for the stage doll).
  fn hinge_axis_error(world: &World, doll: &crate::ragdoll::Doll) -> f32 {
      let mut worst = 0.0f32;
-@@ -187,13 +279,11 @@
+@@ -187,13 +313,11 @@
      /// Skin-joint chain (anim_rig joint indices) from the parent capsule's bone down to this one.
      pub chain: Vec<usize>,
      pub kind: JointKind,
@@ -208,7 +245,7 @@
  
  fn kind_of(name: &str) -> JointKind {
      let s = side_of(name).unwrap_or(0);
-@@ -205,13 +295,16 @@
+@@ -205,13 +329,16 @@
  }
  
  fn q64(q: Quat) -> [f64; 4] { [q.x as f64, q.y as f64, q.z as f64, q.w as f64] }
@@ -228,7 +265,7 @@
      use guildbound_sim::anim_rig as ar;
      let root = world.resource::<crate::studio::Studio>().entity?;
      let bones = world.get::<crate::studio::StudioRig>(root)?.bones.clone();
-@@ -231,12 +324,9 @@
+@@ -231,12 +358,9 @@
          let (Some(from), Some(to)) = (bones.iter().position(|&b| b == pl.bone), bones.iter().position(|&b| b == l.bone)) else { continue };
          let Some(chain) = guildbound_sim::anim_abilities::chain(&rig, from, to) else { warn!("[motor] no chain {from}->{to}"); continue };
          let name = world.get::<Name>(l.bone).map(|n| n.as_str().to_owned()).unwrap_or_default();
@@ -243,7 +280,7 @@
  }
  
  /// Target local rotation of a capsule joint: Animation's chain_target over the chain's rest locals
-@@ -253,7 +343,6 @@
+@@ -253,7 +377,6 @@
  /// Before the physics step (FixedPostUpdate, before PhysicsSystems::First): contact, then the single motor
  /// writer (brief 3.4). One torque per joint per tick, one clamp per joint, +tau on the child, -tau on the parent.
  pub fn balance_tick(world: &mut World) {
@@ -251,7 +288,7 @@
      let mut sb = world.remove_resource::<Sandbox>().unwrap_or_default();
      if let Some(on) = world.resource_mut::<BalanceRequest>().0.take() { world.write_message(SetBalance(on)); }
      let body = world.resource::<crate::possession::PhysicalBody>();
-@@ -269,140 +358,200 @@
+@@ -269,140 +392,227 @@
      let tick = sb.tick;
      sb.tick += 1;
      let mut motors_off: Vec<(Entity, RevoluteJoint)> = Vec::new();
@@ -264,6 +301,7 @@
          let _ = sb.log.append(LogTick(tick), LogEvent::RagdollOn);
          sb.on_tick = Some(tick);
 +        sb.below_floor = None;
++        sb.com0 = Some(raw.com);
          sb.mass = raw.mass;
          let ankles: Vec<Vec3> = raw.ankles.iter().flatten().copied().collect();
          let ankle_y = if ankles.is_empty() { crate::studio::STAGE.y } else { ankles.iter().map(|a| a.y).sum::<f32>() / ankles.len() as f32 };
@@ -274,6 +312,8 @@
          sb.prev_wp = vec![Vec3::ZERO; doll.links.len()];
 -        sb.c = [1.0; 2];
 +        sb.contact = [Some(pb::Contact::planted()); 2];
++        sb.rest_h = raw.sole_h.map(|h| if h.is_finite() { h } else { 0.0 });
++        sb.rest_acc = [(0.0, 0); 2];
          // Avian joint motors off on the sandbox body: the motor writer is the only torque source
          motors_off = doll.joints.iter().filter_map(|&e| world.get::<RevoluteJoint>(e).filter(|j| j.motor.enabled).map(|j| { let mut j = j.clone(); j.motor.enabled = false; (e, j) })).collect();
 +        // anti-tunnelling: every capsule spins at most MAX_SPIN; feet, toes and shins also get swept CCD
@@ -332,7 +372,15 @@
 -        let goal = if planted[s] { 1.0 } else { 0.0 };
 -        sb.c[s] += (goal - sb.c[s]).clamp(-1.0 / 6.0, 1.0 / 6.0);
 +        let ct = sb.contact[s].get_or_insert_with(pb::Contact::planted);
-+        let flip = ct.step(raw.sole_h[s]);
++        // rest height: settle window ticks 1..=60 (only while the foot is down), then fixed
++        if (1..=REST_TICKS).contains(&since_on) && ct.on && raw.sole_h[s].is_finite() {
++            let a = &mut sb.rest_acc[s]; a.0 += raw.sole_h[s]; a.1 += 1;
++            if since_on == REST_TICKS && a.1 > 0 {
++                sb.rest_h[s] = a.0 / a.1 as f32;
++                info!("[contact] rest_h[{s}] = {:.4} m over {} ticks", sb.rest_h[s], a.1);
++            }
++        }
++        let flip = ct.step(raw.sole_h[s] - sb.rest_h[s]);
 +        planted[s] = ct.on;
 +        c[s] = if sb.steps.contact { ct.c } else if ct.on { 1.0 } else { 0.0 };
 +        if flip { sb.contact_flips += 1; }
@@ -366,6 +414,21 @@
 -        hold[s] = h.map(|v| Vec3::from_array(v) * sb.c[s]); // gravity hold is not ramped: the body must carry itself from tick 0
 -    }
 -    let Some(rest) = sb.rest.take() else { for (e, j) in motors_off { world.entity_mut(e).insert(j); } world.insert_resource(sb); return };
++    // COM pull toward com0 (k_com 0.11 in this build): k_com·M·g·(com − com0)_xz × up, faded out during strikes and acro moves,
++    // shares the balance torque's ankle-then-hip split. com0 re-anchors when the acro weight returns to 0.
++    let strike_w = sb.strike_from.map_or(0.0, |t| guildbound_sim::phys_mass::strike_boost(tick.saturating_sub(t).min(u32::MAX as u64) as u32));
++    sb.acro_active = sb.acro_clip.map_or(0.0, |(st, len)| guildbound_sim::anim_acro_active::acro_active(tick, st, len, guildbound_sim::anim_acro_active::ACRO_EASE_TICKS));
++    if sb.acro_clip.is_some_and(|(st, len)| tick >= st + len) { sb.acro_clip = None; }
++    let acro = sb.acro_active.clamp(0.0, 1.0);
++    if acro == 0.0 && sb.prev_acro > 0.0 { sb.com0 = Some(m.com); }
++    sb.prev_acro = acro;
++    let tau_bal = match (sb.gains.k_com, sb.com0) {
++        (Some(k_com), Some(c0)) if sb.balance_on && sb.steps.balance && csum > 0.05 => {
++            let d = Vec3::new(m.com.x - c0.x, 0.0, m.com.z - c0.z);
++            tau_bal + d.cross(Vec3::Y) * (k_com * sb.mass * guildbound_sim::phys_math::G * (1.0 - strike_w.max(acro)))
++        }
++        _ => tau_bal,
++    };
 +    let split_in: Vec<(f32, f32, f32)> = (0..2).map(|s| (c[s], shares[s], ankle_cap(&m, s, -tau_bal, c[s] * shares[s] * sb.mass))).collect();
 +    let split: Vec<(Vec3, Vec3)> = pb::split_balance(tau_bal.to_array(), &split_in).into_iter().map(|(a, h)| (Vec3::from_array(a), Vec3::from_array(h))).collect();
 +    let Some(rest) = sb.rest.take() else { finish_on(world, motors_off, &anti_tunnel, stop_clip); world.insert_resource(sb); return };
@@ -379,16 +442,17 @@
 +    let inertia: Vec<[[f32; 3]; 3]> = links.iter().map(|k| world_inertia(world, k.0, k.1)).collect();
 +    // stance foot lateral damping (off by default): F = -c·40·(v_foot - v_com) in x,z, capped at mu·share·M·g
 +    let mut foot_forces: Vec<(Entity, Vec3)> = Vec::new();
-+    if sb.gains.foot_damp {
++    if sb.gains.foot_damp != FootDamp::Off {
 +        for s in 0..2 {
 +            let Some(foot) = m.feet[s] else { continue };
 +            let v = world.get::<LinearVelocity>(foot).map_or(Vec3::ZERO, |v| v.0);
-+            let f = -(c[s] * FOOT_DAMP) * (v - com_vel).with_y(0.0);
++            let v_rel = if sb.gains.foot_damp == FootDamp::Rel { v - com_vel } else { v };
++            let f = -(c[s] * FOOT_DAMP) * v_rel.with_y(0.0);
 +            let f = f.clamp_length_max(FLOOR_MU * shares[s] * sb.mass * guildbound_sim::phys_math::G);
 +            if f != Vec3::ZERO { foot_forces.push((foot, f)); }
 +        }
 +    }
-+    let strike = sb.strike_from.map_or(0.0, |t| guildbound_sim::phys_mass::strike_boost(tick.saturating_sub(t).min(u32::MAX as u64) as u32));
++    let strike = strike_w;
 +    let safety = SAFETY_LEVER_M * sb.mass * guildbound_sim::phys_math::G;
 +    let mut fault: Option<(usize, f32)> = None;
 +    // first capsule through the floor (lowest point of its capsule below BELOW_FLOOR_M), logged once
@@ -522,20 +586,20 @@
 +            if sb.steps.paired && let Ok(mut f) = q.get_mut(world, parent) { f.apply_torque(-t); sum -= t; hit += 1; }
 +            if hit < 2 { unpaired += 1; }
 +        }
-+    }
+     }
+-    sb.knee_hold = hold[0][1].length() + hold[1][1].length();
 +    // foot damping is a ground-friction stand-in: an external force, not part of Στ
 +    for (e, f) in foot_forces { if let Ok(mut fo) = q.get_mut(world, e) { fo.apply_force(f); } }
 +    let _ = writeln!(sb.tau_log, "{{\"tick\":{since_on},\"sum_tau\":[{:.4},{:.4},{:.4}],\"max_tau\":{max_t:.2},\"unpaired\":{unpaired},\"com_v\":[{:.4},{:.4}],\"c\":[{:.3},{:.3}]}}", sum.x, sum.y, sum.z, com_vel.x, com_vel.z, c[0], c[1]);
 +    if since_on % METRICS_EVERY == 0 {
 +        let lines = std::mem::take(&mut sb.tau_log);
 +        if let Err(e) = append_file("torque_sum.jsonl", lines.trim_end()) { warn!("[motor] torque_sum.jsonl: {e}"); }
-     }
--    sb.knee_hold = hold[0][1].length() + hold[1][1].length();
++    }
 +    sb.knee_hold = knee_ff;
      sb.rest = Some(rest);
      if let Ok(mut s) = SHOWN.lock() {
          let mut v = s.take().unwrap_or_default();
-@@ -413,11 +562,25 @@
+@@ -413,11 +623,25 @@
          v.balance_on = sb.balance_on;
          v.sole = sb.sole;
          v.contact_flips = sb.contact_flips;
@@ -561,7 +625,7 @@
  /// Ankle clamp c·share·M·g·d_edge: d_edge = ankle to the sole edge the torque tips the foot toward.
  /// The ground must move its pressure point by r = (-tau_z, 0, tau_x)/N to resist tau on the foot.
  fn ankle_cap(m: &Measure, s: usize, tau: Vec3, mass_share: f32) -> f32 {
-@@ -442,8 +605,9 @@
+@@ -442,8 +666,9 @@
  /// After the physics step: the final pose gives COM, margin and the hinge check; every 120 ticks a metrics line.
  pub fn report(world: &mut World) {
      let Some(sb) = world.get_resource::<Sandbox>() else { return };
@@ -573,7 +637,7 @@
      let body = world.resource::<crate::possession::PhysicalBody>();
      let Some(doll) = body.doll() else {
          if let Ok(mut s) = SHOWN.lock() && let Some(v) = s.as_mut() { v.active = false; }
-@@ -466,21 +630,23 @@
+@@ -466,21 +691,23 @@
      if since_on % METRICS_EVERY == 0 {
          let margin_s = if margin.is_finite() { format!("{margin:.4}") } else { "null".into() };
          let line = format!(
@@ -603,7 +667,7 @@
  }
  
  /// Studio Tuning tab: "Physics: balance" section, shown after the Possession block.
-@@ -499,7 +665,7 @@
+@@ -499,7 +726,7 @@
      t::stat(ui, "Stability margin", margin, if s.margin >= 0.0 { t::GOOD } else { t::BAD });
      t::stat(ui, "Feet on the ground", format!("{}", s.feet_down), t::PAPER);
      t::stat(ui, "Ankle torque", format!("{:.1} N m (peak {:.0}%)", s.tau, s.peak_sat * 100.0), if s.peak_sat > 0.9 { t::BAD } else { t::GOOD });

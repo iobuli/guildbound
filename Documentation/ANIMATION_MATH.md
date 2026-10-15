@@ -11,8 +11,8 @@ Quaternions are unit, Hamilton product, and rotate a vector by v' = q v q*. Angl
 ## 2. Bone targets
 BoneTarget{rot, omega, alpha}, relative to the parent frame, with the target post-multiplied:
   local_target = base_local · rot
-Derivatives from three samples q_{t-1}, q_t, q_{t+1} (f64), with rotation vectors (log returns half-angle·axis, so ×2):
-  Δ₊ = 2·log(q_t* · q_{t+1}),   Δ₋ = 2·log(q_{t-1}* · q_t)
+Derivatives from three samples q_{t-1}, q_t, q_{t+1} (f64), with Log = full-angle rotation vector (axis·angle):
+  Δ₊ = Log(q_t* · q_{t+1}),   Δ₋ = Log(q_{t-1}* · q_t)
   ω_L = (Δ₊ + Δ₋) / (2·DT)
   α_L = (Δ₊ − Δ₋) / DT²
 At a clip edge (a missing neighbour) the derivative is one-sided and mirrored, so α = 0 there. Neighbours are matched by bone id, never by index, so a bone appearing or disappearing doesn't zero ω.
@@ -28,7 +28,7 @@ Rates are in the PARENT BONE frame. With B_p = R_p·O_p (the parent capsule's wo
   α* = B_p·α_L + ω_p × (B_p·ω_L)
 Callers pass B_p, not R_p, as `rp` to rates_to_world_rel.
 Error (with capsule offset O, where bone_world = capsule_world·O):
-  θ_err = log( (R_p·O_p·local_target·O_c⁻¹) · R_c⁻¹ ) ·2   (axis·angle, world)
+  θ_err = Log( (R_p·O_p·local_target·O_c⁻¹) · R_c⁻¹ )   (full-angle rotation vector, axis·angle, world; matches PHYSICS_MATH)
 ω_rel = ω_c − ω_p.
 
 ## 5. Motor (the Rust Expert's writer, pass 6 ruling)

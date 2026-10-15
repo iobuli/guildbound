@@ -29,6 +29,11 @@ pub struct Args {
     pub one_leg: bool,
     pub scaled: bool,
     pub cp: bool,
+    pub tan_full: bool,
+    pub com_pull: f32,
+    pub cff: f32,
+    pub cdr: f32,
+    pub mu: f32,
     pub ired_scalar: bool,
     pub damp_rel: bool,
     pub foot_damp: f32,
@@ -55,7 +60,7 @@ fn parse_args() -> Args {
     while i < v.len() {
         let a = &v[i];
         if let Some(key) = a.strip_prefix("--") {
-            if matches!(key, "unpaired" | "exact" | "no_gff" | "no_filter" | "balance" | "rest_offset_off" | "no_clamp" | "pin_pelvis" | "one_leg" | "scaled" | "cp" | "geom_edge" | "old_gff" | "flat_feet" | "ired_scalar" | "damp_rel") {
+            if matches!(key, "unpaired" | "exact" | "no_gff" | "no_filter" | "balance" | "rest_offset_off" | "no_clamp" | "pin_pelvis" | "one_leg" | "scaled" | "cp" | "geom_edge" | "old_gff" | "flat_feet" | "ired_scalar" | "damp_rel" | "tan_full") {
                 flags.push(key.to_string());
             } else if i + 1 < v.len() {
                 m.insert(key.to_string(), v[i + 1].clone());
@@ -93,6 +98,11 @@ fn parse_args() -> Args {
         bal_lp: f("bal_lp", 1.0),
         ired_scalar: flags.iter().any(|s| s == "ired_scalar"),
         damp_rel: flags.iter().any(|s| s == "damp_rel"),
+        mu: f("mu", 0.8),
+        cff: f("cff", 1.5),
+        cdr: f("cdr", 10.0),
+        tan_full: flags.iter().any(|s| s == "tan_full"),
+        com_pull: f("k_com", f("com_pull", 0.0)), // --k_com, old --com_pull kept as alias
         cp: flags.iter().any(|s| s == "cp"),
         geom_edge: flags.iter().any(|s| s == "geom_edge"),
         bal_sign: f("bal_sign", 1.0),

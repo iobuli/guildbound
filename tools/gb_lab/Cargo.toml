@@ -12,3 +12,16 @@ avian3d = { version = "=0.7.0", default-features = false, features = ["3d", "f32
 opt-level = 1
 [profile.dev.package."*"]
 opt-level = 3
+
+# Windowed overlay demo (cargo run --release --features visual --bin visual). Headless lab build is unchanged.
+[features]
+visual = ["bevy/default_app", "bevy/3d_bevy_render", "bevy/ui_api", "bevy/ui_bevy_render", "bevy/bevy_winit", "bevy/x11", "bevy/default_font", "bevy/bevy_gizmos", "bevy/bevy_gizmos_render"]
+
+[[bin]]
+name = "gb_lab"
+path = "src/main.rs"
+
+[[bin]]
+name = "visual"
+path = "src/bin/visual.rs"
+required-features = ["visual"]

@@ -1,0 +1,10 @@
+{
+  "_note": "Segment mass shares are the current ragdoll.rs SEGMENTS table (79.4 kg) normalised to 1; per-rig totals from the team brief. Not an anthropometric source.",
+  "rigs": { "master": 75.0, "mannequin": 59.3, "hero": 58.9 },
+  "segments": [
+    ["B_Pelvis", 16.0], ["B_Spine2", 20.0], ["B_Head", 5.0],
+    ["B_L_UpperArm", 3.0], ["B_L_Forearm", 2.0], ["B_R_UpperArm", 3.0], ["B_R_Forearm", 2.0],
+    ["B_L_Thigh", 8.0], ["B_L_Calf", 5.0], ["B_R_Thigh", 8.0], ["B_R_Calf", 5.0],
+    ["B_L_Foot", 1.2], ["B_R_Foot", 1.2]
+  ]
+}

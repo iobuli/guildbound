@@ -60,7 +60,7 @@ struct Lab {
     motors: bool,
     paired: bool,
     kp: f32, kd: f32, k: f32, leg_floor: f32,
-    gff: bool, clamp: bool, scaled: bool, cp: bool, ired_scalar: bool, damp_rel: bool, ired_diff_max: f32, foot_damp: f32, anchor_k: f32, bal_rate: f32, bal_lp: f32, bal_prev: Vec3, anchors: [Option<Vec3>; 2], pending_f: Vec<(Entity, Vec3)>, flat_feet: bool, old_gff: bool, geom_edge: bool, bal_sign: f32, kb: f32, kbd: f32, bal_log: String, sole_now: [f32; 2], foot_tilt: [f32; 2], hip_err: f32, filter: bool, balance: bool, rest_offset: bool, first_below: Option<u32>,
+    gff: bool, clamp: bool, scaled: bool, cp: bool, tan_full: bool, com_pull: f32, mu: f32, fault_ticks: u32, ired_scalar: bool, damp_rel: bool, ired_diff_max: f32, foot_damp: f32, anchor_k: f32, bal_rate: f32, bal_lp: f32, bal_prev: Vec3, anchors: [Option<Vec3>; 2], pending_f: Vec<(Entity, Vec3)>, flat_feet: bool, old_gff: bool, geom_edge: bool, bal_sign: f32, kb: f32, kbd: f32, bal_log: String, sole_now: [f32; 2], foot_tilt: [f32; 2], hip_err: f32, filter: bool, balance: bool, rest_offset: bool, first_below: Option<u32>,
     tick: u32,
     total_mass: f32,
     // contact
@@ -122,7 +122,9 @@ fn torque_writer(mut lab: ResMut<Lab>, q: Query<(&Position, &Rotation, &LinearVe
         let mut f = Vec3::ZERO;
         if lab.foot_damp > 0.0 { let rel = if lab.damp_rel { v.0 - vcom } else { v.0 }; f -= c * lab.foot_damp * rel.with_y(0.0); }
         if lab.anchor_k > 0.0 { if let Some(a) = lab.anchors[fi] { f -= c * lab.anchor_k * (p.0 - a).with_y(0.0); } }
-        let cap = 0.8 * (c / csum0) * csum0.min(1.0) * lab.total_mass * G;
+        // fault cap (log only): a requested foot force above 3*M*g means something is wrong
+        if f.length() > 3.0 * lab.total_mass * G { lab.fault_ticks += 1; }
+        let cap = lab.mu * (c / csum0) * csum0.min(1.0) * lab.total_mass * G;
         if f.length() > cap { f *= cap / f.length(); }
         if f != Vec3::ZERO { ff.push((lab.segs[i].e, f)); }
     }
@@ -150,6 +152,11 @@ fn torque_writer(mut lab: ResMut<Lab>, q: Query<(&Position, &Rotation, &LinearVe
         let err = if lab.cp { e + ve / w0 } else { e };
         let want_raw = lab.bal_sign * (if lab.cp { err * lab.kb } else { e * lab.kb + ve * lab.kbd }).cross(Vec3::Y) * lab.total_mass * G;
         // (c) smooth the balance torque: low-pass then per-tick rate limit (N*m per tick)
+        // weak COM-return pull toward the start point (xz), same units as kb (multiplies M*g)
+        let want_raw = if lab.com_pull > 0.0 && lab.tick > 1 {
+            let d = Vec3::new(com_all.x - lab.com0.x, 0.0, com_all.z - lab.com0.z);
+            want_raw + lab.bal_sign * (d * lab.com_pull).cross(Vec3::Y) * lab.total_mass * G
+        } else { want_raw };
         let mut want = lab.bal_prev + (want_raw - lab.bal_prev) * lab.bal_lp;
         if lab.bal_rate > 0.0 { let d = want - lab.bal_prev; if d.length() > lab.bal_rate { want = lab.bal_prev + d * (lab.bal_rate / d.length()); } }
         lab.bal_prev = want;
@@ -255,7 +262,9 @@ fn torque_writer(mut lab: ResMut<Lab>, q: Query<(&Position, &Rotation, &LinearVe
             // reduced (joint-space) inertia; a static parent counts as infinite inertia
             let ired = if ip.determinant().abs() > 1e-12 { (ij.inverse() + ip.inverse()).inverse() } else { ij };
             let den = 1.0 + lab.kd * DT + lab.kp * DT * DT;
-            let u = (lab.kp * theta - lab.kd * rel_w) / den;
+            // Tan, Liu & Turk 2011 s3.1: full numerator -(kd + kp*dt)*w_rel (switch); shipped form drops kp*dt
+            let kdn = if lab.tan_full { lab.kd + lab.kp * DT } else { lab.kd };
+            let u = (lab.kp * theta - kdn * rel_w) / den;
             // scalar check about the error axis: I_red = I_p*I_c/(I_p+I_c), static parent -> I_c
             let n = if lab.ired_scalar { u.normalize_or_zero() } else if theta.length() > 1e-6 { theta.normalize() } else { u.normalize_or_zero() };
             let (sc, sp) = (n.dot(ij * n), n.dot(ip * n));
@@ -319,6 +328,7 @@ fn metrics(mut lab: ResMut<Lab>, q: Query<(&Position, &Rotation, &LinearVelocity
 pub fn run(args: &Args, lie: bool) -> String {
     let mut app = make_app();
     app.insert_resource(SubstepCount(args.substeps));
+    app.insert_resource(avian3d::dynamics::solver::SolverConfig { contact_frequency_factor: args.cff, contact_damping_ratio: args.cdr, ..default() });
     app.world_mut().spawn((RigidBody::Static, Collider::cuboid(40.0, 1.0, 40.0), Transform::from_xyz(0.0, -0.5, 0.0), Friction::new(args.friction), CollisionLayers::new(LayerMask(1), LayerMask(2))));
     let mut d = defs(args.rest_offset);
     if args.one_leg {
@@ -345,7 +355,7 @@ pub fn run(args: &Args, lie: bool) -> String {
     let mut segs = Vec::new();
     for (i, s) in d.iter().enumerate() {
         if let Some(p) = s.parent {
-            app.world_mut().spawn(SphericalJoint::new(ents[p], ents[i]).with_anchor(xf(s.anchor)));
+            app.world_mut().spawn(SphericalJoint::new(ents[p], ents[i]).with_anchor(xf(s.anchor))); // compliance 0 by default (point/swing/twist)
         }
         let mut rest_rel = (root_r * d[s.parent.unwrap_or(i)].rot).inverse() * (root_r * s.rot);
         if s.name.starts_with("thigh") { rest_rel = Quat::from_rotation_x(args.hip_offset_deg.to_radians()) * rest_rel; }
@@ -361,7 +371,7 @@ pub fn run(args: &Args, lie: bool) -> String {
     // tick-0 header: no clips, one fixed model; a change would fail the run
     if let Some(f) = log.as_mut() { let _ = writeln!(f, "{{\"tick\":0,\"clip\":\"none\",\"model\":\"capsule_ragdoll_v1\"}}"); }
     app.insert_resource(Lab {
-        segs, motors: !lie, paired: !args.unpaired, kp: args.kp, kd: args.kd, k: args.k, leg_floor: args.leg_floor, gff: !args.no_gff, clamp: !args.no_clamp, scaled: args.scaled, cp: args.cp, ired_scalar: args.ired_scalar, damp_rel: args.damp_rel, ired_diff_max: 0.0, foot_damp: args.foot_damp, anchor_k: args.anchor_k, bal_rate: args.bal_rate, bal_lp: args.bal_lp, bal_prev: Vec3::ZERO, anchors: [None; 2], pending_f: Vec::new(), flat_feet: args.flat_feet, old_gff: args.old_gff, geom_edge: args.geom_edge, bal_sign: args.bal_sign, kb: args.kb, kbd: args.kbd, bal_log: String::new(), sole_now: [0.0; 2], foot_tilt: [0.0; 2], hip_err: 0.0, filter: !args.no_filter, balance: args.balance, rest_offset: args.rest_offset, first_below: None, tick: 0, total_mass,
+        segs, motors: !lie, paired: !args.unpaired, kp: args.kp, kd: args.kd, k: args.k, leg_floor: args.leg_floor, gff: !args.no_gff, clamp: !args.no_clamp, scaled: args.scaled, cp: args.cp, tan_full: args.tan_full, com_pull: args.com_pull, mu: args.mu, fault_ticks: 0, ired_scalar: args.ired_scalar, damp_rel: args.damp_rel, ired_diff_max: 0.0, foot_damp: args.foot_damp, anchor_k: args.anchor_k, bal_rate: args.bal_rate, bal_lp: args.bal_lp, bal_prev: Vec3::ZERO, anchors: [None; 2], pending_f: Vec::new(), flat_feet: args.flat_feet, old_gff: args.old_gff, geom_edge: args.geom_edge, bal_sign: args.bal_sign, kb: args.kb, kbd: args.kbd, bal_log: String::new(), sole_now: [0.0; 2], foot_tilt: [0.0; 2], hip_err: 0.0, filter: !args.no_filter, balance: args.balance, rest_offset: args.rest_offset, first_below: None, tick: 0, total_mass,
         c: [0.0; 2], on: [false; 2], flips: 0, com0: Vec3::ZERO, com_min: f32::MAX, com_final: 0.0, drift_max: 0.0, drift_final: 0.0,
         peak_sat: 0.0, peak_sat_foot_down: 0.0, low_limit_ticks_foot_down: 0, sum_tau_max: 0.0, sum_tau_mean: 0.0,
         sole_rest: Vec::new(), fell_through: false, com_samples: Vec::new(), last: String::new(), log, pending: Vec::new(),
@@ -375,8 +385,8 @@ pub fn run(args: &Args, lie: bool) -> String {
     let n = lab.sole_rest.len();
     let sole = if n > 0 { lab.sole_rest[n.saturating_sub(240)..].iter().sum::<f32>() / n.min(240) as f32 } else { f32::NAN };
     let samples: Vec<String> = lab.com_samples.iter().map(|(t, y)| format!("[{:.0},{y:.3}]", *t as f32 * DT)).collect();
-    format!("{{\"scene\":\"{}\",\"ticks\":{},\"seconds\":{secs:.2},\"motors\":{},\"paired\":{},\"kp\":{},\"kd\":{},\"k\":{},\"leg_floor\":{},\"scaled\":{},\"clamp\":{},\"gff\":{},\"filter\":{},\"balance\":{},\"rest_offset\":{},\"clip\":\"none\",\"model_changes\":0,\"first_tick_below_-0.1\":{},\"com_start\":{:.4},\"com_min\":{:.4},\"com_final\":{:.4},\"drift_max\":{:.4},\"drift_final\":{:.4},\"contact_flips\":{},\"flips_per_sec\":{:.3},\"sole_rest_height\":{sole:.4},\"peak_sat\":{:.3},\"peak_sat_foot_down\":{:.3},\"ticks_leg_limit_below_1Nm_foot_down\":{},\"sum_tau_max\":{:.4e},\"sum_tau_mean\":{:.4e},\"ired_rel_diff_max\":{:.4},\"substeps\":{},\"fell_through_floor\":{},\"com_per_sec\":[{}]}}",
+    format!("{{\"scene\":\"{}\",\"ticks\":{},\"seconds\":{secs:.2},\"motors\":{},\"paired\":{},\"kp\":{},\"kd\":{},\"k\":{},\"leg_floor\":{},\"scaled\":{},\"clamp\":{},\"gff\":{},\"filter\":{},\"balance\":{},\"rest_offset\":{},\"clip\":\"none\",\"model_changes\":0,\"first_tick_below_-0.1\":{},\"com_start\":{:.4},\"com_min\":{:.4},\"com_final\":{:.4},\"drift_max\":{:.4},\"drift_final\":{:.4},\"contact_flips\":{},\"flips_per_sec\":{:.3},\"sole_rest_height\":{sole:.4},\"peak_sat\":{:.3},\"peak_sat_foot_down\":{:.3},\"ticks_leg_limit_below_1Nm_foot_down\":{},\"sum_tau_max\":{:.4e},\"sum_tau_mean\":{:.4e},\"ired_rel_diff_max\":{:.4},\"mu\":{},\"tan_full\":{},\"k_com\":{},\"fault_3Mg_ticks\":{},\"substeps\":{},\"kb\":{},\"kbd\":{},\"contact_freq\":{},\"contact_damping\":{},\"foot_damp\":{},\"fell_through_floor\":{},\"com_per_sec\":[{}]}}",
         if lie { "lie" } else { "stand" }, lab.tick, lab.motors, lab.paired, lab.kp, lab.kd, lab.k, lab.leg_floor, lab.scaled, lab.clamp, lab.gff, lab.filter, lab.balance, lab.rest_offset, lab.first_below.map(|t| t as i64).unwrap_or(-1), lab.com0.y, lab.com_min, lab.com_final, lab.drift_max, lab.drift_final,
         lab.flips, lab.flips as f32 / secs.max(1e-6), lab.peak_sat, lab.peak_sat_foot_down, lab.low_limit_ticks_foot_down,
-        lab.sum_tau_max, lab.sum_tau_mean / lab.tick.max(1) as f64, lab.ired_diff_max, args.substeps, lab.fell_through, samples.join(","))
+        lab.sum_tau_max, lab.sum_tau_mean / lab.tick.max(1) as f64, lab.ired_diff_max, lab.mu, lab.tan_full, lab.com_pull, lab.fault_ticks, args.substeps, args.kb, args.kbd, args.cff, args.cdr, args.foot_damp, lab.fell_through, samples.join(","))
 }

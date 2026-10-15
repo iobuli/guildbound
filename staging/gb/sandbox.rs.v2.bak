@@ -1,0 +1,258 @@
+//! Extends: crates/game/src/studio.rs (start-up mode + Physics tab) and body_cmds.rs (ragdoll motors);
+//! pure part in sandbox_core.rs; maths from crates/sim/src/phys_balance.rs.
+//! Per-frame pose order: 1 reference pass -> 2 inertialization -> 3 foot lock -> 4 limits ->
+//! 5 clearance/knee -> 6 Avian/ragdoll.  Sandbox balance runs in slot 6 (Avian/ragdoll): it writes
+//! stance-leg torque before the Avian step. Metrics/report are read from the FINAL pose after physics.
+//! TODO(verify): the repo's SystemSet names for these six slots; balance_torque_tick goes in slot 6
+//! before PhysicsSystems, sample_report_tick after PhysicsSystems/Writeback.
+//! Milestone 0 live sandbox, as a Studio start-up mode (no second boot path).
+//! play.cmd already boots into a paused Studio; when `StudioStartMode::Sandbox` is selected the Studio
+//! loads the rig, measures it once, logs `RagdollOn`, locks input, and this module balances it.
+//! STAGED ON THE BOX, NEVER COMPILED AGAINST THE REPO. `TODO(verify)` = assumption about repo APIs.
+
+use bevy::prelude::*;
+use bevy_egui::egui; // TODO(verify): egui path as used by ui_theme.rs
+use guildbound_sim::phys_balance as pb;
+use std::io::Write;
+
+#[path = "sandbox_core.rs"]
+pub mod core;
+use self::core::*;
+
+const METRICS_DIR: &str = "target/live";
+const METRICS_PATH: &str = "target/live/metrics.jsonl";
+const METRICS_EVERY: u64 = pb::TICK_HZ;
+const CONTACT_EPS: f32 = 0.03;
+const OMEGA: f32 = 6.3;
+const ZETA: f32 = 0.63;
+
+/// TODO(verify): add this variant to studio.rs's start-up mode (or whatever play.cmd's paused-Studio
+/// boot reads, e.g. a CLI flag / env var). Default should be Sandbox per daviy's direction.
+#[derive(Resource, Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum StudioStartMode { #[default] Sandbox, Paused }
+
+#[derive(Resource, Default)]
+pub struct Sandbox {
+    pub tick: u64,
+    pub log: EventLog, // TODO(event_log): use the shared log resource once event_log.rs lands
+    pub rig: Option<(RigProfile, RigBalance)>,
+    pub balance_enabled: bool,
+    pub prev_com: Option<pb::V3>,
+    pub prev_feet: [Option<pb::V3>; 2],
+    pub report: pb::BalanceReport,
+    pub metrics_error: Option<String>,
+    /// Torques written this tick, waiting for the post-physics report.
+    pub pending: Option<(u64, u64, Vec<(u16, pb::V3, f32)>)>,
+    /// Post-physics foot positions for slip (separate from the pre-step ones).
+    pub post_feet: [Option<pb::V3>; 2],
+}
+
+/// Cached per-body role and motor cap, filled once from the bone table at load.
+#[derive(Component, Clone, Copy, Debug)]
+pub struct BoneSlot { pub bone: u16, pub role: BoneRole, pub torque_limit: f32 }
+
+/// Studio hooks into this; registered from studio.rs's plugin, not main.rs.
+pub fn plugin(app: &mut App) {
+    app.init_resource::<Sandbox>()
+        .init_resource::<StudioStartMode>()
+        // TODO(verify): `crate::studio::StudioRigLoaded` message sent by studio.rs when the Studio
+        // model (master or mannequin) and its ragdoll bodies are ready.
+        .add_systems(Update, (on_rig_loaded, esc_opens_f2))
+        // Slot 6 (Avian/ragdoll): torque before the step; report from the final pose after it.
+        // TODO(verify): Avian 0.7 runs in FixedPostUpdate (PhysicsSystems); FixedLast is after it.
+        .add_systems(FixedUpdate, balance_tick)
+        .add_systems(FixedLast, sample_report);
+}
+
+/// Measure once and freeze: bone roles, foot boxes, m and h. Then log RagdollOn and lock input.
+fn on_rig_loaded(
+    mut loaded: MessageReader<crate::studio::StudioRigLoaded>,
+    mode: Res<StudioStartMode>,
+    mut sb: ResMut<Sandbox>,
+    mut commands: Commands,
+    mut lock: ResMut<crate::agent::InputLock>, // TODO(verify): agent.rs lock resource name/fields
+    table: Res<crate::anim::BoneTable>,         // TODO(verify): the 79-bone table: name + path (anim.rs? body_controller.rs?)
+    bodies: Query<(&GlobalTransform, &avian3d::prelude::ComputedMass, &avian3d::prelude::ComputedCenterOfMass)>,
+    meshes: Res<Assets<Mesh>>,
+    skinned: Query<(&Mesh3d, &GlobalTransform)>, // TODO(verify): how foot mesh parts map to foot bones
+) {
+    for ev in loaded.read() {
+        if *mode != StudioStartMode::Sandbox { continue; }
+        let rig = ev.profile; // TODO(verify): StudioRigLoaded { profile, root, bones: Vec<(u16, Entity)> }
+        let mut bone_mass = Vec::new();
+        let mut ankles = [[0.0f32; 3]; 2];
+        let mut feet: [Vec<([f32; 3], [f32; 3])>; 2] = [Vec::new(), Vec::new()];
+        let mut bones: Vec<(u16, Entity)> = ev.bones.clone();
+        bones.sort_by_key(|b| b.0);
+        for &(bone, e) in &bones {
+            // TODO(verify): BoneTable::name(u16) -> &str and torque limit source (body_cmds::torque_limit_for).
+            let role = role_from_name(table.name(bone));
+            let limit = table.torque_limit(bone);
+            commands.entity(e).insert(BoneSlot { bone, role, torque_limit: limit });
+            let Ok((gt, m, c)) = bodies.get(e) else { continue };
+            bone_mass.push(pb::BoneMass { bone, mass: m.value(), com: gt.transform_point(c.0).to_array() });
+            if let BoneRole::Foot(s) = role {
+                if table.is_ankle(bone) { ankles[s as usize] = gt.translation().to_array(); }
+                // Mesh bounds in the foot bone's local frame.
+                for (mesh, mgt) in table.meshes_for(bone).iter().filter_map(|&me| skinned.get(me).ok()) {
+                    if let Some(aabb) = meshes.get(&mesh.0).and_then(|m| m.compute_aabb()) {
+                        let to_local = gt.affine().inverse() * mgt.affine();
+                        let (mn, mx) = (to_local.transform_point3(aabb.min().into()), to_local.transform_point3(aabb.max().into()));
+                        feet[s as usize].push((mn.min(mx).to_array(), mn.max(mx).to_array()));
+                    }
+                }
+            }
+        }
+        let (mass, h) = measure_h(&bone_mass, ankles);
+        let (Some(l), Some(r)) = (measure_foot_box(&feet[0]), measure_foot_box(&feet[1])) else {
+            sb.metrics_error = Some("foot mesh bounds not found; balance off".into());
+            continue;
+        };
+        sb.rig = Some((rig, RigBalance { mass, h, feet: [l, r] }));
+        let t = Tick(sb.tick);
+        sb.log.push(t, Event::RagdollOn { rig });
+        // TODO(verify): apply the event via the Pose tab's ragdoll path (body_cmds) instead of directly.
+        commands.write_message(crate::body_cmds::RagdollSet(true));
+        lock.locked = true;
+        sb.balance_enabled = true;
+        sb.prev_com = None;
+        sb.prev_feet = [None, None];
+        sb.post_feet = [None, None];
+    }
+}
+
+fn esc_opens_f2(keys: Res<ButtonInput<KeyCode>>, mut studio: ResMut<crate::studio::StudioState>) {
+    // TODO(verify): StudioState { open } F2 toggle
+    if keys.just_pressed(KeyCode::Escape) && !studio.open { studio.open = true; }
+}
+
+fn balance_tick(
+    mut sb: ResMut<Sandbox>,
+    bodies: Query<(Entity, &BoneSlot, &GlobalTransform, &avian3d::prelude::ComputedMass, &avian3d::prelude::ComputedCenterOfMass)>,
+    mut torque_q: Query<&mut avian3d::prelude::ConstantTorque>, // TODO(verify): Avian 0.7 torque API
+) {
+    let tick = sb.tick;
+    sb.tick += 1;
+    let Some((_, rb)) = sb.rig else { return };
+    let Some(Tick(on)) = sb.log.ragdoll_on_tick() else { return };
+    let since_on = tick.saturating_sub(on);
+
+    let mut rows: Vec<_> = bodies.iter().collect();
+    rows.sort_by_key(|r| r.1.bone);
+    let masses: Vec<_> = rows.iter().map(|(_, s, gt, m, c)| pb::BoneMass { bone: s.bone, mass: m.value(), com: gt.transform_point(c.0).to_array() }).collect();
+    if masses.is_empty() { return; }
+    let (_, com) = pb::body_com(&masses);
+    let dt = 1.0 / pb::TICK_HZ as f32;
+    let com_vel = sb.prev_com.map_or([0.0; 3], |p| [(com[0] - p[0]) / dt, (com[1] - p[1]) / dt, (com[2] - p[2]) / dt]);
+    sb.prev_com = Some(com);
+
+    let mut pts = Vec::with_capacity(8);
+    let mut planted = [false; 2];
+    let mut slip = [0.0f32; 2];
+    let mut stance: Vec<(u16, Side, f32)> = Vec::new();
+    let mut ents: Vec<Entity> = Vec::new();
+    for (e, s, gt, _, _) in &rows {
+        match s.role {
+            BoneRole::Foot(side) if rb.feet[side as usize].sole_y.is_finite() => {
+                let i = side as usize;
+                let p = gt.translation().to_array();
+                let sole = gt.transform_point(Vec3::new(0.0, rb.feet[i].sole_y, 0.0)).y;
+                let on_ground = sole <= CONTACT_EPS; // TODO(verify): ground plane at y = 0
+                if on_ground && !planted[i] {
+                    let (yaw, _, _) = gt.rotation().to_euler(EulerRot::YXZ);
+                    pts.extend(foot_corners(&rb.feet[i], p, yaw));
+                }
+                planted[i] |= on_ground;
+                if let Some(prev) = sb.prev_feet[i] { slip[i] = pb::foot_slip(prev, p, on_ground); }
+                sb.prev_feet[i] = Some(p);
+            }
+            BoneRole::StanceLeg(side) => { stance.push((s.bone, side, s.torque_limit)); ents.push(*e); }
+            _ => {}
+        }
+    }
+    let poly = pb::support_polygon(&pts);
+    let margin = pb::stability_margin(&poly, [com[0], com[2]]);
+    let tau = if sb.balance_enabled {
+        // Physics owns the m*h^2 inverted-pendulum scaling; we pass the frozen per-rig m and h.
+        pb::balance_torque(rb.mass, rb.h, com, com_vel, &poly, pb::balance_gains(OMEGA, ZETA), since_on, pb::balance_cap(rb.mass))
+    } else { [0.0; 3] };
+    let torques = split_torque(tau, &stance, planted);
+    for (e, (_, t, _)) in ents.iter().zip(&torques) {
+        if let Ok(mut ct) = torque_q.get_mut(*e) { ct.0 = Vec3::from_array(*t); } // overwrite, never accumulate
+    }
+    sb.pending = Some((tick, since_on, torques));
+}
+
+/// Final pose after physics: COM, support, margin, slip, saturation -> report + metrics.jsonl.
+fn sample_report(
+    mut sb: ResMut<Sandbox>,
+    bodies: Query<(&BoneSlot, &GlobalTransform, &avian3d::prelude::ComputedMass, &avian3d::prelude::ComputedCenterOfMass)>,
+) {
+    let Some((tick, since_on, torques)) = sb.pending.take() else { return };
+    let Some((_, rb)) = sb.rig else { return };
+    let mut rows: Vec<_> = bodies.iter().collect();
+    rows.sort_by_key(|r| r.0.bone);
+    let masses: Vec<_> = rows.iter().map(|(s, gt, m, c)| pb::BoneMass { bone: s.bone, mass: m.value(), com: gt.transform_point(c.0).to_array() }).collect();
+    if masses.is_empty() { return; }
+    let (_, com) = pb::body_com(&masses);
+    let mut pts = Vec::with_capacity(8);
+    let mut planted = [false; 2];
+    let mut slip = [0.0f32; 2];
+    for (s, gt, _, _) in &rows {
+        if let BoneRole::Foot(side) = s.role {
+            let i = side as usize;
+            let p = gt.translation().to_array();
+            let on_ground = gt.transform_point(Vec3::new(0.0, rb.feet[i].sole_y, 0.0)).y <= CONTACT_EPS;
+            if on_ground && !planted[i] {
+                let (yaw, _, _) = gt.rotation().to_euler(EulerRot::YXZ);
+                pts.extend(foot_corners(&rb.feet[i], p, yaw));
+            }
+            planted[i] |= on_ground;
+            if let Some(prev) = sb.post_feet[i] { slip[i] = pb::foot_slip(prev, p, on_ground); }
+            sb.post_feet[i] = Some(p);
+        }
+    }
+    let support = pb::support_polygon(&pts);
+    let margin = pb::stability_margin(&support, [com[0], com[2]]);
+    sb.report = pb::BalanceReport { tick, com, support, margin, saturation: pb::saturation(&torques), slip, ramp: pb::ramp(since_on) };
+    if tick % METRICS_EVERY == 0 {
+        let line = sb.report.json_line();
+        if let Err(e) = append_metrics(&line) { sb.metrics_error = Some(e.to_string()); }
+    }
+}
+
+fn append_metrics(line: &str) -> std::io::Result<()> {
+    std::fs::create_dir_all(METRICS_DIR)?; // TODO(verify): cwd is repo root under play.cmd
+    let mut f = std::fs::OpenOptions::new().create(true).append(true).open(METRICS_PATH)?;
+    writeln!(f, "{line}")
+}
+
+/// Physics tab body; studio.rs calls this from its tab dispatch. TODO(verify) tab hook + ui_theme::stat signature.
+pub fn physics_tab(ui: &mut egui::Ui, sb: &mut Sandbox, bone_name: impl Fn(u16) -> String) {
+    use crate::ui_theme as t;
+    let r = sb.report.clone();
+    t::panel(ui, "Balance", |ui| {
+        if let Some((rig, rb)) = sb.rig { t::stat(ui, "Rig", format!("{rig:?}  m {:.1} kg  h {:.3} m", rb.mass, rb.h)); }
+        t::stat(ui, "Tick", format!("{}", r.tick));
+        t::stat(ui, "Ramp", format!("{:.2}", r.ramp));
+        t::stat(ui, "COM (m)", format!("{:.3}, {:.3}, {:.3}", r.com[0], r.com[1], r.com[2]));
+        let col = if r.margin >= 0.0 { t::ACCENT } else { t::DRIVER_COLORS[3] };
+        ui.label(egui::RichText::new(format!("Stability margin  {:+.3} m", r.margin)).size(t::FONT[1]).color(col));
+        t::stat(ui, "Slip L / R (mm/tick)", format!("{:.2} / {:.2}", r.slip[0] * 1e3, r.slip[1] * 1e3));
+        ui.checkbox(&mut sb.balance_enabled, "Balance torque on");
+    });
+    t::panel(ui, "Torque saturation", |ui| {
+        if r.saturation.is_empty() { ui.label("No stance motors yet"); }
+        for &(b, s) in &r.saturation {
+            ui.horizontal(|ui| {
+                ui.label(egui::RichText::new(bone_name(b)).size(t::FONT[0]));
+                let col = if s > 0.9 { t::DRIVER_COLORS[3] } else { t::ACCENT };
+                ui.add(egui::ProgressBar::new(s).desired_width(120.0).fill(col).text(format!("{:.0}%", s * 100.0)));
+            });
+        }
+    });
+    t::panel(ui, "Metrics file", |ui| {
+        ui.label(egui::RichText::new(METRICS_PATH).size(t::FONT[0]).monospace());
+        if let Some(e) = &sb.metrics_error { ui.colored_label(t::DRIVER_COLORS[3], e); }
+    });
+}
