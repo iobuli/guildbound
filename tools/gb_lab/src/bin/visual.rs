@@ -1,10 +1,10 @@
 //! Windowed demo: the gb_lab "stand" scene with the ragdoll debug overlay (F3 toggles, on by default).
-//! Defaults = 12 Oct ruling: 12 substeps, kb 5, kbd 0.3, Kp 4000 / Kd 126 (scaled Stable PD, no clamp),
-//! foot damping 40, mu 0.8. Run: cargo run --release --features visual --bin visual
+//! Defaults = pass 6 test build: 12 substeps, kb 5, kbd 0.3, Kp 4000 / Kd 126 (scaled Stable PD, no clamp),
+//! foot damping 40, mu 0.8, COM pull 0.11. Run: cargo run -p gb_lab --release --features visual --bin visual
 //! Keys: F3 overlay, F4-F9 layers, R restart scene, Space pause.
 #[path = "visual/lab_scene.rs"]
 mod lab_scene;
-#[path = "../../../hive/visual/debug_overlay.rs"]
+#[path = "../../../../staging/overlay/debug_overlay.rs"]
 mod debug_overlay;
 
 use avian3d::prelude::*;
@@ -61,7 +61,7 @@ fn default_args() -> Args {
     Args {
         scene: "stand".into(), ticks: u32::MAX, kp: 4000.0, kd: 126.0, k: 1.2, out: None, unpaired: false, exact: false,
         leg_floor: 0.0, no_gff: false, no_filter: false, balance: true, rest_offset: true, no_clamp: true, pin_pelvis: false,
-        one_leg: false, scaled: true, cp: false, tan_full: false, com_pull: 0.0, cff: 1.5, cdr: 10.0, mu: 0.8,
+        one_leg: false, scaled: true, cp: false, tan_full: false, com_pull: 0.11, cff: 1.5, cdr: 10.0, mu: 0.8,
         ired_scalar: false, damp_rel: false, foot_damp: 40.0, anchor_k: 0.0, bal_rate: 0.0, bal_lp: 1.0, substeps: 12,
         flat_feet: false, friction: 0.8, old_gff: false, geom_edge: false, bal_sign: 1.0, kb: 5.0, kbd: 0.3, hip_offset_deg: 0.0,
     }

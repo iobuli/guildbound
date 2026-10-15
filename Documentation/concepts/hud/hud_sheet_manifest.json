@@ -1,0 +1,1390 @@
+{
+ "schema": 1,
+ "sheet": {
+  "size_px": [
+   2048,
+   2048
+  ],
+  "grid": [
+   8,
+   8
+  ],
+  "cell_px": 256,
+  "background": "transparent"
+ },
+ "layers": {
+  "L0": {
+   "name": "screen fx",
+   "default_alpha": 0.4
+  },
+  "L1": {
+   "name": "panel backplates",
+   "default_alpha": 0.7
+  },
+  "L2": {
+   "name": "meters",
+   "default_alpha": 1.0
+  },
+  "L3": {
+   "name": "icons",
+   "default_alpha": 1.0
+  },
+  "L4": {
+   "name": "text/values (runtime TMP, no art)",
+   "default_alpha": 1.0,
+   "min_alpha": 0.7,
+   "backing_plate": true,
+   "min_effective_alpha": 0.85,
+   "plate_min_alpha": 0.7,
+   "contrast_min": 4.5
+  },
+  "L5": {
+   "name": "context",
+   "default_alpha": 0.9,
+   "fade_out_of_combat_s": 2.0
+  },
+  "L6": {
+   "name": "alerts",
+   "default_alpha": 1.0,
+   "auto_dismiss_s": 3.0,
+   "max_stack": 2,
+   "critical_min_effective_alpha": 0.9
+  },
+  "L7": {
+   "name": "modal windows",
+   "default_alpha": 0.85,
+   "world_dim": 0.6
+  }
+ },
+ "palette": {
+  "panel_fill": "#0B1A3A",
+  "edge_glow": "#5FD7FF",
+  "text_primary": "#EAF6FF",
+  "warning": "#FFB347",
+  "critical": "#FF4A5A"
+ },
+ "rules": [
+  "no text/numbers/letters in any cell",
+  "9-slice borders inside 32 px",
+  "tintable cells are flat white on alpha",
+  "glow separated from frames when baked",
+  "replace single cells, never regenerate the whole sheet for one fix",
+  "all numbers (H) until tested",
+  "text (L4) always sits on its own contrast backing plate; contrast >= 4.5:1 is measured text vs plate, independent of panel/layer opacity",
+  "presentation boards (e.g. blue-gui-system-sheet-v2.png) are not sprite grids and are never sliced",
+  "cells with source=procedural are generated in code/shader (exact, tintable, resolution-independent); the art sheet does not supply them",
+  "L4 glyph alpha floor 0.85; every plate behind L4 text alpha >= 0.70 independent of master/layer opacity (measured: plate 55% over bright sand = 4.5:1, plate 70% = 8.1:1); critical alerts effective alpha >= 0.90; master alpha is clamped by these floors",
+  "reduced-motion option removes pulses and fades; HUD observes state and never mutates it",
+  "simple meter fills and pips are drawn in code as filled masks; generated art supplies frames/decoration only; white-mask normalisation only mechanically and with a recorded derivation"
+ ],
+ "cells": [
+  {
+   "id": "panel_frame_l",
+   "row": 0,
+   "col": 0,
+   "rect_px": [
+    0,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "panel_frame_m",
+   "row": 0,
+   "col": 1,
+   "rect_px": [
+    256,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "panel_frame_s",
+   "row": 0,
+   "col": 2,
+   "rect_px": [
+    512,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "header_bar",
+   "row": 0,
+   "col": 3,
+   "rect_px": [
+    768,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "notch_tab",
+   "row": 0,
+   "col": 4,
+   "rect_px": [
+    1024,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "corner_brackets",
+   "row": 0,
+   "col": 5,
+   "rect_px": [
+    1280,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet",
+   "multi_part_sprite": 4
+  },
+  {
+   "id": "divider",
+   "row": 0,
+   "col": 6,
+   "rect_px": [
+    1536,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "close_button",
+   "row": 0,
+   "col": 7,
+   "rect_px": [
+    1792,
+    0,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L1",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "hp_frame",
+   "row": 1,
+   "col": 0,
+   "rect_px": [
+    0,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "hp_fill",
+   "row": 1,
+   "col": 1,
+   "rect_px": [
+    256,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Filled",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "hp_trail_fill",
+   "row": 1,
+   "col": 2,
+   "rect_px": [
+    512,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Filled",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "guard_seg_empty",
+   "row": 1,
+   "col": 3,
+   "rect_px": [
+    768,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "guard_seg_full",
+   "row": 1,
+   "col": 4,
+   "rect_px": [
+    1024,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "guard_break_crack",
+   "row": 1,
+   "col": 5,
+   "rect_px": [
+    1280,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "cooldown_sweep_mask",
+   "row": 1,
+   "col": 6,
+   "rect_px": [
+    1536,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Filled",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "charge_ring",
+   "row": 1,
+   "col": 7,
+   "rect_px": [
+    1792,
+    256,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Filled",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "ready_ring_empty",
+   "row": 2,
+   "col": 0,
+   "rect_px": [
+    0,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "ready_ring_ready",
+   "row": 2,
+   "col": 1,
+   "rect_px": [
+    256,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "ready_ring_charging",
+   "row": 2,
+   "col": 2,
+   "rect_px": [
+    512,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Filled",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "icon_element_fire",
+   "row": 2,
+   "col": 3,
+   "rect_px": [
+    768,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_element_reserved",
+   "row": 2,
+   "col": 4,
+   "rect_px": [
+    1024,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "carry_slot_frame",
+   "row": 2,
+   "col": 5,
+   "rect_px": [
+    1280,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L2",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_obj_crate",
+   "row": 2,
+   "col": 6,
+   "rect_px": [
+    1536,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_obj_supplies",
+   "row": 2,
+   "col": 7,
+   "rect_px": [
+    1792,
+    512,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "contract_card_frame",
+   "row": 3,
+   "col": 0,
+   "rect_px": [
+    0,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "seal_stamp",
+   "row": 3,
+   "col": 1,
+   "rect_px": [
+    256,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_route_exposed",
+   "row": 3,
+   "col": 2,
+   "rect_px": [
+    512,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_route_sheltered",
+   "row": 3,
+   "col": 3,
+   "rect_px": [
+    768,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_service_gate",
+   "row": 3,
+   "col": 4,
+   "rect_px": [
+    1024,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "icon_service_stall",
+   "row": 3,
+   "col": 5,
+   "rect_px": [
+    1280,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "trust_pip_empty",
+   "row": 3,
+   "col": 6,
+   "rect_px": [
+    1536,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "trust_pip_full",
+   "row": 3,
+   "col": 7,
+   "rect_px": [
+    1792,
+    768,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural fill over generated decoration (I-012 / Codex 15:20)"
+  },
+  {
+   "id": "toast_frame",
+   "row": 4,
+   "col": 0,
+   "rect_px": [
+    0,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L6",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "toast_accent_bar",
+   "row": 4,
+   "col": 1,
+   "rect_px": [
+    256,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L6",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "mastery_frame",
+   "row": 4,
+   "col": 2,
+   "rect_px": [
+    512,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L6",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "technique_frame",
+   "row": 4,
+   "col": 3,
+   "rect_px": [
+    768,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L6",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "lockon_marker",
+   "row": 4,
+   "col": 4,
+   "rect_px": [
+    1024,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L5",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet",
+   "multi_part_sprite": 4
+  },
+  {
+   "id": "enemy_minibar_frame",
+   "row": 4,
+   "col": 5,
+   "rect_px": [
+    1280,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L5",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "interact_prompt_frame",
+   "row": 4,
+   "col": 6,
+   "rect_px": [
+    1536,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L5",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "keycap_frame",
+   "row": 4,
+   "col": 7,
+   "rect_px": [
+    1792,
+    1024,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L3",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "modal_window_l",
+   "row": 5,
+   "col": 0,
+   "rect_px": [
+    0,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "tab_idle",
+   "row": 5,
+   "col": 1,
+   "rect_px": [
+    256,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "tab_hover",
+   "row": 5,
+   "col": 2,
+   "rect_px": [
+    512,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "tab_active",
+   "row": 5,
+   "col": 3,
+   "rect_px": [
+    768,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "slider_track",
+   "row": 5,
+   "col": 4,
+   "rect_px": [
+    1024,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Sliced",
+   "nine_slice_px": [
+    32,
+    32,
+    32,
+    32
+   ],
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "slider_knob",
+   "row": 5,
+   "col": 5,
+   "rect_px": [
+    1280,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "swatch_frame",
+   "row": 5,
+   "col": 6,
+   "rect_px": [
+    1536,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "checkbox",
+   "row": 5,
+   "col": 7,
+   "rect_px": [
+    1792,
+    1280,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L7",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "fx_vignette",
+   "row": 6,
+   "col": 0,
+   "rect_px": [
+    0,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "fx_lowhp_pulse",
+   "row": 6,
+   "col": 1,
+   "rect_px": [
+    256,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "fx_damage_wedge",
+   "row": 6,
+   "col": 2,
+   "rect_px": [
+    512,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "tile_scanline",
+   "row": 6,
+   "col": 3,
+   "rect_px": [
+    768,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "tile_grid",
+   "row": 6,
+   "col": 4,
+   "rect_px": [
+    1024,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "glow_blob",
+   "row": 6,
+   "col": 5,
+   "rect_px": [
+    1280,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": true,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "procedural (proposed, I-010)"
+  },
+  {
+   "id": "sparkle_accent",
+   "row": 6,
+   "col": 6,
+   "rect_px": [
+    1536,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "sheet"
+  },
+  {
+   "id": "empty_r6c7",
+   "row": 6,
+   "col": 7,
+   "rect_px": [
+    1792,
+    1536,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "L0",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_0",
+   "row": 7,
+   "col": 0,
+   "rect_px": [
+    0,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_1",
+   "row": 7,
+   "col": 1,
+   "rect_px": [
+    256,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_2",
+   "row": 7,
+   "col": 2,
+   "rect_px": [
+    512,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_3",
+   "row": 7,
+   "col": 3,
+   "rect_px": [
+    768,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_4",
+   "row": 7,
+   "col": 4,
+   "rect_px": [
+    1024,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_5",
+   "row": 7,
+   "col": 5,
+   "rect_px": [
+    1280,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_6",
+   "row": 7,
+   "col": 6,
+   "rect_px": [
+    1536,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  },
+  {
+   "id": "reserved_7",
+   "row": 7,
+   "col": 7,
+   "rect_px": [
+    1792,
+    1792,
+    256,
+    256
+   ],
+   "safe_margin_px": 16,
+   "layer": "reserved",
+   "image_type": "Simple",
+   "nine_slice_px": null,
+   "tintable_white_mask": false,
+   "text_baked": false,
+   "status": "spec_only",
+   "source": "empty"
+  }
+ ]
+}

@@ -1,0 +1,85 @@
+[
+  {
+    "id": "CS-CHR-06",
+    "file": "Documentation/concepts/development/trained-builds.png",
+    "prompt": "Use case: stylized-concept. Asset type: FreeGuild P1 trained-build concept sheet. Reference image 1 is the approved provisional hero outfit and identity; reference 2 is actual owned-body Blender evidence, constrain all body proportions to this compact faceted family. Create one polished landscape 3D-style art sheet, three columns FIGHTER, CASTER, HEAVY and two rows EARLY and TRAINED. Six full-body characters, the same brown short-haired faceless guild member, same limb lengths, height, visible hands and feet. Carved matte polygons, bone shirt, brown vest/trousers, guild-red sash. Fighter grows broader upper-back/wrap silhouette, compact loaded stance and repaired band stitching. Caster has a tapered vest, composed braced stance, dark forearm bands and two restrained ember seams, no floating orb or permanent glow. Heavy gains padded vest and fuller lower torso/thigh silhouette, broad reinforced cloth bands and grounded stance; never giant shoulders or longer arms. Visual cosmetic development, no weapons, no armour escalation or external IP. Clothing is a proposed derivative of the owned body, not an existing source asset. Quiet cream backdrop, even lighting, clear separated silhouettes, sparse exact labels only. Also show small monochrome silhouettes along the bottom for the three TRAINED figures, no claims of tested gameplay. Make trained silhouettes noticeably different without changing hand size or reach.",
+    "refs": [
+      "D:/New folder (4)/guildbound/Documentation/concepts/characters/hero-turnaround.png",
+      "D:/New folder (4)/guildbound/Documentation/experiments/chr_spike/lineup.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-dd1fdbad-29bb-47d6-8587-99d81b3b9ed5.png",
+    "approval_state": "draft-for-boss-review",
+    "review": "One hero identity, trained caster silhouette distinct; fighter/heavy still need independent distance reading and stronger differentiation."
+  },
+  {
+    "id": "CS-OBJ-06",
+    "file": "Documentation/concepts/development/dressing-corner.png",
+    "prompt": "Use case: stylized-concept. Asset type: FreeGuild owned-kit dressing station assembly study. References 1 and 2 are ACTUAL owned modular objects: reuse their timber support, straight wall, wooden chest, long wooden bench, village clothes rack and cloth banner shapes. Reference 3 is provisional character style. Make a polished landscape cream-background exploded assembly plus assembled vignette: left two-thirds a small functional hall corner with a wooden framed full-body mirror/preview place, long bench, chest, clothes rack, one guild-red cloth marker; one matching faceted hero standing near it, no scene duplicates. Right third carefully separated existing-source-shaped parts, visually traceable to source sheets. Everything is warm brown timber/bone cloth/matte faceted. Frame is derived from owned post/wall timber, mirror pane is a proposed material/UI preview, not a claimed owned object. No carved ornate furniture, weapons, armour piles, new architecture, water, potions, external IP or text labels. Show room for player to stand and turn and a clear unobstructed path past the station. This is a design concept, not a Unity screenshot.",
+    "refs": [
+      "D:/New folder (4)/guildbound/Logs/sheets/tavern.png",
+      "D:/New folder (4)/guildbound/Logs/sheets/town.png",
+      "D:/New folder (4)/guildbound/Documentation/concepts/characters/hero-turnaround.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-0b684f30-b3ac-4292-9ea1-65b755e877be.png",
+    "approval_state": "draft-for-boss-review",
+    "review": "Owned-kit corner vocabulary verified visually; mirror proposed. Drop illustrative rug in first assembly."
+  },
+  {
+    "id": "CS-UI-01",
+    "file": "Documentation/concepts/development/blue-gui-system-sheet-v1.png",
+    "prompt": "Use case: ui-mockup. Create ONE large landscape production design sheet for FreeGuild GUI and HUD. Reference 1 is boss-supplied mood reference only: original blue/cyan luminous geometric frames, deep transparent navy panes, clear white type, restrained faceted diamond corners. Do NOT copy its ornament shapes, runes, character names, stats, layout or text. Reference 2 establishes faceted guild-member world style. Distinct original simple angular guild seal, no external IP. Arrange 6 separated panels in a clean 3 by 2 grid with generous margins on midnight blue. TOP LEFT: compact in-combat HUD with HP red fill, GUARD cyan fill, FIRE ready icon and carried objective 'Return the seal'; no XP/level/strength stats, no wallet during fights, center gameplay view empty. TOP MIDDLE: physical guild board GUI with exactly two contract cards 'Clear the passage' and 'Recover the parcel', ACCEPT button, hall-only wallet 30 coin, trust band Established. TOP RIGHT: dressing preview of same full-body hero with tabs FRAME / HEAD / COLOURS, three body mix controls, APPLY and CANCEL, 'Keep current appearance'; no height slider. BOTTOM LEFT: pause/accessibility pane with Panel opacity, Frame glow, Text opacity, Motion reduction, Camera shake and Remap input. BOTTOM MIDDLE: contact outcome visual language: HIT short amber accent, BLOCK short blue angular pulse, MISS no flash; empty center, no giant floating damage numbers. BOTTOM RIGHT: state strip FIRE LOCKED / READY / CHARGING / RELEASE / COOLDOWN / INTERRUPTED with different shapes and clear labels, not only colors. Keep decorative glow restrained, thin cyan frames, corner accents instead of full neon enclosing gameplay. High readability, original coherent system, consistent margins and typography. This is a concept sheet, not gameplay or final runtime UI.",
+    "refs": [
+      "C:/Users/64Bit 1TB NVME/AppData/Local/Temp/gbtools/boss-hud-reference.jpg",
+      "D:/New folder (4)/guildbound/Documentation/concepts/characters/hero-turnaround.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-62e4b363-f50b-4eb4-bdfe-ee0a7ccfdfa6.png",
+    "approval_state": "draft-for-boss-review",
+    "review": "Historical draft: invented weapons/compass/armour fit. Superseded by edited v2."
+  },
+  {
+    "id": "CS-UI-01-R2",
+    "file": "Documentation/concepts/development/blue-gui-system-sheet-v2.png",
+    "prompt": "Edit this existing FreeGuild 6-panel GUI concept sheet, preserve the original blue/cyan thin angular frame language, hero identity, six-panel layout and overall high-quality presentation. Correct these SYSTEM ERRORS precisely: bottom-middle combat figures must be UNARMED, REMOVE EVERY SWORD/WEAPON. HIT shows one bare/wrapped fist physically contacting an opponent torso with tiny amber contact accent; BLOCK shows a defender's two forearms receiving a strike with a small cyan contact pulse, no full shield; MISS shows a punch passing clearly outside opponent reach with NO flash and NO trail. Make the title 'CONTACT FEEDBACK'. In dressing top-right replace 'Body Type', 'Build', 'Armour Fit' rows with exactly 'FIGHTER', 'CASTER', 'HEAVY' three blend sliders, remove armour-fit imagery; add subtle line 'Cosmetic blend / fixed reach'. Keep 'Keep current appearance', Apply/Cancel. Remove compass from top-left as it isn't in the GDD. Do not frame the entire in-combat view with neon; leave only detached small HP/GUARD corner panel, fire readiness and objective strip, keep center free. In guild board remove bandit/mountain and lost-shipment invented narrative: replace descriptions with 'Recover the sealed guild marker. Restore the gate route.' and 'Recover the guild parcel. Activate the preparation stall.' Contract cards use the owned timber gate and timber crate imagery, no mountain dungeon. In bottom-right keep six state icons but RELEASE means a brief cast transition, not another learnable ability. No invented XP, mana, level stats or new skill systems. Keep text clean. This is edited design art, not a Unity capture.",
+    "refs": [
+      "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-62e4b363-f50b-4eb4-bdfe-ee0a7ccfdfa6.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-08ed7350-200c-46a6-8334-7857fef0a0dc.png",
+    "approval_state": "draft-for-boss-review",
+    "review": "Edited: weapons, compass and armour fit removed; unarmed contact examples, fixed-reach cosmetic blend and contracts tied to gate/stall. Raster presentation only."
+  },
+  {
+    "id": "CS-SYS-01",
+    "file": "Documentation/concepts/development/playable-system-sheet.png",
+    "prompt": "Use case: stylized-concept. One large landscape FreeGuild gameplay integration concept sheet, 3 by 3 grid, nine panels separated with quiet bone-colored gutters. Reference 1 preserves same brown short-haired faceted guild member with brown vest/bone shirt/red sash and fixed normal human limb lengths. Reference 2 hall is built from repeated owned timber walls, supports and roof panels. Reference 3 owned village gates/awning/crates/boardwalk are sole additional object vocabulary. Warm matte faceted world. Panel1 HALL: modest timber hall interior cutaway shows contract counter, recovery bench, dressing corner and visible clear sparring yard doorway. Panel2 DEPART: same hero walks from timber gate down earthy path, no water or extra region. Panel3 CONTACT: two unarmed characters, hero planted foot and fist visibly contacts opponent torso, tiny amber spark, no magical weapon. Panel4 GUARD: defensive opponent's frontal crossed forearms block an unarmed fist, tiny localized cool-blue pulse, no magic shield, readable hands. Panel5 THROW: three small sequential silhouettes within panel show close guarded reach-in, balanced partnered pivot, grounded release; no air combat, no teleport. Panel6 PLAIN FIRE: planted hero casts small orange fire projectile toward visible humanoid opponent, hands/body not obscured, no oversized magic circle. Panel7 HELD FIRE: same hero braces two planted feet, holds hand-sized warm fire charge between palms; then larger bounded orange impact beside humanoid target, no screen-filling explosion. Panel8 RETURN: hero returns owned timber crate/marker to guild counter, clerk and same guild-red marker, no gold rain or loot screen. Panel9 GROWTH: small paired before/after thumbnails of same owned timber gate restored and crate/awning prep stall made usable, next trip visibly chooses shorter open passage. Optional sparse exact panel labels only as given, no copied IP, no sword, no monsters, no leveling stats, no new buildings. These are linked art targets, not runtime evidence.",
+    "refs": [
+      "D:/New folder (4)/guildbound/Documentation/concepts/characters/hero-turnaround.png",
+      "D:/New folder (4)/guildbound/Documentation/concepts/objects/hall-exploded.png",
+      "D:/New folder (4)/guildbound/Logs/sheets/town.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-36b0f2ed-18dd-4c46-b4f4-97ccfe5a29f1.png",
+    "approval_state": "draft-for-boss-review",
+    "review": "Linked gameplay art targets, not chronological gold path or runtime proof. Held charge after first delivery; contact/charge effects need restraint."
+  },
+  {
+    "id": "CS-UI-02",
+    "file": "Documentation/concepts/hud/candidates/hud-master-sheet-v1.png",
+    "prompt": "Use case: ui-mockup. Asset type: EXACT production candidate SPRITE ATLAS, not a presentation board. Reference is original FreeGuild blue/cyan frame language only. Generate a 2048x2048 PNG on GENUINELY TRANSPARENT background, 8 equal rows by 8 equal columns (64 cells of 256x256). NO labels, NO letters, NO digits, NO text, NO drawn grid, NO characters, NO scene or opaque full-sheet backing. Each nonempty sprite centered inside its cell, max224x224 with 16px transparent safe margin, all frames border art inside32px from frame edges. Empty cells completely alpha=0. Keep thin icy cyan angular outline, navy optional backplate ONLY inside sprite, original simple diamond corner motifs. All FILL and MASK sprites flat white on transparency so runtime code tints them, frames cyan not white. Leave icon interiors readable. Exact left-to-right cell order for each row, count carefully: R0: large square panel frame; medium square panel frame; small square panel frame; horizontal header bar; notched tab; four detached corner brackets; divider line; close X button (symbol not letter). R1: health bar frame; solid white rectangular health fill; solid white rectangular delayed-health fill; guard empty segment outline; solid white guard segment; fractured guard diamond; solid white radial cooldown mask; white segmented charge ring. R2: empty ready ring; ready diamond ring; partial charging ring; flame icon; EMPTY reserved element; carried-item slot frame; crate icon; tied supplies bundle icon. R3: tall contract card frame; original diamond guild seal; exposed path icon; sheltered path icon; timber gate icon; awning-stall icon; empty trust diamond pip; solid white trust diamond pip. R4: horizontal toast frame; thin white accent strip; mastery suggestion frame; technique learned frame; four corner lock-on marker; opponent mini-bar frame; interaction prompt frame; blank keycap frame. R5: square modal frame; idle tab; hover tab; selected tab; slider track; white diamond slider knob; colour swatch frame; checkbox empty outline. R6: subtle edge vignette white alpha gradient; low-health edge white pulse mask; directional white damage wedge; white scanline tile; white grid tile; white soft glow blob; white small sparkle accent; EMPTY. R7: ALL EIGHT CELLS EMPTY transparent for later replacements. This image is a candidate for measurement and slicing, never claim exact grid correctness without checks. No extra ornament across cells. Crisp separated individual assets.",
+    "refs": [
+      "D:/New folder (4)/guildbound/Documentation/concepts/development/blue-gui-system-sheet-v2.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-d91c3e5f-e1ce-481f-a48b-961ff19d943b.png",
+    "approval_state": "rejected-production-grid-candidate",
+    "review": "True alpha; requested grid size not respected. Uneven cell occupancy/glow bleed and some mismatched or missing cells. Needs measured extraction/repacking and independent cell review."
+  },
+  {
+    "id": "CS-UI-02-R2",
+    "file": "Documentation/concepts/hud/candidates/hud-master-sheet-v2.png",
+    "prompt": "Edit this transparent FreeGuild sprite atlas into a CLEAN consistent EXACT 8 by 8 grid. Output square 2048x2048 if supported. Preserve the 8-column ordering and each original sprite's design; DO NOT invent new objects. There must be 8 equally spaced rows and 8 equally spaced columns with top-left cell centered at (128,128) on a 2048 sheet and 256px pitch; all 8 cells in bottom row EMPTY. Empty reserved cell R2C4 and empty R6C7 stay transparent. Remove the broad coloured glow haze around frames: ONLY crisp thin cyan frame edges, small modest corner highlights, clean transparent exterior. All sprite content fits within its own cell with 16px transparent margins. White FILL/MASK cells remain flat white alpha art, not shaded/bevelled: R1C1 hp fill, R1C2 trail fill, R1C4 full guard, R1C6 cooldown mask, R1C7 charge ring, R3C7 full trust pip, R4C1 accent, R5C5 slider knob; remove any ornament from these fills. R0C7 close symbol has no full-cell glow. R6 soft effects are confined to their cell. No opaque atlas background, no fake checkerboard, no black backing, no text labels or coordinates, no extra content in bottom row. Preserve actual transparency and avoid inter-cell bleed. Keep this a candidate sheet, not a rendered UI layout.",
+    "refs": [
+      "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-d91c3e5f-e1ce-481f-a48b-961ff19d943b.png"
+    ],
+    "generated_source": "C:\\Users\\64Bit 1TB NVME\\.codex\\generated_images\\01a12a94-7f00-76f2-9ca4-1778d4bd7bf2\\exec-f86dbbe4-6024-48ea-9a69-cbb7d97bd2df.png",
+    "approval_state": "rejected-production-grid-candidate",
+    "review": "True alpha; requested grid size not respected. Uneven cell occupancy/glow bleed and some mismatched or missing cells. Needs measured extraction/repacking and independent cell review."
+  }
+]

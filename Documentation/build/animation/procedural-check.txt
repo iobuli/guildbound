@@ -1,0 +1,5 @@
+Procedural pose - 6000.3.26f1
+30 fps: recoil at 1 s=2.688712E-05 deg; root fixed; 72 transform positions/scales preserved.
+60 fps: recoil at 1 s=3.67082E-05 deg; root fixed; 72 transform positions/scales preserved.
+120 fps: recoil at 1 s=3.670833E-05 deg; root fixed; 72 transform positions/scales preserved.
+PASS: maximum lean=13.26154 deg, recoil=2.943036 deg, turn lag=15 deg, local-position change=0 m. Spring endpoint agrees at 30/60/120 fps within 0.00001 deg.

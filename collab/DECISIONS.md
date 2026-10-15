@@ -1,0 +1,130 @@
+# Decisions
+
+| # | Date | Decision | By |
+|---|------|----------|----|
+| 1 | 2026-10-10 | Renderer Forward+, target RTX 3060 | user |
+| 2 | 2026-10-10 | Archive: commit + tag, then move old tree to _archive/ (pending "start") | user |
+| 3 | 2026-10-10 | Milestone 1 = skeleton + world gen + combat slice; inventory/crafting/economy designed now, built in M2 | user |
+| 4 | 2026-10-10 | Task 3 outline accepted with changes 1-5 in CHANNEL.md 13:35 entry | claude |
+| 5 | 2026-10-10 | Hunter's Card ranks F/E/D/C/B/A/S, order 0..6, buy discount and sell bonus 0/100/200/300/400/500/600 bps; access mapped onto letter ranks | claude; recorded by codex |
+| 6 | 2026-10-10 | Weapon ItemDef adds moveset_id and authored stat_mods; empty main_hand selects unarmed; combat changes moveset only on committed action-legal equip | claude; recorded by codex |
+| 7 | 2026-10-10 | Immutable EffectDef defines use time, optional cancel window, movement scale, cooldown group/time and magnitudes; consumption commits on completion, hit interruption consumes nothing | claude; recorded by codex |
+| 8 | 2026-10-10 | Infusion duration 60 s remains a placeholder owned by elemental design; historical 75 s and unlock_xp 64 must be reconciled there | claude; recorded by codex |
+| 9 | 2026-10-10 | Defs use Godot .tres Resources under data/items, data/recipes, data/ranks, data/qualities; mutable state saves JSON with schema_version and no live Node references | claude; recorded by codex |
+
+| 10 | 2026-10-10 | AGREED (claude 16:50): combat/item-use bridge uses Actor.can_start_action(), Actor.begin_item_use(effect: EffectDef), action_interrupted(reason: StringName); Transactions remains the only consumption authority. Details below; awaiting Claude agreement before integration | codex |
+| 11 | 2026-10-10 | AGREED (claude 16:50): UI atlas manifest schema_version 1, top-left pixel rectangles, nullable verified NinePatch margins, measured image/alpha and per-tile verification flags. Details below; awaiting Claude agreement before generation/consumption | codex |
+| 12 | 2026-10-10 | AGREED: UI/items/foot_lock = codex (PlayerItems.setup(actor, input, camera)); punch animation stack = claude; FootLock.apply after _action in CharacterAnimator | claude+codex |
+
+## Proposal 10: combat-facing item-use boundary
+
+Task 6 contains no actor/UI hooks. A future bridge first checks Actor.can_start_action(), then submits Transactions.request("use", id) with phase "start", owned instance_id and trusted actor context (action_legal, health_fraction). A committed start reserves the item in use_state.pending without changing its quantity. Call Actor.begin_item_use(effect) only after that succeeds. If begin_item_use returns false, immediately submit a fresh "cancel" request with interrupted=true to release the reservation; never apply an effect.
+
+Advance Transactions.game_time_s from the gameplay clock, including pause semantics. The actor animates the accepted EffectDef.use_time_s and movement_scale. Voluntary cancellation submits phase "cancel" without interrupted; Transactions enforces cancel_window_s. Actor.action_interrupted(reason) submits phase "cancel" with interrupted=true. Process interrupts before completion within a physics tick, including a hit on the completion tick. Only a committed phase "complete" with consumed=true may produce an effect application. Completion rechecks authoritative health/action context and consumes one item atomically with cooldown/effect creation. Re-read tx.use_state after each commit because Transactions replaces staged state objects.
+
+The completion receipt's effect contains effect_id, source_quality_id, scaled magnitude, applied_game_time, expires_game_time and healing_applied_hp. The bridge applies each request/effect once; receiving a deduplicated receipt again must not apply healing twice. Active effects/cooldowns/progress persist; pending use cancels on load without consuming an item. Elemental effects stay unusable while magnitude/cooldown are UNKNOWN. The actor owns animation/action legality and health application; item logic owns reservation, cancellation rules, consumption and cooldowns. Combat reads committed equipment moveset_id only on legal equip changes; empty main_hand selects unarmed. No integration code until both agents agree.
+
+## Proposal 11: UI atlas manifest boundary
+
+Each assets/ui/atlas_<sheet>_v1.json will describe its sibling PNG: schema_version=1, image (basename), size_px=[measured width,height], origin="top_left", alpha_verified (bool), layout_verified (bool), and tiles. Every tile has id (stable semantic ID from art_brief/ATLAS_PLAN.json), rect_px=[x,y,width,height], nine_patch_margins_px (null or {left,top,right,bottom}), identity_verified (bool), and nine_patch_verified (bool). Rectangles must be inside the measured image and not overlap. Margins are local pixels relative to rect_px; null means no NinePatch use. Unknown or unverified fields cannot be treated as production bindings.
+
+Preferred art layout is two 1024-square transparent 8x8 sheets with 128px pitch and an intended 8px inset. Those are generation targets; manifests record measured output. All UI text, counts and F-S letters remain runtime text. Panels, borders, slots, buttons and item/rank/action icons are original generated art. Only health is requested as a confirmed meter. Claude consumes verified entries with AtlasTexture.region; use NinePatchRect only where nine_patch_verified=true. Generated sheets remain concept/reference assets where packing or margins fail verification. No runtime HUD code is part of this art task.
+
+## User role direction (2026-10-10 14:34)
+
+User owns direction and scope. Codex leads creative/visual ideas; Claude leads logical structure and technical verification. Both review and challenge assumptions; roles do not change file ownership or the channel-only coordination rule.
+
+
+## Decision 13: elemental FX boundary (agreed Codex / Claude proposal)
+
+Claude owns projectile travel/homing, mana, grounded input, combat stats and damage. Codex owns FootLock and elemental visuals. FireChargeFx extends Node3D: setup(skel: Skeleton3D, hand_bone: StringName), set_charge(c: float), release() -> Node3D. LightningFx extends Node3D: setup(skel: Skeleton3D), set_active(on: bool), make_bolt() -> Node3D. release/make_bolt return new unparented local-origin visuals; electric uses local -Z forward. FX never edits stats, bone poses or Actor transforms. Charge <=0 hides charge; deactivation hides electric arm effects. Animation/support stability comes before implementing elemental FX.
+
+
+## Decision 13 amendment: canonical combat/element ownership
+
+Accepted Claude 22:20 and Codex 15:03: Codex owns ElementalCaster, projectile travel/homing/sweep and both FX. Claude owns CombatStats, Vitals, HitInfo, Actor action permission, CharacterAnimator cast poses, core melee/guard/counter/dash, PlayerInput and world integration. Earlier FX-only ownership text is superseded. Confirmed stats/hit/cast interfaces are recorded in CHANNEL 22:20. Projectile collision mask 3 (terrain + actors), excludes caster RID; damage snapshots magic_power and charge at release and never reads a clip identity.
+
+## Decision 14: solo combat slice delivery
+
+User transferred remaining ownership to Codex while Claude is offline, including local commits after a green full suite. No handshake wait applies to the solo delivery. Melee and counter damage remains CombatStats.attack for every visual variant. A fresh frontal guard opens a 0.13 s parry window; holding guard cannot renew it. Successful parry interrupts the attacker and opens a 0.65 s counter opportunity. Grounded dash stays in the existing collision/gravity motor; no aerial attack or cast starts.
+
+LMB punches, F kicks, RMB guards/parries, Ctrl dashes, hold/release E charges/fires homing Fire, Q awakens Electric for 8 s, R fires a direct non-homing bolt, Backspace refills/reset combat, Esc frees the mouse. Fire costs 8 mana to start plus 12/s up to 1.5 s, stops growing when mana runs out, and snapshots magic_power * (1 + 2 * charge) on release. Electric activation costs 18 mana and a bolt costs 10; aura alone does not block melee. Menu, focus loss, airborne state, interruption and death cancel held charge without a projectile.
+
+Stationary landing and kick recovery acquire the locomotion stance footprint, rather than retaining the landing/raised-kick footprint. The recovering foot lowers through keyframed/inertialized motion until within 0.12 m of the intended stance sole, then acquires its ground anchor. Existing gait contacts remain the authority while moving. Support IK preserves rest limb lengths and ball-of-foot heel/yaw pivoting; it never moves the Actor transform.
+
+## Decision 15: kicks are the heavy/finisher branch (user, 2026-10-11)
+Kicks no longer have their own random-pick button. In the rush string, light = punch chain; heavy pressed at hit N branches into a kick finisher specific to N (held direction may vary it). Current kick scripting gets removed and rebuilt against this. Still open: launcher/jump chase, counter resource, procedural vs mocap kicks.
+
+## Decision 16: combo and metadata interface (Claude proposal, Codex acceptance)
+
+ComboDriver exposes press_light(), press_heavy(dir), release_heavy(); dir is neutral/up/down, captured at the heavy press. A move table owns light/heavy branches, cancel_after_impact_s, reaction, knockback and mana_gain. Light strings cap at four. Heavy charge is 0..1; its damage multiplier comes from CombatStats, never the visual source. Signals become strike_started(move_id) and strike_landed(target, hit, move_id), with audio and all callers migrated in the same delivery. The existing press(kind) call is only a temporary punch compatibility entry point during migration, not a random kick picker.
+
+Claude owns ClipMeta and its bake tool/tests. Runtime trusts verified sidecars for curated strike windows; absent or unverified punch sidecars retain analysis fallback. No source kick enters the runtime picker with unverified rest/contact data. The delivered schema uses clip, length, verified, travels, contacts.l/r (seconds), strikes (limb/start/impact/end in seconds), handover and notes. This is the actual loader schema, not the earlier proposed fps/source_pack/root_motion schema. Procedural kicks have explicit phase timings and contacts and need no guessed strike peak.
+
+Novel creation/polish is authorised by the boss inside the existing grounded combat and elemental scope. File ownership and review handshakes remain in force. Jump chase, counter resource changes and kick source preference remain adjustable boss decisions; default chase remains a player-driven grounded dash.
+
+## Decision 17: procedural kick integration (Claude 04:00 proposal, Codex acceptance)
+
+CharacterAnimator.play_kick(kind, side, target, rate) returns bool; kick_impact_s(kind, rate) returns wall seconds. KickLayer defines front, low, round, axe, sweep and rising, with explicit normalized impact and contact/handover phases. Neutral finishers at N=0..4 are front/front/low/round/round; up selects rising and down selects sweep. Source-swappable later; runtime Ramster kicks and their leg splice are removed, raw assets remain fixtures. No full spin or airborne launcher/chase.
+
+Kicks capture the planted entry footprint and return to it. Heavy input first brakes residual locomotion below 0.15 m/s and stays locked through recovery; a buffered punch waits for leg handover. An expired or persistently pushed kick is dropped, never launched while sliding. Native upper-body clips align their spine root in model space when layered over the imported stance's pelvis, rather than inheriting an extra pelvis rotation. The capsule remains the sole mover and baseline jump physics is unchanged. Boss playtest follows A-D validation, before Task E jump polish.
+
+## Decision 18: boss answers 2026-10-11 + decisions delegated to Claude/Codex
+Boss: explosion is centred on a fixed point at the caster's centre (where the caster is when it detonates) with radius 1.7 x character width; capsule radius 0.32 m -> width 0.64 m -> radius 1.088 m (derive from the capsule, do not hard-code). It damages the caster and everyone inside. Boss delegated the Lugaru question to us.
+Claude proposal (Codex to confirm or amend in CHANNEL): (1) No Lugaru for now. Kick B source order: our CC0 clips, then a Blender-authored motion on our rig. Lugaru animation data only if A and B both fail, never the Lugaru model (share-alike would bind our character art). (2) Overcharge countdown: after white, orb opacity drops 3 % every 0.1 s (CombatStats value); detonates when the peak-hold window ends (default 1.0 s = 30 % drop). (3) Awakening = visual hover over the grounded capsule now; real hover later. (4) Lock-on = middle mouse toggle; hold E aims while charging, camera ray picks the aim point.
+Boss update 2026-10-11: (3) fake hover CONFIRMED. (4) controls: use Skyrim + DBZ (Sparking! Zero) controls as the guide. Claude keymap proposal (Codex amend in CHANNEL): WASD move, Space jump, Shift boost (Skyrim sprint), Ctrl combat step/dash (DBZ step). FISTS stance: LMB light rush (DBZ rush), F heavy, hold F = charged smash, W/S + F = rising/sweep (DBZ directional heavy), RMB hold guard, RMB tap at the hit = parry, LMB in the parry window = throw. R toggles FISTS <-> MAGIC stance (Skyrim ready-weapon/spell). MAGIC stance (Skyrim hands): LMB = right hand, RMB = left hand; tap = quick fireball, hold = charge orange/blue/white, both buttons = dual cast; aim with the camera ray. Z = awaken (Skyrim shout key; DBZ power-up), while awake MAGIC casts become Electric bolts. Middle mouse = lock-on (DBZ lock), mouse wheel = switch target. Tab = system menu, I = inventory, E = interact (Skyrim activate).
+Boss 2026-10-11: Lugaru animations DROPPED entirely. Lugaru is only an idea reference for how its fluid fighting animation works (studied from docs/observation, never its GPL code or its files). Kick B source: our CC0 clips or a Blender-authored motion on our rig.
+
+## Decision 19: scoped full-body and spatial strike contract
+Accepted in CHANNEL Claude 10:00/11:00 and Codex 20:34: CharacterAnimator.register_full_body(name, clip: Animation, meta: ClipMeta) accepts only matching, verified metadata. Full-body strikes own their legs and annotated contacts. Travelling pelvis motion is extracted into Actor.animation_driving + animation_velocity, consumed by the existing collision/gravity motor. Stop/interruption clears it; native masked Jab/Cross retain their current ownership.
+Strikes are armed from preparation end through follow-through. Damage requires first swept geometric contact during that phase and is deduplicated per target. A future bounded contact handler uses surface point/normal, collider and active limb, holds the tip primitive one radius outside the surface, preserves tangential follow-through and fixed bone lengths. No hidden retreat or mesh-only travel. Conservative procedural kick lift waits for pelvis projection within 0.08 m of captured support in the ground tangent plane, grounded support/contact weight >=0.99 and valid fixed-length reach, with bounded cancellation if not ready. Mocap toe-off and trunk position are evidence for choreography, not proof of mapped balance. Kick shoulders/arms hold guard in chest space per boss feedback.
+
+## Proposal 19 (Claude, game-systems-design review 2026-10-11): prototype first, melee as the dependable axis
+- Identity axes today: element (Fire, Electric; awakening is a state on it) and melee (chain, finishers, parry timing). Planned affinity rarity, element manipulation and element-gated flight all sit on the element axis: no new axis.
+- Contrast: element becomes high-variance (affinity rolls), so melee must scale by refinement only (mastery ranks from use: chain length, finisher branches, parry window), no RNG. Structural payoff: trained melee carries element-resistant fights.
+- Scope: prototype gaps = an opponent AI that fights back (top priority), one fight that works start to finish, a 2-3 step rank ladder. Affinity rarity, potions economy, element-manipulation XP, car-proxy flight, crafting and races are big-world specs: write down, build later.
+- Movement verbs: merge sprint and boost (Shift hold = boost), Ctrl = dash / awakened flash step, retire B (matches D18 keymap).
+- States: awakening, stun, overcharge and guard pressure already have traceable causes and routes out. Future fire potions = same state layer as awakening with a faster route in but worse decay: tolerance, withdrawal below baseline, dependency slowing natural element XP.
+- Power scaling: guild consequences that do not scale with combat power (reputation, rank-gated contracts, shop/guild access).
+- Order: 1 sparring opponent AI (same kit), 2 melee mastery ranks, 3 movement merge with the D18 keymap, 4 prototype loop (one fight + rank ladder), 5 park the rest as specs. Boss to confirm.
+
+## Decision 20: new combat motion and practice space, boss 2026-10-11
+Boss says the animations themselves are poor and requests better new ones, inspected without the model. Codex authors a new UAL-rig grounded stance and replaces kick chamber/flow choreography with joint-driven chamber, continuous cubic strike/retraction and a support-load gate for all kicks. Archived clips remain separately inspectable. Directional travel remaps native gait foot paths with bounded knee planes; Shift hold activates existing clean-room acceleration/steering/braking, B remains a compatibility toggle. World generation gets an immutable pre-stream practice clearing, blended into natural terrain, with tree exclusion and static training landmarks. No Wasted/Lugaru code or animations copied.
+EffectDef remains authoritative: supply use slows movement by its configured movement_scale and locks combat/boost until completion or interruption; normal walking alone does not consume/cancel an item. Hits, airborne state and menu opening interrupt without consumption. UI uses existing generated frame/icon assets and live Transactions rather than replacing the validated inventory backend with an additional plugin.
+
+## Decision 21: beta third-party code and references (2026-10-11, boss links + Claude licence review)
+- FATE / FATE: Undiscovered Realms source (archive.org fate_source_code): the archive itself states it LEAKED (Humble Bundle distributed it by mistake); no licence is published. Boss states he has permission. Until the boss confirms that the permission comes from the rights holder (written), FATE is a DESIGN reference only (mobs, skills, inventory/loot, town/dungeon loop): no download into the repo, no code copied or translated. Our Rust is written from the design.
+- avian3d (MIT/Apache-2.0), bevy_tweening (MIT/Apache-2.0): licences fine; both target Bevy 0.19 on crates.io and on main as of 2026-10-11. Stay on Bevy 0.20: easing uses Bevy's built-in EasingCurve; avian is added when it supports 0.20 (needed for ragdoll/props, not for the motor, which stays ours and deterministic).
+- famiq (MIT): targets Bevy 0.16; not used. UI = egui dev panel + bevy_ui for the game HUD.
+- Asset Store packs: boss holds the licences for all packs (2026-10-11). Converted pack content stays git-ignored in assets/packs/ (no raw redistribution).
+- UPDATE 2026-10-12 (boss): FATE and Overgrowth are both used by "read and reimagine": study the code to understand the mechanics, then write our own Rust. No copy-paste, no line-by-line translation, no assets or data files. Reference copies live outside the repo (D:/New folder (4)/reference/) and are never committed; findings go into our design notes in our own words, and code is written from the notes. Overgrowth (Apache-2.0): if a routine is ever adapted closely, keep its notice and add a LICENSES.md row.
+
+## Decision 22: Bevy 0.19 and the boss's crate list (2026-10-12)
+- Engine pinned to Bevy 0.19.1 (from 0.20.0): the ecosystem the boss picked targets 0.19 (avian3d 0.7, bevy_tween 0.13, bevy_hanabi 0.19, bevy_text_animation 0.7, bevy-inspector-egui 0.37 with bevy_egui 0.40). Move back up when they support 0.20.
+- Dependencies (all permissive): avian3d MIT/Apache, bevy_tween Apache-2.0, bevy_hanabi MIT/Apache, bevy_text_animation 0BSD, bevy-inspector-egui MIT/Apache.
+- References (read and reimagine, outside the repo): warbell = PolyForm Noncommercial (never copy code: it would make the game noncommercial); bevy_new_3d_rpg = MIT/Apache in Cargo.toml, CC-BY-4.0 in README (permissive; credit if anything is adapted); drakkar-vfx (Apache-2.0, Bevy 0.11) = VFX editor ideas for bevy_hanabi; egui_ratatui (Apache-2.0) = possible terminal-style dev console; bevy_easings = overlapped by bevy_tween, reference only.
+
+## Decision 23: Codex solo beta repair, RPG hero and controller (boss, 2026-10-12)
+Boss: NO MORE AURA. Claude exhausted usage during development; Codex takes over fixing and iteration without a Claude handshake. Use the RPG model, apply hero mapping to all currently converted animations, and build its locomotion/controller. Novel reusable frameworks are explicitly requested.
+Implementation: RPG skeleton plus all 82 current clips; shared explicit bone/role/eight-direction mapping; scale-preserving retarget bakes isolated from NLA export tracks; sampled mapping audit and ignored measured-stride sidecar. Sim motor remains sole movement authority. Authored controller, courtyard, feedback profiles and HUD are separate presentation modules. Bevy stays pinned to 0.19.1. No source or pack commits in this pass; other store clips/rigs and completed foot locking are not claimed.
+
+## Decision 24: expanded motion, rush combat, physical knockdowns and mage casts (boss, 2026-10-12)
+Boss requests more controller animations, combos/BT3 logic, animation matching/math polish, Overgrowth-inspired ragdolls/physics/procedural pipeline, and mage fireball/lightning. Boss identifies the remaining symptom as animation mismatch/broken pose and directs Codex to check all actions.
+Implementation: own grounded four-hit rush, hit-confirm buffers, charged directional smash, parry counter and energy-cost homing dash. Measured limb-extension landmarks phase-match 32 melee and 5 mage casts. Analytical damping drives bounded aim/lean; current-hierarchy root solving anchors committed pelvis XZ to the motor and fixes rotating-root extra travel. Seven Kevin Iglesias clips extend the RPG library to 89; source animated-root unit/axis conversion is removed and anatomical rest axes align facing. Charge -> cast is detected by action kind as well as sequence, fireball gets its readable launch preparation, and charge orbs follow final hands.
+Avian creates 11 capsule bodies/10 limited joints for knockdown, inherits capped impact momentum, and blends into get-up. Physics shares pause/speed/step time; body transforms drive skin only, while deterministic gameplay movement/damage remain in the sim. Self collision, anatomical elbow/knee hinges and terrain foot IK are not complete. No Overgrowth source, data or assets copied; its public animation/physics notes are a design reference. Converted assets remain ignored and work remains uncommitted.
+
+## Decision 25: absorb, RPG hero as nucleus, Beta V2 open-world scope (boss, 2026-10-12)
+- "Absorb" is the boss's term for: find or take repos, study them from code alone, write findings in our own words, rebuild the mechanics fused and improved in our Rust, and convert usable assets into git-ignored packs. It is a project skill: `.claude/skills/absorb/SKILL.md`. Licence rules stay as in Decision 21.
+- RPG Character is the only hero model for now and the nucleus: other packs contribute non-idle clips retargeted onto it (Mixamo via the Godot prototype, Quaternius UAL1+UAL2). Weapon sets, zombie moves and foreign locomotion are omitted; RPG walk/run stays. Source packs live in `assets/packs/_sources/` (not offered in the model picker).
+- Sekiro-style posture, dizzy, deathblow, backstab and a mob notice cone are in the sim (`posture.rs`, `notice.rs`); consumables are timed, interruptible drinks; crits are deterministic.
+- Running uses a phase-synced blend space (two nearest of eight directions x walk/run, idle fade, left-foot-aligned phase) instead of snapping between single clips.
+- Boss assets: Quaternius MegaKits, UAL2, Base Characters, Bestiary (CC0), Wenrexa UI/icon packs (boss's licence), Cat Prisbrey's souls-like template (Unlicense + CC0). Zips stay in `assets/boss added assets/` and `assets/UI REWORK/` (git-ignored); extractions in `assets/packs/_sources/`.
+- Beta V2: the game is an open-world RPG. Bigger scope: world streaming beyond the courtyard, the Wenrexa UI rework, souls-like systems (quick slot, bonfire spawn sites, ladders/levers/gates, patrols), Bestiary mobs.
+
+## Decision 26: Beta V2 master (boss, 2026-10-12)
+- Master character = Quaternius Universal Base Character head + Modular Character Outfit (hero: Male Ranger) on the UAL skeleton with bones renamed to the RPG names; all hero clips retargeted onto it. NPCs use the same pipeline (peasants, rangers) and are presentation-only.
+- Cut: non-RPG idles (FightingMotions, caster, Kevin); the RPG stance is idle, guard and spell-charge pose.
+- Magic revamp: mana (120, regen x3 out of combat), five skills on keys 1-5 (Fireball, Chain Lightning, Frost Nova, Arcane Blink, Healing Light) with per-skill cooldowns; no ki blast, no ki charge. Hero and partner pools 150 hp.
+- A perfect parry answers by itself with the heavy counter blow (knockdown -> ragdoll).
+- Combat mode = locked on or fought within 5 s; exploring = jog by default, Shift sprints, relaxed clip set; combat = RPG strafe set.
+- HUD rebuilt on the Wenrexa hologram kit (vitals card, skill bar with icons/cooldowns/costs, quick slots R/T, target card).

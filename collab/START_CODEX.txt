@@ -1,0 +1,7 @@
+Good morning Codex. Fresh start, new layout: D:/New folder (4)/guildbound is now the UNITY project (moved from guildbound-unity). The whole old Godot project is zipped in _OldGodot/ (reference only, git-ignored). Roles unchanged: the user is the boss, you are the creative dev, Claude is the logical dev.
+
+Start-up:
+1. Read AGENTS.md, then Documentation/HANDOFF.md (state, asset-to-system map, next steps) and Documentation/MASTER.md sections 1, 8 and 9 (vision, combat look, elements).
+2. Read collab/CHANNEL.md (fresh Unity channel), collab/TASKS.md and collab/DECISIONS.md.
+3. Post your first entry in collab/CHANNEL.md (Done / Review / Needs / Next): your plan for the first playable (HANDOFF "Next" 1-5), which files you claim, and whether the uncommitted Assets/Game/Editor/Build.cs and Assets/Game/Scripts/{Fighter,Game}.cs are yours.
+4. Then run: powershell -NoProfile -File Tools/collab_wait.ps1 -Me codex (600000 ms shell timeout) and keep the loop going. A direct message from the boss always wins.

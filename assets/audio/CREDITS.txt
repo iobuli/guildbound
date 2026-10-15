@@ -1,0 +1,37 @@
+Recorded sounds: Kenney "Impact Sounds" and "RPG Audio" (www.kenney.nl), CC0 / public domain.
+The .ogg files in this folder are those recordings, used as they are by game/sfx.gd.
+
+synth/*.wav are built by tools/make_sfx.py FROM those recordings (layered, varispeeded, filtered,
+transient-shaped, reversed, granulated and given reverb tails), with a little synthesis as a
+sweetener; the wind bed and the birds are synthesized (no recording covers them) though the wind's
+leaf rustle is made of the cloth and paper recordings. Everything here is CC0 / public domain.
+
+Which recordings each generated cue is built from:
+  swish_light     cloth1, cloth3, cloth4
+  swish_blade     cloth3, cloth4, impactMetal_light_000, impactMetal_light_001
+  swish_heavy     cloth1, cloth3, impactMetal_light_000, impactMetal_light_002
+  swish_kick      cloth3, cloth4
+  hit_blade       handleSmallLeather, handleSmallLeather2, impactMetal_light_001, impactMetal_light_002, impactPunch_medium_000, impactPunch_medium_002, impactSoft_medium_000, impactSoft_medium_001
+  clang           beltHandle2, impactMetal_light_001, impactMetal_light_002, impactPlate_light_000, impactPlate_light_002, impactSoft_medium_000, impactSoft_medium_002, metalClick, metalLatch
+  parry           impactMetal_light_000, impactMetal_light_001, impactPlate_light_000, impactPlate_light_001, metalLatch
+  block           bookClose, impactPlate_light_000, impactPlate_light_001, impactPlate_light_002, impactPunch_medium_002, impactPunch_medium_003, impactPunch_medium_004, impactSoft_heavy_000, impactSoft_heavy_003, impactSoft_heavy_004
+  fire_cast       bookFlip1, bookFlip2, bookFlip3, cloth2, cloth3, cloth4
+  fire_hit        bookFlip2, bookFlip3, impactPunch_heavy_003, impactPunch_heavy_004, impactSoft_heavy_000, impactSoft_heavy_002, impactSoft_heavy_003
+  ice_cast        handleCoins, handleCoins2, impactMetal_light_000, impactMetal_light_001, impactMetal_light_002, metalClick
+  ice_hit         handleCoins, handleCoins2, impactMetal_light_000, impactMetal_light_001, impactMetal_light_002, impactPlate_light_002, impactSoft_medium_001, impactSoft_medium_002
+  lightning_cast  beltHandle2, bookFlip2, metalClick, metalLatch
+  lightning_hit   beltHandle1, beltHandle2, bookFlip1, bookFlip2, bookFlip3, impactMetal_light_000, impactMetal_light_002, impactPunch_heavy_000, impactPunch_heavy_002, impactPunch_heavy_004, impactSoft_heavy_001, impactSoft_heavy_002, impactSoft_heavy_004, metalClick
+  wind_cast       bookFlip1, bookFlip3, cloth2, cloth3
+  wind_hit        bookFlip1, bookFlip2, bookFlip3, cloth1, cloth3, impactSoft_heavy_000, impactSoft_heavy_002, impactSoft_heavy_003
+  arcane_cast     handleCoins, handleCoins2, impactMetal_light_000, impactPlate_light_000, impactPlate_light_001
+  arcane_hit      handleCoins, handleCoins2, impactMetal_light_000, impactMetal_light_001, impactMetal_light_002, impactPlate_light_000, impactPlate_light_002, impactSoft_medium_001, impactSoft_medium_002
+  shadow_cast     cloth2, cloth3, cloth4, impactSoft_heavy_002, impactSoft_heavy_004
+  shadow_hit      impactPunch_heavy_000, impactPunch_heavy_003, impactPunch_heavy_004, impactSoft_heavy_000, impactSoft_heavy_003, impactSoft_heavy_004
+  awaken          handleCoins, handleCoins2, impactPlate_light_000, impactPlate_light_001, impactPunch_heavy_000, impactSoft_heavy_003
+  rank_up         handleCoins, impactMetal_light_000
+  slime_hop       handleSmallLeather, handleSmallLeather2, impactSoft_medium_000, impactSoft_medium_002
+  slime_hit       handleSmallLeather, handleSmallLeather2, impactPunch_medium_000, impactPunch_medium_003
+  slime_die       dropLeather, handleSmallLeather, impactSoft_heavy_000, impactSoft_heavy_002
+  step_stone      bookClose, footstep_grass_000, footstep_grass_002, footstep_grass_003, impactSoft_medium_000, impactSoft_medium_001
+  bird            (synthesized)
+  ambience_wind   bookFlip2, bookFlip3, cloth2, cloth4
