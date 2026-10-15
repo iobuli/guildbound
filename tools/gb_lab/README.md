@@ -1,9 +1,10 @@
 # gb_lab - headless Guildbound physics lab
 
-Standalone (not part of the Guildbound repo). Bevy 0.19.1 (MinimalPlugins, no window/render), Avian 0.7.0, fixed 1/120 s, deterministic.
+Workspace member. Bevy 0.19.1 (MinimalPlugins, no window/render), Avian 0.7.0, fixed 1/120 s, deterministic.
+The windowed stand (pass-6 defaults, COM pull 0.11) is `cargo run -p gb_lab --release --features visual --bin visual`.
 
 ## Run (Windows or Linux)
-    cargo run --release -- <scene> [--ticks N] [--kp X] [--kd Y] [--k Z] [--leg_floor F] [--unpaired] [--exact] [--out file.jsonl]
+    cargo run -p gb_lab --release --bin gb_lab -- <scene> [--ticks N] [--kp X] [--kd Y] [--k Z] [--leg_floor F] [--unpaired] [--exact] [--out file.jsonl]
 
 Scenes:
 - `lie`   - rung 0 gate: motors off, body flat on the floor, 240 ticks; drift = slide.

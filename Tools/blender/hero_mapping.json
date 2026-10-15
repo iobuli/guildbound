@@ -1,0 +1,325 @@
+{
+  "schema": 1,
+  "library": "hero",
+  "source_rig": "FightingMotions",
+  "target_rig": "RPG Character",
+  "bones": {
+    "Hip": "B_Pelvis",
+    "Body": "B_Spine",
+    "Chest": "B_Spine2",
+    "Collar_L": "B_L_Clavicle",
+    "Shoulder_L": "B_L_UpperArm",
+    "ForeArm_L": "B_L_Forearm",
+    "Hand_L": "B_L_Forearm.001",
+    "Collar_R": "B_R_Clavicle",
+    "Shoulder_R": "B_R_UpperArm",
+    "ForeArm_R": "B_R_Forearm",
+    "Hand_R": "B_R_Hand",
+    "Neck": "B_Neck",
+    "Head": "B_Head",
+    "Thigh_L": "B_L_Thigh",
+    "Shin_L": "B_L_Calf",
+    "Foot_L": "B_L_Foot",
+    "Toe_L": "B_L_Toe0",
+    "Thigh_R": "B_R_Thigh",
+    "Shin_R": "B_R_Calf",
+    "Foot_R": "B_R_Foot",
+    "Toe_R": "B_R_Toe0"
+  },
+  "locomotion": {
+    "walk": [
+      "nc_walk_forward",
+      "nc_walk_forwardright",
+      "nc_walk_right",
+      "nc_walk_backwardright",
+      "nc_walk_backward",
+      "nc_walk_backwardleft",
+      "nc_walk_left",
+      "nc_walk_forwardleft"
+    ],
+    "run": [
+      "nc_run_forward",
+      "nc_run_forwardright",
+      "nc_run_right",
+      "nc_run_backwardright",
+      "nc_run_backward",
+      "nc_run_backwardleft",
+      "nc_run_left",
+      "nc_run_forwardleft"
+    ]
+  },
+  "combat": {
+    "jab": [
+      "ual_punch_jab",
+      "hp_straight_left_A",
+      "hp_straight_left_Tiramis"
+    ],
+    "cross": [
+      "ual_punch_cross",
+      "hp_straight_right_A",
+      "hp_straight_right_A2"
+    ],
+    "hook": [
+      "hp_hook_left_A",
+      "bp_hook_right_A",
+      "hp_hook_left_Tiramis",
+      "bp_hook_right_A2"
+    ],
+    "uppercut": [
+      "hp_upper_right_A",
+      "bp_upper_left_A",
+      "hp_upper_right_A2",
+      "bp_upper_left_A2"
+    ],
+    "roundhouse": [
+      "hk_rh_right_A2",
+      "hk_rh_right_A"
+    ],
+    "side kick": [
+      "hk_side_left_A2",
+      "hk_side_left_A"
+    ],
+    "front kick": [
+      "bk_push_left_A"
+    ],
+    "low kick": [
+      "lk_rh_right_A2",
+      "lk_rh_left_A2",
+      "lk_rh_right_A",
+      "lk_rh_left_A",
+      "lk_rh_right_Tiramis"
+    ],
+    "counter": [
+      "bp_upper_left_A",
+      "bp_hook_right_A2",
+      "bk_rh_right_A2",
+      "bk_rh_right_A"
+    ],
+    "run punch": [
+      "ual_punch_cross",
+      "hp_straight_right_A2"
+    ]
+  },
+  "roles": {
+    "idle": "nc_idle",
+    "walk": "nc_walk_forward",
+    "run": "nc_run_forward",
+    "back": "nc_walk_backward",
+    "hit": "hd_front_A",
+    "hit_body": "bd_front_A",
+    "hit_low": "ld_front_A",
+    "block": "hb_front_A",
+    "block_body": "bb_front_A",
+    "block_low": "lb_front_A",
+    "guard": "mx_block",
+    "spell_charge": "u1_spell_simple_idle_loop",
+    "knockdown": "knockdown_A",
+    "getup": "getup_A",
+    "jump": "nc_jump_begin",
+    "fall": "nc_fall",
+    "roll": "ual_roll",
+    "dizzy": "mx_dizzy",
+    "drink": "ual_consume",
+    "hit_back": "mx_hit_back",
+    "death": "mx_death",
+    "death_backstab": "mx_death_backstab",
+    "finisher": "mx_finisher",
+    "guard_break": "ual_guard_break",
+    "staggered": "ual_hit_knockback",
+    "interact": "ual_chest_open",
+    "pickup": "ual_pickup"
+  },
+  "mage": {
+    "bones": {
+      "B-hips": "B_Pelvis",
+      "B-spine": "B_Spine",
+      "B-chest": "B_Spine2",
+      "B-shoulder.L": "B_L_Clavicle",
+      "B-upperArm.L": "B_L_UpperArm",
+      "B-forearm.L": "B_L_Forearm",
+      "B-hand.L": "B_L_Forearm.001",
+      "B-shoulder.R": "B_R_Clavicle",
+      "B-upperArm.R": "B_R_UpperArm",
+      "B-forearm.R": "B_R_Forearm",
+      "B-hand.R": "B_R_Hand",
+      "B-neck": "B_Neck",
+      "B-head": "B_Head",
+      "B-thigh.L": "B_L_Thigh",
+      "B-shin.L": "B_L_Calf",
+      "B-foot.L": "B_L_Foot",
+      "B-toe.L": "B_L_Toe0",
+      "B-thigh.R": "B_R_Thigh",
+      "B-shin.R": "B_R_Calf",
+      "B-foot.R": "B_R_Foot",
+      "B-toe.R": "B_R_Toe0"
+    },
+    "clips": {
+      "mage_fireball": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01.fbx",
+      "mage_fireball_load": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01 - Load.fbx",
+      "mage_fireball_release": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect2H01 - Cast.fbx",
+      "mage_lightning_right": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect1H01_R.fbx",
+      "mage_lightning_left": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Directional/HumanM@MagicAttackDirect1H01_L.fbx",
+      "mage_burst": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/MagicAttacks/Omnidirectional/HumanM@MagicAttackOmni01.fbx",
+      "mage_cast_idle": "Kevin Iglesias/Human Animations/Animations/Male/Combat/Spellcasting/HumanM@CastingIdle01.fbx"
+    }
+  },
+  "spells": {
+    "fireball": [
+      "u1_spell_simple_shoot"
+    ],
+    "fireball_charged": [
+      "mx_magic_big"
+    ],
+    "chain lightning": [
+      "mage_lightning_right",
+      "mage_lightning_left"
+    ],
+    "frost nova": [
+      "mage_burst"
+    ],
+    "arcane blink": [
+      "u1_spell_simple_exit",
+      "mx_magic_small"
+    ],
+    "healing light": [
+      "u1_spell_simple_idle_loop",
+      "mx_magic_beam"
+    ]
+  },
+  "mixamo": {
+    "note": "Mixamo-rig clips (Snaiel Godot prototype, Mixamo source) retargeted onto the RPG hero. Kept: non-idle clips that fit an unarmed fighter. Omitted: sword/club/torch weapon attacks (Godot + ML-Agents knight, kept in their own packs for a weapon pass), zombie set, Mixamo locomotion (RPG native walk/run stays the nucleus).",
+    "bones": {
+      "mixamorig:Hips": "B_Pelvis",
+      "mixamorig:Spine": "B_Spine",
+      "mixamorig:Spine2": "B_Spine2",
+      "mixamorig:Neck": "B_Neck",
+      "mixamorig:Head": "B_Head",
+      "mixamorig:LeftHand": "B_L_Forearm.001",
+      "mixamorig:RightHand": "B_R_Hand",
+      "mixamorig:LeftShoulder": "B_L_Clavicle",
+      "mixamorig:LeftArm": "B_L_UpperArm",
+      "mixamorig:LeftForeArm": "B_L_Forearm",
+      "mixamorig:LeftUpLeg": "B_L_Thigh",
+      "mixamorig:LeftLeg": "B_L_Calf",
+      "mixamorig:LeftFoot": "B_L_Foot",
+      "mixamorig:LeftToeBase": "B_L_Toe0",
+      "mixamorig:RightShoulder": "B_R_Clavicle",
+      "mixamorig:RightArm": "B_R_UpperArm",
+      "mixamorig:RightForeArm": "B_R_Forearm",
+      "mixamorig:RightUpLeg": "B_R_Thigh",
+      "mixamorig:RightLeg": "B_R_Calf",
+      "mixamorig:RightFoot": "B_R_Foot",
+      "mixamorig:RightToeBase": "B_R_Toe0"
+    },
+    "sources": {
+      "Godot4ThirdPersonCombatPrototype/animations/combat_animations_1/combat_animations_1.blend": {
+        "mx_dizzy": "Dizzy Idle",
+        "mx_death": "Death",
+        "mx_death_backstab": "Death Backstab",
+        "mx_death_kneeling": "Death Kneeling",
+        "mx_finisher": "Finisher on Kneeling Victim",
+        "mx_hit_front": "Hit Reaction From Front",
+        "mx_hit_back": "Hit Reaction From Behind",
+        "mx_kneel": "Kneel Idle",
+        "mx_kneel_to_stand": "Kneel to Stand",
+        "mx_block": "Blocking"
+      },
+      "Godot4ThirdPersonCombatPrototype/animations/interaction_animations_1/interaction_animations_1.blend": {
+        "mx_drink": "Drinking",
+        "mx_stand_up": "Standing Up"
+      },
+      "Godot4ThirdPersonCombatPrototype/animations/magic_animations_1/magic_animations_1.blend": {
+        "mx_magic_big": "Magic Action Big Projectile",
+        "mx_magic_beam": "Magic Action Energy Beam",
+        "mx_magic_small": "Magic Action Small Projectile"
+      },
+      "Godot4ThirdPersonCombatPrototype/animations/movement_animations_1/movement_animations_1.blend": {
+        "mx_turn_left_90": "Turn-Left-90",
+        "mx_turn_right_90": "Turn-Right-90",
+        "mx_turn_left_180": "Turn-Left-180",
+        "mx_turn_right_180": "Turn-Right-180"
+      }
+    }
+  },
+  "ual": {
+    "note": "Quaternius Universal Animation Library 1+2 (CC0; UAL2 from the boss's kit, UAL1 from the Godot alpha) retargeted onto the RPG hero. Kept: unarmed non-idle reactions, interactions and utility moves. Omitted: sword/pistol/shield-weapon sets, farming/swim/drive/sit/dance/talk idles, zombie, A-pose, locomotion loops (RPG walk/run stays the nucleus; Sprint_Loop kept only for comparison).",
+    "bones": {
+      "pelvis": "B_Pelvis",
+      "spine_01": "B_Spine",
+      "spine_03": "B_Spine2",
+      "neck_01": "B_Neck",
+      "Head": "B_Head",
+      "hand_l": "B_L_Forearm.001",
+      "hand_r": "B_R_Hand",
+      "clavicle_l": "B_L_Clavicle",
+      "upperarm_l": "B_L_UpperArm",
+      "lowerarm_l": "B_L_Forearm",
+      "thigh_l": "B_L_Thigh",
+      "calf_l": "B_L_Calf",
+      "foot_l": "B_L_Foot",
+      "ball_l": "B_L_Toe0",
+      "clavicle_r": "B_R_Clavicle",
+      "upperarm_r": "B_R_UpperArm",
+      "lowerarm_r": "B_R_Forearm",
+      "thigh_r": "B_R_Thigh",
+      "calf_r": "B_R_Calf",
+      "foot_r": "B_R_Foot",
+      "ball_r": "B_R_Toe0"
+    },
+    "sources": {
+      "D:/New folder (4)/guildbound/assets/packs/_sources/quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb": {
+        "ual_consume": "Consume",
+        "ual_hit_knockback": "Hit_Knockback",
+        "ual_guard_break": "Idle_Shield_Break",
+        "ual_chest_open": "Chest_Open",
+        "ual_get_up_lying": "LayToIdle",
+        "ual_overhand_throw": "OverhandThrow",
+        "ual_slide_start": "Slide_Start",
+        "ual_slide_loop": "Slide_Loop",
+        "ual_slide_exit": "Slide_Exit",
+        "ual_climb_up": "ClimbUp_1m",
+        "ual_shoulder_dash": "Shield_Dash"
+      },
+      "D:/New folder (4)/guildbound-godot-loose/assets/animations/source/ual/UAL1_Standard.glb": {
+        "ual_hit_head": "Hit_Head",
+        "ual_hit_chest": "Hit_Chest",
+        "ual_punch_jab": "Punch_Jab",
+        "ual_punch_cross": "Punch_Cross",
+        "ual_death": "Death01",
+        "ual_interact": "Interact",
+        "ual_pickup": "PickUp_Table",
+        "ual_roll": "Roll",
+        "ual_sprint": "Sprint_Loop",
+        "ual_spell_shoot": "Spell_Simple_Shoot",
+        "ual_jump_land": "Jump_Land"
+      }
+    }
+  },
+  "locomotion_relaxed": {
+    "walk": [
+      "nc_walk_forward",
+      "nc_walk_forwardright",
+      "nc_walk_right",
+      "nc_walk_backwardright",
+      "nc_walk_backward",
+      "nc_walk_backwardleft",
+      "nc_walk_left",
+      "nc_walk_forwardleft"
+    ],
+    "run": [
+      "nc_run_forward",
+      "nc_run_forwardright",
+      "nc_run_right",
+      "nc_run_backwardright",
+      "nc_run_backward",
+      "nc_run_backwardleft",
+      "nc_run_left",
+      "nc_run_forwardleft"
+    ],
+    "sprint": [
+      "nc_sprint_forward",
+      "nc_sprint_forwardright",
+      "nc_sprint_forwardleft"
+    ]
+  }
+}
