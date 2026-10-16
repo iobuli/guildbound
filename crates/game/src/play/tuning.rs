@@ -1,6 +1,6 @@
 //! Live tuning page (F1 toggles): edits `Feel` and `motion::compose::MotionFeel` (≤12 knobs:
 //! run speed, accel, turn rate, jump, exaggeration, hold, stepped fps on/off, spring hz,
-//! spring damping, lean, hitstop, ragdoll threshold). F5 saves `profiles/feel.json`, loaded
+//! spring damping, arm swing, lean, hitstop, ragdoll threshold). F5 saves `profiles/feel.json`, loaded
 //! at startup if present.
 //!
 //! The panel sits on the right edge: drag a bar to set a value, buttons toggle 12 fps stepping
@@ -98,7 +98,10 @@ impl Knob {
     }
 }
 
-const KNOBS: [Knob; 11] = [
+/// Exaggeration range: above ~1.4 limbs fold through the body, below ~0.9 the style is gone.
+const EXAGGERATION: (f32, f32) = (0.9, 1.4);
+
+const KNOBS: [Knob; 12] = [
     Knob {
         label: "Run speed",
         unit: "m/s",
@@ -156,8 +159,8 @@ const KNOBS: [Knob; 11] = [
     Knob {
         label: "Exaggeration",
         unit: "x",
-        min: 0.5,
-        max: 2.0,
+        min: EXAGGERATION.0,
+        max: EXAGGERATION.1,
         decimals: 2,
         get: |_, m| m.style.exaggeration,
         set: |_, m, v| m.style.exaggeration = v,
@@ -188,6 +191,15 @@ const KNOBS: [Knob; 11] = [
         decimals: 2,
         get: |_, m| m.springs.damping,
         set: |_, m, v| m.springs.damping = v,
+    },
+    Knob {
+        label: "Arm swing",
+        unit: "x",
+        min: 0.0,
+        max: 2.0,
+        decimals: 2,
+        get: |_, m| m.springs.arm_swing,
+        set: |_, m, v| m.springs.arm_swing = v,
     },
     Knob {
         label: "Lean",
@@ -229,6 +241,7 @@ struct SpringProfile {
     core_hz: f32,
     limb_hz: f32,
     damping: f32,
+    arm_swing: f32,
 }
 
 #[derive(Clone, Copy, Debug, serde::Serialize, serde::Deserialize)]
@@ -248,6 +261,7 @@ impl From<&MotionFeel> for MotionProfile {
                 core_hz: m.springs.core_hz,
                 limb_hz: m.springs.limb_hz,
                 damping: m.springs.damping,
+                arm_swing: m.springs.arm_swing,
             },
             contact: ContactProfile {
                 lean: m.contact.lean,
@@ -264,6 +278,8 @@ impl From<&MotionFeel> for MotionProfile {
 impl MotionProfile {
     fn apply(&self, m: &mut MotionFeel) {
         m.style = self.style;
+        m.style.exaggeration = self.style.exaggeration.clamp(EXAGGERATION.0, EXAGGERATION.1);
+        m.springs.arm_swing = self.springs.arm_swing;
         m.springs.core_hz = self.springs.core_hz;
         m.springs.limb_hz = self.springs.limb_hz;
         m.springs.damping = self.springs.damping;

@@ -946,6 +946,7 @@ pub(crate) mod tests {
             accel: Vec3::NAN,
             squash: f32::INFINITY,
             look_at: Some(Vec3::NAN),
+            root_ease: f32::NAN,
         };
         let mut garbage = |_: Vec3| {
             Some(Ground {

@@ -1,6 +1,7 @@
 //! The single bone writer. For every character with a `Rig`:
 //! 1. evaluate `MotionLayers` bottom→top with `PoseBank::sample` + masks,
-//! 2. `Springs::step` (secondary motion, impulses, squash),
+//! 2. `Springs::step_moving` (secondary motion, arm inertia, impulses, squash),
+//!    then `body::resolve` (limbs out of the body),
 //! 3. `contact::apply` (feet/hands/lean/look) using Avian ray casts against `Phys::World`,
 //! 4. write local rotations (+ pelvis translation) into the bone entities' `Transform`s.
 //! Runs in `PostUpdate` / `MotionSet::Compose` (after Bevy animation, before propagation).
@@ -179,17 +180,19 @@ fn compose(
             springs.follow(&pose);
         } else {
             let mut request = layers.contact.clone();
-            pose = springs.step(
+            pose = springs.step_moving(
                 &pose,
                 skeleton,
                 bones,
                 model_world.rotation,
+                request.accel,
                 &layers.impulses,
                 request.squash,
                 &feel.springs,
                 dt,
             );
             request.squash = springs.squash;
+            super::body::resolve(&mut pose, skeleton, bones);
             let mut ground = |origin: Vec3| {
                 spatial
                     .cast_ray(origin, Dir3::NEG_Y, GROUND_PROBE, true, &filter)

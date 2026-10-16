@@ -21,9 +21,10 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `motion/timing.rs` | Stylized timing: holds, snaps, stepping on twos, exaggeration | done |
 | `motion/bank.rs` | `PoseBank`: tracks, masks, `assets/anim/poses.json` overrides (hot reload) | done |
 | `motion/rig.rs` | Spawn model on `ModelRequest`, bind bones → `Rig` | done |
-| `motion/secondary.rs` | Per-bone angular springs, impulses, squash | done |
+| `motion/secondary.rs` | Per-bone angular springs, arm world inertia + acceleration trail (`Arm swing` knob), impulses, squash | done |
+| `motion/body.rs` | Body capsules; swings arms out of torso/head/opposite thigh and thighs apart (after springs, before contact) | new |
 | `motion/contact.rs` | Foot IK (heel + ball), pelvis drop, COP lean, look-at, hand IK | done, fixed this session |
-| `motion/compose.rs` | **Only bone writer**: layers → springs → contact → bone `Transform`s | done |
+| `motion/compose.rs` | **Only bone writer**: layers → springs → body → contact → bone `Transform`s | done |
 | `motion/tweak.rs` | F2 pose tweak tool | **stub** |
 | `play/mod.rs` | Shared types: `Intent Mover Action Fighter Loadout Hit Interactable Climbable Water Feel`, capsule consts, `spawn_character` | done |
 | `play/world.rs` | Terrain, pond, stairs, mantle boxes, climb walls, props, interactables, characters | done |
@@ -33,7 +34,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/select.rs` | **Only writer of `MotionLayers.layers`** + `ContactRequest` | done |
 | `play/interact.rs` | Focus, walk-in (pivot then step), use clips, grip-following hand IK, prop state | done, fixed this session |
 | `play/hud.rs` | Interaction prompt only | partial |
-| `play/tuning.rs` | F1 live tuning panel, F5 saves `profiles/feel.json` | done |
+| `play/tuning.rs` | F1 live tuning panel (Exaggeration 0.9–1.4, Arm swing 0–2), F5 saves `profiles/feel.json` | done |
 | `play/monitor.rs` | F4 joint-relation monitor + `staging/relations.log` | new |
 | `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`) | done, **no JSON files yet** |
 | `play/combat.rs` | Melee FSM + **only `Hit` resolver** | **stub** |
@@ -71,6 +72,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `HandTargets` | the action owner (`interact` now; `ranged`, `traverse` later) | `select` fades → `ContactRequest.hands` |
 | Bone `Transform`s | `compose` only (and `tweak` while active) | rendering, monitor |
 | Visible pelvis height | `contact` only (it cancels the controller's step easing) | |
+| Limb–body separation | `body::resolve` only | monitor |
 | `Hit` message | `combat`, `ranged`, `magic` emit | **`combat` alone resolves** |
 | `InteractPrompt` | `interact` | `hud` |
 | `Feel`, `MotionFeel` | `tuning` | controller, compose |
@@ -95,6 +97,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `foot_slide` | grounded, foot down (< 2 cm), foot moving > max(0.6, speed / 2) m/s |
 | `toe_inside` / `knee_inside` / `hand_inside` | the joint lies inside `Phys::World` geometry |
 | `hand_miss` | `HandTargets` weight ≥ 0.95 and hand more than 5 cm from the target |
+| `arm_in_body` / `legs_crossed` | `motion::body` capsules overlap by more than 1 cm |
 
 Log line: `t character relation side value mode action speed`.
 
@@ -110,6 +113,7 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
 
 - **A. Melee:** `combat.rs`, `ai.rs`, `ragdoll.rs`, plus `assets/anim/movesets/{unarmed,longsword}.json`. Hit tests sweep the weapon/limb between frames; damage scales with closing speed; hitstop through `Time<Virtual>`; knockback through `Mover.external`; impulses into `MotionLayers.impulses`.
 - **B. Traversal, then ranged and magic:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` and `magic.rs` (projectiles emit `Hit`).
+  - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.
 - **D. Pose tweak tool:** `motion/tweak.rs` (F2).
 

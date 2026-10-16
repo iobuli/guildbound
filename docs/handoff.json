@@ -10,33 +10,147 @@
     "playtest_pause_per_milestone": true
   },
   "modules": [
-    {"file": "motion/donor.rs", "role": "GLB parse", "status": "done"},
-    {"file": "motion/retarget.rs", "role": "donor clips to canonical UAL2 skeleton", "status": "done"},
-    {"file": "motion/extract.rs", "role": "dense clip to extreme keys", "status": "done"},
-    {"file": "motion/timing.rs", "role": "stylized timing", "status": "done"},
-    {"file": "motion/bank.rs", "role": "PoseBank, masks, poses.json", "status": "done"},
-    {"file": "motion/rig.rs", "role": "model spawn and bone binding", "status": "done"},
-    {"file": "motion/secondary.rs", "role": "bone springs, impulses, squash", "status": "done"},
-    {"file": "motion/contact.rs", "role": "foot IK, pelvis drop, lean, look-at, hand IK", "status": "done"},
-    {"file": "motion/compose.rs", "role": "only bone writer", "status": "done"},
-    {"file": "motion/tweak.rs", "role": "F2 pose tweak tool", "status": "stub"},
-    {"file": "play/mod.rs", "role": "shared types and spawn_character", "status": "done"},
-    {"file": "play/world.rs", "role": "level, props, interactables, characters", "status": "done"},
-    {"file": "play/input.rs", "role": "input to Intent", "status": "done"},
-    {"file": "play/camera.rs", "role": "orbit camera, lock-on, shake", "status": "done"},
-    {"file": "play/controller.rs", "role": "kinematic capsule, support probe, steps, jump", "status": "done"},
-    {"file": "play/select.rs", "role": "only MotionLayers.layers writer, ContactRequest", "status": "done"},
-    {"file": "play/interact.rs", "role": "focus, walk-in, use clips, grip hand IK", "status": "done"},
-    {"file": "play/hud.rs", "role": "HUD (interaction prompt only)", "status": "partial"},
-    {"file": "play/tuning.rs", "role": "F1 tuning, F5 save", "status": "done"},
-    {"file": "play/monitor.rs", "role": "F4 joint-relation monitor, staging/relations.log", "status": "done"},
-    {"file": "play/moveset.rs", "role": "moveset schema and loader", "status": "done", "note": "no moveset JSON files yet"},
-    {"file": "play/combat.rs", "role": "melee FSM, only Hit resolver", "status": "stub"},
-    {"file": "play/ai.rs", "role": "NPC brain to Intent", "status": "stub"},
-    {"file": "play/ragdoll.rs", "role": "impact-only active ragdoll", "status": "stub"},
-    {"file": "play/ranged.rs", "role": "bows, crossbows, throwing, projectiles", "status": "stub"},
-    {"file": "play/magic.rs", "role": "schools as movesets, cast/charge/channel", "status": "stub"},
-    {"file": "play/traverse.rs", "role": "swim, climb, ledge, mantle", "status": "stub"}
+    {
+      "file": "motion/donor.rs",
+      "role": "GLB parse",
+      "status": "done"
+    },
+    {
+      "file": "motion/retarget.rs",
+      "role": "donor clips to canonical UAL2 skeleton",
+      "status": "done"
+    },
+    {
+      "file": "motion/extract.rs",
+      "role": "dense clip to extreme keys",
+      "status": "done"
+    },
+    {
+      "file": "motion/timing.rs",
+      "role": "stylized timing",
+      "status": "done"
+    },
+    {
+      "file": "motion/bank.rs",
+      "role": "PoseBank, masks, poses.json",
+      "status": "done"
+    },
+    {
+      "file": "motion/rig.rs",
+      "role": "model spawn and bone binding",
+      "status": "done"
+    },
+    {
+      "file": "motion/secondary.rs",
+      "role": "bone springs, arm world inertia + acceleration trail, impulses, squash",
+      "status": "done"
+    },
+    {
+      "file": "motion/contact.rs",
+      "role": "foot IK, pelvis drop, lean, look-at, hand IK",
+      "status": "done"
+    },
+    {
+      "file": "motion/body.rs",
+      "role": "body capsules; arms out of torso/head/opposite thigh, thighs apart",
+      "status": "done"
+    },
+    {
+      "file": "motion/compose.rs",
+      "role": "only bone writer: layers, springs, body, contact",
+      "status": "done"
+    },
+    {
+      "file": "motion/tweak.rs",
+      "role": "F2 pose tweak tool",
+      "status": "stub"
+    },
+    {
+      "file": "play/mod.rs",
+      "role": "shared types and spawn_character",
+      "status": "done"
+    },
+    {
+      "file": "play/world.rs",
+      "role": "level, props, interactables, characters",
+      "status": "done"
+    },
+    {
+      "file": "play/input.rs",
+      "role": "input to Intent",
+      "status": "done"
+    },
+    {
+      "file": "play/camera.rs",
+      "role": "orbit camera, lock-on, shake",
+      "status": "done"
+    },
+    {
+      "file": "play/controller.rs",
+      "role": "kinematic capsule, support probe, steps, jump",
+      "status": "done"
+    },
+    {
+      "file": "play/select.rs",
+      "role": "only MotionLayers.layers writer, ContactRequest",
+      "status": "done"
+    },
+    {
+      "file": "play/interact.rs",
+      "role": "focus, walk-in, use clips, grip hand IK",
+      "status": "done"
+    },
+    {
+      "file": "play/hud.rs",
+      "role": "HUD (interaction prompt only)",
+      "status": "partial"
+    },
+    {
+      "file": "play/tuning.rs",
+      "role": "F1 tuning, F5 save",
+      "status": "done"
+    },
+    {
+      "file": "play/monitor.rs",
+      "role": "F4 joint-relation monitor, staging/relations.log",
+      "status": "done"
+    },
+    {
+      "file": "play/moveset.rs",
+      "role": "moveset schema and loader",
+      "status": "done",
+      "note": "no moveset JSON files yet"
+    },
+    {
+      "file": "play/combat.rs",
+      "role": "melee FSM, only Hit resolver",
+      "status": "stub"
+    },
+    {
+      "file": "play/ai.rs",
+      "role": "NPC brain to Intent",
+      "status": "stub"
+    },
+    {
+      "file": "play/ragdoll.rs",
+      "role": "impact-only active ragdoll",
+      "status": "stub"
+    },
+    {
+      "file": "play/ranged.rs",
+      "role": "bows, crossbows, throwing, projectiles",
+      "status": "stub"
+    },
+    {
+      "file": "play/magic.rs",
+      "role": "schools as movesets, cast/charge/channel",
+      "status": "stub"
+    },
+    {
+      "file": "play/traverse.rs",
+      "role": "swim, climb, ledge, mantle",
+      "status": "stub"
+    }
   ],
   "order": [
     "Update/PlaySet::Input: input -> Intent (player)",
@@ -47,27 +161,140 @@
     "PostUpdate/MotionSet::Compose: compose; after TransformSystems::Propagate: monitor"
   ],
   "ownership": [
-    {"quantity": "Intent", "writer": ["input", "ai"]},
-    {"quantity": "Mover.velocity|grounded|mode(Ground,Air)|accel|landing|air_time|yaw", "writer": ["controller"]},
-    {"quantity": "Mover.mode(Swim,Climb,Ledge)", "writer": ["traverse"]},
-    {"quantity": "Mover.mode(Ragdoll)", "writer": ["ragdoll"]},
-    {"quantity": "Mover.phase", "writer": ["select"]},
-    {"quantity": "Mover.step_ease", "writer": ["controller"], "readers": ["select -> ContactRequest.root_ease -> contact"]},
-    {"quantity": "Mover.root_motion|move_scale|face", "writer": ["current Action owner"]},
-    {"quantity": "Mover.external", "writer": ["combat"], "note": "controller decays it"},
-    {"quantity": "Action", "writer": ["its owner"], "rule": "start only when is_free(); Owner::Hit may interrupt anything"},
-    {"quantity": "MotionLayers.layers|contact", "writer": ["select"]},
-    {"quantity": "MotionLayers.impulses", "writer": ["play systems (append)"], "note": "compose drains"},
-    {"quantity": "MotionLayers.raw", "writer": ["ragdoll"]},
-    {"quantity": "HandTargets", "writer": ["current action owner: interact, later ranged, traverse"]},
-    {"quantity": "bone Transforms", "writer": ["compose", "tweak (while active)"]},
-    {"quantity": "visible pelvis height", "writer": ["contact"]},
-    {"quantity": "Hit (resolve)", "writer": ["combat"], "emitters": ["combat", "ranged", "magic"]},
-    {"quantity": "InteractPrompt", "writer": ["interact"]},
-    {"quantity": "Feel|MotionFeel", "writer": ["tuning"]}
+    {
+      "quantity": "Intent",
+      "writer": [
+        "input",
+        "ai"
+      ]
+    },
+    {
+      "quantity": "Mover.velocity|grounded|mode(Ground,Air)|accel|landing|air_time|yaw",
+      "writer": [
+        "controller"
+      ]
+    },
+    {
+      "quantity": "Mover.mode(Swim,Climb,Ledge)",
+      "writer": [
+        "traverse"
+      ]
+    },
+    {
+      "quantity": "Mover.mode(Ragdoll)",
+      "writer": [
+        "ragdoll"
+      ]
+    },
+    {
+      "quantity": "Mover.phase",
+      "writer": [
+        "select"
+      ]
+    },
+    {
+      "quantity": "Mover.step_ease",
+      "writer": [
+        "controller"
+      ],
+      "readers": [
+        "select -> ContactRequest.root_ease -> contact"
+      ]
+    },
+    {
+      "quantity": "Mover.root_motion|move_scale|face",
+      "writer": [
+        "current Action owner"
+      ]
+    },
+    {
+      "quantity": "Mover.external",
+      "writer": [
+        "combat"
+      ],
+      "note": "controller decays it"
+    },
+    {
+      "quantity": "Action",
+      "writer": [
+        "its owner"
+      ],
+      "rule": "start only when is_free(); Owner::Hit may interrupt anything"
+    },
+    {
+      "quantity": "MotionLayers.layers|contact",
+      "writer": [
+        "select"
+      ]
+    },
+    {
+      "quantity": "MotionLayers.impulses",
+      "writer": [
+        "play systems (append)"
+      ],
+      "note": "compose drains"
+    },
+    {
+      "quantity": "MotionLayers.raw",
+      "writer": [
+        "ragdoll"
+      ]
+    },
+    {
+      "quantity": "HandTargets",
+      "writer": [
+        "current action owner: interact, later ranged, traverse"
+      ]
+    },
+    {
+      "quantity": "bone Transforms",
+      "writer": [
+        "compose",
+        "tweak (while active)"
+      ]
+    },
+    {
+      "quantity": "visible pelvis height",
+      "writer": [
+        "contact"
+      ]
+    },
+    {
+      "quantity": "Hit (resolve)",
+      "writer": [
+        "combat"
+      ],
+      "emitters": [
+        "combat",
+        "ranged",
+        "magic"
+      ]
+    },
+    {
+      "quantity": "InteractPrompt",
+      "writer": [
+        "interact"
+      ]
+    },
+    {
+      "quantity": "Feel|MotionFeel",
+      "writer": [
+        "tuning"
+      ]
+    },
+    {
+      "quantity": "limb-body separation",
+      "writer": [
+        "body::resolve"
+      ]
+    }
   ],
   "data": {
-    "donors": ["assets/anim/ual1.glb", "assets/anim/ual2.glb (model + canonical skeleton)", "assets/anim/sekiro.glb"],
+    "donors": [
+      "assets/anim/ual1.glb",
+      "assets/anim/ual2.glb (model + canonical skeleton)",
+      "assets/anim/sekiro.glb"
+    ],
     "poses": "assets/anim/poses.json (optional, hot reload)",
     "movesets": "assets/anim/movesets/*.json (schema in play/moveset.rs; none yet)",
     "weapons": "assets/packs/weapons/*.glb",
@@ -78,17 +305,86 @@
     "key": "F4",
     "log_line": "t character relation side value mode action speed",
     "thresholds": {
-      "min_flex_deg": 10, "against_cos": -0.3, "pop_cos": -0.5,
-      "sink_m": -0.03, "float_m": 0.05, "planted_mps": 0.3, "slide_mps": 0.6, "down_m": 0.02,
-      "hand_miss_m": 0.05, "hand_full_weight": 0.95
+      "min_flex_deg": 10,
+      "against_cos": -0.3,
+      "pop_cos": -0.5,
+      "sink_m": -0.03,
+      "float_m": 0.05,
+      "planted_mps": 0.3,
+      "slide_mps": 0.6,
+      "down_m": 0.02,
+      "hand_miss_m": 0.05,
+      "hand_full_weight": 0.95,
+      "self_clip_m": 0.01
     },
-    "relations": ["knee_backward", "knee_pop", "elbow_inward", "elbow_pop", "foot_sink", "foot_float", "foot_slide", "toe_inside", "knee_inside", "hand_inside", "hand_miss"]
+    "relations": [
+      "knee_backward",
+      "knee_pop",
+      "elbow_inward",
+      "elbow_pop",
+      "foot_sink",
+      "foot_float",
+      "foot_slide",
+      "toe_inside",
+      "knee_inside",
+      "hand_inside",
+      "hand_miss",
+      "arm_in_body",
+      "legs_crossed"
+    ]
   },
   "lanes": [
-    {"id": "A", "name": "melee", "files": ["play/combat.rs", "play/ai.rs", "play/ragdoll.rs", "assets/anim/movesets/*.json"]},
-    {"id": "B", "name": "traversal then ranged/magic", "files": ["play/traverse.rs", "play/ranged.rs", "play/magic.rs"]},
-    {"id": "C", "name": "character systems", "files": ["new module per docs/CHARACTER_SYSTEMS.md"], "blocked_on": "6 open questions in docs/CHARACTER_SYSTEMS.md"},
-    {"id": "D", "name": "pose tweak tool", "files": ["motion/tweak.rs"]}
+    {
+      "id": "A",
+      "name": "melee",
+      "files": [
+        "play/combat.rs",
+        "play/ai.rs",
+        "play/ragdoll.rs",
+        "assets/anim/movesets/*.json"
+      ]
+    },
+    {
+      "id": "B",
+      "name": "traversal then ranged/magic",
+      "files": [
+        "play/traverse.rs",
+        "play/ranged.rs",
+        "play/magic.rs"
+      ],
+      "ideas": [
+        "tightrope/balance beam: lean drift countered by the player, arms spread, wobble then fall; builds on contact lean, arm inertia, body self-collision"
+      ]
+    },
+    {
+      "id": "C",
+      "name": "character systems",
+      "files": [
+        "new module per docs/CHARACTER_SYSTEMS.md"
+      ],
+      "blocked_on": "6 open questions in docs/CHARACTER_SYSTEMS.md"
+    },
+    {
+      "id": "D",
+      "name": "pose tweak tool",
+      "files": [
+        "motion/tweak.rs"
+      ]
+    }
   ],
-  "shared_files": ["play/mod.rs", "play/select.rs", "play/world.rs"]
+  "shared_files": [
+    "play/mod.rs",
+    "play/select.rs",
+    "play/world.rs"
+  ],
+  "tuning": {
+    "exaggeration": [
+      0.9,
+      1.4
+    ],
+    "arm_swing": [
+      0.0,
+      2.0
+    ]
+  }
 }

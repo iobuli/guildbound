@@ -9,7 +9,8 @@
 //! 4. `bank`     – `PoseBank` resource: every track, stylized sampling (`timing` easing +
 //!                 exaggeration), `assets/anim/poses.json` overrides with hot reload.
 //! 5. `compose`  – the ONLY system that writes bone `Transform`s. Evaluates each character's
-//!                 `MotionLayers`, runs `secondary` springs and `contact` IK, writes bones.
+//!                 `MotionLayers`, runs `secondary` springs, `body` self-collision and
+//!                 `contact` IK, writes bones.
 //!
 //! Conventions (shared by every module, do not change):
 //! - Canonical skeleton = the joint list of `assets/anim/ual2.glb` skin 0, in that order.
@@ -22,6 +23,7 @@
 //!   original clip.
 
 pub mod bank;
+pub mod body;
 pub mod compose;
 pub mod contact;
 pub mod donor;

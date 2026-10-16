@@ -2,6 +2,11 @@
 //! overlap / follow-through, plus impulse injection for hits and spine squash/stretch.
 //! Springs act on LOCAL rotations in parent space; impulses arrive in world space and are
 //! converted using the model rotation and FK.
+//!
+//! Arms also carry inertia in the WORLD: when the torso or the whole body turns, upper arms and
+//! forearms keep part of their world orientation (the spring then pulls them back), and the
+//! upper arms' goal trails opposite to the body's acceleration like a pendulum. Local springs
+//! alone moved arms rigidly with their parents, so they never swung.
 use super::{Bones, Pose, Skeleton};
 use bevy::prelude::*;
 
@@ -13,6 +18,8 @@ pub struct SpringParams {
     pub limb_hz: f32,
     /// Damping ratio: 1 = critically damped, <1 overshoot.
     pub damping: f32,
+    /// Scale (0..2) of the arms' world inertia and acceleration trail; 0 = local springs only.
+    pub arm_swing: f32,
 }
 
 impl Default for SpringParams {
@@ -21,6 +28,7 @@ impl Default for SpringParams {
             core_hz: 7.0,
             limb_hz: 9.0,
             damping: 0.6,
+            arm_swing: 1.0,
         }
     }
 }
@@ -33,6 +41,8 @@ pub struct Springs {
     pub velocity: Vec<Vec3>,
     pub squash: f32,
     pub squash_velocity: f32,
+    /// World rotation of each swinging arm bone's parent last frame (upper arms, forearms).
+    pub parent_world: [Option<Quat>; 4],
 }
 
 /// Largest frame step the springs integrate; longer frames are clamped (slow-motion, not a jump).
@@ -51,6 +61,12 @@ pub const MAX_ERROR: f32 = 2.07;
 const MAX_SPEED: f32 = 60.0;
 /// Squash value limits (contact maps roughly −0.3..0.3 to visible deformation).
 const MAX_SQUASH: f32 = 1.0;
+/// Share of a parent's world rotation an arm bone resists each frame at `arm_swing = 1`.
+const ARM_INERTIA: f32 = 0.6;
+/// Upper-arm trail (rad) per g of horizontal body acceleration at `arm_swing = 1`, and its cap.
+const ARM_TRAIL: f32 = 0.15;
+const MAX_TRAIL: f32 = 0.6;
+const GRAVITY: f32 = 9.81;
 
 /// Spring group of a canonical bone.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -118,6 +134,13 @@ impl SpringParams {
             Group::Leg => Some(clean(self.limb_hz * 3.0)),
         }
     }
+    fn swing(&self) -> f32 {
+        if self.arm_swing.is_finite() {
+            self.arm_swing.clamp(0.0, 2.0)
+        } else {
+            1.0
+        }
+    }
     fn zeta(&self) -> f32 {
         if self.damping.is_finite() {
             self.damping.clamp(0.05, 2.0)
@@ -154,6 +177,7 @@ impl Springs {
         self.velocity.clear();
         self.squash = 0.0;
         self.squash_velocity = 0.0;
+        self.parent_world = [None; 4];
     }
 
     /// Hold the springs on `pose` at rest (used while something else owns the pose, e.g.
@@ -165,11 +189,11 @@ impl Springs {
         self.velocity.clear();
         self.velocity.resize(pose.rot.len(), Vec3::ZERO);
         self.squash_velocity = 0.0;
+        self.parent_world = [None; 4];
     }
 
-    /// Advance toward `target` by `dt` (sub-stepped for stability, dt clamped to 1/20 s),
-    /// apply `impulses` (bone, world axis*angle rad/s), return the sprung pose.
-    /// Bones without a spring (pelvis translation, root, fingers) pass through.
+    /// `step_moving` for a body that is not accelerating.
+    #[allow(clippy::too_many_arguments)]
     pub fn step(
         &mut self,
         target: &Pose,
@@ -181,9 +205,29 @@ impl Springs {
         params: &SpringParams,
         dt: f32,
     ) -> Pose {
+        self.step_moving(target, skeleton, bones, model_rotation, Vec3::ZERO, impulses, squash_target, params, dt)
+    }
+
+    /// Advance toward `target` by `dt` (sub-stepped for stability, dt clamped to 1/20 s),
+    /// apply `impulses` (bone, world axis*angle rad/s), return the sprung pose. `accel` is the
+    /// body's world acceleration (m/s²), which the upper arms trail.
+    /// Bones without a spring (pelvis translation, root, fingers) pass through.
+    #[allow(clippy::too_many_arguments)]
+    pub fn step_moving(
+        &mut self,
+        target: &Pose,
+        skeleton: &Skeleton,
+        bones: &Bones,
+        model_rotation: Quat,
+        accel: Vec3,
+        impulses: &[(usize, Vec3)],
+        squash_target: f32,
+        params: &SpringParams,
+        dt: f32,
+    ) -> Pose {
         let n = skeleton.len();
         // Sanitized target: finite, normalized, right length (missing bones = rest).
-        let goal: Vec<Quat> = (0..n)
+        let mut goal: Vec<Quat> = (0..n)
             .map(|i| {
                 let rest = clean_quat(skeleton.rest[i].rotation, Quat::IDENTITY);
                 target.rot.get(i).map_or(rest, |q| clean_quat(*q, rest))
@@ -207,10 +251,12 @@ impl Springs {
             self.velocity = vec![Vec3::ZERO; n];
             self.squash = squash_goal;
             self.squash_velocity = 0.0;
+            self.parent_world = [None; 4];
             if fresh || dt > RESET_DT {
                 return Pose { rot: goal, pelvis };
             }
         }
+        let model_rotation = clean_quat(model_rotation, Quat::IDENTITY);
 
         let groups = groups(skeleton, bones);
         let zeta = params.zeta();
@@ -223,7 +269,6 @@ impl Springs {
                 pelvis,
             };
             let model_space = skeleton.fk(&fk_pose, bones.pelvis);
-            let model_rotation = clean_quat(model_rotation, Quat::IDENTITY);
             for &(bone, impulse) in impulses {
                 if !impulse.is_finite() || bone >= n {
                     continue;
@@ -250,6 +295,7 @@ impl Springs {
 
         let dt = dt.min(MAX_DT);
         if dt > 0.0 {
+            self.swing_arms(&mut goal, skeleton, bones, model_rotation, accel, pelvis, params.swing());
             let max_hz = [Group::Core, Group::Limb, Group::Leg]
                 .into_iter()
                 .filter_map(|g| params.hz(g))
@@ -321,6 +367,58 @@ impl Springs {
         Pose {
             rot: self.current.clone(),
             pelvis,
+        }
+    }
+
+    /// World inertia of the arms: upper arms and forearms keep a share of their world
+    /// orientation against their parent's world rotation since last frame, and the upper arms'
+    /// goals trail opposite to `accel`.
+    #[allow(clippy::too_many_arguments)]
+    fn swing_arms(
+        &mut self,
+        goal: &mut [Quat],
+        skeleton: &Skeleton,
+        bones: &Bones,
+        model_rotation: Quat,
+        accel: Vec3,
+        pelvis: Vec3,
+        swing: f32,
+    ) {
+        let arm_bones = [bones.upperarm[0], bones.upperarm[1], bones.lowerarm[0], bones.lowerarm[1]];
+        let fk_pose = Pose {
+            rot: self.current.clone(),
+            pelvis,
+        };
+        let model_space = skeleton.fk(&fk_pose, bones.pelvis);
+        let keep = (ARM_INERTIA * swing).clamp(0.0, 0.95);
+        let accel = if accel.is_finite() { accel.with_y(0.0) / GRAVITY } else { Vec3::ZERO };
+        for (slot, &i) in arm_bones.iter().enumerate() {
+            let Some(p) = skeleton.parent.get(i).copied().flatten() else {
+                continue;
+            };
+            let parent_world = clean_quat(model_rotation * model_space[p].rotation, Quat::IDENTITY);
+            if let Some(prev) = self.parent_world[slot]
+                && keep > 0.0
+            {
+                // Holding the world orientation fully: local' = P^-1 * prev * local.
+                let undo = Quat::IDENTITY.slerp((prev * parent_world.inverse()).normalize(), keep);
+                let held = parent_world.inverse() * undo * parent_world * self.current[i];
+                self.current[i] = clean_quat(held, goal[i]);
+            }
+            self.parent_world[slot] = Some(parent_world);
+
+            // Upper arms: the goal swings so the arm trails the acceleration, like a pendulum.
+            if slot < 2 && swing > 0.0 {
+                let reach = model_space[bones.hand[slot]].translation - model_space[i].translation;
+                let Some(down) = (model_rotation * reach).try_normalize() else {
+                    continue;
+                };
+                let trail = (down.cross(-accel) * (ARM_TRAIL * swing)).clamp_length_max(MAX_TRAIL);
+                if trail.is_finite() && trail.length_squared() > 1e-10 {
+                    let swung = parent_world.inverse() * Quat::from_scaled_axis(trail) * parent_world * goal[i];
+                    goal[i] = clean_quat(swung, goal[i]);
+                }
+            }
         }
     }
 }
@@ -533,6 +631,7 @@ mod tests {
             core_hz: 1e9,
             limb_hz: f32::NAN,
             damping: -5.0,
+            arm_swing: f32::INFINITY,
         };
         for params in [SpringParams::default(), wild] {
             let mut springs = Springs::default();
@@ -575,6 +674,7 @@ mod tests {
             velocity: vec![Vec3::ONE; 3],
             squash: 0.5,
             squash_velocity: 3.0,
+            parent_world: [Some(Quat::NAN); 4],
         };
         let out = springs.step(
             &target,

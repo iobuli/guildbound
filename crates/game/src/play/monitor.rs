@@ -9,10 +9,13 @@
 //! - foot: heel / ball sunk into the ground, floating or sliding while planted, toes or knee
 //!   inside world geometry;
 //! - elbow: folded inwards, or popped between frames;
-//! - hand: away from its fully weighted `HandTargets` point, inside a prop.
+//! - hand: away from its fully weighted `HandTargets` point, inside a prop;
+//! - body: an arm inside the torso / head / opposite thigh, or the legs crossing
+//!   (`motion::body` capsules, the same ones `compose` resolves).
 use super::select::HandTargets;
 use super::{Action, Mover, Phys, Player};
 use crate::motion::bank::PoseBank;
+use crate::motion::body::Body;
 use crate::motion::{Rig, RigBone};
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -35,6 +38,8 @@ const SLIDE: f32 = 0.6;
 /// Ground gap (m) under which a foot counts as down.
 const DOWN: f32 = 0.02;
 const HAND_MISS: f32 = 0.05;
+/// Body capsule overlap (m) that counts as self-clipping.
+const SELF_CLIP: f32 = 0.01;
 /// Hand weights above this are expected to arrive.
 const HAND_FULL: f32 = 0.95;
 /// Seconds between log lines for the same character, relation and side.
@@ -300,6 +305,17 @@ fn measure(
                 gizmos.linestrip([hip, knee, ankle, ball], leg);
                 gizmos.linestrip([shoulder, elbow, hand], if arm_bad { bad } else { ok });
             }
+        }
+
+        // Self-clipping left over after `body::resolve` (springs, IK and hand targets act after it).
+        let body = Body::new(&|i| pos(i).unwrap_or(Vec3::NAN), &b, 1.0);
+        for side in 0..2 {
+            if let Some(hit) = body.arm_overlap(side).filter(|o| o.depth > SELF_CLIP) {
+                faults.push(("arm_in_body", side, hit.depth));
+            }
+        }
+        if let Some(hit) = body.leg_overlap().filter(|o| o.depth > SELF_CLIP) {
+            faults.push(("legs_crossed", 0, hit.depth));
         }
 
         let who = name.map_or_else(|| format!("{entity}"), |n| n.as_str().to_string());
