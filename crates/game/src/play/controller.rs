@@ -514,8 +514,10 @@ fn move_characters(
             normal = support.normal;
         }
         if now_grounded {
+            let before = state.step_offset;
             (state.step_offset, state.step_velocity) =
                 ease_to_zero(state.step_offset, state.step_velocity, STEP_SMOOTH_TIME, dt);
+            mover.step_ease += state.step_offset - before;
         } else {
             // Airborne bodies are drawn where they are.
             position.y += state.step_offset;

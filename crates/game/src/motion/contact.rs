@@ -42,6 +42,8 @@ pub struct ContactState {
     pub pelvis_drop: f32,
     pub lean: Vec3,
     pub look: Quat,
+    /// Last `ContactRequest.root_ease` seen (None until the first frame).
+    pub root_ease: Option<f32>,
 }
 
 const GRAVITY: f32 = 9.81;
@@ -72,6 +74,16 @@ const REACH_FADE: f32 = 0.12;
 const MIN_GROUND_NORMAL_Y: f32 = 0.25;
 /// Largest pelvis drop (m at model scale 1).
 const MAX_DROP: f32 = 0.6;
+/// How far (m) the pelvis may briefly sit above the animation while the root eases down a step.
+const MAX_RAISE: f32 = 0.05;
+/// Limbs never straighten past this share of their length: a locked knee or elbow snaps.
+const MAX_EXTENSION: f32 = 0.999;
+/// How hard (m) knees lean toward the toes and elbows toward out-down-back, so a near-straight
+/// limb keeps a stable bend side instead of flipping with noise.
+const KNEE_BIAS: f32 = 0.04;
+const ELBOW_BIAS: f32 = 0.04;
+/// Natural elbow direction in model space for the left arm (x mirrored for the right).
+const ELBOW_OUT: Vec3 = Vec3::new(0.5, -0.6, -0.6);
 
 /// Analytic two-bone IK (from `skeleton_ik::solve`): returns the middle joint position.
 pub fn two_bone(root: Vec3, target: Vec3, pole: Vec3, lengths: [f32; 2]) -> Vec3 {
@@ -91,7 +103,7 @@ fn solve(root: Vec3, target: Vec3, pole: Vec3, fallback: Vec3, lengths: [f32; 2]
     let offset = target - root;
     let axis = offset.normalize_or(Vec3::NEG_Y);
     let min = (a - b).abs() + 1e-4;
-    let max = (a + b - 1e-4).max(min);
+    let max = ((a + b) * MAX_EXTENSION).max(min);
     let distance = offset.length().clamp(min, max);
     let project = |v: Vec3| {
         let v = if v.is_finite() { v } else { Vec3::ZERO };
@@ -106,6 +118,21 @@ fn solve(root: Vec3, target: Vec3, pole: Vec3, fallback: Vec3, lengths: [f32; 2]
     let along = (a * a - b * b + distance * distance) / (2.0 * distance);
     let height = (a * a - along * along).max(0.0).sqrt();
     (root + axis * along + side * height, root + axis * distance)
+}
+
+/// Bend-side pole for a limb from `root` through `mid` toward `target`: the animated bend,
+/// with any part pointing against `natural` removed (knees never fold backwards, elbows never
+/// inwards) and `natural · bias` added so a straight limb keeps its side.
+fn bend_pole(root: Vec3, mid: Vec3, target: Vec3, natural: Vec3, bias: f32) -> Vec3 {
+    let axis = (target - root).normalize_or(Vec3::NEG_Y);
+    let off = |v: Vec3| v - axis * v.dot(axis);
+    let natural = off(natural).normalize_or_zero();
+    let mut bend = off(mid - root);
+    let against = bend.dot(natural);
+    if against < 0.0 {
+        bend -= natural * against;
+    }
+    bend + natural * bias
 }
 
 /// Model-space FK lifted into world space, plus helpers to edit local rotations by world deltas.
@@ -327,16 +354,26 @@ pub fn apply(
         }
     }
 
-    // 2. Pelvis: smoothed drop to the lowest foot (never above animated) + squash drop.
+    // 2. Pelvis: smoothed drop to the lowest foot + squash drop.
+    //    The controller eases the drawn root over steps; undoing that motion here keeps the
+    //    pelvis still in the world, so this is the only smoother of the visible body height
+    //    (two in series made the body dip and rebound on stairs).
+    let eased = state.root_ease.map_or(0.0, |prev| request.root_ease - prev);
+    state.root_ease = request.root_ease.is_finite().then_some(request.root_ease);
+    if eased.is_finite() && eased.abs() < MAX_DROP * scale {
+        state.pelvis_drop -= eased;
+    }
     let need = foot_w * feet.iter().map(|f| f.correction).fold(0.0_f32, f32::min);
     state.pelvis_drop += (need - state.pelvis_drop) * smoothing(params.pelvis_rate, dt);
-    state.pelvis_drop = state.pelvis_drop.clamp(-MAX_DROP * scale, 0.0);
+    state.pelvis_drop = state.pelvis_drop.clamp(-MAX_DROP * scale, MAX_RAISE * scale);
     let squash = if request.squash.is_finite() {
         request.squash.clamp(-1.0, 1.0)
     } else {
         0.0
     };
-    let drop = state.pelvis_drop + squash.min(0.0) * SQUASH_DROP * scale;
+    // A brief raise only stands while the feet are planted (their IK reaches down for it).
+    let drop = state.pelvis_drop.min(0.0) * (1.0 - foot_w) + state.pelvis_drop * foot_w
+        + squash.min(0.0) * SQUASH_DROP * scale;
     if drop.abs() > 1e-6 {
         let parent = frame.parent(&world0, bones.pelvis);
         let local = parent.rotation.inverse() * (Vec3::Y * drop);
@@ -346,16 +383,19 @@ pub fn apply(
         }
     }
 
-    // 3. Legs: ankles to the planned heights, knees toward the animated knees, feet keep their
-    //    animated world orientation, partially aligned to the ground.
+    // 3. Legs: ankles to the planned heights, knees toward the animated knees (never behind the
+    //    toes' side), feet keep their animated world orientation, partially aligned to the ground.
     if foot_w > 1e-3 {
         let world1 = frame.world(pose);
         for (side, plan) in feet.iter().enumerate() {
             let (thigh, calf, foot) = (bones.thigh[side], bones.calf[side], bones.foot[side]);
             let planted = world0[foot].translation + Vec3::Y * plan.correction;
             let target = world1[foot].translation.lerp(planted, foot_w);
-            let pole = world1[calf].translation - world1[thigh].translation;
-            let Some(delta) = frame.limb(pose, &world1, [thigh, calf, foot], target, pole, forward)
+            let toes = (world1[bones.ball[side]].translation - world1[foot].translation).with_y(0.0);
+            let natural = toes.normalize_or(forward);
+            let (hip, knee) = (world1[thigh].translation, world1[calf].translation);
+            let pole = bend_pole(hip, knee, target, natural, KNEE_BIAS * scale);
+            let Some(delta) = frame.limb(pose, &world1, [thigh, calf, foot], target, pole, natural)
             else {
                 continue;
             };
@@ -436,7 +476,8 @@ pub fn apply(
         frame.rotate(pose, &world, bones.head, delta * neck.inverse());
     }
 
-    // 6. Hands: two-bone IK on the arms toward weighted world targets, elbows as animated.
+    // 6. Hands: two-bone IK on the arms toward weighted world targets, elbows as animated but
+    //    never folded inwards.
     for side in 0..2 {
         let Some((target, weight)) = request.hands[side] else {
             continue;
@@ -448,9 +489,11 @@ pub fn apply(
         let world = frame.world(pose);
         let chain = [bones.upperarm[side], bones.lowerarm[side], bones.hand[side]];
         let goal = world[chain[2]].translation.lerp(target, weight);
-        let pole = world[chain[1]].translation - world[chain[0]].translation;
-        let fallback = model.rotation * Vec3::new(0.0, -0.5, -1.0);
-        frame.limb(pose, &world, chain, goal, pole, fallback);
+        let out = if side == 0 { ELBOW_OUT } else { ELBOW_OUT * Vec3::new(-1.0, 1.0, 1.0) };
+        let natural = model.rotation * out;
+        let (shoulder, elbow) = (world[chain[0]].translation, world[chain[1]].translation);
+        let pole = bend_pole(shoulder, elbow, goal, natural, ELBOW_BIAS * scale);
+        frame.limb(pose, &world, chain, goal, pole, natural);
     }
 
     // Never hand back a broken pose.
@@ -911,6 +954,7 @@ pub(crate) mod tests {
             pelvis_drop: f32::NAN,
             lean: Vec3::INFINITY,
             look: Quat::from_xyzw(0.0, 0.0, 0.0, 0.0),
+            root_ease: Some(f32::NAN),
         };
         for dt in [f32::NAN, -1.0, 0.0, 1e9, 1.0 / 60.0] {
             let mut pose = skeleton.rest_pose();

@@ -30,6 +30,10 @@ const IN_PLACE_YAW: f32 = 0.15;
 /// Give up walking into place after this long (s); start anyway when this close (m).
 const APPROACH_TIMEOUT: f32 = 2.5;
 const CLOSE_ENOUGH: f32 = 0.5;
+/// Heading error (rad) above which the approach turns on the spot before walking, and below
+/// which it walks at full speed: a pivot, then a step, instead of a sideways slide.
+const PIVOT_STOP: f32 = 1.6;
+const PIVOT_GO: f32 = 0.6;
 /// Holding in place during a use: correction time (s) and speed cap (m/s).
 const HOLD_TIME: f32 = 0.12;
 const HOLD_SPEED: f32 = 0.6;
@@ -46,7 +50,7 @@ const MARKER_RANGE: f32 = 14.0;
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Interactable, PropState>()
         .add_systems(Update, (focus, drive).chain().in_set(PlaySet::Act))
-        .add_systems(Update, (animate_props, draw_markers));
+        .add_systems(Update, (animate_props.before(drive), draw_markers));
 }
 
 /// The interactable a character would use with E right now.
@@ -183,7 +187,8 @@ fn drive(
     bank: Res<PoseBank>,
     mut commands: Commands,
     mut characters: Query<(Entity, &Transform, &mut Mover, &Intent, &mut Action, Option<&Focus>, Option<&mut Using>)>,
-    mut interactables: Query<(&Transform, &mut Interactable, &mut PropState), Without<Mover>>,
+    mut interactables: Query<(&Transform, &mut Interactable, &mut PropState, Option<&Children>), Without<Mover>>,
+    parts: Query<(&Name, &Transform), (Without<Interactable>, Without<Mover>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     for (entity, tf, mut mover, intent, mut action, focus, using) in &mut characters {
@@ -212,7 +217,7 @@ fn drive(
             release(&mut commands, entity, &mut mover);
             continue;
         }
-        let Ok((itf, mut it, mut prop)) = interactables.get_mut(using.target) else {
+        let Ok((itf, mut it, mut prop, children)) = interactables.get_mut(using.target) else {
             action.clear();
             release(&mut commands, entity, &mut mover);
             continue;
@@ -233,7 +238,10 @@ fn drive(
 
         match using.phase {
             Phase::Approach => {
-                let speed = (dist / APPROACH_SLOW).min(1.0) * APPROACH_SPEED;
+                let heading = yaw_of(to).map_or(0.0, |y| wrap_angle(y - mover.yaw).abs());
+                let pivot = 1.0 - ((heading - PIVOT_GO) / (PIVOT_STOP - PIVOT_GO)).clamp(0.0, 1.0);
+                let pivot = if dist > 0.3 { pivot * pivot * (3.0 - 2.0 * pivot) } else { 1.0 };
+                let speed = (dist / APPROACH_SLOW).min(1.0) * APPROACH_SPEED * pivot;
                 mover.root_motion = if dist > 1e-3 { to / dist * speed } else { Vec3::ZERO };
                 mover.face = Some(if dist > 0.3 { yaw_of(to).unwrap_or(face) } else { face });
                 let in_place = dist < IN_PLACE && wrap_angle(face - mover.yaw).abs() < IN_PLACE_YAW;
@@ -260,7 +268,15 @@ fn drive(
                     style: None,
                 });
                 let w = hand_weight(using.t, duration, it.looping);
-                let hands = it.hands.map(|h| h.map(|p| (itf.translation + itf.rotation * p, w)));
+                // Hands ride on the grip part (lever arm, chest lid) as it moves.
+                let grip = it
+                    .grip
+                    .as_deref()
+                    .and_then(|name| {
+                        children?.iter().find_map(|c| parts.get(c).ok().filter(|(n, _)| n.as_str() == name))
+                    })
+                    .map_or(*itf, |(_, part)| itf.mul_transform(*part));
+                let hands = it.hands.map(|h| h.map(|p| (grip.transform_point(p), w)));
                 commands.entity(entity).insert(HandTargets { hands });
 
                 if it.looping {
@@ -416,6 +432,7 @@ mod tests {
             stand: Vec3::ZERO,
             face_yaw: 0.0,
             hands: [None, None],
+            grip: None,
             range: 1.8,
         };
         let mut prop = PropState::default();

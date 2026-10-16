@@ -951,6 +951,7 @@ fn update_character(
         accel: sane_vec(mover.accel),
         squash,
         look_at: input.look_at,
+        root_ease: mover.step_ease,
     };
 }
 

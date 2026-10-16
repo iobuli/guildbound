@@ -244,6 +244,8 @@ pub struct ContactRequest {
     pub squash: f32,
     /// World point the head/chest should look toward (lock-on, aiming).
     pub look_at: Option<Vec3>,
+    /// `Mover.step_ease`: running total of the drawn root's vertical easing over steps (m).
+    pub root_ease: f32,
 }
 
 impl Default for ContactRequest {
@@ -254,6 +256,7 @@ impl Default for ContactRequest {
             accel: Vec3::ZERO,
             squash: 0.0,
             look_at: None,
+            root_ease: 0.0,
         }
     }
 }

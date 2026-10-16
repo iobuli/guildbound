@@ -23,6 +23,7 @@ pub mod hud;
 pub mod input;
 pub mod interact;
 pub mod magic;
+pub mod monitor;
 pub mod moveset;
 pub mod ragdoll;
 pub mod ranged;
@@ -61,6 +62,7 @@ pub fn plugin(app: &mut App) {
         ai::plugin,
         tuning::plugin,
         hud::plugin,
+        monitor::plugin,
     ));
 }
 
@@ -173,6 +175,10 @@ pub struct Mover {
     pub move_scale: f32,
     /// When set, the controller turns toward this yaw instead of the move direction.
     pub face: Option<f32>,
+    /// Running total (m) of how far the drawn root has moved vertically while easing over steps.
+    /// Written by `controller` only; `contact` uses its per-frame change to keep the pelvis still
+    /// in the world, so the visible body height has one smoother.
+    pub step_ease: f32,
 }
 
 impl Default for Mover {
@@ -194,6 +200,7 @@ impl Default for Mover {
             root_motion: Vec3::ZERO,
             move_scale: 1.0,
             face: None,
+            step_ease: 0.0,
         }
     }
 }
@@ -375,8 +382,10 @@ pub struct Interactable {
     /// Where the character stands, relative to the interactable, and the yaw it faces.
     pub stand: Vec3,
     pub face_yaw: f32,
-    /// Optional world-space hand targets (relative to the interactable).
+    /// Optional hand targets, relative to the interactable, or to its `grip` part when set.
     pub hands: [Option<Vec3>; 2],
+    /// Name of a moving child part (lever arm, chest lid) the hands hold on to.
+    pub grip: Option<String>,
     pub range: f32,
 }
 

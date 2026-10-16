@@ -362,6 +362,8 @@ struct UseSpec {
     /// Override for `face_yaw` (default: face the object).
     face: Option<f32>,
     hands: [Option<Vec3>; 2],
+    /// Moving child part the `hands` are relative to.
+    grip: Option<&'static str>,
 }
 
 impl UseSpec {
@@ -375,6 +377,7 @@ impl UseSpec {
             stand: self.stand,
             face_yaw: self.face.unwrap_or_else(|| face_toward(self.stand)),
             hands: self.hands,
+            grip: self.grip.map(str::to_string),
             range: 1.8,
         }
     }
@@ -725,7 +728,8 @@ fn spawn_interactables(kit: &mut Kit) {
         looping: false,
         stand: front,
         face: None,
-        hands: [Some(Vec3::new(0.3, 0.62, -0.32)), Some(Vec3::new(-0.3, 0.62, -0.32))],
+        hands: [Some(Vec3::new(0.3, 0.1, -0.58)), Some(Vec3::new(-0.3, 0.1, -0.58))],
+        grip: Some("Chest lid"),
     });
     kit.part(chest, "Chest body", Cuboid::new(1.0, 0.5, 0.6), &wood, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(1.0, 0.5, 0.6)));
     let lid = kit.commands.spawn((Name::new("Chest lid"), Transform::from_xyz(0.0, 0.5, 0.3), Visibility::default(), ChildOf(chest))).id();
@@ -741,6 +745,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: front,
         face: None,
         hands: [None, Some(Vec3::new(-0.15, 0.8, -0.2))],
+        grip: None,
     });
     kit.part(table, "Table top", Cuboid::new(1.6, 0.08, 0.9), &wood, Transform::from_xyz(0.0, 0.74, 0.0), Some(Collider::cuboid(1.6, 0.08, 0.9)));
     for (x, z) in [(-0.7, -0.35), (0.7, -0.35), (-0.7, 0.35), (0.7, 0.35)] {
@@ -758,6 +763,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -0.15),
         face: Some(PI),
         hands: [None, None],
+        grip: None,
     });
     kit.part(chair, "Chair seat", Cuboid::new(0.5, 0.06, 0.5), &wood, Transform::from_xyz(0.0, 0.45, 0.0), None);
     kit.part(chair, "Chair back", Cuboid::new(0.5, 0.55, 0.06), &wood, Transform::from_xyz(0.0, 0.75, 0.22), Some(Collider::cuboid(0.5, 0.55, 0.06)));
@@ -775,6 +781,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -0.85),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     kit.part(anvil, "Anvil stump", Cylinder::new(0.3, 0.45), &dark, Transform::from_xyz(0.0, 0.225, 0.0), Some(Collider::cylinder(0.3, 0.45)));
     kit.part(anvil, "Anvil body", Cuboid::new(0.7, 0.22, 0.28), &metal, Transform::from_xyz(0.0, 0.56, 0.0), Some(Collider::cuboid(0.7, 0.22, 0.28)));
@@ -790,6 +797,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -0.7),
         face: None,
         hands: [None, Some(Vec3::new(0.0, 1.1, 0.0))],
+        grip: None,
     });
     kit.part(torch, "Torch pole", Cylinder::new(0.04, 1.5), &dark, Transform::from_xyz(0.0, 0.75, 0.0), Some(Collider::cylinder(0.04, 1.5)));
     let flame_entity = kit.part(torch, "Torch flame", Sphere::new(0.11), &flame, Transform::from_xyz(0.0, 1.6, 0.0), None);
@@ -813,7 +821,8 @@ fn spawn_interactables(kit: &mut Kit) {
         looping: false,
         stand: Vec3::new(0.0, 0.0, -0.75),
         face: None,
-        hands: [None, Some(Vec3::new(0.0, 1.05, -0.12))],
+        hands: [None, Some(Vec3::new(0.0, 0.62, 0.0))],
+        grip: Some("Lever arm"),
     });
     kit.part(lever, "Lever base", Cuboid::new(0.5, 0.5, 0.4), &stone, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(0.5, 0.5, 0.4)));
     let arm = kit
@@ -838,6 +847,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -1.3),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     kit.part(well, "Well ring", Cylinder::new(0.9, 0.8), &stone, Transform::from_xyz(0.0, 0.4, 0.0), Some(Collider::cylinder(0.9, 0.8)));
     kit.part(well, "Well water", Circle::new(0.75), &water, Transform::from_xyz(0.0, 0.81, 0.0).with_rotation(Quat::from_rotation_x(-FRAC_PI_2)), None);
@@ -856,6 +866,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -1.0),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     kit.part(tree, "Tree trunk", Cylinder::new(0.32, 3.2), &dark, Transform::from_xyz(0.0, 1.6, 0.0), Some(Collider::cylinder(0.32, 3.2)));
     kit.part(tree, "Tree canopy", Sphere::new(1.6), &leaves, Transform::from_xyz(0.0, 3.8, 0.0), None);
@@ -873,6 +884,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -1.3),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     plot(kit, crops, Vec2::new(2.0, 2.0));
     for ix in 0..3 {
@@ -890,6 +902,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -1.0),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     plot(kit, watering, Vec2::new(1.2, 1.2));
     kit.part(watering, "Bucket", Cylinder::new(0.16, 0.3), &wood, Transform::from_xyz(0.35, 0.15, -0.35), None);
@@ -902,6 +915,7 @@ fn spawn_interactables(kit: &mut Kit) {
         stand: Vec3::new(0.0, 0.0, -1.3),
         face: None,
         hands: [None, None],
+        grip: None,
     });
     plot(kit, seeds, Vec2::new(2.0, 2.0));
     kit.part(seeds, "Seed sack", Sphere::new(0.2), &straw, Transform::from_xyz(1.2, 0.18, -0.9), None);
