@@ -12,6 +12,12 @@
 //! - hand: away from its fully weighted `HandTargets` point, inside a prop;
 //! - body: an arm inside the torso / head / opposite thigh, or the legs crossing
 //!   (`motion::body` capsules, the same ones `compose` resolves).
+//!
+//! Window diagnostics go to the same log (character `window`): frame hitches, clicks, focus,
+//! resize and occlusion changes, cursor capture toggles, and shader pipeline compile bursts
+//! (the render world publishes how many pipelines are still compiling). They tell a stalled
+//! frame apart from frames that render without some passes.
+use super::camera::CursorCapture;
 use super::select::HandTargets;
 use super::{Action, Mover, Phys, Player};
 use crate::motion::bank::PoseBank;
@@ -19,10 +25,14 @@ use crate::motion::body::Body;
 use crate::motion::{Rig, RigBone};
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy::render::render_resource::PipelineCache;
+use bevy::render::{Render, RenderApp};
 use bevy::text::FontSize;
 use bevy::transform::TransformSystems;
+use bevy::window::{WindowFocused, WindowOccluded, WindowResized};
 use std::collections::{HashMap, VecDeque};
 use std::io::Write;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 /// Bend smaller than this (deg) has no meaningful side.
 const MIN_FLEX: f32 = 10.0;
@@ -49,13 +59,89 @@ const RECENT: f32 = 5.0;
 /// Natural elbow direction in model space for the left arm (x mirrored for the right).
 const ELBOW_OUT: Vec3 = Vec3::new(0.5, -0.6, -0.6);
 
+/// Real frame time (s) above which a frame counts as a hitch.
+const HITCH: f32 = 0.08;
+/// Shader pipelines still compiling, published by the render world every frame.
+static WAITING_PIPELINES: AtomicUsize = AtomicUsize::new(0);
+
 const LOG_PATH: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/../../staging/relations.log");
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<Monitor>()
         .add_systems(Startup, spawn_panel)
-        .add_systems(Update, toggle)
+        .add_systems(Update, (toggle, window_events))
         .add_systems(PostUpdate, measure.after(TransformSystems::Propagate));
+    if let Some(render) = app.get_sub_app_mut(RenderApp) {
+        render.add_systems(Render, publish_pipelines);
+    }
+}
+
+fn publish_pipelines(cache: Option<Res<PipelineCache>>) {
+    if let Some(cache) = cache {
+        WAITING_PIPELINES.store(cache.waiting_pipelines().count(), Ordering::Relaxed);
+    }
+}
+
+/// What `window_events` saw last frame.
+#[derive(Default)]
+struct WindowWatch {
+    captured: Option<bool>,
+    /// When the current pipeline compile burst started (s) and its peak size.
+    compiling: Option<(f32, usize)>,
+}
+
+#[allow(clippy::too_many_arguments)]
+fn window_events(
+    time: Res<Time>,
+    real: Res<Time<Real>>,
+    mouse: Res<ButtonInput<MouseButton>>,
+    capture: Res<CursorCapture>,
+    mut focused: MessageReader<WindowFocused>,
+    mut resized: MessageReader<WindowResized>,
+    mut occluded: MessageReader<WindowOccluded>,
+    mut monitor: ResMut<Monitor>,
+    mut watch: Local<WindowWatch>,
+) {
+    let now = time.elapsed_secs();
+    let mut lines = Vec::new();
+    let dt = real.delta_secs();
+    if dt > HITCH {
+        lines.push(format!("hitch - {dt:.3}"));
+    }
+    for button in [MouseButton::Left, MouseButton::Right] {
+        if mouse.just_pressed(button) {
+            lines.push(format!("click_{button:?} - {}", capture.captured as u8));
+        }
+    }
+    for e in focused.read() {
+        lines.push(format!("focus - {}", e.focused as u8));
+    }
+    for e in resized.read() {
+        lines.push(format!("resize - {:.0}x{:.0}", e.width, e.height));
+    }
+    for e in occluded.read() {
+        lines.push(format!("occluded - {}", e.occluded as u8));
+    }
+    if watch.captured != Some(capture.captured) {
+        watch.captured = Some(capture.captured);
+        lines.push(format!("capture - {}", capture.captured as u8));
+    }
+    let waiting = WAITING_PIPELINES.load(Ordering::Relaxed);
+    match (watch.compiling, waiting) {
+        (None, n) if n > 0 => {
+            watch.compiling = Some((now, n));
+            lines.push(format!("pipelines_start - {n}"));
+        }
+        (Some((start, peak)), 0) => {
+            watch.compiling = None;
+            lines.push(format!("pipelines_done - {:.3} peak={peak}", now - start));
+        }
+        (Some((start, peak)), n) => watch.compiling = Some((start, peak.max(n))),
+        _ => {}
+    }
+    for line in lines {
+        monitor.write(&format!("{now:.2} window {line} - - -"));
+    }
 }
 
 #[derive(Resource, Default)]
