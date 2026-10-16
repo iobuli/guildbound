@@ -1,7 +1,13 @@
 //! Kinematic capsule controller in `FixedUpdate / PlaySet::Move` using Avian `MoveAndSlide`:
 //! ground/air modes, snappy accel/brake (Feel), turn rate, coyote time, variable jump, gravity,
-//! ground snap + slope limit, step-up, `Mover.external` knockback decay, `root_motion`,
-//! `move_scale`, `face`. Computes `Mover.accel` (smoothed), `landing`, `grounded`, `air_time`.
+//! slope limit, `Mover.external` knockback decay, `root_motion`, `move_scale`, `face`.
+//! Computes `Mover.accel` (smoothed), `landing`, `grounded`, `air_time`.
+//!
+//! Support: the capsule floats `STEP_CLEARANCE` above the soles and only meets walls. A sphere
+//! probe (`find_support`) finds the ground under the body each tick and sets its height, so
+//! steps up to `STEP_HEIGHT` and drops down to `STEP_DOWN` keep the body grounded. Height jumps
+//! the slope doesn't explain are steps: the body snaps, and `step_offset` eases the drawn root
+//! over them (critically damped) so stairs read as steps, not teleports.
 //! Does NOT touch `Mover.phase` (select owns it). Swim/Climb/Ledge/Ragdoll
 //! modes are moved by `traverse` / `ragdoll` instead (skip them here).
 //!
@@ -17,7 +23,10 @@
 //! the frame's LAST fixed tick.
 //!
 //! Characters whose model is not bound yet (no `motion::Rig`) are drawn as gizmo capsules.
-use super::{CAPSULE_LENGTH, CAPSULE_RADIUS, Feel, Intent, MoveMode, Mover, Npc, Phys, PlaySet, Player};
+use super::{
+    CAPSULE_LENGTH, CAPSULE_RADIUS, Feel, HALF_HEIGHT, Intent, MoveMode, Mover, Npc, Phys, PlaySet, Player,
+    STEP_CLEARANCE,
+};
 use crate::motion::Rig;
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -30,11 +39,19 @@ pub const JUMP_BUFFER: f32 = 0.12;
 pub const JUMP_CUT: f32 = 0.45;
 /// Steepest walkable slope (deg).
 pub const SLOPE_LIMIT_DEG: f32 = 50.0;
-/// Highest ledge the controller steps onto without a mantle (m).
-pub const STEP_HEIGHT: f32 = 0.35;
-/// Ground snap reach while grounded (m) and the touch-down probe while falling.
-pub const SNAP_DISTANCE: f32 = 0.3;
-const GROUND_PROBE: f32 = 0.05;
+/// Highest step the body walks onto without a mantle (m): the capsule's clearance.
+pub const STEP_HEIGHT: f32 = STEP_CLEARANCE;
+/// How far the ground may drop under the soles while staying grounded (stairs down, kerbs).
+pub const STEP_DOWN: f32 = 0.45;
+/// Touch-down tolerance under the soles while airborne.
+const LAND_TOLERANCE: f32 = 0.05;
+/// Support probe radius: how far the body's centre may hang past an edge and still stand.
+pub const SUPPORT_RADIUS: f32 = 0.15;
+/// Height changes the ground slope doesn't explain, above this (m), are steps.
+const STEP_JUMP_MIN: f32 = 0.03;
+/// Smoothing time (s) of the drawn root over a step.
+const STEP_SMOOTH_TIME: f32 = 0.07;
+const MAX_STEP_OFFSET: f32 = 0.6;
 /// Knockback half-lives (s) on the ground and in the air.
 pub const EXTERNAL_HALF_LIFE_GROUND: f32 = 0.25;
 pub const EXTERNAL_HALF_LIFE_AIR: f32 = 1.0;
@@ -83,6 +100,9 @@ struct ControllerState {
     jump_spent: bool,
     /// The controller moved this character last tick (false after traverse/ragdoll owned it).
     owned: bool,
+    /// Drawn root height minus the supported height (m), and its rate: eases out after a step.
+    step_offset: f32,
+    step_velocity: f32,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -186,13 +206,70 @@ pub fn walkable(normal: Vec3) -> bool {
     normal.is_finite() && normal.y >= SLOPE_LIMIT_DEG.to_radians().cos()
 }
 
-/// Horizontal velocity lifted onto the ground plane (keeps horizontal speed; slopes add y).
-pub fn slope_tangent(horizontal: Vec3, normal: Vec3) -> Vec3 {
-    if !walkable(normal) {
-        return horizontal.with_y(0.0);
+/// The part of a ground height change `rise` over the horizontal move `moved` that the ground
+/// plane (`normal`) doesn't explain: a step, or 0 when it is just the slope.
+pub fn step_residual(rise: f32, moved: Vec3, normal: Vec3) -> f32 {
+    let n = if walkable(normal) { normal } else { Vec3::Y };
+    let r = rise + (n.x * moved.x + n.z * moved.z) / n.y;
+    if r.is_finite() && r.abs() > STEP_JUMP_MIN { r } else { 0.0 }
+}
+
+/// Critically damped ease of `x` (rate `v`) toward 0, stable for any `dt` (Unity's SmoothDamp).
+pub fn ease_to_zero(x: f32, v: f32, smooth_time: f32, dt: f32) -> (f32, f32) {
+    if !(x.is_finite() && v.is_finite()) {
+        return (0.0, 0.0);
     }
-    let y = -(normal.x * horizontal.x + normal.z * horizontal.z) / normal.y;
-    Vec3::new(horizontal.x, y, horizontal.z)
+    let dt = dt.max(0.0);
+    let omega = 2.0 / smooth_time.max(1e-4);
+    let e = omega * dt;
+    let decay = 1.0 / (1.0 + e + 0.48 * e * e + 0.235 * e * e * e);
+    let t = (v + omega * x) * dt;
+    ((x + t) * decay, (v - omega * t) * decay)
+}
+
+/// Walkable ground under a body.
+#[derive(Clone, Copy, Debug)]
+struct Support {
+    height: f32,
+    normal: Vec3,
+}
+
+/// Ground under a body whose capsule centre is `center`, from `STEP_HEIGHT` above the soles down
+/// to `below` under them. A sphere probe takes the highest ground within `SUPPORT_RADIUS` (the
+/// body can stand with its centre past an edge). An edge or corner contact counts when the face
+/// just inside it is walkable; a ray straight down is the fallback when the sphere only finds
+/// steep ground.
+fn find_support(query: &SpatialQuery, center: Vec3, below: f32, filter: &SpatialQueryFilter) -> Option<Support> {
+    let feet = center.y - HALF_HEIGHT;
+    let accept = |height: f32, normal: Vec3| {
+        (height.is_finite()
+            && height >= feet - below - 1e-3
+            && height <= feet + STEP_HEIGHT + 0.05
+            && walkable(normal))
+        .then(|| Support {
+            height,
+            normal: normal.normalize(),
+        })
+    };
+    let probe = Collider::sphere(SUPPORT_RADIUS);
+    let config = ShapeCastConfig::from_max_distance(HALF_HEIGHT - SUPPORT_RADIUS + below);
+    if let Some(hit) = query.cast_shape(&probe, center, Quat::IDENTITY, Dir3::NEG_Y, &config, filter) {
+        if let Some(support) = accept(hit.point1.y, hit.normal1) {
+            return Some(support);
+        }
+        if hit.normal1.y > 0.02
+            && let Ok(inward) = Dir3::new(-hit.normal1.with_y(0.0))
+        {
+            let origin = hit.point1 + inward * 0.03 + Vec3::Y * 0.1;
+            if let Some(face) = query.cast_ray(origin, Dir3::NEG_Y, 0.2, true, filter)
+                && let Some(support) = accept(origin.y - face.distance, face.normal)
+            {
+                return Some(support);
+            }
+        }
+    }
+    let ray = query.cast_ray(center, Dir3::NEG_Y, HALF_HEIGHT + below, true, filter)?;
+    accept(center.y - ray.distance, ray.normal)
 }
 
 fn latch_jump(mut q: Query<(&Intent, &mut ControllerState)>) {
@@ -214,23 +291,19 @@ fn movement_filter(entity: Entity) -> SpatialQueryFilter {
     SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([entity])
 }
 
-/// One move-and-slide call. Steep (non-walkable) slopes are treated as vertical walls while
-/// grounded, so the capsule never creeps up them; every non-walkable hit normal is recorded.
-#[allow(clippy::too_many_arguments)]
+/// One move-and-slide call. While grounded the floating capsule only meets things taller than a
+/// step, so every upward-facing hit is flattened into a vertical wall (the support probe owns the
+/// height); in the air only steep hits are walls. Every wall normal is recorded.
 fn slide(
     mas: &MoveAndSlide,
     collider: &Collider,
     from: Vec3,
     velocity: Vec3,
     dt: f32,
-    ground_plane: Option<Vec3>,
     grounded: bool,
     filter: &SpatialQueryFilter,
 ) -> Step {
-    let mut config = MoveAndSlideConfig::default();
-    if let Some(n) = ground_plane.and_then(|n| Dir3::new(n).ok()) {
-        config.planes.push(n);
-    }
+    let config = MoveAndSlideConfig::default();
     let mut walls = Vec::new();
     let out = mas.move_and_slide(
         collider,
@@ -242,14 +315,14 @@ fn slide(
         filter,
         |hit| {
             let n = hit.normal.as_vec3();
-            if !walkable(n) {
-                if grounded
-                    && n.y > 0.0
-                    && let Ok(flat) = Dir3::new(n.with_y(0.0))
-                {
-                    *hit.normal = flat;
-                }
-                walls.push(hit.normal.as_vec3());
+            if grounded
+                && n.y > 0.0
+                && let Ok(flat) = Dir3::new(n.with_y(0.0))
+            {
+                *hit.normal = flat;
+                walls.push(flat.as_vec3());
+            } else if !walkable(n) {
+                walls.push(n);
             }
             MoveAndSlideHitResponse::Accept
         },
@@ -258,39 +331,6 @@ fn slide(
         position: if out.position.is_finite() { out.position } else { from },
         walls,
     }
-}
-
-/// Quake-style step-up: lift, move horizontally, drop back onto walkable ground.
-fn try_step_up(
-    mas: &MoveAndSlide,
-    collider: &Collider,
-    from: Vec3,
-    horizontal: Vec3,
-    dt: f32,
-    skin: f32,
-    filter: &SpatialQueryFilter,
-) -> Option<Vec3> {
-    let lift = mas
-        .cast_move(collider, from, Quat::IDENTITY, Vec3::Y * STEP_HEIGHT, skin, filter)
-        .map_or(STEP_HEIGHT, |h| h.distance);
-    if lift < 0.05 {
-        return None;
-    }
-    let raised = from + Vec3::Y * lift;
-    let moved = slide(mas, collider, raised, horizontal.with_y(0.0), dt, None, true, filter);
-    let drop = mas.cast_move(
-        collider,
-        moved.position,
-        Quat::IDENTITY,
-        Vec3::NEG_Y * (lift + GROUND_PROBE),
-        skin,
-        filter,
-    )?;
-    if !walkable(drop.normal1) {
-        return None;
-    }
-    let landed = moved.position - Vec3::Y * drop.distance;
-    (landed.is_finite() && landed.y >= from.y - 0.02 && landed.y <= from.y + STEP_HEIGHT + 0.02).then_some(landed)
 }
 
 #[allow(clippy::type_complexity)]
@@ -312,7 +352,6 @@ fn move_characters(
     let dt = time.delta_secs().clamp(1e-4, 1.0 / 30.0);
     // `root_motion` is a per-frame request: clear it after the frame's last fixed tick.
     let last_tick_of_frame = time.overstep() < time.timestep();
-    let skin = mas.length_unit.0 * MoveAndSlideConfig::default().skin_width;
     let feel = &*feel;
 
     for (entity, collider, mut transform, mut mover, intent, mut state, teleport) in &mut bodies {
@@ -321,7 +360,7 @@ fn move_characters(
         {
             commands.entity(entity).remove::<Teleport>();
             if tp.feet.is_finite() && tp.yaw.is_finite() {
-                transform.translation = tp.feet + Vec3::Y * super::HALF_HEIGHT;
+                transform.translation = tp.feet + Vec3::Y * HALF_HEIGHT;
                 transform.rotation = Quat::from_rotation_y(tp.yaw);
                 *mover = Mover {
                     yaw: tp.yaw,
@@ -346,16 +385,19 @@ fn move_characters(
             continue;
         }
 
-        let start = transform.translation;
-        if !start.is_finite() {
-            continue;
-        }
         if !state.owned {
             // Taking over from traverse / ragdoll / spawn: continue with their velocity.
             let v = if mover.velocity.is_finite() { mover.velocity } else { Vec3::ZERO };
             state.locomotion = v.with_y(0.0);
             state.prev_velocity = v.with_y(0.0);
+            state.step_offset = 0.0;
+            state.step_velocity = 0.0;
             state.owned = true;
+        }
+        // Physics runs on the supported height; `step_offset` only shifts the drawn root.
+        let start = transform.translation - Vec3::Y * state.step_offset;
+        if !start.is_finite() {
+            continue;
         }
         let was_grounded = mover.grounded;
         let mut grounded = was_grounded;
@@ -449,46 +491,36 @@ fn move_characters(
             vy = (vy - feel.gravity.max(0.0) * dt).max(-MAX_FALL_SPEED);
         }
 
-        // --- Move.
+        // --- Move: horizontal on the ground (the support sets the height), ballistic in the air.
         let horizontal = state.locomotion + external.with_y(0.0) + root_motion.with_y(0.0);
-        let mut velocity = if grounded {
-            slope_tangent(horizontal, ground_normal)
-        } else {
-            horizontal + Vec3::Y * vy
-        };
+        let mut velocity = if grounded { horizontal } else { horizontal + Vec3::Y * vy };
         velocity.y += root_motion.y;
         let filter = movement_filter(entity);
-        let plane = grounded.then_some(ground_normal);
-        let Step { mut position, mut walls } = slide(&mas, collider, start, velocity, dt, plane, grounded, &filter);
+        let Step { mut position, walls } = slide(&mas, collider, start, velocity, dt, grounded, &filter);
 
-        // --- Step-up when blocked on the ground.
-        let wanted_h = Vec2::new(velocity.x, velocity.z) * dt;
-        let achieved_h = Vec2::new(position.x - start.x, position.z - start.z);
-        let mut stepped = false;
-        if grounded
-            && !walls.is_empty()
-            && wanted_h.length() > 1e-3
-            && achieved_h.length() < wanted_h.length() * 0.75
-            && let Some(up) = try_step_up(&mas, collider, start, velocity, dt, skin, &filter)
-            && Vec2::new(up.x - start.x, up.z - start.z).length() > achieved_h.length() + 1e-3
-        {
-            position = up;
-            stepped = true;
-            walls.clear();
-        }
-
-        // --- Ground probe + snap.
+        // --- Support: stand on the ground under the body; steps become a drawn offset.
         let ascending = vy > 0.01 || root_motion.y > 0.1;
-        let reach = if (grounded || stepped) && !ascending { SNAP_DISTANCE } else { GROUND_PROBE };
+        let below = if grounded && !ascending { STEP_DOWN } else { LAND_TOLERANCE };
         let mut now_grounded = false;
         let mut normal = Vec3::Y;
-        if !ascending
-            && let Some(hit) = mas.cast_move(collider, position, Quat::IDENTITY, Vec3::NEG_Y * reach, skin, &filter)
-            && walkable(hit.normal1)
-        {
-            position.y -= hit.distance;
+        if !ascending && let Some(support) = find_support(&mas.spatial_query, position, below, &filter) {
+            let supported = support.height + HALF_HEIGHT;
+            if grounded {
+                let step = step_residual(supported - position.y, position - start, ground_normal);
+                state.step_offset = (state.step_offset - step).clamp(-MAX_STEP_OFFSET, MAX_STEP_OFFSET);
+            }
+            position.y = supported;
             now_grounded = true;
-            normal = hit.normal1.normalize_or(Vec3::Y);
+            normal = support.normal;
+        }
+        if now_grounded {
+            (state.step_offset, state.step_velocity) =
+                ease_to_zero(state.step_offset, state.step_velocity, STEP_SMOOTH_TIME, dt);
+        } else {
+            // Airborne bodies are drawn where they are.
+            position.y += state.step_offset;
+            state.step_offset = 0.0;
+            state.step_velocity = 0.0;
         }
 
         // --- Vertical bookkeeping, landing.
@@ -545,7 +577,7 @@ fn move_characters(
             mover.root_motion = Vec3::ZERO;
         }
         if position.is_finite() {
-            transform.translation = position;
+            transform.translation = position + Vec3::Y * state.step_offset;
         }
         transform.rotation = Quat::from_rotation_y(mover.yaw);
     }
@@ -569,7 +601,7 @@ fn draw_unbound_capsules(
         gizmos.primitive_3d(&capsule, Isometry3d::new(p, transform.rotation), color);
         let chest = p + Vec3::Y * 0.35;
         gizmos.arrow(chest, chest + mover.forward() * 0.7, color);
-        let feet = p - Vec3::Y * super::HALF_HEIGHT;
+        let feet = p - Vec3::Y * HALF_HEIGHT;
         let ring = if mover.grounded { color } else { Color::srgb(1.0, 0.9, 0.2) };
         gizmos.circle(Isometry3d::new(feet + Vec3::Y * 0.02, Quat::from_rotation_x(-PI / 2.0)), CAPSULE_RADIUS, ring);
     }
@@ -646,9 +678,45 @@ mod tests {
         assert_eq!(landing_impact(f32::NAN), 0.0);
         assert!(walkable(Vec3::Y));
         assert!(!walkable(Vec3::new(1.0, 0.5, 0.0).normalize()));
-        let n = Vec3::new(0.3, 1.0, 0.1).normalize();
-        let t = slope_tangent(Vec3::new(2.0, 0.0, -1.0), n);
-        assert!(t.dot(n).abs() < 1e-5);
-        assert_eq!((t.x, t.z), (2.0, -1.0));
+    }
+
+    #[test]
+    fn slopes_are_not_steps() {
+        // Walking 0.2 m along +x up a slope rising 0.5 m per metre: rise explained, no step.
+        let n = Vec3::new(-0.5, 1.0, 0.0).normalize();
+        let moved = Vec3::new(0.2, 0.0, 0.0);
+        assert_eq!(step_residual(0.1, moved, n), 0.0);
+        // A 0.25 m stair on flat ground is a step; so is one on top of the slope's own rise.
+        assert!((step_residual(0.25, moved, Vec3::Y) - 0.25).abs() < 1e-6);
+        assert!((step_residual(0.35, moved, n) - 0.25).abs() < 1e-5);
+        assert!((step_residual(-0.25, moved, Vec3::Y) + 0.25).abs() < 1e-6);
+        // Tiny residuals (terrain seams) are continuous ground.
+        assert_eq!(step_residual(0.01, moved, Vec3::Y), 0.0);
+        assert_eq!(step_residual(f32::NAN, moved, Vec3::Y), 0.0);
+    }
+
+    #[test]
+    fn step_offset_eases_out_smoothly() {
+        let dt = 1.0 / 64.0;
+        let (mut x, mut v) = (-0.25, 0.0);
+        let mut prev = x;
+        for i in 0..64 {
+            (x, v) = ease_to_zero(x, v, STEP_SMOOTH_TIME, dt);
+            assert!(x.is_finite() && x <= 1e-4, "overshoot at tick {i}: {x}");
+            assert!(x >= prev - 1e-6, "not monotonic at tick {i}");
+            prev = x;
+        }
+        assert!(x.abs() < 1e-3, "{x}");
+        // Frame-rate independent within a few millimetres, safe with NaN.
+        let mut coarse = (-0.25, 0.0);
+        let mut fine = (-0.25, 0.0);
+        for _ in 0..4 {
+            coarse = ease_to_zero(coarse.0, coarse.1, STEP_SMOOTH_TIME, 1.0 / 32.0);
+        }
+        for _ in 0..16 {
+            fine = ease_to_zero(fine.0, fine.1, STEP_SMOOTH_TIME, 1.0 / 128.0);
+        }
+        assert!((coarse.0 - fine.0).abs() < 0.01, "{coarse:?} {fine:?}");
+        assert_eq!(ease_to_zero(f32::NAN, 0.0, 0.1, dt), (0.0, 0.0));
     }
 }

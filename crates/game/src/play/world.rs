@@ -116,6 +116,14 @@ pub fn ground_normal(x: f32, z: f32) -> Vec3 {
     .normalize_or(Vec3::Y)
 }
 
+/// Low-poly stone of radius `s` and a collider that matches its faces exactly (a sphere collider
+/// would bulge above the flat facets, leaving feet floating).
+fn stone_shape(s: f32) -> (Mesh, Collider) {
+    let mesh = Sphere::new(s).mesh().ico(1).unwrap_or_else(|_| Sphere::new(s).into());
+    let collider = Collider::convex_hull_from_mesh(&mesh).unwrap_or_else(|| Collider::sphere(s));
+    (mesh, collider)
+}
+
 fn hash2(x: i32, z: i32) -> f32 {
     let mut h = (x as u32).wrapping_mul(0x27D4_EB2D) ^ (z as u32).wrapping_mul(0x1656_67B1) ^ 0xA511_E9B3;
     h ^= h >> 15;
@@ -501,13 +509,8 @@ fn spawn_pond(kit: &mut Kit) {
         let y = ground_height(x, z);
         if i % 3 == 0 {
             let s = 0.3 + hash2(i, 3) * 0.3;
-            kit.solid(
-                "Bank stone",
-                Sphere::new(s).mesh().ico(1).unwrap_or_else(|_| Sphere::new(s).into()),
-                &stone,
-                Transform::from_xyz(x, y + s * 0.3, z),
-                Some(Collider::sphere(s)),
-            );
+            let (mesh, collider) = stone_shape(s);
+            kit.solid("Bank stone", mesh, &stone, Transform::from_xyz(x, y + s * 0.3, z), Some(collider));
         } else {
             kit.solid(
                 "Reeds",
@@ -678,12 +681,13 @@ fn spawn_props(kit: &mut Kit) {
             kit.part(trunk, "Tree canopy", Sphere::new(s), &leaves, Transform::from_xyz(0.0, 1.5 + s * 0.6, 0.0), None);
         } else {
             let s = 0.5 + hash2(i, 9) * 1.1;
+            let (mesh, collider) = stone_shape(s);
             kit.solid(
                 "Rock",
-                Sphere::new(s).mesh().ico(1).unwrap_or_else(|_| Sphere::new(s).into()),
+                mesh,
                 &rock,
                 Transform::from_xyz(x, y + s * 0.25, z).with_rotation(Quat::from_rotation_y(hash2(i, 2) * PI)),
-                Some(Collider::sphere(s)),
+                Some(collider),
             );
         }
     }
@@ -756,7 +760,7 @@ fn spawn_interactables(kit: &mut Kit) {
         hands: [None, None],
     });
     kit.part(chair, "Chair seat", Cuboid::new(0.5, 0.06, 0.5), &wood, Transform::from_xyz(0.0, 0.45, 0.0), None);
-    kit.part(chair, "Chair back", Cuboid::new(0.5, 0.55, 0.06), &wood, Transform::from_xyz(0.0, 0.75, 0.22), Some(Collider::cuboid(0.5, 1.0, 0.06)));
+    kit.part(chair, "Chair back", Cuboid::new(0.5, 0.55, 0.06), &wood, Transform::from_xyz(0.0, 0.75, 0.22), Some(Collider::cuboid(0.5, 0.55, 0.06)));
     for (x, z) in [(-0.21, -0.21), (0.21, -0.21), (-0.21, 0.21), (0.21, 0.21)] {
         kit.part(chair, "Chair leg", Cuboid::new(0.05, 0.45, 0.05), &dark, Transform::from_xyz(x, 0.225, z), None);
     }
@@ -787,7 +791,7 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, Some(Vec3::new(0.0, 1.1, 0.0))],
     });
-    kit.part(torch, "Torch pole", Cylinder::new(0.04, 1.5), &dark, Transform::from_xyz(0.0, 0.75, 0.0), Some(Collider::cylinder(0.05, 1.5)));
+    kit.part(torch, "Torch pole", Cylinder::new(0.04, 1.5), &dark, Transform::from_xyz(0.0, 0.75, 0.0), Some(Collider::cylinder(0.04, 1.5)));
     let flame_entity = kit.part(torch, "Torch flame", Sphere::new(0.11), &flame, Transform::from_xyz(0.0, 1.6, 0.0), None);
     kit.commands.entity(flame_entity).insert((
         NotShadowCaster,

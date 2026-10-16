@@ -87,10 +87,13 @@ pub enum Phys {
 }
 
 /// Capsule dimensions shared by spawn, controller and select (UAL2 mannequin ≈ 1.75 m).
+/// The capsule floats `STEP_CLEARANCE` above the soles: the controller holds the body up on a
+/// ground probe, so stairs, kerbs and rocks lower than that never touch the collider.
 pub const CAPSULE_RADIUS: f32 = 0.3;
-pub const CAPSULE_LENGTH: f32 = 1.15;
+pub const STEP_CLEARANCE: f32 = 0.35;
+pub const CAPSULE_LENGTH: f32 = 1.75 - STEP_CLEARANCE - 2.0 * CAPSULE_RADIUS;
 /// Distance from capsule centre to the soles.
-pub const HALF_HEIGHT: f32 = CAPSULE_RADIUS + CAPSULE_LENGTH * 0.5;
+pub const HALF_HEIGHT: f32 = STEP_CLEARANCE + CAPSULE_RADIUS + CAPSULE_LENGTH * 0.5;
 
 #[derive(Component)]
 pub struct Player;

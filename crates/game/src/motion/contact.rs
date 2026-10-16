@@ -290,7 +290,19 @@ pub fn apply(
             if normal.y < MIN_GROUND_NORMAL_Y {
                 continue;
             }
-            let correction = hit.point.y + ankle_height + lift - ankle.y;
+            let mut correction = hit.point.y + ankle_height + lift - ankle.y;
+            // The toes must not sink either (stair nosings, rock lips): the end over higher ground
+            // decides, so the foot rests on the ball with the heel hanging, as on real stairs.
+            let ball = world0[bones.ball[side]].translation;
+            let ball_height = rest[bones.ball[side]].translation.y * scale;
+            let ball_lift = (ball.y - floor - ball_height).max(0.0);
+            if let Some(toe) = ground(Vec3::new(ball.x, probe_y.max(ball.y), ball.z))
+                && toe.point.is_finite()
+                && toe.normal.is_finite()
+                && toe.normal.normalize_or(Vec3::Y).y >= MIN_GROUND_NORMAL_Y
+            {
+                correction = correction.max(toe.point.y + ball_height + ball_lift - ball.y);
+            }
             let reach = if correction >= 0.0 {
                 params.reach_up
             } else {
