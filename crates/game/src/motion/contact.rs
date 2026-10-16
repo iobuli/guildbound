@@ -78,7 +78,7 @@ const MAX_DROP: f32 = 0.6;
 const MAX_RAISE: f32 = 0.05;
 /// Limbs never straighten past this share of their length: a locked knee or elbow snaps.
 const MAX_EXTENSION: f32 = 0.999;
-/// How hard (m) knees lean toward the toes and elbows toward out-down-back, so a near-straight
+/// How hard (m) knees lean toward the body's front and elbows toward out-down-back, so a near-straight
 /// limb keeps a stable bend side instead of flipping with noise.
 const KNEE_BIAS: f32 = 0.04;
 const ELBOW_BIAS: f32 = 0.04;
@@ -122,7 +122,8 @@ fn solve(root: Vec3, target: Vec3, pole: Vec3, fallback: Vec3, lengths: [f32; 2]
 
 /// Bend-side pole for a limb from `root` through `mid` toward `target`: the animated bend,
 /// with any part pointing against `natural` removed (knees never fold backwards, elbows never
-/// inwards) and `natural · bias` added so a straight limb keeps its side.
+/// inwards), plus `natural · bias` fading out as the bend grows, so a near-straight limb keeps
+/// its side while a clearly bent one follows the animation exactly.
 fn bend_pole(root: Vec3, mid: Vec3, target: Vec3, natural: Vec3, bias: f32) -> Vec3 {
     let axis = (target - root).normalize_or(Vec3::NEG_Y);
     let off = |v: Vec3| v - axis * v.dot(axis);
@@ -132,7 +133,8 @@ fn bend_pole(root: Vec3, mid: Vec3, target: Vec3, natural: Vec3, bias: f32) -> V
     if against < 0.0 {
         bend -= natural * against;
     }
-    bend + natural * bias
+    let fade = (1.0 - bend.length() / (3.0 * bias).max(1e-6)).clamp(0.0, 1.0);
+    bend + natural * (bias * fade)
 }
 
 /// Model-space FK lifted into world space, plus helpers to edit local rotations by world deltas.
@@ -383,16 +385,17 @@ pub fn apply(
         }
     }
 
-    // 3. Legs: ankles to the planned heights, knees toward the animated knees (never behind the
-    //    toes' side), feet keep their animated world orientation, partially aligned to the ground.
+    // 3. Legs: ankles to the planned heights, knees toward the animated knees (never toward the
+    //    back of the body), feet keep their animated world orientation, partially aligned to the ground.
     if foot_w > 1e-3 {
         let world1 = frame.world(pose);
         for (side, plan) in feet.iter().enumerate() {
             let (thigh, calf, foot) = (bones.thigh[side], bones.calf[side], bones.foot[side]);
             let planted = world0[foot].translation + Vec3::Y * plan.correction;
             let target = world1[foot].translation.lerp(planted, foot_w);
-            let toes = (world1[bones.ball[side]].translation - world1[foot].translation).with_y(0.0);
-            let natural = toes.normalize_or(forward);
+            // Knees bend toward the body's front. Not the toes: in a running back-kick the foot
+            // points down and back, which flipped the knee mid-swing.
+            let natural = forward;
             let (hip, knee) = (world1[thigh].translation, world1[calf].translation);
             let pole = bend_pole(hip, knee, target, natural, KNEE_BIAS * scale);
             let Some(delta) = frame.limb(pose, &world1, [thigh, calf, foot], target, pole, natural)

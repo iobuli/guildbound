@@ -794,8 +794,8 @@ fn spawn_interactables(kit: &mut Kit) {
         track: "ual1/Idle_Torch_Loop",
         duration: 3.0,
         looping: true,
-        stand: Vec3::new(0.0, 0.0, -0.7),
-        face: None,
+        stand: Vec3::new(0.15, 0.0, -0.45),
+        face: Some(0.0),
         hands: [None, Some(Vec3::new(0.0, 1.1, 0.0))],
         grip: None,
     });
@@ -819,8 +819,8 @@ fn spawn_interactables(kit: &mut Kit) {
         track: "ual1/Interact",
         duration: 1.2,
         looping: false,
-        stand: Vec3::new(0.0, 0.0, -0.75),
-        face: None,
+        stand: Vec3::new(0.15, 0.0, -0.5),
+        face: Some(0.0),
         hands: [None, Some(Vec3::new(0.0, 0.62, 0.0))],
         grip: Some("Lever arm"),
     });

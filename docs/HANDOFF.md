@@ -88,7 +88,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 
 | Relation | Broken when |
 |---|---|
-| `knee_backward` / `elbow_inward` | flex ≥ 10° and the bend side points against natural (toes / out-down-back) with cos < −0.3 |
+| `knee_backward` / `elbow_inward` | flex ≥ 10° and the bend side points against natural (body front / out-down-back) with cos < −0.3 |
 | `knee_pop` / `elbow_pop` | the bend side turns by cos < −0.5 in one frame |
 | `foot_sink` | heel or ball more than 3 cm below the ground |
 | `foot_float` | grounded, body and foot still, lowest of heel/ball more than 5 cm above the ground |

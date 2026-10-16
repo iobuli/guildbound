@@ -5,7 +5,7 @@
 //! sound and red when broken, hand targets, and a panel for the player.
 //!
 //! Relations (thresholds below):
-//! - knee: folded behind the toes' side, or popped to the other side between frames;
+//! - knee: folded toward the back of the body, or popped to the other side between frames;
 //! - foot: heel / ball sunk into the ground, floating or sliding while planted, toes or knee
 //!   inside world geometry;
 //! - elbow: folded inwards, or popped between frames;
@@ -221,8 +221,7 @@ fn measure(
             else {
                 continue;
             };
-            let toes = (ball - ankle).with_y(0.0).normalize_or(forward);
-            let k = bend(hip, knee, ankle, toes);
+            let k = bend(hip, knee, ankle, forward);
             let mut leg_bad = false;
             if let Some(f) = bend_fault(k, mem.knee_side[side], "knee_backward", "knee_pop") {
                 faults.push((f, side, k.flex));
