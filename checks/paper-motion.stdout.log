@@ -1,6 +1,0 @@
-[reference] RPG reference: 1 clips measured; aggregate parameters only
-[ranger] loading actual male_ranger.glb; native walk; character controller, not ragdoll
-[fingers] calibrated 30 phalange joints from Ranger bind frames
-[paper_motion] 62 joints in hierarchical order; 27 mirrored pairs; canonical hip frame ready
-[ranger] 94 nodes, legs [0.41296795, 0.441849] / [0.41296795, 0.441849], sole offsets 0.08712685 / 0.08712685
-[combat] female Ranger ready: 13 fitted body parts, independent grips, disarmable sword

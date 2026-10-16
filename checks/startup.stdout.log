@@ -1,3 +1,0 @@
-TUNING kp 1500 kd 55 kb 5 kbd 0.3 substeps 12 foot_damp 40 mu 0.8 k_com 0.11 ramp 12 | mass 79.4 kg
-[anim_rig] master: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot
-[anim_rig] hero: B_Pelvis, B_Spine2, B_Head, B_L_UpperArm, B_L_Forearm, B_R_UpperArm, B_R_Forearm, B_L_Thigh, B_L_Calf, B_R_Thigh, B_R_Calf, B_L_Foot, B_R_Foot

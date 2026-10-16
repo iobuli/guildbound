@@ -1,3 +1,0 @@
-[ranger] loading actual male_ranger.glb; native walk; character controller, not ragdoll
-[ranger] 94 nodes, legs [0.41296795, 0.441849] / [0.41296795, 0.441849], sole offsets 0.08712685 / 0.08712685
-RANGER_CHECK {"elapsed_s":12.005603790283203,"frames":718,"grounded":true,"jump_height_m":1.7673896551132202,"legs_m":[[0.4129679501056671,0.4418489933013916],[0.4129679501056671,0.4418489933013916]],"max_leg_length_error_m":7.450580596923828e-7,"max_planted_anchor_error_m":0.01313446369022131,"model":"packs/npc/male_ranger.glb","straight_line_deviation_m":0.0,"walk_span_m":6.401556968688965}
