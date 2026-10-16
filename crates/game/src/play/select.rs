@@ -47,6 +47,9 @@ mod tracks {
     pub const JUMP_LOOP: &str = "ual1/Jump_Loop";
     pub const JUMP_LAND: &str = "ual1/Jump_Land";
     pub const FALL: &str = "sekiro/Falling Idle";
+    /// Running (parkour) jump: athletic leap and airborne hold.
+    pub const LEAP_START: &str = "ual2/NinjaJump_Start";
+    pub const LEAP_AIR: &str = "ual2/NinjaJump_Idle_Loop";
     pub const SWIM_IDLE: &str = "ual1/Swim_Idle_Loop";
     pub const SWIM_FWD: &str = "ual1/Swim_Fwd_Loop";
     pub const CLIMB: &str = "ual2/ClimbUp_1m";
@@ -87,6 +90,14 @@ const JUMP_START_OFFSET: f32 = 0.1;
 const JUMP_START_RATE: f32 = 1.5;
 const FALL_SPEED: f32 = -4.0;
 const FALL_AFTER: f32 = 0.6;
+/// Running jump: takeoff speed (m/s) from which the leap poses replace the standing jump, and
+/// the leap start's window, offset (just after its crouch) and rate. A leap hangs longer than a
+/// standing hop before it reads as a fall.
+const LEAP_SPEED: f32 = 3.0;
+const LEAP_START_WINDOW: f32 = 0.25;
+const LEAP_START_OFFSET: f32 = 0.2;
+const LEAP_START_RATE: f32 = 1.2;
+const LEAP_FALL_AFTER: f32 = 0.9;
 /// Landing overlay: window (s), clip offset to just before the deepest crouch, playback rate.
 const LAND_WINDOW: f32 = 0.28;
 const LAND_OFFSET: f32 = 0.08;
@@ -901,6 +912,7 @@ fn update_character(
                 | ActionKind::GetUp
                 | ActionKind::Dead
                 | ActionKind::Mantle
+                | ActionKind::Roll
         )
     });
     let foot_target = if mode == MoveMode::Ground && !full_body_action { 1.0 } else { 0.0 };
@@ -1004,17 +1016,24 @@ fn ground_targets(
 }
 
 /// Air targets: push-off (Jump_Start) early in upward flight, Jump_Loop while rising / at the
-/// apex, Falling Idle once falling fast or airborne for long.
+/// apex, Falling Idle once falling fast or airborne for long. A body that left the ground at
+/// running speed (`Mover.takeoff_speed`) leaps instead: NinjaJump_Start, then its airborne hold.
 fn air_targets(base: &mut Channel, loco: &Loco, bank: &PoseBank, mover: &Mover, velocity: Vec3) {
     let air_time = sane(mover.air_time).max(0.0);
-    let falling = velocity.y < FALL_SPEED || air_time > FALL_AFTER;
-    if velocity.y > JUMP_UP_SPEED && air_time < JUMP_START_WINDOW && bank.has(JUMP_START) {
-        let t = JUMP_START_OFFSET + air_time * JUMP_START_RATE;
-        base.want(JUMP_START, Mask::Full, Clock::Fixed(t), false, None, 1.0, 64);
-    } else if let Some(t) = if falling {
-        pick(bank, &[Some(FALL), Some(JUMP_LOOP)])
+    let leap = sane(mover.takeoff_speed) >= LEAP_SPEED && bank.has(LEAP_START) && bank.has(LEAP_AIR);
+    let (start, window, offset, rate, hang, fall_after) = if leap {
+        (LEAP_START, LEAP_START_WINDOW, LEAP_START_OFFSET, LEAP_START_RATE, LEAP_AIR, LEAP_FALL_AFTER)
     } else {
-        pick(bank, &[Some(JUMP_LOOP), Some(FALL)])
+        (JUMP_START, JUMP_START_WINDOW, JUMP_START_OFFSET, JUMP_START_RATE, JUMP_LOOP, FALL_AFTER)
+    };
+    let falling = velocity.y < FALL_SPEED || air_time > fall_after;
+    if velocity.y > JUMP_UP_SPEED && air_time < window && bank.has(start) {
+        let t = offset + air_time * rate;
+        base.want(start, Mask::Full, Clock::Fixed(t), false, None, 1.0, 64);
+    } else if let Some(t) = if falling {
+        pick(bank, &[Some(FALL), Some(hang), Some(JUMP_LOOP)])
+    } else {
+        pick(bank, &[Some(hang), Some(JUMP_LOOP), Some(FALL)])
     } {
         let rank = if t == FALL { 66 } else { 65 };
         base.want(t, Mask::Full, Clock::Free, true, None, 1.0, rank);

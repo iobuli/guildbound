@@ -116,6 +116,11 @@
       "status": "done"
     },
     {
+      "file": "play/parkour.rs",
+      "role": "graded landings: soft, momentum roll, hard land; land_* log lines",
+      "status": "done"
+    },
+    {
       "file": "play/moveset.rs",
       "role": "moveset schema and loader",
       "status": "done",
@@ -199,6 +204,16 @@
       ],
       "readers": [
         "select -> ContactRequest.root_ease -> contact"
+      ]
+    },
+    {
+      "quantity": "Mover.impact|takeoff_speed",
+      "writer": [
+        "controller"
+      ],
+      "readers": [
+        "parkour",
+        "select"
       ]
     },
     {
@@ -287,6 +302,12 @@
       "writer": [
         "body::resolve"
       ]
+    },
+    {
+      "quantity": "Action kinds Roll|HardLand",
+      "writer": [
+        "parkour (Owner::Move)"
+      ]
     }
   ],
   "data": {
@@ -299,7 +320,8 @@
     "movesets": "assets/anim/movesets/*.json (schema in play/moveset.rs; none yet)",
     "weapons": "assets/packs/weapons/*.glb",
     "feel": "profiles/feel.json",
-    "monitor_log": "staging/relations.log"
+    "monitor_log": "staging/relations.log",
+    "parkour_reference": "docs/reference/parkour_jump.md (frames pending)"
   },
   "monitor": {
     "key": "F4",

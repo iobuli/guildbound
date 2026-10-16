@@ -70,7 +70,8 @@ pub struct Monitor {
 }
 
 impl Monitor {
-    fn write(&mut self, line: &str) {
+    /// Append a line to the log (other systems use it for events, e.g. graded landings).
+    pub fn write(&mut self, line: &str) {
         if !self.opened {
             self.opened = true;
             let path = std::path::Path::new(LOG_PATH);

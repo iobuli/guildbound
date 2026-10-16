@@ -25,6 +25,7 @@ pub mod interact;
 pub mod magic;
 pub mod monitor;
 pub mod moveset;
+pub mod parkour;
 pub mod ragdoll;
 pub mod ranged;
 pub mod select;
@@ -63,6 +64,7 @@ pub fn plugin(app: &mut App) {
         tuning::plugin,
         hud::plugin,
         monitor::plugin,
+        parkour::plugin,
     ));
 }
 
@@ -179,6 +181,11 @@ pub struct Mover {
     /// Written by `controller` only; `contact` uses its per-frame change to keep the pelvis still
     /// in the world, so the visible body height has one smoother.
     pub step_ease: f32,
+    /// Downward speed (m/s) at the last touchdown. Written by `controller` only.
+    pub impact: f32,
+    /// Horizontal speed (m/s) when the body last left the ground (jump or run-off). Written by
+    /// `controller` only; `select` picks the running-jump poses from it.
+    pub takeoff_speed: f32,
 }
 
 impl Default for Mover {
@@ -201,6 +208,8 @@ impl Default for Mover {
             move_scale: 1.0,
             face: None,
             step_ease: 0.0,
+            impact: 0.0,
+            takeoff_speed: 0.0,
         }
     }
 }
@@ -257,6 +266,10 @@ pub enum ActionKind {
     Channel,
     Interact,
     Mantle,
+    /// Landing roll that carries momentum (`parkour`).
+    Roll,
+    /// Heavy landing: deep crouch, brief lock (`parkour`).
+    HardLand,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

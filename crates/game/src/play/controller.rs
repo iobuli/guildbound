@@ -532,12 +532,16 @@ fn move_characters(
             if !was_grounded {
                 let impact = -velocity.y.min(0.0);
                 mover.landing = mover.landing.max(landing_impact(impact));
+                mover.impact = impact;
             }
             vy = 0.0;
             state.jumping = false;
             state.jump_spent = false;
             mover.air_time = 0.0;
         } else {
+            if was_grounded {
+                mover.takeoff_speed = (position - start).with_y(0.0).length() / dt;
+            }
             mover.air_time += dt;
             if !grounded {
                 // Bonk on ceilings / slide on steep slopes: keep only what actually happened.

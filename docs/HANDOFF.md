@@ -36,6 +36,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/hud.rs` | Interaction prompt only | partial |
 | `play/tuning.rs` | F1 live tuning panel (Exaggeration 0.9–1.4, Arm swing 0–2), F5 saves `profiles/feel.json` | done |
 | `play/monitor.rs` | F4 joint-relation monitor + `staging/relations.log` | new |
+| `play/parkour.rs` | Graded landings: soft / momentum roll / hard land (`Owner::Move`); logs `land_*` lines | new |
 | `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`) | done, **no JSON files yet** |
 | `play/combat.rs` | Melee FSM + **only `Hit` resolver** | **stub** |
 | `play/ai.rs` | NPC brain → `Intent` | **stub** |
@@ -62,6 +63,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Mover.mode` Swim/Climb/Ledge | `traverse` | controller skips those modes |
 | `Mover.mode` Ragdoll | `ragdoll` | controller, select skip |
 | `Mover.phase` | `select` | `select` |
+| `Mover.impact`, `Mover.takeoff_speed` | `controller` | `parkour` (grade), `select` (leap poses) |
 | `Mover.step_ease` | `controller` (running total of drawn-root step easing) | `select` → `ContactRequest.root_ease` → `contact` |
 | `Mover.root_motion / move_scale / face` | the current `Action` owner | `controller` (root_motion cleared after the frame's last tick) |
 | `Mover.external` (knockback) | `combat` | `controller` decays it |
@@ -116,5 +118,6 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.
 - **D. Pose tweak tool:** `motion/tweak.rs` (F2).
+- **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 
 Rules: keep the module header docs in step with the code. Use the monitor log to back motion claims. Stop for a playtest at each milestone.
