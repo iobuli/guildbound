@@ -1,15 +1,19 @@
-//! HP and stamina: two `gbui` bars side by side above the hotbar, each with a damage trail.
-//! Reads the player's `Fighter` (written by `combat`); a bar is "checked" (themed as a warning)
-//! when its value falls under `LOW`.
+//! Vitals above the hotbar, each a `gbui` bar with a damage trail: HP and stamina (the player's
+//! `Fighter`, written by `combat`) on the top row, Battlewill and magicules (`magic::Energy`) under
+//! them. A bar is "checked" (themed as a warning) when its value falls under `LOW`.
 use super::MARGIN;
 use super::hotbar;
+use crate::play::magic::Energy;
 use crate::play::{Fighter, Player};
 use bevy::prelude::*;
 use gbui::prelude::*;
 
 /// Fraction under which a bar shows its warning state.
 const LOW: f32 = 0.3;
-const BAR_HEIGHT: f32 = 12.0;
+const BAR_HEIGHT: f32 = 11.0;
+/// Width of the vitals block (px), and the gap between its rows.
+pub const WIDTH: f32 = 560.0;
+const ROW_GAP: f32 = 5.0;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn).add_systems(Update, update);
@@ -19,6 +23,8 @@ pub fn plugin(app: &mut App) {
 enum Vital {
     Hp,
     Stamina,
+    Battlewill,
+    Magicules,
 }
 
 #[derive(Component)]
@@ -35,15 +41,21 @@ fn spawn(mut commands: Commands) {
         })
         .with_children(|row| {
             row.spawn(Node {
-                width: px(hotbar::WIDTH),
+                width: px(WIDTH),
+                flex_wrap: FlexWrap::Wrap,
                 column_gap: px(14.0),
+                row_gap: px(ROW_GAP),
                 ..default()
             })
             .with_children(|pair| {
-                for (vital, key, class) in [(Vital::Hp, "HP", "bar.hp"), (Vital::Stamina, "ST", "bar.st")] {
+                for (vital, key, class) in [
+                    (Vital::Hp, "HP", "bar.hp"),
+                    (Vital::Stamina, "ST", "bar.st"),
+                    (Vital::Battlewill, "BW", "bar.bw"),
+                    (Vital::Magicules, "MP", "bar.mp"),
+                ] {
                     pair.spawn(Node {
-                        flex_grow: 1.0,
-                        flex_basis: px(0.0),
+                        width: px((WIDTH - 14.0) * 0.5),
                         align_items: AlignItems::Center,
                         column_gap: px(6.0),
                         ..default()
@@ -78,14 +90,17 @@ fn spawn(mut commands: Commands) {
 }
 
 fn update(
-    player: Query<&Fighter, With<Player>>,
+    player: Query<(&Fighter, Option<&Energy>), With<Player>>,
     mut bars: Query<(&Vital, &mut Bar, &mut UiFlags)>,
     mut values: Query<(&VitalValue, &mut Text)>,
 ) {
-    let Ok(f) = player.single() else { return };
+    let Ok((f, energy)) = player.single() else { return };
+    let e = energy.cloned().unwrap_or_default();
     let read = |v: Vital| match v {
         Vital::Hp => (f.hp, f.max_hp),
         Vital::Stamina => (f.stamina, f.max_stamina),
+        Vital::Battlewill => (e.battlewill, e.max_battlewill),
+        Vital::Magicules => (e.magicules, e.max_magicules),
     };
     for (vital, mut bar, mut flags) in &mut bars {
         let (now, max) = read(*vital);

@@ -1,8 +1,10 @@
 //! HUD: the terminal-style overlay, built from `gbui` widgets and styled by `assets/ui/theme.json`
 //! (edit it while the game runs; it reloads). Single-player layout:
 //! - bottom left: the round map (`minimap`), the message log above it (`log`);
-//! - bottom centre: HP / ST bars (`vitals`) over the hotbar (`hotbar`: the `Loadout` slots on
-//!   1–0 and the bag button, which sends `inventory::ToggleBag`);
+//! - bottom centre: HP / ST / BW / MP bars (`vitals`) over the hotbar (`hotbar`: the Q art, the
+//!   E spell, the weapon in hand and the bag button);
+//! - the STATS button on the minimap's rim opens the stats page (`stats_page`, tabs STATS and
+//!   ARTS & MAGIC; also K);
 //! - bottom right: the bag panel (`inventory`, I or the bag button);
 //! - centre low: the interaction prompt (`InteractPrompt`), typed out when it changes.
 //!
@@ -15,6 +17,7 @@ use gbui::prelude::*;
 pub mod hotbar;
 pub mod log;
 pub mod minimap;
+pub mod stats_page;
 pub mod vitals;
 
 /// Gap between HUD blocks and the window edge (px).
@@ -23,7 +26,7 @@ pub const MARGIN: f32 = 18.0;
 const PROMPT_RATE: f32 = 70.0;
 
 pub fn plugin(app: &mut App) {
-    app.add_plugins((log::plugin, vitals::plugin, hotbar::plugin, minimap::plugin))
+    app.add_plugins((log::plugin, vitals::plugin, hotbar::plugin, minimap::plugin, stats_page::plugin))
         .add_systems(Startup, spawn_prompt)
         .add_systems(Update, show_prompt.after(PlaySet::Act));
 }

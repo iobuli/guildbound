@@ -8,7 +8,8 @@
 //!   are buffered for `BUFFER` s and chain once it passes its `cancel` fraction. When the chain
 //!   stops, the attack's `recover` clip carries the body back to the stance;
 //! - heavy: holds its windup pose while primary stays down (up to `charge` s, damage
-//!   ×(1 + held), stamina drains), strikes on release;
+//!   ×(1 + held), stamina drains), strikes on release, or by itself once fully charged (a clank
+//!   and a small camera kick mark the moment);
 //! - sprint attack (pressed while sprinting) and air attack: a plunge that hangs through the
 //!   windup, dives, holds its strike pose down to the ground and lands with a shockwave;
 //! - guard (secondary held, the set's `guard` clip): blows from the front `arc` are blocked for
@@ -212,6 +213,8 @@ const SHAKE_DOWN: f32 = 0.5;
 const SHAKE_BLOCK: f32 = 0.16;
 const SHAKE_PARRY: f32 = 0.3;
 const SHAKE_PLUNGE: f32 = 0.5;
+/// A heavy reaching full charge.
+const SHAKE_PRIMED: f32 = 0.12;
 /// Spring impulse (rad/s) on the spine and head: base + per m/s of knockback, capped; shares
 /// for spine_02, spine_03, neck, head.
 const IMPULSE_BASE: f32 = 2.0;
@@ -500,6 +503,8 @@ struct Swing {
     prev: Option<[Vec3; 2]>,
     plunge: Plunge,
     whoosh: bool,
+    /// The full-charge cue has played (heavy).
+    primed: bool,
 }
 
 impl Swing {
@@ -1400,6 +1405,7 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         prev: None,
         plunge,
         whoosh: false,
+        primed: false,
     })))
 }
 
@@ -1894,6 +1900,18 @@ fn hit_test(
     }));
     for (entity, tf, _, fighter, mut melee, rig, slot, player) in &mut fighters {
         let State::Swing(sw) = &mut melee.state else { continue };
+        // A heavy held to full charge strikes by itself; a ring and a kick say it is coming.
+        if sw.heavy() && !sw.primed && sw.attack.charge > 0.0 && sw.charged >= sw.attack.charge {
+            sw.primed = true;
+            sfx.write(Sfx {
+                kind: SfxKind::Clank,
+                at: tf.translation + Vec3::Y * 0.4,
+                volume: 0.8,
+            });
+            if player {
+                shake.add(SHAKE_PRIMED);
+            }
+        }
         let enemies = targets
             .iter()
             .filter(|t| t.entity != entity && t.alive && !t.immune && t.team != Some(fighter.team));

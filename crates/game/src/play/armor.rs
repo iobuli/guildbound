@@ -1,5 +1,6 @@
-//! Plate armour: a light adventurer set (open bascinet, cuirass, three-lame pauldrons,
-//! vambraces, greaves) built at startup from the character's own body and worn as rigid steel.
+//! Plate armour: an adventurer's harness (open bascinet, cuirass, three-lame pauldrons,
+//! rerebraces, vambraces, cuisses, greaves: steel from shoulder to wrist and hip to ankle) built at
+//! startup from the character's own body and worn as rigid steel.
 //! `armor` owns every plate entity, `ArmorSet`, the armour stand (its pose and availability) and
 //! the wearer's `BodyPadding`.
 //!
@@ -36,7 +37,7 @@ use super::fx::{Sfx, SfxKind};
 use super::interact::{PropState, UseEffect};
 use super::voxel::{Lattice, surface_nets};
 use super::{Interactable, Phys, Player};
-use crate::motion::body::{ARM_R, BodyPadding, CALF_R, HEAD_LIFT, HEAD_R, TORSO_R};
+use crate::motion::body::{ARM_R, BodyPadding, CALF_R, HEAD_LIFT, HEAD_R, THIGH_R, TORSO_R};
 use crate::motion::{
     Bones, ContactRequest, Layer, Mask, ModelRequest, MotionLayers, MotionSet, Rig, RigPose, Skeleton, Source,
 };
@@ -77,6 +78,8 @@ const LOCK_SHAKE: f32 = 0.04;
 /// The stand's frozen pose: clip and time.
 const STAND_CLIP: &str = "ual1/Idle_Loop";
 const STAND_POSE_T: f32 = 0.6;
+/// Rerebraces start this far down the upper arm (m): below the pauldron's lowest lame.
+const REREBRACE_TOP: f32 = 0.135;
 /// Extra clearance (m) on top of the plates' own extent in the derived `BodyPadding`.
 const PAD_MARGIN: f32 = 0.006;
 const TEXTURES: [&str; 3] = [
@@ -630,6 +633,7 @@ enum Part {
     Torso,
     UpperArm(usize),
     Forearm(usize),
+    Thigh(usize),
     Calf(usize),
 }
 
@@ -744,9 +748,9 @@ fn design(body: &BodyMesh, m: &Marks) -> Vec<PlateDef> {
 
     for side in 0..2 {
         let names = if side == 0 {
-            ["Pauldron L", "Pauldron L lame", "Pauldron L lower lame", "Vambrace L", "Greave L"]
+            ["Pauldron L", "Pauldron L lame", "Pauldron L lower lame", "Vambrace L", "Greave L", "Rerebrace L", "Cuisse L"]
         } else {
-            ["Pauldron R", "Pauldron R lame", "Pauldron R lower lame", "Vambrace R", "Greave R"]
+            ["Pauldron R", "Pauldron R lame", "Pauldron R lower lame", "Vambrace R", "Greave R", "Rerebrace R", "Cuisse R"]
         };
         // Pauldron: three spherical bands around the shoulder joint (pole down the arm, θ = 0
         // up), from the cap over the shoulder to the lower lame on the upper arm, top half only.
@@ -783,6 +787,27 @@ fn design(body: &BodyMesh, m: &Marks) -> Vec<PlateDef> {
                 part: Part::UpperArm(side),
             });
         }
+        // Rerebrace: a closed tube on the upper arm from just below where the pauldron's lowest
+        // lame ends (that sphere closes about 0.13 m down the arm, so the two never meet) to
+        // above the elbow, so the arm reads as steel from shoulder to wrist.
+        let upper_len = (elbow - shoulder).length();
+        let upper_frame = Frame::cylinder(shoulder, elbow - shoulder, Vec3::Y);
+        let upper_profile =
+            Arc::new(Profile::build(upper_frame, (0.1, upper_len), 0.008, 72, &body.region(&[b.upperarm[side]]), 0.04));
+        let upper_top = (REREBRACE_TOP).min(upper_len - 0.08);
+        let mut rerebrace =
+            Plate::new(upper_frame, Shape::Profile(upper_profile), 0.012, Box::new(move |_| (upper_top, upper_len - 0.035)));
+        rerebrace.bead = 0.004;
+        rerebrace.ridges.push((PI, 0.06, -0.0025));
+        defs.push(PlateDef {
+            name: names[5],
+            plate: rerebrace,
+            bones: vec![b.upperarm[side]],
+            fit: Fit::Free,
+            anchor: b.upperarm[side],
+            tint: STEEL,
+            part: Part::UpperArm(side),
+        });
         // Vambrace: a closed tube from below the elbow to above the wrist, flared at the wrist,
         // with a groove along the inner seam.
         let wrist = m.at(b.hand[side]);
@@ -824,6 +849,31 @@ fn design(body: &BodyMesh, m: &Marks) -> Vec<PlateDef> {
             anchor: b.calf[side],
             tint: STEEL,
             part: Part::Calf(side),
+        });
+        // Cuisse: a closed tube down the thigh, starting a hand below the hip so a raised knee
+        // never drives its top into the belly (lowest at the front and the back, where the hip
+        // folds), ending over the kneecap and cut higher behind the knee so the leg can bend.
+        let hip = m.at(b.thigh[side]);
+        let thigh_len = (knee - hip).length();
+        let thigh_frame = Frame::cylinder(hip, knee - hip, Vec3::Z);
+        let thigh_profile =
+            Arc::new(Profile::build(thigh_frame, (0.0, thigh_len), 0.01, 72, &body.region(&[b.thigh[side]]), 0.05));
+        let thigh_span = move |t: f32| {
+            let fold = t.cos().abs();
+            let back = smoothstep01((t.abs() - 1.6) / 1.2);
+            (0.075 + 0.05 * fold, thigh_len - 0.03 - 0.07 * back)
+        };
+        let mut cuisse = Plate::new(thigh_frame, Shape::Profile(thigh_profile), 0.013, Box::new(thigh_span));
+        cuisse.bead = 0.004;
+        cuisse.ridges.push((0.0, 0.2, 0.005));
+        defs.push(PlateDef {
+            name: names[6],
+            plate: cuisse,
+            bones: vec![b.thigh[side]],
+            fit: Fit::Free,
+            anchor: b.thigh[side],
+            tint: STEEL,
+            part: Part::Thigh(side),
         });
     }
     defs
@@ -990,10 +1040,11 @@ fn derive_padding(plates: &[(Part, &Mesh, &[Vec3])], rest: &[Transform], b: &Bon
                 pad.upper_arm = pad.upper_arm.max(standoff(shoulder.lerp(elbow, 0.5), elbow, true, ARM_R));
             }
             Part::Forearm(s) => pad.forearm = pad.forearm.max(standoff(at(b.lowerarm[s]), at(b.hand[s]), true, ARM_R)),
+            Part::Thigh(s) => pad.thigh = pad.thigh.max(standoff(at(b.thigh[s]), at(b.calf[s]), true, THIGH_R)),
             Part::Calf(s) => pad.calf = pad.calf.max(standoff(at(b.calf[s]), at(b.foot[s]), true, CALF_R)),
         }
     }
-    for v in [&mut pad.torso, &mut pad.head, &mut pad.upper_arm, &mut pad.forearm, &mut pad.calf] {
+    for v in [&mut pad.torso, &mut pad.head, &mut pad.upper_arm, &mut pad.forearm, &mut pad.thigh, &mut pad.calf] {
         *v = v.clamp(0.0, 0.2);
     }
     pad

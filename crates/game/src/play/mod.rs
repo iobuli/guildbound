@@ -42,6 +42,7 @@ pub mod traverse;
 pub mod tools;
 pub mod trees;
 pub mod tuning;
+pub mod vfx;
 pub mod voxel;
 pub mod world;
 
@@ -87,7 +88,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

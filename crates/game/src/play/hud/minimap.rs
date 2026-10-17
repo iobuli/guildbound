@@ -34,7 +34,7 @@ const DOT: f32 = 6.0;
 const DOT_INSET: f32 = 8.0;
 const NORTH_INSET: f32 = 15.0;
 /// Readout line height under the map (px).
-const READOUT: f32 = 16.0;
+pub const READOUT: f32 = 16.0;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn).add_systems(PostUpdate, update.before(GbuiSet::Animate));

@@ -15,6 +15,7 @@ use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseSc
 use bevy::prelude::*;
 use bevy::transform::TransformSystems;
 use super::armory::ArmoryOpen;
+use super::hud::stats_page::StatsOpen;
 use super::inventory::BagOpen;
 use super::tuning::TuningPanel;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
@@ -283,6 +284,7 @@ fn capture_cursor(
     mut windows: Query<(&Window, &mut CursorOptions), With<PrimaryWindow>>,
     bag: Option<Res<BagOpen>>,
     armory: Option<Res<ArmoryOpen>>,
+    stats: Option<Res<StatsOpen>>,
     tuning: Option<Res<TuningPanel>>,
     mut tweak_page: Local<bool>,
 ) {
@@ -300,6 +302,7 @@ fn capture_cursor(
     // Any open page frees the cursor; closing the last one takes it back.
     let ui_mode = bag.is_some_and(|b| b.0)
         || armory.is_some_and(|a| a.0.is_some())
+        || stats.is_some_and(|s| s.0.is_some())
         || tuning.is_some_and(|t| t.open)
         || *tweak_page;
     if capture.ui_mode && !ui_mode {

@@ -66,6 +66,12 @@
     "bar.st": { "extends": "bar" },
     "bar.st.fill": { "gradient": ["#127C86", "accent"] },
     "bar.st.trail": { "bg": "warn@0.7" },
+    "bar.bw": { "extends": "bar" },
+    "bar.bw.fill": { "gradient": ["#1F8F6A", "#B8FFE0"] },
+    "bar.bw.trail": { "bg": "warn@0.6" },
+    "bar.mp": { "extends": "bar" },
+    "bar.mp.fill": { "gradient": ["#3A2C9E", "#B79CFF"] },
+    "bar.mp.trail": { "bg": "info@0.6" },
     "vital.key": { "text": "accent", "size": 11, "bold": true, "shadow": "black@0.7" },
     "vital.value": { "text": "text", "size": 11, "shadow": "black@0.7" },
 
@@ -83,6 +89,35 @@
     "prompt.text": { "text": "text", "size": 16, "shadow": "black@0.6" },
 
     "bag": { "extends": "panel", "bg": "bg@0.78" },
+    "stats": { "extends": "panel", "bg": "bg@0.84" },
+    "tab": {
+      "bg": "bg@0.4", "border": "accent@0.25", "border_width": 1, "radius": 2,
+      "hovered": { "border": "accent@0.7" },
+      "checked": { "bg": "accent@0.2", "border": "accent2", "glow": "accent2@0.35", "glow_blur": 10 }
+    },
+    "tab.text": { "text": "dim", "size": 13, "bold": true, "checked": { "text": "accent2" } },
+    "row": {
+      "bg": "bg@0.0", "border": "accent@0.0", "border_width": 1, "radius": 2,
+      "hovered": { "bg": "accent@0.10", "border": "accent@0.45" },
+      "checked": { "bg": "accent@0.16", "border": "accent2@0.8" },
+      "disabled": { "bg": "bg@0.0", "border": "accent@0.0" }
+    },
+    "row.text": { "text": "text", "size": 13, "shadow": "black@0.6" },
+    "row.dim": { "text": "faint", "size": 12, "shadow": "black@0.6" },
+    "row.tag": { "text": "warn", "size": 11, "bold": true, "shadow": "black@0.6" },
+    "plus": {
+      "bg": "accent@0.12", "border": "accent@0.6", "border_width": 1, "radius": 2,
+      "hovered": { "bg": "accent@0.3" }, "pressed": { "bg": "accent@0.5" },
+      "disabled": { "bg": "bg@0.2", "border": "faint@0.4" }
+    },
+    "plus.text": { "text": "accent2", "size": 14, "bold": true },
+    "mapbutton": {
+      "bg": "bg@0.8", "border": "accent@0.75", "border_width": 1, "radius": 3, "glow": "accent@0.25", "glow_blur": 8,
+      "hovered": { "bg": "accent@0.22", "border": "accent2" },
+      "checked": { "bg": "accent@0.3", "border": "accent2", "glow": "accent2@0.5", "glow_blur": 12 }
+    },
+    "mapbutton.text": { "text": "accent2", "size": 10, "bold": true, "shadow": "black@0.8" },
+    "mapbutton.dot": { "bg": "warn", "radius": 4, "glow": "warn@0.6", "glow_blur": 6 },
 
     "map": { "border": "accent@0.0" },
     "map.player": { "text": "accent2", "size": 16, "bold": true, "shadow": "black@0.8" },

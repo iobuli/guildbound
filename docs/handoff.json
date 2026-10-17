@@ -152,8 +152,8 @@
     },
     {
       "file": "play/armor.rs",
-      "role": "plate armour built from the body mesh (one cuirass with arm holes, concentric-sphere pauldron lames pivoting on the shoulder, vambraces, greaves, bascinet); rigid per-plate skin fits; BodyPadding derived from the plates; armour stand + equip flights",
-      "status": "done"
+      "role": "16 plates incl. rerebraces and cuisses",
+      "status": "new"
     },
     {
       "file": "play/grass.rs",
@@ -188,8 +188,8 @@
     },
     {
       "file": "play/magic.rs",
-      "role": "schools as movesets, cast/charge/channel",
-      "status": "stub"
+      "role": "arts (Q, Battlewill) and spells (E, magicules; MB5 cycles), ABILITIES table, shapes bolt/crescent/quake/lance/orbs/step, mastery -> skills at a magicule cost, GB_CAST demo",
+      "status": "new"
     },
     {
       "file": "play/traverse.rs",
@@ -199,6 +199,26 @@
     {
       "file": "play/surfaces.rs",
       "role": "CPU-generated tileable detail + normal maps (ground, stone, rock, wood, metal, cloth, sand) with mip chains; world_uvs box-projects world-scale UVs and generates tangents for world props; terrain UVs are (x, z) / TERRAIN_TILE",
+      "status": "new"
+    },
+    {
+      "file": "play/stats.rs",
+      "role": "universal Stats on every Fighter -> Derived; xp from kills, points per level",
+      "status": "new"
+    },
+    {
+      "file": "play/armory.rs",
+      "role": "weapon chest: rack panel, combat::Equip",
+      "status": "new"
+    },
+    {
+      "file": "play/vfx.rs",
+      "role": "hanabi effects with procedural sprites and per-particle algorithms; lightning/crescent/ring meshes; impacts",
+      "status": "new"
+    },
+    {
+      "file": "play/hud/stats_page.rs",
+      "role": "STATS / ARTS & MAGIC tabs, minimap rim button, K",
       "status": "new"
     }
   ],
@@ -491,6 +511,36 @@
       "writer": [
         "world"
       ]
+    },
+    {
+      "quantity": "Stats, Derived, DamageScale",
+      "writer": [
+        "stats"
+      ]
+    },
+    {
+      "quantity": "Energy, Grimoire",
+      "writer": [
+        "magic"
+      ]
+    },
+    {
+      "quantity": "Loadout.current",
+      "writer": [
+        "combat (Equip)"
+      ]
+    },
+    {
+      "quantity": "ArmoryOpen",
+      "writer": [
+        "armory"
+      ]
+    },
+    {
+      "quantity": "StatsOpen",
+      "writer": [
+        "hud::stats_page"
+      ]
     }
   ],
   "data": {
@@ -554,11 +604,10 @@
     },
     {
       "id": "B",
-      "name": "traversal then ranged/magic",
+      "name": "traversal then ranged",
       "files": [
         "play/traverse.rs",
-        "play/ranged.rs",
-        "play/magic.rs"
+        "play/ranged.rs"
       ],
       "ideas": [
         "tightrope/balance beam: lean drift countered by the player, arms spread, wobble then fall; builds on contact lean, arm inertia, body self-collision"
@@ -622,15 +671,33 @@
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
   ],
   "milestone": {
-    "name": "melee movesets, NPC brain, ragdoll, world surfaces",
+    "name": "stats, magic, weapon chest, controls, fuller armour",
     "status": "awaiting playtest",
     "playtest": [
-      "number keys 1-5: unarmed, katana, greatsword, dagger, axe; tap / hold LMB on the training dummies; sprint attack and jump attack (plunge)",
-      "fight the Opponent (katana, team 1): it closes in, strafes, attacks, guards, sometimes parries or dodges; dies and gets up at its spawn after 6 s",
-      "weapons sit in the right fist with the blade along the thumb side; the axe head faces the swing",
-      "terrain, stone, wood, sand, cloth and metal show surface detail and catch light; no seams or stretching on boxes",
-      "staging/relations.log: hit_*, parry, guard_break, knockdown, death, revive lines",
-      "F6 ragdolls the player; heavy greatsword / plunge hits ragdoll the Opponent; bodies settle and get up facing their feet"
+      "F the chest, wield each weapon",
+      "Q/E casts, MB5 cycles, K to bind more at levels 2-5",
+      "kill the Opponent: xp, level, points",
+      "BW fills from blows, MP regenerates",
+      "armour covers upper arms and thighs"
     ]
+  },
+  "controls": {
+    "interact": "F",
+    "art": "Q",
+    "spell": "E",
+    "next_spell": "MB5",
+    "stats": "K",
+    "bag": "I",
+    "ragdoll_self": "F6",
+    "weapons": "courtyard chest"
+  },
+  "smoke_env": {
+    "GB_AUTOQUIT": "s",
+    "GB_SCREENSHOT": "path",
+    "GB_SCREENSHOT_AT": "game s",
+    "GB_SPAWN": "x,z,yaw_deg",
+    "GB_CAST": "ability ids",
+    "GB_CAST_EVERY": "s",
+    "GB_VFX_TEST": "1"
   }
 }

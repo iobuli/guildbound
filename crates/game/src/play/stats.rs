@@ -4,10 +4,12 @@
 //! - `combat` sets `Fighter` max hp / stamina / poise from it (keeping the current shares) and
 //!   regenerates stamina at `regen`; melee blows scale by `might` (`combat::DamageScale`, written
 //!   here only);
-//! - `magic` sizes the mana pool (`max_mana`, `mana_regen`) and scales spells by `spell`.
+//! - `magic` sizes the magicule pool (`max_mana`, `mana_regen`) for spells and the Battlewill
+//!   pool (`max_battlewill`) for arts, and scales both by `spell` / `might`.
 //!
 //! Attributes (10 = an ordinary person, `derive` is linear in each):
-//! Vigor → hp; Endurance → stamina, poise, stamina regen; Strength → might, poise;
+//! Vigor → hp; Endurance → stamina, poise, stamina regen, Battlewill; Strength → might, poise,
+//! Battlewill;
 //! Dexterity → might (less), cast speed; Intelligence → mana, spell power; Faith → mana regen,
 //! mana, spell power (less).
 //!
@@ -156,6 +158,8 @@ pub struct Derived {
     pub max_stamina: f32,
     pub max_poise: f32,
     pub max_mana: f32,
+    /// Battlewill (aura) pool for arts.
+    pub max_battlewill: f32,
     /// Melee damage and poise multiplier.
     pub might: f32,
     /// Spell damage multiplier.
@@ -175,6 +179,7 @@ pub fn derive(s: &Stats) -> Derived {
         max_stamina: 100.0 + 5.0 * a(Attr::Endurance),
         max_poise: 50.0 + 2.0 * a(Attr::Endurance) + 1.5 * a(Attr::Strength),
         max_mana: 100.0 + 7.0 * a(Attr::Intelligence) + 3.0 * a(Attr::Faith),
+        max_battlewill: 100.0 + 4.0 * a(Attr::Endurance) + 4.0 * a(Attr::Strength),
         might: (1.0 + 0.03 * a(Attr::Strength) + 0.015 * a(Attr::Dexterity)).max(0.3),
         spell: (1.0 + 0.035 * a(Attr::Intelligence) + 0.012 * a(Attr::Faith)).max(0.3),
         regen: (1.0 + 0.02 * a(Attr::Endurance)).max(0.3),

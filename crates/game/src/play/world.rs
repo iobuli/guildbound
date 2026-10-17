@@ -21,7 +21,8 @@
 //!
 //! Smoke-test env vars: `GB_AUTOQUIT=<seconds>` sends `AppExit` after that much real time (waits
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
-//! ~3 s.
+//! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
+//! abilities at the nearest NPC (see `magic::demo`).
 use super::armor::spawn_stand;
 use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
@@ -470,6 +471,12 @@ fn spawn_sky_and_camera(commands: &mut Commands) {
         Name::new("Main camera"),
         MainCamera,
         Camera3d::default(),
+        // HDR + gentle bloom: spells, arts and flames brighter than 1 glow.
+        bevy::camera::Hdr,
+        bevy::post_process::bloom::Bloom {
+            intensity: 0.12,
+            ..bevy::post_process::bloom::Bloom::NATURAL
+        },
         Projection::Perspective(PerspectiveProjection {
             fov: 60f32.to_radians(),
             ..default()
@@ -1033,7 +1040,13 @@ fn spawn_characters(commands: &mut Commands) {
 struct Smoke {
     quit_after: Option<f32>,
     shot: Option<String>,
+    /// Game (virtual) seconds before the shot (`GB_SCREENSHOT_AT`, default `SCREENSHOT_AT`), so
+    /// slow software rendering still catches timed events.
+    shot_at: f32,
     shot_requested: bool,
+    /// `GB_SPAWN=x,z,yaw_deg`: where the player is put once the world is up.
+    spawn: Option<(Vec3, f32)>,
+    spawned: bool,
     shot_done: bool,
     exit_sent: bool,
 }
@@ -1045,9 +1058,20 @@ impl Smoke {
             .and_then(|s| s.trim().parse::<f32>().ok())
             .filter(|s| s.is_finite() && *s >= 0.0);
         let shot = std::env::var("GB_SCREENSHOT").ok().filter(|s| !s.trim().is_empty());
+        let shot_at = std::env::var("GB_SCREENSHOT_AT")
+            .ok()
+            .and_then(|s| s.trim().parse::<f32>().ok())
+            .filter(|s| s.is_finite() && *s >= 0.0)
+            .unwrap_or(SCREENSHOT_AT);
+        let spawn = std::env::var("GB_SPAWN").ok().and_then(|s| {
+            let v: Vec<f32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
+            (v.len() == 3).then(|| (Vec3::new(v[0], ground_height(v[0], v[1]), v[1]), v[2].to_radians()))
+        });
         Self {
             quit_after,
             shot,
+            shot_at,
+            spawn,
             ..default()
         }
     }
@@ -1055,14 +1079,25 @@ impl Smoke {
 
 fn smoke_test(
     time: Res<Time<Real>>,
+    game: Res<Time<Virtual>>,
     mut smoke: ResMut<Smoke>,
     mut commands: Commands,
+    players: Query<Entity, With<Player>>,
     mut exit: MessageWriter<AppExit>,
 ) {
     let t = time.elapsed_secs();
+    if let Some((feet, yaw)) = smoke.spawn
+        && !smoke.spawned
+        && game.elapsed_secs() > 0.5
+    {
+        smoke.spawned = true;
+        for p in &players {
+            commands.entity(p).try_insert(super::controller::Teleport { feet, yaw });
+        }
+    }
     if let Some(path) = smoke.shot.clone()
         && !smoke.shot_requested
-        && t >= SCREENSHOT_AT
+        && game.elapsed_secs() >= smoke.shot_at
     {
         smoke.shot_requested = true;
         info!("[world] GB_SCREENSHOT → {path}");
@@ -1075,7 +1110,7 @@ fn smoke_test(
         && t >= quit
         && !smoke.exit_sent
     {
-        let waiting = smoke.shot.is_some() && !smoke.shot_done && t < quit.max(SCREENSHOT_AT) + 5.0;
+        let waiting = smoke.shot.is_some() && !smoke.shot_done && t < quit.max(smoke.shot_at) + 5.0;
         if !waiting {
             info!("[world] GB_AUTOQUIT after {t:.1} s");
             smoke.exit_sent = true;

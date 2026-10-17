@@ -35,13 +35,16 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/interact.rs` | Focus, `offer` (per held tool; `requires` → head-shake refusal), radial stands, walk-in, use clips, `beat` (effect / loop landing + hitstop freeze; tool loops land when the blade stops, `Swing`), `reach` IK windows, emits `UseEffect` / `UseBeat` | done |
 | `play/tools.rs` | `Holding` + `ToolItem`: the axe on the table, left-hand pickup, hand-over to the right hand, carry/chop grips, settle on every re-parent | new |
 | `play/voxel.rs` | `VoxelGrid` (carve, split, `mesh`, `smooth_mesh`) and the shared `Lattice` + `surface_nets` mesher for any density field (each quad wound as a whole, split along its flatter diagonal) | done |
-| `play/armor.rs` | Plate armour (bascinet, one cuirass with arm holes, pauldrons of 3 concentric spherical lames, vambraces, greaves) built at startup on the async pool, one thread per plate, from the body mesh: ray-cast profiles → designed shells (gap and thickness along the normal) → Surface Nets + UVs (cylindrical with a seam split, band, or azimuthal about the pole) + tangents + Metal049C with mips generated at load; each plate rigid, fitted per frame to the skin under it (Kabsch / Müller, warm-started; pauldron lames rotate only about the shoulder joint, so they never cut into each other); `BodyPadding` derived from the built plates; armour stand + E, plates leave one by one | new |
+| `play/armor.rs` | Plate armour (bascinet, one cuirass with arm holes, pauldrons of 3 concentric spherical lames, rerebraces, vambraces, cuisses, greaves: 16 plates) built at startup on the async pool, one thread per plate, from the body mesh: ray-cast profiles → designed shells (gap and thickness along the normal) → Surface Nets + UVs (cylindrical with a seam split, band, or azimuthal about the pole) + tangents + Metal049C with mips generated at load; each plate rigid, fitted per frame to the skin under it (Kabsch / Müller, warm-started; pauldron lames rotate only about the shoulder joint, so they never cut into each other); `BodyPadding` derived from the built plates; armour stand + E, plates leave one by one | new |
 | `play/grass.rs` + `assets/shaders/grass.wgsl` | Lush grass: chunked LOD blades, vertex-shader wind (gust fronts, flutter), trampling by `Mover`s, `GrassWind` (incl. a `gust` slot for wind magic) | new |
 | `play/items.rs` | Item entities (log, stick, stone, apple): physics drops on `Phys::Debris`, magnet flight into the bag, hill scatter + respawn spots | new |
 | `play/inventory.rs` | `Inventory` (required by `Player`, 20 stacks), I-key bag panel, pickup toasts | new |
 | `play/trees.rs` | Voxel trees drawn smooth: notch carving on `UseBeat`, chips/shake/recoil/sound, felling into a `Phys::Debris` body, landing, breaking into logs/sticks/apples, regrow; `chop` / `fell` / `drop` log lines | new |
 | `play/fx.rs` | `Burst` particles (chips, leaves) and `Sfx` one-shot sounds (first audio in the game) | new |
-| `play/hud.rs` | Interaction prompt only | partial |
+| `play/hud/` | Prompt (F), log, minimap with a STATS rim button, vitals (HP ST / BW MP), hotbar (Q art, E spell, weapon in hand, bag), `stats_page` (tabs STATS and ARTS & MAGIC; K) | done |
+| `play/stats.rs` | Universal `Stats` on every `Fighter` (level, Vigor Endurance Strength Dexterity Intelligence Faith, points, xp) → `Derived` (max hp / stamina / poise / magicules / Battlewill, might, spell, regen, cast speed); kills give the player xp, levels give points (`SpendPoint`) | new |
+| `play/armory.rs` | Weapon chest: opening the courtyard chest shows the weapon rack; a click sends `combat::Equip` | new |
+| `play/vfx.rs` | `bevy_hanabi` effects per element (trail, burst, cast motes, shock debris) with procedural sprites and per-particle motion algorithms (ABC flow fire, Vogel phyllotaxis frost, vortex arcane), plus CPU meshes (fractal midpoint-displacement lightning with branches, aura crescent, shock ring), impacts with glow and light flash; `GB_VFX_TEST` rig | new |
 | `play/surfaces.rs` | CPU-generated tileable detail + normal maps (ground, stone, rock, wood, metal, cloth, sand) with mip chains; `world_uvs` box-projects world-scale UVs (`PROP_TILE` 1.5 m) and generates tangents; terrain UVs are (x, z) / `TERRAIN_TILE` (3 m) | new |
 | `play/tuning.rs` | F1 live tuning panel (Exaggeration 0.9–1.4, Arm swing 0–2, Bounce 0–2), F5 saves `profiles/feel.json` | done |
 | `play/monitor.rs` | F4 joint-relation monitor + `staging/relations.log` | new |
@@ -49,9 +52,9 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`); `WeaponDef.mesh_rotation_deg` / `mesh_offset` orient glTF weapon meshes so the blade runs along the root's +Y | done |
 | `play/combat.rs` | Melee FSM (light chains, charged heavy, sprint attack, air plunge, guard / parry, roll / sidestep, stamina, poise), swept hit tests, **only `Hit` resolver**, hitstop, reactions, death / revive, weapon in the hand | done |
 | `play/ai.rs` | Rule-based NPC brain → `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive` | new |
-| `play/ragdoll.rs` | Impact ragdoll: on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
+| `play/ragdoll.rs` | Impact ragdoll (F6 on the player): on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
 | `play/ranged.rs` | Bow/crossbow/throwing, projectiles | **stub** |
-| `play/magic.rs` | Schools as movesets, cast/charge/channel | **stub** |
+| `play/magic.rs` | Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 4 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step; mastery per landed blow → **Skill** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known by level; `GB_CAST` demo hook | new |
 | `play/traverse.rs` | Swim, climb, ledge, mantle | **stub** |
 
 ## Frame order
@@ -101,6 +104,10 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Hit` message | `combat`, `ranged`, `magic` emit | **`combat` alone resolves** |
 | `InteractPrompt` | `interact` | `hud` |
 | `Feel`, `MotionFeel` | `tuning` | controller, compose |
+| `Stats`, `Derived`, `DamageScale` | `stats` | combat (maxima, regen, might), magic (pools, spell power), HUD |
+| `Energy` (Battlewill, magicules), `Grimoire` (bindings, mastery, skill debt) | `magic` (the stats page binds through `magic::Bind`) | HUD |
+| `Loadout.current` | `combat` (`Equip` messages from `armory`) | select, HUD |
+| `ArmoryOpen`, `StatsOpen` | `armory`, `hud::stats_page` | `camera` (cursor) |
 | `Surfaces` (generated maps) | `world` (setup) | `world` palette and terrain |
 
 ## Data files
@@ -134,7 +141,21 @@ Log line: `t character relation side value mode action speed`.
 - Knees and elbows: `bend_pole` drops any bend component against the natural side and adds a small bias, so near-straight limbs keep a stable bend side. Limbs never extend past 99.9 % of their length, so they no longer lock and snap.
 - Interaction: hands ride the moving grip part (`Interactable.grip`: lever arm, chest lid). The walk-in pivots on the spot before stepping when the target is behind.
 
-## Melee, NPC brain, world surfaces (latest milestone, awaiting playtest)
+## Stats, magic, weapon chest, controls (latest milestone, awaiting playtest)
+
+- Controls: **F** interact, **Q** art, **E** spell, **MB5** next spell, **K** stats page, **F6** ragdoll yourself. Weapons come from the courtyard chest, not number keys.
+- Setting: arts run on Battlewill (aura of the body: no chant, almost no wind-up), spells on magicules (a short cast). Skills are born from mastering an art or spell and cost magicules for good. The player has no devouring skill: kills give experience only. Inspired by the user's Tensura notes; every name is original.
+- Effects were checked headlessly on the CPU renderer (`GB_VFX_TEST=1`, `GB_CAST=<ids> GB_CAST_EVERY=0.3`, `GB_SPAWN=x,z,yaw`, `GB_SCREENSHOT_AT` in game seconds): the lightning, glow and particles render; sizes were raised for readability. Bloom is on (HDR camera, intensity 0.12).
+- Heavy attacks held to full charge strike by themselves; a clank and a small camera kick mark the moment.
+- The camera, hit tests and HUD were verified with screenshots; feel (cast timing, effect sizes, BW gain rates) needs the playtest.
+- Playtest checklist:
+  1. F the chest, wield each weapon from the rack.
+  2. Q / E casts; MB5 cycles spells; at levels 2–5 more arts and spells unlock (K → ARTS & MAGIC to bind).
+  3. Kill the Opponent: XP, LEVEL line, the dot on the STATS button; spend points with +.
+  4. Watch BW fill as you land blows; MP refill after a pause.
+  5. Armour stand: the set now covers upper arms and thighs.
+
+## Melee, NPC brain, world surfaces (previous milestone)
 
 - Moveset windows (`windup` / `active` / `cancel`) come from the donor clips' hand and foot speed peaks (forward kinematics on the GLB data), e.g. `ual2/Sword_Regular_A` strikes at 0.20–0.27 s of 0.43 s, `ual1/Punch_Jab` leads with the LEFT hand at 0.13–0.17 s, `sekiro/Zombie Kick` kicks with `foot_r` at 0.53–1.15 s. To re-check them in the bank: `GB_PROBE="ual2/Sword_Regular_A,..." cargo test -p guildbound clip_probe -- --ignored --nocapture` (`motion/bank.rs`).
 - Weapons: katana, greatsword and dagger are `sword` primitives; the axe is `battleaxe.glb` turned by `mesh_rotation_deg` [90, 0, 0] with its grip (z = 0.17) moved to the origin. All are held at the axe's `FIST` point, blade along the thumb side (`rotation_deg` [0, 90, 90]). If a blade sits wrong in the hand, tune these two fields in the JSON.
@@ -166,7 +187,8 @@ Log line: `t character relation side value mode action speed`.
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
 - **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
-- **B. Traversal, then ranged and magic:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` and `magic.rs` (projectiles emit `Hit`).
+- **B. Traversal, then ranged:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` (bow, crossbow, knives; projectiles emit `Hit` like `magic`'s). Magic is done.
+- **Next for magic:** NPC casters (the AI only fights in melee), a Battlewill shield art, a faulds skirt to close the armour's hips.
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.
 - **D. Pose tweak tool:** `motion/tweak.rs` (F2).
