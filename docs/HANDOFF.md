@@ -116,6 +116,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Stats`, `Derived`, `DamageScale` | `stats` | combat (maxima, regen, might), magic (pools, spell power), HUD |
 | `Deed` message | combat, magic, ranged, traverse, parkour, trees, skills (survive) emit | `skills`, `contracts` |
 | `Board` (open contracts) | `contracts` | HUD |
+| `Honours`, `Standing` (holdings; NPCs seeded by `world`) | `contracts` (`honour`) | skills (bonus), insignia (gold), contracts (issuers), HUD |
 | `Clock`, the sun's light and transform, `ClearColor`, `GlobalAmbientLight`, camera fog colour | `sky` | occupations, minimap |
 | Civilians' `Intent`, `Occupation` | `occupations` (`work`) | interact, controller |
 | `Sheet` (skill XP, affinities, discovered abilities), `SkillBonus` | `skills` (presets at spawn in `world`; the `GB_CAST` demo marks abilities discovered) | magic (`known`, casting), stats (`derive_with`), HUD |
