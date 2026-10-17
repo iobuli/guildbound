@@ -9,8 +9,8 @@ use bevy::prelude::*;
 /// Badge size (m) and where it sits from the chest bone: forward, left, up.
 const SIZE: f32 = 0.06;
 const FORWARD: f32 = 0.12;
-const LEFT: f32 = 0.085;
-const UP: f32 = 0.06;
+const LEFT: f32 = 0.075;
+const UP: f32 = 0.02;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (wear, place).chain());

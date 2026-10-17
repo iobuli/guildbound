@@ -2,11 +2,14 @@
 //! open at a time (`Board`, written here only); each objective is a deed pattern × count, so
 //! progress comes from the player's `deeds::Deed`s like everything else. A finished contract pays
 //! its experience (`stats::GrantXp`), is logged, and the next template in turn takes its place
-//! (never one already open). Shown on the stats page's CONTRACTS tab.
+//! (never one already open). Shown on the stats page's WORK tab, which the courtyard noticeboard
+//! (interactable kind "board", F) opens.
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
 use super::stats::GrantXp;
-use super::Player;
+use super::hud::stats_page::{StatsOpen, StatsTab, ToggleStats};
+use super::interact::UseEffect;
+use super::{Interactable, Player};
 use bevy::prelude::*;
 
 /// Contracts open at once.
@@ -128,7 +131,7 @@ pub fn plugin(app: &mut App) {
     });
     let mut board = Board::default();
     board.fill(&book);
-    app.insert_resource(book).insert_resource(board).add_systems(Update, progress);
+    app.insert_resource(book).insert_resource(board).add_systems(Update, (progress, read_board));
 }
 
 fn progress(
@@ -154,6 +157,24 @@ fn progress(
         }
         if board.open.len() < OPEN {
             board.fill(&book);
+        }
+    }
+}
+
+/// Reading the noticeboard opens the WORK tab.
+fn read_board(
+    mut effects: MessageReader<UseEffect>,
+    boards: Query<&Interactable>,
+    players: Query<(), With<Player>>,
+    mut toggles: MessageWriter<ToggleStats>,
+    open: Res<StatsOpen>,
+) {
+    for e in effects.read() {
+        if players.contains(e.user)
+            && boards.get(e.target).is_ok_and(|it| it.kind == "board")
+            && open.0 != Some(StatsTab::Contracts)
+        {
+            toggles.write(ToggleStats(Some(StatsTab::Contracts)));
         }
     }
 }

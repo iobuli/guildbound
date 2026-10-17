@@ -1043,6 +1043,30 @@ fn spawn_interactables(kit: &mut Kit, assets: &AssetServer) {
     kit.part(arm, "Lever shaft", Cylinder::new(0.03, 0.6), &metal, Transform::from_xyz(0.0, 0.3, 0.0), None);
     kit.part(arm, "Lever grip", Sphere::new(0.06), &dark, Transform::from_xyz(0.0, 0.62, 0.0), None);
 
+    // Guild noticeboard near the spawn: two posts, a plank board under a little roof, pinned
+    // notices. F reads it (`contracts` opens the WORK tab).
+    let board = place(kit, "Noticeboard", Vec3::new(3.2, 0.0, -9.8), UseSpec {
+        kind: "board",
+        prompt: "Read the notices",
+        track: "ual1/Interact",
+        duration: 1.2,
+        looping: false,
+        stand: Vec3::new(0.0, 0.0, -0.8),
+        face: Some(0.0),
+        hands: [None, Some(Vec3::new(0.15, 1.35, -0.06))],
+        grip: None,
+        beat: None,
+        reach: None,
+    });
+    for x in [-0.75, 0.75] {
+        kit.part(board, "Board post", Cuboid::new(0.1, 2.1, 0.1), &dark, Transform::from_xyz(x, 1.05, 0.0), Some(Collider::cuboid(0.1, 2.1, 0.1)));
+    }
+    kit.part(board, "Board planks", Cuboid::new(1.4, 0.9, 0.05), &wood, Transform::from_xyz(0.0, 1.35, 0.0), Some(Collider::cuboid(1.4, 0.9, 0.05)));
+    kit.part(board, "Board roof", Cuboid::new(1.75, 0.06, 0.45), &dark, Transform::from_xyz(0.0, 2.12, -0.05).with_rotation(Quat::from_rotation_x(-0.25)), None);
+    for (x, y, tilt) in [(-0.4, 1.5, 0.06), (0.05, 1.4, -0.04), (0.45, 1.55, 0.08), (-0.2, 1.08, -0.07), (0.35, 1.1, 0.03)] {
+        kit.part(board, "Notice", Cuboid::new(0.26, 0.32, 0.01), &straw, Transform::from_xyz(x, y, -0.035).with_rotation(Quat::from_rotation_z(tilt)), None);
+    }
+
     // Well: stone ring, water disc, two posts and a roof beam.
     let well = place(kit, "Well", Vec3::new(10.0, 0.0, 10.5), UseSpec {
         kind: "well",

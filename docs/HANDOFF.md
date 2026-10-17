@@ -165,8 +165,8 @@ Log line: `t character relation side value mode action speed`.
 - **Titles** (lane C): earned automatically from skill levels and lifetime deed counts (`Sheet::counts`), never lost, each a flat bonus; "Title earned: …" log and flourish. `titles.json` hot-reloads with `skills.json`.
 - **Events** (lane C): world-unique skills, one holder at a time (freed when the holder is gone). **Second Wind** (+HP, +ST per level): survive a close call (under 15 % HP, alive 8 s later; `skills::close_calls` writes `survive`). **Spellscarred** (+MP, spell power): grows from being `struck` by spells. An NPC claiming one first is announced ("Somewhere, someone has claimed …").
 - **Traits** (lane C): every NPC rolls a temper, a walk and a fighting manner; they change how it moves (bounce, pose exaggeration, holds) and fights (aggression, guard, parry, dodge, reaction, casting). The player picks theirs on the STATS tab: a clickable madlib ("I'm a [temper] fighter who walks [walk] and fights [fight]", `traits::SetTrait`); only the walk changes the player (style), the rest is flavour until the player has a brain.
-- **Contracts** (lane C): three open at a time on K → WORK (Sparring Partner, Woodcutter's Errand, Bad Blood, Hold the Line, Flamework, Scale the Walls, Cold Water, Hunt the Hunter, Forager, Marksman, Courtyard Champion, Arcanist); progress comes from your deeds; finishing one pays character XP (`stats::GrantXp`) and posts the next.
-- **Title insignia**: titled characters wear a glowing badge on the left breast; presets earn titles at once (`skills::entitle`), so the Opponent (Swordsmanship 20) wears Blade Adept. Placement was not checked on screen yet.
+- **Contracts** (lane C): a **noticeboard** stands just ahead of the spawn (F: read the notices → WORK tab). Three open at a time on K → WORK (Sparring Partner, Woodcutter's Errand, Bad Blood, Hold the Line, Flamework, Scale the Walls, Cold Water, Hunt the Hunter, Forager, Marksman, Courtyard Champion, Arcanist); progress comes from your deeds; finishing one pays character XP (`stats::GrantXp`) and posts the next.
+- **Title insignia**: titled characters wear a glowing badge on the left breast; presets earn titles at once (`skills::entitle`), so the Opponent (Swordsmanship 20) wears Blade Adept. Placement checked on screen (left breast, just below the collarbone).
 - Ward hits flare: sparks and a soft clank where a blow meets the shell.
 - **F7** toggles a second enemy, the **Rival** (team 2, greatsword, purple; Swordsmanship 15, Defence 8). Teams differ, so the brain sends each NPC at its nearest foe: the Rival and the Opponent fight each other as readily as the player. A ragdolled Rival leaves once it is back up. `GB_RIVAL=1` brings it in at start; `GB_FIGHT=<moveset>` puts the player on the NPC brain (`ai::Autopilot`) with that weapon.
 - Kill XP goes to the killer (the last to strike the victim, read from `Hit`), player or NPC: NPCs level up from their kills too.
@@ -188,7 +188,7 @@ Log line: `t character relation side value mode action speed`.
   10. Watch the log at start: each NPC is introduced with its traits; a heavy walker bounces, a light one glides; a reckless one presses, a careful one guards.
   11. Get under 15 % HP and survive 8 s: Second Wind (unique) may be discovered.
   12. K → STATS: click the madlib's words; "walks heavily" bounces, "lightly" glides.
-  13. The Opponent wears a small glowing badge on its left breast (Blade Adept); tell me if it sits inside the chest or floats.
+  13. The Opponent wears a small glowing badge on its left breast (Blade Adept).
   14. K → WORK: three contracts with exact progress; finish one (e.g. land 30 blows) for XP and a new posting.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
@@ -240,7 +240,7 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
 - **B. Done** (traversal, ranged, magic). Possible: ledge shimmy, diving, bow draw/release clips (the aim uses the pistol pose). NPC archers (F8 Hunter) and casters are done.
 - **Next for magic:** done this round: NPC casters and the Aura Ward. Ward-hit sparks done. Open: a faulds skirt to close the armour's hips, mastery for the ward (it lands no blows).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
-- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Player madlib, title insignia and contracts done. Next: occupations (NPC day schedules), standing (who may post contracts), a guild board prop, occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
+- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Player madlib, title insignia, contracts and the noticeboard done. Next: occupations (NPC day schedules), standing (who may post contracts), occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
 - **D. Done:** `motion/tweak.rs` (F2). Possible: N to author new keys (`authored` tracks).
 - **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 

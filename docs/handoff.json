@@ -740,7 +740,6 @@
       "ideas": [
         "occupations",
         "stat-weighted affinity",
-        "guild board prop",
         "standing (who may post)"
       ]
     },
@@ -813,7 +812,8 @@
       "survive under 15% HP for 8 s: Second Wind (unique)",
       "K -> STATS madlib: click words, walk style changes",
       "Opponent badge on the left breast (check placement)",
-      "K -> WORK: finish a contract for XP and a new posting"
+      "K -> WORK: finish a contract for XP and a new posting",
+      "noticeboard by the spawn: F opens WORK"
     ]
   },
   "controls": {
