@@ -1,5 +1,6 @@
 //! The weapon chest. Weapons are not on the hotbar: opening the courtyard chest (F) shows the
-//! weapon rack, a `gbui` panel with one slot per melee / unarmed moveset (`moveset::Movesets`).
+//! weapon rack, a `gbui` panel with one slot per unarmed / melee / ranged moveset
+//! (`moveset::Movesets`).
 //! Clicking a slot asks `combat` to wield it (`combat::Equip`, applied once the player is free);
 //! the wielded one shows checked, and the footer types the hovered weapon's light / heavy damage.
 //! The rack closes with Esc, when the chest is closed again, or when the player walks off.
@@ -43,7 +44,7 @@ struct RackFooter;
 
 /// Weapon movesets in rack order: unarmed first, then by name.
 pub fn weapons(sets: &Movesets) -> Vec<&Moveset> {
-    let mut v: Vec<&Moveset> = sets.0.values().filter(|m| matches!(m.kind, Kind::Unarmed | Kind::Melee)).collect();
+    let mut v: Vec<&Moveset> = sets.0.values().filter(|m| matches!(m.kind, Kind::Unarmed | Kind::Melee | Kind::Ranged)).collect();
     v.sort_by(|a, b| (a.kind != Kind::Unarmed, &a.name).cmp(&(b.kind != Kind::Unarmed, &b.name)));
     v.truncate(RACK);
     v
@@ -213,6 +214,16 @@ fn pick(
 
 /// One line about a weapon: its attacks' damage.
 pub fn describe(set: &Moveset) -> String {
+    if let Some(p) = &set.projectile {
+        return format!(
+            "{}  //  {} {:.0} dmg{}  every {:.2} s",
+            set.name.to_uppercase(),
+            p.kind,
+            p.damage,
+            if p.count > 1 { format!(" ×{}", p.count) } else { String::new() },
+            set.cooldown
+        );
+    }
     let list = |v: &[super::moveset::Attack]| {
         v.iter().map(|a| format!("{:.0}", a.damage)).collect::<Vec<_>>().join("/")
     };

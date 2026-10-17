@@ -90,10 +90,19 @@ fn player_input(
     mut commands: Commands,
     mut players: Query<(Entity, &Transform, &mut Intent), With<Player>>,
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
+    tweak: Option<Res<crate::motion::tweak::Tweak>>,
 ) {
     let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
         return;
     };
+    // The pose tweak tool (F2) has the keyboard.
+    if tweak.is_some_and(|t| t.on) {
+        *intent = Intent {
+            look: intent.look,
+            ..default()
+        };
+        return;
+    }
     let mouse_live = capture.captured && !capture.just_captured;
 
     // --- Movement stick (keyboard digital, gamepad analog; the larger wins).

@@ -25,7 +25,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `motion/body.rs` | Body capsules (+ the root's `BodyPadding` for worn armour); swings arms out of torso/head/opposite thigh and thighs apart (after springs, before contact) | done |
 | `motion/contact.rs` | Foot IK (heel + ball), pelvis drop only as far as a planted foot can't reach by straightening its leg (swing feet ignored), step-bounce dip (`ContactRequest.bob`, fades where the feet stand at different heights), COP lean, look-at, hand IK | done |
 | `motion/compose.rs` | **Only bone writer**: layers → springs → body → contact → bone `Transform`s; also publishes the pose in model space as `RigPose` | done |
-| `motion/tweak.rs` | F2 pose tweak tool | **stub** |
+| `motion/tweak.rs` | F2 pose tweak: freeze the player on a track key (PgUp/PgDn track, [ ] key), click or , . a bone, arrows swing (camera axes), wheel twists, Shift fine, Backspace reset, Ctrl+S merges into `poses.json` `edits` (hot-reloaded); player input is ignored while it is on | new |
 | `play/mod.rs` | Shared types: `Intent Mover Action Fighter Loadout Hit StaminaSpend Interactable Climbable Water Feel`, capsule consts, `spawn_character` | done |
 | `play/world.rs` | Terrain, pond, stairs, mantle boxes, climb walls, props, interactables, characters | done |
 | `play/input.rs` | Keyboard/mouse/gamepad → `Intent` | done |
@@ -53,7 +53,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/combat.rs` | Melee FSM (light chains, charged heavy, sprint attack, air plunge, guard / parry, roll / sidestep, stamina, poise), swept hit tests, **only `Hit` resolver**, hitstop, reactions, death / revive, weapon in the hand | done |
 | `play/ai.rs` | Rule-based NPC brain → `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive` | new |
 | `play/ragdoll.rs` | Impact ragdoll (F6 on the player): on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
-| `play/ranged.rs` | Bow/crossbow/throwing, projectiles | **stub** |
+| `play/ranged.rs` | Movesets of kind `ranged` (`bow`, `crossbow`, `knives`, from the chest): RMB aims (upper-body aim clip, half speed, crosshair), LMB fires; the bow draws (hold, power grows with the draw), the crossbow reloads, knives throw in fans of 3. Shots arc under gravity, sweep body capsules, emit `Hit` (`HitKind::Projectile`, × might); arrows and bolts stick in the world; `GB_SHOOT` hook | new |
 | `play/magic.rs` | Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 4 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step; mastery per landed blow → **Skill** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known by level; `GB_CAST` demo hook | new |
 | `play/traverse.rs` | Swim (chest under the surface, bob, sprint costs stamina, wade out), wall climb (jump at a tall `Climbable` face; stick climbs / shimmies; hand and foot holds on a grid; jump kicks off, dodge lets go, stamina runs out → fall), mantle over the top, vault onto waist-high blocks (`ActionKind::Mantle`, scripted rise-then-over path); `GB_CLIMB` smoke hook | new |
 
@@ -187,11 +187,11 @@ Log line: `t character relation side value mode action speed`.
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
 - **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
-- **B. Ranged:** traversal and magic are done; `ranged.rs` (bow, crossbow, knives) is next. Traversal could add ledge shimmy and diving.
+- **B. Done** (traversal, ranged, magic). Possible: ledge shimmy, diving, bow draw/release clips (the aim uses the pistol pose), NPC archers and casters.
 - **Next for magic:** NPC casters (the AI only fights in melee), a Battlewill shield art, a faulds skirt to close the armour's hips.
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.
-- **D. Pose tweak tool:** `motion/tweak.rs` (F2).
+- **D. Done:** `motion/tweak.rs` (F2). Possible: N to author new keys (`authored` tracks).
 - **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 
 Rules: keep the module header docs in step with the code. Use the monitor log to back motion claims. Stop for a playtest at each milestone.

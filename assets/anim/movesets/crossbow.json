@@ -1,0 +1,20 @@
+{
+  "name": "crossbow",
+  "kind": "ranged",
+  "weapon": {
+    "primitive": { "shape": "box", "size": [0.07, 0.62, 0.09], "color": [0.35, 0.24, 0.14] },
+    "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "length": 0.0
+  },
+  "aim": {
+    "clip": { "track": "ual1/Pistol_Aim_Neutral", "mask": "upper" },
+    "hold": 0.1,
+    "reload": { "track": "ual1/Pistol_Reload", "start": 0.0 },
+    "draw_time": 0.0
+  },
+  "projectile": {
+    "kind": "bolt", "speed": 55.0, "gravity": 4.0, "radius": 0.06,
+    "damage": 38.0, "poise": 35.0, "knockback": 4.0, "lifetime": 3.0,
+    "color": [0.3, 0.22, 0.14]
+  },
+  "cooldown": 1.4
+}

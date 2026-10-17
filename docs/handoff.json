@@ -62,8 +62,8 @@
     },
     {
       "file": "motion/tweak.rs",
-      "role": "F2 pose tweak tool",
-      "status": "stub"
+      "role": "F2 pose tweak: freeze on a key, pick and rotate bones, Ctrl+S into poses.json edits",
+      "status": "new"
     },
     {
       "file": "play/mod.rs",
@@ -183,8 +183,8 @@
     },
     {
       "file": "play/ranged.rs",
-      "role": "bows, crossbows, throwing, projectiles",
-      "status": "stub"
+      "role": "bow/crossbow/knives movesets: aim, draw, reload, arcing shots that stick; GB_SHOOT",
+      "status": "new"
     },
     {
       "file": "play/magic.rs",
@@ -550,7 +550,7 @@
       "assets/anim/sekiro.glb"
     ],
     "poses": "assets/anim/poses.json (optional, hot reload)",
-    "movesets": "assets/anim/movesets/{unarmed,katana,greatsword,dagger,axe}.json (melee; windows from donor hand/foot speed peaks); bow, crossbow, knives, fire, frost wait for the ranged / magic lanes",
+    "movesets": "assets/anim/movesets/: unarmed katana greatsword dagger axe (melee), bow crossbow knives (ranged); spells live in play/magic.rs ABILITIES",
     "weapons": "assets/packs/weapons/*.glb",
     "feel": "profiles/feel.json",
     "monitor_log": "staging/relations.log",
@@ -611,7 +611,8 @@
       ],
       "ideas": [
         "tightrope/balance beam: lean drift countered by the player, arms spread, wobble then fall; builds on contact lean, arm inertia, body self-collision"
-      ]
+      ],
+      "status": "done"
     },
     {
       "id": "C",
@@ -626,7 +627,8 @@
       "name": "pose tweak tool",
       "files": [
         "motion/tweak.rs"
-      ]
+      ],
+      "status": "done"
     }
   ],
   "shared_files": [
@@ -699,6 +701,7 @@
     "GB_CAST": "ability ids",
     "GB_CAST_EVERY": "s",
     "GB_VFX_TEST": "1",
-    "GB_CLIMB": "1: jump once at 2.5 s, then hold forward"
+    "GB_CLIMB": "1: jump once at 2.5 s, then hold forward",
+    "GB_SHOOT": "bow|crossbow|knives"
   }
 }

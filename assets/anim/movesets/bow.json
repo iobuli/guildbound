@@ -1,0 +1,59 @@
+{
+  "name": "bow",
+  "kind": "ranged",
+  "weapon": {
+    "primitive": {
+      "shape": "cylinder",
+      "size": [
+        0.03,
+        1.3,
+        0.03
+      ],
+      "color": [
+        0.42,
+        0.27,
+        0.14
+      ]
+    },
+    "hand": "l",
+    "offset": [
+      -0.625,
+      0.075,
+      0.0
+    ],
+    "rotation_deg": [
+      0,
+      0,
+      -90
+    ],
+    "length": 0.0
+  },
+  "aim": {
+    "clip": {
+      "track": "ual1/Pistol_Aim_Neutral",
+      "mask": "upper"
+    },
+    "hold": 0.1,
+    "release": {
+      "track": "ual1/Pistol_Shoot",
+      "start": 0.0
+    },
+    "draw_time": 0.7
+  },
+  "projectile": {
+    "kind": "arrow",
+    "speed": 38.0,
+    "gravity": 9.0,
+    "radius": 0.06,
+    "damage": 26.0,
+    "poise": 18.0,
+    "knockback": 2.5,
+    "lifetime": 4.0,
+    "color": [
+      0.55,
+      0.42,
+      0.28
+    ]
+  },
+  "cooldown": 0.35
+}
