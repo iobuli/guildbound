@@ -28,7 +28,7 @@ const TALK_FOV: f32 = 42.0;
 const EYE_FORWARD: f32 = 0.1;
 /// Most options shown.
 pub const OPTIONS: usize = 7;
-const PANEL_W: f32 = 760.0;
+const PANEL_W: f32 = 680.0;
 const LINE_RATE: f32 = 70.0;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -46,6 +46,11 @@ pub struct Talkable {
     /// A few words under the name ("Guild receptionist").
     pub title: &'static str,
 }
+
+/// UI kept on screen during a talk (the dialogue panel, the Guild Card); every other top-level
+/// UI node is hidden for a clean first-person view and shown again after.
+#[derive(Component, Default)]
+pub struct KeepInTalk;
 
 /// The NPC F would talk to now.
 #[derive(Resource, Default)]
@@ -106,7 +111,7 @@ pub fn plugin(app: &mut App) {
         .add_message::<EndTalk>()
         .add_systems(Startup, spawn_ui)
         .add_systems(Update, focus.before(PlaySet::Input))
-        .add_systems(Update, (smoke, start, choose, end, show_panel, prompt).chain().after(PlaySet::Input))
+        .add_systems(Update, (smoke, start, choose, end, show_panel, prompt, declutter).chain().after(PlaySet::Input))
         .add_systems(PostUpdate, view.after(super::camera::follow).before(TransformSystems::Propagate));
 }
 
@@ -238,13 +243,14 @@ fn spawn_ui(mut commands: Commands) {
     commands
         .spawn((
             Panel,
+            KeepInTalk,
             panel(
                 "stats",
                 Node {
                     display: Display::None,
                     position_type: PositionType::Absolute,
                     left: percent(50.0),
-                    bottom: px(36.0),
+                    bottom: px(24.0),
                     margin: UiRect::left(px(-PANEL_W * 0.5)),
                     width: px(PANEL_W),
                     flex_direction: FlexDirection::Column,
@@ -264,7 +270,7 @@ fn spawn_ui(mut commands: Commands) {
                 Typewriter::new("", LINE_RATE),
                 Node {
                     width: px(PANEL_W - 28.0),
-                    min_height: px(44.0),
+                    min_height: px(30.0),
                     ..default()
                 },
             ));
@@ -273,7 +279,7 @@ fn spawn_ui(mut commands: Commands) {
                     OptionRow(i),
                     Button,
                     Node {
-                        height: px(24.0),
+                        height: px(21.0),
                         align_items: AlignItems::Center,
                         padding: UiRect::horizontal(px(8.0)),
                         ..default()
@@ -337,6 +343,29 @@ fn show_panel(
     }
     for (o, mut t) in &mut texts {
         t.0 = dialogue.options.get(o.0).map_or(String::new(), |c| format!("{}.  {}", o.0 + 1, c.label));
+    }
+}
+
+/// While talking, hide the rest of the HUD (only what this hid comes back).
+#[allow(clippy::type_complexity)]
+fn declutter(
+    talking: Res<Talking>,
+    mut hidden: Local<Vec<Entity>>,
+    mut roots: Query<(Entity, &mut Visibility), (With<Node>, Without<ChildOf>, Without<KeepInTalk>)>,
+) {
+    if talking.active() {
+        for (e, mut v) in &mut roots {
+            if *v != Visibility::Hidden {
+                *v = Visibility::Hidden;
+                hidden.push(e);
+            }
+        }
+    } else if !hidden.is_empty() {
+        for e in hidden.drain(..) {
+            if let Ok((_, mut v)) = roots.get_mut(e) {
+                *v = Visibility::Inherited;
+            }
+        }
     }
 }
 

@@ -799,6 +799,7 @@ fn spawn_card(mut commands: Commands) {
     commands
         .spawn((
             Card,
+            super::talk::KeepInTalk,
             panel(
                 "stats",
                 Node {
