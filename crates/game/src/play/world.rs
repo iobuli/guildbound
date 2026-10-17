@@ -1002,11 +1002,8 @@ fn spawn_characters(commands: &mut Commands) {
         SPAWN_YAW,
         Fighter::new(0, 100.0),
         Loadout {
-            slots: [
-                "unarmed", "katana", "greatsword", "dagger", "axe", "bow", "crossbow", "knives", "fire", "frost",
-            ]
-            .map(String::from)
-            .to_vec(),
+            // Weapons come from the chest (`armory`); fists until then.
+            slots: vec!["unarmed".to_string()],
             current: 0,
         },
         None,

@@ -16,6 +16,7 @@
 //! (combat damage reactions) may interrupt anything.
 
 pub mod ai;
+pub mod armory;
 pub mod armor;
 pub mod audio;
 pub mod camera;
@@ -86,7 +87,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins(stats::plugin);
+    .add_plugins((stats::plugin, armory::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

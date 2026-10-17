@@ -14,6 +14,7 @@ use avian3d::prelude::*;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::prelude::*;
 use bevy::transform::TransformSystems;
+use super::armory::ArmoryOpen;
 use super::inventory::BagOpen;
 use super::tuning::TuningPanel;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
@@ -281,6 +282,7 @@ fn capture_cursor(
     mut capture: ResMut<CursorCapture>,
     mut windows: Query<(&Window, &mut CursorOptions), With<PrimaryWindow>>,
     bag: Option<Res<BagOpen>>,
+    armory: Option<Res<ArmoryOpen>>,
     tuning: Option<Res<TuningPanel>>,
     mut tweak_page: Local<bool>,
 ) {
@@ -296,7 +298,10 @@ fn capture_cursor(
         *tweak_page = false;
     }
     // Any open page frees the cursor; closing the last one takes it back.
-    let ui_mode = bag.is_some_and(|b| b.0) || tuning.is_some_and(|t| t.open) || *tweak_page;
+    let ui_mode = bag.is_some_and(|b| b.0)
+        || armory.is_some_and(|a| a.0.is_some())
+        || tuning.is_some_and(|t| t.open)
+        || *tweak_page;
     if capture.ui_mode && !ui_mode {
         capture.wanted = true;
     }
