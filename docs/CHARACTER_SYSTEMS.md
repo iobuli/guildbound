@@ -1,7 +1,30 @@
 # Character systems: stats, skills, arts, jobs, traits
 
-Status: proposal v0 (2026-10-15), from the wave-1 playtest Q&A. Nothing here is implemented yet.
-Open questions are at the end.
+Status: **v1 implemented (2026-10-17)**: deeds, skills, discovery and discovered arts/spells
+(`play/deeds.rs`, `play/skills.rs`, `assets/data/skills.json`, the SKILLS tab). The rest of this
+document (titles, occupations, contracts, events, traits) is still the proposal. The user's
+answers to the open questions are recorded at the end; where they differ from the proposal below,
+the answers win.
+
+## What v1 built
+
+- **Hybrid progression.** The six stats of `play/stats.rs` (Vigor, Endurance, Strength, Dexterity,
+  Intelligence, Faith) keep levels and points. Skills sit on top, rise only from deeds, and add a
+  small per-level `bonus` to `Derived` (`stats::SkillBonus`). The 12-stat derived-from-skills model
+  below is not built.
+- **Deeds:** `hit{weapon}`, `block`, `parry`, `kill`, `cast{ability}`, `cast_hit{ability}`,
+  `shoot{arrow|bolt|knife}`, `shoot_hit{...}`, `swim` and `climb` per metre, `mantle`,
+  `land{Roll|Hard}`, `chop`, `fell`, `gather{item}`.
+- **16 skills:** Swordsmanship, Unarmed, Axemanship, Defence, Archery, Throwing, Aura Arts, Fire /
+  Frost / Lightning / Arcane Manipulation, Swimming, Climbing, Breakfall, Woodcutting, Gathering.
+  RuneScape curve (99 = 13 034 431 XP); at most 600 XP per skill per 30 s.
+- **Discovery:** `p = base · a / (a + 4)` per matching deed, certain at `pity`; xorshift RNG seeded
+  per character. Arts and spells: once every skill that `unlocks` one has reached its level,
+  deeds that train those skills build its affinity (`p = 0.15 · a / (a + 3)`, certain at 8).
+  Start: Crescent Edge and Cinder Bolt.
+- **Mastery** (per ability, from landed blows) is unchanged and now called **Mastered** so the
+  word "skill" means only these skills.
+- Player and NPCs carry the same `Sheet`; the Opponent starts with Swordsmanship 20, Defence 12.
 
 ## Words (use exactly these)
 
@@ -135,7 +158,16 @@ NPCs roll traits, so every character moves differently. This needs a per-charact
 - `Deed` message emitted by interact, combat, traverse and magic. One `progress` system turns deeds into XP, affinity, discovery, mastery, titles and contract progress.
 - `perceive(observer, target)` returns what the observer is able to know; the HUD only shows that.
 
-## Open questions
+## Answers (2026-10-16)
+
+1. Self-knowledge: **exact numbers** (levels, XP, affinity % toward discovery on the SKILLS tab).
+2. Art resource: **Battlewill** for arts, **magicules** for spells (Tensura-inspired; no predation).
+3. Stats: the six of `stats.rs` stay, with points per level (**hybrid**).
+4. Art unlock: **discovered** after the requirements are met, with a pity floor.
+5. Guild standing: not decided (not in v1).
+6. Permanence: **permanent**, like RuneScape.
+
+## Open questions (as first asked)
 
 1. **Self-knowledge.** What does the player see about themselves? Proposal: skill names with a band (Novice … Grandmaster); exact numbers only with an Introspection-type skill.
 2. **Art resource name.** Ki, Essence, Aether, other?

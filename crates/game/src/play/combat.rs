@@ -44,6 +44,7 @@
 use super::camera::CameraShake;
 use super::controller::{Teleport, wrap_angle, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
+use super::deeds::Deed;
 use super::monitor::Monitor;
 use super::moveset::{Attack, ClipRef, Moveset, Movesets, Primitive, WeaponDef};
 use super::ragdoll::RagdollRequest;
@@ -1985,11 +1986,13 @@ fn blow(attacker: Entity, target: &Target, sw: &Swing, point: Vec3, dir: Vec3, s
 }
 
 /// What `resolve` knows about the attacker of a blow.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Attacker {
     pos: Vec3,
     scale: f32,
     player: bool,
+    /// The wielded moveset (the `hit` deed's tag).
+    weapon: String,
 }
 
 #[allow(clippy::type_complexity)]
@@ -2008,17 +2011,21 @@ type Victim<'a> = (
 
 /// Feedback shared by every outcome: hitstop, shake, sound, sparks.
 // One lifetime per writer: they are separate system params and `&mut` is invariant.
-struct Feedback<'sfx, 'bursts, 'a> {
+struct Feedback<'sfx, 'bursts, 'deeds, 'a> {
     feel: &'a Feel,
     stop: &'a mut Hitstop,
     shake: &'a mut CameraShake,
     sfx: &'a mut MessageWriter<'sfx, Sfx>,
     bursts: &'a mut MessageWriter<'bursts, Burst>,
+    deeds: &'a mut MessageWriter<'deeds, Deed>,
     monitor: &'a mut Monitor,
     now: f32,
 }
 
-impl Feedback<'_, '_, '_> {
+impl Feedback<'_, '_, '_, '_> {
+    fn deed(&mut self, who: Entity, kind: &'static str, tag: &str) {
+        self.deeds.write(Deed::new(who, kind, tag, 1.0));
+    }
     fn strike(&mut self, involved: bool, hitstop: f32, trauma: f32, sound: SfxKind, at: Vec3, volume: f32) {
         if involved {
             self.stop.trigger(self.feel.hitstop.max(0.0) * hitstop);
@@ -2049,6 +2056,7 @@ fn resolve(
     mut shake: ResMut<CameraShake>,
     mut sfx: MessageWriter<Sfx>,
     mut bursts: MessageWriter<Burst>,
+    mut deeds: MessageWriter<Deed>,
     mut monitor: ResMut<Monitor>,
     mut commands: Commands,
     mut fighters: Query<Victim>,
@@ -2063,25 +2071,31 @@ fn resolve(
         shake: &mut shake,
         sfx: &mut sfx,
         bursts: &mut bursts,
+        deeds: &mut deeds,
         monitor: &mut monitor,
         now: time.elapsed_secs(),
     };
     for hit in hits.read() {
-        let attacker = fighters.get(hit.attacker).ok().map(|(tf, .., scale, player, _)| Attacker {
+        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _)| Attacker {
             pos: tf.translation,
             scale: scale.map_or(1.0, |s| finite(s.0, 1.0).max(0.0)),
             player,
+            weapon: loadout.equipped().to_string(),
         });
         let attacker = attacker.unwrap_or(Attacker {
             pos: hit.point - hit.direction,
             scale: 1.0,
             player: false,
+            weapon: String::new(),
         });
         let Ok(victim) = fighters.get_mut(hit.target) else {
             // A training dummy (or anything else that can't be hurt): feedback only.
             let heavy = hit.knockback >= KNOCKDOWN_POISE_KB;
             let sound = if heavy { SfxKind::HitHeavy } else { SfxKind::Hit };
             fx.strike(attacker.player, 1.0, SHAKE_LIGHT, sound, hit.point, 0.8);
+            if hit.kind == HitKind::Melee {
+                fx.deed(hit.attacker, "hit", &attacker.weapon);
+            }
             continue;
         };
         let parried = strike(hit, &attacker, victim, &bank, &movesets, &feel, &mut fx, &mut commands);
@@ -2160,6 +2174,7 @@ fn strike(
             fx.strike(involved, HITSTOP_PARRY, SHAKE_PARRY, SfxKind::Parry, hit.point, 1.0);
             fx.sparks(hit.point, from, SPARKS_PARRY);
             log(fx, "parry", 0.0, &action, &mover);
+            fx.deed(hit.target, "parry", "");
             true
         }
         Verdict::Blocked { damage, stamina } => {
@@ -2170,7 +2185,9 @@ fn strike(
             fx.strike(involved, HITSTOP_BLOCK, SHAKE_BLOCK, SfxKind::Block, hit.point, 0.9);
             fx.sparks(hit.point, from, SPARKS_BLOCK);
             log(fx, "hit_blocked", damage, &action, &mover);
+            fx.deed(hit.target, "block", "");
             if fighter.hp <= 0.0 {
+                fx.deed(hit.attacker, "kill", "");
                 kill(&mut fighter, &mut action, &mut mover, &mut melee, fx, hit.point, involved);
             }
             false
@@ -2183,7 +2200,11 @@ fn strike(
             fx.strike(involved, HITSTOP_HEAVY, SHAKE_HEAVY, SfxKind::Block, hit.point, 1.0);
             fx.sparks(hit.point, from, SPARKS_BLOCK);
             log(fx, "guard_break", damage, &action, &mover);
+            if hit.kind == HitKind::Melee {
+                fx.deed(hit.attacker, "hit", &attacker.weapon);
+            }
             if fighter.hp <= 0.0 {
+                fx.deed(hit.attacker, "kill", "");
                 kill(&mut fighter, &mut action, &mut mover, &mut melee, fx, hit.point, involved);
             } else {
                 stagger(&mut melee, &mut action, &mut mover, bank, from, hit.direction, knockback);
@@ -2212,6 +2233,12 @@ fn strike(
                 });
             }
             log(fx, &format!("hit_{outcome:?}").to_lowercase(), damage, &action, &mover);
+            if hit.kind == HitKind::Melee {
+                fx.deed(hit.attacker, "hit", &attacker.weapon);
+            }
+            if outcome == Reaction::Death {
+                fx.deed(hit.attacker, "kill", "");
+            }
             let swimming = !matches!(mover.mode, MoveMode::Ground | MoveMode::Air);
             match outcome {
                 Reaction::Death => {

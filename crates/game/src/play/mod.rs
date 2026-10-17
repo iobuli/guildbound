@@ -22,6 +22,7 @@ pub mod audio;
 pub mod camera;
 pub mod combat;
 pub mod controller;
+pub mod deeds;
 pub mod fx;
 pub mod grass;
 pub mod hud;
@@ -36,6 +37,7 @@ pub mod parkour;
 pub mod ragdoll;
 pub mod ranged;
 pub mod select;
+pub mod skills;
 pub mod stats;
 pub mod surfaces;
 pub mod traverse;
@@ -88,7 +90,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

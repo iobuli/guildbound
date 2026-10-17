@@ -10,9 +10,12 @@
 //!   capsules and dummies like spells do, and emit `Hit` (`HitKind::Projectile`, damage scaled by
 //!   the shooter's `stats::Derived::might`). Arrows and bolts that hit the world stick there for
 //!   `STUCK_TIME` s; knives clatter and vanish.
+//! Each volley is a `shoot` deed and each fighter struck a `shoot_hit` (tagged with the
+//! projectile kind: arrow, bolt, knife).
 //! Shooting owns the `Action` (`Owner::Ranged`, `ActionKind::Aim` / `Shoot` / `Reload`); hit
 //! reactions interrupt it.
 use super::combat::{CombatSet, segment_distance};
+use super::deeds::Deed;
 use super::moveset::{Kind, Moveset, Movesets, ProjectileDef};
 use super::stats::Derived;
 use super::tools::Holding;
@@ -110,6 +113,7 @@ fn shoot(
     sets: Res<Movesets>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut deeds: MessageWriter<Deed>,
     mut q: Query<(
         Entity,
         &Transform,
@@ -209,6 +213,7 @@ fn shoot(
                 let d = Quat::from_rotation_y(spread) * dir;
                 spawn_shot(&mut commands, &mut meshes, &mut materials, entity, fighter.team, def, power, muzzle, d * def.speed * speed_share);
             }
+            deeds.write(Deed::new(entity, "shoot", def.kind.clone(), 1.0));
             st.cooldown = set.cooldown.max(0.05);
             if let Some(reload) = &aim.reload {
                 action.start(ActionKind::Reload, Owner::Ranged, Some(ActionLayer::new(reload.track.clone(), reload.start, Mask::Upper)));
@@ -288,6 +293,7 @@ fn fly(
     mut commands: Commands,
     spatial: SpatialQuery,
     mut hits: MessageWriter<Hit>,
+    mut deeds: MessageWriter<Deed>,
     mut shots: Query<(Entity, &mut Shot, &mut Transform)>,
     fighters: Query<(Entity, &Transform, &Fighter), Without<Shot>>,
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Shot>)>,
@@ -341,6 +347,7 @@ fn fly(
                 speed: s.velocity.length(),
                 kind: HitKind::Projectile,
             });
+            deeds.write(Deed::new(s.owner, "shoot_hit", s.def.kind.clone(), 1.0));
             commands.entity(entity).try_despawn();
             continue;
         }

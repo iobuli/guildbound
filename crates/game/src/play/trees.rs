@@ -14,6 +14,7 @@
 //! `chop` / `fell` lines in `staging/relations.log` give the blade's distance to the bark and the
 //! notch depth, to calibrate the stand distance and the grip.
 use super::camera::CameraShake;
+use super::deeds::Deed;
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::interact::{PropState, UseBeat, Using};
 use super::items::{ItemAssets, ItemKind, spawn_item};
@@ -353,6 +354,7 @@ fn chop(
     mut sounds: MessageWriter<Sfx>,
     mut shake: ResMut<CameraShake>,
     mut monitor: ResMut<Monitor>,
+    mut deeds: MessageWriter<Deed>,
 ) {
     let now = time.elapsed_secs();
     for beat in beats.read() {
@@ -432,7 +434,9 @@ fn chop(
             notch.depth
         ));
 
+        deeds.write(Deed::new(beat.user, "chop", "", 1.0));
         if notch.depth >= FELL_DEPTH * radius {
+            deeds.write(Deed::new(beat.user, "fell", "", 1.0));
             fell(&mut commands, &mut meshes, root, &mut tree, notch, radius);
             prop.regrow = REGROW;
             prop.shake = 0.0;

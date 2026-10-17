@@ -1,16 +1,20 @@
-//! The stats page: a `gbui` panel with two tabs, opened by the STATS button on the minimap's rim
+//! The stats page: a `gbui` panel with three tabs, opened by the STATS button on the minimap's rim
 //! (a dot lights on it while attribute points wait), K, or the hotbar's Q / E slots.
 //! - STATS: level, experience, unspent points; the six attributes with a + button each (sends
 //!   `stats::SpendPoint`); the derived values (`stats::Derived`).
 //! - ARTS & MAGIC: every art (Q, Battlewill) and spell (E, magicules) with its cost and mastery;
-//!   known ones bind to their key on click (`magic::Bind`), skills are tagged, locked ones show
-//!   the level that teaches them.
-//! The footer types out whatever is hovered. `StatsOpen` (written here only) frees the cursor
+//!   discovered ones bind to their key on click (`magic::Bind`), mastered ones are tagged,
+//!   undiscovered ones show the skill levels that make them discoverable.
+//! - SKILLS: every discovered skill (`skills::Sheet`) with its exact level and XP to the next, and
+//!   the undiscovered skills the character is closest to finding (affinity toward the pity floor).
+//! The footer types out whatever is hovered. Smoke: `GB_STATS=stats|arts|skills` opens that tab
+//! 1 s in (for headless screenshots). `StatsOpen` (written here only) frees the cursor
 //! through `camera`.
 use super::MARGIN;
 use super::minimap;
 use crate::play::camera::PageToggles;
-use crate::play::magic::{ABILITIES, Bind, Grimoire, Pool, SKILL_COST};
+use crate::play::magic::{ABILITIES, Ability, Bind, Grimoire, MASTERED_COST, Pool};
+use crate::play::skills::{Sheet, SkillBook, SkillDef, level_for_xp, xp_for_level};
 use crate::play::stats::{Attr, Derived, LevelUp, POINTS_PER_LEVEL, SpendPoint, Stats};
 use super::log::{HudLog, LogKind};
 use crate::play::Player;
@@ -19,6 +23,9 @@ use gbui::prelude::*;
 
 const WIDTH: f32 = 430.0;
 const ROW: f32 = 24.0;
+const SKILL_ROW: f32 = 21.0;
+/// Undiscovered skills hinted at on the SKILLS tab.
+const HINTS: usize = 3;
 const FOOTER_RATE: f32 = 110.0;
 /// The map button: size (px) and where on the rim it sits (rad from east, counter-clockwise).
 const BUTTON: Vec2 = Vec2::new(52.0, 20.0);
@@ -29,6 +36,7 @@ pub enum StatsTab {
     #[default]
     Stats,
     Arts,
+    Skills,
 }
 
 /// The open tab, if the page is open.
@@ -43,7 +51,11 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<StatsOpen>()
         .add_message::<ToggleStats>()
         .add_systems(Startup, spawn)
-        .add_systems(Update, (toggle.in_set(PageToggles), clicks, refresh, hover, level_up).chain());
+        .add_systems(Update, smoke.before(PageToggles))
+        .add_systems(
+            Update,
+            (toggle.in_set(PageToggles), clicks, refresh, refresh_skills, hover, level_up).chain(),
+        );
 }
 
 #[derive(Component)]
@@ -75,13 +87,21 @@ struct AbilityText(usize);
 #[derive(Component)]
 struct AbilityTag(usize);
 #[derive(Component)]
+struct SkillRow(usize);
+#[derive(Component)]
+struct SkillText(usize);
+#[derive(Component)]
+struct SkillTag(usize);
+#[derive(Component)]
+struct SkillHint;
+#[derive(Component)]
 struct Footer;
 
 fn button(class: &'static str, node: Node) -> impl Bundle {
     (Button, node, Styled::new(class), UiFlags::default())
 }
 
-fn spawn(mut commands: Commands) {
+fn spawn(mut commands: Commands, book: Res<SkillBook>) {
     // The rim button, over the minimap's top-right edge.
     let r = minimap::SIZE * 0.5;
     let centre = Vec2::new(MARGIN + r, MARGIN + minimap::READOUT + r);
@@ -159,7 +179,7 @@ fn spawn(mut commands: Commands) {
                     ..default()
                 })
                 .with_children(|tabs| {
-                    for (tab, text) in [(StatsTab::Stats, "STATS"), (StatsTab::Arts, "ARTS & MAGIC")] {
+                    for (tab, text) in [(StatsTab::Stats, "STATS"), (StatsTab::Arts, "ARTS & MAGIC"), (StatsTab::Skills, "SKILLS")] {
                         tabs.spawn((
                             Tab(tab),
                             button(
@@ -261,8 +281,7 @@ fn spawn(mut commands: Commands) {
                             ..default()
                         },
                     ));
-                    for (i, a) in ABILITIES.iter().enumerate().filter(|(_, a)| a.is_art() == art) {
-                        let _ = a;
+                    for (i, _) in ABILITIES.iter().enumerate().filter(|(_, a)| a.is_art() == art) {
                         page.spawn((
                             AbilityRow(i),
                             button(
@@ -284,6 +303,47 @@ fn spawn(mut commands: Commands) {
                 }
             });
 
+            // SKILLS page.
+            p.spawn((
+                Page(StatsTab::Skills),
+                Node {
+                    display: Display::None,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(1.0),
+                    ..default()
+                },
+            ))
+            .with_children(|page| {
+                for i in 0..book.0.len() {
+                    page.spawn((
+                        SkillRow(i),
+                        button(
+                            "row",
+                            Node {
+                                display: Display::None,
+                                height: px(SKILL_ROW),
+                                align_items: AlignItems::Center,
+                                justify_content: JustifyContent::SpaceBetween,
+                                padding: UiRect::horizontal(px(6.0)),
+                                ..default()
+                            },
+                        ),
+                    ))
+                    .with_children(|r| {
+                        r.spawn((SkillText(i), label("", "row.text")));
+                        r.spawn((SkillTag(i), label("", "row.tag")));
+                    });
+                }
+                page.spawn((
+                    SkillHint,
+                    label("", "text.dim"),
+                    Node {
+                        margin: UiRect::top(px(6.0)),
+                        ..default()
+                    },
+                ));
+            });
+
             p.spawn((
                 Footer,
                 label("", "text.dim"),
@@ -295,6 +355,21 @@ fn spawn(mut commands: Commands) {
                 },
             ));
         });
+}
+
+/// `GB_STATS=<tab>`: open the page on that tab once, 1 s in.
+fn smoke(time: Res<Time>, mut done: Local<bool>, mut toggles: MessageWriter<ToggleStats>) {
+    if *done || time.elapsed_secs() < 1.0 {
+        return;
+    }
+    *done = true;
+    let tab = match std::env::var("GB_STATS").unwrap_or_default().trim() {
+        "stats" => StatsTab::Stats,
+        "arts" => StatsTab::Arts,
+        "skills" => StatsTab::Skills,
+        _ => return,
+    };
+    toggles.write(ToggleStats(Some(tab)));
 }
 
 /// K, Esc, `ToggleStats` (map button, hotbar) and the close / tab buttons.
@@ -384,7 +459,8 @@ fn clicks(
 #[allow(clippy::type_complexity)]
 fn refresh(
     open: Res<StatsOpen>,
-    player: Query<(&Stats, Option<&Derived>, Option<&Grimoire>), With<Player>>,
+    book: Res<SkillBook>,
+    player: Query<(&Stats, Option<&Derived>, Option<&Grimoire>, Option<&Sheet>), With<Player>>,
     mut texts: ParamSet<(
         Query<(&AttrValue, &mut Text)>,
         Query<&mut Text, With<Header>>,
@@ -396,7 +472,8 @@ fn refresh(
     mut rows: Query<(&AbilityRow, &mut UiFlags), Without<Plus>>,
     mut dot: Query<&mut Visibility, With<MapDot>>,
 ) {
-    let Ok((s, d, g)) = player.single() else { return };
+    let Ok((s, d, g, sheet)) = player.single() else { return };
+    let found = |a: &Ability| sheet.is_some_and(|sh| sh.has_ability(a.id));
     for mut v in &mut dot {
         v.set_if_neq(if s.points > 0 { Visibility::Inherited } else { Visibility::Hidden });
     }
@@ -439,7 +516,7 @@ fn refresh(
     for (r, mut flags) in &mut rows {
         let a = &ABILITIES[r.0];
         let bound = g.art == a.id || g.spell == a.id;
-        let locked = a.level > s.level;
+        let locked = !found(a);
         if flags.checked != bound {
             flags.checked = bound;
         }
@@ -450,9 +527,9 @@ fn refresh(
     for (r, mut t) in &mut texts.p3() {
         let a = &ABILITIES[r.0];
         let pool = if a.pool == Pool::Battlewill { "BW" } else { "MP" };
-        let cost = a.cost * if g.is_skill(a.id) { SKILL_COST } else { 1.0 };
-        let line = if a.level > s.level {
-            format!("{}", a.name)
+        let cost = a.cost * if g.is_mastered(a.id) { MASTERED_COST } else { 1.0 };
+        let line = if !found(a) {
+            "· · ·".to_string()
         } else {
             format!("{}   {cost:.0} {pool}   {:.0}%", a.name, g.mastery(a.id) * 100.0)
         };
@@ -460,10 +537,10 @@ fn refresh(
     }
     for (r, mut t) in &mut texts.p4() {
         let a = &ABILITIES[r.0];
-        let tag = if a.level > s.level {
-            format!("LV {}", a.level)
-        } else if g.is_skill(a.id) {
-            "SKILL".to_string()
+        let tag = if !found(a) {
+            requirement(&book, a, sheet)
+        } else if g.is_mastered(a.id) {
+            "MASTERED".to_string()
         } else if g.art == a.id {
             "[Q]".to_string()
         } else if g.spell == a.id {
@@ -475,14 +552,132 @@ fn refresh(
     }
 }
 
+/// What an undiscovered ability waits on: "Aura Arts 5" (met requirements are dropped; all met
+/// reads "SENSED").
+fn requirement(book: &SkillBook, a: &Ability, sheet: Option<&Sheet>) -> String {
+    let left: Vec<String> = book
+        .requires(a.id)
+        .into_iter()
+        .filter(|(s, lvl)| sheet.map_or(0, |sh| sh.level(&s.id)) < *lvl)
+        .map(|(s, lvl)| format!("{} {lvl}", short(&s.name)))
+        .collect();
+    if left.is_empty() { "SENSED".to_string() } else { left.join(" + ") }
+}
+
+/// "Fire Manipulation" → "Fire".
+fn short(name: &str) -> &str {
+    name.strip_suffix(" Manipulation").unwrap_or(name)
+}
+
+/// One line about a skill: family, bonus per level, abilities it opens.
+fn describe(s: &SkillDef) -> String {
+    let b = &s.bonus;
+    let mut per = Vec::new();
+    for (v, what, pct) in [
+        (b.max_hp, "HP", false),
+        (b.max_stamina, "ST", false),
+        (b.max_battlewill, "BW", false),
+        (b.max_mana, "MP", false),
+        (b.might, "might", true),
+        (b.spell, "spell", true),
+        (b.cast_speed, "cast", true),
+    ] {
+        if v != 0.0 {
+            per.push(if pct { format!("+{:.1}% {what}", v * 100.0) } else { format!("+{v:.1} {what}") });
+        }
+    }
+    let opens: Vec<String> = s
+        .unlocks
+        .iter()
+        .filter_map(|u| ABILITIES.iter().find(|a| a.id == u.ability).map(|a| format!("{} at {}", a.name, u.level)))
+        .collect();
+    let mut line = format!("{} ({}): {} per level.", s.name, s.family, if per.is_empty() { "—".into() } else { per.join(", ") });
+    if !opens.is_empty() {
+        line += &format!(" Opens {}.", opens.join(", "));
+    }
+    line
+}
+
+/// The SKILLS tab: discovered skills with exact numbers, the nearest undiscovered ones.
+#[allow(clippy::type_complexity)]
+fn refresh_skills(
+    open: Res<StatsOpen>,
+    book: Res<SkillBook>,
+    player: Query<&Sheet, With<Player>>,
+    mut rows: Query<(&SkillRow, &mut Node)>,
+    mut texts: ParamSet<(
+        Query<(&SkillText, &mut Text)>,
+        Query<(&SkillTag, &mut Text)>,
+        Query<&mut Text, With<SkillHint>>,
+    )>,
+) {
+    if open.0 != Some(StatsTab::Skills) {
+        return;
+    }
+    let Ok(sheet) = player.single() else { return };
+    let set = |t: &mut Text, v: String| {
+        if t.0 != v {
+            t.0 = v;
+        }
+    };
+    for (r, mut node) in &mut rows {
+        let show = book.0.get(r.0).is_some_and(|s| sheet.knows(&s.id));
+        let want = if show { Display::Flex } else { Display::None };
+        if node.display != want {
+            node.display = want;
+        }
+    }
+    for (r, mut t) in &mut texts.p0() {
+        let Some(s) = book.0.get(r.0) else { continue };
+        set(&mut t, format!("{}   LV {}", s.name, sheet.level(&s.id)));
+    }
+    for (r, mut t) in &mut texts.p1() {
+        let Some(s) = book.0.get(r.0) else { continue };
+        let xp = sheet.xp.get(&s.id).copied().unwrap_or(0.0);
+        let level = level_for_xp(xp);
+        let tag = if level >= 99 {
+            format!("{xp:.0} XP  MAX")
+        } else {
+            format!("{xp:.0} / {:.0} XP", xp_for_level(level + 1))
+        };
+        set(&mut t, tag);
+    }
+    let mut near: Vec<(&SkillDef, f32)> = book
+        .0
+        .iter()
+        .filter(|s| !sheet.knows(&s.id))
+        .filter_map(|s| sheet.affinity.get(&s.id).map(|a| (s, (a / s.discovery.pity).min(1.0))))
+        .filter(|(_, f)| *f > 0.0)
+        .collect();
+    near.sort_by(|a, b| b.1.total_cmp(&a.1));
+    let known = sheet.xp.len();
+    let mut hint = if known == 0 {
+        "No skills yet: they are found by doing.".to_string()
+    } else {
+        format!("{known} of {} skills discovered.", book.0.len())
+    };
+    if !near.is_empty() {
+        let list: Vec<String> = near.iter().take(HINTS).map(|(s, f)| format!("{} {:.0}%", s.name, f * 100.0)).collect();
+        hint += &format!("\nSensing: {}", list.join("  //  "));
+    }
+    for mut t in &mut texts.p2() {
+        set(&mut t, hint.clone());
+    }
+}
+
 /// The footer explains what the cursor is over.
+#[allow(clippy::type_complexity)]
 fn hover(
     open: Res<StatsOpen>,
+    book: Res<SkillBook>,
+    player: Query<&Sheet, With<Player>>,
     attrs: Query<(&AttrRow, &Interaction)>,
     rows: Query<(&AbilityRow, &Interaction)>,
+    skills: Query<(&SkillRow, &Interaction)>,
     mut footer: Query<&mut Typewriter, With<Footer>>,
 ) {
     let Some(tab) = open.0 else { return };
+    let sheet = player.single().ok();
     let line = attrs
         .iter()
         .find(|(_, i)| **i != Interaction::None)
@@ -490,14 +685,31 @@ fn hover(
         .or_else(|| {
             rows.iter().find(|(_, i)| **i != Interaction::None).map(|(r, _)| {
                 let a = &ABILITIES[r.0];
-                format!("{} (from level {}): {} Click to bind.", a.name, a.level, a.about)
+                if sheet.is_some_and(|s| s.has_ability(a.id)) {
+                    format!("{}: {} Click to bind.", a.name, a.about)
+                } else {
+                    format!(
+                        "Undiscovered. Needs {}; then keep training it and it will come to you.",
+                        requirement(&book, a, sheet)
+                    )
+                }
             })
+        })
+        .or_else(|| {
+            skills
+                .iter()
+                .find(|(_, i)| **i != Interaction::None)
+                .and_then(|(r, _)| book.0.get(r.0))
+                .map(describe)
         })
         .unwrap_or_else(|| match tab {
             StatsTab::Stats => "Levels come from defeating foes. Spend points with +.".to_string(),
             StatsTab::Arts => {
-                "Landing an ability grows its mastery; mastered, it becomes a Skill (cheaper, faster, stronger) at a permanent cost of magicules."
+                "Arts and spells are discovered by training their skills. Landing one grows its mastery; mastered, it is cheaper, faster and stronger, at a permanent cost of magicules."
                     .to_string()
+            }
+            StatsTab::Skills => {
+                "Skills are found and raised by doing: fighting, casting, swimming, climbing, felling. They never fade.".to_string()
             }
         });
     for mut tw in &mut footer {

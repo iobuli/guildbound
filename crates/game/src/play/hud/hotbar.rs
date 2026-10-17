@@ -1,12 +1,12 @@
 //! The hotbar: the player's bound art (Q) and spell (E) from `magic::Grimoire`, the weapon in hand
 //! (weapons come from the chest, `armory`), and the bag button at the far right. Ability slots
-//! show a three-letter code, `★` once the ability is a skill, and dim while its pool can't pay
+//! show a three-letter code, `★` once the ability is mastered, and dim while its pool can't pay
 //! for it; their tooltips give the name, cost and mastery. Clicking Q or E opens the stats page on
 //! its Arts & Magic tab (bind there); the bag button sends `inventory::ToggleBag`.
 use super::MARGIN;
 use super::stats_page::{StatsTab, ToggleStats};
 use crate::play::inventory::{BagOpen, ToggleBag};
-use crate::play::magic::{Energy, Grimoire, Pool, SKILL_COST, ability};
+use crate::play::magic::{Energy, Grimoire, MASTERED_COST, Pool, ability};
 use crate::play::{Loadout, Player};
 use bevy::prelude::*;
 use gbui::prelude::*;
@@ -98,8 +98,8 @@ fn update(
             Kind::Art | Kind::Spell => {
                 let id = if *kind == Kind::Art { g.art } else { g.spell };
                 let Some(a) = ability(id) else { continue };
-                let skill = g.is_skill(id);
-                let cost = a.cost * if skill { SKILL_COST } else { 1.0 };
+                let mastered = g.is_mastered(id);
+                let cost = a.cost * if mastered { MASTERED_COST } else { 1.0 };
                 let have = match a.pool {
                     Pool::Battlewill => e.battlewill,
                     Pool::Magicules => e.magicules,
@@ -108,11 +108,11 @@ fn update(
                 let tip = format!(
                     "{}{}  //  {cost:.0} {pool}  //  mastery {:.0}%",
                     a.name,
-                    if skill { " [SKILL]" } else { "" },
+                    if mastered { " [MASTERED]" } else { "" },
                     g.mastery(id) * 100.0
                 );
                 let changed = if *kind == Kind::Art { last.0 != now.0 } else { last.1 != now.1 };
-                (code(a.name), if skill { "★".to_string() } else { String::new() }, tip, have < cost, false, changed)
+                (code(a.name), if mastered { "★".to_string() } else { String::new() }, tip, have < cost, false, changed)
             }
             Kind::Weapon => {
                 let name = loadout.equipped();

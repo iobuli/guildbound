@@ -188,7 +188,7 @@
     },
     {
       "file": "play/magic.rs",
-      "role": "arts (Q, Battlewill) and spells (E, magicules; MB5 cycles), ABILITIES table, shapes bolt/crescent/quake/lance/orbs/step, mastery -> skills at a magicule cost, GB_CAST demo",
+      "role": "arts (Q, Battlewill) and spells (E, magicules; MB5 cycles), ABILITIES table, shapes bolt/crescent/quake/lance/orbs/step, mastery -> Mastered at a magicule cost, known = discovered (skills::Sheet), GB_CAST demo",
       "status": "new"
     },
     {
@@ -203,7 +203,7 @@
     },
     {
       "file": "play/stats.rs",
-      "role": "universal Stats on every Fighter -> Derived; xp from kills, points per level",
+      "role": "universal Stats on every Fighter -> Derived; xp from kills, points per level; SkillBonus from skills folded in by derive_with",
       "status": "new"
     },
     {
@@ -218,7 +218,17 @@
     },
     {
       "file": "play/hud/stats_page.rs",
-      "role": "STATS / ARTS & MAGIC tabs, minimap rim button, K",
+      "role": "STATS / ARTS & MAGIC / SKILLS tabs, minimap rim button, K, GB_STATS smoke hook",
+      "status": "new"
+    },
+    {
+      "file": "play/deeds.rs",
+      "role": "Deed {who, kind, tag, amount}: the only input to progression",
+      "status": "new"
+    },
+    {
+      "file": "play/skills.rs",
+      "role": "use-based skills from assets/data/skills.json: RuneScape curve, XP window cap, affinity + seeded discovery with pity, ability discovery via unlocks, Sheet on every Fighter, SkillBonus",
       "status": "new"
     }
   ],
@@ -541,6 +551,32 @@
       "writer": [
         "hud::stats_page"
       ]
+    },
+    {
+      "quantity": "Deed",
+      "writer": [
+        "combat",
+        "magic",
+        "ranged",
+        "traverse",
+        "parkour",
+        "trees"
+      ],
+      "readers": [
+        "skills"
+      ]
+    },
+    {
+      "quantity": "Sheet, SkillBonus",
+      "writer": [
+        "skills"
+      ],
+      "readers": [
+        "magic",
+        "stats",
+        "hud"
+      ],
+      "note": "world presets the Opponent at spawn; magic demo marks abilities discovered"
     }
   ],
   "data": {
@@ -557,7 +593,8 @@
     "parkour_reference": "docs/reference/parkour_jump.md (frames pending)",
     "sounds": "assets/audio/kenney/impactWood_*, impactPlank_* (Kenney Impact Sounds, CC0)",
     "textures": "assets/textures/armor/plate_{color,normal,mr}.png (ambientCG Metal049C, CC0)",
-    "shaders": "assets/shaders/grass.wgsl (grass vertex shader); assets/shaders/toon.wgsl (unused)"
+    "shaders": "assets/shaders/grass.wgsl (grass vertex shader); assets/shaders/toon.wgsl (unused)",
+    "skills": "assets/data/skills.json"
   },
   "monitor": {
     "key": "F4",
@@ -618,9 +655,22 @@
       "id": "C",
       "name": "character systems",
       "files": [
-        "new module per docs/CHARACTER_SYSTEMS.md"
+        "play/deeds.rs",
+        "play/skills.rs",
+        "assets/data/skills.json",
+        "play/hud/stats_page.rs (SKILLS tab)"
       ],
-      "blocked_on": "6 open questions in docs/CHARACTER_SYSTEMS.md"
+      "status": "v1 done (skills, deeds, discovered arts)",
+      "ideas": [
+        "hot reload skills.json",
+        "titles",
+        "occupations",
+        "contracts",
+        "events",
+        "traits madlib -> MotionStyle",
+        "stat-weighted affinity",
+        "NPC casters"
+      ]
     },
     {
       "id": "D",
@@ -673,14 +723,15 @@
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
   ],
   "milestone": {
-    "name": "stats, magic, weapon chest, controls, fuller armour",
+    "name": "skills, deeds, discovered arts (lane C v1)",
     "status": "awaiting playtest",
+    "tests": "171 passed, 1 ignored",
     "playtest": [
-      "F the chest, wield each weapon",
-      "Q/E casts, MB5 cycles, K to bind more at levels 2-5",
-      "kill the Opponent: xp, level, points",
-      "BW fills from blows, MP regenerates",
-      "armour covers upper arms and thighs"
+      "K -> SKILLS: punch a dummy, Unarmed is discovered",
+      "cast Cinder Bolt: Fire Manipulation; Sensing shows Lightning affinity",
+      "swim, climb, mantle, roll-land, chop/fell, gather: their skills",
+      "ARTS & MAGIC: undiscovered rows show needed skill levels / SENSED",
+      "STATS: derived values grow with skill levels"
     ]
   },
   "controls": {
@@ -702,6 +753,7 @@
     "GB_CAST_EVERY": "s",
     "GB_VFX_TEST": "1",
     "GB_CLIMB": "1: jump once at 2.5 s, then hold forward",
-    "GB_SHOOT": "bow|crossbow|knives"
+    "GB_SHOOT": "bow|crossbow|knives",
+    "GB_STATS": "stats|arts|skills: open that stats tab at 1 s"
   }
 }

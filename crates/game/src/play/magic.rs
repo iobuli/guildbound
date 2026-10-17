@@ -6,17 +6,17 @@
 //! - **Magicules** fuel **spells** on E: a short cast (the chant), then the effect. They
 //!   regenerate after a pause. MB5 binds the next known spell to E.
 //!
-//! Abilities are a table (`ABILITIES`): pool, element, cost, unlock level, cast clip window and
+//! Abilities are a table (`ABILITIES`): pool, element, cost, cast clip window and
 //! release point (from the clips' measured hand-speed peaks), damage / poise / knockback and a
 //! `Shape`: a projectile (`Bolt`), a thrown aura blade (`Crescent`, passes through up to three
 //! foes), a ground slam (`Quake`), a chained lightning strike (`Lance`), orbiting motes that
-//! launch and home (`Orbs`, Lissajous orbits), or a dash (`Step`). Known abilities are those up to
-//! the fighter's level (`stats::Stats`).
+//! launch and home (`Orbs`, Lissajous orbits), or a dash (`Step`). Known abilities are the ones the
+//! fighter has discovered (`skills::Sheet::abilities`; `skills` discovers them from deeds).
 //!
 //! Mastery: every blow an ability lands adds `MASTERY_PER_HIT`; at full mastery the world
-//! acknowledges it as a **Skill**: it costs `SKILL_COST` of the price, casts `SKILL_SPEED` times
-//! faster, hits `SKILL_POWER` times harder and its effects grow, but forming a skill permanently
-//! takes `SKILL_DEBT` magicules from the fighter's maximum.
+//! acknowledges it as **Mastered**: it costs `MASTERED_COST` of the price, casts `MASTERED_SPEED` times
+//! faster, hits `MASTERED_POWER` times harder and its effects grow, but mastering it permanently
+//! takes `MASTERED_DEBT` magicules from the fighter's maximum.
 //!
 //! Damage: arts scale by `stats::Derived::might`, spells by `spell`; blows go out as `Hit`s
 //! (`HitKind::Spell`, resolved by `combat` like everything else). Casting owns the `Action`
@@ -25,7 +25,9 @@ use super::combat::{CombatSet, segment_distance};
 use super::camera::CameraShake;
 use super::hud::log::{HudLog, LogKind};
 use super::monitor::Monitor;
-use super::stats::{Derived, Stats};
+use super::deeds::Deed;
+use super::skills::Sheet;
+use super::stats::Derived;
 use super::tools::Holding;
 use super::vfx::{self, Element, Expire, Flash, Vfx};
 use super::world::TrainingDummy;
@@ -40,13 +42,13 @@ use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
-/// Mastery per landed blow (20 blows to a skill), and what a skill changes.
+/// Mastery per landed blow (20 blows to mastered), and what mastery changes.
 pub const MASTERY_PER_HIT: f32 = 0.05;
-pub const SKILL_COST: f32 = 0.65;
-pub const SKILL_SPEED: f32 = 1.35;
-pub const SKILL_POWER: f32 = 1.2;
-pub const SKILL_FLAIR: f32 = 1.35;
-pub const SKILL_DEBT: f32 = 8.0;
+pub const MASTERED_COST: f32 = 0.65;
+pub const MASTERED_SPEED: f32 = 1.35;
+pub const MASTERED_POWER: f32 = 1.2;
+pub const MASTERED_FLAIR: f32 = 1.35;
+pub const MASTERED_DEBT: f32 = 8.0;
 /// Pools: Battlewill per landed melee blow / per blow taken, at rest (/s); magicules (/s) after
 /// `MP_DELAY` s without casting.
 const BW_ON_HIT: f32 = 7.0;
@@ -94,8 +96,6 @@ pub struct Ability {
     pub pool: Pool,
     pub element: Element,
     pub cost: f32,
-    /// Known from this level on.
-    pub level: u32,
     pub track: &'static str,
     /// Clip window (s), playback rate and release point (share of the window).
     pub start: f32,
@@ -123,7 +123,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Battlewill,
         element: Element::Aura,
         cost: 25.0,
-        level: 1,
         track: "ual2/Sword_Regular_A",
         start: 0.0,
         end: 0.43,
@@ -141,7 +140,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Battlewill,
         element: Element::Aura,
         cost: 18.0,
-        level: 1,
         track: "sekiro/Run-Forwards",
         start: 0.0,
         end: 0.3,
@@ -159,7 +157,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Battlewill,
         element: Element::Aura,
         cost: 14.0,
-        level: 3,
         track: "ual1/Spell_Simple_Shoot",
         start: 0.0,
         end: 0.45,
@@ -177,7 +174,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Battlewill,
         element: Element::Aura,
         cost: 40.0,
-        level: 5,
         track: "sekiro/Zombie Smash",
         start: 0.9,
         end: 2.0,
@@ -196,7 +192,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Magicules,
         element: Element::Fire,
         cost: 18.0,
-        level: 1,
         track: "sekiro/Magic Action Small Projectile",
         start: 0.3,
         end: 1.3,
@@ -214,7 +209,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Magicules,
         element: Element::Frost,
         cost: 26.0,
-        level: 2,
         track: "sekiro/Magic Action Big Projectile",
         start: 0.5,
         end: 1.6,
@@ -232,7 +226,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Magicules,
         element: Element::Lightning,
         cost: 30.0,
-        level: 3,
         track: "sekiro/Magic Action Energy Beam",
         start: 0.7,
         end: 1.5,
@@ -250,7 +243,6 @@ pub static ABILITIES: [Ability; 8] = [
         pool: Pool::Magicules,
         element: Element::Arcane,
         cost: 34.0,
-        level: 4,
         track: "ual1/Spell_Simple_Enter",
         start: 0.0,
         end: 0.53,
@@ -268,9 +260,10 @@ pub fn ability(id: &str) -> Option<&'static Ability> {
     ABILITIES.iter().find(|a| a.id == id)
 }
 
-/// Abilities a fighter of `level` knows, arts or spells.
-pub fn known(level: u32, arts: bool) -> impl Iterator<Item = &'static Ability> {
-    ABILITIES.iter().filter(move |a| a.level <= level && a.is_art() == arts)
+/// Of the `discovered` abilities (`skills::Sheet::abilities`), the arts or the spells, in table
+/// order.
+pub fn known(discovered: &[&'static str], arts: bool) -> impl Iterator<Item = &'static Ability> {
+    ABILITIES.iter().filter(move |a| discovered.contains(&a.id) && a.is_art() == arts)
 }
 
 /// The two pools (written by `magic` only).
@@ -302,7 +295,7 @@ pub struct Grimoire {
     pub art: &'static str,
     pub spell: &'static str,
     pub mastery: HashMap<&'static str, f32>,
-    /// Magicules given up to form skills.
+    /// Magicules given up to master abilities.
     pub debt: f32,
 }
 
@@ -321,7 +314,7 @@ impl Grimoire {
     pub fn mastery(&self, id: &str) -> f32 {
         self.mastery.get(id).copied().unwrap_or(0.0)
     }
-    pub fn is_skill(&self, id: &str) -> bool {
+    pub fn is_mastered(&self, id: &str) -> bool {
         self.mastery(id) >= 1.0
     }
 }
@@ -340,7 +333,7 @@ struct Casting {
     t: f32,
     rate: f32,
     released: bool,
-    skill: bool,
+    mastered: bool,
     power: f32,
     aim: Vec3,
     target: Option<Entity>,
@@ -417,13 +410,13 @@ fn pools(
 /// Binding from the stats panel; MB5 cycles the bound spell.
 fn bind(
     mut binds: MessageReader<Bind>,
-    mut q: Query<(Entity, &mut Grimoire, &Stats, &Intent)>,
+    mut q: Query<(Entity, &mut Grimoire, &Sheet, &Intent)>,
     mut log: MessageWriter<HudLog>,
     players: Query<(), With<Player>>,
 ) {
     for b in binds.read() {
         let Ok((_, mut g, s, _)) = q.get_mut(b.who) else { continue };
-        let Some(a) = ability(b.id).filter(|a| a.level <= s.level) else { continue };
+        let Some(a) = ability(b.id).filter(|a| s.has_ability(a.id)) else { continue };
         if a.is_art() {
             g.art = a.id;
         } else {
@@ -434,7 +427,7 @@ fn bind(
         if !intent.next_spell {
             continue;
         }
-        let spells: Vec<_> = known(s.level, false).collect();
+        let spells: Vec<_> = known(&s.abilities, false).collect();
         if spells.is_empty() {
             continue;
         }
@@ -471,7 +464,7 @@ fn start_cast(
             &mut Mover,
             &mut Energy,
             &Grimoire,
-            &Stats,
+            &Sheet,
             &Fighter,
             Option<&Derived>,
             Option<&Rig>,
@@ -483,7 +476,7 @@ fn start_cast(
     globals: Query<&GlobalTransform>,
 ) {
     let (Some(bank), Some(vfx)) = (bank, vfx) else { return };
-    for (entity, tf, intent, mut action, mut mover, mut energy, g, stats, fighter, derived, rig, holding, player) in &mut q {
+    for (entity, tf, intent, mut action, mut mover, mut energy, g, sheet, fighter, derived, rig, holding, player) in &mut q {
         let id = if intent.art_pressed {
             g.art
         } else if intent.spell_pressed {
@@ -491,12 +484,12 @@ fn start_cast(
         } else {
             continue;
         };
-        let Some(a) = ability(id).filter(|a| a.level <= stats.level) else { continue };
+        let Some(a) = ability(id).filter(|a| sheet.has_ability(a.id)) else { continue };
         if fighter.dead || holding || !action.is_free() || !matches!(mover.mode, MoveMode::Ground | MoveMode::Air) {
             continue;
         }
-        let skill = g.is_skill(a.id);
-        let cost = a.cost * if skill { SKILL_COST } else { 1.0 };
+        let mastered = g.is_mastered(a.id);
+        let cost = a.cost * if mastered { MASTERED_COST } else { 1.0 };
         let pool = match a.pool {
             Pool::Battlewill => &mut energy.battlewill,
             Pool::Magicules => &mut energy.magicules,
@@ -515,7 +508,7 @@ fn start_cast(
         let d = derived.copied();
         let scale = if a.is_art() { d.map_or(1.0, |d| d.might) } else { d.map_or(1.0, |d| d.spell) };
         let cast_speed = if a.is_art() { 1.0 } else { d.map_or(1.0, |d| d.cast_speed) };
-        let rate = a.speed * cast_speed * if skill { SKILL_SPEED } else { 1.0 };
+        let rate = a.speed * cast_speed * if mastered { MASTERED_SPEED } else { 1.0 };
         let origin = hand(rig, &bank, &globals, tf);
         let target = intent.target;
         let aim_point = target
@@ -543,8 +536,8 @@ fn start_cast(
             t: 0.0,
             rate,
             released: false,
-            skill,
-            power: scale * if skill { SKILL_POWER } else { 1.0 },
+            mastered,
+            power: scale * if mastered { MASTERED_POWER } else { 1.0 },
             aim,
             target,
             motes,
@@ -612,6 +605,7 @@ fn drive_cast(
     mut shake: ResMut<CameraShake>,
     mut monitor: ResMut<Monitor>,
     mut hits: MessageWriter<Hit>,
+    mut deeds: MessageWriter<Deed>,
     mut casters: Query<(
         Entity,
         &Transform,
@@ -676,7 +670,7 @@ fn drive_cast(
                 commands.entity(m).try_despawn();
             }
             let team = fighter.team;
-            let flair = if c.skill { SKILL_FLAIR } else { 1.0 };
+            let flair = if c.mastered { MASTERED_FLAIR } else { 1.0 };
             let landed = release(
                 &mut commands,
                 &mut meshes,
@@ -695,6 +689,10 @@ fn drive_cast(
                 shake.add(if matches!(a.shape, Shape::Quake { .. }) { 0.5 } else { 0.25 });
             }
             gain(&mut grimoire, a.id, landed);
+            deeds.write(Deed::new(entity, "cast", a.id, 1.0));
+            if landed > 0 {
+                deeds.write(Deed::new(entity, "cast_hit", a.id, landed as f32));
+            }
         }
         if u >= 1.0 {
             finish(&mut commands, entity, &mut action, &mut mover, &c);
@@ -722,7 +720,7 @@ fn gain(g: &mut Grimoire, id: &'static str, n: u32) {
     let after = (before + MASTERY_PER_HIT * n as f32).min(1.0);
     g.mastery.insert(id, after);
     if before < 1.0 && after >= 1.0 {
-        g.debt += SKILL_DEBT;
+        g.debt += MASTERED_DEBT;
     }
 }
 
@@ -945,6 +943,7 @@ fn fly(
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Projectile>)>,
     mut grimoires: Query<&mut Grimoire>,
     mut monitor: ResMut<Monitor>,
+    mut deeds: MessageWriter<Deed>,
 ) {
     let Some(vfx) = vfx else { return };
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -1058,10 +1057,11 @@ fn fly(
                 p.hits_left = 0;
             }
         }
-        if landed > 0
-            && let Ok(mut g) = grimoires.get_mut(p.owner)
-        {
-            gain(&mut g, a.id, landed);
+        if landed > 0 {
+            deeds.write(Deed::new(p.owner, "cast_hit", a.id, landed as f32));
+            if let Ok(mut g) = grimoires.get_mut(p.owner) {
+                gain(&mut g, a.id, landed);
+            }
         }
         if p.hits_left == 0 || p.life <= 0.0 {
             // Let the trail's particles finish: detach and fade the head.
@@ -1070,15 +1070,15 @@ fn fly(
     }
 }
 
-/// Smoke-test driver: `GB_CAST=cinder_bolt,storm_lance,...` makes the player (levelled up enough)
-/// lock the nearest training dummy and cast those abilities in turn, one every `GB_CAST_EVERY` s (default
+/// Smoke-test driver: `GB_CAST=cinder_bolt,storm_lance,...` makes the player (with those abilities
+/// discovered) lock the nearest training dummy and cast those abilities in turn, one every `GB_CAST_EVERY` s (default
 /// 1.6) from 2 s on, with full pools and no NPCs about. For headless screenshots of the effects.
 fn demo(
     time: Res<Time>,
     mut commands: Commands,
     opponents: Query<Entity, With<super::Npc>>,
     mut state: Local<Option<(Vec<&'static Ability>, usize, f32)>>,
-    mut players: Query<(&Transform, &mut Intent, &mut Grimoire, &mut Energy, &mut Stats), With<Player>>,
+    mut players: Query<(&Transform, &mut Intent, &mut Grimoire, &mut Energy, &mut Sheet), With<Player>>,
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Player>)>,
 ) {
     let st = state.get_or_insert_with(|| {
@@ -1103,9 +1103,11 @@ fn demo(
     if time.elapsed_secs() < 2.0 {
         return;
     }
-    let Ok((tf, mut intent, mut g, mut e, mut stats)) = players.single_mut() else { return };
-    if stats.level < 5 {
-        stats.level = 5;
+    let Ok((tf, mut intent, mut g, mut e, mut sheet)) = players.single_mut() else { return };
+    for a in &st.0 {
+        if !sheet.has_ability(a.id) {
+            sheet.abilities.push(a.id);
+        }
     }
     e.battlewill = e.max_battlewill;
     e.magicules = e.max_magicules;
@@ -1138,14 +1140,15 @@ mod tests {
     #[test]
     fn table_is_consistent() {
         for a in &ABILITIES {
-            assert!(a.cost > 0.0 && a.level >= 1, "{}", a.id);
+            assert!(a.cost > 0.0, "{}", a.id);
             assert!(a.end > a.start && (0.0..=1.0).contains(&a.release), "{}", a.id);
             assert!(ability(a.id).is_some_and(|b| std::ptr::eq(a, b)));
             assert_eq!(a.is_art(), a.element == Element::Aura, "{}: arts are Battlewill", a.id);
         }
         let g = Grimoire::default();
-        assert!(ability(g.art).is_some_and(|a| a.is_art() && a.level == 1));
-        assert!(ability(g.spell).is_some_and(|a| !a.is_art() && a.level == 1));
+        let start = super::super::skills::STARTING;
+        assert!(ability(g.art).is_some_and(|a| a.is_art() && start.contains(&a.id)));
+        assert!(ability(g.spell).is_some_and(|a| !a.is_art() && start.contains(&a.id)));
     }
 
     #[test]
@@ -1158,24 +1161,27 @@ mod tests {
     }
 
     #[test]
-    fn mastery_forms_a_skill_once_and_costs_magicules() {
+    fn mastery_happens_once_and_costs_magicules() {
         let mut g = Grimoire::default();
         for _ in 0..19 {
             gain(&mut g, "cinder_bolt", 1);
         }
-        assert!(!g.is_skill("cinder_bolt"));
+        assert!(!g.is_mastered("cinder_bolt"));
         gain(&mut g, "cinder_bolt", 1);
-        assert!(g.is_skill("cinder_bolt"));
-        assert_eq!(g.debt, SKILL_DEBT);
+        assert!(g.is_mastered("cinder_bolt"));
+        assert_eq!(g.debt, MASTERED_DEBT);
         gain(&mut g, "cinder_bolt", 5);
-        assert_eq!(g.debt, SKILL_DEBT, "only once");
+        assert_eq!(g.debt, MASTERED_DEBT, "only once");
     }
 
     #[test]
-    fn levels_unlock_more() {
-        assert_eq!(known(1, true).count(), 2);
-        assert_eq!(known(1, false).count(), 1);
-        assert_eq!(known(5, true).count() + known(5, false).count(), ABILITIES.len());
+    fn known_follows_discovery() {
+        let start = super::super::skills::STARTING;
+        assert_eq!(known(&start, true).map(|a| a.id).collect::<Vec<_>>(), ["crescent_edge"]);
+        assert_eq!(known(&start, false).map(|a| a.id).collect::<Vec<_>>(), ["cinder_bolt"]);
+        let all: Vec<&'static str> = ABILITIES.iter().map(|a| a.id).collect();
+        assert_eq!(known(&all, true).count() + known(&all, false).count(), ABILITIES.len());
+        assert_eq!(known(&[], true).count(), 0);
     }
 
     #[test]

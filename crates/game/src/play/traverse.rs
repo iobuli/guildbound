@@ -14,6 +14,7 @@
 //!   vaults onto it; reaching a wall's top climbs over. A mantle is an `Action` (`Owner::Traverse`,
 //!   `ActionKind::Mantle`, `ual2/ClimbUp_1m`) with the root on a scripted two-phase path (rise to
 //!   the top, then over the edge) in `MoveMode::Ledge`.
+use super::deeds::Deed;
 use super::select::{FootTargets, HandTargets};
 use super::world::ground_height;
 use super::{
@@ -87,7 +88,8 @@ fn demo(
 /// What traversal is doing with a body (added on demand).
 #[derive(Component, Clone, Debug)]
 pub enum Traverse {
-    Swim { clock: f32 },
+    /// `swum`: metres toward the next `swim` deed.
+    Swim { clock: f32, swum: f32 },
     Climb(Climbing),
     Mantle(Mantle),
 }
@@ -160,6 +162,7 @@ fn water(
         Option<&mut Traverse>,
     )>,
     mut spend: MessageWriter<StaminaSpend>,
+    mut deeds: MessageWriter<Deed>,
     mut commands: Commands,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -191,11 +194,11 @@ fn water(
             mover.velocity.y = 0.0;
             commands
                 .entity(entity)
-                .try_insert(Traverse::Swim { clock: 0.0 });
+                .try_insert(Traverse::Swim { clock: 0.0, swum: 0.0 });
             continue;
         }
         let Some(mut state) = state else { continue };
-        let Traverse::Swim { clock } = &mut *state else {
+        let Traverse::Swim { clock, swum } = &mut *state else {
             continue;
         };
         if depth < SWIM_DEPTH - SWIM_HYST || surface.is_none() || fighter.dead {
@@ -226,6 +229,11 @@ fn water(
         if h.length() > 0.2 {
             mover.yaw = h.x.atan2(h.z);
             tf.rotation = Quat::from_rotation_y(mover.yaw);
+        }
+        *swum += Vec2::new(next.x - p.x, next.z - p.z).length();
+        if *swum >= 1.0 {
+            *swum -= 1.0;
+            deeds.write(Deed::new(entity, "swim", "", 1.0));
         }
         tf.translation = next;
         mover.grounded = false;
@@ -264,6 +272,7 @@ fn climb(
         Option<&mut Traverse>,
     )>,
     mut spend: MessageWriter<StaminaSpend>,
+    mut deeds: MessageWriter<Deed>,
     mut commands: Commands,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -386,7 +395,11 @@ fn climb(
                         continue;
                     }
                 }
+                let before = c.travelled;
                 c.travelled += (next - tf.translation).length();
+                if c.travelled.floor() > before.floor() {
+                    deeds.write(Deed::new(entity, "climb", "", 1.0));
+                }
                 mover.velocity = (next - tf.translation) / dt.max(1e-4);
                 tf.translation = next;
                 // The top: climb over.
@@ -470,6 +483,7 @@ fn mantle(
         &mut Action,
         &mut Traverse,
     )>,
+    mut deeds: MessageWriter<Deed>,
     mut commands: Commands,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -500,6 +514,7 @@ fn mantle(
             mover.mode = MoveMode::Ground;
             mover.velocity = Vec3::ZERO;
             mover.grounded = true;
+            deeds.write(Deed::new(entity, "mantle", "", 1.0));
             commands.entity(entity).try_remove::<Traverse>();
         }
     }

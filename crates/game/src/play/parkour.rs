@@ -7,10 +7,12 @@
 //!   takes over smoothly;
 //! - hard: heavy while slow → `ActionKind::HardLand`: a deep landing crouch, locked for a time
 //!   that grows with the impact; jump cancels its second half.
+//! Rolls and hard landings are `land` deeds (tagged `Roll` / `Hard`; Breakfall).
 //! Every landing above `LOG_IMPACT` is logged to `staging/relations.log`. The constants are
 //! body-mechanics defaults until the reference breakdown (`docs/reference/parkour_jump.md`)
 //! calibrates them.
 use super::controller::yaw_of;
+use super::deeds::Deed;
 use super::monitor::Monitor;
 use super::{Action, ActionKind, ActionLayer, Feel, Intent, MoveMode, Mover, Owner, PlaySet};
 use crate::motion::Mask;
@@ -98,11 +100,12 @@ fn land(
     feel: Res<Feel>,
     bank: Res<PoseBank>,
     mut monitor: ResMut<Monitor>,
-    mut characters: Query<(Option<&Name>, &mut Mover, &Intent, &mut Action, &mut Landing)>,
+    mut deeds: MessageWriter<Deed>,
+    mut characters: Query<(Entity, Option<&Name>, &mut Mover, &Intent, &mut Action, &mut Landing)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     let now = time.elapsed_secs();
-    for (name, mut mover, intent, mut action, mut st) in &mut characters {
+    for (entity, name, mut mover, intent, mut action, mut st) in &mut characters {
         let touchdown = st.airborne && mover.mode == MoveMode::Ground;
         st.airborne = mover.mode == MoveMode::Air;
 
@@ -117,6 +120,9 @@ fn land(
                 monitor.write(&format!(
                     "{now:.2} {who} land_{g:?} - {impact:.3} Ground takeoff={takeoff:.2} {speed:.2}"
                 ));
+            }
+            if g != Grade::Soft {
+                deeds.write(Deed::new(entity, "land", format!("{g:?}"), 1.0));
             }
             match g {
                 Grade::Roll if bank.has(ROLL) => {

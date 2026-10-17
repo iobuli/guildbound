@@ -188,6 +188,48 @@ pub fn derive(s: &Stats) -> Derived {
     }
 }
 
+/// Flat additions to `Derived` from skill levels (written by `skills` only; each skill row's
+/// `bonus` × its level).
+#[derive(Component, Clone, Copy, Debug, Default, PartialEq, serde::Deserialize)]
+#[serde(default, deny_unknown_fields)]
+pub struct SkillBonus {
+    pub max_hp: f32,
+    pub max_stamina: f32,
+    pub max_mana: f32,
+    pub max_battlewill: f32,
+    pub might: f32,
+    pub spell: f32,
+    pub cast_speed: f32,
+}
+
+impl SkillBonus {
+    /// `self += other × k`.
+    pub fn add(&mut self, other: &SkillBonus, k: f32) {
+        self.max_hp += other.max_hp * k;
+        self.max_stamina += other.max_stamina * k;
+        self.max_mana += other.max_mana * k;
+        self.max_battlewill += other.max_battlewill * k;
+        self.might += other.might * k;
+        self.spell += other.spell * k;
+        self.cast_speed += other.cast_speed * k;
+    }
+}
+
+/// `derive` plus skill bonuses.
+pub fn derive_with(s: &Stats, b: &SkillBonus) -> Derived {
+    let d = derive(s);
+    Derived {
+        max_hp: d.max_hp + b.max_hp,
+        max_stamina: d.max_stamina + b.max_stamina,
+        max_mana: d.max_mana + b.max_mana,
+        max_battlewill: d.max_battlewill + b.max_battlewill,
+        might: d.might + b.might,
+        spell: d.spell + b.spell,
+        cast_speed: (d.cast_speed + b.cast_speed).clamp(0.5, 1.8),
+        ..d
+    }
+}
+
 /// Raise an attribute with a point (stats panel).
 #[derive(Message, Clone, Copy, Debug)]
 pub struct SpendPoint {
@@ -244,10 +286,14 @@ fn award_xp(
     }
 }
 
-/// Keep `Derived` and `DamageScale` in step with `Stats`.
-fn publish(mut commands: Commands, stats: Query<(Entity, &Stats, Option<&Derived>), Changed<Stats>>) {
-    for (e, s, old) in &stats {
-        let d = derive(s);
+/// Keep `Derived` and `DamageScale` in step with `Stats` and `SkillBonus`.
+#[allow(clippy::type_complexity)]
+fn publish(
+    mut commands: Commands,
+    stats: Query<(Entity, &Stats, Option<&SkillBonus>, Option<&Derived>), Or<(Changed<Stats>, Changed<SkillBonus>)>>,
+) {
+    for (e, s, b, old) in &stats {
+        let d = derive_with(s, &b.copied().unwrap_or_default());
         if old != Some(&d) {
             commands.entity(e).try_insert((d, DamageScale(d.might)));
         }
@@ -299,5 +345,19 @@ mod tests {
         let p = Stats::preset(5, &[Attr::Strength, Attr::Dexterity]);
         assert_eq!(p.get(Attr::Strength) + p.get(Attr::Dexterity), 2 * BASE + 4 * POINTS_PER_LEVEL);
         assert_eq!(p.points, 0);
+    }
+
+    #[test]
+    fn skill_bonus_adds_on_top() {
+        let s = Stats::default();
+        let b = SkillBonus {
+            max_hp: 12.0,
+            might: 0.06,
+            ..default()
+        };
+        let d = derive_with(&s, &b);
+        assert_eq!(d.max_hp, 112.0);
+        assert!((d.might - 1.06).abs() < 1e-6);
+        assert_eq!(derive_with(&s, &SkillBonus::default()), derive(&s));
     }
 }

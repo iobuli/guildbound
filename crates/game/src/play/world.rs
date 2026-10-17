@@ -24,6 +24,7 @@
 //! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
 //! abilities at the nearest NPC (see `magic::demo`).
 use super::armor::spawn_stand;
+use super::skills::{Sheet, xp_for_level};
 use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
 use super::camera::MainCamera;
@@ -1030,9 +1031,13 @@ fn spawn_characters(commands: &mut Commands) {
         },
         Some(Color::srgb(0.80, 0.30, 0.26)),
     );
-    // A seasoned swordsman: a few levels into strength, dexterity and vigor.
+    // A seasoned swordsman: a few levels into strength, dexterity and vigor, and the skills to go
+    // with them.
     let build = [Attr::Strength, Attr::Dexterity, Attr::Vigor];
-    commands.entity(npc).insert((Npc, Stats::preset(4, &build)));
+    let mut sheet = Sheet::default();
+    sheet.grant("swordsmanship", xp_for_level(20));
+    sheet.grant("defence", xp_for_level(12));
+    commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
 }
 
 /// `GB_AUTOQUIT` / `GB_SCREENSHOT` state.
