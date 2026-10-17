@@ -149,7 +149,7 @@ pub struct Guild {
 
 impl Guild {
     fn roll(&mut self, n: usize) -> usize {
-        let mut x = self.rng.max(0x9E37_79B9);
+        let mut x = if self.rng == 0 { 0x9E37_79B9 } else { self.rng };
         x ^= x << 13;
         x ^= x >> 17;
         x ^= x << 5;
@@ -307,7 +307,9 @@ fn spawn_people(mut commands: Commands) {
 
 /// Smoke hooks: `GB_GOLD=<n>` fills the purse; `GB_CARD=1` opens the Guild Card; `GB_EXAM=1`
 /// schedules the next rank's exam and starts the bout at 2.5 s (with `GB_FIGHT` the player duels
-/// on autopilot).
+/// on autopilot); `GB_ITEMS=Log:3,Stone:2` puts items in the bag; `GB_BOUNTIES=Rival:1` fills the
+/// ledger; `GB_PASSED=1` marks the next rank's exam passed; `GB_CHOOSE=sell,bounty,...` picks
+/// those options, one every 1.5 s from 3.5 s, in a talk (`GB_TALK`).
 #[allow(clippy::too_many_arguments)]
 fn smoke(
     time: Res<Time>,
@@ -320,10 +322,36 @@ fn smoke(
     mut captains: Query<(Entity, &Talkable, &mut Fighter)>,
     board: Res<Board>,
     mut log: MessageWriter<HudLog>,
+    mut collected: MessageWriter<super::items::ItemCollected>,
+    mut picks: Local<(Vec<String>, f32)>,
+    talking: Res<Talking>,
+    talkables: Query<&Talkable>,
+    mut chose: MessageWriter<Chose>,
 ) {
     let t = time.elapsed_secs();
     if !done.0 && t > 1.0 {
         done.0 = true;
+        if let Ok(player) = players.single() {
+            for part in std::env::var("GB_ITEMS").unwrap_or_default().split(',') {
+                let mut kv = part.split(':');
+                if let (Some(k), Some(n)) = (kv.next(), kv.next().and_then(|n| n.trim().parse().ok()))
+                    && let Some(kind) = ItemKind::ALL.into_iter().find(|i| format!("{i:?}") == k.trim())
+                {
+                    collected.write(super::items::ItemCollected { who: player, kind, count: n });
+                }
+            }
+        }
+        for part in std::env::var("GB_BOUNTIES").unwrap_or_default().split(',') {
+            let mut kv = part.split(':');
+            if let (Some(k), Some(n)) = (kv.next(), kv.next().and_then(|n| n.trim().parse::<u32>().ok())) {
+                *guild.bounties.entry(k.trim().to_string()).or_insert(0) += n;
+            }
+        }
+        if std::env::var("GB_PASSED").is_ok_and(|v| v.trim() == "1") {
+            guild.exam = Exam::Passed((board.rank() + 1).min(RANKS.len() - 1));
+        }
+        picks.0 = std::env::var("GB_CHOOSE").unwrap_or_default().split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).rev().collect();
+        picks.1 = 3.5;
         if let Some(g) = std::env::var("GB_GOLD").ok().and_then(|s| s.trim().parse().ok())
             && let Ok(mut p) = purses.single_mut()
         {
@@ -331,6 +359,18 @@ fn smoke(
         }
         if std::env::var("GB_CARD").is_ok_and(|v| v.trim() == "1") {
             guild.card_open = true;
+        }
+    }
+    if t > picks.1
+        && let Some(npc) = talking.npc
+        && let Ok(who) = talkables.get(npc)
+        && let Some(id) = picks.0.pop()
+    {
+        picks.1 = t + 1.5;
+        // Only ids the menus offer (they are &'static str).
+        const IDS: [&str; 13] = ["turn_in", "card", "items", "sell", "bounties", "bounty", "apply", "collect", "bed", "exam", "advice", "news", "leave"];
+        if let Some(id) = IDS.into_iter().find(|i| *i == id) {
+            chose.write(Chose { npc, role: who.role, id });
         }
     }
     if !done.1 && t > 2.5 {
@@ -511,6 +551,7 @@ fn respond(
             end.write(EndTalk);
             continue;
         }
+        info!("[guild] {} -> {line}", c.id);
         if !line.is_empty() {
             dialogue.line = line;
         }
@@ -649,6 +690,7 @@ fn sleep(
             guild.bed_paid = false;
             hour.write(super::sky::SetHour(6.0));
             rested.write(Rested { who: player });
+            info!("[guild] slept until dawn");
             log.write(HudLog::new(LogKind::Item, "You sleep until dawn. Rested."));
         } else {
             log.write(HudLog::new(LogKind::System, "Rent a bed from Mira to sleep here."));
@@ -678,17 +720,24 @@ fn chatter(
         .filter(|(_, _, u)| chairs.get(u.target).is_ok_and(|it| it.kind == "chair"))
         .map(|(t, k, _)| (t, k))
         .collect();
-    let Some((tf, who)) = seated.iter().find(|(a, _)| {
-        seated.iter().any(|(b, _)| {
-            let d = a.translation.distance(b.translation);
-            d > 0.1 && d < CHATTER_PAIR
+    // Whoever has company at the table, taking turns at random.
+    let talkers: Vec<&(&Transform, &Talkable)> = seated
+        .iter()
+        .filter(|(a, _)| {
+            seated.iter().any(|(b, _)| {
+                let d = a.translation.distance(b.translation);
+                d > 0.1 && d < CHATTER_PAIR
+            })
         })
-    }) else {
+        .collect();
+    if talkers.is_empty() {
         return;
-    };
+    }
+    let (tf, who) = *talkers[guild.roll(talkers.len())];
     let near = players.single().is_ok_and(|p| p.translation.distance(tf.translation) < HEAR);
     if near {
         let i = guild.roll(data.lines.chatter.len());
+        info!("[guild] {} says: {}", who.name, data.lines.chatter[i]);
         super::talk::say(&mut log, who.name, &data.lines.chatter[i]);
     }
 }
@@ -846,6 +895,13 @@ mod tests {
         };
         assert!(!ids(&booked).contains(&"apply"));
         assert!(desk_menu(&busy).len() <= super::super::talk::OPTIONS);
+    }
+
+    #[test]
+    fn rolls_vary() {
+        let mut g = Guild::default();
+        let picks: std::collections::HashSet<usize> = (0..40).map(|_| g.roll(8)).collect();
+        assert!(picks.len() >= 5, "{picks:?}");
     }
 
     #[test]

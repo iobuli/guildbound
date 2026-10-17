@@ -945,6 +945,10 @@
     "GB_TALK": "npc name: talk at 2 s",
     "GB_GOLD": "starting gold",
     "GB_CARD": "1: open the Guild Card",
-    "GB_EXAM": "1: book and start the rank exam at 2.5 s"
+    "GB_EXAM": "1: book and start the rank exam at 2.5 s",
+    "GB_ITEMS": "Log:3,Stone:2 into the bag",
+    "GB_BOUNTIES": "Rival:1 into the ledger",
+    "GB_PASSED": "1: exam passed",
+    "GB_CHOOSE": "option ids picked in a talk, 1.5 s apart"
   }
 }
