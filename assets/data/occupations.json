@@ -1,9 +1,11 @@
 {
-  "_about": "Occupations: what a civilian does all day, as a routine of interactable kinds used in turn (the nearest free one). stay: seconds a looping use runs (one-shots end with their clip). Civilians use the world through the same interact actions as the player.",
+  "_about": "Occupations: what a civilian does all day, as a routine of interactable kinds used in turn (the nearest free one). stay: seconds a looping use runs (one-shots end with their clip). Civilians use the world through the same interact actions as the player. night: the routine after dark (sky clock), if any.",
   "occupations": [
     { "id": "smith", "name": "Smith",
-      "routine": [ { "kind": "anvil", "stay": 20 }, { "kind": "well", "stay": 0 }, { "kind": "anvil", "stay": 16 }, { "kind": "chair", "stay": 10 }, { "kind": "torch", "stay": 6 } ] },
+      "routine": [ { "kind": "anvil", "stay": 20 }, { "kind": "well", "stay": 0 }, { "kind": "anvil", "stay": 16 }, { "kind": "chair", "stay": 10 }, { "kind": "torch", "stay": 6 } ],
+      "night": [ { "kind": "chair", "stay": 40 }, { "kind": "torch", "stay": 12 } ] },
     { "id": "farmer", "name": "Farmer",
-      "routine": [ { "kind": "seed", "stay": 0 }, { "kind": "watering", "stay": 0 }, { "kind": "crop", "stay": 0 }, { "kind": "well", "stay": 0 }, { "kind": "board", "stay": 0 } ] }
+      "routine": [ { "kind": "seed", "stay": 0 }, { "kind": "watering", "stay": 0 }, { "kind": "crop", "stay": 0 }, { "kind": "well", "stay": 0 }, { "kind": "board", "stay": 0 } ],
+      "night": [ { "kind": "torch", "stay": 15 }, { "kind": "well", "stay": 0 }, { "kind": "chair", "stay": 30 } ] }
   ]
 }

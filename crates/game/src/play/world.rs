@@ -585,6 +585,7 @@ fn setup(
 fn spawn_sky_and_camera(commands: &mut Commands) {
     commands.spawn((
         Name::new("Sun"),
+        super::sky::Sun,
         DirectionalLight {
             illuminance: 9000.0,
             shadow_maps_enabled: true,

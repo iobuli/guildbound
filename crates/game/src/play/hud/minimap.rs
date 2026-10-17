@@ -4,7 +4,7 @@
 //! every 2.5 m, and the courtyard edge; G hill shade; B water; A land) that `gbui`'s ring material
 //! colours from the theme, so theme edits recolour it live. Over it: dots (NPCs, items, trees,
 //! other things to use), the player's arrow (its facing relative to the camera), an N on the rim,
-//! and a readout below (position and camera heading).
+//! and a readout below (position, camera heading and the time of day).
 use super::MARGIN;
 use crate::play::camera::CameraRig;
 use crate::play::items::Item;
@@ -188,6 +188,7 @@ fn update(
     mut arrow: Query<&mut UiTransform, (With<PlayerArrow>, Without<MapDot>, Without<NorthMark>)>,
     mut north: Query<&mut UiTransform, (With<NorthMark>, Without<MapDot>, Without<PlayerArrow>)>,
     mut readout: Query<&mut Text, With<Readout>>,
+    clock: Option<Res<crate::play::sky::Clock>>,
     mut marks: Local<Vec<(u8, f32, Vec2, &'static str)>>,
 ) {
     let Ok((transform, mover)) = player.single() else { return };
@@ -252,7 +253,8 @@ fn update(
         let r = SIZE * 0.5 - NORTH_INSET;
         ui.translation = Val2::px(yaw.sin() * r, -yaw.cos() * r);
     }
-    let line = format!("{:>6.1} {:>6.1}   {:<2}", here.x, here.y, heading(yaw));
+    let time = clock.map_or(String::new(), |c| format!("   {}", c.label()));
+    let line = format!("{:>6.1} {:>6.1}   {:<2}{time}", here.x, here.y, heading(yaw));
     for mut text in &mut readout {
         if text.0 != line {
             text.0 = line.clone();

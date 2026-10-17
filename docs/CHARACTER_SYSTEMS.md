@@ -6,7 +6,7 @@ Status: **v1 implemented (2026-10-17)**: deeds, skills, discovery and discovered
 (`play/traits.rs`, `traits.json`: NPCs roll them; walk → per-character `StyleScale`, temper and
 fight → `ai::Difficulty`; the player picks them on the STATS tab), title insignia and contracts
 (`contracts.json`, the WORK tab, a noticeboard) and occupations as routines (`occupations.json`:
-a Smith and a Farmer; no day clock yet). Standing is still the proposal. The user's
+a Smith and a Farmer, with night routines on the `sky` clock). Standing is still the proposal. The user's
 answers to the open questions are recorded at the end; where they differ from the proposal below,
 the answers win.
 

@@ -4,6 +4,7 @@
 //! kind, press interact (the same `Intent.interact_pressed` as the player: `interact` walks it into
 //! place and plays the clip), stay `stay` s on a looping use (anvil, chair, torch) then press again
 //! to stop, and move on. `work` is the only writer of a civilian's `Intent`.
+//! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one.
 //! The courtyard has a Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well,
 //! the noticeboard).
 use super::interact::{Using, stand_and_face};
@@ -30,6 +31,9 @@ pub struct OccupationDef {
     pub id: String,
     pub name: String,
     pub routine: Vec<Step>,
+    /// After dark (`sky::Clock::is_night`), if any.
+    #[serde(default)]
+    pub night: Vec<Step>,
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -80,6 +84,8 @@ pub struct Occupation {
     stay: f32,
     press_in: f32,
     elapsed: f32,
+    /// Which routine the step indexes (night or day).
+    night: bool,
 }
 
 impl Occupation {
@@ -92,6 +98,7 @@ impl Occupation {
             stay: 0.0,
             press_in: 0.0,
             elapsed: 0.0,
+            night: false,
         }
     }
     fn advance(&mut self, len: usize) {
@@ -114,6 +121,7 @@ pub fn plugin(app: &mut App) {
 fn work(
     time: Res<Time>,
     book: Res<OccupationBook>,
+    clock: Option<Res<super::sky::Clock>>,
     mut workers: Query<(Entity, &Transform, &Fighter, &mut Intent, &mut Occupation, Option<&Using>), With<Civilian>>,
     users: Query<&Using>,
     things: Query<(Entity, &Transform, &Interactable)>,
@@ -130,8 +138,18 @@ fn work(
         if fighter.dead {
             continue;
         }
-        let len = def.routine.len();
-        let step = &def.routine[job.step % len];
+        let night = clock.as_deref().is_some_and(|c| c.is_night()) && !def.night.is_empty();
+        if night != job.night {
+            // Dusk or dawn: start the other routine (a looping use winds down first).
+            job.night = night;
+            job.step = 0;
+            job.phase = Phase::Going;
+            job.stay = 0.0;
+            job.elapsed = 0.0;
+        }
+        let routine = if night { &def.night } else { &def.routine };
+        let len = routine.len();
+        let step = &routine[job.step % len];
         job.elapsed += dt;
         if let Some(u) = using {
             if job.phase == Phase::Going {

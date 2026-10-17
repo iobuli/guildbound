@@ -255,6 +255,11 @@
       "file": "play/occupations.rs",
       "role": "civilians running interactable routines (Smith, Farmer) through the same interact actions",
       "status": "new"
+    },
+    {
+      "file": "play/sky.rs",
+      "role": "day/night clock: sun, moon, sky, fog, ambient; F9 +1 h; GB_HOUR",
+      "status": "new"
     }
   ],
   "order": [
@@ -666,6 +671,16 @@
         "occupations"
       ],
       "readers": []
+    },
+    {
+      "quantity": "Clock, sun light, ClearColor, GlobalAmbientLight, fog colour",
+      "writer": [
+        "sky"
+      ],
+      "readers": [
+        "occupations",
+        "minimap"
+      ]
     }
   ],
   "data": {
@@ -752,8 +767,7 @@
       "status": "v1 + titles, events, traits, madlib, insignia, contracts",
       "ideas": [
         "stat-weighted affinity",
-        "standing (who may post)",
-        "day clock for schedules"
+        "standing (who may post)"
       ]
     },
     {
@@ -829,7 +843,8 @@
       "noticeboard by the spawn: F opens WORK",
       "pond: C dives, Space surfaces, breath 12 s",
       "armour faulds close the waist; thigh clears them when raised",
-      "Smith works the anvil/well/chair/torch; Farmer works the plots"
+      "Smith works the anvil/well/chair/torch; Farmer works the plots",
+      "F9 through the day: dusk, night (torches, moon), civilians night routine"
     ]
   },
   "controls": {
@@ -843,7 +858,8 @@
     "weapons": "courtyard chest",
     "rival": "F7",
     "hunter": "F8",
-    "dive": "C while swimming (Space surfaces)"
+    "dive": "C while swimming (Space surfaces)",
+    "skip_hour": "F9"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -863,6 +879,7 @@
     "GB_RECORD_TO": "game s (15)",
     "GB_RECORD_FPS": "30",
     "GB_HUNTER": "1: the Hunter (archer) joins at start",
-    "GB_DIVE": "1: dive once swimming (spawn in the pond, e.g. GB_SPAWN=-24,2,90)"
+    "GB_DIVE": "1: dive once swimming (spawn in the pond, e.g. GB_SPAWN=-24,2,90)",
+    "GB_HOUR": "starting hour (0-24)"
   }
 }
