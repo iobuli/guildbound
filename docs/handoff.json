@@ -762,7 +762,7 @@
       "ideas": [
         "tightrope/balance beam: lean drift countered by the player, arms spread, wobble then fall; builds on contact lean, arm inertia, body self-collision"
       ],
-      "status": "done; NPC archers (F8 Hunter) done"
+      "status": "done; NPC archers, diving, archery clip, ledge hang done"
     },
     {
       "id": "C",
@@ -856,7 +856,8 @@
       "F9 through the day: dusk, night (torches, moon), civilians night routine",
       "WORK tab shows guild rank; rank E/D unlock new postings",
       "bow: side-on archery draw/anchor/release, stave upright",
-      "Smith and Farmer post their own contracts (from the Smith / Farmer)"
+      "Smith and Farmer post their own contracts (from the Smith / Farmer)",
+      "climb to a wall top: hang, edge sideways, pull over"
     ]
   },
   "controls": {

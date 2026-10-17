@@ -10,8 +10,9 @@
 //!   up, down and along the wall (`CLIMB_SPEED`), costing stamina (more when moving); hands and
 //!   feet take holds on a `HOLD` grid on the face (`select::HandTargets` / `FootTargets`, written
 //!   here only, alternating as the climb advances). Jump kicks off the wall, dodge lets go, an
-//!   empty stamina bar drops the climber, and moving past the wall's edge lets go too. Near the
-//!   top the climber mantles onto it.
+//!   empty stamina bar drops the climber, and moving past the wall's edge lets go too. At the
+//!   top the climber hangs from the ledge, both hands on the edge (`ledge_hands`): sideways edges
+//!   along it, down drops back to climbing, jump (or pushing up for `PULL_HOLD`) pulls over.
 //! - Mantle: jumping at a `Climbable` block whose top is `MANTLE_LOW`–`MANTLE_HIGH` above the feet
 //!   vaults onto it; reaching a wall's top climbs over. A mantle is an `Action` (`Owner::Traverse`,
 //!   `ActionKind::Mantle`, `ual2/ClimbUp_1m`) with the root on a scripted two-phase path (rise to
@@ -64,6 +65,23 @@ const MANTLE_LOW: f32 = 0.35;
 const MANTLE_HIGH: f32 = 1.45;
 /// Climbing mantles over the top once the hands are within this of it (m).
 const TOP_REACH: f32 = 0.35;
+/// Ledge: hands above the chest when reaching up (m), edging speed (m/s), and how long (s) the
+/// stick pushes up before a hanging climber pulls over (jump pulls over at once).
+const HANDS_ABOVE_CHEST: f32 = 0.75;
+const LEDGE_SPEED: f32 = 0.6;
+const PULL_HOLD: f32 = 0.5;
+
+/// Body centre height hanging from a ledge at `top`: hands on the edge.
+pub fn hang_y(top: f32) -> f32 {
+    top - CHEST_HEIGHT - HANDS_ABOVE_CHEST + 0.02
+}
+
+/// Both hands on the ledge at `top`, a shoulder-width apart, just over the face's edge.
+pub fn ledge_hands(body: Vec3, n: Vec3, right: Vec3, top: f32) -> [Vec3; 2] {
+    let edge = Vec3::new(body.x, top + 0.02, body.z) - n * (WALL_GAP + 0.04);
+    [edge + right * 0.22, edge - right * 0.22]
+}
+
 /// Mantle: duration (s) per metre of rise (plus a base), how far onto the top (m).
 const MANTLE_BASE: f32 = 0.35;
 const MANTLE_PER_M: f32 = 0.3;
@@ -116,6 +134,9 @@ pub struct Climbing {
     top: f32,
     /// Distance climbed (m), for the alternating holds.
     travelled: f32,
+    /// Hanging from the top edge (hands on it); seconds the stick has pushed up while hanging.
+    hanging: bool,
+    pull: f32,
 }
 
 #[derive(Clone, Debug)]
@@ -363,6 +384,8 @@ fn climb(
                             normal,
                             top: c.ledge,
                             travelled: 0.0,
+                            hanging: false,
+                            pull: 0.0,
                         }));
                 }
             }
@@ -387,6 +410,14 @@ fn climb(
                         .try_remove::<(Traverse, HandTargets, FootTargets)>();
                     continue;
                 }
+                let pull_up = c.hanging && (intent.jump_pressed || c.pull >= PULL_HOLD);
+                if pull_up {
+                    let point = tf.translation - n * WALL_GAP;
+                    let top = c.top;
+                    commands.entity(entity).try_remove::<(HandTargets, FootTargets)>();
+                    start_mantle(&mut commands, entity, &mut action, &mut mover, &tf, point, n, top, bank.as_deref());
+                    continue;
+                }
                 if intent.jump_pressed {
                     let_go(&mut commands, &mut mover, n * KICK_OUT + Vec3::Y * KICK_UP);
                     continue;
@@ -400,7 +431,18 @@ fn climb(
                 let stick = intent.move_dir;
                 let up = stick.dot(-n);
                 let side = stick.dot(-right);
-                let v = Vec3::Y * up * CLIMB_SPEED - right * side * CLIMB_SPEED * 0.8;
+                if c.hanging {
+                    // On the ledge: push up to pull over, down to drop back onto the face.
+                    c.pull = if up > 0.5 { c.pull + dt } else { 0.0 };
+                    if up < -0.5 {
+                        c.hanging = false;
+                    }
+                }
+                let v = if c.hanging {
+                    -right * side * LEDGE_SPEED
+                } else {
+                    Vec3::Y * up * CLIMB_SPEED - right * side * CLIMB_SPEED * 0.8
+                };
                 let moving = v.length() > 0.1;
                 spend.write(StaminaSpend {
                     who: entity,
@@ -437,28 +479,17 @@ fn climb(
                 }
                 mover.velocity = (next - tf.translation) / dt.max(1e-4);
                 tf.translation = next;
-                // The top: climb over.
-                let hands_y = next.y + CHEST_HEIGHT + 0.75;
-                if hands_y + TOP_REACH >= c.top {
-                    let point = next - n * WALL_GAP;
-                    let top = c.top;
-                    commands
-                        .entity(entity)
-                        .try_remove::<(HandTargets, FootTargets)>();
-                    start_mantle(
-                        &mut commands,
-                        entity,
-                        &mut action,
-                        &mut mover,
-                        &tf,
-                        point,
-                        n,
-                        top,
-                        bank.as_deref(),
-                    );
-                    continue;
+                // The top: take the ledge and hang from it (both hands on the edge).
+                let hands_y = next.y + CHEST_HEIGHT + HANDS_ABOVE_CHEST;
+                if !c.hanging && hands_y + TOP_REACH >= c.top && up >= 0.0 {
+                    c.hanging = true;
+                    c.pull = 0.0;
                 }
-                let (hands, feet_holds) = holds(next, n, c.travelled);
+                let (mut hands, feet_holds) = holds(next, n, c.travelled);
+                if c.hanging {
+                    tf.translation.y = hang_y(c.top);
+                    hands = ledge_hands(tf.translation, n, right, c.top);
+                }
                 commands.entity(entity).try_insert((
                     HandTargets {
                         hands: [Some((hands[0], 1.0)), Some((hands[1], 1.0))],
@@ -558,6 +589,21 @@ fn mantle(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hanging_hands_sit_on_the_edge() {
+        let top = 3.0;
+        let body = Vec3::new(1.0, hang_y(top), 0.42);
+        let (n, right) = (Vec3::Z, Vec3::X);
+        let hands = ledge_hands(body, n, right, top);
+        for h in hands {
+            assert!((h.y - top).abs() < 0.05, "on the edge: {h}");
+            assert!(h.z < body.z - WALL_GAP, "over the face, not in the air: {h}");
+        }
+        assert!((hands[0] - hands[1]).length() > 0.3);
+        // Reaching from the hang, the hands are where they'd be at full stretch.
+        assert!((body.y + CHEST_HEIGHT + HANDS_ABOVE_CHEST - top).abs() < 0.05);
+    }
 
     #[test]
     fn diving_goes_down_but_not_into_the_floor() {
