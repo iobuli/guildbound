@@ -872,7 +872,8 @@ mod tests {
         // open, flat, low meadow is fully grassy
         assert!(grass_cover(30.0, 20.0, 1.0, up) > 0.99);
         // borders fade instead of cutting off
-        let fringe = grass_cover(COURTYARD_HALF + 1.2, 0.0, 0.0, up);
+        // (the north edge: east of the courtyard is the bare guild terrace)
+        let fringe = grass_cover(0.0, COURTYARD_HALF + 1.2, 0.0, up);
         assert!(fringe > 0.05 && fringe < 0.95, "{fringe}");
     }
 

@@ -1342,7 +1342,8 @@ mod tests {
 
     #[test]
     fn the_guild_terrace_is_flat() {
-        for x in [15.0, 20.0, 30.0, 45.5] {
+        // Where the guild stands (x ≤ 41; past x 44 the map's outer rim starts to rise).
+        for x in [15.0, 20.0, 30.0, 41.0] {
             for z in [-17.5, -9.0, 0.0, 13.5] {
                 assert_eq!(ground_height(x, z), 0.0, "terrace not flat at {x},{z}");
             }
