@@ -27,6 +27,7 @@ pub mod fx;
 pub mod grass;
 pub mod hud;
 pub mod input;
+pub mod insignia;
 pub mod interact;
 pub mod inventory;
 pub mod items;
@@ -92,7 +93,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

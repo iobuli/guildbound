@@ -6,7 +6,8 @@
 //! - fight and temper → its `ai::Difficulty` (aggression, guard, parry, dodge, reaction,
 //!   casting), added to whatever the spawner set and clamped.
 //! The log introduces each one ("Opponent: a grim fighter who walks proudly and fights coldly.").
-//! The player has no traits yet (a creator screen would pick them).
+//! The player picks theirs on the stats page (the STATS tab's madlib: click a word to cycle it,
+//! `SetTrait`); for the player only the walk matters (no brain to shift).
 use super::ai::Difficulty;
 use super::hud::log::{HudLog, LogKind};
 use super::{Npc, PlaySet};
@@ -127,6 +128,45 @@ impl TraitBook {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Slot {
+    Temper,
+    Walk,
+    Fight,
+}
+
+/// Step one slot's word (the stats page madlib).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct SetTrait {
+    pub who: Entity,
+    pub slot: Slot,
+}
+
+impl TraitBook {
+    /// The word in `slot`, if `t` has one.
+    pub fn word(&self, t: Option<&Traits>, slot: Slot) -> Option<&str> {
+        let t = t?;
+        match slot {
+            Slot::Temper => self.temper.get(t.temper).map(|w| w.word.as_str()),
+            Slot::Walk => self.walk.get(t.walk).map(|w| w.word.as_str()),
+            Slot::Fight => self.fight.get(t.fight).map(|w| w.word.as_str()),
+        }
+    }
+    /// `t` (or the first words) with `slot` moved to its next word.
+    pub fn step(&self, t: Option<Traits>, slot: Slot) -> Traits {
+        let Some(mut t) = t else {
+            return Traits { temper: 0, walk: 0, fight: 0 };
+        };
+        let next = |i: usize, n: usize| (i + 1) % n.max(1);
+        match slot {
+            Slot::Temper => t.temper = next(t.temper, self.temper.len()),
+            Slot::Walk => t.walk = next(t.walk, self.walk.len()),
+            Slot::Fight => t.fight = next(t.fight, self.fight.len()),
+        }
+        t
+    }
+}
+
 /// One word index per slot (written by `traits` only).
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Traits {
@@ -144,7 +184,9 @@ pub fn plugin(app: &mut App) {
         error!("[traits] {e}");
         TraitBook::default()
     });
-    app.insert_resource(book).add_systems(Update, assign.before(PlaySet::Think));
+    app.insert_resource(book)
+        .add_message::<SetTrait>()
+        .add_systems(Update, (assign, set_trait).before(PlaySet::Think));
 }
 
 /// New NPCs roll their traits; style and behaviour follow.
@@ -168,12 +210,40 @@ fn assign(
     }
 }
 
+/// The madlib's clicks: the word moves on, and the body's style with it.
+fn set_trait(book: Res<TraitBook>, mut sets: MessageReader<SetTrait>, mut commands: Commands, q: Query<Option<&Traits>>) {
+    let mut now: Vec<(Entity, Traits)> = Vec::new();
+    for s in sets.read() {
+        let Ok(t) = q.get(s.who) else { continue };
+        let current = now.iter().find(|(e, _)| *e == s.who).map(|(_, t)| *t).or(t.copied());
+        let t = book.step(current, s.slot);
+        now.retain(|(e, _)| *e != s.who);
+        now.push((s.who, t));
+    }
+    for (e, t) in now {
+        commands.entity(e).try_insert((t, book.style(&t)));
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn book() -> TraitBook {
         TraitBook::load(&traits_path()).expect("traits.json")
+    }
+
+    #[test]
+    fn stepping_cycles_each_slot() {
+        let b = book();
+        let mut t = b.step(None, Slot::Walk);
+        assert_eq!(t, Traits { temper: 0, walk: 0, fight: 0 });
+        for _ in 0..b.walk.len() {
+            t = b.step(Some(t), Slot::Walk);
+        }
+        assert_eq!(t.walk, 0, "wraps");
+        assert_eq!(b.word(Some(&t), Slot::Fight), Some(b.fight[0].word.as_str()));
+        assert_eq!(b.word(None, Slot::Fight), None);
     }
 
     #[test]

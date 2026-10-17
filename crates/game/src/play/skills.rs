@@ -401,7 +401,7 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(book)
         .insert_resource(titles)
         .register_required_components::<Fighter, Sheet>()
-        .add_systems(Update, (reload, close_calls, seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
+        .add_systems(Update, (reload, close_calls, seed, progress, entitle, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
 }
 
 /// How often `skills.json` is checked for edits (real s).
@@ -558,6 +558,15 @@ fn close_calls(
     timers.retain(|e, _| fighters.contains(*e));
     if book.1.values().any(|h| !fighters.contains(*h)) {
         book.1.retain(|_, h| fighters.contains(*h));
+    }
+}
+
+/// Titles from any change (presets, reloads), not only deeds; quiet (deeds log the player's).
+fn entitle(titles: Res<TitleBook>, mut sheets: Query<&mut Sheet, Changed<Sheet>>) {
+    for mut sheet in &mut sheets {
+        if !earn(&titles, sheet.bypass_change_detection()).is_empty() {
+            sheet.set_changed();
+        }
     }
 }
 

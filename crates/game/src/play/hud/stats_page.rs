@@ -15,6 +15,7 @@ use super::MARGIN;
 use super::minimap;
 use crate::play::camera::PageToggles;
 use crate::play::magic::{ABILITIES, Ability, Bind, Grimoire, MASTERED_COST, Pool};
+use crate::play::traits::{SetTrait, Slot, TraitBook, Traits};
 use crate::play::skills::{Sheet, SkillBook, SkillDef, TitleBook, level_for_xp, xp_for_level};
 use crate::play::stats::{Attr, Derived, LevelUp, POINTS_PER_LEVEL, SpendPoint, Stats};
 use super::log::{HudLog, LogKind};
@@ -57,7 +58,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, smoke.before(PageToggles))
         .add_systems(
             Update,
-            (toggle.in_set(PageToggles), clicks, refresh, refresh_skills, hover, level_up).chain(),
+            (toggle.in_set(PageToggles), clicks, refresh, refresh_skills, refresh_madlib, hover, level_up).chain(),
         );
 }
 
@@ -97,6 +98,10 @@ struct SkillText(usize);
 struct SkillTag(usize);
 #[derive(Component)]
 struct SkillHint;
+#[derive(Component)]
+struct MadlibWord(Slot);
+#[derive(Component)]
+struct MadlibText(Slot);
 #[derive(Component)]
 struct Footer;
 
@@ -255,6 +260,37 @@ fn spawn(mut commands: Commands, book: Res<SkillBook>) {
                         .with_child(label("+", "plus.text"));
                     });
                 }
+                // The madlib: who this character is (click a word to change it).
+                page.spawn(Node {
+                    flex_wrap: FlexWrap::Wrap,
+                    align_items: AlignItems::Center,
+                    column_gap: px(5.0),
+                    row_gap: px(3.0),
+                    margin: UiRect::top(px(6.0)),
+                    ..default()
+                })
+                .with_children(|m| {
+                    let word = |m: &mut ChildSpawnerCommands, slot: Slot| {
+                        m.spawn((
+                            MadlibWord(slot),
+                            button(
+                                "tab",
+                                Node {
+                                    padding: UiRect::axes(px(6.0), px(1.0)),
+                                    ..default()
+                                },
+                            ),
+                            Tooltip("Click for another word".into()),
+                        ))
+                        .with_child((MadlibText(slot), label("…", "tab.text")));
+                    };
+                    m.spawn(label("I'm a", "text.dim"));
+                    word(m, Slot::Temper);
+                    m.spawn(label("fighter who walks", "text.dim"));
+                    word(m, Slot::Walk);
+                    m.spawn(label("and fights", "text.dim"));
+                    word(m, Slot::Fight);
+                });
                 page.spawn((
                     DerivedText,
                     label("", "text.dim"),
@@ -441,8 +477,10 @@ fn clicks(
     player: Query<Entity, With<Player>>,
     plus: Query<(&Plus, Ref<Interaction>)>,
     rows: Query<(&AbilityRow, Ref<Interaction>)>,
+    words: Query<(&MadlibWord, Ref<Interaction>)>,
     mut spend: MessageWriter<SpendPoint>,
     mut bind: MessageWriter<Bind>,
+    mut traits: MessageWriter<SetTrait>,
 ) {
     if open.0.is_none() {
         return;
@@ -456,6 +494,11 @@ fn clicks(
     for (r, i) in &rows {
         if i.is_changed() && *i == Interaction::Pressed {
             bind.write(Bind { who, id: ABILITIES[r.0].id });
+        }
+    }
+    for (w, i) in &words {
+        if i.is_changed() && *i == Interaction::Pressed {
+            traits.write(SetTrait { who, slot: w.0 });
         }
     }
 }
@@ -674,6 +717,25 @@ fn refresh_skills(
     }
 }
 
+/// The madlib's words follow the player's traits.
+fn refresh_madlib(
+    open: Res<StatsOpen>,
+    book: Res<TraitBook>,
+    player: Query<Option<&Traits>, With<Player>>,
+    mut texts: Query<(&MadlibText, &mut Text)>,
+) {
+    if open.0 != Some(StatsTab::Stats) {
+        return;
+    }
+    let Ok(t) = player.single() else { return };
+    for (m, mut text) in &mut texts {
+        let want = book.word(t, m.0).unwrap_or("…");
+        if text.0 != want {
+            text.0 = want.to_string();
+        }
+    }
+}
+
 /// The footer explains what the cursor is over.
 #[allow(clippy::type_complexity)]
 fn hover(
@@ -712,7 +774,9 @@ fn hover(
                 .map(describe)
         })
         .unwrap_or_else(|| match tab {
-            StatsTab::Stats => "Levels come from defeating foes. Spend points with +.".to_string(),
+            StatsTab::Stats => {
+                "Levels come from defeating foes. Spend points with +. Click the words of the sentence to choose how you carry yourself.".to_string()
+            }
             StatsTab::Arts => {
                 "Arts and spells are discovered by training their skills. Landing one grows its mastery; mastered, it is cheaper, faster and stronger, at a permanent cost of magicules."
                     .to_string()

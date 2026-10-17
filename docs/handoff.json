@@ -240,6 +240,11 @@
       "file": "play/traits.rs",
       "role": "madlib traits (temper, walk, fight) rolled per NPC -> StyleScale (motion) and Difficulty shifts",
       "status": "new"
+    },
+    {
+      "file": "play/insignia.rs",
+      "role": "title badge on the left breast, coloured by the newest title",
+      "status": "new"
     }
   ],
   "order": [
@@ -625,6 +630,13 @@
       "readers": [
         "ai"
       ]
+    },
+    {
+      "quantity": "Title badges",
+      "writer": [
+        "insignia"
+      ],
+      "readers": []
     }
   ],
   "data": {
@@ -712,9 +724,7 @@
       "ideas": [
         "occupations",
         "contracts",
-        "stat-weighted affinity",
-        "title insignia on the body",
-        "player trait creator screen"
+        "stat-weighted affinity"
       ]
     },
     {
@@ -783,7 +793,9 @@
       "F8: Hunter shoots from range, everyone fights everyone",
       "Swordsmanship 10: Title earned: Blade Adept",
       "log introduces each NPC with its traits; movement and fighting differ",
-      "survive under 15% HP for 8 s: Second Wind (unique)"
+      "survive under 15% HP for 8 s: Second Wind (unique)",
+      "K -> STATS madlib: click words, walk style changes",
+      "Opponent badge on the left breast (check placement)"
     ]
   },
   "controls": {
