@@ -1,0 +1,24 @@
+{
+  "_about": "Traits: the creator madlib, 'I'm a [temper] fighter who walks [walk] and fights [fight].' NPCs roll one word per slot. walk sets the body (multipliers on pose exaggeration, holds and step bounce: motion::compose::StyleScale); fight and temper shift the brain (ai::Difficulty: added to reaction, parry, dodge, guard, aggression, casting).",
+  "temper": [
+    { "word": "stoic",    "reaction": 0.04,  "casting": -0.1, "aggression": -0.05 },
+    { "word": "fiery",    "reaction": -0.06, "casting": 0.15, "aggression": 0.15 },
+    { "word": "cheerful", "reaction": 0.0,   "casting": 0.05, "aggression": 0.0 },
+    { "word": "grim",     "reaction": -0.03, "casting": 0.0,  "aggression": 0.05 },
+    { "word": "wary",     "reaction": -0.08, "casting": -0.05, "aggression": -0.1 }
+  ],
+  "walk": [
+    { "word": "heavily",   "exaggeration": 0.9,  "hold": 1.2,  "bounce": 1.6 },
+    { "word": "lightly",   "exaggeration": 1.1,  "hold": 0.8,  "bounce": 0.6 },
+    { "word": "briskly",   "exaggeration": 1.2,  "hold": 1.0,  "bounce": 1.1 },
+    { "word": "lazily",    "exaggeration": 0.85, "hold": 1.4,  "bounce": 1.3 },
+    { "word": "proudly",   "exaggeration": 1.3,  "hold": 1.1,  "bounce": 0.8 }
+  ],
+  "fight": [
+    { "word": "recklessly", "aggression": 0.3,  "guard": -0.2, "parry": -0.1, "dodge": -0.05 },
+    { "word": "carefully",  "aggression": -0.2, "guard": 0.25, "parry": 0.05, "dodge": 0.05 },
+    { "word": "coldly",     "aggression": 0.0,  "guard": 0.0,  "parry": 0.2,  "dodge": 0.0 },
+    { "word": "nimbly",     "aggression": 0.05, "guard": -0.1, "parry": 0.0,  "dodge": 0.25 },
+    { "word": "patiently",  "aggression": -0.1, "guard": 0.1,  "parry": 0.1,  "dodge": 0.0 }
+  ]
+}

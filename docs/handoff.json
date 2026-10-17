@@ -235,6 +235,11 @@
       "file": "play/record.rs",
       "role": "GB_RECORD frame-locked video capture for headless runs",
       "status": "new"
+    },
+    {
+      "file": "play/traits.rs",
+      "role": "madlib traits (temper, walk, fight) rolled per NPC -> StyleScale (motion) and Difficulty shifts",
+      "status": "new"
     }
   ],
   "order": [
@@ -600,6 +605,26 @@
       "readers": [
         "hud"
       ]
+    },
+    {
+      "quantity": "Traits, StyleScale",
+      "writer": [
+        "traits"
+      ],
+      "readers": [
+        "compose",
+        "select"
+      ]
+    },
+    {
+      "quantity": "Difficulty",
+      "writer": [
+        "traits",
+        "ai::enroll (default)"
+      ],
+      "readers": [
+        "ai"
+      ]
     }
   ],
   "data": {
@@ -683,14 +708,13 @@
         "assets/data/skills.json",
         "play/hud/stats_page.rs (SKILLS tab)"
       ],
-      "status": "v1 done (skills, deeds, discovered arts)",
+      "status": "v1 done + titles, events (unique skills), traits",
       "ideas": [
         "occupations",
         "contracts",
-        "events",
-        "traits madlib -> MotionStyle",
         "stat-weighted affinity",
-        "title insignia on the body"
+        "title insignia on the body",
+        "player trait creator screen"
       ]
     },
     {
@@ -757,7 +781,9 @@
       "Rival and Opponent cast at each other",
       "Defence 5 + blocking discovers Aura Ward; Q shows the spinning shell",
       "F8: Hunter shoots from range, everyone fights everyone",
-      "Swordsmanship 10: Title earned: Blade Adept"
+      "Swordsmanship 10: Title earned: Blade Adept",
+      "log introduces each NPC with its traits; movement and fighting differ",
+      "survive under 15% HP for 8 s: Second Wind (unique)"
     ]
   },
   "controls": {

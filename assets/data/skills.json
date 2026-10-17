@@ -1,5 +1,5 @@
 {
-  "_about": "Skills: discovered from deeds, levelled 1-99 on the RuneScape curve, permanent. sources: deed kind + tags (empty = any) -> xp and affinity per unit. discovery: chance base * a/(a+4) per matching deed, certain once affinity reaches pity. bonus: added per level to stats::Derived. unlocks: abilities (magic::ABILITIES ids) discoverable once this skill reaches the level.",
+  "_about": "Skills: discovered from deeds, levelled 1-99 on the RuneScape curve, permanent. sources: deed kind + tags (empty = any) -> xp and affinity per unit. discovery: chance base * a/(a+4) per matching deed, certain once affinity reaches pity. bonus: added per level to stats::Derived. unlocks: abilities (magic::ABILITIES ids) discoverable once this skill reaches the level. unique: world-unique (event) skill; only one character may ever hold it.",
   "skills": [
     { "id": "swordsmanship", "name": "Swordsmanship", "family": "combat",
       "sources": [ { "kind": "hit", "tags": ["katana", "greatsword", "dagger"], "xp": 14, "affinity": 1.0 },
@@ -92,6 +92,16 @@
       "sources": [ { "kind": "gather", "tags": [], "xp": 5, "affinity": 1.0 } ],
       "discovery": { "base": 0.3, "pity": 4 },
       "bonus": { "max_stamina": 0.2 },
+      "unlocks": [] },
+    { "id": "second_wind", "name": "Second Wind", "family": "unique", "unique": true,
+      "sources": [ { "kind": "survive", "tags": [], "xp": 120, "affinity": 1.0 } ],
+      "discovery": { "base": 0.5, "pity": 2 },
+      "bonus": { "max_hp": 1.5, "max_stamina": 1.0 },
+      "unlocks": [] },
+    { "id": "spellscarred", "name": "Spellscarred", "family": "unique", "unique": true,
+      "sources": [ { "kind": "struck", "tags": ["Spell"], "xp": 15, "affinity": 1.0 } ],
+      "discovery": { "base": 0.05, "pity": 25 },
+      "bonus": { "max_mana": 1.5, "spell": 0.002 },
       "unlocks": [] }
   ]
 }

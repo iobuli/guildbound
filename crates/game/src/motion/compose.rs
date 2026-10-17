@@ -41,6 +41,37 @@ impl Default for MotionFeel {
     }
 }
 
+/// One character's motion style on top of `MotionFeel` (from `play::traits`): multipliers for the
+/// pose exaggeration, the holds of the snap curve and the step bounce (read by `play::select`).
+/// Layers with their own `style` keep it.
+#[derive(Component, Clone, Copy, Debug, PartialEq)]
+pub struct StyleScale {
+    pub exaggeration: f32,
+    pub hold: f32,
+    pub bounce: f32,
+}
+
+impl Default for StyleScale {
+    fn default() -> Self {
+        Self {
+            exaggeration: 1.0,
+            hold: 1.0,
+            bounce: 1.0,
+        }
+    }
+}
+
+impl StyleScale {
+    /// `feel` with this character's style applied.
+    pub fn apply(&self, feel: &MotionFeel) -> MotionFeel {
+        let mut f = feel.clone();
+        let ok = |x: f32| if x.is_finite() { x } else { 1.0 };
+        f.style.exaggeration = (feel.style.exaggeration * ok(self.exaggeration)).clamp(0.5, 2.0);
+        f.style.hold = (feel.style.hold * ok(self.hold)).clamp(0.0, 1.0);
+        f
+    }
+}
+
 /// Longest downward ground probe (m) from pelvis height.
 const GROUND_PROBE: f32 = 3.0;
 
@@ -154,6 +185,7 @@ fn compose(
             &Transform,
             Option<&BodyPadding>,
             Option<&mut RigPose>,
+            Option<&StyleScale>,
         ),
         Without<RigBone>,
     >,
@@ -169,7 +201,7 @@ fn compose(
     let dt = time.delta_secs();
     let filter = SpatialQueryFilter::from_mask(Phys::World);
 
-    for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose) in &mut roots {
+    for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose, scale) in &mut roots {
         if rig.bones.len() != n {
             if warned.insert(format!("rig:{root}")) {
                 warn!(
@@ -179,7 +211,8 @@ fn compose(
             }
             continue;
         }
-        let mut pose = evaluate(&bank, &layers, &feel, &mut warned);
+        let own = scale.map(|s| s.apply(&feel));
+        let mut pose = evaluate(&bank, &layers, own.as_ref().unwrap_or(&feel), &mut warned);
 
         let model_local = models.get(rig.model).copied().unwrap_or_default();
         let model_world = root_transform.mul_transform(model_local);

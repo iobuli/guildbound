@@ -44,6 +44,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/hud/` | Prompt (F), log, minimap with a STATS rim button, vitals (HP ST / BW MP), hotbar (Q art, E spell, weapon in hand, bag), `stats_page` (tabs STATS, ARTS & MAGIC and SKILLS; K; `GB_STATS=<tab>` smoke hook) | done |
 | `play/deeds.rs` | `Deed { who, kind, tag, amount }`: the only input to progression. Producers: combat (hit, block, parry, kill), magic (cast, cast_hit), ranged (shoot, shoot_hit), traverse (swim / climb per metre, mantle), parkour (land Roll / Hard), trees (chop, fell); `skills` turns `ItemCollected` into gather | new |
 | `play/record.rs` | `GB_RECORD=<dir>`: frame-locked capture (each frame advances 1/`GB_RECORD_FPS` s of game time; frames `GB_RECORD_FROM`..`GB_RECORD_TO` saved as PNGs, then quit) so slow software rendering still makes normal-speed video (`ffmpeg -framerate 30 -i f_%05d.png`) | new |
+| `play/traits.rs` + `assets/data/traits.json` | The madlib "a [temper] fighter who walks [walk] and fights [fight]": NPCs roll one word per slot (seeded by entity); walk → `motion::compose::StyleScale` (exaggeration, holds, bounce; compose and select apply it per character), temper + fight → `ai::Difficulty` shifts (clamped); the log introduces each NPC | new |
 | `assets/data/titles.json` | 12 titles (Blade Adept, Duelist, Slayer, Bulwark, Aura Master, Pyromancer, Frostweaver, Stormcaller, Spellblade, Wallrunner, Tidewalker, Woodsman): `requires {skills: level, deeds: lifetime count}`, flat `bonus`; earned in `skills::earn`, shown on the SKILLS tab | new |
 | `play/skills.rs` + `assets/data/skills.json` | Use-based skills (lane C): 16 rows (`SkillBook`), RuneScape curve 1–99, XP capped per skill per 30 s window; undiscovered skills build affinity and roll `base·a/(a+4)` with a pity floor (per-character seeded); arts and spells are discovered once their skills reach the `unlocks` levels; `Sheet` (required by `Fighter`) for player and NPCs; skill levels → `stats::SkillBonus` | new |
 | `play/stats.rs` | Universal `Stats` on every `Fighter` (level, Vigor Endurance Strength Dexterity Intelligence Faith, points, xp) → `Derived` (max hp / stamina / poise / magicules / Battlewill, might, spell, regen, cast speed); kills give the player xp, levels give points (`SpendPoint`) | new |
@@ -111,6 +112,9 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Stats`, `Derived`, `DamageScale` | `stats` | combat (maxima, regen, might), magic (pools, spell power), HUD |
 | `Deed` message | combat, magic, ranged, traverse, parkour, trees emit | `skills` alone reads |
 | `Sheet` (skill XP, affinities, discovered abilities), `SkillBonus` | `skills` (presets at spawn in `world`; the `GB_CAST` demo marks abilities discovered) | magic (`known`, casting), stats (`derive_with`), HUD |
+| `Traits`, `StyleScale` | `traits` (on a new NPC) | compose, select (per-character style) |
+| `Difficulty` | `traits` (rolled shifts), else `ai::enroll` (default) | `ai` |
+| `SkillBook.1` (holders of unique skills) | `skills` | `skills::apply` |
 | `Ward` (Aura Ward: time left, share) | `magic` | `combat` (scales damage and poise) |
 | `Energy` (Battlewill, magicules), `Grimoire` (bindings, mastery, mastery debt) | `magic` (the stats page binds through `magic::Bind`) | HUD |
 | `Loadout.current` | `combat` (`Equip` messages from `armory`) | select, HUD |
@@ -156,6 +160,8 @@ Log line: `t character relation side value mode action speed`.
 - The Opponent has Swordsmanship 20 and Defence 12 and levels the same way.
 - **F8** toggles the **Hunter** (team 3, bow, Archery 15): the brain's `archer` mode keeps 5–11 m away (back-pedals, closes in, strafes), aims, draws to full and releases (presses for crossbows / knives). `GB_HUNTER=1` at start. Guests are one `world::Guest` enum (F7 Rival, F8 Hunter).
 - **Titles** (lane C): earned automatically from skill levels and lifetime deed counts (`Sheet::counts`), never lost, each a flat bonus; "Title earned: …" log and flourish. `titles.json` hot-reloads with `skills.json`.
+- **Events** (lane C): world-unique skills, one holder at a time (freed when the holder is gone). **Second Wind** (+HP, +ST per level): survive a close call (under 15 % HP, alive 8 s later; `skills::close_calls` writes `survive`). **Spellscarred** (+MP, spell power): grows from being `struck` by spells. An NPC claiming one first is announced ("Somewhere, someone has claimed …").
+- **Traits** (lane C): every NPC rolls a temper, a walk and a fighting manner; they change how it moves (bounce, pose exaggeration, holds) and fights (aggression, guard, parry, dodge, reaction, casting). The player has none yet (a creator screen would choose them).
 - Ward hits flare: sparks and a soft clank where a blow meets the shell.
 - **F7** toggles a second enemy, the **Rival** (team 2, greatsword, purple; Swordsmanship 15, Defence 8). Teams differ, so the brain sends each NPC at its nearest foe: the Rival and the Opponent fight each other as readily as the player. A ragdolled Rival leaves once it is back up. `GB_RIVAL=1` brings it in at start; `GB_FIGHT=<moveset>` puts the player on the NPC brain (`ai::Autopilot`) with that weapon.
 - Kill XP goes to the killer (the last to strike the victim, read from `Hit`), player or NPC: NPCs level up from their kills too.
@@ -174,6 +180,8 @@ Log line: `t character relation side value mode action speed`.
   7. Block and parry until Defence 5, then keep blocking: Aura Ward is discovered; Q with it bound shows the spinning shell, and blows hurt less.
   8. F8: the Hunter shoots from range; it and the others all fight each other.
   9. Reach Swordsmanship 10: "Title earned: Blade Adept" (K → SKILLS lists titles).
+  10. Watch the log at start: each NPC is introduced with its traits; a heavy walker bounces, a light one glides; a reckless one presses, a careful one guards.
+  11. Get under 15 % HP and survive 8 s: Second Wind (unique) may be discovered.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
 
@@ -224,7 +232,7 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
 - **B. Done** (traversal, ranged, magic). Possible: ledge shimmy, diving, bow draw/release clips (the aim uses the pistol pose). NPC archers (F8 Hunter) and casters are done.
 - **Next for magic:** done this round: NPC casters and the Aura Ward. Ward-hit sparks done. Open: a faulds skirt to close the armour's hips, mastery for the ward (it lands no blows).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
-- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload and titles done (no insignia on the body yet). Next: occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
+- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Next: a creator screen for the player's traits, title insignia on the body, occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
 - **D. Done:** `motion/tweak.rs` (F2). Possible: N to author new keys (`authored` tracks).
 - **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 

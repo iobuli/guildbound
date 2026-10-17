@@ -43,6 +43,7 @@ pub mod stats;
 pub mod surfaces;
 pub mod traverse;
 pub mod tools;
+pub mod traits;
 pub mod trees;
 pub mod tuning;
 pub mod vfx;
@@ -91,7 +92,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

@@ -2247,6 +2247,7 @@ fn strike(
             if hit.kind == HitKind::Melee {
                 fx.deed(hit.attacker, "hit", &attacker.weapon);
             }
+            fx.deed(hit.target, "struck", &format!("{:?}", hit.kind));
             if outcome == Reaction::Death {
                 fx.deed(hit.attacker, "kill", "");
             }

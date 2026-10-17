@@ -1,9 +1,10 @@
 //! Deeds: anything a character does or suffers, as a tagged record, the only input to
 //! progression (`skills`). Producers write `Deed` and nothing else about progression:
-//! `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill),
+//! `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill;
+//! struck: the victim took a blow, tagged Melee / Projectile / Spell),
 //! `magic` (cast, cast_hit: tagged with the ability id), `ranged` (shoot, shoot_hit: tagged with
 //! the projectile kind), `traverse` (swim and climb per metre, mantle), `parkour` (land: tagged
-//! `Roll` / `Hard`), `trees` (chop, fell). `skills` also turns `items::ItemCollected` into
+//! `Roll` / `Hard`), `trees` (chop, fell), `skills` (survive: a close call lived through). `skills` also turns `items::ItemCollected` into
 //! `gather` (tagged with the item kind, amount = count). Blows on training dummies count
 //! like any other (practice teaches; `skills` caps XP per window so nothing can be farmed).
 use bevy::prelude::*;
@@ -12,7 +13,8 @@ use bevy::prelude::*;
 pub struct Deed {
     pub who: Entity,
     /// What happened: "hit", "block", "parry", "kill", "cast", "cast_hit", "shoot",
-    /// "shoot_hit", "swim", "climb", "mantle", "land", "chop", "fell", "gather".
+    /// "shoot_hit", "swim", "climb", "mantle", "land", "chop", "fell", "gather", "struck",
+    /// "survive".
     pub kind: &'static str,
     /// Detail matched by skill sources: a moveset, ability id, projectile kind, item, grade.
     pub tag: String,

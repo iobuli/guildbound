@@ -20,7 +20,7 @@
 use super::moveset::{Movesets, Stance};
 use super::{Action, ActionKind, Feel, Intent, Loadout, MoveMode, Mover, PlaySet, HALF_HEIGHT};
 use crate::motion::bank::PoseBank;
-use crate::motion::compose::MotionFeel;
+use crate::motion::compose::{MotionFeel, StyleScale};
 use crate::motion::timing::Style;
 use crate::motion::{ContactRequest, Layer, Mask, MotionLayers, Source};
 use bevy::prelude::*;
@@ -665,6 +665,7 @@ type CharacterQuery<'a> = (
     Option<&'a Loadout>,
     (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>),
     Option<&'a mut SelectState>,
+    Option<&'a StyleScale>,
 );
 
 #[allow(clippy::too_many_arguments)]
@@ -688,7 +689,11 @@ fn select(
         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
         bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
     };
-    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture), state) in &mut characters {
+    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture), state, scale) in &mut characters {
+        let frame = Frame {
+            bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
+            ..frame
+        };
         let stance = loadout
             .zip(movesets.as_deref())
             .and_then(|(l, m)| m.get(l.equipped()))
@@ -729,6 +734,7 @@ fn select(
     }
 }
 
+#[derive(Clone, Copy)]
 struct Frame<'a> {
     bank: &'a PoseBank,
     anchors: GaitAnchors,

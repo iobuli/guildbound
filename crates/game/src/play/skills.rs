@@ -16,6 +16,11 @@
 //! Everyone carries a `Sheet` (required by `Fighter`): NPCs progress the same way.
 //! `skills.json` hot-reloads (`reload`, checked every second).
 //!
+//! **Events** are world-unique skills (`unique` rows): one holder at a time (`SkillBook.1`), freed
+//! when the holder is gone. Second Wind comes from surviving close calls (`close_calls` writes
+//! `survive` deeds), Spellscarred from being struck by spells; when an NPC claims one first, the
+//! player hears of it.
+//!
 //! **Titles** (`assets/data/titles.json`, `TitleBook`): recognition earned automatically once a
 //! character's skill levels and lifetime deed counts (`Sheet::counts`) meet a row's `requires`;
 //! never lost. Each adds its flat `bonus` to `SkillBonus`; the player gets a log line and a
@@ -79,6 +84,9 @@ pub struct SkillDef {
     pub bonus: SkillBonus,
     #[serde(default)]
     pub unlocks: Vec<UnlockDef>,
+    /// World-unique (an event skill): only one character may hold it at a time.
+    #[serde(default)]
+    pub unique: bool,
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -86,15 +94,15 @@ struct SkillsFile {
     skills: Vec<SkillDef>,
 }
 
-/// Every skill row.
+/// Every skill row, and who holds each world-unique one.
 #[derive(Resource, Clone, Debug, Default)]
-pub struct SkillBook(pub Vec<SkillDef>);
+pub struct SkillBook(pub Vec<SkillDef>, pub HashMap<String, Entity>);
 
 impl SkillBook {
     pub fn load(path: &std::path::Path) -> Result<Self, String> {
         let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
         let file: SkillsFile = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
-        let book = Self(file.skills);
+        let book = Self(file.skills, HashMap::new());
         book.validate()?;
         Ok(book)
     }
@@ -118,6 +126,10 @@ impl SkillBook {
     }
     pub fn get(&self, id: &str) -> Option<&SkillDef> {
         self.0.iter().find(|s| s.id == id)
+    }
+    /// A unique skill someone other than `who` holds.
+    pub fn taken(&self, id: &str, who: Entity) -> bool {
+        self.1.get(id).is_some_and(|h| *h != who)
     }
     /// (skill, level) pairs an ability needs.
     pub fn requires(&self, ability: &str) -> Vec<(&SkillDef, u32)> {
@@ -324,6 +336,8 @@ pub fn apply(book: &SkillBook, sheet: &mut Sheet, deed: &Deed, dt_since: f32) ->
                 if after > before {
                     out.levelled.push((s.id.clone(), after));
                 }
+            } else if s.unique && book.taken(&s.id, deed.who) {
+                continue;
             } else {
                 let a = sheet.affinity.entry(s.id.clone()).or_insert(0.0);
                 *a += src.affinity * units;
@@ -387,7 +401,7 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(book)
         .insert_resource(titles)
         .register_required_components::<Fighter, Sheet>()
-        .add_systems(Update, (reload, seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
+        .add_systems(Update, (reload, close_calls, seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
 }
 
 /// How often `skills.json` is checked for edits (real s).
@@ -418,7 +432,9 @@ fn reload(
     match SkillBook::load(&path).and_then(|b| TitleBook::load(&titles_path(), &b).map(|t| (b, t))) {
         Ok((new, new_titles)) => {
             info!("[skills] reloaded: {} skills, {} titles", new.0.len(), new_titles.0.len());
+            let claims = std::mem::take(&mut book.1);
             *book = new;
+            book.1 = claims;
             *titles = new_titles;
             for mut s in &mut sheets {
                 s.set_changed();
@@ -445,7 +461,7 @@ fn seed(mut sheets: Query<(Entity, &mut Sheet), Changed<Sheet>>) {
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn progress(
     time: Res<Time>,
-    book: Res<SkillBook>,
+    mut book: ResMut<SkillBook>,
     titles: Res<TitleBook>,
     vfx: Option<Res<Vfx>>,
     mut deeds: MessageReader<Deed>,
@@ -467,13 +483,23 @@ fn progress(
         let mut out = apply(&book, &mut sheet, deed, if first { dt } else { 0.0 });
         out.titles = earn(&titles, &mut sheet);
         first = false;
+        let claimed: Vec<String> = out.discovered.iter().filter(|id| book.get(id).is_some_and(|s| s.unique)).cloned().collect();
+        for id in &claimed {
+            book.1.insert(id.clone(), deed.who);
+            if !player {
+                let name = book.get(id).map_or(id.clone(), |s| s.name.clone());
+                info!("[skills] unique {id} claimed by {:?}", deed.who);
+                log.write(HudLog::new(LogKind::Warn, format!("Somewhere, someone has claimed {name}.")));
+            }
+        }
         if !player {
             continue;
         }
         let name = |id: &str| book.get(id).map_or(id.to_string(), |s| s.name.clone());
         for id in &out.discovered {
             info!("[skills] discovered {id}");
-            log.write(HudLog::new(LogKind::Item, format!("Discovered: {}", name(id))));
+            let unique = if claimed.contains(id) { "  (unique: yours alone)" } else { "" };
+            log.write(HudLog::new(LogKind::Item, format!("Discovered: {}{unique}", name(id))));
         }
         for (id, level) in &out.levelled {
             info!("[skills] {id} {level}");
@@ -494,6 +520,44 @@ fn progress(
         if flourish && let (Some(vfx), Some(tf)) = (vfx.as_deref(), tf) {
             vfx::impact(&mut commands, &mut meshes, &mut materials, vfx, Element::Aura, tf.translation + Vec3::Y * 0.6, 1.2);
         }
+    }
+}
+
+/// A close call: below `CLOSE_CALL` of max hp, and still alive `SURVIVE` s later → a `survive`
+/// deed (Second Wind). Also frees unique skills whose holder is gone.
+const CLOSE_CALL: f32 = 0.15;
+const SURVIVE: f32 = 8.0;
+
+fn close_calls(
+    time: Res<Time>,
+    mut book: ResMut<SkillBook>,
+    fighters: Query<(Entity, &Fighter)>,
+    mut deeds: MessageWriter<Deed>,
+    mut timers: Local<HashMap<Entity, f32>>,
+) {
+    let dt = time.delta_secs();
+    for (e, f) in &fighters {
+        let low = !f.dead && f.hp > 0.0 && f.hp < CLOSE_CALL * f.max_hp.max(1.0);
+        match (timers.get_mut(&e), low) {
+            (Some(_), _) if f.dead => {
+                timers.remove(&e);
+            }
+            (Some(t), _) => {
+                *t += dt;
+                if *t >= SURVIVE {
+                    timers.remove(&e);
+                    deeds.write(Deed::new(e, "survive", "", 1.0));
+                }
+            }
+            (None, true) => {
+                timers.insert(e, 0.0);
+            }
+            (None, false) => {}
+        }
+    }
+    timers.retain(|e, _| fighters.contains(*e));
+    if book.1.values().any(|h| !fighters.contains(*h)) {
+        book.1.retain(|_, h| fighters.contains(*h));
     }
 }
 
@@ -623,6 +687,24 @@ mod tests {
         assert_eq!(bonus(&b, &t, &sheet), SkillBonus::default());
         sheet.grant("swordsmanship", xp_for_level(10));
         assert!(bonus(&b, &t, &sheet).might > 0.0);
+    }
+
+    #[test]
+    fn unique_skills_have_one_holder() {
+        let mut b = book();
+        let (a, z) = (Entity::from_raw_u32(1).unwrap(), Entity::from_raw_u32(2).unwrap());
+        assert!(b.get("second_wind").is_some_and(|s| s.unique));
+        let mut first = Sheet::default();
+        let out = apply(&b, &mut first, &Deed::new(a, "survive", "", 1.0), 0.0);
+        let out = if out.discovered.is_empty() { apply(&b, &mut first, &Deed::new(a, "survive", "", 1.0), 0.0) } else { out };
+        assert!(out.discovered.contains(&"second_wind".to_string()), "pity 2");
+        b.1.insert("second_wind".into(), a);
+        let mut second = Sheet::default();
+        for _ in 0..10 {
+            apply(&b, &mut second, &Deed::new(z, "survive", "", 1.0), 0.0);
+        }
+        assert!(!second.knows("second_wind"), "taken");
+        assert!(second.affinity.get("second_wind").is_none());
     }
 
     #[test]
