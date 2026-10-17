@@ -564,7 +564,8 @@ mod tests {
         let (surface, floor) = (-0.35, -2.45);
         let top = swim_height(surface, floor, false, 0.0);
         let down = swim_height(surface, floor, true, 0.0);
-        assert!(down < top - 0.8, "{down} vs {top}");
+        assert!(down < top - 0.5, "{down} vs {top}");
+        assert!(down + CHEST_HEIGHT + HEAD_ABOVE_CHEST < surface, "the head goes under");
         assert!(down >= floor + DIVE_FLOOR - 1e-5);
         // Shallow water: diving can't go above the surface height.
         assert!(swim_height(surface, top - 0.1, true, 0.0) <= top);
