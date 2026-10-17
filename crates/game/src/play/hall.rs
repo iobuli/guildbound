@@ -50,10 +50,34 @@ pub struct Door {
     closed: f32,
     dir: f32,
     open: f32,
+    /// The doorway's centre: both leaves open for anyone near it.
+    centre: Vec3,
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, swing);
+    app.add_systems(Update, swing)
+        .add_systems(Update, walk.after(super::PlaySet::Input).before(super::PlaySet::Act));
+}
+
+/// `GB_WALK=x,z`: from 1 s the player walks toward that point (to see the doors swing).
+fn walk(time: Res<Time>, mut target: Local<Option<Option<Vec3>>>, mut players: Query<(&Transform, &mut super::Intent), With<super::Player>>) {
+    let goal = *target.get_or_insert_with(|| {
+        std::env::var("GB_WALK").ok().and_then(|s| {
+            let v: Vec<f32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
+            (v.len() == 2).then(|| Vec3::new(v[0], 0.0, v[1]))
+        })
+    });
+    let Some(goal) = goal else { return };
+    if time.elapsed_secs() < 1.0 {
+        return;
+    }
+    for (tf, mut intent) in &mut players {
+        let to = (goal - tf.translation).with_y(0.0);
+        if to.length() > 0.4 {
+            intent.move_dir = to.normalize() * 0.6;
+            intent.walk = true;
+        }
+    }
 }
 
 /// Leaves swing open toward a character in reach of their doorway and close once all are gone.
@@ -65,9 +89,14 @@ fn swing(
     let dt = time.delta_secs();
     for (mut d, mut tf, g) in &mut doors {
         let hinge = g.translation();
-        let near = bodies.iter().any(|b| Vec2::new(b.translation().x - hinge.x, b.translation().z - hinge.z).length() < DOOR_REACH);
+        let c = d.centre;
+        let near = bodies.iter().any(|b| Vec2::new(b.translation().x - c.x, b.translation().z - c.z).length() < DOOR_REACH);
         let want = if near { 1.0 } else { 0.0 };
+        let before = d.open;
         d.open += (want - d.open) * (DOOR_RATE * dt).min(1.0);
+        if (before < 0.9) != (d.open < 0.9) {
+            info!("[hall] door at ({:.1}, {:.1}) {}", hinge.x, hinge.z, if d.open >= 0.9 { "open" } else { "closing" });
+        }
         let eased = d.open * d.open * (3.0 - 2.0 * d.open);
         tf.rotation = Quat::from_rotation_y(d.closed + d.dir * DOOR_OPEN * eased);
     }
@@ -90,7 +119,7 @@ fn doors(kit: &mut Kit, centre: Vec3, along: Vec3, inward: Vec3, width: f32) {
             .commands
             .spawn((
                 Name::new("Door leaf"),
-                Door { closed, dir, open: 0.0 },
+                Door { closed, dir, open: 0.0, centre },
                 Transform::from_translation(hinge).with_rotation(Quat::from_rotation_y(closed)),
                 Visibility::default(),
             ))

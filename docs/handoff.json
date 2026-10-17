@@ -950,6 +950,7 @@
     "GB_BOUNTIES": "Rival:1 into the ledger",
     "GB_PASSED": "1: exam passed",
     "GB_CHOOSE": "option ids picked in a talk, 1.5 s apart",
-    "GB_SLEEP": "1: hurt, go to a bed, use it (after GB_CHOOSE=bed,leave); logs hp and hour"
+    "GB_SLEEP": "1: hurt, go to a bed, use it (after GB_CHOOSE=bed,leave); logs hp and hour",
+    "GB_WALK": "x,z: the player walks there from 1 s"
   }
 }
