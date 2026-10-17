@@ -1,0 +1,14 @@
+{
+  "_about": "Honours: standing above guild rank and titles, granted once every requirement holds, never lost. requires: rank (guild rank letter), titles (all held), honours (all held). grants: holdings (added to Standing) and a flat bonus (same keys as a skill bonus). An honoured character's badge turns gold.",
+  "honours": [
+    { "id": "knight", "name": "Knight of the Courtyard", "about": "Rank C and two titles: the guild knights you.",
+      "requires": { "rank": "C", "titles": 2, "honours": [] },
+      "grants": { "holdings": ["the Courtyard"], "bonus": { "max_hp": 20, "might": 0.03 } } },
+    { "id": "champion", "name": "Champion", "about": "Rank B and the Duelist's title.",
+      "requires": { "rank": "B", "titles": 1, "title": "duelist", "honours": [] },
+      "grants": { "holdings": [], "bonus": { "max_stamina": 20, "might": 0.03 } } },
+    { "id": "lord", "name": "Lord of the Vale", "about": "Rank A and a knighthood: the vale is yours.",
+      "requires": { "rank": "A", "titles": 0, "honours": ["knight"] },
+      "grants": { "holdings": ["the Vale"], "bonus": { "max_hp": 30, "max_mana": 30, "spell": 0.03 } } }
+  ]
+}

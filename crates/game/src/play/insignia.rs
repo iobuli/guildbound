@@ -1,6 +1,7 @@
 //! Title insignia: anyone holding a title (`skills::Sheet::titles`) wears a small glowing badge on
 //! the left breast, coloured by their newest title (a hue from its id), so standing shows on the
-//! body. The badge is a free entity placed each frame from the chest bone and the body's facing.
+//! body; an honoured one (`contracts::Honours`) wears it in gold. The badge is a free entity placed each frame from the chest bone and the body's facing.
+use super::contracts::Honours;
 use super::skills::Sheet;
 use crate::motion::Rig;
 use crate::motion::bank::PoseBank;
@@ -21,7 +22,11 @@ pub fn plugin(app: &mut App) {
 struct Badge {
     owner: Entity,
     title: String,
+    gold: bool,
 }
+
+/// An honoured character's badge (HDR gold).
+const GOLD: LinearRgba = LinearRgba::rgb(3.2, 2.2, 0.5);
 
 /// A colour per title: hue from the id, bright enough to bloom a little.
 pub fn hue(id: &str) -> LinearRgba {
@@ -33,7 +38,7 @@ pub fn hue(id: &str) -> LinearRgba {
 /// Badges follow titles: spawned, recoloured, or dropped with their owner.
 fn wear(
     mut commands: Commands,
-    sheets: Query<(Entity, &Sheet), Changed<Sheet>>,
+    sheets: Query<(Entity, &Sheet, Option<&Honours>), Or<(Changed<Sheet>, Changed<Honours>)>>,
     mut badges: Query<(Entity, &mut Badge, &MeshMaterial3d<StandardMaterial>)>,
     owners: Query<(), With<Sheet>>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -45,13 +50,16 @@ fn wear(
             commands.entity(e).try_despawn();
         }
     }
-    for (owner, sheet) in &sheets {
+    for (owner, sheet, honours) in &sheets {
         let Some(title) = sheet.titles.last() else { continue };
+        let gold = honours.is_some_and(|h| !h.0.is_empty());
+        let color = if gold { GOLD } else { hue(title) };
         if let Some((_, mut b, mat)) = badges.iter_mut().find(|(_, b, _)| b.owner == owner) {
-            if b.title != *title {
+            if b.title != *title || b.gold != gold {
                 b.title = title.clone();
+                b.gold = gold;
                 if let Some(mut m) = materials.get_mut(&mat.0) {
-                    m.base_color = Color::LinearRgba(hue(title));
+                    m.base_color = Color::LinearRgba(color);
                 }
             }
             continue;
@@ -63,10 +71,11 @@ fn wear(
             Badge {
                 owner,
                 title: title.clone(),
+                gold,
             },
             Mesh3d(mesh),
             MeshMaterial3d(materials.add(StandardMaterial {
-                base_color: Color::LinearRgba(hue(title)),
+                base_color: Color::LinearRgba(color),
                 unlit: true,
                 ..default()
             })),

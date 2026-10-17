@@ -29,6 +29,7 @@ use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
 use super::items::ItemCollected;
 use super::magic::{ABILITIES, Ability};
+use super::contracts::{HonourBook, Honours};
 use super::stats::SkillBonus;
 use super::vfx::{self, Element, Vfx};
 use super::{Fighter, Player};
@@ -571,14 +572,22 @@ fn entitle(titles: Res<TitleBook>, mut sheets: Query<&mut Sheet, Changed<Sheet>>
 }
 
 /// Skill levels → `SkillBonus` for `stats`.
+#[allow(clippy::type_complexity)]
 fn publish(
     book: Res<SkillBook>,
     titles: Res<TitleBook>,
+    honour_book: Option<Res<HonourBook>>,
     mut commands: Commands,
-    sheets: Query<(Entity, &Sheet, Option<&SkillBonus>), Changed<Sheet>>,
+    sheets: Query<(Entity, &Sheet, Option<&Honours>, Option<&SkillBonus>), Or<(Changed<Sheet>, Changed<Honours>)>>,
 ) {
-    for (e, sheet, old) in &sheets {
-        let b = bonus(&book, &titles, sheet);
+    for (e, sheet, honours, old) in &sheets {
+        let mut b = bonus(&book, &titles, sheet);
+        // Honours (`contracts`) add their flat bonus too.
+        if let (Some(hb), Some(h)) = (honour_book.as_deref(), honours) {
+            for g in h.0.iter().filter_map(|id| hb.get(id)) {
+                b.add(&g.grants.bonus, 1.0);
+            }
+        }
         if old != Some(&b) {
             commands.entity(e).try_insert(b);
         }

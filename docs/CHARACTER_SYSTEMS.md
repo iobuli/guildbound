@@ -6,7 +6,7 @@ Status: **v1 implemented (2026-10-17)**: deeds, skills, discovery and discovered
 (`play/traits.rs`, `traits.json`: NPCs roll them; walk → per-character `StyleScale`, temper and
 fight → `ai::Difficulty`; the player picks them on the STATS tab), title insignia and contracts
 (`contracts.json`, the WORK tab, a noticeboard) and occupations as routines (`occupations.json`:
-a Smith and a Farmer, with night routines on the `sky` clock). Standing: holdings let NPCs post contracts (the Smith's forge, the Farmer's fields); honours and player holdings are still the proposal. The user's
+a Smith and a Farmer, with night routines on the `sky` clock). Standing: holdings let NPCs post contracts (the Smith's forge, the Farmer's fields); honours (`honours.json`: knight, champion, lord) grant the player holdings and bonuses; what holdings do for the player is still the proposal. The user's
 answers to the open questions are recorded at the end; where they differ from the proposal below,
 the answers win.
 

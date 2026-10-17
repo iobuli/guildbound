@@ -16,7 +16,7 @@ use super::MARGIN;
 use super::minimap;
 use crate::play::camera::PageToggles;
 use crate::play::magic::{ABILITIES, Ability, Bind, Grimoire, MASTERED_COST, Pool};
-use crate::play::contracts::{self, Board, ContractBook};
+use crate::play::contracts::{self, Board, ContractBook, HonourBook, Honours, Standing};
 use crate::play::traits::{SetTrait, Slot, TraitBook, Traits};
 use crate::play::skills::{Sheet, SkillBook, SkillDef, TitleBook, level_for_xp, xp_for_level};
 use crate::play::stats::{Attr, Derived, LevelUp, POINTS_PER_LEVEL, SpendPoint, Stats};
@@ -759,6 +759,8 @@ fn refresh_contracts(
     open: Res<StatsOpen>,
     book: Res<ContractBook>,
     board: Res<Board>,
+    honour_book: Res<HonourBook>,
+    player: Query<(Option<&Honours>, Option<&Standing>), With<Player>>,
     mut texts: ParamSet<(
         Query<(&ContractName, &mut Text)>,
         Query<(&ContractInfo, &mut Text)>,
@@ -798,7 +800,17 @@ fn refresh_contracts(
         let next = contracts::RANKS
             .get(rank + 1)
             .map_or(String::new(), |(l, n)| format!("   ·   {} more to {l}", n.saturating_sub(board.done)));
-        set(&mut t, format!("Guild rank {}   ·   {} done{next}", contracts::RANKS[rank].0, board.done));
+        let mut line = format!("Guild rank {}   ·   {} done{next}", contracts::RANKS[rank].0, board.done);
+        if let Ok((honours, standing)) = player.single() {
+            if let Some(h) = honours.filter(|h| !h.0.is_empty()) {
+                let names: Vec<&str> = h.0.iter().map(|id| honour_book.get(id).map_or(id.as_str(), |d| d.name.as_str())).collect();
+                line += &format!("\nHonours: {}", names.join(", "));
+            }
+            if let Some(s) = standing.filter(|s| !s.holdings.is_empty()) {
+                line += &format!("\nHoldings: {}", s.holdings.join(", "));
+            }
+        }
+        set(&mut t, line);
     }
 }
 

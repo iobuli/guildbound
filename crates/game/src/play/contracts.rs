@@ -5,11 +5,17 @@
 //! (never one already open). **Guild rank** (F, E, D, C, B, A, S) rises with contracts completed
 //! (`RANKS`); a template is only posted once the rank reaches its `rank`. **Issuers**: a template
 //! with an `issuer` is posted only while a character of that name with `Standing` (holdings: the
-//! Smith's forge, the Farmer's fields) is about; the WORK tab names who posted it. Shown on the stats page's WORK tab, which the courtyard noticeboard
+//! Smith's forge, the Farmer's fields) is about; the WORK tab names who posted it.
+//! **Honours** (`assets/data/honours.json`, `HonourBook`): standing above rank and titles, granted
+//! to the player once a row's rank, title count, named title and earlier honours hold; each adds
+//! its holdings to the player's `Standing` and its bonus (through `skills::publish`); the badge
+//! turns gold (`insignia`). `Honours` and `Standing` are written here (the world seeds NPC
+//! holdings at spawn). Shown on the stats page's WORK tab, which the courtyard noticeboard
 //! (interactable kind "board", F) opens.
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
-use super::stats::GrantXp;
+use super::skills::Sheet;
+use super::stats::{GrantXp, SkillBonus};
 use super::hud::stats_page::{StatsOpen, StatsTab, ToggleStats};
 use super::interact::UseEffect;
 use super::{Interactable, Player};
@@ -71,7 +77,81 @@ pub struct ContractDef {
     pub issuer: Option<String>,
 }
 
-/// Holdings that let a character post contracts (written by `world` at spawn).
+#[derive(Clone, Debug, Default, serde::Deserialize)]
+pub struct HonourRequires {
+    pub rank: String,
+    #[serde(default)]
+    pub titles: usize,
+    #[serde(default)]
+    pub title: Option<String>,
+    #[serde(default)]
+    pub honours: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, serde::Deserialize)]
+pub struct HonourGrants {
+    #[serde(default)]
+    pub holdings: Vec<String>,
+    #[serde(default)]
+    pub bonus: SkillBonus,
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
+pub struct HonourDef {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub about: String,
+    pub requires: HonourRequires,
+    #[serde(default)]
+    pub grants: HonourGrants,
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
+struct HonoursFile {
+    honours: Vec<HonourDef>,
+}
+
+#[derive(Resource, Clone, Debug, Default)]
+pub struct HonourBook(pub Vec<HonourDef>);
+
+impl HonourBook {
+    pub fn load(path: &std::path::Path) -> Result<Self, String> {
+        let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let file: HonoursFile = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+        for h in &file.honours {
+            if rank_index(&h.requires.rank).is_none() {
+                return Err(format!("honour '{}': unknown rank '{}'", h.id, h.requires.rank));
+            }
+            if let Some(r) = h.requires.honours.iter().find(|r| !file.honours.iter().any(|o| &o.id == *r)) {
+                return Err(format!("honour '{}' needs unknown honour '{r}'", h.id));
+            }
+        }
+        Ok(Self(file.honours))
+    }
+    pub fn get(&self, id: &str) -> Option<&HonourDef> {
+        self.0.iter().find(|h| h.id == id)
+    }
+}
+
+/// Whether `def` is due at guild rank index `rank` with `titles` and `honours` held.
+pub fn qualifies(def: &HonourDef, rank: usize, titles: &[String], honours: &[String]) -> bool {
+    let r = &def.requires;
+    rank_index(&r.rank).is_some_and(|need| rank >= need)
+        && titles.len() >= r.titles
+        && r.title.as_ref().is_none_or(|t| titles.contains(t))
+        && r.honours.iter().all(|h| honours.contains(h))
+}
+
+/// Honours a character holds (written by `contracts` only).
+#[derive(Component, Clone, Debug, Default, PartialEq)]
+pub struct Honours(pub Vec<String>);
+
+pub fn honours_path() -> std::path::PathBuf {
+    std::path::Path::new(crate::ASSETS).join("data/honours.json")
+}
+
+/// Holdings that let a character post contracts (seeded by `world` at spawn, grown by honours).
 #[derive(Component, Clone, Debug, Default)]
 pub struct Standing {
     pub holdings: Vec<String>,
@@ -173,7 +253,14 @@ pub fn plugin(app: &mut App) {
     });
     let mut board = Board::default();
     board.fill(&book, &[]);
-    app.insert_resource(book).insert_resource(board).add_systems(Update, (progress, read_board));
+    let honours = HonourBook::load(&honours_path()).unwrap_or_else(|e| {
+        error!("[contracts] {e}");
+        HonourBook::default()
+    });
+    app.insert_resource(book)
+        .insert_resource(board)
+        .insert_resource(honours)
+        .add_systems(Update, (progress, honour, read_board).chain());
 }
 
 fn progress(
@@ -207,6 +294,52 @@ fn progress(
         if board.open.len() < OPEN {
             let present: Vec<String> = issuers.iter().filter(|(_, s)| !s.holdings.is_empty()).map(|(n, _)| n.to_string()).collect();
             board.fill(&book, &present);
+        }
+    }
+}
+
+/// The player's honours follow rank, titles and earlier honours; holdings and a log line come
+/// with each.
+#[allow(clippy::type_complexity)]
+fn honour(
+    book: Res<HonourBook>,
+    board: Res<Board>,
+    mut commands: Commands,
+    mut players: Query<(Entity, &Sheet, Option<&mut Honours>, Option<&mut Standing>), With<Player>>,
+    mut log: MessageWriter<HudLog>,
+) {
+    let Ok((e, sheet, honours, standing)) = players.single_mut() else { return };
+    let mut held = honours.as_deref().map_or(Vec::new(), |h| h.0.clone());
+    let mut holdings = standing.as_deref().map_or(Vec::new(), |s| s.holdings.clone());
+    let mut new = false;
+    // Repeat so an honour that needs another granted this frame follows at once.
+    loop {
+        let Some(h) = book.0.iter().find(|h| !held.contains(&h.id) && qualifies(h, board.rank(), &sheet.titles, &held)) else {
+            break;
+        };
+        held.push(h.id.clone());
+        holdings.extend(h.grants.holdings.iter().cloned());
+        new = true;
+        info!("[contracts] honour {}", h.id);
+        let what = if h.grants.holdings.is_empty() {
+            String::new()
+        } else {
+            format!("  //  you hold {}", h.grants.holdings.join(", "))
+        };
+        log.write(HudLog::new(LogKind::Item, format!("Honour: {}{what}  [K]", h.name)));
+    }
+    if new {
+        match honours {
+            Some(mut h) => h.0 = held,
+            None => {
+                commands.entity(e).try_insert(Honours(held));
+            }
+        }
+        match standing {
+            Some(mut s) => s.holdings = holdings,
+            None => {
+                commands.entity(e).try_insert(Standing { holdings });
+            }
         }
     }
 }
@@ -289,6 +422,21 @@ mod tests {
             assert!(board.open.iter().all(|o| rank_index(&b.0[o.index].rank).unwrap() <= board.rank()));
         }
         assert!(seen_d, "D work posted by rank D");
+    }
+
+    #[test]
+    fn honours_load_and_follow_rank_titles_and_each_other() {
+        let h = HonourBook::load(&honours_path()).expect("honours.json");
+        let knight = h.get("knight").expect("knight");
+        let lord = h.get("lord").expect("lord");
+        let two = vec!["blade_adept".to_string(), "duelist".to_string()];
+        let c = rank_index("C").unwrap();
+        assert!(!qualifies(knight, c - 1, &two, &[]), "rank D is too low");
+        assert!(!qualifies(knight, c, &two[..1], &[]), "one title is too few");
+        assert!(qualifies(knight, c, &two, &[]));
+        let a = rank_index("A").unwrap();
+        assert!(!qualifies(lord, a, &two, &[]), "no knighthood");
+        assert!(qualifies(lord, a, &two, &["knight".to_string()]));
     }
 
     #[test]

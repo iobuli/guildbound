@@ -690,6 +690,17 @@
       "readers": [
         "contracts"
       ]
+    },
+    {
+      "quantity": "Honours, player Standing",
+      "writer": [
+        "contracts"
+      ],
+      "readers": [
+        "skills",
+        "insignia",
+        "hud"
+      ]
     }
   ],
   "data": {
@@ -776,7 +787,7 @@
       "status": "v1 + titles, events, traits, madlib, insignia, contracts",
       "ideas": [
         "stat-weighted affinity",
-        "honours and player holdings"
+        "what holdings do (posting work, income)"
       ]
     },
     {
