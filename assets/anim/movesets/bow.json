@@ -43,7 +43,8 @@
       "start": 9.38
     },
     "draw_time": 0.7,
-    "body_yaw_deg": -56.0
+    "body_yaw_deg": -56.0,
+    "pose_pitch_deg": 11.0
   },
   "projectile": {
     "kind": "arrow",

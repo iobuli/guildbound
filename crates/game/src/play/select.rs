@@ -18,7 +18,7 @@
 //! action changes cross-fade instead of popping. Ending actions fade out frozen on their last
 //! frame; a restarted clip (time jumps backwards) cross-fades from its old copy.
 use super::moveset::{Movesets, Stance};
-use super::{Action, ActionKind, Feel, Intent, Loadout, MoveMode, Mover, PlaySet, HALF_HEIGHT};
+use super::{Action, ActionKind, Feel, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Owner, PlaySet};
 use crate::motion::bank::PoseBank;
 use crate::motion::compose::{MotionFeel, StyleScale};
 use crate::motion::timing::Style;
@@ -139,6 +139,8 @@ const CLIMB_SPAN: f32 = 0.35;
 /// at the capsule centre, so their feet are `HALF_HEIGHT` below the Transform; other targets
 /// use their Transform as the base.
 const LOOK_HEIGHT: f32 = 1.5;
+/// Height of the chest above the body centre (m), where a ranged aim starts (as `ranged`).
+const AIM_CHEST: f32 = 0.45;
 
 /// Optional world-space hand IK targets `[left, right]` as (point, weight 0..1). `select`
 /// forwards them into `ContactRequest.hands` with smoothed weights. Inserted / updated by
@@ -694,10 +696,8 @@ fn select(
             bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
             ..frame
         };
-        let stance = loadout
-            .zip(movesets.as_deref())
-            .and_then(|(l, m)| m.get(l.equipped()))
-            .and_then(|m| m.stance.as_ref());
+        let stance_set = loadout.zip(movesets.as_deref()).and_then(|(l, m)| m.get(l.equipped()));
+        let stance = stance_set.and_then(|m| m.stance.as_ref());
         let look_at = intent
             .and_then(|i| i.target)
             .filter(|t| *t != entity)
@@ -712,6 +712,23 @@ fn select(
             })
             .filter(|p| p.is_finite());
         let strafing = mover.face.is_some() || intent.is_some_and(|i| i.target.is_some());
+        // A ranged weapon up: the chest follows the aim's pitch (`ContactRequest.aim`).
+        let aim = action
+            .filter(|a| a.owner == Owner::Ranged)
+            .zip(intent)
+            .and_then(|(_, i)| {
+                let me = targets.get(entity).ok()?.0.translation + Vec3::Y * AIM_CHEST;
+                let at = i
+                    .target
+                    .and_then(|t| targets.get(t).ok())
+                    .map_or(i.look, |(tf, _)| tf.translation + Vec3::Y * 0.3);
+                let d = (at - me).try_normalize()?;
+                // Less the pitch the clip's own pose already shoots at.
+                let bias = stance_set.and_then(|m| m.aim.as_ref()).map_or(0.0, |a| a.pose_pitch_deg.to_radians());
+                let flat = Vec3::new(d.x, 0.0, d.z).try_normalize()?;
+                let pitch = d.y.atan2(Vec2::new(d.x, d.z).length()) - bias;
+                Some(flat * pitch.cos() + Vec3::Y * pitch.sin())
+            });
         let input = CharacterInput {
             stance,
             action,
@@ -720,6 +737,7 @@ fn select(
             posture,
             look_at,
             strafing,
+            aim,
         };
         match state {
             Some(mut state) => {
@@ -751,6 +769,7 @@ struct CharacterInput<'a> {
     posture: Option<&'a Posture>,
     look_at: Option<Vec3>,
     strafing: bool,
+    aim: Option<Vec3>,
 }
 
 fn update_character(
@@ -1052,6 +1071,7 @@ fn update_character(
         root_ease: mover.step_ease,
         feet,
         stance,
+        aim: input.aim,
     };
 }
 

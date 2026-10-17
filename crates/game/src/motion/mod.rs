@@ -259,6 +259,9 @@ pub struct ContactRequest {
     /// Narrow stance (balance beam): the farthest a foot on the ground may stand from the body's
     /// mid-plane (m); `f32::INFINITY` keeps the animated stance.
     pub stance: f32,
+    /// World direction a held ranged weapon aims along: the spine bends so the chest follows the
+    /// aim's pitch (the clips shoot level). `None` eases back.
+    pub aim: Option<Vec3>,
 }
 
 impl Default for ContactRequest {
@@ -273,6 +276,7 @@ impl Default for ContactRequest {
             root_ease: 0.0,
             feet: [None, None],
             stance: f32::INFINITY,
+            aim: None,
         }
     }
 }

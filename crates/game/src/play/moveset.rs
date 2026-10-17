@@ -114,6 +114,10 @@ pub struct Aim {
     /// body turns this far for the shot to leave along the aim.
     #[serde(default)]
     pub body_yaw_deg: f32,
+    /// Pitch of the shot in the clip's own pose at full draw (deg, + up): the spine bends by the
+    /// aim's pitch less this (`ContactRequest.aim`).
+    #[serde(default)]
+    pub pose_pitch_deg: f32,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]

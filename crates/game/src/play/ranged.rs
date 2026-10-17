@@ -243,7 +243,13 @@ fn shoot(
                     let off = line.angle_between(dir).to_degrees();
                     let yaw_off = (line.x.atan2(line.z) - dir.x.atan2(dir.z)).to_degrees();
                     let yaw_off = (yaw_off + 540.0).rem_euclid(360.0) - 180.0;
-                    monitor.write(&format!("{:.2} bow_align - {off:.1} Ground yaw={yaw_off:.1} pull={pull:.2}", time.elapsed_secs()));
+                    let pitch = |v: Vec3| v.y.atan2(Vec2::new(v.x, v.z).length()).to_degrees();
+                    monitor.write(&format!(
+                        "{:.2} bow_align - {off:.1} Ground yaw={yaw_off:.1} pitch={:.1}/{:.1} pull={pull:.2}",
+                        time.elapsed_secs(),
+                        pitch(line),
+                        pitch(dir)
+                    ));
                 }
             }
             st.cooldown = set.cooldown.max(0.05);

@@ -47,6 +47,9 @@ pub struct ContactState {
     pub look: Quat,
     /// Last `ContactRequest.root_ease` seen (None until the first frame).
     pub root_ease: Option<f32>,
+    /// Smoothed aim pitch (rad, + up) and the world axis it bends about.
+    pub aim_pitch: f32,
+    pub aim_axis: Vec3,
 }
 
 const GRAVITY: f32 = 9.81;
@@ -60,6 +63,10 @@ pub const MAX_LOOK_PITCH: f32 = 40.0 * std::f32::consts::PI / 180.0;
 const NECK_SHARE: f32 = 0.4;
 /// Lean share per spine bone (spine_01, spine_02, spine_03).
 const LEAN_SHARE: [f32; 3] = [0.6, 0.4, 0.0];
+/// Aim pitch: share per spine bone, limit (rad), smoothing rate (1/s).
+const AIM_SHARE: [f32; 3] = [0.3, 0.35, 0.35];
+pub const MAX_AIM_PITCH: f32 = 0.9;
+const AIM_RATE: f32 = 10.0;
 /// Squash curl / arch share per spine bone.
 const CURL_SHARE: [f32; 3] = [0.3, 0.4, 0.3];
 /// Pelvis drop (m) per unit of negative squash.
@@ -555,6 +562,34 @@ pub fn apply(
         }
         let world = frame.world(pose);
         frame.rotate(pose, &world, spine, Quat::from_scaled_axis(rv));
+    }
+
+    // 4b. Aim: bend the spine about the horizontal axis across the aim so the chest (and the
+    //     arms holding a bow or crossbow) follow its pitch.
+    let (aim_target, axis) = match request.aim.filter(|d| d.is_finite()) {
+        Some(d) if Vec2::new(d.x, d.z).length_squared() > 1e-6 => {
+            let flat = Vec3::new(d.x, 0.0, d.z);
+            let pitch = d.y.atan2(flat.length()).clamp(-MAX_AIM_PITCH, MAX_AIM_PITCH);
+            (pitch, flat.normalize().cross(Vec3::Y))
+        }
+        _ => (0.0, state.aim_axis),
+    };
+    if !state.aim_pitch.is_finite() {
+        state.aim_pitch = 0.0;
+    }
+    if !state.aim_axis.is_finite() {
+        state.aim_axis = Vec3::ZERO;
+    }
+    if axis.is_finite() && axis.length_squared() > 0.5 {
+        state.aim_axis = axis;
+    }
+    state.aim_pitch += (aim_target - state.aim_pitch) * smoothing(AIM_RATE, dt);
+    if state.aim_pitch.abs() > 1e-4 && state.aim_axis.length_squared() > 0.5 {
+        for (k, &spine) in bones.spine.iter().enumerate() {
+            let world = frame.world(pose);
+            let bend = Quat::from_axis_angle(state.aim_axis.normalize(), state.aim_pitch * AIM_SHARE[k]);
+            frame.rotate(pose, &world, spine, bend);
+        }
     }
 
     // 5. Look-at: neck + head turn toward the target, clamped relative to the body.
@@ -1113,6 +1148,30 @@ pub(crate) mod tests {
     }
 
     #[test]
+    fn aim_bends_the_spine_to_the_aims_pitch_and_eases_back() {
+        let (skeleton, bones) = skeleton();
+        let model = Transform::IDENTITY;
+        let up = 30f32.to_radians();
+        let mut request = ContactRequest {
+            foot_ik: 0.0,
+            aim: Some(Vec3::new(up.cos(), up.sin(), 0.0)),
+            ..default()
+        };
+        let mut state = ContactState::default();
+        let pose = run(120, &model, &request, &mut nothing, &mut state, |_| {});
+        assert!((state.aim_pitch - up).abs() < 0.01, "{}", state.aim_pitch);
+        let w = world(&skeleton, &bones, &model, &pose);
+        // Aiming up along +X the torso leans back, away from the target.
+        assert!(w[bones.head].translation.x < -0.05, "{}", w[bones.head].translation);
+        request.aim = Some(Vec3::new(0.0, -1.0, 0.0).lerp(Vec3::X, 0.01));
+        run(120, &model, &request, &mut nothing, &mut state, |_| {});
+        assert!(state.aim_pitch >= -MAX_AIM_PITCH - 1e-4, "clamped");
+        request.aim = None;
+        run(200, &model, &request, &mut nothing, &mut state, |_| {});
+        assert!(state.aim_pitch.abs() < 0.01, "eases back");
+    }
+
+    #[test]
     fn lean_tips_the_chest_into_acceleration_and_clamps() {
         let (skeleton, bones) = skeleton();
         let model = Transform::IDENTITY;
@@ -1187,6 +1246,7 @@ pub(crate) mod tests {
             root_ease: f32::NAN,
             feet: [Some((Vec3::NAN, 1.0)), Some((Vec3::ONE, f32::NAN))],
             stance: f32::NAN,
+            aim: Some(Vec3::NAN),
         };
         let mut garbage = |_: Vec3| {
             Some(Ground {
@@ -1199,6 +1259,8 @@ pub(crate) mod tests {
             lean: Vec3::INFINITY,
             look: Quat::from_xyzw(0.0, 0.0, 0.0, 0.0),
             root_ease: Some(f32::NAN),
+            aim_pitch: f32::NAN,
+            aim_axis: Vec3::NAN,
         };
         for dt in [f32::NAN, -1.0, 0.0, 1e9, 1.0 / 60.0] {
             let mut pose = skeleton.rest_pose();
