@@ -23,6 +23,7 @@
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
 //! ~3 s.
 use super::armor::spawn_stand;
+use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
 use super::camera::MainCamera;
 use super::tools::{AXE_SCALE, Tool, ToolItem};
@@ -1025,7 +1026,9 @@ fn spawn_characters(commands: &mut Commands) {
         },
         Some(Color::srgb(0.80, 0.30, 0.26)),
     );
-    commands.entity(npc).insert(Npc);
+    // A seasoned swordsman: a few levels into strength, dexterity and vigor.
+    let build = [Attr::Strength, Attr::Dexterity, Attr::Vigor];
+    commands.entity(npc).insert((Npc, Stats::preset(4, &build)));
 }
 
 /// `GB_AUTOQUIT` / `GB_SCREENSHOT` state.

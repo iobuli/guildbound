@@ -1,0 +1,298 @@
+//! Stats: the universal base of every fighter (player and NPCs alike). `Stats` (required by
+//! `Fighter`) holds a level, six attributes, unspent points and experience; `derive` turns them
+//! into `Derived`, which the rest of the game reads:
+//! - `combat` sets `Fighter` max hp / stamina / poise from it (keeping the current shares) and
+//!   regenerates stamina at `regen`; melee blows scale by `might` (`combat::DamageScale`, written
+//!   here only);
+//! - `magic` sizes the mana pool (`max_mana`, `mana_regen`) and scales spells by `spell`.
+//!
+//! Attributes (10 = an ordinary person, `derive` is linear in each):
+//! Vigor → hp; Endurance → stamina, poise, stamina regen; Strength → might, poise;
+//! Dexterity → might (less), cast speed; Intelligence → mana, spell power; Faith → mana regen,
+//! mana, spell power (less).
+//!
+//! Levelling: killing an enemy grants the player `XP_PER_KILL` × the enemy's level; each level
+//! needs `xp_to_next` and gives `POINTS_PER_LEVEL` points. `SpendPoint` (the stats panel's +
+//! buttons) raises an attribute while points remain. NPC strength comes from their `Stats` (e.g.
+//! `Stats::preset`), not from a separate difficulty knob.
+use super::combat::DamageScale;
+use super::{Fighter, Player};
+use bevy::prelude::*;
+
+/// Attribute value of an ordinary person; every derived value is "normal" at all-10s.
+pub const BASE: u32 = 10;
+pub const MAX_ATTR: u32 = 60;
+/// Experience per kill (× the victim's level), points per level.
+pub const XP_PER_KILL: u32 = 60;
+pub const POINTS_PER_LEVEL: u32 = 2;
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Attr {
+    Vigor,
+    Endurance,
+    Strength,
+    Dexterity,
+    Intelligence,
+    Faith,
+}
+
+impl Attr {
+    pub const ALL: [Attr; 6] = [
+        Attr::Vigor,
+        Attr::Endurance,
+        Attr::Strength,
+        Attr::Dexterity,
+        Attr::Intelligence,
+        Attr::Faith,
+    ];
+    pub fn name(self) -> &'static str {
+        match self {
+            Attr::Vigor => "Vigor",
+            Attr::Endurance => "Endurance",
+            Attr::Strength => "Strength",
+            Attr::Dexterity => "Dexterity",
+            Attr::Intelligence => "Intelligence",
+            Attr::Faith => "Faith",
+        }
+    }
+    pub fn code(self) -> &'static str {
+        match self {
+            Attr::Vigor => "VIG",
+            Attr::Endurance => "END",
+            Attr::Strength => "STR",
+            Attr::Dexterity => "DEX",
+            Attr::Intelligence => "INT",
+            Attr::Faith => "FTH",
+        }
+    }
+    pub fn description(self) -> &'static str {
+        match self {
+            Attr::Vigor => "Health.",
+            Attr::Endurance => "Stamina, poise and stamina recovery.",
+            Attr::Strength => "Weapon damage (most) and poise.",
+            Attr::Dexterity => "Weapon damage and casting speed.",
+            Attr::Intelligence => "Mana and spell power.",
+            Attr::Faith => "Mana recovery, mana and some spell power.",
+        }
+    }
+    fn index(self) -> usize {
+        self as usize
+    }
+}
+
+#[derive(Component, Clone, Debug, PartialEq)]
+pub struct Stats {
+    pub level: u32,
+    attrs: [u32; 6],
+    /// Unspent attribute points.
+    pub points: u32,
+    /// Experience toward the next level.
+    pub xp: u32,
+}
+
+impl Default for Stats {
+    fn default() -> Self {
+        Self {
+            level: 1,
+            attrs: [BASE; 6],
+            points: 0,
+            xp: 0,
+        }
+    }
+}
+
+impl Stats {
+    /// A fighter of `level` whose extra points (`POINTS_PER_LEVEL` per level above 1) went into
+    /// `build` in turn (repeat an attribute to weight it).
+    pub fn preset(level: u32, build: &[Attr]) -> Self {
+        let mut s = Self {
+            level: level.max(1),
+            ..default()
+        };
+        let extra = (s.level - 1) * POINTS_PER_LEVEL;
+        for i in 0..extra as usize {
+            if let Some(a) = build.get(i % build.len().max(1)) {
+                let v = &mut s.attrs[a.index()];
+                *v = (*v + 1).min(MAX_ATTR);
+            }
+        }
+        s
+    }
+    pub fn get(&self, a: Attr) -> u32 {
+        self.attrs[a.index()]
+    }
+    /// Spend one point on `a`; false when there are none or it is maxed.
+    pub fn spend(&mut self, a: Attr) -> bool {
+        let v = &mut self.attrs[a.index()];
+        if self.points == 0 || *v >= MAX_ATTR {
+            return false;
+        }
+        *v += 1;
+        self.points -= 1;
+        true
+    }
+    /// Experience needed from this level to the next.
+    pub fn xp_to_next(&self) -> u32 {
+        100 + 50 * self.level
+    }
+    /// Add experience; returns the levels gained.
+    pub fn gain(&mut self, xp: u32) -> u32 {
+        self.xp = self.xp.saturating_add(xp);
+        let mut gained = 0;
+        while self.xp >= self.xp_to_next() {
+            self.xp -= self.xp_to_next();
+            self.level += 1;
+            self.points += POINTS_PER_LEVEL;
+            gained += 1;
+        }
+        gained
+    }
+}
+
+/// Values derived from `Stats` (written by `stats` only).
+#[derive(Component, Clone, Copy, Debug, PartialEq)]
+pub struct Derived {
+    pub max_hp: f32,
+    pub max_stamina: f32,
+    pub max_poise: f32,
+    pub max_mana: f32,
+    /// Melee damage and poise multiplier.
+    pub might: f32,
+    /// Spell damage multiplier.
+    pub spell: f32,
+    /// Stamina and mana regeneration multipliers.
+    pub regen: f32,
+    pub mana_regen: f32,
+    /// Cast animation speed multiplier.
+    pub cast_speed: f32,
+}
+
+/// Everything at 10 gives 100 hp / stamina / mana, 50 poise and ×1 multipliers.
+pub fn derive(s: &Stats) -> Derived {
+    let a = |x: Attr| s.get(x) as f32 - BASE as f32;
+    Derived {
+        max_hp: 100.0 + 8.0 * a(Attr::Vigor),
+        max_stamina: 100.0 + 5.0 * a(Attr::Endurance),
+        max_poise: 50.0 + 2.0 * a(Attr::Endurance) + 1.5 * a(Attr::Strength),
+        max_mana: 100.0 + 7.0 * a(Attr::Intelligence) + 3.0 * a(Attr::Faith),
+        might: (1.0 + 0.03 * a(Attr::Strength) + 0.015 * a(Attr::Dexterity)).max(0.3),
+        spell: (1.0 + 0.035 * a(Attr::Intelligence) + 0.012 * a(Attr::Faith)).max(0.3),
+        regen: (1.0 + 0.02 * a(Attr::Endurance)).max(0.3),
+        mana_regen: (1.0 + 0.03 * a(Attr::Faith) + 0.01 * a(Attr::Intelligence)).max(0.3),
+        cast_speed: (1.0 + 0.01 * a(Attr::Dexterity)).clamp(0.5, 1.6),
+    }
+}
+
+/// Raise an attribute with a point (stats panel).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct SpendPoint {
+    pub who: Entity,
+    pub attr: Attr,
+}
+
+/// The player levelled up (HUD log, effects).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct LevelUp {
+    pub who: Entity,
+    pub level: u32,
+}
+
+pub fn plugin(app: &mut App) {
+    app.register_required_components::<Fighter, Stats>()
+        .add_message::<SpendPoint>()
+        .add_message::<LevelUp>()
+        .add_systems(Update, (spend, award_xp, publish).chain());
+}
+
+fn spend(mut spends: MessageReader<SpendPoint>, mut stats: Query<&mut Stats>) {
+    for s in spends.read() {
+        if let Ok(mut st) = stats.get_mut(s.who) {
+            st.spend(s.attr);
+        }
+    }
+}
+
+/// Enemies that just died give the player experience.
+fn award_xp(
+    fighters: Query<(Entity, &Fighter, &Stats), Without<Player>>,
+    mut players: Query<(Entity, &Fighter, &mut Stats), With<Player>>,
+    mut ups: MessageWriter<LevelUp>,
+    mut dead: Local<Vec<Entity>>,
+) {
+    let mut xp = 0;
+    for (e, f, s) in &fighters {
+        let was = dead.contains(&e);
+        if f.dead && !was {
+            dead.push(e);
+            xp += XP_PER_KILL * s.level;
+        } else if !f.dead && was {
+            dead.retain(|d| *d != e);
+        }
+    }
+    if xp == 0 {
+        return;
+    }
+    for (e, f, mut s) in &mut players {
+        if !f.dead && s.gain(xp) > 0 {
+            ups.write(LevelUp { who: e, level: s.level });
+        }
+    }
+}
+
+/// Keep `Derived` and `DamageScale` in step with `Stats`.
+fn publish(mut commands: Commands, stats: Query<(Entity, &Stats, Option<&Derived>), Changed<Stats>>) {
+    for (e, s, old) in &stats {
+        let d = derive(s);
+        if old != Some(&d) {
+            commands.entity(e).try_insert((d, DamageScale(d.might)));
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_tens_is_the_baseline() {
+        let d = derive(&Stats::default());
+        assert_eq!((d.max_hp, d.max_stamina, d.max_poise, d.max_mana), (100.0, 100.0, 50.0, 100.0));
+        assert_eq!((d.might, d.spell, d.regen, d.mana_regen, d.cast_speed), (1.0, 1.0, 1.0, 1.0, 1.0));
+    }
+
+    #[test]
+    fn attributes_raise_what_they_say() {
+        let base = derive(&Stats::default());
+        for a in Attr::ALL {
+            let mut s = Stats {
+                points: 5,
+                ..default()
+            };
+            for _ in 0..5 {
+                assert!(s.spend(a));
+            }
+            assert!(!s.spend(a), "out of points");
+            let d = derive(&s);
+            let raised = match a {
+                Attr::Vigor => d.max_hp > base.max_hp,
+                Attr::Endurance => d.max_stamina > base.max_stamina && d.regen > base.regen,
+                Attr::Strength => d.might > base.might && d.max_poise > base.max_poise,
+                Attr::Dexterity => d.might > base.might && d.cast_speed > base.cast_speed,
+                Attr::Intelligence => d.max_mana > base.max_mana && d.spell > base.spell,
+                Attr::Faith => d.mana_regen > base.mana_regen,
+            };
+            assert!(raised, "{a:?}");
+        }
+    }
+
+    #[test]
+    fn levels_grant_points_and_presets_spend_them() {
+        let mut s = Stats::default();
+        assert_eq!(s.gain(s.xp_to_next() - 1), 0);
+        assert_eq!(s.gain(1), 1);
+        assert_eq!((s.level, s.points, s.xp), (2, POINTS_PER_LEVEL, 0));
+        let p = Stats::preset(5, &[Attr::Strength, Attr::Dexterity]);
+        assert_eq!(p.get(Attr::Strength) + p.get(Attr::Dexterity), 2 * BASE + 4 * POINTS_PER_LEVEL);
+        assert_eq!(p.points, 0);
+    }
+}

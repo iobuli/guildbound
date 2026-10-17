@@ -61,7 +61,7 @@ fn spawn_prompt(mut commands: Commands) {
             ))
             .with_children(|p| {
                 p.spawn((
-                    label("E", "prompt.key"),
+                    label("F", "prompt.key"),
                     Node {
                         padding: UiRect::axes(px(7.0), px(1.0)),
                         ..default()

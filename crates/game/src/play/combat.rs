@@ -38,14 +38,15 @@
 //!
 //! The weapon (`WeaponDef`: a `sword` primitive built here, a basic primitive or a glTF scene)
 //! is a child of the hand bone, placed like `tools` places the axe: the grip transform under the
-//! bone, compensating the bone's global scale. `Intent.slot` switches `Loadout.current` while
-//! free. Monitor log lines: `hit_*`, `parry`, `guard_break`, `knockdown`, `death`, `revive`.
+//! bone, compensating the bone's global scale. `Equip` messages (the weapon chest) switch
+//! `Loadout.current` while free. Monitor log lines: `hit_*`, `parry`, `guard_break`, `knockdown`, `death`, `revive`.
 use super::camera::CameraShake;
 use super::controller::{Teleport, wrap_angle, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::monitor::Monitor;
 use super::moveset::{Attack, ClipRef, Moveset, Movesets, Primitive, WeaponDef};
 use super::ragdoll::RagdollRequest;
+use super::stats::Derived;
 use super::tools::Holding;
 use super::world::TrainingDummy;
 use super::{
@@ -241,6 +242,7 @@ const SHOULDER_WIDTH: f32 = 0.8;
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Fighter, Melee>()
         .init_resource::<Hitstop>()
+        .add_message::<Equip>()
         .add_systems(Startup, validate)
         .add_systems(PreUpdate, apply_hitstop)
         .add_systems(
@@ -819,18 +821,34 @@ fn enroll(mut commands: Commands, players: Query<Entity, (Added<Player>, With<Fi
     }
 }
 
-/// `Intent.slot` switches the equipped moveset while the fighter is free.
-fn equip(mut fighters: Query<(&Intent, &Action, &Melee, &mut Loadout)>) {
-    for (intent, action, melee, mut loadout) in &mut fighters {
-        if let Some(slot) = intent.slot
-            && slot < loadout.slots.len()
-            && slot != loadout.current
-            && action.is_free()
-            && melee.free()
-        {
-            loadout.current = slot;
+/// Wield a moveset (the weapon chest). Applied once the fighter is free; the request waits until
+/// then.
+#[derive(Message, Clone, Debug)]
+pub struct Equip {
+    pub who: Entity,
+    pub set: String,
+}
+
+/// `Equip` messages switch the wielded moveset while the fighter is free (`Loadout` keeps the
+/// sets it has wielded; `current` is the one in hand).
+fn equip(
+    mut requests: MessageReader<Equip>,
+    mut pending: Local<Vec<Equip>>,
+    mut fighters: Query<(&Action, &Melee, &mut Loadout)>,
+) {
+    pending.extend(requests.read().cloned());
+    pending.retain(|req| {
+        let Ok((action, melee, mut loadout)) = fighters.get_mut(req.who) else { return false };
+        if !(action.is_free() && melee.free()) {
+            return true;
         }
-    }
+        let index = loadout.slots.iter().position(|s| *s == req.set).unwrap_or_else(|| {
+            loadout.slots.push(req.set.clone());
+            loadout.slots.len() - 1
+        });
+        loadout.current = index;
+        false
+    });
 }
 
 /// Grip transform of `def` under a hand bone with global scale `bone_scale`.
@@ -1006,7 +1024,7 @@ fn blade_mesh(width: f32, thickness: f32, length: f32) -> Mesh {
 fn stamina(
     time: Res<Time>,
     mut spends: MessageReader<StaminaSpend>,
-    mut fighters: Query<(&mut Fighter, &mut Melee, &mut Mover, &Action)>,
+    mut fighters: Query<(&mut Fighter, &mut Melee, &mut Mover, &Action, Option<&Derived>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     for spend in spends.read() {
@@ -1014,7 +1032,10 @@ fn stamina(
             melee.spend(&mut fighter, spend.amount);
         }
     }
-    for (mut fighter, mut melee, mut mover, action) in &mut fighters {
+    for (mut fighter, mut melee, mut mover, action, derived) in &mut fighters {
+        if let Some(d) = derived {
+            apply_derived(&mut fighter, d);
+        }
         if fighter.dead {
             continue;
         }
@@ -1028,7 +1049,7 @@ fn stamina(
         }
         melee.rested += dt;
         if melee.rested > REGEN_DELAY {
-            let rate = if melee.exhausted { EXHAUSTED_REGEN } else { REGEN_RATE };
+            let rate = if melee.exhausted { EXHAUSTED_REGEN } else { REGEN_RATE } * derived.map_or(1.0, |d| d.regen);
             fighter.stamina = (fighter.stamina + rate * dt).min(fighter.max_stamina);
             if fighter.stamina >= fighter.max_stamina {
                 melee.exhausted = false;
@@ -1043,6 +1064,20 @@ fn stamina(
             melee.slowed = false;
         }
     }
+}
+
+/// Take the maxima from `stats`, keeping the current hp / stamina / poise shares.
+fn apply_derived(f: &mut Fighter, d: &Derived) {
+    let rescale = |now: &mut f32, max: &mut f32, new: f32| {
+        if (*max - new).abs() > 1e-3 && new > 0.0 {
+            let share = if *max > 0.0 { (*now / *max).clamp(0.0, 1.0) } else { 1.0 };
+            *max = new;
+            *now = share * new;
+        }
+    };
+    rescale(&mut f.hp, &mut f.max_hp, d.max_hp);
+    rescale(&mut f.stamina, &mut f.max_stamina, d.max_stamina);
+    rescale(&mut f.poise, &mut f.max_poise, d.max_poise);
 }
 
 /// Everything a fighter's step reads besides its own components.
@@ -2074,8 +2109,10 @@ fn strike(
         facing,
     };
     let factor = speed_factor(hit.speed);
-    let damage = hit.damage * factor * attacker.scale;
-    let poise = hit.poise * factor * attacker.scale;
+    // Spells arrive already scaled by the caster's spell power; `might` is for weapons.
+    let scale = if hit.kind == HitKind::Melee { attacker.scale } else { 1.0 };
+    let damage = hit.damage * factor * scale;
+    let poise = hit.poise * factor * scale;
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);
     let involved = attacker.player || player;
     let who = name.map_or("?", |n| n.as_str()).to_string();

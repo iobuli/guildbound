@@ -35,6 +35,7 @@ pub mod parkour;
 pub mod ragdoll;
 pub mod ranged;
 pub mod select;
+pub mod stats;
 pub mod surfaces;
 pub mod traverse;
 pub mod tools;
@@ -84,7 +85,8 @@ pub fn plugin(app: &mut App) {
         grass::plugin,
         armor::plugin,
         audio::plugin,
-    ));
+    ))
+    .add_plugins(stats::plugin);
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -149,8 +151,11 @@ pub struct Intent {
     pub secondary_held: bool,
     pub secondary_pressed: bool,
     pub interact_pressed: bool,
-    /// Number keys / d-pad: switch loadout slot.
-    pub slot: Option<usize>,
+    /// Q / d-pad up: the bound art (Battlewill). E / d-pad right: the bound spell (magicules).
+    pub art_pressed: bool,
+    pub spell_pressed: bool,
+    /// MB5 / d-pad left: bind the next known spell to the spell slot.
+    pub next_spell: bool,
     /// Lock-on target, if any.
     pub target: Option<Entity>,
 }

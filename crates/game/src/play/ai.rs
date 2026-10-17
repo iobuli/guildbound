@@ -10,9 +10,10 @@
 //!   raised late, inside the parry window), dodged sideways, or taken;
 //! - low hp: retreat with the guard up until stamina recovers;
 //! - nothing while dead or down; with no enemy in `AGGRO` range, walk home and stand.
-//! `enroll` gives every new `Npc` a `Difficulty`, `combat::DamageScale` and `combat::Revive`
-//! (back at its spawn point) — the hooks `combat` leaves for `ai`.
-use super::combat::{self, DamageScale, Melee, Revive, Tell};
+//! `enroll` gives every new `Npc` a `Difficulty` and `combat::Revive` (back at its spawn point).
+//! How hard an NPC hits and how much it takes comes from its `stats::Stats`, the same universal
+//! base as the player's; `Difficulty` is only how it behaves.
+use super::combat::{self, Melee, Revive, Tell};
 use super::moveset::Movesets;
 use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, PlaySet};
 use bevy::prelude::*;
@@ -66,8 +67,6 @@ pub struct Difficulty {
     pub guard: f32,
     /// 0..1: how often an open chance to attack is taken, and how short the pause after one.
     pub aggression: f32,
-    /// Damage multiplier on this NPC's blows (`combat::DamageScale`).
-    pub damage: f32,
 }
 
 impl Default for Difficulty {
@@ -78,7 +77,6 @@ impl Default for Difficulty {
             dodge: 0.2,
             guard: 0.35,
             aggression: 0.6,
-            damage: 0.8,
         }
     }
 }
@@ -331,7 +329,7 @@ fn flat(v: Vec3) -> Vec3 {
     Vec3::new(v.x, 0.0, v.z)
 }
 
-/// New NPCs: difficulty, damage scale, revive at home, a per-NPC random seed.
+/// New NPCs: difficulty, revive at home, a per-NPC random seed.
 fn enroll(
     mut commands: Commands,
     mut npcs: Query<(Entity, &Transform, &Mover, &mut Brain, Option<&Difficulty>), Added<Npc>>,
@@ -343,7 +341,6 @@ fn enroll(
         brain.rng ^= entity.to_bits() as u32 | 1;
         commands.entity(entity).try_insert((
             difficulty,
-            DamageScale(difficulty.damage),
             Revive {
                 after: REVIVE_AFTER,
                 home: Some((feet, mover.yaw)),

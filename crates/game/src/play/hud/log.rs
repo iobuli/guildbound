@@ -91,7 +91,7 @@ fn spawn(mut commands: Commands) {
 
 fn greet(mut log: MessageWriter<HudLog>) {
     log.write(HudLog::new(LogKind::System, "guildbound // link established"));
-    log.write(HudLog::new(LogKind::System, "[E] use   [I] bag   [1-0] hotbar   [Esc] free cursor"));
+    log.write(HudLog::new(LogKind::System, "[F] use   [Q] art   [E] spell   [MB5] next spell   [I] bag   [Esc] free cursor"));
 }
 
 fn forward(mut reads: MessageReader<HudLog>, column: Query<Entity, With<HudLogColumn>>, mut writes: MessageWriter<LogWrite>) {

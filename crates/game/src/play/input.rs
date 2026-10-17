@@ -1,18 +1,19 @@
 //! Player input → `Intent` (keyboard + mouse + gamepad). Move direction is relative to the
 //! camera yaw (`camera::CameraRig`). Controls: WASD move, Alt walk, Shift sprint, C crouch,
-//! Space jump/climb, Ctrl dodge, LMB primary (tap/hold), RMB secondary (block/aim), E interact,
-//! 1-9 loadout slot, Tab lock-on nearest enemy, R reset player.
+//! Space jump/climb, Ctrl dodge, LMB primary (tap/hold), RMB secondary (block/aim), F interact,
+//! Q art (Battlewill), E spell (magicules), MB5 (mouse forward) next spell, Tab lock-on nearest
+//! enemy, R reset player. Weapons come from the chest (`armory`), not from number keys.
 //!
 //! Gamepad: left stick move (small tilt walks), right stick camera, A jump, B dodge, X interact,
 //! Y crouch, RB/RT primary, LB/LT secondary, L3 sprint (latched until the stick is released),
-//! R3 lock-on, d-pad left/right previous/next slot, Select reset.
+//! R3 lock-on, d-pad up art, d-pad right spell, d-pad left next spell, Select reset.
 //! Mouse buttons only count while the cursor is captured (`camera::CursorCapture`), so clicking
 //! UI or re-capturing the cursor never attacks. Crouch is a toggle latched here: `Intent.crouch`
 //! is the latched state; sprinting or jumping stands back up.
 use super::camera::{CameraRig, CursorCapture, stick_deadzone};
 use super::controller::Teleport;
 use super::world::PlayerSpawn;
-use super::{Fighter, Intent, Loadout, Npc, PlaySet, Player};
+use super::{Fighter, Intent, Npc, PlaySet, Player};
 use bevy::prelude::*;
 
 /// `Intent.look` is this far along the camera view.
@@ -87,10 +88,10 @@ fn player_input(
     spawn: Option<Res<PlayerSpawn>>,
     mut latches: ResMut<Latches>,
     mut commands: Commands,
-    mut players: Query<(Entity, &Transform, &mut Intent, &Loadout), With<Player>>,
+    mut players: Query<(Entity, &Transform, &mut Intent), With<Player>>,
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
 ) {
-    let Some((entity, transform, mut intent, loadout)) = players.iter_mut().next() else {
+    let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
         return;
     };
     let mouse_live = capture.captured && !capture.just_captured;
@@ -105,7 +106,10 @@ fn player_input(
     let mut jump_held = keys.pressed(KeyCode::Space);
     let mut dodge = keys.any_just_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
     let mut crouch_toggle = keys.just_pressed(KeyCode::KeyC);
-    let mut interact = keys.just_pressed(KeyCode::KeyE);
+    let mut interact = keys.just_pressed(KeyCode::KeyF);
+    let mut art = keys.just_pressed(KeyCode::KeyQ);
+    let mut spell = keys.just_pressed(KeyCode::KeyE);
+    let mut next_spell = mouse.just_pressed(MouseButton::Forward);
     let mut lock_toggle = keys.just_pressed(KeyCode::Tab);
     let mut reset = keys.just_pressed(KeyCode::KeyR);
     let mut primary_pressed = mouse_live && mouse.just_pressed(MouseButton::Left);
@@ -114,21 +118,6 @@ fn player_input(
     let mut secondary_pressed = mouse_live && mouse.just_pressed(MouseButton::Right);
     let mut secondary_held = mouse_live && mouse.pressed(MouseButton::Right);
 
-    let digits = [
-        KeyCode::Digit1,
-        KeyCode::Digit2,
-        KeyCode::Digit3,
-        KeyCode::Digit4,
-        KeyCode::Digit5,
-        KeyCode::Digit6,
-        KeyCode::Digit7,
-        KeyCode::Digit8,
-        KeyCode::Digit9,
-        KeyCode::Digit0,
-    ];
-    let mut slot = digits.iter().position(|k| keys.just_pressed(*k));
-
-    let slots = loadout.slots.len().max(1);
     let mut pad_primary = false;
     let mut pad_secondary = false;
     for pad in &gamepads {
@@ -151,12 +140,9 @@ fn player_input(
             || pad.get(GamepadButton::RightTrigger2).unwrap_or(0.0) > TRIGGER_THRESHOLD;
         pad_secondary |= pad.pressed(GamepadButton::LeftTrigger)
             || pad.get(GamepadButton::LeftTrigger2).unwrap_or(0.0) > TRIGGER_THRESHOLD;
-        if pad.just_pressed(GamepadButton::DPadRight) {
-            slot = Some((loadout.current + 1) % slots);
-        }
-        if pad.just_pressed(GamepadButton::DPadLeft) {
-            slot = Some((loadout.current + slots - 1) % slots);
-        }
+        art |= pad.just_pressed(GamepadButton::DPadUp);
+        spell |= pad.just_pressed(GamepadButton::DPadRight);
+        next_spell |= pad.just_pressed(GamepadButton::DPadLeft);
     }
     // Gamepad button edges for the analog-capable buttons.
     primary_pressed |= pad_primary && !latches.pad_primary;
@@ -214,7 +200,6 @@ fn player_input(
         latches.pad_sprint = false;
     }
 
-    let slot = slot.filter(|s| *s < loadout.slots.len());
     let look = rig.eye + rig.forward() * LOOK_DISTANCE;
     *intent = Intent {
         move_dir: camera_relative(stick, rig.yaw),
@@ -231,7 +216,9 @@ fn player_input(
         secondary_held,
         secondary_pressed,
         interact_pressed: interact,
-        slot,
+        art_pressed: art,
+        spell_pressed: spell,
+        next_spell,
         target,
     };
 }
