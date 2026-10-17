@@ -36,6 +36,7 @@ pub mod moveset;
 pub mod parkour;
 pub mod ragdoll;
 pub mod ranged;
+pub mod record;
 pub mod select;
 pub mod skills;
 pub mod stats;
@@ -90,7 +91,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

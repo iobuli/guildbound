@@ -52,7 +52,31 @@ const HOME_RADIUS: f32 = 1.0;
 
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Npc, Brain>()
-        .add_systems(Update, (enroll, think).chain().in_set(PlaySet::Think));
+        .register_required_components::<Autopilot, Brain>()
+        .add_systems(Update, (autopilot, enroll, think).chain().in_set(PlaySet::Think));
+}
+
+/// The NPC brain drives this (non-NPC) body too: `GB_FIGHT=<moveset>` puts it on the player, who
+/// then wields that weapon and duels like an NPC (smoke tests and recordings).
+#[derive(Component, Default)]
+pub struct Autopilot;
+
+fn autopilot(
+    time: Res<Time>,
+    mut done: Local<bool>,
+    mut commands: Commands,
+    players: Query<Entity, With<super::Player>>,
+    mut equip: MessageWriter<combat::Equip>,
+) {
+    if *done || time.elapsed_secs() < 0.5 {
+        return;
+    }
+    *done = true;
+    let Some(set) = std::env::var("GB_FIGHT").ok().filter(|s| !s.trim().is_empty()) else { return };
+    for who in &players {
+        commands.entity(who).try_insert(Autopilot);
+        equip.write(combat::Equip { who, set: set.trim().to_string() });
+    }
 }
 
 /// How well an NPC fights. Inserted with defaults by `enroll` unless the spawner set one.
@@ -355,7 +379,7 @@ fn think(
     time: Res<Time>,
     movesets: Res<Movesets>,
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
-    mut npcs: Query<(Entity, &mut Intent, &mut Brain, Option<&Difficulty>), With<Npc>>,
+    mut npcs: Query<(Entity, &mut Intent, &mut Brain, Option<&Difficulty>), Or<(With<Npc>, With<Autopilot>)>>,
 ) {
     let dt = time.delta_secs();
     for (entity, mut intent, mut brain, difficulty) in &mut npcs {

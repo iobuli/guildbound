@@ -22,8 +22,12 @@
 //! Smoke-test env vars: `GB_AUTOQUIT=<seconds>` sends `AppExit` after that much real time (waits
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
 //! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
-//! abilities at the nearest NPC (see `magic::demo`).
+//! abilities at the nearest NPC (see `magic::demo`). `GB_RIVAL=1` brings in the rival at start.
+//!
+//! F7 toggles a second enemy, the Rival (team 2, greatsword): it and the Opponent (team 1) fight
+//! each other as readily as the player.
 use super::armor::spawn_stand;
+use super::hud::log::{HudLog, LogKind};
 use super::skills::{Sheet, xp_for_level};
 use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
@@ -71,7 +75,77 @@ pub fn plugin(app: &mut App) {
     })
     .insert_resource(Smoke::from_env())
     .add_systems(Startup, setup)
-    .add_systems(Update, smoke_test);
+    .add_systems(Update, (smoke_test, rival));
+}
+
+/// The second enemy (F7 toggles it; `GB_RIVAL=1` brings it in at start). It is on its own team,
+/// so the brain (`ai`) sends it at whoever is nearest: the Opponent or the player.
+#[derive(Component)]
+pub struct Rival;
+
+/// Where the rival stands (feet), off the Opponent's right, facing it; its team.
+const RIVAL_FEET: Vec3 = Vec3::new(5.0, 0.0, -6.0);
+const RIVAL_TEAM: u8 = 2;
+
+/// F7: bring the rival in, or send it away. A rival lying in a ragdoll leaves once it is back up
+/// (its physics segments belong to the body).
+#[allow(clippy::too_many_arguments)]
+fn rival(
+    time: Res<Time>,
+    keys: Res<ButtonInput<KeyCode>>,
+    mut commands: Commands,
+    rivals: Query<(Entity, &super::Mover), With<Rival>>,
+    mut log: MessageWriter<HudLog>,
+    mut leaving: Local<bool>,
+    mut started: Local<bool>,
+) {
+    let from_env = !*started && time.elapsed_secs() > 0.5 && {
+        *started = true;
+        std::env::var("GB_RIVAL").is_ok_and(|v| v.trim() == "1")
+    };
+    if keys.just_pressed(KeyCode::F7) || from_env {
+        if rivals.is_empty() {
+            spawn_rival(&mut commands);
+            log.write(HudLog::new(LogKind::Warn, "A rival enters the courtyard  [F7]").key(7101));
+        } else {
+            *leaving = true;
+            log.write(HudLog::new(LogKind::System, "The rival withdraws  [F7]").key(7101));
+        }
+    }
+    if *leaving {
+        for (e, mover) in &rivals {
+            if mover.mode != super::MoveMode::Ragdoll {
+                commands.entity(e).try_despawn();
+            }
+        }
+        if rivals.is_empty() {
+            *leaving = false;
+        }
+    }
+}
+
+fn spawn_rival(commands: &mut Commands) {
+    let feet = RIVAL_FEET.with_y(ground_height(RIVAL_FEET.x, RIVAL_FEET.z));
+    let opponent = SPAWN_FEET + Vec3::new(SPAWN_YAW.sin(), 0.0, SPAWN_YAW.cos()) * 4.0;
+    let to = opponent - feet;
+    let rival = spawn_character(
+        commands,
+        "Rival",
+        feet,
+        to.x.atan2(to.z),
+        Fighter::new(RIVAL_TEAM, 100.0),
+        Loadout {
+            slots: vec!["greatsword".to_string()],
+            current: 0,
+        },
+        Some(Color::srgb(0.36, 0.30, 0.78)),
+    );
+    // A heavy brawler: strength, endurance and vigor, a greatsword and the skills behind it.
+    let build = [Attr::Strength, Attr::Endurance, Attr::Vigor];
+    let mut sheet = Sheet::default();
+    sheet.grant("swordsmanship", xp_for_level(15));
+    sheet.grant("defence", xp_for_level(8));
+    commands.entity(rival).insert((Npc, Rival, Stats::preset(4, &build), sheet));
 }
 
 /// Where `R` puts the player back.

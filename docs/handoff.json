@@ -230,6 +230,11 @@
       "file": "play/skills.rs",
       "role": "use-based skills from assets/data/skills.json: RuneScape curve, XP window cap, affinity + seeded discovery with pity, ability discovery via unlocks, Sheet on every Fighter, SkillBonus",
       "status": "new"
+    },
+    {
+      "file": "play/record.rs",
+      "role": "GB_RECORD frame-locked video capture for headless runs",
+      "status": "new"
     }
   ],
   "order": [
@@ -731,7 +736,8 @@
       "cast Cinder Bolt: Fire Manipulation; Sensing shows Lightning affinity",
       "swim, climb, mantle, roll-land, chop/fell, gather: their skills",
       "ARTS & MAGIC: undiscovered rows show needed skill levels / SENSED",
-      "STATS: derived values grow with skill levels"
+      "STATS: derived values grow with skill levels",
+      "F7: Rival joins and duels the Opponent; F7 again removes it"
     ]
   },
   "controls": {
@@ -742,7 +748,8 @@
     "stats": "K",
     "bag": "I",
     "ragdoll_self": "F6",
-    "weapons": "courtyard chest"
+    "weapons": "courtyard chest",
+    "rival": "F7"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -754,6 +761,12 @@
     "GB_VFX_TEST": "1",
     "GB_CLIMB": "1: jump once at 2.5 s, then hold forward",
     "GB_SHOOT": "bow|crossbow|knives",
-    "GB_STATS": "stats|arts|skills: open that stats tab at 1 s"
+    "GB_STATS": "stats|arts|skills: open that stats tab at 1 s",
+    "GB_RIVAL": "1: the Rival joins at start",
+    "GB_FIGHT": "moveset: the player fights on the NPC brain (ai::Autopilot)",
+    "GB_RECORD": "dir: frame-locked PNG capture",
+    "GB_RECORD_FROM": "game s (3)",
+    "GB_RECORD_TO": "game s (15)",
+    "GB_RECORD_FPS": "30"
   }
 }

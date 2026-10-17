@@ -43,6 +43,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/fx.rs` | `Burst` particles (chips, leaves) and `Sfx` one-shot sounds (first audio in the game) | new |
 | `play/hud/` | Prompt (F), log, minimap with a STATS rim button, vitals (HP ST / BW MP), hotbar (Q art, E spell, weapon in hand, bag), `stats_page` (tabs STATS, ARTS & MAGIC and SKILLS; K; `GB_STATS=<tab>` smoke hook) | done |
 | `play/deeds.rs` | `Deed { who, kind, tag, amount }`: the only input to progression. Producers: combat (hit, block, parry, kill), magic (cast, cast_hit), ranged (shoot, shoot_hit), traverse (swim / climb per metre, mantle), parkour (land Roll / Hard), trees (chop, fell); `skills` turns `ItemCollected` into gather | new |
+| `play/record.rs` | `GB_RECORD=<dir>`: frame-locked capture (each frame advances 1/`GB_RECORD_FPS` s of game time; frames `GB_RECORD_FROM`..`GB_RECORD_TO` saved as PNGs, then quit) so slow software rendering still makes normal-speed video (`ffmpeg -framerate 30 -i f_%05d.png`) | new |
 | `play/skills.rs` + `assets/data/skills.json` | Use-based skills (lane C): 16 rows (`SkillBook`), RuneScape curve 1–99, XP capped per skill per 30 s window; undiscovered skills build affinity and roll `base·a/(a+4)` with a pity floor (per-character seeded); arts and spells are discovered once their skills reach the `unlocks` levels; `Sheet` (required by `Fighter`) for player and NPCs; skill levels → `stats::SkillBonus` | new |
 | `play/stats.rs` | Universal `Stats` on every `Fighter` (level, Vigor Endurance Strength Dexterity Intelligence Faith, points, xp) → `Derived` (max hp / stamina / poise / magicules / Battlewill, might, spell, regen, cast speed); kills give the player xp, levels give points (`SpendPoint`) | new |
 | `play/armory.rs` | Weapon chest: opening the courtyard chest shows the weapon rack; a click sends `combat::Equip` | new |
@@ -151,6 +152,8 @@ Log line: `t character relation side value mode action speed`.
 - The player starts with Crescent Edge and Cinder Bolt. Everything else is discovered: e.g. Aura Arts 2 makes Flash Step discoverable, and casting / landing aura arts then builds its affinity until it is found (certain after 8 such deeds). Fire 1 → Cinder Bolt, Frost 1 → Frost Bloom, Lightning 1 → Storm Lance, Arcane 1 → Orbit Motes, Aura Arts 5 / 10 → Aura Bullet / Earthbreaker.
 - The old mastered-ability "Skill" is renamed **Mastered** (`Grimoire::is_mastered`, `MASTERED_*`), so "skill" means only the new use-based skills.
 - The Opponent has Swordsmanship 20 and Defence 12 and levels the same way.
+- **F7** toggles a second enemy, the **Rival** (team 2, greatsword, purple; Swordsmanship 15, Defence 8). Teams differ, so the brain sends each NPC at its nearest foe: the Rival and the Opponent fight each other as readily as the player. A ragdolled Rival leaves once it is back up. `GB_RIVAL=1` brings it in at start; `GB_FIGHT=<moveset>` puts the player on the NPC brain (`ai::Autopilot`) with that weapon.
+- Known: `stats::award_xp` still gives the player XP for any NPC death, including Rival-vs-Opponent kills (skill `kill` deeds are attributed correctly).
 - Training dummies count as deeds (practice teaches); the 600 XP per skill per 30 s cap stops farming.
 - Tests: 171 passed, 1 ignored. The headless screenshot of the SKILLS tab was not taken this round (`GB_STATS=skills GB_CAST=crescent_edge,cinder_bolt` with a long `GB_AUTOQUIT` does it).
 - Playtest checklist:
@@ -159,10 +162,11 @@ Log line: `t character relation side value mode action speed`.
   3. Swim, climb, mantle, roll-land, chop and fell a tree, pick things up: Swimming, Climbing, Breakfall, Woodcutting, Gathering.
   4. K → ARTS & MAGIC: undiscovered rows read "· · ·" with the skill levels they need (or SENSED once those are met).
   5. STATS tab: the derived values grow a little with skill levels.
+  6. F7: the Rival joins; stand back and watch it and the Opponent duel; F7 again sends it away.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
 
-- Controls: **F** interact, **Q** art, **E** spell, **MB5** next spell, **K** stats page, **F6** ragdoll yourself. Weapons come from the courtyard chest, not number keys.
+- Controls: **F** interact, **Q** art, **E** spell, **MB5** next spell, **K** stats page, **F6** ragdoll yourself, **F7** rival on / off. Weapons come from the courtyard chest, not number keys.
 - Setting: arts run on Battlewill (aura of the body: no chant, almost no wind-up), spells on magicules (a short cast). Mastering an art or spell makes it cheaper, faster and stronger, and costs magicules for good. The player has no devouring skill: kills give experience only. Inspired by the user's Tensura notes; every name is original.
 - Effects were checked headlessly on the CPU renderer (`GB_VFX_TEST=1`, `GB_CAST=<ids> GB_CAST_EVERY=0.3`, `GB_SPAWN=x,z,yaw`, `GB_SCREENSHOT_AT` in game seconds): the lightning, glow and particles render; sizes were raised for readability. Bloom is on (HDR camera, intensity 0.12).
 - Heavy attacks held to full charge strike by themselves; a clank and a small camera kick mark the moment.
