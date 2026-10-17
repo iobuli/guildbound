@@ -234,3 +234,38 @@ fn birds(
         PlaybackSettings::DESPAWN.with_volume(Volume::Linear(volume)).with_speed(speed),
     ));
 }
+
+#[cfg(test)]
+mod tests {
+    use bevy::audio::{AudioSource, Decodable};
+
+    /// Every sound under `assets/audio` decodes with the formats Bevy is built with (it unwraps the
+    /// decoder when a sound first plays, so an unsupported format crashes the game there).
+    #[test]
+    fn every_sound_decodes() {
+        let root = std::path::Path::new(crate::ASSETS).join("audio");
+        let mut files = Vec::new();
+        let mut dirs = vec![root];
+        while let Some(dir) = dirs.pop() {
+            for entry in std::fs::read_dir(&dir).expect("audio dir").flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    dirs.push(path);
+                } else if path.extension().is_some_and(|x| x == "wav" || x == "ogg") {
+                    files.push(path);
+                }
+            }
+        }
+        assert!(!files.is_empty());
+        let failed: Vec<_> = files
+            .iter()
+            .filter(|path| {
+                let source = AudioSource {
+                    bytes: std::fs::read(path).expect("read").into(),
+                };
+                std::panic::catch_unwind(|| source.decoder().take(64).count()).is_err()
+            })
+            .collect();
+        assert!(failed.is_empty(), "undecodable: {failed:?}");
+    }
+}
