@@ -178,8 +178,8 @@
     },
     {
       "file": "play/ragdoll.rs",
-      "role": "impact-only active ragdoll; RagdollRequest contract defined",
-      "status": "stub"
+      "role": "impact ragdoll: 11 jointed Phys::Ragdoll capsules from the bones on RagdollRequest (combat or F6), raw Source::Pose read-back, root follows pelvis, settle then LayToIdle get-up (Owner::Ragdoll); corpses stay down until revived",
+      "status": "new"
     },
     {
       "file": "play/ranged.rs",
@@ -545,10 +545,12 @@
     {
       "id": "A",
       "name": "melee",
-      "files": [
-        "play/ragdoll.rs"
-      ],
-      "status": "combat, movesets and ai done; ragdoll.rs still a stub (combat already inserts RagdollRequest)"
+      "files": [],
+      "status": "done (combat, melee movesets, ai, ragdoll)",
+      "ideas": [
+        "face-down get-up clip",
+        "active ragdoll: PD drive toward the animated pose"
+      ]
     },
     {
       "id": "B",
@@ -620,14 +622,15 @@
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
   ],
   "milestone": {
-    "name": "melee movesets, NPC brain, world surfaces",
+    "name": "melee movesets, NPC brain, ragdoll, world surfaces",
     "status": "awaiting playtest",
     "playtest": [
       "number keys 1-5: unarmed, katana, greatsword, dagger, axe; tap / hold LMB on the training dummies; sprint attack and jump attack (plunge)",
       "fight the Opponent (katana, team 1): it closes in, strafes, attacks, guards, sometimes parries or dodges; dies and gets up at its spawn after 6 s",
       "weapons sit in the right fist with the blade along the thumb side; the axe head faces the swing",
       "terrain, stone, wood, sand, cloth and metal show surface detail and catch light; no seams or stretching on boxes",
-      "staging/relations.log: hit_*, parry, guard_break, knockdown, death, revive lines"
+      "staging/relations.log: hit_*, parry, guard_break, knockdown, death, revive lines",
+      "F6 ragdolls the player; heavy greatsword / plunge hits ragdoll the Opponent; bodies settle and get up facing their feet"
     ]
   }
 }

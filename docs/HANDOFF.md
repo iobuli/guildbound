@@ -49,7 +49,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`); `WeaponDef.mesh_rotation_deg` / `mesh_offset` orient glTF weapon meshes so the blade runs along the root's +Y | done |
 | `play/combat.rs` | Melee FSM (light chains, charged heavy, sprint attack, air plunge, guard / parry, roll / sidestep, stamina, poise), swept hit tests, **only `Hit` resolver**, hitstop, reactions, death / revive, weapon in the hand | done |
 | `play/ai.rs` | Rule-based NPC brain → `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive` | new |
-| `play/ragdoll.rs` | Impact-only active ragdoll; `RagdollRequest` (the contract with `combat`) is defined | **stub** |
+| `play/ragdoll.rs` | Impact ragdoll: on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
 | `play/ranged.rs` | Bow/crossbow/throwing, projectiles | **stub** |
 | `play/magic.rs` | Schools as movesets, cast/charge/channel | **stub** |
 | `play/traverse.rs` | Swim, climb, ledge, mantle | **stub** |
@@ -146,6 +146,8 @@ Log line: `t character relation side value mode action speed`.
   3. Weapons sit in the right fist; the axe head faces the swing.
   4. Terrain, stone, wood, sand, cloth and metal show surface detail in the sunlight, with no seams or stretching on boxes.
   5. `staging/relations.log` shows `hit_*`, `parry`, `guard_break`, `knockdown`, `death` and `revive` lines.
+  6. Ragdoll: F6 throws the player backwards; a greatsword heavy or plunge (knockback over 7 m/s) ragdolls the Opponent. Bodies fall, settle and get up facing their feet; a killed Opponent stays down until it revives at its spawn.
+- Audio: Bevy's `wav` feature is on (`crates/game/Cargo.toml`); `audio::tests::every_sound_decodes` catches an unsupported sound format before it crashes the game.
 
 ## Grass and armour (previous milestone)
 
@@ -163,7 +165,7 @@ Log line: `t character relation side value mode action speed`.
 
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
-- **A. Melee:** `combat.rs`, the melee movesets and `ai.rs` are done. Left: `ragdoll.rs` (combat already inserts `RagdollRequest` above `Feel.ragdoll_threshold`; until the ragdoll exists a knockdown plays).
+- **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
 - **B. Traversal, then ranged and magic:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` and `magic.rs` (projectiles emit `Hit`).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.
