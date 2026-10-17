@@ -813,7 +813,8 @@
       "K -> STATS madlib: click words, walk style changes",
       "Opponent badge on the left breast (check placement)",
       "K -> WORK: finish a contract for XP and a new posting",
-      "noticeboard by the spawn: F opens WORK"
+      "noticeboard by the spawn: F opens WORK",
+      "pond: C dives, Space surfaces, breath 12 s"
     ]
   },
   "controls": {
@@ -826,7 +827,8 @@
     "ragdoll_self": "F6",
     "weapons": "courtyard chest",
     "rival": "F7",
-    "hunter": "F8"
+    "hunter": "F8",
+    "dive": "C while swimming (Space surfaces)"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -845,6 +847,7 @@
     "GB_RECORD_FROM": "game s (3)",
     "GB_RECORD_TO": "game s (15)",
     "GB_RECORD_FPS": "30",
-    "GB_HUNTER": "1: the Hunter (archer) joins at start"
+    "GB_HUNTER": "1: the Hunter (archer) joins at start",
+    "GB_DIVE": "1: dive once swimming (spawn in the pond, e.g. GB_SPAWN=-24,2,90)"
   }
 }

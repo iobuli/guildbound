@@ -3,7 +3,9 @@
 //! - Water: a body whose ground lies deeper than `SWIM_DEPTH` under a `Water` surface swims:
 //!   chest held `CHEST_BELOW` under the surface with a slow bob, the stick steers at `SWIM_SPEED`
 //!   (sprint `SWIM_SPRINT`, spending stamina through `StaminaSpend`), and it wades out where
-//!   the bottom comes up again.
+//!   the bottom comes up again. Diving: the crouch toggle (C) takes the body down toward the
+//!   floor (`swim_height`) while `BREATH` lasts (it refills at the surface); jump clears the
+//!   crouch and surfaces. Metres under water are `dive` deeds, on top `swim`.
 //! - Climbing: jumping at a `Climbable` face whose top is out of reach grabs it. The stick moves
 //!   up, down and along the wall (`CLIMB_SPEED`), costing stamina (more when moving); hands and
 //!   feet take holds on a `HOLD` grid on the face (`select::HandTargets` / `FootTargets`, written
@@ -36,6 +38,13 @@ const SWIM_SPEED: f32 = 1.7;
 const SWIM_SPRINT: f32 = 2.8;
 const SWIM_SPRINT_COST: f32 = 10.0;
 /// Bob amplitude (m) and rate (rad/s).
+/// Diving: body centre this far above the floor at the bottom (m), vertical easing rate, head
+/// height above the chest, breath (s) and how fast it comes back at the surface (s per s).
+const DIVE_FLOOR: f32 = 0.75;
+const DIVE_RATE: f32 = 1.6;
+const HEAD_ABOVE_CHEST: f32 = 0.35;
+const BREATH: f32 = 12.0;
+const BREATH_REGAIN: f32 = 3.0;
 const BOB: f32 = 0.035;
 const BOB_RATE: f32 = 2.2;
 /// Climbing: speed (m/s), stamina per second hanging / moving, distance kept from the face (m),
@@ -66,19 +75,24 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act));
 }
 
-/// Smoke-test driver: `GB_CLIMB=1` makes the player jump once at 2.5 s of game time and hold
+/// Smoke-test driver: `GB_DIVE=1` dives once swimming (spawn in the pond). `GB_CLIMB=1` makes the player jump once at 2.5 s of game time and hold
 /// forward from then on (spawn it facing a wall with `GB_SPAWN`).
 fn demo(
     time: Res<Time>,
-    mut armed: Local<Option<bool>>,
+    mut armed: Local<Option<(bool, bool)>>,
     mut players: Query<&mut Intent, With<super::Player>>,
     movers: Query<&Mover, With<super::Player>>,
 ) {
-    let on = *armed.get_or_insert_with(|| std::env::var_os("GB_CLIMB").is_some());
-    if !on || time.elapsed_secs() < 2.5 {
+    let (climb, dive) = *armed.get_or_insert_with(|| (std::env::var_os("GB_CLIMB").is_some(), std::env::var_os("GB_DIVE").is_some()));
+    let (Ok(mut intent), Ok(mover)) = (players.single_mut(), movers.single()) else { return };
+    // GB_DIVE: once swimming (spawn in the pond with GB_SPAWN), drift forward and dive.
+    if dive && mover.mode == MoveMode::Swim {
+        intent.move_dir = mover.forward() * 0.4;
+        intent.crouch = time.elapsed_secs() > 2.0;
+    }
+    if !climb || time.elapsed_secs() < 2.5 {
         return;
     }
-    let (Ok(mut intent), Ok(mover)) = (players.single_mut(), movers.single()) else { return };
     intent.move_dir = mover.forward();
     if time.elapsed_secs() - time.delta_secs() < 2.5 {
         intent.jump_pressed = true;
@@ -88,8 +102,8 @@ fn demo(
 /// What traversal is doing with a body (added on demand).
 #[derive(Component, Clone, Debug)]
 pub enum Traverse {
-    /// `swum`: metres toward the next `swim` deed.
-    Swim { clock: f32, swum: f32 },
+    /// `swum`: metres toward the next `swim` / `dive` deed; `breath`: seconds left under water.
+    Swim { clock: f32, swum: f32, breath: f32 },
     Climb(Climbing),
     Mantle(Mantle),
 }
@@ -147,6 +161,17 @@ pub fn holds(root: Vec3, normal: Vec3, travelled: f32) -> ([Vec3; 2], [Vec3; 2])
     (hands, feet)
 }
 
+/// Body-centre height while swimming: bobbing at the surface, or near the floor when diving
+/// (never above the surface height, never into the floor).
+pub fn swim_height(surface: f32, floor: f32, diving: bool, clock: f32) -> f32 {
+    let at_surface = surface - CHEST_BELOW - CHEST_HEIGHT + BOB * (clock * BOB_RATE).sin();
+    if diving {
+        (floor + DIVE_FLOOR).min(at_surface)
+    } else {
+        at_surface
+    }
+}
+
 /// Swim where the water is deep; wade out where it isn't.
 #[allow(clippy::type_complexity)]
 fn water(
@@ -194,11 +219,11 @@ fn water(
             mover.velocity.y = 0.0;
             commands
                 .entity(entity)
-                .try_insert(Traverse::Swim { clock: 0.0, swum: 0.0 });
+                .try_insert(Traverse::Swim { clock: 0.0, swum: 0.0, breath: BREATH });
             continue;
         }
         let Some(mut state) = state else { continue };
-        let Traverse::Swim { clock, swum } = &mut *state else {
+        let Traverse::Swim { clock, swum, breath } = &mut *state else {
             continue;
         };
         if depth < SWIM_DEPTH - SWIM_HYST || surface.is_none() || fighter.dead {
@@ -219,8 +244,18 @@ fn water(
         let want = Vec3::new(intent.move_dir.x, 0.0, intent.move_dir.z) * speed;
         let h = Vec3::new(mover.velocity.x, 0.0, mover.velocity.z);
         let h = h.lerp(want, (3.0 * dt).min(1.0));
-        let target_y = surface - CHEST_BELOW - CHEST_HEIGHT + BOB * (*clock * BOB_RATE).sin();
-        let y = p.y + (target_y - p.y) * (4.0 * dt).min(1.0);
+        // Diving: the crouch toggle (C) takes the body down while breath lasts; jump clears it.
+        let floor_here = ground_height(p.x, p.z);
+        let head_under = p.y + CHEST_HEIGHT + HEAD_ABOVE_CHEST < surface;
+        if head_under {
+            *breath -= dt;
+        } else {
+            *breath = (*breath + BREATH_REGAIN * dt).min(BREATH);
+        }
+        let diving = intent.crouch && *breath > 0.0;
+        let target_y = swim_height(surface, floor_here, diving, *clock);
+        let rate = if diving || head_under { DIVE_RATE } else { 4.0 };
+        let y = p.y + (target_y - p.y) * (rate * dt).min(1.0);
         let mut next = Vec3::new(p.x + h.x * dt, y, p.z + h.z * dt);
         // Never sink into the bowl's floor.
         let floor_next = ground_height(next.x, next.z);
@@ -230,10 +265,10 @@ fn water(
             mover.yaw = h.x.atan2(h.z);
             tf.rotation = Quat::from_rotation_y(mover.yaw);
         }
-        *swum += Vec2::new(next.x - p.x, next.z - p.z).length();
+        *swum += Vec2::new(next.x - p.x, next.z - p.z).length() + if head_under { (next.y - p.y).abs() } else { 0.0 };
         if *swum >= 1.0 {
             *swum -= 1.0;
-            deeds.write(Deed::new(entity, "swim", "", 1.0));
+            deeds.write(Deed::new(entity, if head_under { "dive" } else { "swim" }, "", 1.0));
         }
         tf.translation = next;
         mover.grounded = false;
@@ -523,6 +558,17 @@ fn mantle(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn diving_goes_down_but_not_into_the_floor() {
+        let (surface, floor) = (-0.35, -2.45);
+        let top = swim_height(surface, floor, false, 0.0);
+        let down = swim_height(surface, floor, true, 0.0);
+        assert!(down < top - 0.8, "{down} vs {top}");
+        assert!(down >= floor + DIVE_FLOOR - 1e-5);
+        // Shallow water: diving can't go above the surface height.
+        assert!(swim_height(surface, top - 0.1, true, 0.0) <= top);
+    }
 
     #[test]
     fn mantle_rises_before_it_crosses_and_lands_on_target() {
