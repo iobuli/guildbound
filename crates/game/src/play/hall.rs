@@ -6,7 +6,8 @@
 //!   receptionist stands at `DESK_STAND`), an indoor **bounty board** (interactable `board`), and
 //!   the **lodging** corner (three `bed`s, a table and chairs);
 //! - the **training ground** north of the hall: a sand yard, a fence, a stone-marked **duel ring**
-//!   (`RING_CENTER`, `RING_RADIUS`), dummies and a weapon rack.
+//!   (`RING_CENTER`, `RING_RADIUS`), dummies, a weapon rack and a **balance beam** (`BEAM_START`–
+//!   `BEAM_END`, `beam::Beam`) with a mounting block at each end.
 //! **Doors**: both doorways hang a pair of leaves (`Door`) that swing open when anyone comes
 //! within `DOOR_REACH` and close behind them (`swing`; no collider, so NPCs pass as well).
 //! Who works here and what they do is `guild` / `occupations`; otherwise this module only builds.
@@ -35,6 +36,10 @@ pub const DESK_X: f32 = 33.8;
 pub const RING_CENTER: Vec3 = Vec3::new(32.0, 0.0, 7.0);
 pub const RING_RADIUS: f32 = 3.6;
 /// Where the Captain waits by the ring.
+/// The balance beam's top line (along +x by the north fence) and width (m).
+pub const BEAM_START: Vec3 = Vec3::new(28.6, 0.6, 12.0);
+pub const BEAM_END: Vec3 = Vec3::new(37.6, 0.6, 12.0);
+const BEAM_WIDTH: f32 = 0.14;
 pub const CAPTAIN_POST: Vec3 = Vec3::new(36.5, 0.0, 7.0);
 /// The gate at the courtyard's east edge.
 pub const GATE: Vec3 = Vec3::new(16.5, 0.0, DOOR_Z);
@@ -401,6 +406,25 @@ fn spawn_training_ground(kit: &mut Kit) {
     for (i, z) in [3.0f32, 6.5, 10.0].into_iter().enumerate() {
         spawn_dummy(kit, Vec3::new(26.2, 0.0, z), FRAC_PI_2, &format!("Yard dummy {}", i + 1));
     }
+    // The balance beam along the north fence, a mounting block at each end.
+    let (a, b) = (BEAM_START, BEAM_END);
+    let mid = (a + b) * 0.5;
+    let len = (b - a).length();
+    kit.solid("Balance beam", Cuboid::new(len, 0.14, BEAM_WIDTH), &dark, Transform::from_translation(mid - Vec3::Y * 0.07), Some(Collider::cuboid(len, 0.14, BEAM_WIDTH)));
+    let posts = 4;
+    for k in 0..=posts {
+        let p = a.lerp(b, k as f32 / posts as f32);
+        let h = a.y - 0.14;
+        kit.solid("Beam post", Cuboid::new(0.12, h, 0.12), &dark, Transform::from_translation(p.with_y(h * 0.5)), None);
+        if k == 0 || k == posts {
+            kit.solid("Beam foot", Cuboid::new(0.12, 0.08, 0.7), &dark, Transform::from_translation(p.with_y(0.04)), None);
+        }
+    }
+    for (end, out) in [(a, -1.0f32), (b, 1.0)] {
+        let p = end + Vec3::X * out * 0.55;
+        kit.solid("Beam block", Cuboid::new(0.9, 0.3, 0.9), &stone, Transform::from_translation(p.with_y(0.15)), Some(Collider::cuboid(0.9, 0.3, 0.9)));
+    }
+    kit.commands.spawn((Name::new("Beam line"), super::beam::Beam { a, b }));
     let rack = Vec3::new(40.2, 0.0, 7.0);
     for dz in [-1.0, 1.0] {
         kit.solid("Rack post", Cuboid::new(0.1, 1.5, 0.1), &dark, Transform::from_translation(rack + Vec3::new(0.0, 0.75, dz)), None);

@@ -159,7 +159,7 @@ pub struct FootTargets {
     pub feet: [Option<(Vec3, f32)>; 2],
 }
 
-/// Posture requests beyond the limbs, written by `traverse` on the balance beam. `lean` (m/s²,
+/// Posture requests beyond the limbs, written by `beam` on a balance beam. `lean` (m/s²,
 /// world, horizontal) is added to the acceleration the torso leans into and the arms trail;
 /// `stance` (m) is the farthest a foot may stand from the body's mid-plane. `select` fades the
 /// stance in when this appears and out when it is removed.

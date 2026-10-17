@@ -3,6 +3,8 @@
   "contracts": [
     { "id": "sparring", "name": "Sparring Partner", "about": "Land thirty blows in melee.",
       "objectives": [ { "kind": "hit", "tags": [], "count": 30 } ], "reward": { "xp": 120, "gold": 24 } },
+    { "id": "beam", "name": "Steady Feet", "about": "Captain Varro wants your footwork sharper: cross the training-ground beam three times.",
+      "objectives": [ { "kind": "beam", "tags": ["crossed"], "count": 3 } ], "reward": { "xp": 140, "gold": 28 } },
     { "id": "woodcutter", "name": "Woodcutter's Errand", "about": "The forge needs fuel: fell three trees.",
       "objectives": [ { "kind": "fell", "tags": [], "count": 3 } ], "reward": { "xp": 150, "gold": 30 } },
     { "id": "rival", "rank": "D", "name": "Bad Blood", "about": "Someone wants the Rival humbled. [F7]",

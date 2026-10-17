@@ -267,6 +267,11 @@
       "status": "new"
     },
     {
+      "file": "play/beam.rs",
+      "role": "balance beam: inverted-pendulum sway countered by the sideways stick, Posture lean + narrow stance, arms out, wobble and fall; balance / beam deeds; GB_BEAM",
+      "status": "new"
+    },
+    {
       "file": "play/talk.rs",
       "role": "talk to Talkable NPCs: first-person close-up camera, dialogue panel with options",
       "status": "new"
