@@ -1,13 +1,13 @@
 {
-  "_about": "Contracts: posted work. objectives: deed patterns (kind + tags, empty = any) x count; reward: character experience (stats). Three are open at a time on the stats page's CONTRACTS tab; a finished one is replaced by the next in turn.",
+  "_about": "Contracts: posted work. rank: the guild rank (F, E, D, C, B, A, S) needed before it is posted (default F). objectives: deed patterns (kind + tags, empty = any) x count; reward: character experience (stats). Three are open at a time on the stats page's CONTRACTS tab; a finished one is replaced by the next in turn.",
   "contracts": [
     { "id": "sparring", "name": "Sparring Partner", "about": "Land thirty blows in melee.",
       "objectives": [ { "kind": "hit", "tags": [], "count": 30 } ], "reward": { "xp": 120 } },
     { "id": "woodcutter", "name": "Woodcutter's Errand", "about": "The forge needs fuel: fell three trees.",
       "objectives": [ { "kind": "fell", "tags": [], "count": 3 } ], "reward": { "xp": 150 } },
-    { "id": "rival", "name": "Bad Blood", "about": "Someone wants the Rival humbled. [F7]",
+    { "id": "rival", "rank": "D", "name": "Bad Blood", "about": "Someone wants the Rival humbled. [F7]",
       "objectives": [ { "kind": "kill", "tags": ["Rival"], "count": 1 } ], "reward": { "xp": 250 } },
-    { "id": "guard", "name": "Hold the Line", "about": "Block fifteen blows and turn five with a parry.",
+    { "id": "guard", "rank": "E", "name": "Hold the Line", "about": "Block fifteen blows and turn five with a parry.",
       "objectives": [ { "kind": "block", "tags": [], "count": 15 }, { "kind": "parry", "tags": [], "count": 5 } ], "reward": { "xp": 180 } },
     { "id": "flamework", "name": "Flamework", "about": "Land eight Cinder Bolts.",
       "objectives": [ { "kind": "cast_hit", "tags": ["cinder_bolt"], "count": 8 } ], "reward": { "xp": 140 } },
@@ -15,15 +15,15 @@
       "objectives": [ { "kind": "climb", "tags": [], "count": 20 }, { "kind": "mantle", "tags": [], "count": 3 } ], "reward": { "xp": 130 } },
     { "id": "pond", "name": "Cold Water", "about": "Swim forty metres in the pond.",
       "objectives": [ { "kind": "swim", "tags": [], "count": 40 } ], "reward": { "xp": 110 } },
-    { "id": "hunter", "name": "Hunt the Hunter", "about": "There is a price on the archer. [F8]",
+    { "id": "hunter", "rank": "D", "name": "Hunt the Hunter", "about": "There is a price on the archer. [F8]",
       "objectives": [ { "kind": "kill", "tags": ["Hunter"], "count": 1 } ], "reward": { "xp": 250 } },
     { "id": "forager", "name": "Forager", "about": "Bring in ten things from the hills.",
       "objectives": [ { "kind": "gather", "tags": [], "count": 10 } ], "reward": { "xp": 100 } },
-    { "id": "marksman", "name": "Marksman", "about": "Strike ten times with arrows, bolts or knives (the chest has them).",
+    { "id": "marksman", "rank": "E", "name": "Marksman", "about": "Strike ten times with arrows, bolts or knives (the chest has them).",
       "objectives": [ { "kind": "shoot_hit", "tags": [], "count": 10 } ], "reward": { "xp": 150 } },
-    { "id": "champion", "name": "Courtyard Champion", "about": "Defeat the Opponent three times.",
+    { "id": "champion", "rank": "C", "name": "Courtyard Champion", "about": "Defeat the Opponent three times.",
       "objectives": [ { "kind": "kill", "tags": ["Opponent"], "count": 3 } ], "reward": { "xp": 400 } },
-    { "id": "arcanist", "name": "Arcanist", "about": "Land twenty spells or arts of any kind.",
+    { "id": "arcanist", "rank": "E", "name": "Arcanist", "about": "Land twenty spells or arts of any kind.",
       "objectives": [ { "kind": "cast_hit", "tags": [], "count": 20 } ], "reward": { "xp": 200 } }
   ]
 }

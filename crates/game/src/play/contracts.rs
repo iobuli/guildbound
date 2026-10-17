@@ -2,7 +2,8 @@
 //! open at a time (`Board`, written here only); each objective is a deed pattern × count, so
 //! progress comes from the player's `deeds::Deed`s like everything else. A finished contract pays
 //! its experience (`stats::GrantXp`), is logged, and the next template in turn takes its place
-//! (never one already open). Shown on the stats page's WORK tab, which the courtyard noticeboard
+//! (never one already open). **Guild rank** (F, E, D, C, B, A, S) rises with contracts completed
+//! (`RANKS`); a template is only posted once the rank reaches its `rank`. Shown on the stats page's WORK tab, which the courtyard noticeboard
 //! (interactable kind "board", F) opens.
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
@@ -14,6 +15,22 @@ use bevy::prelude::*;
 
 /// Contracts open at once.
 pub const OPEN: usize = 3;
+/// Guild ranks and the contracts completed to reach each.
+pub const RANKS: [(&str, u32); 7] = [("F", 0), ("E", 3), ("D", 6), ("C", 10), ("B", 15), ("A", 21), ("S", 28)];
+
+/// Rank index for `done` contracts.
+pub fn rank_for(done: u32) -> usize {
+    RANKS.iter().rposition(|(_, n)| done >= *n).unwrap_or(0)
+}
+
+/// Index of a rank letter (unknown → None).
+pub fn rank_index(letter: &str) -> Option<usize> {
+    RANKS.iter().position(|(l, _)| *l == letter)
+}
+
+fn rank_f() -> String {
+    "F".into()
+}
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Objective {
@@ -44,6 +61,9 @@ pub struct ContractDef {
     pub objectives: Vec<Objective>,
     #[serde(default)]
     pub reward: Reward,
+    /// Guild rank needed before it is posted.
+    #[serde(default = "rank_f")]
+    pub rank: String,
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -61,6 +81,9 @@ impl ContractBook {
         for c in &file.contracts {
             if c.objectives.is_empty() || c.objectives.iter().any(|o| !(o.count > 0.0)) {
                 return Err(format!("contract '{}': objectives", c.id));
+            }
+            if rank_index(&c.rank).is_none() {
+                return Err(format!("contract '{}': unknown rank '{}'", c.id, c.rank));
             }
         }
         Ok(Self(file.contracts))
@@ -84,15 +107,20 @@ pub struct Board {
 }
 
 impl Board {
-    /// Fill up to `OPEN` with the next templates not already open.
+    pub fn rank(&self) -> usize {
+        rank_for(self.done)
+    }
+    /// Fill up to `OPEN` with the next templates not already open that the rank allows.
     pub fn fill(&mut self, book: &ContractBook) {
         let n = book.0.len();
+        let rank = self.rank();
         let mut tries = 0;
         while self.open.len() < OPEN.min(n) && tries < n {
             let i = self.next % n;
             self.next += 1;
             tries += 1;
-            if !self.open.iter().any(|o| o.index == i) {
+            let allowed = rank_index(&book.0[i].rank).is_some_and(|r| r <= rank);
+            if allowed && !self.open.iter().any(|o| o.index == i) {
                 self.open.push(Open {
                     index: i,
                     progress: vec![0.0; book.0[i].objectives.len()],
@@ -147,6 +175,7 @@ fn progress(
         return;
     };
     for d in deeds.read().filter(|d| d.who == player) {
+        let before = board.rank();
         for i in board.record(&book, d) {
             let def = &book.0[i];
             info!("[contracts] done {}", def.id);
@@ -154,6 +183,11 @@ fn progress(
             if def.reward.xp > 0 {
                 grants.write(GrantXp { who: player, xp: def.reward.xp });
             }
+        }
+        if board.rank() > before {
+            let r = RANKS[board.rank()].0;
+            info!("[contracts] rank {r}");
+            log.write(HudLog::new(LogKind::Item, format!("Guild rank {r}: new postings on the board  [K]")));
         }
         if board.open.len() < OPEN {
             board.fill(&book);
@@ -218,6 +252,27 @@ mod tests {
         board.fill(&b);
         assert_eq!(board.open.len(), OPEN);
         assert!(board.open.iter().all(|o| o.index != first) || b.0.len() <= OPEN);
+    }
+
+    #[test]
+    fn rank_gates_postings() {
+        let b = book();
+        assert_eq!(rank_for(0), 0);
+        assert_eq!(RANKS[rank_for(3)].0, "E");
+        assert_eq!(RANKS[rank_for(100)].0, "S");
+        let mut board = Board::default();
+        board.fill(&b);
+        assert!(board.open.iter().all(|o| b.0[o.index].rank == "F"), "rank F posts only F work");
+        // Cycle through many completions: higher-rank work appears once the rank allows it.
+        let mut seen_d = false;
+        for _ in 0..12 {
+            board.open.remove(0);
+            board.done += 1;
+            board.fill(&b);
+            seen_d |= board.open.iter().any(|o| b.0[o.index].rank == "D");
+            assert!(board.open.iter().all(|o| rank_index(&b.0[o.index].rank).unwrap() <= board.rank()));
+        }
+        assert!(seen_d, "D work posted by rank D");
     }
 
     #[test]

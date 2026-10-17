@@ -6,7 +6,7 @@ Status: **v1 implemented (2026-10-17)**: deeds, skills, discovery and discovered
 (`play/traits.rs`, `traits.json`: NPCs roll them; walk → per-character `StyleScale`, temper and
 fight → `ai::Difficulty`; the player picks them on the STATS tab), title insignia and contracts
 (`contracts.json`, the WORK tab, a noticeboard) and occupations as routines (`occupations.json`:
-a Smith and a Farmer, with night routines on the `sky` clock). Standing is still the proposal. The user's
+a Smith and a Farmer, with night routines on the `sky` clock). Standing beyond the guild rank (holdings, honours, NPC issuers) is still the proposal. The user's
 answers to the open questions are recorded at the end; where they differ from the proposal below,
 the answers win.
 
@@ -168,7 +168,7 @@ NPCs roll traits, so every character moves differently. This needs a per-charact
 2. Art resource: **Battlewill** for arts, **magicules** for spells (Tensura-inspired; no predation).
 3. Stats: the six of `stats.rs` stay, with points per level (**hybrid**).
 4. Art unlock: **discovered** after the requirements are met, with a pity floor.
-5. Guild standing: not decided (not in v1).
+5. Guild standing: letter ranks F–S kept as the guild rank (`contracts::RANKS`, from contracts completed; gates postings).
 6. Permanence: **permanent**, like RuneScape.
 
 ## Open questions (as first asked)

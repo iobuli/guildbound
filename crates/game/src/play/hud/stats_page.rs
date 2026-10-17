@@ -791,7 +791,11 @@ fn refresh_contracts(
         set(&mut t, line);
     }
     for mut t in &mut texts.p2() {
-        set(&mut t, format!("Contracts completed: {}", board.done));
+        let rank = board.rank();
+        let next = contracts::RANKS
+            .get(rank + 1)
+            .map_or(String::new(), |(l, n)| format!("   ·   {} more to {l}", n.saturating_sub(board.done)));
+        set(&mut t, format!("Guild rank {}   ·   {} done{next}", contracts::RANKS[rank].0, board.done));
     }
 }
 
