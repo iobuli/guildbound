@@ -13,7 +13,7 @@
 //! launch and home (`Orbs`, Lissajous orbits), or a dash (`Step`). Known abilities are the ones the
 //! fighter has discovered (`skills::Sheet::abilities`; `skills` discovers them from deeds).
 //!
-//! Mastery: every blow an ability lands adds `MASTERY_PER_HIT`; at full mastery the world
+//! Mastery: every blow an ability lands (for Aura Ward: every blow it turns) adds `MASTERY_PER_HIT`; at full mastery the world
 //! acknowledges it as **Mastered**: it costs `MASTERED_COST` of the price, casts `MASTERED_SPEED` times
 //! faster, hits `MASTERED_POWER` times harder and its effects grow, but mastering it permanently
 //! takes `MASTERED_DEBT` magicules from the fighter's maximum.
@@ -399,7 +399,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
         .add_systems(
             Update,
-            (pools, bind, start_cast, drive_cast, fly, ward)
+            (pools, bind, start_cast, drive_cast, fly, ward, ward_mastery)
                 .chain()
                 .in_set(PlaySet::Act)
                 .after(CombatSet),
@@ -1004,6 +1004,16 @@ const WARD_SPIN: f32 = 2.4;
 struct WardBand {
     axis: Quat,
     speed: f32,
+}
+
+/// A blow turned by the ward (`ward` deed from `combat`) masters it as a landed blow does an
+/// attack.
+fn ward_mastery(mut deeds: MessageReader<Deed>, mut grimoires: Query<&mut Grimoire>) {
+    for d in deeds.read().filter(|d| d.kind == "ward") {
+        if let Ok(mut g) = grimoires.get_mut(d.who) {
+            gain(&mut g, "aura_ward", 1);
+        }
+    }
 }
 
 /// Wards run down; shells breathe, shrink away at the end, and go with their ward.

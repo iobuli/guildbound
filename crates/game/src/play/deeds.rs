@@ -1,7 +1,7 @@
 //! Deeds: anything a character does or suffers, as a tagged record, the only input to
 //! progression (`skills`) and to contract progress (`contracts`). Producers write `Deed` and nothing else about progression:
 //! `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill: tagged with the victim's name;
-//! struck: the victim took a blow, tagged Melee / Projectile / Spell),
+//! struck: the victim took a blow, tagged Melee / Projectile / Spell; ward: an Aura Ward turned one),
 //! `magic` (cast, cast_hit: tagged with the ability id), `ranged` (shoot, shoot_hit: tagged with
 //! the projectile kind), `traverse` (swim, dive and climb per metre, mantle), `parkour` (land: tagged
 //! `Roll` / `Hard`), `trees` (chop, fell), `skills` (survive: a close call lived through). `skills` also turns `items::ItemCollected` into
@@ -13,7 +13,7 @@ use bevy::prelude::*;
 pub struct Deed {
     pub who: Entity,
     /// What happened: "hit", "block", "parry", "kill", "cast", "cast_hit", "shoot",
-    /// "shoot_hit", "swim", "climb", "mantle", "land", "chop", "fell", "gather", "struck", "dive",
+    /// "shoot_hit", "swim", "climb", "mantle", "land", "chop", "fell", "gather", "struck", "dive", "ward",
     /// "survive".
     pub kind: &'static str,
     /// Detail matched by skill sources: a moveset, ability id, projectile kind, item, grade.

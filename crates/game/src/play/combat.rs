@@ -2153,6 +2153,7 @@ fn strike(
         // The shell flares where the blow lands.
         fx.sparks(hit.point, flat(hit.point - tf.translation).normalize_or(-hit.direction), SPARKS_WARD);
         fx.sfx.write(Sfx { kind: SfxKind::Block, at: hit.point, volume: 0.5 });
+        fx.deed(hit.target, "ward", "");
     }
     let damage = hit.damage * factor * scale * kept;
     let poise = hit.poise * factor * scale * kept;
