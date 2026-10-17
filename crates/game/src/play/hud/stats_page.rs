@@ -1,4 +1,4 @@
-//! The stats page: a `gbui` panel with three tabs, opened by the STATS button on the minimap's rim
+//! The stats page: a `gbui` panel with four tabs, opened by the STATS button on the minimap's rim
 //! (a dot lights on it while attribute points wait), K, or the hotbar's Q / E slots.
 //! - STATS: level, experience, unspent points; the six attributes with a + button each (sends
 //!   `stats::SpendPoint`); the derived values (`stats::Derived`).
@@ -8,13 +8,15 @@
 //! - SKILLS: every discovered skill (`skills::Sheet`) with its exact level and XP to the next, and
 //!   the undiscovered skills the character is closest to finding (affinity toward the pity floor),
 //!   and the titles earned (`skills::TitleBook`).
-//! The footer types out whatever is hovered. Smoke: `GB_STATS=stats|arts|skills` opens that tab
+//! - WORK: the three open contracts (`contracts::Board`) with exact progress.
+//! The footer types out whatever is hovered. Smoke: `GB_STATS=stats|arts|skills|contracts` opens that tab
 //! 1 s in (for headless screenshots). `StatsOpen` (written here only) frees the cursor
 //! through `camera`.
 use super::MARGIN;
 use super::minimap;
 use crate::play::camera::PageToggles;
 use crate::play::magic::{ABILITIES, Ability, Bind, Grimoire, MASTERED_COST, Pool};
+use crate::play::contracts::{self, Board, ContractBook};
 use crate::play::traits::{SetTrait, Slot, TraitBook, Traits};
 use crate::play::skills::{Sheet, SkillBook, SkillDef, TitleBook, level_for_xp, xp_for_level};
 use crate::play::stats::{Attr, Derived, LevelUp, POINTS_PER_LEVEL, SpendPoint, Stats};
@@ -23,7 +25,7 @@ use crate::play::Player;
 use bevy::prelude::*;
 use gbui::prelude::*;
 
-const WIDTH: f32 = 430.0;
+const WIDTH: f32 = 470.0;
 const ROW: f32 = 24.0;
 const SKILL_ROW: f32 = 21.0;
 /// Extra SKILLS rows beyond the book at startup.
@@ -41,6 +43,7 @@ pub enum StatsTab {
     Stats,
     Arts,
     Skills,
+    Contracts,
 }
 
 /// The open tab, if the page is open.
@@ -58,7 +61,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, smoke.before(PageToggles))
         .add_systems(
             Update,
-            (toggle.in_set(PageToggles), clicks, refresh, refresh_skills, refresh_madlib, hover, level_up).chain(),
+            (toggle.in_set(PageToggles), clicks, refresh, refresh_skills, refresh_madlib, refresh_contracts, hover, level_up).chain(),
         );
 }
 
@@ -98,6 +101,12 @@ struct SkillText(usize);
 struct SkillTag(usize);
 #[derive(Component)]
 struct SkillHint;
+#[derive(Component)]
+struct ContractName(usize);
+#[derive(Component)]
+struct ContractInfo(usize);
+#[derive(Component)]
+struct ContractsDone;
 #[derive(Component)]
 struct MadlibWord(Slot);
 #[derive(Component)]
@@ -187,7 +196,7 @@ fn spawn(mut commands: Commands, book: Res<SkillBook>) {
                     ..default()
                 })
                 .with_children(|tabs| {
-                    for (tab, text) in [(StatsTab::Stats, "STATS"), (StatsTab::Arts, "ARTS & MAGIC"), (StatsTab::Skills, "SKILLS")] {
+                    for (tab, text) in [(StatsTab::Stats, "STATS"), (StatsTab::Arts, "ARTS & MAGIC"), (StatsTab::Skills, "SKILLS"), (StatsTab::Contracts, "WORK")] {
                         tabs.spawn((
                             Tab(tab),
                             button(
@@ -384,6 +393,32 @@ fn spawn(mut commands: Commands, book: Res<SkillBook>) {
                 ));
             });
 
+            // CONTRACTS page.
+            p.spawn((
+                Page(StatsTab::Contracts),
+                Node {
+                    display: Display::None,
+                    flex_direction: FlexDirection::Column,
+                    row_gap: px(6.0),
+                    ..default()
+                },
+            ))
+            .with_children(|page| {
+                for i in 0..contracts::OPEN {
+                    page.spawn(Node {
+                        flex_direction: FlexDirection::Column,
+                        row_gap: px(1.0),
+                        padding: UiRect::horizontal(px(6.0)),
+                        ..default()
+                    })
+                    .with_children(|c| {
+                        c.spawn((ContractName(i), label("", "row.text")));
+                        c.spawn((ContractInfo(i), label("", "text.dim")));
+                    });
+                }
+                page.spawn((ContractsDone, label("", "text.accent")));
+            });
+
             p.spawn((
                 Footer,
                 label("", "text.dim"),
@@ -407,6 +442,7 @@ fn smoke(time: Res<Time>, mut done: Local<bool>, mut toggles: MessageWriter<Togg
         "stats" => StatsTab::Stats,
         "arts" => StatsTab::Arts,
         "skills" => StatsTab::Skills,
+        "contracts" | "work" => StatsTab::Contracts,
         _ => return,
     };
     toggles.write(ToggleStats(Some(tab)));
@@ -717,6 +753,48 @@ fn refresh_skills(
     }
 }
 
+/// The WORK tab: open contracts with exact progress.
+#[allow(clippy::type_complexity)]
+fn refresh_contracts(
+    open: Res<StatsOpen>,
+    book: Res<ContractBook>,
+    board: Res<Board>,
+    mut texts: ParamSet<(
+        Query<(&ContractName, &mut Text)>,
+        Query<(&ContractInfo, &mut Text)>,
+        Query<&mut Text, With<ContractsDone>>,
+    )>,
+) {
+    if open.0 != Some(StatsTab::Contracts) {
+        return;
+    }
+    let set = |t: &mut Text, v: String| {
+        if t.0 != v {
+            t.0 = v;
+        }
+    };
+    let get = |i: usize| board.open.get(i).and_then(|o| book.0.get(o.index).map(|d| (o, d)));
+    for (c, mut t) in &mut texts.p0() {
+        let line = get(c.0).map_or(String::new(), |(_, d)| format!("{}   +{} XP", d.name, d.reward.xp));
+        set(&mut t, line);
+    }
+    for (c, mut t) in &mut texts.p1() {
+        let line = get(c.0).map_or(String::new(), |(o, d)| {
+            let steps: Vec<String> = d
+                .objectives
+                .iter()
+                .zip(&o.progress)
+                .map(|(obj, p)| format!("{} {:.0}/{:.0}", obj.kind.replace('_', " "), p.floor(), obj.count))
+                .collect();
+            format!("{}\n{}", d.about, steps.join("   "))
+        });
+        set(&mut t, line);
+    }
+    for mut t in &mut texts.p2() {
+        set(&mut t, format!("Contracts completed: {}", board.done));
+    }
+}
+
 /// The madlib's words follow the player's traits.
 fn refresh_madlib(
     open: Res<StatsOpen>,
@@ -781,6 +859,7 @@ fn hover(
                 "Arts and spells are discovered by training their skills. Landing one grows its mastery; mastered, it is cheaper, faster and stronger, at a permanent cost of magicules."
                     .to_string()
             }
+            StatsTab::Contracts => "Posted work. Progress counts by itself as you go about it; a finished contract pays experience and a new one is posted.".to_string(),
             StatsTab::Skills => {
                 "Skills are found and raised by doing: fighting, casting, swimming, climbing, felling. They never fade.".to_string()
             }

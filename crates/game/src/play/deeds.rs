@@ -1,6 +1,6 @@
 //! Deeds: anything a character does or suffers, as a tagged record, the only input to
-//! progression (`skills`). Producers write `Deed` and nothing else about progression:
-//! `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill;
+//! progression (`skills`) and to contract progress (`contracts`). Producers write `Deed` and nothing else about progression:
+//! `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill: tagged with the victim's name;
 //! struck: the victim took a blow, tagged Melee / Projectile / Spell),
 //! `magic` (cast, cast_hit: tagged with the ability id), `ranged` (shoot, shoot_hit: tagged with
 //! the projectile kind), `traverse` (swim and climb per metre, mantle), `parkour` (land: tagged

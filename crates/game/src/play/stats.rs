@@ -239,6 +239,13 @@ pub struct SpendPoint {
     pub attr: Attr,
 }
 
+/// Experience from elsewhere (contract rewards).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct GrantXp {
+    pub who: Entity,
+    pub xp: u32,
+}
+
 /// A fighter levelled up (the HUD logs the player's).
 #[derive(Message, Clone, Copy, Debug)]
 pub struct LevelUp {
@@ -250,7 +257,8 @@ pub fn plugin(app: &mut App) {
     app.register_required_components::<Fighter, Stats>()
         .add_message::<SpendPoint>()
         .add_message::<LevelUp>()
-        .add_systems(Update, (spend, award_xp, publish).chain());
+        .add_message::<GrantXp>()
+        .add_systems(Update, (spend, award_xp, grant, publish).chain());
 }
 
 fn spend(mut spends: MessageReader<SpendPoint>, mut stats: Query<&mut Stats>) {
@@ -292,6 +300,17 @@ fn award_xp(
             && s.gain(xp) > 0
         {
             ups.write(LevelUp { who: e, level: s.level });
+        }
+    }
+}
+
+fn grant(mut grants: MessageReader<GrantXp>, mut stats: Query<(&Fighter, &mut Stats)>, mut ups: MessageWriter<LevelUp>) {
+    for g in grants.read() {
+        if let Ok((f, mut s)) = stats.get_mut(g.who)
+            && !f.dead
+            && s.gain(g.xp) > 0
+        {
+            ups.write(LevelUp { who: g.who, level: s.level });
         }
     }
 }

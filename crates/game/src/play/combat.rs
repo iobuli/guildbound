@@ -2198,7 +2198,7 @@ fn strike(
             log(fx, "hit_blocked", damage, &action, &mover);
             fx.deed(hit.target, "block", "");
             if fighter.hp <= 0.0 {
-                fx.deed(hit.attacker, "kill", "");
+                fx.deed(hit.attacker, "kill", &who);
                 kill(&mut fighter, &mut action, &mut mover, &mut melee, fx, hit.point, involved);
             }
             false
@@ -2215,7 +2215,7 @@ fn strike(
                 fx.deed(hit.attacker, "hit", &attacker.weapon);
             }
             if fighter.hp <= 0.0 {
-                fx.deed(hit.attacker, "kill", "");
+                fx.deed(hit.attacker, "kill", &who);
                 kill(&mut fighter, &mut action, &mut mover, &mut melee, fx, hit.point, involved);
             } else {
                 stagger(&mut melee, &mut action, &mut mover, bank, from, hit.direction, knockback);
@@ -2249,7 +2249,7 @@ fn strike(
             }
             fx.deed(hit.target, "struck", &format!("{:?}", hit.kind));
             if outcome == Reaction::Death {
-                fx.deed(hit.attacker, "kill", "");
+                fx.deed(hit.attacker, "kill", &who);
             }
             let swimming = !matches!(mover.mode, MoveMode::Ground | MoveMode::Air);
             match outcome {

@@ -4,8 +4,8 @@ Status: **v1 implemented (2026-10-17)**: deeds, skills, discovery and discovered
 (`play/deeds.rs`, `play/skills.rs`, `assets/data/skills.json`, the SKILLS tab), then titles
 (`titles.json`), events as world-unique skills (Second Wind, Spellscarred) and traits
 (`play/traits.rs`, `traits.json`: NPCs roll them; walk → per-character `StyleScale`, temper and
-fight → `ai::Difficulty`). Occupations, contracts, standing, title insignia and the player's
-creator screen are still the proposal. The user's
+fight → `ai::Difficulty`; the player picks them on the STATS tab), title insignia and contracts
+(`contracts.json`, the WORK tab). Occupations and standing are still the proposal. The user's
 answers to the open questions are recorded at the end; where they differ from the proposal below,
 the answers win.
 

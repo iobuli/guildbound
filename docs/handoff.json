@@ -245,6 +245,11 @@
       "file": "play/insignia.rs",
       "role": "title badge on the left breast, coloured by the newest title",
       "status": "new"
+    },
+    {
+      "file": "play/contracts.rs",
+      "role": "contracts: deed-pattern objectives, 3 open, XP rewards (stats::GrantXp), WORK tab",
+      "status": "new"
     }
   ],
   "order": [
@@ -575,10 +580,12 @@
         "ranged",
         "traverse",
         "parkour",
-        "trees"
+        "trees",
+        "skills (survive)"
       ],
       "readers": [
-        "skills"
+        "skills",
+        "contracts"
       ]
     },
     {
@@ -637,6 +644,15 @@
         "insignia"
       ],
       "readers": []
+    },
+    {
+      "quantity": "Board (open contracts)",
+      "writer": [
+        "contracts"
+      ],
+      "readers": [
+        "hud"
+      ]
     }
   ],
   "data": {
@@ -720,11 +736,12 @@
         "assets/data/skills.json",
         "play/hud/stats_page.rs (SKILLS tab)"
       ],
-      "status": "v1 done + titles, events (unique skills), traits",
+      "status": "v1 + titles, events, traits, madlib, insignia, contracts",
       "ideas": [
         "occupations",
-        "contracts",
-        "stat-weighted affinity"
+        "stat-weighted affinity",
+        "guild board prop",
+        "standing (who may post)"
       ]
     },
     {
@@ -795,7 +812,8 @@
       "log introduces each NPC with its traits; movement and fighting differ",
       "survive under 15% HP for 8 s: Second Wind (unique)",
       "K -> STATS madlib: click words, walk style changes",
-      "Opponent badge on the left breast (check placement)"
+      "Opponent badge on the left breast (check placement)",
+      "K -> WORK: finish a contract for XP and a new posting"
     ]
   },
   "controls": {
@@ -820,7 +838,7 @@
     "GB_VFX_TEST": "1",
     "GB_CLIMB": "1: jump once at 2.5 s, then hold forward",
     "GB_SHOOT": "bow|crossbow|knives",
-    "GB_STATS": "stats|arts|skills: open that stats tab at 1 s",
+    "GB_STATS": "stats|arts|skills|contracts: open that stats tab at 1 s",
     "GB_RIVAL": "1: the Rival joins at start",
     "GB_FIGHT": "moveset: the player fights on the NPC brain (ai::Autopilot)",
     "GB_RECORD": "dir: frame-locked PNG capture",
