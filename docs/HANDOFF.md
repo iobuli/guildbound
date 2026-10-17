@@ -45,6 +45,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/deeds.rs` | `Deed { who, kind, tag, amount }`: the only input to progression. Producers: combat (hit, block, parry, kill), magic (cast, cast_hit), ranged (shoot, shoot_hit), traverse (swim / climb per metre, mantle), parkour (land Roll / Hard), trees (chop, fell); `skills` turns `ItemCollected` into gather | new |
 | `play/record.rs` | `GB_RECORD=<dir>`: frame-locked capture (each frame advances 1/`GB_RECORD_FPS` s of game time; frames `GB_RECORD_FROM`..`GB_RECORD_TO` saved as PNGs, then quit) so slow software rendering still makes normal-speed video (`ffmpeg -framerate 30 -i f_%05d.png`) | new |
 | `play/traits.rs` + `assets/data/traits.json` | The madlib "a [temper] fighter who walks [walk] and fights [fight]": NPCs roll one word per slot (seeded by entity); walk → `motion::compose::StyleScale` (exaggeration, holds, bounce; compose and select apply it per character), temper + fight → `ai::Difficulty` shifts (clamped); the log introduces each NPC | new |
+| `play/occupations.rs` + `assets/data/occupations.json` | Civilians at work: a `Civilian` (no brain fights it, it fights no one) with an `Occupation` routine of interactable kinds: walk to the nearest free one, press interact like the player (`interact` walks it in and plays the clip), stay on looping uses, move on. A Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well, noticeboard) | new |
 | `play/contracts.rs` + `assets/data/contracts.json` | 12 contract templates; objectives are deed patterns × count (kills are tagged with the victim's name, so "Defeat the Rival" works); 3 open on the `Board`; finished → `stats::GrantXp`, log, next template; stats page WORK tab | new |
 | `play/insignia.rs` | Title badge: a small glowing diamond on the left breast of anyone with a title, coloured by the newest title (hue from its id), placed each frame from the chest bone (`spine[2]`) and the body's facing | new |
 | `assets/data/titles.json` | 12 titles (Blade Adept, Duelist, Slayer, Bulwark, Aura Master, Pyromancer, Frostweaver, Stormcaller, Spellblade, Wallrunner, Tidewalker, Woodsman): `requires {skills: level, deeds: lifetime count}`, flat `bonus`; earned in `skills::earn`, shown on the SKILLS tab | new |
@@ -114,6 +115,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Stats`, `Derived`, `DamageScale` | `stats` | combat (maxima, regen, might), magic (pools, spell power), HUD |
 | `Deed` message | combat, magic, ranged, traverse, parkour, trees, skills (survive) emit | `skills`, `contracts` |
 | `Board` (open contracts) | `contracts` | HUD |
+| Civilians' `Intent`, `Occupation` | `occupations` (`work`) | interact, controller |
 | `Sheet` (skill XP, affinities, discovered abilities), `SkillBonus` | `skills` (presets at spawn in `world`; the `GB_CAST` demo marks abilities discovered) | magic (`known`, casting), stats (`derive_with`), HUD |
 | `Traits`, `StyleScale` | `traits` (on a new NPC) | compose, select (per-character style) |
 | `Difficulty` | `traits` (rolled shifts), else `ai::enroll` (default) | `ai` |
@@ -167,6 +169,7 @@ Log line: `t character relation side value mode action speed`.
 - **Traits** (lane C): every NPC rolls a temper, a walk and a fighting manner; they change how it moves (bounce, pose exaggeration, holds) and fights (aggression, guard, parry, dodge, reaction, casting). The player picks theirs on the STATS tab: a clickable madlib ("I'm a [temper] fighter who walks [walk] and fights [fight]", `traits::SetTrait`); only the walk changes the player (style), the rest is flavour until the player has a brain.
 - **Contracts** (lane C): a **noticeboard** stands just ahead of the spawn (F: read the notices → WORK tab). Three open at a time on K → WORK (Sparring Partner, Woodcutter's Errand, Bad Blood, Hold the Line, Flamework, Scale the Walls, Cold Water, Hunt the Hunter, Forager, Marksman, Courtyard Champion, Arcanist); progress comes from your deeds; finishing one pays character XP (`stats::GrantXp`) and posts the next.
 - **Title insignia**: titled characters wear a glowing badge on the left breast; presets earn titles at once (`skills::entitle`), so the Opponent (Swordsmanship 20) wears Blade Adept. Placement checked on screen (left breast, just below the collarbone).
+- **Occupations** (lane C): the Smith works the anvil, drinks at the well, sits, tends the torch; the Farmer plants, waters, harvests, drinks, reads the board. Civilians are team 0, never targeted by the brain, revive at home after 8 s, and roll traits like NPCs.
 - **Faulds**: two nested hoops round the hips under the cuirass (`FAULD_TOP` 1.135 leaves a gap below its 1.18 bottom so the spine bends; lower over the hip sides than at the front / back, where the thigh folds). 18 plates now; torso padding 0.065 m.
 - **Diving** (lane B): in the pond, C dives toward the floor (breath 12 s, refills at the surface ×3), Space comes up.
 - Ward hits flare: sparks and a soft clank where a blow meets the shell.
@@ -194,6 +197,7 @@ Log line: `t character relation side value mode action speed`.
   14. K → WORK: three contracts with exact progress; finish one (e.g. land 30 blows) for XP and a new posting.
   15. Swim into the pond, press C: dive to the floor; Space or running out of breath brings you up.
   16. Armour stand: the faulds close the waist under the cuirass; put it on and raise a knee (sprint, kick) to check the thigh clears them.
+  17. The Smith kneels at the anvil, then wanders to the well, the chair, the torch; the Farmer works the plots.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
 
@@ -244,7 +248,7 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
 - **B. Done** (traversal, ranged, magic). Diving done. Possible: ledge shimmy, bow draw/release clips (the aim uses the pistol pose). NPC archers (F8 Hunter) and casters are done.
 - **Next for magic:** done this round: NPC casters and the Aura Ward. Ward-hit sparks done. Faulds done. Open: mastery for the ward (it lands no blows).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
-- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Player madlib, title insignia, contracts and the noticeboard done. Next: occupations (NPC day schedules), standing (who may post contracts), occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
+- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Player madlib, title insignia, contracts and the noticeboard done. Occupations done (routines; no day/night clock yet). Next: standing (who may post contracts), a day clock for schedules, occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
 - **D. Done:** `motion/tweak.rs` (F2). Possible: N to author new keys (`authored` tracks).
 - **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 

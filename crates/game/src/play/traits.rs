@@ -1,4 +1,4 @@
-//! Traits: the creator madlib, "I'm a [temper] fighter who walks [walk] and fights [fight]."
+//! Traits (NPCs and civilians): the creator madlib, "I'm a [temper] fighter who walks [walk] and fights [fight]."
 //! (`assets/data/traits.json`, `TraitBook`). Every NPC rolls one word per slot when it first
 //! appears (seeded by its entity, so a run replays the same) and the words shape it:
 //! - walk → `motion::compose::StyleScale` (pose exaggeration, holds, step bounce): a heavy walker
@@ -10,6 +10,7 @@
 //! `SetTrait`); for the player only the walk matters (no brain to shift).
 use super::ai::Difficulty;
 use super::hud::log::{HudLog, LogKind};
+use super::occupations::Civilian;
 use super::{Npc, PlaySet};
 use crate::motion::compose::StyleScale;
 use bevy::prelude::*;
@@ -193,7 +194,7 @@ pub fn plugin(app: &mut App) {
 fn assign(
     book: Res<TraitBook>,
     mut commands: Commands,
-    npcs: Query<(Entity, Option<&Name>, Option<&Difficulty>), (With<Npc>, Without<Traits>)>,
+    npcs: Query<(Entity, Option<&Name>, Option<&Difficulty>), (Or<(With<Npc>, With<Civilian>)>, Without<Traits>)>,
     mut log: MessageWriter<HudLog>,
 ) {
     if book.walk.is_empty() {

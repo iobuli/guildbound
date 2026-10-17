@@ -31,6 +31,7 @@
 use super::armor::spawn_stand;
 use super::hud::log::{HudLog, LogKind};
 use super::magic::Grimoire;
+use super::occupations::{Civilian, Occupation};
 use super::skills::{Sheet, xp_for_level};
 use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
@@ -1192,6 +1193,35 @@ fn spawn_characters(commands: &mut Commands) {
     sheet.grant("swordsmanship", xp_for_level(20));
     sheet.grant("defence", xp_for_level(12));
     commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
+
+    // Civilians at work: a Smith by the anvil and a Farmer in the plots (team 0; nobody fights
+    // them, they fight nobody).
+    for (name, job, at, tint) in [
+        ("Smith", "smith", Vec3::new(4.0, 0.0, 10.5), Color::srgb(0.55, 0.42, 0.32)),
+        ("Farmer", "farmer", Vec3::new(-8.5, 0.0, -9.5), Color::srgb(0.42, 0.55, 0.30)),
+    ] {
+        let feet = at.with_y(ground_height(at.x, at.z));
+        let e = spawn_character(
+            commands,
+            name,
+            feet,
+            0.0,
+            Fighter::new(0, 100.0),
+            Loadout {
+                slots: vec!["unarmed".to_string()],
+                current: 0,
+            },
+            Some(tint),
+        );
+        commands.entity(e).insert((
+            Civilian,
+            Occupation::new(job),
+            super::combat::Revive {
+                after: 8.0,
+                home: Some((feet, 0.0)),
+            },
+        ));
+    }
 }
 
 /// `GB_AUTOQUIT` / `GB_SCREENSHOT` state.

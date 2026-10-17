@@ -20,6 +20,7 @@
 //! How hard an NPC hits and how much it takes comes from its `stats::Stats`, the same universal
 //! base as the player's; `Difficulty` is only how it behaves.
 use super::combat::{self, Melee, Revive, Tell};
+use super::occupations::Civilian;
 use super::magic::{Energy, Grimoire, MASTERED_COST, ability};
 use super::moveset::{Kind, Movesets};
 use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, PlaySet};
@@ -492,6 +493,7 @@ fn think(
     time: Res<Time>,
     movesets: Res<Movesets>,
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
+    civilians: Query<(), With<Civilian>>,
     mut npcs: Query<
         (Entity, &mut Intent, &mut Brain, Option<&Difficulty>, Option<&Energy>, Option<&Grimoire>),
         Or<(With<Npc>, With<Autopilot>)>,
@@ -513,7 +515,7 @@ fn think(
         }
         let foe = fighters
             .iter()
-            .filter(|(e, _, f, ..)| *e != entity && !f.dead && f.team != fighter.team)
+            .filter(|(e, _, f, ..)| *e != entity && !f.dead && f.team != fighter.team && !civilians.contains(*e))
             .map(|(e, t, _, m, ..)| (e, t.translation, m))
             .filter(|(_, p, _)| flat(*p - me).length() < AGGRO)
             .min_by(|a, b| flat(a.1 - me).length().total_cmp(&flat(b.1 - me).length()));
