@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/sim", "crates/game", "tools/gb_lab"]
+members = ["crates/sim", "crates/gbui", "crates/gbperf", "crates/game", "tools/gb_lab"]
 
 [workspace.package]
 edition = "2024"
@@ -13,3 +13,8 @@ opt-level = 1
 
 [profile.dev.package."*"]
 opt-level = 3
+
+# Shipping build: whole-program thin LTO and one codegen unit (slower to build, faster to run).
+[profile.release]
+lto = "thin"
+codegen-units = 1

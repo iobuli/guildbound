@@ -1,6 +1,9 @@
-//! Contact layer, applied after springs: foot IK onto the ground, pelvis drop to the lower
-//! foot, COP lean (Kwon 2020: torso over COP + h·a/g), squash, look-at, hand IK.
-//! Pure pose maths; the ground is queried through a callback so this stays testable.
+//! Contact layer, applied after springs: foot IK onto the ground (optionally in a narrow stance,
+//! feet drawn toward the body's mid-plane), pelvis drop (only as far as a planted foot cannot
+//! reach lower ground by straightening its leg; feet in the air don't count), step bounce, foot
+//! IK onto world targets (climb holds), COP lean (Kwon 2020: torso over COP + h·a/g), squash,
+//! look-at, hand IK. Pure pose maths; the ground is queried through a callback so this stays
+//! testable.
 use super::secondary::clean_quat;
 use super::{Bones, ContactRequest, Pose, Skeleton};
 use bevy::prelude::*;
@@ -76,12 +79,23 @@ const MIN_GROUND_NORMAL_Y: f32 = 0.25;
 const MAX_DROP: f32 = 0.6;
 /// How far (m) the pelvis may briefly sit above the animation while the root eases down a step.
 const MAX_RAISE: f32 = 0.05;
+/// Deepest step bounce dip (m at model scale 1), and the difference in foot heights (m) over
+/// which the bounce fades out.
+const MAX_BOB: f32 = 0.15;
+const UNEVEN: f32 = 0.12;
+/// Share of its length a bent leg may straighten to before the pelvis has to come down for a
+/// lower foot, and the ankle lift (m) over which a foot stops counting as planted.
+const LEG_REACH: f32 = 0.97;
+const PLANT_LIFT: f32 = 0.1;
 /// Limbs never straighten past this share of their length: a locked knee or elbow snaps.
 const MAX_EXTENSION: f32 = 0.999;
 /// How hard (m) knees lean toward the body's front and elbows toward out-down-back, so a near-straight
 /// limb keeps a stable bend side instead of flipping with noise.
 const KNEE_BIAS: f32 = 0.04;
 const ELBOW_BIAS: f32 = 0.04;
+/// Knees of feet on world targets (climb holds) bend toward the body's front turned out by this
+/// much (rad), so they stay off the wall the feet stand on.
+const KNEE_SPLAY: f32 = 0.7;
 /// Natural elbow direction in model space for the left arm (x mirrored for the right).
 const ELBOW_OUT: Vec3 = Vec3::new(0.5, -0.6, -0.6);
 
@@ -232,6 +246,12 @@ struct FootPlan {
     /// Ground normal and how much of it the foot takes (0..FOOT_ALIGN).
     normal: Vec3,
     align: f32,
+    /// The animation's lift of this ankle above its planted height (m); 0 = planted.
+    lift: f32,
+    /// Ground was found under this foot.
+    probed: bool,
+    /// Horizontal shift (world) of the foot toward the body's mid-plane (narrow stance).
+    shift: Vec3,
 }
 
 impl Default for FootPlan {
@@ -240,8 +260,36 @@ impl Default for FootPlan {
             correction: 0.0,
             normal: Vec3::Y,
             align: 0.0,
+            lift: 0.0,
+            probed: false,
+            shift: Vec3::ZERO,
         }
     }
+}
+
+/// Horizontal shift (world) that brings `foot` within `stance` (m) of the body's mid-plane
+/// through `mid` facing `left`; zero when `stance` is not a finite width (the animated stance).
+pub fn stance_shift(foot: Vec3, mid: Vec3, left: Vec3, stance: f32) -> Vec3 {
+    if !(stance.is_finite() && stance >= 0.0 && foot.is_finite() && mid.is_finite()) {
+        return Vec3::ZERO;
+    }
+    let side = left.with_y(0.0).normalize_or_zero();
+    let lateral = (foot - mid).dot(side);
+    side * (lateral.clamp(-stance, stance) - lateral)
+}
+
+fn smoothstep01(x: f32) -> f32 {
+    let x = if x.is_finite() { x.clamp(0.0, 1.0) } else { 0.0 };
+    x * x * (3.0 - 2.0 * x)
+}
+
+/// How far (m) the hip must come down so a leg of `cap` reach gets from `hip` to `target`; 0
+/// when the leg reaches as it is.
+fn reach_drop(hip: Vec3, target: Vec3, cap: f32) -> f32 {
+    let h = Vec2::new(target.x - hip.x, target.z - hip.z).length();
+    let room = (cap * cap - h * h).max(0.0).sqrt();
+    let d = (hip.y - target.y) - room;
+    if d.is_finite() { d.max(0.0) } else { 0.0 }
 }
 
 /// Rotate `pose` in place so its feet sit on the ground, hands reach their targets, the
@@ -299,14 +347,17 @@ pub fn apply(
     let rest = skeleton.fk(&skeleton.rest_pose(), bones.pelvis);
     let world0 = frame.world(pose);
 
-    // 1. Ground probes under each animated foot.
+    // 1. Ground probes under each animated foot (drawn toward the mid-plane in a narrow stance).
     let foot_w = unit_weight(request.foot_ik);
     let mut feet = [FootPlan::default(); 2];
     if foot_w > 1e-3 {
         let floor = model.translation.y;
-        let probe_y = world0[bones.pelvis].translation.y;
+        let mid = world0[bones.pelvis].translation;
+        let probe_y = mid.y;
         for (side, plan) in feet.iter_mut().enumerate() {
-            let ankle = world0[bones.foot[side]].translation;
+            let shift = stance_shift(world0[bones.foot[side]].translation, mid, left, request.stance);
+            plan.shift = shift;
+            let ankle = world0[bones.foot[side]].translation + shift;
             let ankle_height = rest[bones.foot[side]].translation.y * scale;
             // The animation's own lift above its planted height is kept (swing feet stay up).
             let lift = (ankle.y - floor - ankle_height).max(0.0);
@@ -322,7 +373,7 @@ pub fn apply(
             let mut correction = hit.point.y + ankle_height + lift - ankle.y;
             // The toes must not sink either (stair nosings, rock lips): the end over higher ground
             // decides, so the foot rests on the ball with the heel hanging, as on real stairs.
-            let ball = world0[bones.ball[side]].translation;
+            let ball = world0[bones.ball[side]].translation + shift;
             let ball_height = rest[bones.ball[side]].translation.y * scale;
             let ball_lift = (ball.y - floor - ball_height).max(0.0);
             if let Some(toe) = ground(Vec3::new(ball.x, probe_y.max(ball.y), ball.z))
@@ -352,11 +403,15 @@ pub fn apply(
                 correction: correction * fade,
                 normal,
                 align: FOOT_ALIGN * fade * (1.0 - lift / ALIGN_FADE).clamp(0.0, 1.0),
+                lift,
+                probed: true,
+                shift,
             };
         }
     }
 
-    // 2. Pelvis: smoothed drop to the lowest foot + squash drop.
+    // 2. Pelvis: smoothed drop, only as far as a planted foot cannot reach its ground by
+    //    straightening its leg, + squash drop + step bounce.
     //    The controller eases the drawn root over steps; undoing that motion here keeps the
     //    pelvis still in the world, so this is the only smoother of the visible body height
     //    (two in series made the body dip and rebound on stairs).
@@ -365,7 +420,25 @@ pub fn apply(
     if eased.is_finite() && eased.abs() < MAX_DROP * scale {
         state.pelvis_drop -= eased;
     }
-    let need = foot_w * feet.iter().map(|f| f.correction).fold(0.0_f32, f32::min);
+    let mut drop_needed = 0.0_f32;
+    for (side, plan) in feet.iter().enumerate() {
+        if !plan.probed || plan.correction >= 0.0 {
+            continue;
+        }
+        let (thigh, calf, foot) = (bones.thigh[side], bones.calf[side], bones.foot[side]);
+        let leg = (rest[calf].translation.distance(rest[thigh].translation)
+            + rest[foot].translation.distance(rest[calf].translation))
+            * scale;
+        let hip = world0[thigh].translation;
+        let ankle = world0[foot].translation + plan.shift;
+        // A bent leg may straighten (to `LEG_REACH` of its length) before the body comes down;
+        // a leg the animation already holds straighter keeps its own length.
+        let cap = hip.distance(ankle).max(LEG_REACH * leg);
+        let planted = 1.0 - smoothstep01(plan.lift / PLANT_LIFT);
+        let d = reach_drop(hip, ankle + Vec3::Y * plan.correction, cap) * planted;
+        drop_needed = drop_needed.max(d);
+    }
+    let need = -foot_w * drop_needed;
     state.pelvis_drop += (need - state.pelvis_drop) * smoothing(params.pelvis_rate, dt);
     state.pelvis_drop = state.pelvis_drop.clamp(-MAX_DROP * scale, MAX_RAISE * scale);
     let squash = if request.squash.is_finite() {
@@ -373,9 +446,22 @@ pub fn apply(
     } else {
         0.0
     };
+    // Step bounce: only ever down, only while the feet are planted (their IK holds them), and
+    // fading out where the feet stand at different heights (stairs get careful footing).
+    let uneven = if feet[0].probed && feet[1].probed {
+        (feet[0].correction - feet[1].correction).abs()
+    } else {
+        0.0
+    };
+    let bob = if request.bob.is_finite() {
+        request.bob.clamp(-MAX_BOB, 0.0) * foot_w * scale * (1.0 - smoothstep01(uneven / (UNEVEN * scale)))
+    } else {
+        0.0
+    };
     // A brief raise only stands while the feet are planted (their IK reaches down for it).
     let drop = state.pelvis_drop.min(0.0) * (1.0 - foot_w) + state.pelvis_drop * foot_w
-        + squash.min(0.0) * SQUASH_DROP * scale;
+        + squash.min(0.0) * SQUASH_DROP * scale
+        + bob;
     if drop.abs() > 1e-6 {
         let parent = frame.parent(&world0, bones.pelvis);
         let local = parent.rotation.inverse() * (Vec3::Y * drop);
@@ -391,7 +477,7 @@ pub fn apply(
         let world1 = frame.world(pose);
         for (side, plan) in feet.iter().enumerate() {
             let (thigh, calf, foot) = (bones.thigh[side], bones.calf[side], bones.foot[side]);
-            let planted = world0[foot].translation + Vec3::Y * plan.correction;
+            let planted = world0[foot].translation + plan.shift + Vec3::Y * plan.correction;
             let target = world1[foot].translation.lerp(planted, foot_w);
             // Knees bend toward the body's front. Not the toes: in a running back-kick the foot
             // points down and back, which flipped the knee mid-swing.
@@ -409,6 +495,30 @@ pub fn apply(
             let parent = delta * frame.parent(&world1, foot).rotation;
             Frame::set_world(pose, foot, parent, wanted);
         }
+    }
+
+    // 3b. Foot targets (climb holds): ankles to weighted world targets, knees toward the body's
+    //     front turned out by `KNEE_SPLAY`, feet keep their animated world orientation.
+    for side in 0..2 {
+        let Some((target, weight)) = request.feet[side] else {
+            continue;
+        };
+        let weight = unit_weight(weight);
+        if weight < 1e-3 || !target.is_finite() {
+            continue;
+        }
+        let world = frame.world(pose);
+        let chain = [bones.thigh[side], bones.calf[side], bones.foot[side]];
+        let goal = world[chain[2]].translation.lerp(target, weight);
+        let out = if side == 0 { left } else { -left };
+        let natural = forward * KNEE_SPLAY.cos() + out * KNEE_SPLAY.sin();
+        let (hip, knee) = (world[chain[0]].translation, world[chain[1]].translation);
+        let pole = bend_pole(hip, knee, goal, natural, KNEE_BIAS * scale);
+        let Some(delta) = frame.limb(pose, &world, chain, goal, pole, natural) else {
+            continue;
+        };
+        let parent = delta * frame.parent(&world, chain[2]).rotation;
+        Frame::set_world(pose, chain[2], parent, world[chain[2]].rotation);
     }
 
     // 4. Torso: COP lean into the horizontal acceleration + squash curl / stretch arch.
@@ -623,12 +733,26 @@ pub(crate) mod tests {
         request: &ContactRequest,
         ground: &mut dyn FnMut(Vec3) -> Option<Ground>,
         state: &mut ContactState,
+        each: impl FnMut(&ContactState),
+    ) -> Pose {
+        let (skeleton, _) = skeleton();
+        run_from(&skeleton.rest_pose(), frames, model, request, ground, state, each)
+    }
+
+    /// `run` on an animated `base` pose instead of rest.
+    fn run_from(
+        base: &Pose,
+        frames: usize,
+        model: &Transform,
+        request: &ContactRequest,
+        ground: &mut dyn FnMut(Vec3) -> Option<Ground>,
+        state: &mut ContactState,
         mut each: impl FnMut(&ContactState),
     ) -> Pose {
         let (skeleton, bones) = skeleton();
-        let mut pose = skeleton.rest_pose();
+        let mut pose = base.clone();
         for _ in 0..frames {
-            pose = skeleton.rest_pose();
+            pose = base.clone();
             apply(
                 &mut pose,
                 &skeleton,
@@ -794,6 +918,112 @@ pub(crate) mod tests {
         assert!((w[bones.foot[0]].translation.y - ANKLE_HEIGHT).abs() < 3e-3);
     }
 
+    /// Rest pose crouched by `depth` with both feet held on flat ground at y = 0 by the IK:
+    /// an animated pose with bent knees.
+    fn crouched(depth: f32) -> Pose {
+        let (skeleton, bones) = skeleton();
+        let mut pose = skeleton.rest_pose();
+        let world = skeleton.fk(&pose, bones.pelvis);
+        let parent = match skeleton.parent[bones.pelvis] {
+            Some(p) => world[p],
+            None => skeleton.base,
+        };
+        pose.pelvis += parent.rotation.inverse() * (Vec3::NEG_Y * depth);
+        let mut state = ContactState::default();
+        apply(
+            &mut pose,
+            &skeleton,
+            &bones,
+            &Transform::IDENTITY,
+            &ContactRequest::default(),
+            &mut flat(0.0),
+            &ContactParams::default(),
+            &mut state,
+            1.0 / 60.0,
+        );
+        pose
+    }
+
+    /// Lift the right foot by swinging the thigh forward (`angle` rad about the body's left).
+    fn right_leg_raised(angle: f32) -> Pose {
+        let (skeleton, bones) = skeleton();
+        let mut pose = skeleton.rest_pose();
+        let world = skeleton.fk(&pose, bones.pelvis);
+        let thigh = bones.thigh[1];
+        let parent = world[skeleton.parent[thigh].unwrap()].rotation;
+        let swing = Quat::from_rotation_x(-angle);
+        pose.rot[thigh] = (parent.inverse() * swing * parent * pose.rot[thigh]).normalize();
+        pose
+    }
+
+    #[test]
+    fn bent_legs_straighten_before_the_pelvis_drops() {
+        let (skeleton, bones) = skeleton();
+        let base = crouched(0.1);
+        let w0 = world(&skeleton, &bones, &Transform::IDENTITY, &base);
+        assert!((w0[bones.foot[1]].translation.y - ANKLE_HEIGHT).abs() < 2e-3, "base feet on the ground");
+        // Ground 15 cm lower under the right foot (−X).
+        let mut ground = |o: Vec3| {
+            Some(Ground {
+                point: Vec3::new(o.x, if o.x < 0.0 { -0.15 } else { 0.0 }, o.z),
+                normal: Vec3::Y,
+            })
+        };
+        let mut state = ContactState::default();
+        let pose = run_from(&base, 120, &Transform::IDENTITY, &ContactRequest::default(), &mut ground, &mut state, |_| {});
+        assert_finite(&pose);
+        let drop = state.pelvis_drop;
+        assert!(drop < -0.02 && drop > -0.12, "the leg takes most of the step, the pelvis the rest: {drop}");
+        let w = world(&skeleton, &bones, &Transform::IDENTITY, &pose);
+        assert!((w[bones.foot[1]].translation.y - (ANKLE_HEIGHT - 0.15)).abs() < 3e-3, "lower ankle lands");
+        assert!((w[bones.foot[0]].translation.y - ANKLE_HEIGHT).abs() < 3e-3, "upper ankle stays");
+    }
+
+    #[test]
+    fn a_foot_in_the_air_does_not_pull_the_pelvis_down() {
+        let (skeleton, bones) = skeleton();
+        let base = right_leg_raised(0.7);
+        let w0 = world(&skeleton, &bones, &Transform::IDENTITY, &base);
+        assert!(w0[bones.foot[1]].translation.y > ANKLE_HEIGHT + PLANT_LIFT + 0.03, "foot swung up");
+        // The swing foot passes over ground 20 cm lower.
+        let mut ground = |o: Vec3| {
+            Some(Ground {
+                point: Vec3::new(o.x, if o.x < 0.0 { -0.2 } else { 0.0 }, o.z),
+                normal: Vec3::Y,
+            })
+        };
+        let mut state = ContactState::default();
+        let pose = run_from(&base, 60, &Transform::IDENTITY, &ContactRequest::default(), &mut ground, &mut state, |s| {
+            assert!(s.pelvis_drop > -1e-3, "no drop for a swing foot, got {}", s.pelvis_drop);
+        });
+        assert_finite(&pose);
+    }
+
+    #[test]
+    fn bounce_is_full_on_flat_ground_and_fades_on_a_step() {
+        let (skeleton, bones) = skeleton();
+        let pelvis_y = |ground: &mut dyn FnMut(Vec3) -> Option<Ground>, bob: f32| {
+            let request = ContactRequest {
+                bob,
+                ..default()
+            };
+            let mut state = ContactState::default();
+            let pose = run(30, &Transform::IDENTITY, &request, ground, &mut state, |_| {});
+            world(&skeleton, &bones, &Transform::IDENTITY, &pose)[bones.pelvis].translation.y
+        };
+        let flat_dip = pelvis_y(&mut flat(0.0), -0.04) - pelvis_y(&mut flat(0.0), 0.0);
+        assert!((flat_dip + 0.04).abs() < 2e-3, "full dip on flat ground: {flat_dip}");
+        let mut step = |o: Vec3| {
+            Some(Ground {
+                point: Vec3::new(o.x, if o.x > 0.0 { 0.25 } else { 0.0 }, o.z),
+                normal: Vec3::Y,
+            })
+        };
+        let with = pelvis_y(&mut step, -0.04);
+        let without = pelvis_y(&mut step, 0.0);
+        assert!((with - without).abs() < 2e-3, "no dip with the feet a step apart: {}", with - without);
+    }
+
     #[test]
     fn foot_ik_off_or_out_of_reach_leaves_the_pose() {
         let (skeleton, bones) = skeleton();
@@ -807,7 +1037,8 @@ pub(crate) mod tests {
         let pose = run(10, &model, &off, &mut flat(0.3), &mut state, |_| {});
         let w = world(&skeleton, &bones, &model, &pose);
         assert!((w[bones.foot[0]].translation.y - ANKLE_HEIGHT).abs() < 1e-4);
-        // Ground a metre up: beyond reach_up plus the fade band, ignored.
+        // Ground a metre up: beyond reach_up plus the fade band, ignored. The legs only take the
+        // `MAX_EXTENSION` cap (the rest legs stand at 99.93 % of their length).
         let mut state = ContactState::default();
         let pose = run(
             10,
@@ -817,9 +1048,15 @@ pub(crate) mod tests {
             &mut state,
             |_| {},
         );
-        for (a, b) in pose.rot.iter().zip(&rest.rot) {
+        let legs = [bones.thigh, bones.calf, bones.foot].concat();
+        for (i, (a, b)) in pose.rot.iter().zip(&rest.rot).enumerate() {
             let angle = crate::motion::secondary::rotation_vector(*a * b.inverse()).length();
-            assert!(angle < 1e-4, "moved by {angle}");
+            let limit = if legs.contains(&i) { 0.02 } else { 1e-4 };
+            assert!(angle < limit, "bone {i} moved by {angle}");
+        }
+        let w = world(&skeleton, &bones, &model, &pose);
+        for foot in bones.foot {
+            assert!((w[foot].translation.y - ANKLE_HEIGHT).abs() < 1e-3, "ankle pulled toward the ground");
         }
         assert_eq!(state.pelvis_drop, 0.0);
     }
@@ -944,9 +1181,12 @@ pub(crate) mod tests {
             foot_ik: f32::NAN,
             hands: [Some((Vec3::NAN, 1.0)), Some((Vec3::ONE, f32::NAN))],
             accel: Vec3::NAN,
+            bob: f32::NEG_INFINITY,
             squash: f32::INFINITY,
             look_at: Some(Vec3::NAN),
             root_ease: f32::NAN,
+            feet: [Some((Vec3::NAN, 1.0)), Some((Vec3::ONE, f32::NAN))],
+            stance: f32::NAN,
         };
         let mut garbage = |_: Vec3| {
             Some(Ground {

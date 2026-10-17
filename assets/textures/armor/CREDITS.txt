@@ -1,0 +1,2 @@
+Metal 049 C by ambientCG (https://ambientcg.com/a/Metal049C), CC0 1.0 Universal.
+plate_color.png = Color, plate_normal.png = NormalGL, plate_mr.png = (0, Roughness, Metalness) packed for glTF metallic-roughness.

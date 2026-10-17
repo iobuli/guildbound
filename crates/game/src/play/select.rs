@@ -3,7 +3,11 @@
 //! back / turn, phase-synced by `Mover.phase` and blended by speed; air start/loop/fall/land;
 //! swim; climb), the equipped moveset's `Stance` overlay, then `Action.layer` and
 //! `Action.overlay`. Fills `ContactRequest` (foot IK off in air/swim/ragdoll, accel, squash from
-//! landing/jump, look_at from Intent.target). Never touches `MotionLayers.impulses` / `raw`.
+//! landing/jump, look_at from Intent.target, and the `MotionFeel.bounce` character: a pelvis dip
+//! after every foot plant with its vertical acceleration in `accel.y`, a squash/stretch rhythm
+//! on the same beat, idle breathing). Hand and foot targets (`HandTargets`, `FootTargets`) pass
+//! through with smoothed weights; a `Posture` adds its balance lean to `accel` and fades the
+//! narrow stance in and out. Never touches `MotionLayers.impulses` / `raw`.
 //!
 //! Layer stack per frame (bottom → top):
 //! 1. locomotion base: smoothed per-track weights stacked by `gait_layers` (Full mask),
@@ -16,6 +20,7 @@
 use super::moveset::{Movesets, Stance};
 use super::{Action, ActionKind, Feel, Intent, Loadout, MoveMode, Mover, PlaySet, HALF_HEIGHT};
 use crate::motion::bank::PoseBank;
+use crate::motion::compose::MotionFeel;
 use crate::motion::timing::Style;
 use crate::motion::{ContactRequest, Layer, Mask, MotionLayers, Source};
 use bevy::prelude::*;
@@ -102,10 +107,21 @@ const LEAP_FALL_AFTER: f32 = 0.9;
 const LAND_WINDOW: f32 = 0.28;
 const LAND_OFFSET: f32 = 0.08;
 const LAND_RATE: f32 = 1.2;
-/// Contact squash / stretch.
+/// Contact squash / stretch (scaled by 0.5 + 0.5·bounce).
 const LAND_SQUASH: f32 = 0.25;
 const JUMP_STRETCH: f32 = 0.12;
 const STRETCH_WINDOW: f32 = 0.1;
+/// Step bounce at `MotionFeel.bounce` = 1: pelvis dip (m) per gait [idle, walk, jog, run,
+/// sprint], halved while crouched; its lowest point trails each plant by `BOB_LAG` of a cycle
+/// (weight acceptance). Squash at each plant and stretch at passing ride the same rhythm.
+const BOB: [f32; 5] = [0.0, 0.03, 0.045, 0.05, 0.04];
+const BOB_LAG: f32 = 0.04;
+const CROUCH_BOB: f32 = 0.5;
+const STEP_SQUASH: f32 = 0.06;
+const STEP_STRETCH: f32 = 0.03;
+/// Idle breathing: squash amplitude and period (s).
+const BREATH: f32 = 0.035;
+const BREATH_PERIOD: f32 = 3.4;
 
 /// Turn in place: yaw rate threshold (rad/s), ramp to full, max overlay weight, idle speed.
 const TURN_RATE_MIN: f32 = 2.0;
@@ -132,6 +148,28 @@ const LOOK_HEIGHT: f32 = 1.5;
 pub struct HandTargets {
     pub hands: [Option<(Vec3, f32)>; 2],
 }
+
+/// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
+/// `select` forwards them into `ContactRequest.feet` with smoothed weights, like `HandTargets`.
+/// Written by `traverse`; remove it to release (the feet fade back to the animation).
+#[derive(Component, Clone, Debug, Default)]
+pub struct FootTargets {
+    pub feet: [Option<(Vec3, f32)>; 2],
+}
+
+/// Posture requests beyond the limbs, written by `traverse` on the balance beam. `lean` (m/s²,
+/// world, horizontal) is added to the acceleration the torso leans into and the arms trail;
+/// `stance` (m) is the farthest a foot may stand from the body's mid-plane. `select` fades the
+/// stance in when this appears and out when it is removed.
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct Posture {
+    pub lean: Vec3,
+    pub stance: f32,
+}
+
+/// Stance fade time (s), and a stance width (m) wider than any animated one (the fade starts there).
+const STANCE_TIME: f32 = 0.15;
+const FREE_STANCE: f32 = 0.5;
 
 /// How a layer's clip time is driven.
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -313,6 +351,17 @@ pub fn gait_layers(
         out.push((track.to_string(), time, layer_weight));
     }
     out
+}
+
+/// Step bounce at locomotion `phase` (plants at 0 and 0.5, lowest `BOB_LAG` after each) for dip
+/// amplitude `amp` (m) and phase rate `rate` (cycles/s). Returns (dip ≤ 0 m, its vertical
+/// acceleration m/s², rhythm c = 1 at the bottom of the dip, −1 at passing).
+pub fn step_bounce(phase: f32, amp: f32, rate: f32) -> (f32, f32, f32) {
+    let amp = sane(amp).max(0.0);
+    let c = (2.0 * TAU * (sane(phase) - BOB_LAG)).cos();
+    let w = 2.0 * TAU * sane(rate);
+    // dip = −A/2·(1 + cos(4π(φ − lag))); d²/dt² with dφ/dt = rate gives A/2·(4π·rate)²·cos.
+    (-amp * 0.5 * (1.0 + c), amp * 0.5 * w * w * c, c)
 }
 
 /// Critically damped approach of `current` toward `target` with smoothing time `tau` (s);
@@ -532,6 +581,11 @@ pub struct SelectState {
     foot_ik: f32,
     foot_ik_velocity: f32,
     hands: [HandFade; 2],
+    feet: [HandFade; 2],
+    /// `Posture.stance` fade: weight 0..1, its rate, and the last requested width (m).
+    narrow: f32,
+    narrow_velocity: f32,
+    narrow_width: f32,
     started: bool,
 }
 
@@ -552,6 +606,10 @@ impl Default for SelectState {
             foot_ik: 1.0,
             foot_ik_velocity: 0.0,
             hands: [HandFade::default(); 2],
+            feet: [HandFade::default(); 2],
+            narrow: 0.0,
+            narrow_velocity: 0.0,
+            narrow_width: FREE_STANCE,
             started: false,
         }
     }
@@ -605,7 +663,7 @@ type CharacterQuery<'a> = (
     Option<&'a Action>,
     Option<&'a Intent>,
     Option<&'a Loadout>,
-    Option<&'a HandTargets>,
+    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>),
     Option<&'a mut SelectState>,
 );
 
@@ -618,6 +676,7 @@ fn select(
     movesets: Option<Res<Movesets>>,
     targets: Query<(&Transform, Has<Mover>)>,
     mut characters: Query<CharacterQuery>,
+    motion: Option<Res<MotionFeel>>,
     mut missing: Local<HashSet<String>>,
 ) {
     let Some(bank) = bank else {
@@ -627,8 +686,9 @@ fn select(
         bank: &bank,
         anchors: GaitAnchors::from_feel(&feel),
         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
+        bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
     };
-    for (entity, mut mover, mut layers, action, intent, loadout, hands, state) in &mut characters {
+    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture), state) in &mut characters {
         let stance = loadout
             .zip(movesets.as_deref())
             .and_then(|(l, m)| m.get(l.equipped()))
@@ -651,6 +711,8 @@ fn select(
             stance,
             action,
             hands,
+            feet,
+            posture,
             look_at,
             strafing,
         };
@@ -671,12 +733,16 @@ struct Frame<'a> {
     bank: &'a PoseBank,
     anchors: GaitAnchors,
     dt: f32,
+    /// `MotionFeel.bounce`.
+    bounce: f32,
 }
 
 struct CharacterInput<'a> {
     stance: Option<&'a Stance>,
     action: Option<&'a Action>,
     hands: Option<&'a HandTargets>,
+    feet: Option<&'a FootTargets>,
+    posture: Option<&'a Posture>,
     look_at: Option<Vec3>,
     strafing: bool,
 }
@@ -923,6 +989,7 @@ fn update_character(
         smooth_damp(state.foot_ik, foot_target, &mut state.foot_ik_velocity, tau, dt).clamp(0.0, 1.0)
     };
 
+    let bounce = frame.bounce;
     let stretch = if mode == MoveMode::Air
         && velocity.y > JUMP_UP_SPEED
         && sane(mover.air_time) < STRETCH_WINDOW
@@ -931,14 +998,70 @@ fn update_character(
     } else {
         0.0
     };
-    let squash = (-LAND_SQUASH * landing + stretch).clamp(-0.3, 0.3);
+    let contact_squash = (-LAND_SQUASH * landing + stretch) * (0.5 + 0.5 * bounce);
 
-    let mut hands = [None, None];
-    for (i, hand) in hands.iter_mut().enumerate() {
-        let fade = &mut state.hands[i];
-        let wanted = input
-            .hands
-            .and_then(|h| h.hands[i])
+    // Step bounce and idle breath, on the ground outside full-body actions.
+    let (mut bob, mut bob_accel, mut rhythm_squash) = (0.0, 0.0, 0.0);
+    if mode == MoveMode::Ground && !full_body_action {
+        let crouch = if mover.crouch { CROUCH_BOB } else { 1.0 };
+        let amp = gait.iter().zip(BOB).map(|(w, a)| w * a).sum::<f32>() * bounce * crouch;
+        let rate = phase_speed / stride.max(1e-3);
+        let (dip, accel, c) = step_bounce(mover.phase, amp, rate);
+        let moving = 1.0 - gait[0];
+        bob = dip;
+        bob_accel = accel;
+        rhythm_squash = bounce * moving * (-STEP_SQUASH * 0.5 * (1.0 + c) + STEP_STRETCH * 0.5 * (1.0 - c))
+            + bounce * gait[0] * BREATH * (TAU * state.clock / BREATH_PERIOD).sin();
+    }
+    let squash = (contact_squash + rhythm_squash).clamp(-0.3, 0.3);
+
+    let hands = fade_limbs(&mut state.hands, input.hands.map(|h| h.hands), snap, dt);
+    let feet = fade_limbs(&mut state.feet, input.feet.map(|f| f.feet), snap, dt);
+
+    // Posture: the balance lean adds to the acceleration; the narrow stance fades in and out.
+    let lean = input.posture.map_or(Vec3::ZERO, |p| sane_vec(p.lean).with_y(0.0));
+    let wanted = input.posture.map(|p| sane(p.stance)).filter(|w| *w > 0.0);
+    if let Some(width) = wanted {
+        state.narrow_width = width;
+    }
+    let goal = if wanted.is_some() { 1.0 } else { 0.0 };
+    state.narrow = if snap {
+        goal
+    } else {
+        smooth_damp(state.narrow, goal, &mut state.narrow_velocity, STANCE_TIME, dt).clamp(0.0, 1.0)
+    };
+    let stance = if state.narrow > WEIGHT_EPS {
+        FREE_STANCE + (state.narrow_width - FREE_STANCE) * state.narrow
+    } else {
+        f32::INFINITY
+    };
+
+    out.contact = ContactRequest {
+        foot_ik: state.foot_ik,
+        hands,
+        accel: (sane_vec(mover.accel) + lean).with_y(sane(bob_accel)),
+        bob: sane(bob),
+        squash,
+        look_at: input.look_at,
+        root_ease: mover.step_ease,
+        feet,
+        stance,
+    };
+}
+
+/// Smoothed limb targets: each weight eases toward the wanted one (`HAND_TIME`); a released
+/// limb keeps its last point while it fades out.
+fn fade_limbs(
+    fades: &mut [HandFade; 2],
+    wanted: Option<[Option<(Vec3, f32)>; 2]>,
+    snap: bool,
+    dt: f32,
+) -> [Option<(Vec3, f32)>; 2] {
+    let mut out = [None, None];
+    for (i, limb) in out.iter_mut().enumerate() {
+        let fade = &mut fades[i];
+        let wanted = wanted
+            .and_then(|w| w[i])
             .filter(|(p, w)| p.is_finite() && w.is_finite());
         let target = match wanted {
             Some((point, w)) => {
@@ -953,18 +1076,10 @@ fn update_character(
             smooth_damp(fade.weight, target, &mut fade.velocity, HAND_TIME, dt).clamp(0.0, 1.0)
         };
         if fade.weight > WEIGHT_EPS {
-            *hand = Some((fade.point, fade.weight));
+            *limb = Some((fade.point, fade.weight));
         }
     }
-
-    out.contact = ContactRequest {
-        foot_ik: state.foot_ik,
-        hands,
-        accel: sane_vec(mover.accel),
-        squash,
-        look_at: input.look_at,
-        root_ease: mover.step_ease,
-    };
+    out
 }
 
 /// Ground locomotion targets: idle + phase-synced gaits, blended across strafe directions
@@ -1207,6 +1322,33 @@ mod tests {
         // Fixed clocks clamp into the clip.
         let fixed = gait_layers(&[("x", Clock::Fixed(5.0), 1.0)], 0.0, 0.0, &info);
         assert_eq!(fixed[0].1, 1.0);
+    }
+
+    #[test]
+    fn step_bounce_dips_twice_per_cycle_and_never_rises() {
+        let (amp, rate) = (0.05, 1.8);
+        let mut minima = 0;
+        let n = 2000;
+        let dip = |i: i32| step_bounce(i as f32 / n as f32, amp, rate).0;
+        for i in 0..n {
+            let d = dip(i);
+            assert!(d <= 0.0 && d >= -amp - 1e-6, "{d}");
+            if d < dip(i - 1) && d <= dip(i + 1) {
+                minima += 1;
+            }
+        }
+        assert_eq!(minima, 2);
+        // Lowest just after each plant.
+        assert!((step_bounce(BOB_LAG, amp, rate).0 + amp).abs() < 1e-6);
+        assert!((step_bounce(0.5 + BOB_LAG, amp, rate).0 + amp).abs() < 1e-6);
+        // The reported acceleration is the dip's second time derivative.
+        let (dt, phase) = (1e-3, 0.3);
+        let at = |t: f32| step_bounce(phase + rate * t, amp, rate).0;
+        let fd = (at(dt) - 2.0 * at(0.0) + at(-dt)) / (dt * dt);
+        let accel = step_bounce(phase, amp, rate).1;
+        assert!((fd - accel).abs() < 0.05 * accel.abs().max(1.0), "{fd} vs {accel}");
+        assert_eq!(step_bounce(0.2, 0.0, rate).0, 0.0);
+        assert!(step_bounce(f32::NAN, f32::NAN, f32::NAN).0.is_finite());
     }
 
     #[test]

@@ -6,6 +6,8 @@ publish.workspace = true
 
 [dependencies]
 guildbound_sim = { path = "../sim" }
+gbui = { path = "../gbui" }
+gbperf = { path = "../gbperf" }
 bevy = { version = "=0.19.1" }
 avian3d = "=0.7.0"
 gltf = { version = "=1.4.1", default-features = false, features = ["utils", "names"] }

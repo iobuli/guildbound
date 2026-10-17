@@ -1,6 +1,6 @@
-//! Live tuning page (F1 toggles): edits `Feel` and `motion::compose::MotionFeel` (≤12 knobs:
+//! Live tuning page (F1 toggles): edits `Feel` and `motion::compose::MotionFeel` (13 knobs:
 //! run speed, accel, turn rate, jump, exaggeration, hold, stepped fps on/off, spring hz,
-//! spring damping, arm swing, lean, hitstop, ragdoll threshold). F5 saves `profiles/feel.json`, loaded
+//! spring damping, arm swing, lean, bounce, hitstop, ragdoll threshold). F5 saves `profiles/feel.json`, loaded
 //! at startup if present.
 //!
 //! The panel sits on the right edge: drag a bar to set a value, buttons toggle 12 fps stepping
@@ -9,12 +9,12 @@
 //! The profile file holds `{ "feel": Feel, "motion": MotionFeel mirror }`; missing or
 //! non-finite entries fall back to defaults, unknown keys are ignored.
 use super::Feel;
+use super::camera::PageToggles;
 use crate::motion::compose::MotionFeel;
 use crate::motion::timing::Style;
 use bevy::prelude::*;
 use bevy::text::FontSize;
 use bevy::ui::RelativeCursorPosition;
-use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -45,7 +45,7 @@ pub fn plugin(app: &mut App) {
     .add_systems(Startup, spawn_panel)
     .add_systems(
         Update,
-        (hotkeys, drag_sliders, press_buttons, paint).chain(),
+        (hotkeys.in_set(PageToggles), drag_sliders, press_buttons, paint).chain(),
     );
 }
 
@@ -70,8 +70,6 @@ pub struct TuningPanel {
     pub capturing: bool,
     drag: Option<usize>,
     note: String,
-    /// Cursor visibility / grab before the panel opened (restored on close).
-    saved_cursor: Option<(bool, CursorGrabMode)>,
 }
 
 /// One slider: label, unit, range, display precision and accessors into the two resources.
@@ -100,8 +98,10 @@ impl Knob {
 
 /// Exaggeration range: above ~1.4 limbs fold through the body, below ~0.9 the style is gone.
 const EXAGGERATION: (f32, f32) = (0.9, 1.4);
+/// Bounce range: 0 = the clips' own vertical motion, 2 = rubbery.
+const BOUNCE: (f32, f32) = (0.0, 2.0);
 
-const KNOBS: [Knob; 12] = [
+const KNOBS: [Knob; 13] = [
     Knob {
         label: "Run speed",
         unit: "m/s",
@@ -210,6 +210,15 @@ const KNOBS: [Knob; 12] = [
         get: |_, m| m.contact.lean,
         set: |_, m, v| m.contact.lean = v,
     },
+    Knob {
+        label: "Bounce",
+        unit: "x",
+        min: BOUNCE.0,
+        max: BOUNCE.1,
+        decimals: 2,
+        get: |_, m| m.bounce,
+        set: |_, m, v| m.bounce = v,
+    },
 ];
 
 /// On-disk profile: gameplay `Feel` plus a serde mirror of `MotionFeel`.
@@ -233,6 +242,7 @@ struct MotionProfile {
     style: Style,
     springs: SpringProfile,
     contact: ContactProfile,
+    bounce: f32,
     debug: bool,
 }
 
@@ -270,6 +280,7 @@ impl From<&MotionFeel> for MotionProfile {
                 reach_down: m.contact.reach_down,
                 pelvis_rate: m.contact.pelvis_rate,
             },
+            bounce: m.bounce,
             debug: m.debug,
         }
     }
@@ -288,6 +299,7 @@ impl MotionProfile {
         m.contact.reach_up = self.contact.reach_up;
         m.contact.reach_down = self.contact.reach_down;
         m.contact.pelvis_rate = self.contact.pelvis_rate;
+        m.bounce = self.bounce.clamp(BOUNCE.0, BOUNCE.1);
         m.debug = self.debug;
     }
 }
@@ -494,11 +506,11 @@ fn spawn_panel(mut commands: Commands) {
         });
 }
 
+/// F1 toggles the page (the camera frees the cursor while it is open), F5 saves.
 fn hotkeys(
     keys: Res<ButtonInput<KeyCode>>,
     mut panel: ResMut<TuningPanel>,
     mut roots: Query<&mut Node, With<PanelRoot>>,
-    mut cursors: Query<&mut CursorOptions, With<PrimaryWindow>>,
     feel: Res<Feel>,
     motion: Res<MotionFeel>,
 ) {
@@ -507,16 +519,6 @@ fn hotkeys(
         let display = if panel.open { Display::Flex } else { Display::None };
         for mut node in &mut roots {
             node.display = display;
-        }
-        if let Ok(mut cursor) = cursors.single_mut() {
-            if panel.open {
-                panel.saved_cursor = Some((cursor.visible, cursor.grab_mode));
-                cursor.visible = true;
-                cursor.grab_mode = CursorGrabMode::None;
-            } else if let Some((visible, grab_mode)) = panel.saved_cursor.take() {
-                cursor.visible = visible;
-                cursor.grab_mode = grab_mode;
-            }
         }
         if !panel.open {
             panel.drag = None;
@@ -695,6 +697,7 @@ mod tests {
         motion.style.stepped_fps = Some(12.0);
         motion.springs.damping = 0.9;
         motion.contact.lean = 1.7;
+        motion.bounce = 1.6;
         motion.debug = true;
         let profile = Profile {
             feel,
@@ -708,6 +711,7 @@ mod tests {
         assert_eq!(applied.style.stepped_fps, Some(12.0));
         assert_eq!(applied.springs.damping, 0.9);
         assert_eq!(applied.contact.lean, 1.7);
+        assert_eq!(applied.bounce, 1.6);
         assert!(applied.debug);
     }
 

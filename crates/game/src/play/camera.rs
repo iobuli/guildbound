@@ -14,6 +14,8 @@ use avian3d::prelude::*;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::prelude::*;
 use bevy::transform::TransformSystems;
+use super::inventory::BagOpen;
+use super::tuning::TuningPanel;
 use bevy::window::{CursorGrabMode, CursorOptions, PrimaryWindow};
 use std::f32::consts::{PI, TAU};
 
@@ -72,7 +74,12 @@ pub fn plugin(app: &mut App) {
         .init_resource::<FollowState>()
         .add_systems(
             Update,
-            (capture_cursor, orbit).chain().before(PlaySet::Input),
+            (
+                capture_cursor.after(PageToggles),
+                orbit,
+            )
+                .chain()
+                .before(PlaySet::Input),
         )
         // Avian's interpolation eases root Transforms in `RunFixedMainLoop` (after the fixed loop,
         // before `Update`), so by PostUpdate every root holds its smooth render pose, including
@@ -147,6 +154,10 @@ impl CameraShake {
     }
 }
 
+/// Systems that open or close UI pages (tuning, bag); the cursor is decided after them.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct PageToggles;
+
 /// Cursor capture state. Mouse look and mouse buttons only act while `captured`.
 #[derive(Resource, Clone, Debug)]
 pub struct CursorCapture {
@@ -156,7 +167,8 @@ pub struct CursorCapture {
     pub captured: bool,
     /// Captured this frame (the capturing click must not also attack).
     pub just_captured: bool,
-    /// F1 / F2 page open: keep the cursor free.
+    /// A UI page is open (F1 tuning, F2 pose tweak, I bag): keep the cursor free. Derived each
+    /// frame from the pages' own state, never toggled, so pages can't fall out of step.
     pub ui_mode: bool,
 }
 
@@ -260,24 +272,37 @@ fn aims_over_shoulder(loadout: Option<&Loadout>, movesets: Option<&Movesets>) ->
     )
 }
 
+/// The only writer of the cursor's grab and visibility.
+#[allow(clippy::too_many_arguments)]
 fn capture_cursor(
     keys: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     ui: Query<&Interaction>,
     mut capture: ResMut<CursorCapture>,
     mut windows: Query<(&Window, &mut CursorOptions), With<PrimaryWindow>>,
+    bag: Option<Res<BagOpen>>,
+    tuning: Option<Res<TuningPanel>>,
+    mut tweak_page: Local<bool>,
 ) {
     capture.just_captured = false;
     let Ok((window, mut cursor)) = windows.single_mut() else {
         return;
     };
-    if keys.just_pressed(KeyCode::F1) || keys.just_pressed(KeyCode::F2) {
-        capture.ui_mode = !capture.ui_mode;
-        capture.wanted = !capture.ui_mode;
+    // F2 (pose tweak) has no page state of its own yet: it frees the cursor while toggled on.
+    if keys.just_pressed(KeyCode::F2) {
+        *tweak_page = !*tweak_page;
     }
     if keys.just_pressed(KeyCode::Escape) {
+        *tweak_page = false;
+    }
+    // Any open page frees the cursor; closing the last one takes it back.
+    let ui_mode = bag.is_some_and(|b| b.0) || tuning.is_some_and(|t| t.open) || *tweak_page;
+    if capture.ui_mode && !ui_mode {
+        capture.wanted = true;
+    }
+    capture.ui_mode = ui_mode;
+    if keys.just_pressed(KeyCode::Escape) {
         capture.wanted = false;
-        capture.ui_mode = false;
     }
     let over_ui = ui.iter().any(|i| *i != Interaction::None);
     if !capture.wanted

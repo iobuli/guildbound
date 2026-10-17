@@ -12,7 +12,7 @@
 use super::bank::PoseBank;
 use super::contact::ContactState;
 use super::secondary::Springs;
-use super::{ModelRequest, MotionLayers, MotionSet, Rig, RigBone};
+use super::{ModelRequest, MotionLayers, MotionSet, Rig, RigBone, RigPose};
 use bevy::prelude::*;
 use bevy::world_serialization::{WorldAssetRoot, WorldInstanceReady};
 use std::collections::{HashMap, HashSet};
@@ -201,6 +201,7 @@ fn bind_models(
                 Rig { model, bones },
                 Springs::default(),
                 ContactState::default(),
+                RigPose::default(),
             ))
             .try_insert_if_new(MotionLayers::default());
         info!("[rig] {root}: bound {found}/{} bones", skeleton.len());

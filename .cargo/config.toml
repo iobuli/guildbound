@@ -1,0 +1,12 @@
+# Faster links: rust-lld ships with the toolchain and links a Bevy binary several times faster
+# than MSVC's link.exe. Remove this block to fall back to link.exe.
+[target.x86_64-pc-windows-msvc]
+linker = "rust-lld.exe"
+# x86-64-v3: AVX2, FMA, BMI (every desktop CPU since ~2015, incl. the dev box's Ryzen 7 3700X).
+# glam's vector maths, skinning, the armour fit and physics use the wider instructions.
+rustflags = ["-C", "target-cpu=x86-64-v3"]
+
+# Half the 16 hardware threads: builds stay a little slower but the machine (and a running game)
+# stays responsive, and peak RAM stays inside 16 GB.
+[build]
+jobs = 8

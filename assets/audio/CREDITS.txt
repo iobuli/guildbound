@@ -35,3 +35,6 @@ Which recordings each generated cue is built from:
   step_stone      bookClose, footstep_grass_000, footstep_grass_002, footstep_grass_003, impactSoft_medium_000, impactSoft_medium_001
   bird            (synthesized)
   ambience_wind   bookFlip2, bookFlip3, cloth2, cloth4
+
+impactWood_heavy_*, impactWood_medium_*, impactPlank_medium_*: Kenney "Impact Sounds" 1.0 (CC0),
+added for axe chops, tree falls and picking up / putting down the axe (play/fx.rs).

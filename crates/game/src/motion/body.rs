@@ -14,7 +14,7 @@ pub const ARM_R: f32 = 0.04;
 pub const THIGH_R: f32 = 0.065;
 pub const CALF_R: f32 = 0.045;
 /// Head sphere centre above the head joint, along neck → head (m).
-const HEAD_LIFT: f32 = 0.08;
+pub const HEAD_LIFT: f32 = 0.08;
 /// Hand capsule length past the wrist (m).
 const HAND_LENGTH: f32 = 0.07;
 /// Clearance (m) added to every correction so a resolved pose doesn't touch again next frame.
@@ -22,6 +22,20 @@ const MARGIN: f32 = 0.01;
 const PASSES: usize = 2;
 /// Largest swing (rad) one correction may apply.
 const MAX_SWING: f32 = 0.6;
+
+/// Extra capsule radii (m at model scale 1) for what a character wears over the body (armour),
+/// so limbs are also kept clear of the plates. On the character root; read by `compose`
+/// (`resolve`) and the monitor.
+#[derive(Component, Clone, Copy, Debug, Default, PartialEq)]
+pub struct BodyPadding {
+    pub torso: f32,
+    pub head: f32,
+    pub upper_arm: f32,
+    pub forearm: f32,
+    pub hand: f32,
+    pub thigh: f32,
+    pub calf: f32,
+}
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Capsule {
@@ -100,7 +114,8 @@ pub struct Body {
 }
 
 impl Body {
-    pub fn new(pos: &dyn Fn(usize) -> Vec3, bones: &Bones, scale: f32) -> Self {
+    pub fn new(pos: &dyn Fn(usize) -> Vec3, bones: &Bones, scale: f32, padding: &BodyPadding) -> Self {
+        let pad = |r: f32| if r.is_finite() { r.clamp(0.0, 0.2) } else { 0.0 };
         let cap = |a: Vec3, b: Vec3, r: f32| Capsule { a, b, r: r * scale };
         let (neck, head) = (pos(bones.neck), pos(bones.head));
         let crown = head + (head - neck).normalize_or(Vec3::Y) * (HEAD_LIFT * scale);
@@ -112,20 +127,23 @@ impl Body {
             );
             let tip = hand + (hand - elbow).normalize_or_zero() * (HAND_LENGTH * scale);
             [
-                cap(shoulder.lerp(elbow, 0.5), elbow, ARM_R),
-                cap(elbow, hand, ARM_R),
-                cap(hand, tip, ARM_R),
+                cap(shoulder.lerp(elbow, 0.5), elbow, ARM_R + pad(padding.upper_arm)),
+                cap(elbow, hand, ARM_R + pad(padding.forearm)),
+                cap(hand, tip, ARM_R + pad(padding.hand)),
             ]
         };
         let leg = |side: usize| {
             let (hip, knee, ankle) = (pos(bones.thigh[side]), pos(bones.calf[side]), pos(bones.foot[side]));
-            (cap(hip, knee, THIGH_R), cap(knee, ankle, CALF_R))
+            (
+                cap(hip, knee, THIGH_R + pad(padding.thigh)),
+                cap(knee, ankle, CALF_R + pad(padding.calf)),
+            )
         };
         let (thigh_l, calf_l) = leg(0);
         let (thigh_r, calf_r) = leg(1);
         Self {
-            torso: cap(pos(bones.pelvis), pos(bones.spine[2]), TORSO_R),
-            head: cap(crown, crown, HEAD_R),
+            torso: cap(pos(bones.pelvis), pos(bones.spine[2]), TORSO_R + pad(padding.torso)),
+            head: cap(crown, crown, HEAD_R + pad(padding.head)),
             arm: [arm(0), arm(1)],
             thigh: [thigh_l, thigh_r],
             calf: [calf_l, calf_r],
@@ -176,15 +194,16 @@ fn rotate(pose: &mut Pose, model: &[Transform], skeleton: &Skeleton, bone: usize
     pose.rot[bone] = clean_quat(parent.inverse() * delta * model[bone].rotation, fallback);
 }
 
-/// Push limbs out of the body (see the module docs). `pose` must match `skeleton`.
-pub fn resolve(pose: &mut Pose, skeleton: &Skeleton, bones: &Bones) {
+/// Push limbs out of the body (see the module docs), with `padding` for what is worn over it.
+/// `pose` must match `skeleton`.
+pub fn resolve(pose: &mut Pose, skeleton: &Skeleton, bones: &Bones, padding: &BodyPadding) {
     if pose.rot.len() != skeleton.len() {
         return;
     }
     for _ in 0..PASSES {
         let model = skeleton.fk(pose, bones.pelvis);
         let pos = |i: usize| model[i].translation;
-        let body = Body::new(&pos, bones, 1.0);
+        let body = Body::new(&pos, bones, 1.0, padding);
         let mut moved = false;
         for side in 0..2 {
             let Some(hit) = body.arm_overlap(side) else { continue };
@@ -231,7 +250,7 @@ mod tests {
         let (skeleton, bones) = skeleton();
         let rest = skeleton.rest_pose();
         let mut untouched = rest.clone();
-        resolve(&mut untouched, &skeleton, &bones);
+        resolve(&mut untouched, &skeleton, &bones, &BodyPadding::default());
         assert_eq!(untouched, rest, "the T-pose touches nothing");
 
         // Swing the left upper arm across the chest: the forearm ends up inside the torso.
@@ -243,11 +262,11 @@ mod tests {
         rotate(&mut pose, &model, &skeleton, bones.upperarm[0], across);
         let depth = |p: &Pose| {
             let m = skeleton.fk(p, bones.pelvis);
-            Body::new(&|i| m[i].translation, &bones, 1.0).arm_overlap(0).map_or(0.0, |o| o.depth)
+            Body::new(&|i| m[i].translation, &bones, 1.0, &BodyPadding::default()).arm_overlap(0).map_or(0.0, |o| o.depth)
         };
         assert!(depth(&pose) > 0.02);
         for _ in 0..4 {
-            resolve(&mut pose, &skeleton, &bones);
+            resolve(&mut pose, &skeleton, &bones, &BodyPadding::default());
         }
         assert!(depth(&pose) < 0.01, "left {}", depth(&pose));
         assert!(pose.rot.iter().all(|q| q.is_finite()));

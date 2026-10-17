@@ -1,0 +1,99 @@
+{
+  "_about": "gbui theme: edit while the game runs, it reloads within half a second. Colours: #RRGGBB, #RRGGBBAA or a palette name, each optionally @alpha. States: checked, focused, hovered, pressed, disabled (later ones win). Keys starting with _ are comments.",
+  "font": "fonts/jetbrains-mono/JetBrainsMono-Regular.ttf",
+  "font_bold": "fonts/jetbrains-mono/JetBrainsMono-Bold.ttf",
+  "palette": {
+    "accent": "#2EE6C5",
+    "accent2": "#7CFFB2",
+    "deep": "#0E7F72",
+    "text": "#D2FFF3",
+    "dim": "#6FB8AA",
+    "faint": "#2B6A60",
+    "bg": "#03110F",
+    "danger": "#FF5C7A",
+    "warn": "#FFC857",
+    "info": "#7FD8FF",
+    "speech": "#F2FFF9",
+    "black": "#000000"
+  },
+  "glass": {
+    "tint": "accent@0.9",
+    "scanlines": 0.045,
+    "spacing": 3,
+    "grain": 0.018,
+    "edge": 0.16,
+    "sweep": 0.05,
+    "sweep_period": 7
+  },
+  "ring": {
+    "fill": "bg@0.62",
+    "ring": "accent@0.85",
+    "land": "deep@0.55",
+    "water": "info@0.5",
+    "contour": "accent@0.55",
+    "sweep": "accent2@0.22",
+    "width": 3,
+    "sweep_speed": 0.22,
+    "grid": 0.14
+  },
+  "classes": {
+    "panel": { "bg": "bg@0.58", "border": "accent@0.32", "border_width": 1, "radius": 3, "glow": "accent@0.10", "glow_blur": 18 },
+    "bracket": { "border": "accent@0.95" },
+    "title": { "text": "accent", "size": 14, "bold": true, "shadow": "black@0.6" },
+    "text": { "text": "text", "size": 14, "shadow": "black@0.6" },
+    "text.dim": { "text": "dim", "size": 12, "shadow": "black@0.6" },
+    "text.accent": { "text": "accent2", "size": 13, "shadow": "black@0.6" },
+
+    "slot": {
+      "bg": "bg@0.5", "border": "accent@0.22", "border_width": 1, "radius": 2,
+      "hovered": { "border": "accent@0.75", "bg": "accent@0.10" },
+      "checked": { "border": "accent2", "bg": "accent@0.16", "glow": "accent2@0.40", "glow_blur": 14 },
+      "pressed": { "bg": "accent@0.28" }
+    },
+    "slot.key": { "text": "dim", "size": 10, "shadow": "black@0.7", "checked": { "text": "accent2" } },
+    "slot.label": { "text": "text", "size": 13, "bold": true, "shadow": "black@0.7" },
+    "slot.count": { "text": "accent2", "size": 11, "shadow": "black@0.7" },
+    "slot.bag": { "extends": "slot", "border": "accent@0.5" },
+    "slot.bag.key": { "extends": "slot.key" },
+    "slot.bag.label": { "extends": "slot.label", "text": "accent" },
+    "slot.bag.count": { "extends": "slot.count" },
+
+    "bar": { "bg": "bg@0.65", "border": "accent@0.30", "border_width": 1, "radius": 1 },
+    "bar.tick": { "border": "bg@0.55" },
+    "bar.hp": { "extends": "bar" },
+    "bar.hp.fill": { "gradient": ["#139C75", "accent2"] },
+    "bar.hp.trail": { "bg": "danger@0.85" },
+    "bar.st": { "extends": "bar" },
+    "bar.st.fill": { "gradient": ["#127C86", "accent"] },
+    "bar.st.trail": { "bg": "warn@0.7" },
+    "vital.key": { "text": "accent", "size": 11, "bold": true, "shadow": "black@0.7" },
+    "vital.value": { "text": "text", "size": 11, "shadow": "black@0.7" },
+
+    "tooltip": { "extends": "panel", "bg": "bg@0.88", "border": "accent@0.6" },
+    "tooltip.text": { "text": "text", "size": 13 },
+
+    "log.line": { "text": "text", "size": 14, "shadow": "black@0.75" },
+    "log.item": { "extends": "log.line", "text": "accent2" },
+    "log.warn": { "extends": "log.line", "text": "danger" },
+    "log.speech": { "extends": "log.line", "text": "speech" },
+    "log.system": { "extends": "log.line", "text": "dim", "size": 13 },
+
+    "prompt": { "extends": "panel", "bg": "bg@0.72", "border": "accent@0.55" },
+    "prompt.key": { "bg": "accent@0.18", "border": "accent", "border_width": 1, "radius": 2, "text": "accent2", "size": 14, "bold": true },
+    "prompt.text": { "text": "text", "size": 16, "shadow": "black@0.6" },
+
+    "bag": { "extends": "panel", "bg": "bg@0.78" },
+
+    "map": { "border": "accent@0.0" },
+    "map.player": { "text": "accent2", "size": 16, "bold": true, "shadow": "black@0.8" },
+    "map.north": { "text": "warn", "size": 12, "bold": true, "shadow": "black@0.9" },
+    "map.npc": { "bg": "warn", "radius": 4, "glow": "warn@0.5", "glow_blur": 6 },
+    "map.item": { "bg": "danger", "radius": 4 },
+    "map.tree": { "bg": "accent2@0.55", "radius": 4 },
+    "map.poi": { "bg": "text@0.8", "radius": 1 },
+    "map.readout": { "text": "dim", "size": 11, "shadow": "black@0.8" },
+
+    "perf": { "extends": "panel", "bg": "bg@0.82" },
+    "perf.text": { "text": "text", "size": 12, "shadow": "black@0.7" }
+  }
+}

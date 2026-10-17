@@ -21,10 +21,11 @@ use super::camera::CursorCapture;
 use super::select::HandTargets;
 use super::{Action, Mover, Phys, Player};
 use crate::motion::bank::PoseBank;
-use crate::motion::body::Body;
+use crate::motion::body::{Body, BodyPadding};
 use crate::motion::{Rig, RigBone};
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use gbperf::PerfApp;
 use bevy::render::render_resource::PipelineCache;
 use bevy::render::{Render, RenderApp};
 use bevy::text::FontSize;
@@ -70,7 +71,8 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<Monitor>()
         .add_systems(Startup, spawn_panel)
         .add_systems(Update, (toggle, window_events))
-        .add_systems(PostUpdate, measure.after(TransformSystems::Propagate));
+        .add_systems(PostUpdate, measure.after(TransformSystems::Propagate))
+        .perf_span(PostUpdate, "monitor", measure);
     if let Some(render) = app.get_sub_app_mut(RenderApp) {
         render.add_systems(Render, publish_pipelines);
     }
@@ -270,6 +272,7 @@ fn measure(
         Option<&Action>,
         Option<&HandTargets>,
         Has<Player>,
+        Option<&BodyPadding>,
     )>,
     bones_q: Query<&GlobalTransform, With<RigBone>>,
     mut panel: Query<&mut Text, With<Panel>>,
@@ -292,7 +295,7 @@ fn measure(
     memory.retain(|e, _| characters.contains(*e));
     let mut panel_text = None;
 
-    for (entity, rig, mover, root, name, action, hands, player) in &characters {
+    for (entity, rig, mover, root, name, action, hands, player, padding) in &characters {
         let pos = |i: usize| {
             rig.bones
                 .get(i)
@@ -395,7 +398,7 @@ fn measure(
         }
 
         // Self-clipping left over after `body::resolve` (springs, IK and hand targets act after it).
-        let body = Body::new(&|i| pos(i).unwrap_or(Vec3::NAN), &b, 1.0);
+        let body = Body::new(&|i| pos(i).unwrap_or(Vec3::NAN), &b, 1.0, &padding.copied().unwrap_or_default());
         for side in 0..2 {
             if let Some(hit) = body.arm_overlap(side).filter(|o| o.depth > SELF_CLIP) {
                 faults.push(("arm_in_body", side, hit.depth));

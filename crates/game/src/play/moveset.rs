@@ -52,6 +52,11 @@ pub struct Hitbox {
 pub struct Attack {
     pub name: String,
     pub clip: ClipRef,
+    /// Played when the chain stops after this attack: the way back to the stance for clips that
+    /// end mid-motion (UAL2 sword / hook clips come as `X` + `X_Rec`). The next chained attack
+    /// starts from this attack's own end instead.
+    #[serde(default)]
+    pub recover: Option<ClipRef>,
     /// Fractions of the clip window: active frames are [windup, active); after `cancel` the next
     /// chained attack (or a dodge) may start.
     pub windup: f32,
@@ -62,7 +67,8 @@ pub struct Attack {
     pub knockback: f32,
     #[serde(default)]
     pub hitbox: Option<Hitbox>,
-    /// Forward lunge distance (m) spread over windup..active.
+    /// Forward lunge distance (m) on top of the clip's own root travel, eased in from the clip
+    /// start to the end of the active window.
     #[serde(default)]
     pub travel: f32,
     #[serde(default)]
@@ -145,7 +151,8 @@ fn right() -> String {
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
 pub struct Primitive {
-    /// "box" | "cylinder" | "sphere".
+    /// "box" | "cylinder" | "sphere" | "sword" (built by `combat`: `size` = blade width,
+    /// thickness, length; guard, grip and pommel follow from them).
     pub shape: String,
     pub size: [f32; 3],
     pub color: [f32; 3],
@@ -163,6 +170,7 @@ pub struct WeaponDef {
     /// Grip transform relative to the hand bone.
     #[serde(default)]
     pub offset: [f32; 3],
+    /// Grip rotation relative to the hand bone (degrees, XYZ Euler).
     #[serde(default)]
     pub rotation_deg: [f32; 3],
     #[serde(default = "one")]
@@ -258,6 +266,9 @@ impl Movesets {
         for (name, s) in &self.0 {
             for a in s.light.iter().chain(&s.heavy).chain(&s.sprint_attack).chain(&s.air_attack) {
                 push(name, &a.clip);
+                if let Some(r) = &a.recover {
+                    push(name, r);
+                }
             }
             if let Some(g) = &s.guard {
                 push(name, &g.clip);

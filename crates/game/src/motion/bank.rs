@@ -623,7 +623,8 @@ mod tests {
         assert_eq!(count("ual1"), 44);
         assert_eq!(count("ual2"), 42);
         assert_eq!(count("sekiro"), 56);
-        assert!(b.has("ual1/Punch_Jab") && b.has("sekiro/Inward Slash"));
+        assert_eq!(count("rokoko"), 28);
+        assert!(b.has("ual1/Punch_Jab") && b.has("sekiro/Inward Slash") && b.has("rokoko/DrStrangeMagic"));
         assert!(!b.has("ual1/A_TPose"));
     }
 

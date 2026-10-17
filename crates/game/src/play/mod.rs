@@ -16,12 +16,18 @@
 //! (combat damage reactions) may interrupt anything.
 
 pub mod ai;
+pub mod armor;
+pub mod audio;
 pub mod camera;
 pub mod combat;
 pub mod controller;
+pub mod fx;
+pub mod grass;
 pub mod hud;
 pub mod input;
 pub mod interact;
+pub mod inventory;
+pub mod items;
 pub mod magic;
 pub mod monitor;
 pub mod moveset;
@@ -30,7 +36,10 @@ pub mod ragdoll;
 pub mod ranged;
 pub mod select;
 pub mod traverse;
+pub mod tools;
+pub mod trees;
 pub mod tuning;
+pub mod voxel;
 pub mod world;
 
 use crate::motion::{self, Mask, ModelRequest};
@@ -45,6 +54,7 @@ pub fn plugin(app: &mut App) {
     .init_resource::<Feel>()
     .init_resource::<InteractPrompt>()
     .add_message::<Hit>()
+    .add_message::<StaminaSpend>()
     .add_plugins((
         world::plugin,
         input::plugin,
@@ -65,6 +75,14 @@ pub fn plugin(app: &mut App) {
         hud::plugin,
         monitor::plugin,
         parkour::plugin,
+        fx::plugin,
+        tools::plugin,
+        trees::plugin,
+        items::plugin,
+        inventory::plugin,
+        grass::plugin,
+        armor::plugin,
+        audio::plugin,
     ));
 }
 
@@ -88,6 +106,9 @@ pub enum Phys {
     Projectile,
     /// Sensors: water volumes, interaction triggers.
     Trigger,
+    /// Loose physics pieces (felled trees): collide with World and each other only, so
+    /// characters and ground probes ignore them.
+    Debris,
 }
 
 /// Capsule dimensions shared by spawn, controller and select (UAL2 mannequin ≈ 1.75 m).
@@ -265,11 +286,14 @@ pub enum ActionKind {
     Cast,
     Channel,
     Interact,
+    /// Climbing up onto a ledge or a waist-high obstacle on a scripted path (`traverse`).
     Mantle,
     /// Landing roll that carries momentum (`parkour`).
     Roll,
     /// Heavy landing: deep crouch, brief lock (`parkour`).
     HardLand,
+    /// Walking a balance beam (`traverse`): steered along the beam, swaying, arms out.
+    Balance,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -283,6 +307,8 @@ pub enum Owner {
     Interact,
     Traverse,
     Hit,
+    /// `ragdoll`'s get-up after physics hands the body back.
+    Ragdoll,
 }
 
 /// One clip-driven layer requested by an action. `select` converts it to a `motion::Layer`.
@@ -375,6 +401,15 @@ pub struct Hit {
     pub kind: HitKind,
 }
 
+/// Stamina spent by a module that does not own `Fighter` (`traverse`: climbing, swimming
+/// fast). `combat`, the only writer of `Fighter.stamina`, applies it; spenders read the
+/// stamina back to decide when the character is out (it can't go below 0).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct StaminaSpend {
+    pub who: Entity,
+    pub amount: f32,
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum HitKind {
     Melee,
@@ -400,6 +435,17 @@ pub struct Interactable {
     /// Name of a moving child part (lever arm, chest lid) the hands hold on to.
     pub grip: Option<String>,
     pub range: f32,
+    /// Tool the user must hold (`tools::Tool::name`, e.g. "axe"); without it E refuses.
+    pub requires: Option<String>,
+    /// Seconds into the clip where the use lands: one-shots apply their effect there (default
+    /// 45 % of the clip), loops land every cycle (`interact::UseBeat`).
+    pub beat: Option<f32>,
+    /// Clip seconds between which the hand targets hold fully (they ramp in and out around
+    /// them); default 35–70 % of a one-shot.
+    pub reach: Option<(f32, f32)>,
+    /// Stand this far (m) from the root on the side the user comes from, facing it (trees),
+    /// instead of at `stand`.
+    pub radial: Option<f32>,
 }
 
 /// Climbable surface marker (walls, cliffs, ledges). `ledge` = top edge height in world space.

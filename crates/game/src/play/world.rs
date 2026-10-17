@@ -12,16 +12,21 @@
 //!   mantle box row (0.5 / 0.9 / 0.9 / 1.2 / 1.6 m) at x = −9; stairs (0.25 m rise) up to a
 //!   1.5 m platform in the north-west corner.
 //! - east: climb walls 2.5 / 4 / 6 m at x ≈ 13.5; training dummies on a sand pad south-east.
-//! - north: chest, table + chair, anvil, torch, lever, well, tree; farm plots south-west.
+//! - north: chest, table (with the axe) + chair, anvil, torch, lever, well, a voxel tree to chop;
+//!   more voxel trees on the hills (`trees::spawn_tree`); farm plots south-west.
 //!
 //! Interactable roots sit on the ground (y = 0); `stand` is the feet offset from the root and
 //! `face_yaw` faces the object. Movable bits are named children (`Chest lid`, `Lever arm`,
-//! `Crop`, `Torch flame`, `Tree canopy`, `Table item`) for `interact` to animate.
+//! `Crop`, `Torch flame`, `Tree canopy`) for `interact` to animate; the axe is a `tools::ToolItem`.
 //!
 //! Smoke-test env vars: `GB_AUTOQUIT=<seconds>` sends `AppExit` after that much real time (waits
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
 //! ~3 s.
+use super::armor::spawn_stand;
 use super::camera::MainCamera;
+use super::tools::{AXE_SCALE, Tool, ToolItem};
+use super::items::HillTrees;
+use super::trees::{TreeSpec, spawn_tree};
 use super::{Climbable, Fighter, Interactable, Loadout, Npc, Phys, Player, Water, spawn_character};
 use avian3d::prelude::*;
 use bevy::asset::RenderAssetUsages;
@@ -29,6 +34,7 @@ use bevy::light::{CascadeShadowConfigBuilder, NotShadowCaster};
 use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use bevy::render::view::screenshot::{Screenshot, ScreenshotCaptured, save_to_disk};
+use bevy::world_serialization::WorldAssetRoot;
 use std::f32::consts::{FRAC_PI_2, PI};
 
 /// Half size of the flat training courtyard (y = 0 inside).
@@ -36,7 +42,7 @@ pub const COURTYARD_HALF: f32 = 15.0;
 /// Half size of the terrain mesh (m).
 pub const TERRAIN_HALF: f32 = 60.0;
 /// Terrain vertex spacing (m).
-const GRID: f32 = 0.5;
+pub const GRID: f32 = 0.5;
 /// Hills fade in over this distance outside the courtyard.
 const COURTYARD_BLEND: f32 = 12.0;
 /// World metres → `guildbound_sim::terrain` units (pulls its hills and ridges into the map).
@@ -85,7 +91,7 @@ fn smoothstep(edge0: f32, edge1: f32, x: f32) -> f32 {
 }
 
 /// Signed distance to the square courtyard (≤ 0 inside; contours round off outside its corners).
-fn courtyard_distance(x: f32, z: f32) -> f32 {
+pub fn courtyard_distance(x: f32, z: f32) -> f32 {
     let q = Vec2::new(x.abs() - COURTYARD_HALF, z.abs() - COURTYARD_HALF);
     q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0)
 }
@@ -133,7 +139,7 @@ fn hash2(x: i32, z: i32) -> f32 {
 }
 
 /// Smooth value noise 0..1.
-fn value_noise(x: f32, z: f32) -> f32 {
+pub fn value_noise(x: f32, z: f32) -> f32 {
     let (ix, iz) = (x.floor(), z.floor());
     let (fx, fz) = (smoothstep(0.0, 1.0, x - ix), smoothstep(0.0, 1.0, z - iz));
     let (ix, iz) = (ix as i32, iz as i32);
@@ -143,7 +149,7 @@ fn value_noise(x: f32, z: f32) -> f32 {
 }
 
 /// Vertex colour (linear RGBA): grass / packed dirt / sand + mud / rock by slope and height.
-fn ground_color(x: f32, z: f32, y: f32, n: Vec3) -> [f32; 4] {
+pub fn ground_color(x: f32, z: f32, y: f32, n: Vec3) -> [f32; 4] {
     let srgb = |r: f32, g: f32, b: f32| Vec3::new(r, g, b);
     let patch = value_noise(x * 0.3, z * 0.3);
     let fine = value_noise(x * 1.7 + 40.0, z * 1.7 - 13.0);
@@ -224,6 +230,8 @@ struct Palette {
     flame: Handle<StandardMaterial>,
     water: Handle<StandardMaterial>,
     cloth: Handle<StandardMaterial>,
+    /// White base for vertex-coloured voxel meshes (trees).
+    voxel: Handle<StandardMaterial>,
 }
 
 impl Palette {
@@ -246,6 +254,7 @@ impl Palette {
         let sand = solid(0.76, 0.67, 0.48, 1.0);
         let rock = solid(0.47, 0.46, 0.44, 0.95);
         let cloth = solid(0.62, 0.18, 0.15, 0.9);
+        let voxel = solid(1.0, 1.0, 1.0, 0.9);
         let metal = mats.add(StandardMaterial {
             base_color: Color::srgb(0.28, 0.29, 0.31),
             metallic: 0.8,
@@ -280,6 +289,7 @@ impl Palette {
             flame,
             water,
             cloth,
+            voxel,
         }
     }
 }
@@ -364,6 +374,9 @@ struct UseSpec {
     hands: [Option<Vec3>; 2],
     /// Moving child part the `hands` are relative to.
     grip: Option<&'static str>,
+    /// When the use lands (clip seconds) and when the hands hold fully (see `Interactable`).
+    beat: Option<f32>,
+    reach: Option<(f32, f32)>,
 }
 
 impl UseSpec {
@@ -379,12 +392,17 @@ impl UseSpec {
             hands: self.hands,
             grip: self.grip.map(str::to_string),
             range: 1.8,
+            requires: None,
+            beat: self.beat,
+            reach: self.reach,
+            radial: None,
         }
     }
 }
 
 fn setup(
     mut commands: Commands,
+    assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
@@ -405,7 +423,7 @@ fn setup(
     spawn_traversal(&mut kit);
     spawn_training_ground(&mut kit);
     spawn_props(&mut kit);
-    spawn_interactables(&mut kit);
+    spawn_interactables(&mut kit, &assets);
     spawn_characters(&mut commands);
 }
 
@@ -630,11 +648,11 @@ fn spawn_training_ground(kit: &mut Kit) {
 
 /// Crates, barrels, rocks and trees.
 fn spawn_props(kit: &mut Kit) {
-    let (wood, dark, rock, leaves, metal) = (
+    let (wood, dark, rock, voxel, metal) = (
         kit.pal.wood.clone(),
         kit.pal.dark_wood.clone(),
         kit.pal.rock.clone(),
-        kit.pal.leaves.clone(),
+        kit.pal.voxel.clone(),
         kit.pal.metal.clone(),
     );
     for (pos, yaw) in [
@@ -664,6 +682,7 @@ fn spawn_props(kit: &mut Kit) {
         }
     }
     // Rocks and trees on the hills (deterministic scatter, away from the pond).
+    let mut hill_trees = Vec::new();
     for i in 0..26 {
         let a = i as f32 * 2.399_963;
         let r = 21.0 + hash2(i, 1) * 26.0;
@@ -673,15 +692,14 @@ fn spawn_props(kit: &mut Kit) {
         }
         let y = ground_height(x, z);
         if i % 3 == 0 {
-            let trunk = kit.solid(
-                "Tree",
-                Cylinder::new(0.25, 3.0),
-                &dark,
-                Transform::from_xyz(x, y + 1.4, z),
-                Some(Collider::cylinder(0.25, 3.0)),
-            );
-            let s = 1.3 + hash2(i, 5) * 0.8;
-            kit.part(trunk, "Tree canopy", Sphere::new(s), &leaves, Transform::from_xyz(0.0, 1.5 + s * 0.6, 0.0), None);
+            let spec = TreeSpec {
+                radius: 0.26 + hash2(i, 3) * 0.08,
+                height: 2.8 + hash2(i, 4) * 0.6,
+                canopy: 1.3 + hash2(i, 5) * 0.8,
+                seed: i as u32,
+            };
+            spawn_tree(kit.commands, kit.meshes, &voxel, Vec3::new(x, y, z), spec);
+            hill_trees.push(Vec3::new(x, y, z));
         } else {
             let s = 0.5 + hash2(i, 9) * 1.1;
             let (mesh, collider) = stone_shape(s);
@@ -694,6 +712,8 @@ fn spawn_props(kit: &mut Kit) {
             );
         }
     }
+    // Apples fall under the hill trees (`items` scatters them).
+    kit.commands.insert_resource(HillTrees(hill_trees));
 }
 
 /// Spawn an interactable root on the ground at `at`.
@@ -703,16 +723,16 @@ fn place(kit: &mut Kit, name: &str, at: Vec3, spec: UseSpec) -> Entity {
     e
 }
 
-fn spawn_interactables(kit: &mut Kit) {
+fn spawn_interactables(kit: &mut Kit, assets: &AssetServer) {
     let p = &kit.pal;
-    let (wood, dark, metal, stone, soil, crop, leaves, flame, water, straw) = (
+    let (wood, dark, metal, stone, soil, crop, voxel, flame, water, straw) = (
         p.wood.clone(),
         p.dark_wood.clone(),
         p.metal.clone(),
         p.stone.clone(),
         p.soil.clone(),
         p.crop.clone(),
-        p.leaves.clone(),
+        p.voxel.clone(),
         p.flame.clone(),
         p.water.clone(),
         p.straw.clone(),
@@ -730,28 +750,46 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [Some(Vec3::new(0.3, 0.1, -0.58)), Some(Vec3::new(-0.3, 0.1, -0.58))],
         grip: Some("Chest lid"),
+        beat: None,
+        reach: None,
     });
     kit.part(chest, "Chest body", Cuboid::new(1.0, 0.5, 0.6), &wood, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(1.0, 0.5, 0.6)));
     let lid = kit.commands.spawn((Name::new("Chest lid"), Transform::from_xyz(0.0, 0.5, 0.3), Visibility::default(), ChildOf(chest))).id();
     kit.part(lid, "Chest lid board", Cuboid::new(1.02, 0.14, 0.62), &dark, Transform::from_xyz(0.0, 0.07, -0.3), None);
 
-    // Table with an item to pick up, and a chair beside it.
+    // Table with the axe on it, and a chair beside it. `PickUp_Table` reaches with the LEFT
+    // hand (about 0.45 m ahead at 0.87 m, 0.2-0.3 s in), so the axe lies across the front-left
+    // of the top with its mid-haft there; the left wrist target sits just behind that grip.
     let table = place(kit, "Table", Vec3::new(-1.5, 0.0, 12.0), UseSpec {
         kind: "table",
-        prompt: "Pick up",
+        prompt: "Pick up axe",
         track: "ual1/PickUp_Table",
-        duration: 1.4,
+        duration: 0.833,
         looping: false,
         stand: front,
         face: None,
-        hands: [None, Some(Vec3::new(-0.15, 0.8, -0.2))],
+        hands: [Some(Vec3::new(0.1, 0.84, -0.47)), None],
         grip: None,
+        beat: Some(0.27),
+        reach: Some((0.2, 0.3)),
     });
     kit.part(table, "Table top", Cuboid::new(1.6, 0.08, 0.9), &wood, Transform::from_xyz(0.0, 0.74, 0.0), Some(Collider::cuboid(1.6, 0.08, 0.9)));
     for (x, z) in [(-0.7, -0.35), (0.7, -0.35), (-0.7, 0.35), (0.7, 0.35)] {
         kit.part(table, "Table leg", Cuboid::new(0.08, 0.7, 0.08), &dark, Transform::from_xyz(x, 0.35, z), Some(Collider::cuboid(0.08, 0.7, 0.08)));
     }
-    kit.part(table, "Table item", Cylinder::new(0.06, 0.14), &metal, Transform::from_xyz(-0.15, 0.85, -0.2), None);
+    // Lying flat, head toward +X, edge toward the user; mid-haft at (0.1, 0.81, -0.4).
+    let rest = Transform::from_xyz(0.01, 0.806, -0.4)
+        .with_rotation(Quat::from_rotation_y(-FRAC_PI_2))
+        .with_scale(Vec3::splat(AXE_SCALE));
+    let scene = assets.load(GltfAssetLabel::Scene(0).from_asset("packs/weapons/battleaxe.glb"));
+    kit.commands.spawn((
+        Name::new("Axe"),
+        WorldAssetRoot(scene),
+        rest,
+        Visibility::default(),
+        ToolItem::new(Tool::Axe, table, rest),
+        ChildOf(table),
+    ));
 
     // Chair faces −Z (back toward +Z); sit on the seat, facing away from the backrest.
     let chair = place(kit, "Chair", Vec3::new(-3.3, 0.0, 11.6), UseSpec {
@@ -764,6 +802,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: Some(PI),
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     kit.part(chair, "Chair seat", Cuboid::new(0.5, 0.06, 0.5), &wood, Transform::from_xyz(0.0, 0.45, 0.0), None);
     kit.part(chair, "Chair back", Cuboid::new(0.5, 0.55, 0.06), &wood, Transform::from_xyz(0.0, 0.75, 0.22), Some(Collider::cuboid(0.5, 0.55, 0.06)));
@@ -782,6 +822,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     kit.part(anvil, "Anvil stump", Cylinder::new(0.3, 0.45), &dark, Transform::from_xyz(0.0, 0.225, 0.0), Some(Collider::cylinder(0.3, 0.45)));
     kit.part(anvil, "Anvil body", Cuboid::new(0.7, 0.22, 0.28), &metal, Transform::from_xyz(0.0, 0.56, 0.0), Some(Collider::cuboid(0.7, 0.22, 0.28)));
@@ -798,6 +840,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: Some(0.0),
         hands: [None, Some(Vec3::new(0.0, 1.1, 0.0))],
         grip: None,
+        beat: None,
+        reach: None,
     });
     kit.part(torch, "Torch pole", Cylinder::new(0.04, 1.5), &dark, Transform::from_xyz(0.0, 0.75, 0.0), Some(Collider::cylinder(0.04, 1.5)));
     let flame_entity = kit.part(torch, "Torch flame", Sphere::new(0.11), &flame, Transform::from_xyz(0.0, 1.6, 0.0), None);
@@ -823,6 +867,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: Some(0.0),
         hands: [None, Some(Vec3::new(0.0, 0.62, 0.0))],
         grip: Some("Lever arm"),
+        beat: None,
+        reach: None,
     });
     kit.part(lever, "Lever base", Cuboid::new(0.5, 0.5, 0.4), &stone, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(0.5, 0.5, 0.4)));
     let arm = kit
@@ -848,6 +894,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     kit.part(well, "Well ring", Cylinder::new(0.9, 0.8), &stone, Transform::from_xyz(0.0, 0.4, 0.0), Some(Collider::cylinder(0.9, 0.8)));
     kit.part(well, "Well water", Circle::new(0.75), &water, Transform::from_xyz(0.0, 0.81, 0.0).with_rotation(Quat::from_rotation_x(-FRAC_PI_2)), None);
@@ -856,20 +904,17 @@ fn spawn_interactables(kit: &mut Kit) {
     }
     kit.part(well, "Well beam", Cuboid::new(1.9, 0.12, 0.12), &dark, Transform::from_xyz(0.0, 1.9, 0.0), None);
 
-    // Tree to chop.
-    let tree = place(kit, "Choppable tree", Vec3::new(-5.0, 0.0, 6.0), UseSpec {
-        kind: "tree",
-        prompt: "Chop tree",
-        track: "ual2/TreeChopping_Loop",
-        duration: 1.6,
-        looping: true,
-        stand: Vec3::new(0.0, 0.0, -1.0),
-        face: None,
-        hands: [None, None],
-        grip: None,
-    });
-    kit.part(tree, "Tree trunk", Cylinder::new(0.32, 3.2), &dark, Transform::from_xyz(0.0, 1.6, 0.0), Some(Collider::cylinder(0.32, 3.2)));
-    kit.part(tree, "Tree canopy", Sphere::new(1.6), &leaves, Transform::from_xyz(0.0, 3.8, 0.0), None);
+    // Armour stand: a wooden mannequin wearing the plate set (`armor`), facing the courtyard.
+    spawn_stand(kit.commands, kit.meshes, &dark, Vec3::new(1.0, 0.0, 8.0), PI);
+
+    // Voxel tree to chop (needs the axe from the table).
+    let spec = TreeSpec {
+        radius: 0.33,
+        height: 3.2,
+        canopy: 1.6,
+        seed: 101,
+    };
+    spawn_tree(kit.commands, kit.meshes, &voxel, Vec3::new(-5.0, 0.0, 6.0), spec);
 
     // Farm: crop plot, watering spot, seed plot (soil is visual only, walkable).
     let plot = |kit: &mut Kit, parent: Entity, size: Vec2| {
@@ -885,6 +930,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     plot(kit, crops, Vec2::new(2.0, 2.0));
     for ix in 0..3 {
@@ -903,6 +950,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     plot(kit, watering, Vec2::new(1.2, 1.2));
     kit.part(watering, "Bucket", Cylinder::new(0.16, 0.3), &wood, Transform::from_xyz(0.35, 0.15, -0.35), None);
@@ -916,6 +965,8 @@ fn spawn_interactables(kit: &mut Kit) {
         face: None,
         hands: [None, None],
         grip: None,
+        beat: None,
+        reach: None,
     });
     plot(kit, seeds, Vec2::new(2.0, 2.0));
     kit.part(seeds, "Seed sack", Sphere::new(0.2), &straw, Transform::from_xyz(1.2, 0.18, -0.9), None);

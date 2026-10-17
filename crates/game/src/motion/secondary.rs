@@ -7,6 +7,9 @@
 //! forearms keep part of their world orientation (the spring then pulls them back), and the
 //! upper arms' goal trails opposite to the body's acceleration like a pendulum. Local springs
 //! alone moved arms rigidly with their parents, so they never swung.
+//!
+//! The chest, neck and head nod against vertical body acceleration (the step bounce), so each
+//! footfall carries through to the head.
 use super::{Bones, Pose, Skeleton};
 use bevy::prelude::*;
 
@@ -66,6 +69,11 @@ const ARM_INERTIA: f32 = 0.6;
 /// Upper-arm trail (rad) per g of horizontal body acceleration at `arm_swing = 1`, and its cap.
 const ARM_TRAIL: f32 = 0.15;
 const MAX_TRAIL: f32 = 0.6;
+/// Forward nod (rad) per g of upward body acceleration, its share per bone (spine_03, neck,
+/// head) and the acceleration cap (g).
+const NOD: f32 = 0.08;
+const NOD_SHARE: [f32; 3] = [0.3, 0.3, 0.4];
+const MAX_NOD_G: f32 = 2.0;
 const GRAVITY: f32 = 9.81;
 
 /// Spring group of a canonical bone.
@@ -296,6 +304,7 @@ impl Springs {
         let dt = dt.min(MAX_DT);
         if dt > 0.0 {
             self.swing_arms(&mut goal, skeleton, bones, model_rotation, accel, pelvis, params.swing());
+            self.nod(&mut goal, skeleton, bones, model_rotation, accel, pelvis);
             let max_hz = [Group::Core, Group::Limb, Group::Leg]
                 .into_iter()
                 .filter_map(|g| params.hz(g))
@@ -367,6 +376,39 @@ impl Springs {
         Pose {
             rot: self.current.clone(),
             pelvis,
+        }
+    }
+
+    /// Head and chest inertia against vertical body acceleration (the step bounce): when the
+    /// body is pushed up they lag down, tipping forward about the character's left, and the
+    /// springs carry the wobble.
+    #[allow(clippy::too_many_arguments)]
+    fn nod(
+        &self,
+        goal: &mut [Quat],
+        skeleton: &Skeleton,
+        bones: &Bones,
+        model_rotation: Quat,
+        accel: Vec3,
+        pelvis: Vec3,
+    ) {
+        let g = if accel.y.is_finite() { (accel.y / GRAVITY).clamp(-MAX_NOD_G, MAX_NOD_G) } else { 0.0 };
+        if g.abs() < 1e-4 {
+            return;
+        }
+        let fk_pose = Pose {
+            rot: self.current.clone(),
+            pelvis,
+        };
+        let model_space = skeleton.fk(&fk_pose, bones.pelvis);
+        let left = model_rotation * Vec3::X;
+        for (&bone, share) in [bones.spine[2], bones.neck, bones.head].iter().zip(NOD_SHARE) {
+            let Some(p) = skeleton.parent.get(bone).copied().flatten() else {
+                continue;
+            };
+            let parent_world = clean_quat(model_rotation * model_space[p].rotation, Quat::IDENTITY);
+            let tip = Quat::from_axis_angle(left, NOD * share * g);
+            goal[bone] = clean_quat(parent_world.inverse() * tip * parent_world * goal[bone], goal[bone]);
         }
     }
 
@@ -610,6 +652,34 @@ mod tests {
         );
         assert!(angle(out.rot[bones.hand[0]], rest.rot[bones.hand[0]]) > 1e-3);
         assert!(angle(out.rot[finger], rest.rot[finger]) < 1e-6);
+    }
+
+    #[test]
+    fn upward_acceleration_nods_the_head_forward() {
+        let (skeleton, bones) = skeleton();
+        let params = SpringParams::default();
+        let rest = skeleton.rest_pose();
+        let model = Quat::from_rotation_y(0.7);
+        let world = |pose: &Pose| model * skeleton.fk(pose, bones.pelvis)[bones.head].rotation;
+        let mut springs = Springs::default();
+        let mut out = rest.clone();
+        for _ in 0..60 {
+            out = springs.step_moving(&rest, &skeleton, &bones, model, Vec3::Y * GRAVITY, &[], 0.0, &params, DT);
+        }
+        let tip = rotation_vector(world(&out) * world(&rest).inverse());
+        let left = model * Vec3::X;
+        assert!(tip.dot(left) > 0.5 * NOD, "head tips forward about the left axis: {tip}");
+        // Falling (downward acceleration) tips it back; no vertical acceleration, no nod.
+        let mut springs = Springs::default();
+        for _ in 0..60 {
+            out = springs.step_moving(&rest, &skeleton, &bones, model, -Vec3::Y * GRAVITY, &[], 0.0, &params, DT);
+        }
+        assert!(rotation_vector(world(&out) * world(&rest).inverse()).dot(left) < -0.5 * NOD);
+        let mut springs = Springs::default();
+        for _ in 0..10 {
+            out = springs.step_moving(&rest, &skeleton, &bones, model, Vec3::ZERO, &[], 0.0, &params, DT);
+        }
+        assert!(angle(world(&out), world(&rest)) < 1e-5);
     }
 
     #[test]

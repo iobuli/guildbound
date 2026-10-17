@@ -124,6 +124,7 @@ fn player_input(
         KeyCode::Digit7,
         KeyCode::Digit8,
         KeyCode::Digit9,
+        KeyCode::Digit0,
     ];
     let mut slot = digits.iter().position(|k| keys.just_pressed(*k));
 

@@ -42,12 +42,12 @@
     },
     {
       "file": "motion/secondary.rs",
-      "role": "bone springs, arm world inertia + acceleration trail, impulses, squash",
+      "role": "bone springs, arm world inertia + acceleration trail, chest/neck/head nod, impulses, squash",
       "status": "done"
     },
     {
       "file": "motion/contact.rs",
-      "role": "foot IK, pelvis drop, lean, look-at, hand IK",
+      "role": "foot IK, reach-based pelvis drop (planted feet only), step-bounce dip (fades on uneven footing), lean, look-at, hand IK",
       "status": "done"
     },
     {
@@ -57,7 +57,7 @@
     },
     {
       "file": "motion/compose.rs",
-      "role": "only bone writer: layers, springs, body, contact",
+      "role": "only bone writer: layers, springs, body (padded), contact; publishes RigPose",
       "status": "done"
     },
     {
@@ -67,7 +67,7 @@
     },
     {
       "file": "play/mod.rs",
-      "role": "shared types and spawn_character",
+      "role": "shared types (incl. StaminaSpend) and spawn_character",
       "status": "done"
     },
     {
@@ -92,12 +92,12 @@
     },
     {
       "file": "play/select.rs",
-      "role": "only MotionLayers.layers writer, ContactRequest",
+      "role": "only MotionLayers.layers writer, ContactRequest (incl. bounce: bob, accel.y, squash rhythm, breath)",
       "status": "done"
     },
     {
       "file": "play/interact.rs",
-      "role": "focus, walk-in, use clips, grip hand IK",
+      "role": "focus, offer per held tool, radial stands, walk-in, use clips, beat/reach, UseEffect/UseBeat, grip hand IK; tool loops land on blade stop (Swing), clip beat as fallback",
       "status": "done"
     },
     {
@@ -107,7 +107,7 @@
     },
     {
       "file": "play/tuning.rs",
-      "role": "F1 tuning, F5 save",
+      "role": "F1 tuning (13 knobs incl. Bounce), F5 save",
       "status": "done"
     },
     {
@@ -118,6 +118,46 @@
     {
       "file": "play/parkour.rs",
       "role": "graded landings: soft, momentum roll, hard land; land_* log lines",
+      "status": "done"
+    },
+    {
+      "file": "play/tools.rs",
+      "role": "Holding/ToolItem: axe on table, left-hand pickup, hand-over, carry/chop grips, settle",
+      "status": "done"
+    },
+    {
+      "file": "play/voxel.rs",
+      "role": "VoxelGrid (carve, split, mesh, smooth_mesh) + shared Lattice/surface_nets mesher (quads wound whole, split on the flatter diagonal)",
+      "status": "done"
+    },
+    {
+      "file": "play/trees.rs",
+      "role": "voxel trees drawn smooth: notch on UseBeat, felling into Phys::Debris body, breaks into items, regrow; chop/fell/drop log lines",
+      "status": "done"
+    },
+    {
+      "file": "play/fx.rs",
+      "role": "Burst particles, Sfx one-shot audio",
+      "status": "done"
+    },
+    {
+      "file": "play/items.rs",
+      "role": "item entities: physics drops, magnet into bag, hill scatter + respawn",
+      "status": "done"
+    },
+    {
+      "file": "play/inventory.rs",
+      "role": "Inventory (20 stacks, required by Player), I bag panel, toasts",
+      "status": "done"
+    },
+    {
+      "file": "play/armor.rs",
+      "role": "plate armour built from the body mesh (one cuirass with arm holes, concentric-sphere pauldron lames pivoting on the shoulder, vambraces, greaves, bascinet); rigid per-plate skin fits; BodyPadding derived from the plates; armour stand + equip flights",
+      "status": "done"
+    },
+    {
+      "file": "play/grass.rs",
+      "role": "chunked LOD grass, wind vertex shader (assets/shaders/grass.wgsl), trampling, GrassWind",
       "status": "done"
     },
     {
@@ -138,7 +178,7 @@
     },
     {
       "file": "play/ragdoll.rs",
-      "role": "impact-only active ragdoll",
+      "role": "impact-only active ragdoll; RagdollRequest contract defined",
       "status": "stub"
     },
     {
@@ -160,7 +200,7 @@
   "order": [
     "Update/PlaySet::Input: input -> Intent (player)",
     "Update/PlaySet::Think: ai -> Intent (NPC)",
-    "Update/PlaySet::Act: combat, ranged, magic, interact (animate_props before drive), traverse",
+    "Update/PlaySet::Act: combat, ranged, magic, interact (animate_props before drive), tools + trees::chop after drive, traverse",
     "Update/PlaySet::Select: select -> MotionLayers",
     "FixedUpdate/PlaySet::Move: controller",
     "PostUpdate/MotionSet::Compose: compose; after TransformSystems::Propagate: monitor"
@@ -239,7 +279,8 @@
     {
       "quantity": "MotionLayers.layers|contact",
       "writer": [
-        "select"
+        "select (characters)",
+        "armor (armour stands)"
       ]
     },
     {
@@ -258,7 +299,8 @@
     {
       "quantity": "HandTargets",
       "writer": [
-        "current action owner: interact, later ranged, traverse"
+        "current action owner: interact, later ranged, traverse",
+        "tools (right hand during the pickup hand-over)"
       ]
     },
     {
@@ -308,6 +350,136 @@
       "writer": [
         "parkour (Owner::Move)"
       ]
+    },
+    {
+      "quantity": "ContactRequest.bob|accel.y",
+      "writer": [
+        "select"
+      ],
+      "readers": [
+        "contact (pelvis dip)",
+        "secondary (nod)"
+      ],
+      "note": "scaled by MotionFeel.bounce"
+    },
+    {
+      "quantity": "Holding|ToolItem|tool parent+transform|table PropState.on",
+      "writer": [
+        "tools"
+      ],
+      "readers": [
+        "interact (offer)",
+        "trees (blade point)"
+      ]
+    },
+    {
+      "quantity": "tree voxels|Tree|felled bodies|tree PropState.regrow,shake (set)",
+      "writer": [
+        "trees"
+      ],
+      "readers": [
+        "interact"
+      ]
+    },
+    {
+      "quantity": "UseEffect|UseBeat",
+      "writer": [
+        "interact"
+      ],
+      "readers": [
+        "tools",
+        "trees"
+      ]
+    },
+    {
+      "quantity": "Particle|Sfx audio entities",
+      "writer": [
+        "fx"
+      ],
+      "emitters": [
+        "trees",
+        "tools"
+      ]
+    },
+    {
+      "quantity": "Item entities|Flying|Spot",
+      "writer": [
+        "items"
+      ],
+      "spawners": [
+        "items",
+        "trees (items::spawn_item)"
+      ]
+    },
+    {
+      "quantity": "Inventory contents",
+      "writer": [
+        "inventory"
+      ],
+      "readers": [
+        "items (room check)"
+      ],
+      "messages": [
+        "ItemCollected (items -> inventory)",
+        "ItemRejected (inventory -> items)"
+      ]
+    },
+    {
+      "quantity": "RigPose",
+      "writer": [
+        "compose"
+      ],
+      "readers": [
+        "armor"
+      ]
+    },
+    {
+      "quantity": "BodyPadding",
+      "writer": [
+        "armor"
+      ],
+      "readers": [
+        "compose (body::resolve)",
+        "monitor"
+      ]
+    },
+    {
+      "quantity": "armour plates|ArmorSet|stand PropState.on",
+      "writer": [
+        "armor"
+      ],
+      "readers": [
+        "interact (offer)"
+      ]
+    },
+    {
+      "quantity": "grass chunks|GrassWind",
+      "writer": [
+        "grass"
+      ],
+      "note": "wind magic will set GrassWind.gust"
+    },
+    {
+      "quantity": "Fighter (hp, poise, stamina, dead)",
+      "writer": [
+        "combat"
+      ],
+      "readers": [
+        "traverse",
+        "ai",
+        "hud"
+      ],
+      "note": "others spend stamina via the StaminaSpend message"
+    },
+    {
+      "quantity": "RagdollRequest",
+      "writer": [
+        "combat"
+      ],
+      "readers": [
+        "ragdoll"
+      ],
+      "note": "ragdoll then owns the body, Mover.mode Ragdoll, MotionLayers.raw and the get-up Action (Owner::Ragdoll)"
     }
   ],
   "data": {
@@ -321,7 +493,10 @@
     "weapons": "assets/packs/weapons/*.glb",
     "feel": "profiles/feel.json",
     "monitor_log": "staging/relations.log",
-    "parkour_reference": "docs/reference/parkour_jump.md (frames pending)"
+    "parkour_reference": "docs/reference/parkour_jump.md (frames pending)",
+    "sounds": "assets/audio/kenney/impactWood_*, impactPlank_* (Kenney Impact Sounds, CC0)",
+    "textures": "assets/textures/armor/plate_{color,normal,mr}.png (ambientCG Metal049C, CC0)",
+    "shaders": "assets/shaders/grass.wgsl (grass vertex shader); assets/shaders/toon.wgsl (unused)"
   },
   "monitor": {
     "key": "F4",
@@ -407,6 +582,32 @@
     "arm_swing": [
       0.0,
       2.0
+    ],
+    "bounce": [
+      0.0,
+      2.0
     ]
-  }
+  },
+  "physics_layers": [
+    "World",
+    "Character",
+    "Ragdoll",
+    "Projectile",
+    "Trigger",
+    "Debris (felled trees: World + Debris only)"
+  ],
+  "calibration": {
+    "chop": "staging/relations.log chop lines: value = blade distance to bark (m, negative inside), blade_y, hand=(x,y,z) in the user frame vs clip impact (0,1.06,0.54), clip_t; tune trees::STAND, tools::FIST/CHOP_TILT/AXE_GRIP",
+    "clips": {
+      "ual2/TreeChopping_Loop": "0.967 s, one-handed right chop leading with the pinky edge, lands at 0.17 s, hand 0.54 m ahead",
+      "ual1/PickUp_Table": "0.833 s, LEFT hand reaches 0.45 m ahead at 0.87 m (0.2-0.3 s), at right chest by 0.5 s"
+    }
+  },
+  "roadmap": [
+    "M2 visual style: CC0 textures (ambientCG), terrain triplanar+normal-map toon shader, rock normal maps, instanced wind grass",
+    "M3 axe handling: back holster (X), two-hand carry when moving, idle rest, anti-clip vs body capsules",
+    "M4 landing: legs reach for predicted ground, impact absorb, fuller roll",
+    "M5 climbing: traverse.rs procedural limb stepping on Climbable walls, ClimbUp_1m mantle",
+    "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
+  ]
 }

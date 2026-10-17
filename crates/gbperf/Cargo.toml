@@ -1,0 +1,11 @@
+[package]
+name = "gbperf"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+
+# Frame profiler: frame time, CPU spans around system sets, GPU pass times, entity counts,
+# fixed-tick overruns, hitches; an F3 panel (gbui) and a log file. Knows nothing about the game.
+[dependencies]
+bevy = { version = "=0.19.1" }
+gbui = { path = "../gbui" }

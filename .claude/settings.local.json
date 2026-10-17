@@ -6,7 +6,9 @@
       "Bash(cp __TRACKED_VAR__/quaternius/Universal_Animation_Library_1/UAL1_Standard.glb anim/ual1.glb)",
       "Bash(cp '__TRACKED_VAR__/quaternius/Universal_Animation_Library_2/Universal Animation Library 2[Standard]/Unreal-Godot/UAL2_Standard.glb' anim/ual2.glb)",
       "Bash(cp __TRACKED_VAR__/sekiro_proto/ybot.glb anim/sekiro.glb)",
-      "Bash(python -I -)"
+      "Bash(python -I -)",
+      "Bash(ls \"C:/Users/64Bit 1TB NVME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/\" | grep -i -E \"gltf|^glam|serde_json\" ; ls \"D:/gb_overhaul/assets/anim/\")",
+      "Bash(git check-ignore *)"
     ]
   }
 }

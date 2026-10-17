@@ -1,14 +1,16 @@
 //! The single bone writer. For every character with a `Rig`:
 //! 1. evaluate `MotionLayers` bottom→top with `PoseBank::sample` + masks,
 //! 2. `Springs::step_moving` (secondary motion, arm inertia, impulses, squash),
-//!    then `body::resolve` (limbs out of the body),
+//!    then `body::resolve` (limbs out of the body, padded by the root's `BodyPadding`),
 //! 3. `contact::apply` (feet/hands/lean/look) using Avian ray casts against `Phys::World`,
-//! 4. write local rotations (+ pelvis translation) into the bone entities' `Transform`s.
+//! 4. write local rotations (+ pelvis translation) into the bone entities' `Transform`s, and the
+//!    same pose in model space into `RigPose` (for armour plates riding on the body).
 //! Runs in `PostUpdate` / `MotionSet::Compose` (after Bevy animation, before propagation).
 use super::bank::PoseBank;
 use super::contact::{self, ContactState, Ground};
 use super::secondary::Springs;
-use super::{Mask, MotionLayers, MotionSet, Pose, Rig, RigBone, Source};
+use super::body::BodyPadding;
+use super::{Mask, MotionLayers, MotionSet, Pose, Rig, RigBone, RigPose, Source};
 use crate::play::Phys;
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -20,6 +22,9 @@ pub struct MotionFeel {
     pub style: super::timing::Style,
     pub springs: super::secondary::SpringParams,
     pub contact: super::contact::ContactParams,
+    /// Character bounce (0..2, 1 = default): step dip, step squash rhythm, landing / jump
+    /// squash and idle breathing, all requested by `play::select`.
+    pub bounce: f32,
     /// Debug: draw skeleton gizmos.
     pub debug: bool,
 }
@@ -30,6 +35,7 @@ impl Default for MotionFeel {
             style: default(),
             springs: default(),
             contact: default(),
+            bounce: 1.0,
             debug: false,
         }
     }
@@ -146,6 +152,8 @@ fn compose(
             &mut Springs,
             &mut ContactState,
             &Transform,
+            Option<&BodyPadding>,
+            Option<&mut RigPose>,
         ),
         Without<RigBone>,
     >,
@@ -161,7 +169,7 @@ fn compose(
     let dt = time.delta_secs();
     let filter = SpatialQueryFilter::from_mask(Phys::World);
 
-    for (root, rig, mut layers, mut springs, mut state, root_transform) in &mut roots {
+    for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose) in &mut roots {
         if rig.bones.len() != n {
             if warned.insert(format!("rig:{root}")) {
                 warn!(
@@ -192,7 +200,7 @@ fn compose(
                 dt,
             );
             request.squash = springs.squash;
-            super::body::resolve(&mut pose, skeleton, bones);
+            super::body::resolve(&mut pose, skeleton, bones, &padding.copied().unwrap_or_default());
             let mut ground = |origin: Vec3| {
                 spatial
                     .cast_ray(origin, Dir3::NEG_Y, GROUND_PROBE, true, &filter)
@@ -214,6 +222,9 @@ fn compose(
             );
         }
         layers.impulses.clear();
+        if let Some(mut out) = rig_pose {
+            out.0 = skeleton.fk(&pose, bones.pelvis);
+        }
 
         for (i, &entity) in rig.bones.iter().enumerate() {
             if entity == Entity::PLACEHOLDER {

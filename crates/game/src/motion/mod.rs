@@ -42,10 +42,12 @@ pub const SAMPLE_HZ: f32 = 30.0;
 /// The character model and canonical skeleton.
 pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 3] = [
+pub const LIBRARIES: [(&str, &str); 4] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
+    // Rokoko free mocap (Mixamo rig), converted from assets/anim/Rokoko_Free_Mocap_FBX_263.
+    ("rokoko", "anim/rokoko.glb"),
 ];
 
 pub fn plugin(app: &mut App) {
@@ -239,15 +241,24 @@ pub struct ContactRequest {
     pub foot_ik: f32,
     /// World-space hand targets with weights (climb holds, bow string, two-hand grip, levers).
     pub hands: [Option<(Vec3, f32)>; 2],
-    /// World-space acceleration of the character (m/s²) for COP lean (Kwon 2020: torso over
-    /// COP + h·a/g).
+    /// World-space acceleration of the character (m/s²): horizontal for COP lean (Kwon 2020:
+    /// torso over COP + h·a/g) and the arm trail; vertical = the step bounce's acceleration,
+    /// which the head and chest nod against.
     pub accel: Vec3,
+    /// Step bounce (m, ≤ 0): extra pelvis dip after each foot plant. Feet stay planted.
+    pub bob: f32,
     /// Extra spine squash (−) / stretch (+), roughly −0.3..0.3.
     pub squash: f32,
     /// World point the head/chest should look toward (lock-on, aiming).
     pub look_at: Option<Vec3>,
     /// `Mover.step_ease`: running total of the drawn root's vertical easing over steps (m).
     pub root_ease: f32,
+    /// World-space ankle targets with weights (climb holds), applied after the ground IK: knees
+    /// bend toward the body's front turned out, feet keep their animated world orientation.
+    pub feet: [Option<(Vec3, f32)>; 2],
+    /// Narrow stance (balance beam): the farthest a foot on the ground may stand from the body's
+    /// mid-plane (m); `f32::INFINITY` keeps the animated stance.
+    pub stance: f32,
 }
 
 impl Default for ContactRequest {
@@ -256,9 +267,12 @@ impl Default for ContactRequest {
             foot_ik: 1.0,
             hands: [None, None],
             accel: Vec3::ZERO,
+            bob: 0.0,
             squash: 0.0,
             look_at: None,
             root_ease: 0.0,
+            feet: [None, None],
+            stance: f32::INFINITY,
         }
     }
 }
@@ -276,6 +290,12 @@ pub struct Rig {
 /// Marker on every bone entity bound in a `Rig`.
 #[derive(Component)]
 pub struct RigBone;
+
+/// The pose `compose` just wrote, as model-space transforms (one per canonical bone, relative to
+/// the `Rig.model` entity). Written by `compose` only, every frame, before transform propagation,
+/// so things riding on the body (armour plates) can follow it in the same frame.
+#[derive(Component, Clone, Debug, Default)]
+pub struct RigPose(pub Vec<Transform>);
 
 /// Request a model to be spawned under a character root. `rig` handles it.
 #[derive(Component, Clone, Debug)]

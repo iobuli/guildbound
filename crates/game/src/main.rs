@@ -1,7 +1,9 @@
 //! Guildbound: stylized synthesized motion + physics combat.
 //! `motion/` turns donor clips (UAL1, UAL2, Sekiro proto) into stylized extremes and composes
 //! the final skeleton pose. `play/` owns the world, characters, combat and everything that
-//! decides which motion layers are active.
+//! decides which motion layers are active. `gbui` (crates/gbui) draws the HUD, themed by
+//! `assets/ui/theme.json`. `gbperf` (F3) profiles frames and logs a baseline to
+//! `staging/perf.log` every run.
 //! Run: `cargo run -p guildbound`
 
 mod motion;
@@ -9,6 +11,7 @@ mod play;
 
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use gbperf::PerfApp;
 
 /// Fixed physics tick (1/120 s).
 pub const TICK_HZ: f64 = 120.0;
@@ -42,6 +45,22 @@ fn main() {
         )
         .add_plugins(PhysicsPlugins::default().set(PhysicsInterpolationPlugin::interpolate_all()))
         .insert_resource(SubstepCount(8))
+        .add_plugins(gbui::GbuiPlugin {
+            theme: concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/ui/theme.json").into(),
+        })
+        .add_plugins(gbperf::GbperfPlugin {
+            log: concat!(env!("CARGO_MANIFEST_DIR"), "/../../staging/perf.log").into(),
+            key: KeyCode::F3,
+        })
         .add_plugins((motion::plugin, play::plugin))
+        .perf_span(Update, "input", play::PlaySet::Input)
+        .perf_span(Update, "think", play::PlaySet::Think)
+        .perf_span(Update, "act", play::PlaySet::Act)
+        .perf_span(Update, "select", play::PlaySet::Select)
+        .perf_span(FixedUpdate, "move", play::PlaySet::Move)
+        .perf_span(FixedPostUpdate, "physics", PhysicsSystems::StepSimulation)
+        .perf_span(PostUpdate, "compose", motion::MotionSet::Compose)
+        .perf_span(PostUpdate, "ui anim", gbui::GbuiSet::Animate)
+        .perf_span(PostUpdate, "ui style", gbui::GbuiSet::Style)
         .run();
 }

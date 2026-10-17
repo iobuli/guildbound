@@ -1,0 +1,15 @@
+[package]
+name = "gbui"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+
+# Guildbound's UI toolkit: LVGL's ideas (state styles, themes, tweens, focusable widgets) on Bevy UI.
+# Knows nothing about the game; `cargo test -p gbui` runs headless.
+[dependencies]
+bevy = { version = "=0.19.1" }
+serde_json = "1"
+
+[dev-dependencies]
+# Same naga as Bevy's renderer: the tests parse and validate the WGSL that only compiles at runtime.
+naga = { version = "=29.0.4", features = ["wgsl-in"] }
