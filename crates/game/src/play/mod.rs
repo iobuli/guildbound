@@ -35,6 +35,7 @@ pub mod parkour;
 pub mod ragdoll;
 pub mod ranged;
 pub mod select;
+pub mod surfaces;
 pub mod traverse;
 pub mod tools;
 pub mod trees;

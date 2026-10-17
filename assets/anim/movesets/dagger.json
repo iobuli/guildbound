@@ -1,0 +1,41 @@
+{
+  "name": "dagger",
+  "kind": "melee",
+  "weapon": {
+    "primitive": { "shape": "sword", "size": [0.03, 0.007, 0.3], "color": [0.72, 0.74, 0.78] },
+    "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "length": 0.3
+  },
+  "light": [
+    {
+      "name": "thrust",
+      "clip": { "track": "sekiro/Thrust Slash", "start": 0.4, "end": 1.3, "speed": 1.4 },
+      "windup": 0.25, "active": 0.45, "cancel": 0.55,
+      "damage": 7, "poise": 8, "knockback": 0.8, "stamina": 7, "travel": 0.5
+    },
+    {
+      "name": "slice",
+      "clip": { "track": "sekiro/Inward Slash", "start": 0.5, "end": 1.3, "speed": 1.3 },
+      "windup": 0.37, "active": 0.65, "cancel": 0.7,
+      "damage": 7, "poise": 8, "knockback": 0.8, "stamina": 7, "travel": 0.3
+    },
+    {
+      "name": "hook",
+      "clip": { "track": "ual2/Melee_Hook" },
+      "recover": { "track": "ual2/Melee_Hook_Rec" },
+      "windup": 0.47, "active": 0.6, "cancel": 0.62,
+      "damage": 9, "poise": 12, "knockback": 1.2, "stamina": 8, "travel": 0.3
+    }
+  ],
+  "heavy": [
+    {
+      "name": "rising_stab",
+      "clip": { "track": "sekiro/Upward Thrust", "start": 0.3, "end": 1.3 },
+      "windup": 0.25, "active": 0.55, "cancel": 0.7,
+      "damage": 18, "poise": 25, "knockback": 2.0, "stamina": 16, "travel": 0.6, "charge": 0.5
+    }
+  ],
+  "guard": {
+    "clip": { "track": "ual2/Sword_Block", "mask": "upper" },
+    "hold": 0.3, "parry_window": 0.22, "absorb": 0.55, "arc": 110
+  }
+}

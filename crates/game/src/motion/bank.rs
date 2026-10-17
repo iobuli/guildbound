@@ -804,4 +804,43 @@ mod tests {
         assert_eq!(b.tracks["ual1/Punch_Jab"].keys[1].pose.rot[hand], original);
         assert_eq!(b.style, Style::default());
     }
+
+    /// Strike timing probe for authoring movesets: per track in `GB_PROBE` (comma separated),
+    /// the duration and, every 1/30 s, the model-space speed (m/s) of each hand and foot and the
+    /// right hand's position. Peaks mark where an attack's active window belongs.
+    /// `GB_PROBE="ual1/Punch_Jab" cargo test -p guildbound clip_probe -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn clip_probe() {
+        let b = bank();
+        let tracks = std::env::var("GB_PROBE").unwrap_or_default();
+        let ends = [b.bones.hand[0], b.bones.hand[1], b.bones.foot[0], b.bones.foot[1]];
+        for track in tracks.split(',').map(str::trim).filter(|t| !t.is_empty()) {
+            let d = b.duration(track);
+            println!("== {track} {d:.3}s");
+            let at = |t: f32| {
+                let fk = b.skeleton.fk(&b.sample_raw(track, t, false), b.bones.pelvis);
+                ends.map(|i| fk[i].translation)
+            };
+            let dt = 1.0 / 30.0;
+            let mut t = 0.0;
+            while t <= d + 1e-4 {
+                let (p0, p1) = (at((t - dt * 0.5).max(0.0)), at((t + dt * 0.5).min(d)));
+                let v = [0, 1, 2, 3].map(|k| (p1[k] - p0[k]).length() / dt);
+                let rh = at(t)[1];
+                println!(
+                    "{t:5.2} {:4.2} hl {:5.2} hr {:5.2} fl {:5.2} fr {:5.2}  rh ({:5.2} {:5.2} {:5.2})",
+                    t / d.max(1e-3),
+                    v[0],
+                    v[1],
+                    v[2],
+                    v[3],
+                    rh.x,
+                    rh.y,
+                    rh.z
+                );
+                t += dt;
+            }
+        }
+    }
 }

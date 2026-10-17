@@ -1102,7 +1102,7 @@ pub fn rigid_fit(rest: &[Vec3], pc: Vec3, now: &[Vec3], qc: Vec3, warm: Quat) ->
 
 /// Which kind of data a texture holds, for averaging its mip levels.
 #[derive(Clone, Copy, Debug, PartialEq)]
-enum Texel {
+pub(crate) enum Texel {
     Srgb,
     Linear,
     Normal,
@@ -1118,7 +1118,7 @@ fn linear_to_srgb(c: f32) -> f32 {
 
 /// Append a full box-filtered mip chain to an RGBA8 image (no-op for other formats or if it
 /// already has mips).
-fn add_mips(image: &mut Image, texel: Texel) {
+pub(crate) fn add_mips(image: &mut Image, texel: Texel) {
     let format = image.texture_descriptor.format;
     if !matches!(format, TextureFormat::Rgba8Unorm | TextureFormat::Rgba8UnormSrgb)
         || image.texture_descriptor.mip_level_count > 1

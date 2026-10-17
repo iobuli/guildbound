@@ -1,6 +1,6 @@
 # Guildbound overhaul: handoff
 
-State as of 2026-10-16, `master`. The machine-readable copy is `docs/handoff.json`; keep both in step.
+State as of 2026-10-17, branch `overhaul-2026-10-16`. The machine-readable copy is `docs/handoff.json`; keep both in step.
 Read this file first, then the module header (`//!`) of any file before you edit it.
 
 ## Build and run
@@ -42,12 +42,13 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/trees.rs` | Voxel trees drawn smooth: notch carving on `UseBeat`, chips/shake/recoil/sound, felling into a `Phys::Debris` body, landing, breaking into logs/sticks/apples, regrow; `chop` / `fell` / `drop` log lines | new |
 | `play/fx.rs` | `Burst` particles (chips, leaves) and `Sfx` one-shot sounds (first audio in the game) | new |
 | `play/hud.rs` | Interaction prompt only | partial |
+| `play/surfaces.rs` | CPU-generated tileable detail + normal maps (ground, stone, rock, wood, metal, cloth, sand) with mip chains; `world_uvs` box-projects world-scale UVs (`PROP_TILE` 1.5 m) and generates tangents; terrain UVs are (x, z) / `TERRAIN_TILE` (3 m) | new |
 | `play/tuning.rs` | F1 live tuning panel (Exaggeration 0.9–1.4, Arm swing 0–2, Bounce 0–2), F5 saves `profiles/feel.json` | done |
 | `play/monitor.rs` | F4 joint-relation monitor + `staging/relations.log` | new |
 | `play/parkour.rs` | Graded landings: soft / momentum roll / hard land (`Owner::Move`); logs `land_*` lines | new |
-| `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`) | done, **no JSON files yet** |
-| `play/combat.rs` | Melee FSM + **only `Hit` resolver** | **stub** |
-| `play/ai.rs` | NPC brain → `Intent` | **stub** |
+| `play/moveset.rs` | Moveset JSON schema + loader (`assets/anim/movesets/*.json`); `WeaponDef.mesh_rotation_deg` / `mesh_offset` orient glTF weapon meshes so the blade runs along the root's +Y | done |
+| `play/combat.rs` | Melee FSM (light chains, charged heavy, sprint attack, air plunge, guard / parry, roll / sidestep, stamina, poise), swept hit tests, **only `Hit` resolver**, hitstop, reactions, death / revive, weapon in the hand | done |
+| `play/ai.rs` | Rule-based NPC brain → `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive` | new |
 | `play/ragdoll.rs` | Impact-only active ragdoll; `RagdollRequest` (the contract with `combat`) is defined | **stub** |
 | `play/ranged.rs` | Bow/crossbow/throwing, projectiles | **stub** |
 | `play/magic.rs` | Schools as movesets, cast/charge/channel | **stub** |
@@ -100,12 +101,13 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Hit` message | `combat`, `ranged`, `magic` emit | **`combat` alone resolves** |
 | `InteractPrompt` | `interact` | `hud` |
 | `Feel`, `MotionFeel` | `tuning` | controller, compose |
+| `Surfaces` (generated maps) | `world` (setup) | `world` palette and terrain |
 
 ## Data files
 
 - `assets/anim/{ual1,ual2,sekiro}.glb`: donor libraries. `ual2.glb` is the model and the canonical skeleton.
 - `assets/anim/poses.json` (optional): style plus per-key overrides. Hot-reloaded.
-- `assets/anim/movesets/*.json`: one `Moveset` per file (schema in `play/moveset.rs`: `name, kind(unarmed|melee|ranged|magic|tool), weapon{glb path, hand, offset}, offhand, stance, light[], heavy[], sprint_attack, air_attack, guard{clip, parry}, aim{clip, draw, release, reload}, projectile, cooldown`). Every `track` is a bank name `"{lib}/{clip}"`. **None exist yet.**
+- `assets/anim/movesets/*.json`: one `Moveset` per file (schema in `play/moveset.rs`: `name, kind(unarmed|melee|ranged|magic|tool), weapon{glb path, hand, offset}, offhand, stance, light[], heavy[], sprint_attack, air_attack, guard{clip, parry}, aim{clip, draw, release, reload}, projectile, cooldown`). Every `track` is a bank name `"{lib}/{clip}"`. Shipped: `unarmed`, `katana`, `greatsword`, `dagger`, `axe` (melee). The player's loadout also names `bow crossbow knives fire frost`; they wait for the ranged / magic lanes.
 - `assets/packs/weapons/*.glb`: longsword, shortsword, greatsword, claymore, knight_sword, battleaxe, mace, warhammer, spear, glaive, battle_staff, elder_staff.
 - `assets/audio/kenney/impactWood_*`, `impactPlank_*`: Kenney Impact Sounds (CC0), chop / fall / pick-up sounds.
 - `profiles/feel.json`: written by F5.
@@ -132,12 +134,25 @@ Log line: `t character relation side value mode action speed`.
 - Knees and elbows: `bend_pole` drops any bend component against the natural side and adds a small bias, so near-straight limbs keep a stable bend side. Limbs never extend past 99.9 % of their length, so they no longer lock and snap.
 - Interaction: hands ride the moving grip part (`Interactable.grip`: lever arm, chest lid). The walk-in pivots on the spot before stepping when the target is behind.
 
-## Grass and armour (latest milestone, awaiting playtest)
+## Melee, NPC brain, world surfaces (latest milestone, awaiting playtest)
+
+- Moveset windows (`windup` / `active` / `cancel`) come from the donor clips' hand and foot speed peaks (forward kinematics on the GLB data), e.g. `ual2/Sword_Regular_A` strikes at 0.20–0.27 s of 0.43 s, `ual1/Punch_Jab` leads with the LEFT hand at 0.13–0.17 s, `sekiro/Zombie Kick` kicks with `foot_r` at 0.53–1.15 s. To re-check them in the bank: `GB_PROBE="ual2/Sword_Regular_A,..." cargo test -p guildbound clip_probe -- --ignored --nocapture` (`motion/bank.rs`).
+- Weapons: katana, greatsword and dagger are `sword` primitives; the axe is `battleaxe.glb` turned by `mesh_rotation_deg` [90, 0, 0] with its grip (z = 0.17) moved to the origin. All are held at the axe's `FIST` point, blade along the thumb side (`rotation_deg` [0, 90, 90]). If a blade sits wrong in the hand, tune these two fields in the JSON.
+- The Opponent (katana, team 1) now fights: `Difficulty::default()` = reaction 0.28 s, parry 25 %, dodge 20 %, guard 35 %, aggression 0.6, damage ×0.8; it revives at its spawn after 6 s.
+- Surfaces: detail maps are near white (≈0.75–1.0) and multiply the palette colours and the terrain's vertex colours, so hues stay as tuned; textured palette colours were lifted ≈15 % to keep their brightness. Every prop spawned through `Kit` gets UVs and tangents. Trees, leaves, crops, water and flame stay untextured.
+- Playtest checklist:
+  1. Keys 1–5 (unarmed, katana, greatsword, dagger, axe): tap and hold LMB on the training dummies, sprint attack, jump attack (plunge).
+  2. Fight the Opponent: it closes in, strafes, attacks, guards, sometimes parries or dodges, and gets up at its spawn after dying.
+  3. Weapons sit in the right fist; the axe head faces the swing.
+  4. Terrain, stone, wood, sand, cloth and metal show surface detail in the sunlight, with no seams or stretching on boxes.
+  5. `staging/relations.log` shows `hit_*`, `parry`, `guard_break`, `knockdown`, `death` and `revive` lines.
+
+## Grass and armour (previous milestone)
 
 - Armour design facts: the bind pose equals the skeleton rest (FK) to 1 µm and the mesh is in model space, so plates are authored directly on the T-pose body and placed by `rigid fit(rest samples → skinned samples)`. A review simulated the first design on real clips (Python replica against `ual2.glb`) and found plates fitted to different bones passing through each other, so the set was redesigned: no belly lames (one cuirass, flared rolled bottom, arm holes cut below the hanging arms' armpits, pelvis skin in its profile), pauldron lames are concentric spheres about the shoulder joint with strictly increasing radii (`nest_radii`) and `Fit::Pivot` (rotation only), gap and thickness are scaled by the profile slope so steep areas keep `THICK` (11 mm, over the 4.8 mm lattice diagonal), and `BodyPadding` is measured from the meshes (`derive_padding`) instead of constants. Clearances (gap): cuirass 2.6 cm, vambrace 1.2 cm, greave 1.3 cm, bascinet 1.6 cm, pauldron lames ≥ 2.05 cm apart radially. Rotation extraction runs up to 32 Müller iterations and stops once a step is under 1 µrad (a cold start needs ~30, a warm frame a few).
 - Grass: WGSL compiles only at runtime; if grass is missing, check the log for a `shaders/grass.wgsl` error. Startup logs `[grass] N blades ...` and `[armor] built N plates (V vertices), padding ...`. The flutter clock wraps at `FLUTTER_WRAP` (3600 s) and the gust-noise scroll at `SCROLL_WRAP` (2000 m); the shader rounds flutter frequencies to whole cycles per wrap and repeats its noise lattices over the scroll period, so neither wrap shows (constants duplicated in `grass.rs` and `grass.wgsl`: keep them equal).
 
-## Axe, trees, bounce (previous milestone)
+## Axe, trees, bounce (earlier milestone)
 
 - Clip facts behind the numbers: `TreeChopping_Loop` (0.967 s) is a one-handed right-hand chop that leads with the pinky edge; the axe lands at ≈0.17 s with the hand 0.54 m ahead. `PickUp_Table` (0.833 s) reaches with the LEFT hand (≈0.45 m ahead, 0.87 m high, 0.2–0.3 s) and brings it across to the right side of the chest by 0.5 s; the right shoulder pulls back out of reach.
 - Calibrate from `staging/relations.log`: `chop` lines give the blade's distance to the bark (`value`, negative = inside) and its height; tune `trees::STAND`, `tools::{FIST, CHOP_TILT, AXE_GRIP}` from them.
@@ -148,7 +163,7 @@ Log line: `t character relation side value mode action speed`.
 
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
-- **A. Melee:** `combat.rs`, `ai.rs`, `ragdoll.rs`, plus `assets/anim/movesets/{unarmed,longsword}.json`. Hit tests sweep the weapon/limb between frames; damage scales with closing speed; hitstop through `Time<Virtual>`; knockback through `Mover.external`; impulses into `MotionLayers.impulses`.
+- **A. Melee:** `combat.rs`, the melee movesets and `ai.rs` are done. Left: `ragdoll.rs` (combat already inserts `RagdollRequest` above `Feel.ragdoll_threshold`; until the ragdoll exists a knockdown plays).
 - **B. Traversal, then ranged and magic:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` and `magic.rs` (projectiles emit `Hit`).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.

@@ -914,7 +914,10 @@ fn build_weapon(
 ) {
     if let Some(path) = &def.mesh {
         let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(path.clone()));
-        commands.spawn((Name::new("Weapon mesh"), WorldAssetRoot(scene), Transform::default(), ChildOf(weapon)));
+        let [x, y, z] = def.mesh_rotation_deg.map(f32::to_radians);
+        let rotation = Quat::from_euler(EulerRot::XYZ, x, y, z);
+        let at = Transform::from_translation(Vec3::from(def.mesh_offset)).with_rotation(rotation);
+        commands.spawn((Name::new("Weapon mesh"), WorldAssetRoot(scene), at, ChildOf(weapon)));
         return;
     }
     let Some(prim) = &def.primitive else { return };

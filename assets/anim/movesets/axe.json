@@ -1,0 +1,37 @@
+{
+  "name": "axe",
+  "kind": "melee",
+  "weapon": {
+    "mesh": "packs/weapons/battleaxe.glb",
+    "mesh_rotation_deg": [90, 0, 0],
+    "mesh_offset": [0.0, 0.17, 0.0],
+    "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "scale": 0.75, "length": 0.87
+  },
+  "light": [
+    {
+      "name": "hook",
+      "clip": { "track": "ual2/Melee_Hook" },
+      "recover": { "track": "ual2/Melee_Hook_Rec" },
+      "windup": 0.47, "active": 0.6, "cancel": 0.62,
+      "damage": 14, "poise": 20, "knockback": 2.0, "stamina": 14, "travel": 0.35
+    },
+    {
+      "name": "chop",
+      "clip": { "track": "ual2/TreeChopping_Loop", "end": 0.6 },
+      "windup": 0.13, "active": 0.37, "cancel": 0.55,
+      "damage": 18, "poise": 28, "knockback": 3.0, "stamina": 16, "travel": 0.3
+    }
+  ],
+  "heavy": [
+    {
+      "name": "overhead",
+      "clip": { "track": "ual1/Sword_Attack", "end": 1.1, "speed": 0.85 },
+      "windup": 0.3, "active": 0.42, "cancel": 0.62,
+      "damage": 30, "poise": 45, "knockback": 5.0, "stamina": 28, "travel": 0.5, "charge": 0.8
+    }
+  ],
+  "guard": {
+    "clip": { "track": "ual2/Sword_Block", "mask": "upper" },
+    "hold": 0.3, "parry_window": 0.14, "absorb": 0.7, "arc": 130
+  }
+}

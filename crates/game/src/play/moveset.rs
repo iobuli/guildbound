@@ -165,6 +165,13 @@ pub struct WeaponDef {
     pub mesh: Option<String>,
     #[serde(default)]
     pub primitive: Option<Primitive>,
+    /// `mesh` placement under the weapon root (degrees XYZ Euler, then metres in the root's
+    /// unscaled frame), so the blade runs along the root's +Y from the grip at its origin, as
+    /// hitboxes assume. E.g. `battleaxe.glb` points its head down −Z with the grip at z = 0.17.
+    #[serde(default)]
+    pub mesh_rotation_deg: [f32; 3],
+    #[serde(default)]
+    pub mesh_offset: [f32; 3],
     /// "r" | "l".
     pub hand: String,
     /// Grip transform relative to the hand bone.
@@ -296,4 +303,42 @@ pub fn movesets_dir() -> std::path::PathBuf {
 
 pub fn plugin(app: &mut App) {
     app.insert_resource(Movesets::load(&movesets_dir()));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Every shipped moveset parses, every attack window is ordered, and every track exists in
+    /// the pose bank.
+    #[test]
+    fn shipped_movesets_are_valid() {
+        let files = std::fs::read_dir(movesets_dir()).expect("movesets dir").count();
+        let sets = Movesets::load(&movesets_dir());
+        assert!(files > 0);
+        assert_eq!(sets.0.len(), files, "a moveset failed to parse or two share a name");
+        for (name, set) in &sets.0 {
+            let attacks = set.light.iter().chain(&set.heavy).chain(&set.sprint_attack).chain(&set.air_attack);
+            for a in attacks {
+                assert!(
+                    0.0 <= a.windup && a.windup < a.active && a.active <= a.cancel && a.cancel <= 1.0,
+                    "{name}/{}: windup {} active {} cancel {}",
+                    a.name,
+                    a.windup,
+                    a.active,
+                    a.cancel
+                );
+                assert!(a.damage > 0.0 && a.poise >= 0.0 && a.knockback >= 0.0, "{name}/{}", a.name);
+            }
+            if set.kind == Kind::Melee {
+                let weapon = set.weapon.as_ref().expect("melee sets hold a weapon");
+                assert!(weapon.length > 0.0, "{name}: weapon length");
+            }
+        }
+        let (bank, _) = crate::motion::bank::PoseBank::build_with(std::path::Path::new("__no_poses__.json"))
+            .expect("bank");
+        for (set, track) in sets.tracks() {
+            assert!(bank.has(&track), "{set}: unknown track {track}");
+        }
+    }
 }

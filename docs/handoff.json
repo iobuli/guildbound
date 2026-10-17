@@ -1,7 +1,7 @@
 {
   "schema": "guildbound-handoff/1",
-  "date": "2026-10-16",
-  "branch": "master",
+  "date": "2026-10-17",
+  "branch": "overhaul-2026-10-16",
   "build": {
     "cargo_home": "D:\\dev\\cargo",
     "rustup_home": "D:\\dev\\rustup",
@@ -169,12 +169,12 @@
     {
       "file": "play/combat.rs",
       "role": "melee FSM, only Hit resolver",
-      "status": "stub"
+      "status": "done"
     },
     {
       "file": "play/ai.rs",
-      "role": "NPC brain to Intent",
-      "status": "stub"
+      "role": "rule-based NPC brain writing Intent: spacing, strafe, attack in reach, reads the foe's Melee::tell to guard / parry late / dodge, retreats when hurt, walks home; no network or language model; Difficulty knob; enroll inserts DamageScale + Revive",
+      "status": "new"
     },
     {
       "file": "play/ragdoll.rs",
@@ -195,6 +195,11 @@
       "file": "play/traverse.rs",
       "role": "swim, climb, ledge, mantle",
       "status": "stub"
+    },
+    {
+      "file": "play/surfaces.rs",
+      "role": "CPU-generated tileable detail + normal maps (ground, stone, rock, wood, metal, cloth, sand) with mip chains; world_uvs box-projects world-scale UVs and generates tangents for world props; terrain UVs are (x, z) / TERRAIN_TILE",
+      "status": "new"
     }
   ],
   "order": [
@@ -480,6 +485,12 @@
         "ragdoll"
       ],
       "note": "ragdoll then owns the body, Mover.mode Ragdoll, MotionLayers.raw and the get-up Action (Owner::Ragdoll)"
+    },
+    {
+      "quantity": "Surfaces",
+      "writer": [
+        "world"
+      ]
     }
   ],
   "data": {
@@ -489,7 +500,7 @@
       "assets/anim/sekiro.glb"
     ],
     "poses": "assets/anim/poses.json (optional, hot reload)",
-    "movesets": "assets/anim/movesets/*.json (schema in play/moveset.rs; none yet)",
+    "movesets": "assets/anim/movesets/{unarmed,katana,greatsword,dagger,axe}.json (melee; windows from donor hand/foot speed peaks); bow, crossbow, knives, fire, frost wait for the ranged / magic lanes",
     "weapons": "assets/packs/weapons/*.glb",
     "feel": "profiles/feel.json",
     "monitor_log": "staging/relations.log",
@@ -535,11 +546,9 @@
       "id": "A",
       "name": "melee",
       "files": [
-        "play/combat.rs",
-        "play/ai.rs",
-        "play/ragdoll.rs",
-        "assets/anim/movesets/*.json"
-      ]
+        "play/ragdoll.rs"
+      ],
+      "status": "combat, movesets and ai done; ragdoll.rs still a stub (combat already inserts RagdollRequest)"
     },
     {
       "id": "B",
@@ -609,5 +618,16 @@
     "M4 landing: legs reach for predicted ground, impact absorb, fuller roll",
     "M5 climbing: traverse.rs procedural limb stepping on Climbable walls, ClimbUp_1m mantle",
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
-  ]
+  ],
+  "milestone": {
+    "name": "melee movesets, NPC brain, world surfaces",
+    "status": "awaiting playtest",
+    "playtest": [
+      "number keys 1-5: unarmed, katana, greatsword, dagger, axe; tap / hold LMB on the training dummies; sprint attack and jump attack (plunge)",
+      "fight the Opponent (katana, team 1): it closes in, strafes, attacks, guards, sometimes parries or dodges; dies and gets up at its spawn after 6 s",
+      "weapons sit in the right fist with the blade along the thumb side; the axe head faces the swing",
+      "terrain, stone, wood, sand, cloth and metal show surface detail and catch light; no seams or stretching on boxes",
+      "staging/relations.log: hit_*, parry, guard_break, knockdown, death, revive lines"
+    ]
+  }
 }
