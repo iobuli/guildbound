@@ -591,6 +591,15 @@
       "readers": [
         "combat"
       ]
+    },
+    {
+      "quantity": "Sheet.counts, Sheet.titles",
+      "writer": [
+        "skills"
+      ],
+      "readers": [
+        "hud"
+      ]
     }
   ],
   "data": {
@@ -663,7 +672,7 @@
       "ideas": [
         "tightrope/balance beam: lean drift countered by the player, arms spread, wobble then fall; builds on contact lean, arm inertia, body self-collision"
       ],
-      "status": "done"
+      "status": "done; NPC archers (F8 Hunter) done"
     },
     {
       "id": "C",
@@ -676,12 +685,12 @@
       ],
       "status": "v1 done (skills, deeds, discovered arts)",
       "ideas": [
-        "titles",
         "occupations",
         "contracts",
         "events",
         "traits madlib -> MotionStyle",
-        "stat-weighted affinity"
+        "stat-weighted affinity",
+        "title insignia on the body"
       ]
     },
     {
@@ -746,7 +755,9 @@
       "STATS: derived values grow with skill levels",
       "F7: Rival joins and duels the Opponent; F7 again removes it",
       "Rival and Opponent cast at each other",
-      "Defence 5 + blocking discovers Aura Ward; Q shows the spinning shell"
+      "Defence 5 + blocking discovers Aura Ward; Q shows the spinning shell",
+      "F8: Hunter shoots from range, everyone fights everyone",
+      "Swordsmanship 10: Title earned: Blade Adept"
     ]
   },
   "controls": {
@@ -758,7 +769,8 @@
     "bag": "I",
     "ragdoll_self": "F6",
     "weapons": "courtyard chest",
-    "rival": "F7"
+    "rival": "F7",
+    "hunter": "F8"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -776,6 +788,7 @@
     "GB_RECORD": "dir: frame-locked PNG capture",
     "GB_RECORD_FROM": "game s (3)",
     "GB_RECORD_TO": "game s (15)",
-    "GB_RECORD_FPS": "30"
+    "GB_RECORD_FPS": "30",
+    "GB_HUNTER": "1: the Hunter (archer) joins at start"
   }
 }

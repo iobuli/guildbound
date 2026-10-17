@@ -9,6 +9,9 @@
 //! - defence: an incoming swing is noticed after `Difficulty.reaction`, then guarded (sometimes
 //!   raised late, inside the parry window), dodged sideways, or taken;
 //! - low hp: retreat with the guard up until stamina recovers;
+//! - ranged sets (`archer`): keep `SHOOT_NEAR`..`SHOOT_FAR` from the enemy (back-pedal, close in,
+//!   strafe), aim (secondary), draw to full and release (bow) or press (crossbow, knives), a
+//!   pause between shots;
 //! - magic (`cast`): the bound spell (E) from range when magicules allow, the bound art (Q) up
 //!   close when Battlewill allows, each a `Difficulty.casting` chance per look, a few seconds
 //!   apart; never mid-swing or while guarding;
@@ -18,7 +21,7 @@
 //! base as the player's; `Difficulty` is only how it behaves.
 use super::combat::{self, Melee, Revive, Tell};
 use super::magic::{Energy, Grimoire, MASTERED_COST, ability};
-use super::moveset::Movesets;
+use super::moveset::{Kind, Movesets};
 use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, PlaySet};
 use bevy::prelude::*;
 
@@ -31,6 +34,14 @@ const SPELL_FROM: f32 = 1.5;
 const SPELL_TO: f32 = 12.0;
 /// Arts are used within the reach plus this (m).
 const ART_REACH: f32 = 2.5;
+
+/// Ranged sets: preferred distance band (m), first shot and pause between shots (s, shortened by
+/// aggression), extra draw beyond the bow's full draw (share, random).
+const SHOOT_NEAR: f32 = 5.0;
+const SHOOT_FAR: f32 = 11.0;
+const SHOT_FIRST: f32 = 1.0;
+const SHOT_PAUSE: [f32; 2] = [0.5, 1.8];
+const OVERDRAW: f32 = 0.25;
 
 /// Enemies farther than this (m) are ignored.
 const AGGRO: f32 = 14.0;
@@ -148,6 +159,9 @@ pub struct Brain {
     home: Option<(Vec3, f32)>,
     /// Seconds until the next cast may be considered.
     cast_in: f32,
+    /// Ranged: draw time left (s) while drawing, and seconds until the next shot.
+    drawing: f32,
+    shot_in: f32,
 }
 
 impl Default for Brain {
@@ -168,6 +182,8 @@ impl Default for Brain {
             retreating: false,
             home: None,
             cast_in: CAST_FIRST,
+            drawing: 0.0,
+            shot_in: SHOT_FIRST,
         }
     }
 }
@@ -373,6 +389,56 @@ fn flat(v: Vec3) -> Vec3 {
     Vec3::new(v.x, 0.0, v.z)
 }
 
+/// What an archer sees: itself, the enemy, and its weapon's draw time (0 = press to shoot).
+#[derive(Clone, Copy, Debug)]
+pub struct ArcherView {
+    pub me: Vec3,
+    pub foe: Vec3,
+    pub draw_time: f32,
+}
+
+/// One frame of thought for a ranged set: spacing, aim (`guard` = secondary held), draw / shoot.
+pub fn archer(v: &ArcherView, d: &Difficulty, b: &mut Brain, dt: f32) -> Orders {
+    let dt = if dt.is_finite() { dt.clamp(0.0, 0.1) } else { 0.0 };
+    b.shot_in -= dt;
+    b.flip_in -= dt;
+    let mut o = Orders::default();
+    let to = flat(v.foe - v.me);
+    let dist = to.length();
+    let toward = to.normalize_or(Vec3::Z);
+    let side = Vec3::Y.cross(toward) * b.side;
+    if b.flip_in <= 0.0 {
+        b.side = if b.roll() < 0.5 { -1.0 } else { 1.0 };
+        b.flip_in = STRAFE_MIN + 2.0 * b.roll();
+    }
+    o.move_dir = if dist < SHOOT_NEAR {
+        -toward * 0.9
+    } else if dist > SHOOT_FAR {
+        toward * 0.8
+    } else {
+        side * 0.35
+    };
+    o.sprint = dist > SHOOT_FAR + 4.0;
+    o.guard = dist <= SHOOT_FAR + 3.0;
+    let pause = || SHOT_PAUSE[0] + (SHOT_PAUSE[1] - SHOT_PAUSE[0]) * (1.0 - d.aggression.clamp(0.0, 1.0));
+    if v.draw_time > 0.0 {
+        if b.drawing > 0.0 {
+            b.drawing -= dt;
+            o.hold = b.drawing > 0.0;
+            if !o.hold {
+                b.shot_in = pause() * (0.7 + 0.6 * b.roll());
+            }
+        } else if b.shot_in <= 0.0 && o.guard {
+            b.drawing = v.draw_time * (1.0 + OVERDRAW * b.roll());
+            o.hold = true;
+        }
+    } else if b.shot_in <= 0.0 && o.guard {
+        o.press = true;
+        b.shot_in = pause() * (0.7 + 0.6 * b.roll());
+    }
+    o
+}
+
 /// What casting sees: the distance to the enemy, the weapon reach, and for the bound art and
 /// spell whether its pool can pay. `busy`: attacking, guarding or exhausted.
 #[derive(Clone, Copy, Debug)]
@@ -467,7 +533,12 @@ fn think(
             home: brain.home.map(|h| h.0 + Vec3::Y * HALF_HEIGHT),
         };
         let difficulty = difficulty.copied().unwrap_or_default();
-        let o = decide(&view, &difficulty, &mut brain, dt);
+        let set = movesets.get(loadout.equipped());
+        let ranged = set.filter(|s| s.kind == Kind::Ranged).map(|s| s.aim.as_ref().map_or(0.0, |a| a.draw_time.max(0.0)));
+        let o = match (ranged, foe) {
+            (Some(draw_time), Some((_, pos, _))) => archer(&ArcherView { me, foe: pos, draw_time }, &difficulty, &mut brain, dt),
+            _ => decide(&view, &difficulty, &mut brain, dt),
+        };
         let (art, spell) = match (foe, energy, grimoire) {
             (Some((_, pos, _)), Some(e), Some(g)) => {
                 let can_pay = |id: &str| {
@@ -550,6 +621,42 @@ mod tests {
         let o = decide(&view(10.0), &Difficulty::default(), &mut b, 1.0 / 60.0);
         assert!(o.move_dir.z > 0.9 && o.sprint);
         assert!(!o.press);
+    }
+
+    #[test]
+    fn archer_keeps_range_draws_and_releases() {
+        let d = Difficulty::default();
+        let me = Vec3::ZERO;
+        let mut b = Brain::default();
+        let close = archer(&ArcherView { me, foe: Vec3::Z * 2.0, draw_time: 0.8 }, &d, &mut b, 1.0 / 60.0);
+        assert!(close.move_dir.z < -0.5, "backs away");
+        let far = archer(&ArcherView { me, foe: Vec3::Z * 20.0, draw_time: 0.8 }, &d, &mut b, 1.0 / 60.0);
+        assert!(far.move_dir.z > 0.5 && !far.guard, "closes in, not aiming");
+        // In the band: aims, then holds a draw at least the full draw time, then lets go.
+        let v = ArcherView { me, foe: Vec3::Z * 8.0, draw_time: 0.8 };
+        let mut b = Brain::default();
+        let mut held = 0;
+        let mut released = false;
+        for _ in 0..300 {
+            let o = archer(&v, &d, &mut b, 1.0 / 60.0);
+            assert!(o.guard);
+            if o.hold {
+                held += 1;
+            } else if held > 0 {
+                released = true;
+                break;
+            }
+        }
+        assert!(released && held as f32 / 60.0 >= 0.78, "held {held} frames");
+    }
+
+    #[test]
+    fn crossbows_press() {
+        let d = Difficulty::default();
+        let mut b = Brain::default();
+        let v = ArcherView { me: Vec3::ZERO, foe: Vec3::Z * 8.0, draw_time: 0.0 };
+        let presses = (0..300).filter(|_| archer(&v, &d, &mut b, 1.0 / 60.0).press).count();
+        assert!((1..=6).contains(&presses), "{presses}");
     }
 
     fn cast_view(dist: f32) -> CastView {

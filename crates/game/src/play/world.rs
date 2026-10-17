@@ -22,10 +22,12 @@
 //! Smoke-test env vars: `GB_AUTOQUIT=<seconds>` sends `AppExit` after that much real time (waits
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
 //! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
-//! abilities at the nearest NPC (see `magic::demo`). `GB_RIVAL=1` brings in the rival at start.
+//! abilities at the nearest NPC (see `magic::demo`). `GB_RIVAL=1` / `GB_HUNTER=1` bring in the
+//! guests at start.
 //!
-//! F7 toggles a second enemy, the Rival (team 2, greatsword, Earthbreaker and Frost Bloom): it and the Opponent (team 1) fight
-//! each other as readily as the player.
+//! F7 / F8 toggle extra enemies (`Guest`): the Rival (team 2, greatsword, Earthbreaker and Frost
+//! Bloom) and the Hunter (team 3, bow). Every NPC fights the nearest foe, so they fight each
+//! other as readily as the player.
 use super::armor::spawn_stand;
 use super::hud::log::{HudLog, LogKind};
 use super::magic::Grimoire;
@@ -76,86 +78,130 @@ pub fn plugin(app: &mut App) {
     })
     .insert_resource(Smoke::from_env())
     .add_systems(Startup, setup)
-    .add_systems(Update, (smoke_test, rival));
+    .add_systems(Update, (smoke_test, guests));
 }
 
-/// The second enemy (F7 toggles it; `GB_RIVAL=1` brings it in at start). It is on its own team,
-/// so the brain (`ai`) sends it at whoever is nearest: the Opponent or the player.
-#[derive(Component)]
-pub struct Rival;
+/// Extra enemies brought in and sent away by key (each on its own team, so the brain (`ai`)
+/// sends every one at whoever is nearest: the Opponent, each other, or the player).
+/// - F7 **Rival**: greatsword brawler, Earthbreaker and Frost Bloom (`GB_RIVAL=1` at start);
+/// - F8 **Hunter**: an archer with a bow who keeps its distance (`GB_HUNTER=1` at start).
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Guest {
+    Rival,
+    Hunter,
+}
 
-/// Where the rival stands (feet), off the Opponent's right, facing it; its team.
-const RIVAL_FEET: Vec3 = Vec3::new(5.0, 0.0, -6.0);
-const RIVAL_TEAM: u8 = 2;
+impl Guest {
+    const ALL: [Guest; 2] = [Guest::Rival, Guest::Hunter];
+    fn key(self) -> KeyCode {
+        match self {
+            Guest::Rival => KeyCode::F7,
+            Guest::Hunter => KeyCode::F8,
+        }
+    }
+    fn env(self) -> &'static str {
+        match self {
+            Guest::Rival => "GB_RIVAL",
+            Guest::Hunter => "GB_HUNTER",
+        }
+    }
+    fn name(self) -> &'static str {
+        match self {
+            Guest::Rival => "Rival",
+            Guest::Hunter => "Hunter",
+        }
+    }
+    /// Feet (x, z) and team.
+    fn post(self) -> (Vec3, u8) {
+        match self {
+            Guest::Rival => (Vec3::new(5.0, 0.0, -6.0), 2),
+            Guest::Hunter => (Vec3::new(-6.0, 0.0, -3.0), 3),
+        }
+    }
+}
 
-/// F7: bring the rival in, or send it away. A rival lying in a ragdoll leaves once it is back up
+/// F7 / F8: bring a guest in, or send it away. One lying in a ragdoll leaves once it is back up
 /// (its physics segments belong to the body).
-#[allow(clippy::too_many_arguments)]
-fn rival(
+fn guests(
     time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
-    rivals: Query<(Entity, &super::Mover), With<Rival>>,
+    present: Query<(Entity, &Guest, &super::Mover)>,
     mut log: MessageWriter<HudLog>,
-    mut leaving: Local<bool>,
+    mut leaving: Local<Vec<Guest>>,
     mut started: Local<bool>,
 ) {
-    let from_env = !*started && time.elapsed_secs() > 0.5 && {
+    let at_start = !*started && time.elapsed_secs() > 0.5;
+    if at_start {
         *started = true;
-        std::env::var("GB_RIVAL").is_ok_and(|v| v.trim() == "1")
-    };
-    if keys.just_pressed(KeyCode::F7) || from_env {
-        if rivals.is_empty() {
-            spawn_rival(&mut commands);
-            log.write(HudLog::new(LogKind::Warn, "A rival enters the courtyard  [F7]").key(7101));
-        } else {
-            *leaving = true;
-            log.write(HudLog::new(LogKind::System, "The rival withdraws  [F7]").key(7101));
-        }
     }
-    if *leaving {
-        for (e, mover) in &rivals {
-            if mover.mode != super::MoveMode::Ragdoll {
-                commands.entity(e).try_despawn();
+    for g in Guest::ALL {
+        let from_env = at_start && std::env::var(g.env()).is_ok_and(|v| v.trim() == "1");
+        if !(keys.just_pressed(g.key()) || from_env) {
+            continue;
+        }
+        let key = format!("{:?}", g.key()).replace("Key", "");
+        if present.iter().any(|(_, k, _)| *k == g) {
+            if !leaving.contains(&g) {
+                leaving.push(g);
             }
-        }
-        if rivals.is_empty() {
-            *leaving = false;
+            log.write(HudLog::new(LogKind::System, format!("The {} withdraws  [{key}]", g.name().to_lowercase())).key(7101));
+        } else {
+            leaving.retain(|l| *l != g);
+            spawn_guest(&mut commands, g);
+            log.write(HudLog::new(LogKind::Warn, format!("A {} enters the courtyard  [{key}]", g.name().to_lowercase())).key(7101));
         }
     }
+    for (e, g, mover) in &present {
+        if leaving.contains(g) && mover.mode != super::MoveMode::Ragdoll {
+            commands.entity(e).try_despawn();
+        }
+    }
+    leaving.retain(|g| present.iter().any(|(_, k, _)| k == g));
 }
 
-fn spawn_rival(commands: &mut Commands) {
-    let feet = RIVAL_FEET.with_y(ground_height(RIVAL_FEET.x, RIVAL_FEET.z));
+fn spawn_guest(commands: &mut Commands, g: Guest) {
+    let (post, team) = g.post();
+    let feet = post.with_y(ground_height(post.x, post.z));
     let opponent = SPAWN_FEET + Vec3::new(SPAWN_YAW.sin(), 0.0, SPAWN_YAW.cos()) * 4.0;
     let to = opponent - feet;
-    let rival = spawn_character(
+    let (weapon, tint) = match g {
+        Guest::Rival => ("greatsword", Color::srgb(0.36, 0.30, 0.78)),
+        Guest::Hunter => ("bow", Color::srgb(0.30, 0.62, 0.32)),
+    };
+    let e = spawn_character(
         commands,
-        "Rival",
+        g.name(),
         feet,
         to.x.atan2(to.z),
-        Fighter::new(RIVAL_TEAM, 100.0),
+        Fighter::new(team, 100.0),
         Loadout {
-            slots: vec!["greatsword".to_string()],
+            slots: vec![weapon.to_string()],
             current: 0,
         },
-        Some(Color::srgb(0.36, 0.30, 0.78)),
+        Some(tint),
     );
-    // A heavy brawler: strength, endurance and vigor, a greatsword and the skills behind it;
-    // it slams the ground (Earthbreaker) and throws frost.
-    let build = [Attr::Strength, Attr::Endurance, Attr::Vigor];
     let mut sheet = Sheet::default();
-    sheet.grant("swordsmanship", xp_for_level(15));
-    sheet.grant("defence", xp_for_level(8));
-    sheet.grant("aura_arts", xp_for_level(10));
-    sheet.grant("frost", xp_for_level(5));
-    sheet.abilities.extend(["earthbreaker", "frost_bloom"]);
-    let grimoire = Grimoire {
-        art: "earthbreaker",
-        spell: "frost_bloom",
-        ..default()
+    let (stats, grimoire) = match g {
+        // A heavy brawler: strength, endurance and vigor, a greatsword and the skills behind it;
+        // it slams the ground (Earthbreaker) and throws frost.
+        Guest::Rival => {
+            sheet.grant("swordsmanship", xp_for_level(15));
+            sheet.grant("defence", xp_for_level(8));
+            sheet.grant("aura_arts", xp_for_level(10));
+            sheet.grant("frost", xp_for_level(5));
+            sheet.abilities.extend(["earthbreaker", "frost_bloom"]);
+            let build = [Attr::Strength, Attr::Endurance, Attr::Vigor];
+            (Stats::preset(4, &build), Grimoire { art: "earthbreaker", spell: "frost_bloom", ..default() })
+        }
+        // A deft archer: dexterity first; it shoots, so it never casts.
+        Guest::Hunter => {
+            sheet.grant("archery", xp_for_level(15));
+            let build = [Attr::Dexterity, Attr::Dexterity, Attr::Vigor];
+            (Stats::preset(3, &build), Grimoire::default())
+        }
     };
-    commands.entity(rival).insert((Npc, Rival, Stats::preset(4, &build), sheet, grimoire));
+    commands.entity(e).insert((Npc, g, stats, sheet, grimoire));
 }
 
 /// Where `R` puts the player back.

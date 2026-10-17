@@ -42,7 +42,7 @@
 //! bone, compensating the bone's global scale. `Equip` messages (the weapon chest) switch
 //! `Loadout.current` while free. Monitor log lines: `hit_*`, `parry`, `guard_break`, `knockdown`, `death`, `revive`.
 use super::camera::CameraShake;
-use super::controller::{Teleport, wrap_angle, yaw_of};
+use super::controller::{Teleport, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::deeds::Deed;
 use super::magic::Ward;
@@ -197,6 +197,8 @@ const GET_UP_RATE: f32 = 1.3;
 /// The body lands this far into the death / knockdown clip (s): the fall sound.
 const DEATH_FALL_AT: f32 = 0.95;
 const KNOCKDOWN_FALL_AT: f32 = 0.3;
+/// Sparks where a blow meets an Aura Ward.
+const SPARKS_WARD: u32 = 10;
 /// Blocked blows: knockback cap (m/s).
 const BLOCK_PUSH: f32 = 1.0;
 
@@ -2147,6 +2149,11 @@ fn strike(
     let scale = if hit.kind == HitKind::Melee { attacker.scale } else { 1.0 };
     // An Aura Ward (`magic`) turns aside its share of damage and poise.
     let kept = 1.0 - ward.map_or(0.0, |w| finite(w.share, 0.0).clamp(0.0, 0.9));
+    if kept < 1.0 && !matches!(melee.state, State::Guard { .. }) {
+        // The shell flares where the blow lands.
+        fx.sparks(hit.point, flat(hit.point - tf.translation).normalize_or(-hit.direction), SPARKS_WARD);
+        fx.sfx.write(Sfx { kind: SfxKind::Block, at: hit.point, volume: 0.5 });
+    }
     let damage = hit.damage * factor * scale * kept;
     let poise = hit.poise * factor * scale * kept;
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);

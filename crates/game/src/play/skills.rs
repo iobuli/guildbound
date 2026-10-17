@@ -15,6 +15,11 @@
 //! row's `bonus` per level to `stats::SkillBonus`, which `stats` folds into `Derived`.
 //! Everyone carries a `Sheet` (required by `Fighter`): NPCs progress the same way.
 //! `skills.json` hot-reloads (`reload`, checked every second).
+//!
+//! **Titles** (`assets/data/titles.json`, `TitleBook`): recognition earned automatically once a
+//! character's skill levels and lifetime deed counts (`Sheet::counts`) meet a row's `requires`;
+//! never lost. Each adds its flat `bonus` to `SkillBonus`; the player gets a log line and a
+//! flourish.
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
 use super::items::ItemCollected;
@@ -123,6 +128,79 @@ impl SkillBook {
     }
 }
 
+#[derive(Clone, Debug, Default, serde::Deserialize)]
+pub struct TitleRequires {
+    #[serde(default)]
+    pub skills: HashMap<String, u32>,
+    #[serde(default)]
+    pub deeds: HashMap<String, f32>,
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
+pub struct TitleDef {
+    pub id: String,
+    pub name: String,
+    #[serde(default)]
+    pub about: String,
+    pub requires: TitleRequires,
+    #[serde(default)]
+    pub bonus: SkillBonus,
+}
+
+#[derive(Clone, Debug, serde::Deserialize)]
+struct TitlesFile {
+    titles: Vec<TitleDef>,
+}
+
+/// Every title row.
+#[derive(Resource, Clone, Debug, Default)]
+pub struct TitleBook(pub Vec<TitleDef>);
+
+impl TitleBook {
+    /// Load and check against the skills (unique ids, real skills, something required).
+    pub fn load(path: &std::path::Path, skills: &SkillBook) -> Result<Self, String> {
+        let text = std::fs::read_to_string(path).map_err(|e| format!("{}: {e}", path.display()))?;
+        let file: TitlesFile = serde_json::from_str(&text).map_err(|e| format!("{}: {e}", path.display()))?;
+        let mut seen = std::collections::HashSet::new();
+        for t in &file.titles {
+            if !seen.insert(&t.id) {
+                return Err(format!("title '{}' twice", t.id));
+            }
+            if t.requires.skills.is_empty() && t.requires.deeds.is_empty() {
+                return Err(format!("title '{}' requires nothing", t.id));
+            }
+            if let Some(s) = t.requires.skills.keys().find(|s| skills.get(s).is_none()) {
+                return Err(format!("title '{}' needs unknown skill '{s}'", t.id));
+            }
+        }
+        Ok(Self(file.titles))
+    }
+    pub fn get(&self, id: &str) -> Option<&TitleDef> {
+        self.0.iter().find(|t| t.id == id)
+    }
+}
+
+pub fn titles_path() -> std::path::PathBuf {
+    std::path::Path::new(crate::ASSETS).join("data/titles.json")
+}
+
+/// Titles `sheet` now qualifies for and lacks; they are added to it.
+pub fn earn(titles: &TitleBook, sheet: &mut Sheet) -> Vec<String> {
+    let mut new = Vec::new();
+    for t in &titles.0 {
+        if sheet.titles.contains(&t.id) {
+            continue;
+        }
+        let skills = t.requires.skills.iter().all(|(s, l)| sheet.level(s) >= *l);
+        let deeds = t.requires.deeds.iter().all(|(k, n)| sheet.counts.get(k.as_str()).copied().unwrap_or(0.0) >= *n);
+        if skills && deeds {
+            sheet.titles.push(t.id.clone());
+            new.push(t.id.clone());
+        }
+    }
+    new
+}
+
 pub fn skills_path() -> std::path::PathBuf {
     std::path::Path::new(crate::ASSETS).join("data/skills.json")
 }
@@ -155,6 +233,10 @@ pub struct Sheet {
     /// Discovered abilities (`magic::ABILITIES` ids).
     pub abilities: Vec<&'static str>,
     ability_affinity: HashMap<&'static str, f32>,
+    /// Lifetime deed totals by kind (titles).
+    pub counts: HashMap<&'static str, f32>,
+    /// Titles earned, in order.
+    pub titles: Vec<String>,
     rng: u32,
     seeded: bool,
     /// Skill → (seconds into the window, XP gained in it).
@@ -168,6 +250,8 @@ impl Default for Sheet {
             affinity: HashMap::new(),
             abilities: STARTING.to_vec(),
             ability_affinity: HashMap::new(),
+            counts: HashMap::new(),
+            titles: Vec::new(),
             rng: 0x2545_F491,
             seeded: false,
             window: HashMap::new(),
@@ -208,6 +292,7 @@ impl Sheet {
 /// What one deed changed on a sheet.
 #[derive(Debug, Default, PartialEq)]
 pub struct Outcome {
+    pub titles: Vec<String>,
     pub discovered: Vec<String>,
     pub levelled: Vec<(String, u32)>,
     pub abilities: Vec<&'static str>,
@@ -216,6 +301,7 @@ pub struct Outcome {
 /// Apply one deed to a sheet (pure: the systems wrap it with I/O).
 pub fn apply(book: &SkillBook, sheet: &mut Sheet, deed: &Deed, dt_since: f32) -> Outcome {
     let mut out = Outcome::default();
+    *sheet.counts.entry(deed.kind).or_insert(0.0) += deed.amount.max(0.0);
     for w in sheet.window.values_mut() {
         w.0 += dt_since;
     }
@@ -273,14 +359,17 @@ pub fn apply(book: &SkillBook, sheet: &mut Sheet, deed: &Deed, dt_since: f32) ->
     out
 }
 
-/// The sum of every known skill's bonus × level.
-pub fn bonus(book: &SkillBook, sheet: &Sheet) -> SkillBonus {
+/// The sum of every known skill's bonus × level, plus every earned title's bonus.
+pub fn bonus(book: &SkillBook, titles: &TitleBook, sheet: &Sheet) -> SkillBonus {
     let mut b = SkillBonus::default();
     for s in &book.0 {
         let l = sheet.level(&s.id) as f32;
         if l > 0.0 {
             b.add(&s.bonus, l);
         }
+    }
+    for t in sheet.titles.iter().filter_map(|id| titles.get(id)) {
+        b.add(&t.bonus, 1.0);
     }
     b
 }
@@ -290,8 +379,13 @@ pub fn plugin(app: &mut App) {
         error!("[skills] {e}");
         SkillBook::default()
     });
-    info!("[skills] {} skills", book.0.len());
+    let titles = TitleBook::load(&titles_path(), &book).unwrap_or_else(|e| {
+        error!("[skills] {e}");
+        TitleBook::default()
+    });
+    info!("[skills] {} skills, {} titles", book.0.len(), titles.0.len());
     app.insert_resource(book)
+        .insert_resource(titles)
         .register_required_components::<Fighter, Sheet>()
         .add_systems(Update, (reload, seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
 }
@@ -304,6 +398,7 @@ const RELOAD_EVERY: f32 = 1.0;
 fn reload(
     time: Res<Time<Real>>,
     mut book: ResMut<SkillBook>,
+    mut titles: ResMut<TitleBook>,
     mut sheets: Query<&mut Sheet>,
     mut log: MessageWriter<HudLog>,
     mut state: Local<(f32, Option<std::time::SystemTime>)>,
@@ -314,23 +409,25 @@ fn reload(
     }
     state.0 = 0.0;
     let path = skills_path();
-    let Some(stamp) = std::fs::metadata(&path).and_then(|m| m.modified()).ok() else { return };
+    let modified = |p: &std::path::Path| std::fs::metadata(p).and_then(|m| m.modified()).ok();
+    let Some(stamp) = modified(&path).max(modified(&titles_path())) else { return };
     let Some(seen) = state.1.replace(stamp) else { return };
     if seen == stamp {
         return;
     }
-    match SkillBook::load(&path) {
-        Ok(new) => {
-            info!("[skills] reloaded: {} skills", new.0.len());
+    match SkillBook::load(&path).and_then(|b| TitleBook::load(&titles_path(), &b).map(|t| (b, t))) {
+        Ok((new, new_titles)) => {
+            info!("[skills] reloaded: {} skills, {} titles", new.0.len(), new_titles.0.len());
             *book = new;
+            *titles = new_titles;
             for mut s in &mut sheets {
                 s.set_changed();
             }
-            log.write(HudLog::new(LogKind::System, "skills.json reloaded").key(7201));
+            log.write(HudLog::new(LogKind::System, "skills.json / titles.json reloaded").key(7201));
         }
         Err(e) => {
             error!("[skills] {e}");
-            log.write(HudLog::new(LogKind::Warn, "skills.json: error, kept the old one (see log)").key(7201));
+            log.write(HudLog::new(LogKind::Warn, "skills / titles: error, kept the old ones (see log)").key(7201));
         }
     }
 }
@@ -349,6 +446,7 @@ fn seed(mut sheets: Query<(Entity, &mut Sheet), Changed<Sheet>>) {
 fn progress(
     time: Res<Time>,
     book: Res<SkillBook>,
+    titles: Res<TitleBook>,
     vfx: Option<Res<Vfx>>,
     mut deeds: MessageReader<Deed>,
     mut items: MessageReader<ItemCollected>,
@@ -366,7 +464,8 @@ fn progress(
     let mut first = true;
     for deed in &all {
         let Ok((mut sheet, tf, player)) = sheets.get_mut(deed.who) else { continue };
-        let out = apply(&book, &mut sheet, deed, if first { dt } else { 0.0 });
+        let mut out = apply(&book, &mut sheet, deed, if first { dt } else { 0.0 });
+        out.titles = earn(&titles, &mut sheet);
         first = false;
         if !player {
             continue;
@@ -386,7 +485,12 @@ fn progress(
             let what = if a.is_some_and(|a| a.is_art()) { "New art" } else { "New spell" };
             log.write(HudLog::new(LogKind::Item, format!("{what}: {}  [K]", a.map_or(*id, |a| a.name))));
         }
-        let flourish = !out.discovered.is_empty() || !out.abilities.is_empty();
+        for id in &out.titles {
+            info!("[skills] title {id}");
+            let name = titles.get(id).map_or(id.as_str(), |t| t.name.as_str());
+            log.write(HudLog::new(LogKind::Item, format!("Title earned: {name}  [K]")));
+        }
+        let flourish = !out.discovered.is_empty() || !out.abilities.is_empty() || !out.titles.is_empty();
         if flourish && let (Some(vfx), Some(tf)) = (vfx.as_deref(), tf) {
             vfx::impact(&mut commands, &mut meshes, &mut materials, vfx, Element::Aura, tf.translation + Vec3::Y * 0.6, 1.2);
         }
@@ -394,9 +498,14 @@ fn progress(
 }
 
 /// Skill levels → `SkillBonus` for `stats`.
-fn publish(book: Res<SkillBook>, mut commands: Commands, sheets: Query<(Entity, &Sheet, Option<&SkillBonus>), Changed<Sheet>>) {
+fn publish(
+    book: Res<SkillBook>,
+    titles: Res<TitleBook>,
+    mut commands: Commands,
+    sheets: Query<(Entity, &Sheet, Option<&SkillBonus>), Changed<Sheet>>,
+) {
     for (e, sheet, old) in &sheets {
-        let b = bonus(&book, sheet);
+        let b = bonus(&book, &titles, sheet);
         if old != Some(&b) {
             commands.entity(e).try_insert(b);
         }
@@ -509,9 +618,34 @@ mod tests {
     #[test]
     fn bonuses_scale_with_level() {
         let b = book();
+        let t = TitleBook::default();
         let mut sheet = Sheet::default();
-        assert_eq!(bonus(&b, &sheet), SkillBonus::default());
+        assert_eq!(bonus(&b, &t, &sheet), SkillBonus::default());
         sheet.grant("swordsmanship", xp_for_level(10));
-        assert!(bonus(&b, &sheet).might > 0.0);
+        assert!(bonus(&b, &t, &sheet).might > 0.0);
+    }
+
+    #[test]
+    fn titles_load_and_are_earned_once() {
+        let b = book();
+        let t = TitleBook::load(&titles_path(), &b).expect("titles.json");
+        assert!(t.0.len() >= 8);
+        let e = Entity::PLACEHOLDER;
+        let mut sheet = Sheet::default();
+        sheet.grant("swordsmanship", xp_for_level(10));
+        assert_eq!(earn(&t, &mut sheet), ["blade_adept"]);
+        assert!(earn(&t, &mut sheet).is_empty(), "once");
+        let before = bonus(&b, &t, &sheet).might;
+        for _ in 0..5 {
+            apply(&b, &mut sheet, &Deed::new(e, "kill", "", 1.0), 0.0);
+        }
+        for _ in 0..9 {
+            apply(&b, &mut sheet, &Deed::new(e, "parry", "", 1.0), 0.0);
+        }
+        assert!(!earn(&t, &mut sheet).contains(&"duelist".to_string()), "9 parries are not 10");
+        apply(&b, &mut sheet, &Deed::new(e, "parry", "", 1.0), 0.0);
+        assert!(earn(&t, &mut sheet).contains(&"duelist".to_string()));
+        assert!(bonus(&b, &t, &sheet).max_stamina > 0.0);
+        assert!(bonus(&b, &t, &sheet).might >= before);
     }
 }

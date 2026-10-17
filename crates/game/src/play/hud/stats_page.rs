@@ -6,7 +6,8 @@
 //!   discovered ones bind to their key on click (`magic::Bind`), mastered ones are tagged,
 //!   undiscovered ones show the skill levels that make them discoverable.
 //! - SKILLS: every discovered skill (`skills::Sheet`) with its exact level and XP to the next, and
-//!   the undiscovered skills the character is closest to finding (affinity toward the pity floor).
+//!   the undiscovered skills the character is closest to finding (affinity toward the pity floor),
+//!   and the titles earned (`skills::TitleBook`).
 //! The footer types out whatever is hovered. Smoke: `GB_STATS=stats|arts|skills` opens that tab
 //! 1 s in (for headless screenshots). `StatsOpen` (written here only) frees the cursor
 //! through `camera`.
@@ -14,7 +15,7 @@ use super::MARGIN;
 use super::minimap;
 use crate::play::camera::PageToggles;
 use crate::play::magic::{ABILITIES, Ability, Bind, Grimoire, MASTERED_COST, Pool};
-use crate::play::skills::{Sheet, SkillBook, SkillDef, level_for_xp, xp_for_level};
+use crate::play::skills::{Sheet, SkillBook, SkillDef, TitleBook, level_for_xp, xp_for_level};
 use crate::play::stats::{Attr, Derived, LevelUp, POINTS_PER_LEVEL, SpendPoint, Stats};
 use super::log::{HudLog, LogKind};
 use crate::play::Player;
@@ -606,6 +607,7 @@ fn describe(s: &SkillDef) -> String {
 fn refresh_skills(
     open: Res<StatsOpen>,
     book: Res<SkillBook>,
+    titles: Res<TitleBook>,
     player: Query<&Sheet, With<Player>>,
     mut rows: Query<(&SkillRow, &mut Node)>,
     mut texts: ParamSet<(
@@ -659,6 +661,10 @@ fn refresh_skills(
     } else {
         format!("{known} of {} skills discovered.", book.0.len())
     };
+    if !sheet.titles.is_empty() {
+        let names: Vec<&str> = sheet.titles.iter().map(|id| titles.get(id).map_or(id.as_str(), |t| t.name.as_str())).collect();
+        hint += &format!("\nTitles: {}", names.join(", "));
+    }
     if !near.is_empty() {
         let list: Vec<String> = near.iter().take(HINTS).map(|(s, f)| format!("{} {:.0}%", s.name, f * 100.0)).collect();
         hint += &format!("\nSensing: {}", list.join("  //  "));
