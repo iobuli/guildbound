@@ -55,7 +55,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/ragdoll.rs` | Impact ragdoll (F6 on the player): on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
 | `play/ranged.rs` | Bow/crossbow/throwing, projectiles | **stub** |
 | `play/magic.rs` | Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 4 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step; mastery per landed blow → **Skill** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known by level; `GB_CAST` demo hook | new |
-| `play/traverse.rs` | Swim, climb, ledge, mantle | **stub** |
+| `play/traverse.rs` | Swim (chest under the surface, bob, sprint costs stamina, wade out), wall climb (jump at a tall `Climbable` face; stick climbs / shimmies; hand and foot holds on a grid; jump kicks off, dodge lets go, stamina runs out → fall), mantle over the top, vault onto waist-high blocks (`ActionKind::Mantle`, scripted rise-then-over path); `GB_CLIMB` smoke hook | new |
 
 ## Frame order
 
@@ -187,7 +187,7 @@ Log line: `t character relation side value mode action speed`.
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
 - **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
-- **B. Traversal, then ranged:** `traverse.rs` (select already handles the Swim/Climb/Ledge layers), then `ranged.rs` (bow, crossbow, knives; projectiles emit `Hit` like `magic`'s). Magic is done.
+- **B. Ranged:** traversal and magic are done; `ranged.rs` (bow, crossbow, knives) is next. Traversal could add ledge shimmy and diving.
 - **Next for magic:** NPC casters (the AI only fights in melee), a Battlewill shield art, a faulds skirt to close the armour's hips.
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems:** `docs/CHARACTER_SYSTEMS.md`. Its 6 open questions need the user's answers before any code.

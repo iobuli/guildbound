@@ -193,8 +193,8 @@
     },
     {
       "file": "play/traverse.rs",
-      "role": "swim, climb, ledge, mantle",
-      "status": "stub"
+      "role": "swim, wall climb with holds, mantle and vault; GB_CLIMB smoke hook",
+      "status": "new"
     },
     {
       "file": "play/surfaces.rs",
@@ -698,6 +698,7 @@
     "GB_SPAWN": "x,z,yaw_deg",
     "GB_CAST": "ability ids",
     "GB_CAST_EVERY": "s",
-    "GB_VFX_TEST": "1"
+    "GB_VFX_TEST": "1",
+    "GB_CLIMB": "1: jump once at 2.5 s, then hold forward"
   }
 }

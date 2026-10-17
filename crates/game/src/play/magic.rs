@@ -38,7 +38,6 @@ use crate::motion::bank::PoseBank;
 use crate::motion::Rig;
 use avian3d::prelude::*;
 use bevy::prelude::*;
-use bevy_hanabi::prelude::*;
 use std::collections::HashMap;
 
 /// Mastery per landed blow (20 blows to a skill), and what a skill changes.
