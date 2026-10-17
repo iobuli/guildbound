@@ -248,7 +248,10 @@ pub fn plugin(app: &mut App) {
         .add_systems(Startup, (spawn_people, spawn_card))
         .add_systems(
             Update,
-            (smoke, ledger, paid, respond, sleep, duel, chatter, card).chain().after(super::PlaySet::Input),
+            (smoke, sleep_smoke, ledger, paid, respond, sleep, duel, chatter, card)
+                .chain()
+                .after(super::PlaySet::Input)
+                .before(super::PlaySet::Act),
         );
 }
 
@@ -383,6 +386,47 @@ fn smoke(
             guild.exam = Exam::Scheduled(to);
             start_duel(&mut commands, &mut guild, &data, captain, &mut f, player, to, &mut log);
         }
+    }
+}
+
+/// `GB_SLEEP=1` (after renting a bed with `GB_CHOOSE=bed,leave`): at 6 s the player is hurt to
+/// 30 %, at 6.5 s stood by the first bed, at 7.5 s uses it; at 12 s hp and the hour are logged.
+#[allow(clippy::type_complexity)]
+fn sleep_smoke(
+    time: Res<Time>,
+    clock: Res<super::sky::Clock>,
+    mut stage: Local<u8>,
+    mut commands: Commands,
+    mut players: Query<(Entity, &mut Fighter, &mut super::Intent), With<Player>>,
+    beds: Query<(&Transform, &Interactable)>,
+) {
+    if *stage == 0 && !std::env::var("GB_SLEEP").is_ok_and(|v| v.trim() == "1") {
+        *stage = 9;
+    }
+    let t = time.elapsed_secs();
+    let Ok((e, mut f, mut intent)) = players.single_mut() else { return };
+    match *stage {
+        0 if t > 6.0 => {
+            f.hp = f.max_hp * 0.3;
+            info!("[guild] smoke: hp {:.0} at {}", f.hp, clock.label());
+            *stage = 1;
+        }
+        1 if t > 6.5 => {
+            if let Some((tf, it)) = beds.iter().filter(|(_, it)| it.kind == "bed").min_by(|a, b| a.0.translation.x.total_cmp(&b.0.translation.x)) {
+                let stand = tf.translation + tf.rotation * it.stand;
+                commands.entity(e).try_insert(Teleport { feet: stand, yaw: std::f32::consts::FRAC_PI_2 * -1.0 });
+            }
+            *stage = 2;
+        }
+        2 if t > 7.5 => {
+            intent.interact_pressed = true;
+            *stage = 3;
+        }
+        3 if t > 12.0 => {
+            info!("[guild] smoke: hp {:.0} / {:.0} at {}", f.hp, f.max_hp, clock.label());
+            *stage = 9;
+        }
+        _ => {}
     }
 }
 
@@ -541,6 +585,10 @@ fn respond(
                     close = true;
                     start_duel(&mut commands, &mut guild, &data, c.npc, &mut f, player, to, &mut log);
                 }
+                String::new()
+            }
+            "leave" => {
+                close = true;
                 String::new()
             }
             "advice" => greet(&mut guild, &data.lines.captain_greet),
