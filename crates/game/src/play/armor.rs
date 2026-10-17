@@ -78,6 +78,11 @@ const LOCK_SHAKE: f32 = 0.04;
 /// The stand's frozen pose: clip and time.
 const STAND_CLIP: &str = "ual1/Idle_Loop";
 const STAND_POSE_T: f32 = 0.6;
+/// Faulds (heights in the torso frame, m): top a gap under the cuirass's bottom (1.18), where
+/// the two hoops meet, and the lower hoop's lowest edge (over the hip sides).
+const FAULD_TOP: f32 = 1.135;
+const FAULD_SPLIT: f32 = 1.07;
+const FAULD_LOW: f32 = 0.985;
 /// Rerebraces start this far down the upper arm (m): below the pauldron's lowest lame.
 const REREBRACE_TOP: f32 = 0.135;
 /// Extra clearance (m) on top of the plates' own extent in the derived `BodyPadding`.
@@ -745,6 +750,34 @@ fn design(body: &BodyMesh, m: &Marks) -> Vec<PlateDef> {
         tint: STEEL,
         part: Part::Torso,
     });
+
+    // Faulds: two nested hoops round the hips under the cuirass's rolled bottom (a gap below it
+    // so the spine can bend), hanging lower over the hip sides than at the front and back, where
+    // a raised thigh folds; the lower hoop sits outside the upper and overlaps it like lames.
+    let hips_bones = [b.pelvis, b.spine[0]];
+    let hips_profile = Arc::new(Profile::build(torso_frame, (0.9, 1.25), 0.01, 72, &body.region(&hips_bones), 0.14));
+    let faulds: [(&str, f32, Box<dyn Fn(f32) -> (f32, f32) + Send + Sync>); 2] = [
+        ("Fauld upper", 0.03, Box::new(|_| (FAULD_SPLIT, FAULD_TOP))),
+        (
+            "Fauld lower",
+            0.04,
+            Box::new(|t: f32| (FAULD_LOW + 0.07 * t.cos().abs(), FAULD_SPLIT + 0.012)),
+        ),
+    ];
+    for (name, gap, span) in faulds {
+        let mut fauld = Plate::new(torso_frame, Shape::Profile(hips_profile.clone()), gap, span);
+        fauld.bead = 0.004;
+        fauld.flare_low = (0.008, 0.02);
+        defs.push(PlateDef {
+            name,
+            plate: fauld,
+            bones: hips_bones.to_vec(),
+            fit: Fit::Free,
+            anchor: b.pelvis,
+            tint: Color::srgb(0.62, 0.64, 0.68),
+            part: Part::Torso,
+        });
+    }
 
     for side in 0..2 {
         let names = if side == 0 {
