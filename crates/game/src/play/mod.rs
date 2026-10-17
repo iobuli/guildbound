@@ -26,6 +26,7 @@ pub mod controller;
 pub mod deeds;
 pub mod fx;
 pub mod grass;
+pub mod aim;
 pub mod beam;
 pub mod hall;
 pub mod hud;
@@ -100,7 +101,8 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
+    .add_plugins(aim::plugin);
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

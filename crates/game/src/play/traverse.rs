@@ -82,7 +82,8 @@ pub fn hang_y(top: f32) -> f32 {
 /// Both hands on the ledge at `top`, a shoulder-width apart, just over the face's edge.
 pub fn ledge_hands(body: Vec3, n: Vec3, right: Vec3, top: f32) -> [Vec3; 2] {
     let edge = Vec3::new(body.x, top + 0.02, body.z) - n * (WALL_GAP + 0.04);
-    [edge + right * 0.22, edge - right * 0.22]
+    // [left, right]: facing the wall, the climber's left is −`right`.
+    [edge - right * 0.22, edge + right * 0.22]
 }
 
 /// Mantle: duration (s) per metre of rise (plus a base), how far onto the top (m).
@@ -180,9 +181,10 @@ pub fn holds(root: Vec3, normal: Vec3, travelled: f32) -> ([Vec3; 2], [Vec3; 2])
         };
         on_face + Vec3::Y * (base + if up { raise } else { -raise }) + right * side
     };
-    // Facing the wall, the character's right is the face's "right" seen from outside, mirrored.
-    let hands = [step(0.75, 0.24, true), step(0.75, -0.24, true)];
-    let feet = [step(-0.75, 0.16, false), step(-0.75, -0.16, false)];
+    // Facing the wall (forward −n), the character's left is Y × (−n) = −right: the face's
+    // "right" seen from outside is the climber's right.
+    let hands = [step(0.75, -0.24, true), step(0.75, 0.24, true)];
+    let feet = [step(-0.75, -0.16, false), step(-0.75, 0.16, false)];
     (hands, feet)
 }
 
@@ -431,7 +433,7 @@ fn climb(
                     continue;
                 }
                 // Stick: forward (into the wall) climbs, back descends, sideways shimmies. The
-                // character faces the wall, so its right is −right of the face seen from outside.
+                // character faces the wall, so `side` measures toward its left (−right of the face).
                 let stick = intent.move_dir;
                 let up = stick.dot(-n);
                 let side = stick.dot(-right);
@@ -685,5 +687,22 @@ mod tests {
         assert!(h0[0].y > h0[1].y && h1[0].y < h1[1].y, "hands lead in turn");
         assert!(h0.iter().all(|h| h.y > root.y) && f0.iter().all(|f| f.y < root.y));
         assert!((h0[0].x - h0[1].x).abs() > 0.4, "hands apart");
+    }
+
+    /// Hands and feet go on the climber's own sides: its left is +X of a body facing the wall.
+    #[test]
+    fn climb_holds_are_on_the_matching_side() {
+        for normal in [Vec3::Z, Vec3::X, Vec3::new(-0.6, 0.0, 0.8)] {
+            let n = normal.normalize();
+            let yaw = (-n.x).atan2(-n.z);
+            let left = Vec3::new(yaw.cos(), 0.0, -yaw.sin());
+            let root = Vec3::new(1.0, 2.0, 3.0);
+            let (hands, feet) = holds(root, n, 0.1);
+            assert!((hands[0] - root).dot(left) > 0.1 && (hands[1] - root).dot(left) < -0.1);
+            assert!((feet[0] - root).dot(left) > 0.05 && (feet[1] - root).dot(left) < -0.05);
+            let right = Vec3::Y.cross(n);
+            let edge = ledge_hands(root, n, right, 3.0);
+            assert!((edge[0] - root).dot(left) > 0.1 && (edge[1] - root).dot(left) < -0.1);
+        }
     }
 }

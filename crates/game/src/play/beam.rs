@@ -1,10 +1,12 @@
 //! Balance beams (`Update`): walking a narrow `Beam` is a balancing act.
-//! - Mounting: a grounded player whose soles stand on a beam's top (within `CATCH` of its line)
+//! - Mounting: a grounded character (player or NPC) whose soles stand on a beam's top (within `CATCH` of its line)
 //!   starts `Balancing`; leaving it (stepping off an end, jumping, falling) ends it. Landing on
 //!   a beam from a jump kicks the sway by the landing impact.
 //! - Steering (`steer`, after `PlaySet::Input`): the stick's component along the beam walks
 //!   (at most `WALK_SCALE` of a walk, never a sprint); its sideways component is the balance
-//!   input, not a step, and a gentle pull keeps the body over the line.
+//!   input, not a step, and a gentle pull keeps the body over the line. NPCs (Sena's `scout`
+//!   routine walks it both ways) counter on their own with softer gains (`NPC_GAIN`), so a strong
+//!   drift sometimes tips them off.
 //! - Sway: `tilt` (≈ radians, + toward the beam's `side`) is an inverted pendulum,
 //!   tilt'' = `TIP`·tilt + `COUNTER`·input + drift − `DAMP`·tilt', where the drift is a smooth
 //!   random push that grows with walking speed and sideways acceleration and shrinks with the
@@ -16,6 +18,8 @@
 //!   else holds the hands), tilting against the lean.
 //! - Deeds: a `balance` per metre walked on a beam, a `beam` (tag "crossed") for walking one end
 //!   to end without falling, a `beam` (tag "fell") for a fall.
+//! - Beams: the yard beam (`hall`) and the tightrope over the pond (`spawn_tightrope`, sways
+//!   `ROPE_SWAY` times harder; a fall lands in the water).
 //! - Smoke: `GB_BEAM=steady|drift` walks the player along the beam it starts on (`GB_SPAWN`),
 //!   countering the sway (steady) or not at all (drift). Logs `[beam] on|fell|crossed|off`.
 use super::deeds::Deed;
@@ -25,11 +29,15 @@ use super::skills::Sheet;
 use super::{HALF_HEIGHT, Intent, MoveMode, Mover, Player, PlaySet};
 use bevy::prelude::*;
 
-/// A balance beam: its top line from `a` to `b` (world, the walking surface).
+/// A balance beam: its top line from `a` to `b` (world, the walking surface), how much harder
+/// than the yard beam it sways (`sway` scales the tip-over and the drift; a rope is livelier),
+/// and what it is called in the log.
 #[derive(Component, Clone, Copy, Debug)]
 pub struct Beam {
     pub a: Vec3,
     pub b: Vec3,
+    pub sway: f32,
+    pub name: &'static str,
 }
 
 impl Beam {
@@ -85,6 +93,9 @@ const ARM_WEIGHT: f32 = 0.85;
 /// Each Balance level takes this much off the drift (at most `MAX_ASSIST`).
 const ASSIST_PER_LEVEL: f32 = 0.03;
 const MAX_ASSIST: f32 = 0.6;
+/// NPC counter: tilt and tilt-rate gains (softer than a perfect counter).
+const NPC_GAIN: f32 = 1.5;
+const NPC_DAMP: f32 = 0.35;
 /// Pendulum integration step (s).
 const SUBSTEP: f32 = 1.0 / 120.0;
 /// Walked this fraction of a beam in one go to count as crossing it.
@@ -119,7 +130,7 @@ pub struct Toppled(f32);
 const REMOUNT: f32 = 0.8;
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, steer.after(PlaySet::Input).before(PlaySet::Act))
+    app.add_systems(Update, steer.after(PlaySet::Think).after(super::hall::walk).before(PlaySet::Act))
         .add_systems(Update, (mount, sway).chain().in_set(PlaySet::Act));
 }
 
@@ -136,10 +147,11 @@ fn smoke_mode() -> u8 {
 fn steer(
     mut mode: Local<Option<u8>>,
     beams: Query<&Beam>,
-    mut walkers: Query<(&Transform, &mut Intent, &mut Balancing), With<Player>>,
+    mut walkers: Query<(&Transform, &mut Intent, &mut Balancing, Has<Player>)>,
 ) {
-    let smoke = *mode.get_or_insert_with(smoke_mode);
-    for (tf, mut intent, mut bal) in &mut walkers {
+    let smoke_mode = *mode.get_or_insert_with(smoke_mode);
+    for (tf, mut intent, mut bal, player) in &mut walkers {
+        let smoke = if player { smoke_mode } else { 3 };
         let Ok(beam) = beams.get(bal.beam) else { continue };
         let (dir, side) = (beam.dir(), beam.side());
         let mut stick = intent.move_dir.with_y(0.0);
@@ -152,6 +164,9 @@ fn steer(
             input = (-(bal.tilt * 2.2 + bal.rate * 0.7)).clamp(-1.0, 1.0);
         } else if smoke == 2 {
             input = 0.0;
+        } else if smoke == 3 {
+            // A practised walker's reflexes: a softer counter than the smoke's, so a gust can win.
+            input = (-(bal.tilt * NPC_GAIN + bal.rate * NPC_DAMP)).clamp(-1.0, 1.0);
         }
         bal.input = input;
         let (_, off, _) = beam.locate(tf.translation - Vec3::Y * HALF_HEIGHT);
@@ -176,7 +191,7 @@ fn mount(
     beams: Query<(Entity, &Beam)>,
     mut walkers: Query<
         (Entity, &Transform, &Mover, Option<&Balancing>, Option<&HandTargets>, Option<&mut Toppled>),
-        With<Player>,
+        With<Intent>,
     >,
 ) {
     for (e, tf, mover, bal, hands, toppled) in &mut walkers {
@@ -237,10 +252,17 @@ fn sway(
     time: Res<Time>,
     mut commands: Commands,
     beams: Query<&Beam>,
-    mut walkers: Query<
-        (Entity, &Transform, &mut Mover, &mut Balancing, &mut Posture, Option<&mut HandTargets>, Option<&Sheet>),
-        With<Player>,
-    >,
+    mut walkers: Query<(
+        Entity,
+        &Transform,
+        &mut Mover,
+        &mut Balancing,
+        &mut Posture,
+        Option<&mut HandTargets>,
+        Option<&Sheet>,
+        Option<&Name>,
+        Has<Player>,
+    )>,
     mut deeds: MessageWriter<Deed>,
     mut log: MessageWriter<HudLog>,
 ) {
@@ -248,7 +270,8 @@ fn sway(
     if dt <= 0.0 {
         return;
     }
-    for (e, tf, mut mover, mut bal, mut posture, hands, sheet) in &mut walkers {
+    for (e, tf, mut mover, mut bal, mut posture, hands, sheet, name, player) in &mut walkers {
+        let who = name.map_or("?", |n| n.as_str());
         let Ok(beam) = beams.get(bal.beam) else { continue };
         let (dir, side) = (beam.dir(), beam.side());
         bal.clock += dt;
@@ -264,7 +287,7 @@ fn sway(
         let steps = (dt / SUBSTEP).ceil().max(1.0);
         let h = dt / steps;
         for _ in 0..steps as u32 {
-            let accel = TIP * bal.tilt + COUNTER * bal.input + push * (1.0 - assist) - DAMP * bal.rate;
+            let accel = beam.sway * (TIP * bal.tilt + push * (1.0 - assist)) + COUNTER * bal.input - DAMP * bal.rate;
             bal.rate += accel * h;
             bal.tilt += bal.rate * h;
         }
@@ -283,8 +306,10 @@ fn sway(
         if !bal.crossed && bal.farthest >= beam.length() * CROSSED {
             bal.crossed = true;
             deeds.write(Deed::new(e, "beam", "crossed", 1.0));
-            log.write(HudLog::new(LogKind::Info, "Crossed the beam."));
-            info!("[beam] crossed tilt={:.2}", bal.tilt);
+            if player {
+                log.write(HudLog::new(LogKind::Info, format!("Crossed the {}.", beam.name)));
+            }
+            info!("[beam] {who} crossed tilt={:.2}", bal.tilt);
         }
 
         // Topple.
@@ -292,8 +317,10 @@ fn sway(
             let out = side * bal.tilt.signum();
             mover.external += out * FALL_PUSH + Vec3::Y * 0.6;
             deeds.write(Deed::new(e, "beam", "fell", 1.0));
-            log.write(HudLog::new(LogKind::Warn, "You lose your footing!"));
-            info!("[beam] fell tilt={:.2} after {:.1} m", bal.tilt, bal.farthest);
+            if player {
+                log.write(HudLog::new(LogKind::Warn, "You lose your footing!"));
+            }
+            info!("[beam] {who} fell tilt={:.2} after {:.1} m", bal.tilt, bal.farthest);
             commands.entity(e).remove::<(Balancing, Posture)>().insert(Toppled(REMOUNT));
             if bal.hands {
                 commands.entity(e).remove::<HandTargets>();
@@ -324,12 +351,54 @@ fn sway(
     }
 }
 
+/// The tightrope over the pond: a rope `ROPE_UP` above the higher bank end, from west to east
+/// across `POND_CENTER`, a platform with steps at each end. A fall lands in the water.
+const ROPE_HALF: f32 = 7.5;
+const ROPE_UP: f32 = 1.2;
+const ROPE_SWAY: f32 = 1.5;
+
+pub(crate) fn spawn_tightrope(kit: &mut super::world::Kit) {
+    use super::world::{POND_CENTER, ground_height};
+    use avian3d::prelude::Collider;
+    let (wood, rope) = (kit.pal.dark_wood.clone(), kit.pal.straw.clone());
+    let ends = [-1.0f32, 1.0].map(|s| Vec2::new(POND_CENTER.x + s * ROPE_HALF, POND_CENTER.y));
+    let top = ends.iter().map(|p| ground_height(p.x, p.y)).fold(f32::MIN, f32::max) + ROPE_UP;
+    let (a, b) = (Vec3::new(ends[0].x, top, ends[0].y), Vec3::new(ends[1].x, top, ends[1].y));
+    let len = b.x - a.x;
+    kit.solid(
+        "Tightrope",
+        Cylinder::new(0.03, len),
+        &rope,
+        Transform::from_translation((a + b) * 0.5 - Vec3::Y * 0.03).with_rotation(Quat::from_rotation_z(std::f32::consts::FRAC_PI_2)),
+        Some(Collider::cuboid(0.1, len, 0.1)),
+    );
+    for (end, out) in [(a, -1.0f32), (b, 1.0)] {
+        // Platform (its top level with the rope) and steps down the outer side.
+        let ground = ground_height(end.x + out * 0.8, end.z);
+        let h = top - ground;
+        let centre = end + Vec3::X * out * 0.8;
+        kit.solid("Rope platform", Cuboid::new(1.6, h, 1.6), &wood, Transform::from_translation(centre.with_y(ground + h * 0.5)), Some(Collider::cuboid(1.6, h, 1.6)));
+        let steps = (h / 0.3).ceil() as usize;
+        for i in 1..steps {
+            let sh = h * i as f32 / steps as f32;
+            let x = centre.x + out * (0.8 + (steps - i) as f32 * 0.45 - 0.225);
+            let g = ground_height(x, end.z);
+            let size = Vec3::new(0.45, (ground + sh - g).max(0.1) + 0.3, 1.2);
+            kit.solid("Rope step", Cuboid::from_size(size), &wood, Transform::from_xyz(x, ground + sh - size.y * 0.5, end.z), Some(Collider::cuboid(size.x, size.y, size.z)));
+        }
+        for dz in [-0.6, 0.6] {
+            kit.solid("Rope post", Cylinder::new(0.06, 1.0), &wood, Transform::from_translation(end + Vec3::new(0.0, 0.5, dz)), None);
+        }
+    }
+    kit.commands.spawn((Name::new("Tightrope line"), Beam { a, b, sway: ROPE_SWAY, name: "tightrope" }));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     fn beam() -> Beam {
-        Beam { a: Vec3::new(0.0, 0.6, 0.0), b: Vec3::new(8.0, 0.6, 0.0) }
+        Beam { a: Vec3::new(0.0, 0.6, 0.0), b: Vec3::new(8.0, 0.6, 0.0), sway: 1.0, name: "beam" }
     }
 
     #[test]

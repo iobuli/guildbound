@@ -65,7 +65,7 @@ pub fn plugin(app: &mut App) {
 }
 
 /// `GB_WALK=x,z`: from 1 s the player walks toward that point (to see the doors swing).
-fn walk(time: Res<Time>, mut target: Local<Option<Option<Vec3>>>, mut players: Query<(&Transform, &mut super::Intent), With<super::Player>>) {
+pub(crate) fn walk(time: Res<Time>, mut target: Local<Option<Option<Vec3>>>, mut players: Query<(&Transform, &mut super::Intent), With<super::Player>>) {
     let goal = *target.get_or_insert_with(|| {
         std::env::var("GB_WALK").ok().and_then(|s| {
             let v: Vec<f32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
@@ -424,7 +424,7 @@ fn spawn_training_ground(kit: &mut Kit) {
         let p = end + Vec3::X * out * 0.55;
         kit.solid("Beam block", Cuboid::new(0.9, 0.3, 0.9), &stone, Transform::from_translation(p.with_y(0.15)), Some(Collider::cuboid(0.9, 0.3, 0.9)));
     }
-    kit.commands.spawn((Name::new("Beam line"), super::beam::Beam { a, b }));
+    kit.commands.spawn((Name::new("Beam line"), super::beam::Beam { a, b, sway: 1.0, name: "beam" }));
     let rack = Vec3::new(40.2, 0.0, 7.0);
     for dz in [-1.0, 1.0] {
         kit.solid("Rack post", Cuboid::new(0.1, 1.5, 0.1), &dark, Transform::from_translation(rack + Vec3::new(0.0, 0.75, dz)), None);

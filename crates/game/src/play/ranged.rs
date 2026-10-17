@@ -133,6 +133,7 @@ fn shoot(
         Has<Holding>,
     )>,
     globals: Query<&GlobalTransform>,
+    vels: Res<super::aim::Velocities>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     for (entity, tf, intent, mut action, mut mover, loadout, fighter, derived, shooting, holding) in &mut q {
@@ -150,11 +151,8 @@ fn shoot(
             continue;
         }
         let aiming = intent.secondary_held;
-        let look = intent
-            .target
-            .and_then(|t| globals.get(t).ok())
-            .map(|g| g.translation() + Vec3::Y * 0.3)
-            .unwrap_or(intent.look);
+        let locked = intent.target.and_then(|t| globals.get(t).ok().map(|g| (t, g.translation() + Vec3::Y * 0.3)));
+        let look = locked.map_or(intent.look, |(_, p)| p);
         // From the chest toward the aim (not the body's facing: an archer stands side-on).
         let ahead = (look - tf.translation).with_y(0.0).normalize_or(tf.forward().as_vec3());
         let muzzle = tf.translation + Vec3::Y * MUZZLE_UP + ahead * MUZZLE_FORWARD;
@@ -221,6 +219,12 @@ fn shoot(
             let might = derived.map_or(1.0, |d| d.might);
             let power = (DRAW_MIN + (1.0 - DRAW_MIN) * pull) * might;
             let speed_share = 0.55 + 0.45 * pull;
+            // Lead a locked target and lift the shot for its drop, so it lands where aimed.
+            let speed = def.speed * speed_share;
+            let dir = match locked {
+                Some((t, p)) => super::aim::lead(muzzle, p, vels.of(t), speed, def.gravity).0,
+                None => super::aim::ballistic(muzzle, look, speed, def.gravity),
+            };
             let count = def.count.max(1);
             for k in 0..count {
                 let spread = if count > 1 {
@@ -229,7 +233,7 @@ fn shoot(
                     0.0
                 };
                 let d = Quat::from_rotation_y(spread) * dir;
-                spawn_shot(&mut commands, &mut meshes, &mut materials, entity, fighter.team, def, power, muzzle, d * def.speed * speed_share);
+                spawn_shot(&mut commands, &mut meshes, &mut materials, entity, fighter.team, def, power, muzzle, d * speed);
             }
             deeds.write(Deed::new(entity, "shoot", def.kind.clone(), 1.0));
             // Monitor: how far the drawn arrow line in the pose (string hand → bow hand) is

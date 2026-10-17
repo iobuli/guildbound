@@ -13,11 +13,15 @@
 use super::camera::{CameraRig, CursorCapture, stick_deadzone};
 use super::controller::Teleport;
 use super::world::PlayerSpawn;
-use super::{Fighter, Intent, Npc, PlaySet, Player};
+use super::{Fighter, Intent, Npc, Phys, PlaySet, Player};
+use avian3d::prelude::*;
 use bevy::prelude::*;
 
 /// `Intent.look` is this far along the camera view.
 const LOOK_DISTANCE: f32 = 20.0;
+/// Crosshair ray length (m) and the nearest aim point (m from the camera).
+const AIM_RANGE: f32 = 120.0;
+const LOOK_MIN: f32 = 2.0;
 /// Lock-on acquire range (m) and half-angle of the acquire cone around the view (deg).
 const LOCK_RANGE: f32 = 15.0;
 const LOCK_CONE_DEG: f32 = 75.0;
@@ -92,6 +96,7 @@ fn player_input(
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
     tweak: Option<Res<crate::motion::tweak::Tweak>>,
     talk: (Option<Res<super::talk::TalkFocus>>, Option<Res<super::talk::Talking>>),
+    spatial: SpatialQuery,
 ) {
     let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
         return;
@@ -211,7 +216,14 @@ fn player_input(
         latches.pad_sprint = false;
     }
 
-    let look = rig.eye + rig.forward() * LOOK_DISTANCE;
+    // The aim point is what the crosshair covers (world or a body), so shots from the chest
+    // converge on it at any range; open sky falls back to `AIM_RANGE` out.
+    let filter = SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([entity]);
+    let forward = rig.forward();
+    let look = Dir3::new(forward)
+        .ok()
+        .and_then(|dir| spatial.cast_ray(rig.eye, dir, AIM_RANGE, true, &filter))
+        .map_or(rig.eye + forward * AIM_RANGE, |hit| rig.eye + forward * hit.distance.max(LOOK_MIN));
     *intent = Intent {
         move_dir: camera_relative(stick, rig.yaw),
         look: if look.is_finite() { look } else { root + Vec3::Z * LOOK_DISTANCE },

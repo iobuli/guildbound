@@ -371,6 +371,8 @@ struct Casting {
     mastered: bool,
     power: f32,
     aim: Vec3,
+    /// What the caster aimed at (no target): the release re-aims at it from the hand.
+    aim_point: Vec3,
     target: Option<Entity>,
     motes: Option<Entity>,
 }
@@ -581,6 +583,7 @@ fn start_cast(
             mastered,
             power: scale * if mastered { MASTERED_POWER } else { 1.0 },
             aim,
+            aim_point,
             target,
             motes,
         });
@@ -663,6 +666,7 @@ fn drive_cast(
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
     globals: Query<&GlobalTransform>,
     mut motes: Query<&mut Transform, (Without<Fighter>, Without<Projectile>, Without<TrainingDummy>)>,
+    vels: Res<super::aim::Velocities>,
 ) {
     let (Some(bank), Some(vfx)) = (bank, vfx) else { return };
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -710,6 +714,26 @@ fn drive_cast(
             c.released = true;
             if let Some(m) = c.motes.take() {
                 commands.entity(m).try_despawn();
+            }
+            // Re-aim at the release from the hand: lead a target, lift for the drop.
+            let (speed, gravity) = match a.shape {
+                Shape::Bolt { speed, gravity, .. } => (speed, gravity),
+                Shape::Crescent { speed, .. } => (speed, 0.0),
+                _ => (0.0, 0.0),
+            };
+            if speed > 0.0 {
+                let locked = c.target.and_then(|t| globals.get(t).ok().map(|g| (t, g.translation() + Vec3::Y * 0.2)));
+                let mut dir = match locked {
+                    Some((t, p)) => super::aim::lead(origin, p, vels.of(t), speed, gravity).0,
+                    None => super::aim::ballistic(origin, c.aim_point, speed, gravity),
+                };
+                if matches!(a.shape, Shape::Crescent { .. }) {
+                    // The crescent skims along the ground: keep its pitch, turn its heading.
+                    dir = Vec3::new(dir.x, 0.0, dir.z).normalize_or(c.aim.with_y(0.0)) * c.aim.with_y(0.0).length() + Vec3::Y * c.aim.y;
+                }
+                if dir.is_finite() && dir.length_squared() > 0.5 {
+                    c.aim = dir.normalize();
+                }
             }
             let team = fighter.team;
             let flair = if c.mastered { MASTERED_FLAIR } else { 1.0 };

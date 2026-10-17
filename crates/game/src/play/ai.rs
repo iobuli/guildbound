@@ -23,7 +23,8 @@ use super::combat::{self, Melee, Revive, Tell};
 use super::occupations::Civilian;
 use super::magic::{Energy, Grimoire, MASTERED_COST, ability};
 use super::moveset::{Kind, Movesets};
-use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, PlaySet};
+use super::hud::log::{HudLog, LogKind};
+use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, Player, PlaySet};
 use bevy::prelude::*;
 
 /// Casting: first chance after spotting an enemy, re-look interval, pause after a cast (s), and
@@ -79,7 +80,22 @@ const HOME_RADIUS: f32 = 1.0;
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Npc, Brain>()
         .register_required_components::<Autopilot, Brain>()
-        .add_systems(Update, (autopilot, enroll, think).chain().in_set(PlaySet::Think));
+        .insert_resource(Peaceful(std::env::var("GB_PEACEFUL").is_ok_and(|v| v.trim() == "1")))
+        .add_systems(Update, (peaceful, autopilot, enroll, think).chain().in_set(PlaySet::Think));
+}
+
+/// Peaceful mode (F10, or `GB_PEACEFUL=1`): no NPC picks the player as a foe, so nothing attacks
+/// you (NPCs still fight each other, and a sparring bout you agreed to, the rank exam, still runs).
+#[derive(Resource, Default)]
+pub struct Peaceful(pub bool);
+
+fn peaceful(keys: Res<ButtonInput<KeyCode>>, mut on: ResMut<Peaceful>, mut log: MessageWriter<HudLog>) {
+    if keys.just_pressed(KeyCode::F10) {
+        on.0 = !on.0;
+        let text = if on.0 { "Peaceful: enemies leave you alone  [F10]" } else { "Hostile: enemies may attack you  [F10]" };
+        log.write(HudLog::new(LogKind::System, text).key(7102));
+        info!("[ai] peaceful={}", on.0);
+    }
 }
 
 /// The NPC brain drives this (non-NPC) body too: `GB_FIGHT=<moveset>` puts it on the player, who
@@ -494,13 +510,16 @@ fn think(
     movesets: Res<Movesets>,
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
     civilians: Query<(), With<Civilian>>,
+    peaceful: Res<Peaceful>,
+    players: Query<(), With<Player>>,
     mut npcs: Query<
-        (Entity, &mut Intent, &mut Brain, Option<&Difficulty>, Option<&Energy>, Option<&Grimoire>),
+        (Entity, &mut Intent, &mut Brain, Option<&Difficulty>, Option<&Energy>, Option<&Grimoire>, Has<combat::Sparring>),
         Or<(With<Npc>, With<Autopilot>)>,
     >,
 ) {
     let dt = time.delta_secs();
-    for (entity, mut intent, mut brain, difficulty, energy, grimoire) in &mut npcs {
+    for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring) in &mut npcs {
+        let spare_player = peaceful.0 && !sparring;
         let Ok((_, tf, fighter, melee, mover, loadout)) = fighters.get(entity) else {
             continue;
         };
@@ -516,6 +535,7 @@ fn think(
         let foe = fighters
             .iter()
             .filter(|(e, _, f, ..)| *e != entity && !f.dead && f.team != fighter.team && !civilians.contains(*e))
+            .filter(|(e, ..)| !(spare_player && players.contains(*e)))
             .map(|(e, t, _, m, ..)| (e, t.translation, m))
             .filter(|(_, p, _)| flat(*p - me).length() < AGGRO)
             .min_by(|a, b| flat(a.1 - me).length().total_cmp(&flat(b.1 - me).length()));

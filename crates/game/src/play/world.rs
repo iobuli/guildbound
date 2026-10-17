@@ -595,6 +595,7 @@ fn setup(
     };
     spawn_terrain(&mut kit, terrain_material);
     spawn_pond(&mut kit);
+    super::beam::spawn_tightrope(&mut kit);
     spawn_traversal(&mut kit);
     spawn_training_ground(&mut kit);
     spawn_props(&mut kit);
