@@ -68,12 +68,15 @@ const TOP_REACH: f32 = 0.35;
 /// Ledge: hands above the chest when reaching up (m), edging speed (m/s), and how long (s) the
 /// stick pushes up before a hanging climber pulls over (jump pulls over at once).
 const HANDS_ABOVE_CHEST: f32 = 0.75;
+/// How far above the chest the hands actually reach in the hang (m): measured from the hand
+/// bones (`ledge_hang` monitor lines), the arms stop well short of `HANDS_ABOVE_CHEST`.
+const HANG_REACH: f32 = 0.37;
 const LEDGE_SPEED: f32 = 0.6;
 const PULL_HOLD: f32 = 0.5;
 
 /// Body centre height hanging from a ledge at `top`: hands on the edge.
 pub fn hang_y(top: f32) -> f32 {
-    top - CHEST_HEIGHT - HANDS_ABOVE_CHEST + 0.02
+    top - CHEST_HEIGHT - HANG_REACH + 0.02
 }
 
 /// Both hands on the ledge at `top`, a shoulder-width apart, just over the face's edge.
@@ -90,7 +93,8 @@ const CLIMB_TRACK: &str = "ual2/ClimbUp_1m";
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (water, climb, mantle).chain().in_set(PlaySet::Act))
-        .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act));
+        .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
+        .add_systems(Update, ledge_probe.after(PlaySet::Act));
 }
 
 /// Smoke-test driver: `GB_DIVE=1` dives once swimming (spawn in the pond). `GB_CLIMB=1` makes the player jump once at 2.5 s of game time and hold
@@ -503,6 +507,40 @@ fn climb(
     }
 }
 
+/// Monitor: while hanging, how far each hand bone sits from the ledge's top (m; + above), so
+/// the hand IK on the edge can be checked from `staging/relations.log` (`ledge_hang` lines).
+fn ledge_probe(
+    time: Res<Time>,
+    bank: Option<Res<PoseBank>>,
+    mut monitor: ResMut<super::monitor::Monitor>,
+    bodies: Query<(Option<&Name>, &Traverse, &crate::motion::Rig)>,
+    globals: Query<&GlobalTransform>,
+    mut last: Local<f32>,
+) {
+    let now = time.elapsed_secs();
+    if now - *last < 0.25 {
+        return;
+    }
+    let Some(bank) = bank else { return };
+    for (name, state, rig) in &bodies {
+        let Traverse::Climb(c) = state else { continue };
+        if !c.hanging {
+            continue;
+        }
+        let hand = |side: usize| {
+            rig.bones
+                .get(bank.bones.hand[side])
+                .and_then(|e| globals.get(*e).ok())
+                .map(|g| g.translation().y - c.top)
+        };
+        if let (Some(l), Some(r)) = (hand(0), hand(1)) {
+            *last = now;
+            let who = name.map_or("?", |n| n.as_str());
+            monitor.write(&format!("{now:.2} {who} ledge_hang - {:.3} Climb l={l:.3} r={r:.3}", l.abs().max(r.abs())));
+        }
+    }
+}
+
 /// Begin a mantle onto the top at `top` (world y) over the edge at `point` (face normal `n`).
 #[allow(clippy::too_many_arguments)]
 fn start_mantle(
@@ -601,8 +639,8 @@ mod tests {
             assert!(h.z < body.z - WALL_GAP, "over the face, not in the air: {h}");
         }
         assert!((hands[0] - hands[1]).length() > 0.3);
-        // Reaching from the hang, the hands are where they'd be at full stretch.
-        assert!((body.y + CHEST_HEIGHT + HANDS_ABOVE_CHEST - top).abs() < 0.05);
+        // From the hang the hands reach the edge.
+        assert!((body.y + CHEST_HEIGHT + HANG_REACH - top).abs() < 0.05);
     }
 
     #[test]

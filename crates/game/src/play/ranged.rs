@@ -25,7 +25,9 @@ use super::{
     Action, ActionKind, ActionLayer, Fighter, HALF_HEIGHT, Hit, HitKind, Intent, Loadout, MoveMode, Mover, Owner, Phys,
     PlaySet, Player,
 };
-use crate::motion::Mask;
+use super::monitor::Monitor;
+use crate::motion::bank::PoseBank;
+use crate::motion::{Mask, Rig};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 
@@ -115,6 +117,9 @@ fn shoot(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut deeds: MessageWriter<Deed>,
+    bank: Option<Res<PoseBank>>,
+    mut monitor: ResMut<Monitor>,
+    rigs: Query<&Rig>,
     mut q: Query<(
         Entity,
         &Transform,
@@ -227,6 +232,20 @@ fn shoot(
                 spawn_shot(&mut commands, &mut meshes, &mut materials, entity, fighter.team, def, power, muzzle, d * def.speed * speed_share);
             }
             deeds.write(Deed::new(entity, "shoot", def.kind.clone(), 1.0));
+            // Monitor: how far the drawn arrow line in the pose (string hand → bow hand) is
+            // off the aim (deg), for the bow's side-on stance (`bow_align` lines).
+            if aim.draw.is_some()
+                && let (Some(bank), Ok(rig)) = (bank.as_deref(), rigs.get(entity))
+            {
+                let at = |side: usize| rig.bones.get(bank.bones.hand[side]).and_then(|e| globals.get(*e).ok()).map(|g| g.translation());
+                if let (Some(bow), Some(string)) = (at(0), at(1)) {
+                    let line = (bow - string).normalize_or_zero();
+                    let off = line.angle_between(dir).to_degrees();
+                    let yaw_off = (line.x.atan2(line.z) - dir.x.atan2(dir.z)).to_degrees();
+                    let yaw_off = (yaw_off + 540.0).rem_euclid(360.0) - 180.0;
+                    monitor.write(&format!("{:.2} bow_align - {off:.1} Ground yaw={yaw_off:.1} pull={pull:.2}", time.elapsed_secs()));
+                }
+            }
             st.cooldown = set.cooldown.max(0.05);
             if let Some(reload) = &aim.reload {
                 action.start(ActionKind::Reload, Owner::Ranged, Some(ActionLayer::new(reload.track.clone(), reload.start, Mask::Upper)));

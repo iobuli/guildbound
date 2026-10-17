@@ -9,7 +9,7 @@
 //! **Honours** (`assets/data/honours.json`, `HonourBook`): standing above rank and titles, granted
 //! to the player once a row's rank, title count, named title and earlier honours hold; each adds
 //! its holdings to the player's `Standing` and its bonus (through `skills::publish`); the badge
-//! turns gold (`insignia`). `Honours` and `Standing` are written here (the world seeds NPC
+//! turns gold (`insignia`); every dawn the holdings yield their `daily_xp` (`yields`). `Honours` and `Standing` are written here (the world seeds NPC
 //! holdings at spawn). Shown on the stats page's WORK tab, which the courtyard noticeboard
 //! (interactable kind "board", F) opens.
 use super::deeds::Deed;
@@ -92,6 +92,9 @@ pub struct HonourRequires {
 pub struct HonourGrants {
     #[serde(default)]
     pub holdings: Vec<String>,
+    /// Experience the holdings yield every dawn (`sky::Clock`).
+    #[serde(default)]
+    pub daily_xp: u32,
     #[serde(default)]
     pub bonus: SkillBonus,
 }
@@ -260,7 +263,7 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(book)
         .insert_resource(board)
         .insert_resource(honours)
-        .add_systems(Update, (progress, honour, read_board).chain());
+        .add_systems(Update, (progress, honour, yields, read_board).chain());
 }
 
 fn progress(
@@ -340,6 +343,31 @@ fn honour(
             None => {
                 commands.entity(e).try_insert(Standing { holdings });
             }
+        }
+    }
+}
+
+/// Each dawn the player's holdings yield their honours' `daily_xp`.
+fn yields(
+    clock: Option<Res<super::sky::Clock>>,
+    book: Res<HonourBook>,
+    players: Query<(Entity, &Honours), With<Player>>,
+    mut grants: MessageWriter<GrantXp>,
+    mut log: MessageWriter<HudLog>,
+    mut was_night: Local<Option<bool>>,
+) {
+    let Some(clock) = clock else { return };
+    let night = clock.is_night();
+    let dawn = *was_night == Some(true) && !night;
+    *was_night = Some(night);
+    if !dawn {
+        return;
+    }
+    for (e, h) in &players {
+        let xp: u32 = h.0.iter().filter_map(|id| book.get(id)).map(|d| d.grants.daily_xp).sum();
+        if xp > 0 {
+            grants.write(GrantXp { who: e, xp });
+            log.write(HudLog::new(LogKind::Item, format!("Dawn: your holdings yield +{xp} XP")));
         }
     }
 }
@@ -437,6 +465,7 @@ mod tests {
         let a = rank_index("A").unwrap();
         assert!(!qualifies(lord, a, &two, &[]), "no knighthood");
         assert!(qualifies(lord, a, &two, &["knight".to_string()]));
+        assert!(knight.grants.daily_xp > 0 && lord.grants.daily_xp > knight.grants.daily_xp, "holdings pay");
     }
 
     #[test]
