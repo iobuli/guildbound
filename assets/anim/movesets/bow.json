@@ -30,15 +30,20 @@
   },
   "aim": {
     "clip": {
-      "track": "ual1/Pistol_Aim_Neutral",
+      "track": "rokoko/Hawkeye_Archery",
       "mask": "upper"
     },
-    "hold": 0.1,
-    "release": {
-      "track": "ual1/Pistol_Shoot",
-      "start": 0.0
+    "hold": 8.7,
+    "draw": {
+      "track": "rokoko/Hawkeye_Archery",
+      "start": 7.95
     },
-    "draw_time": 0.7
+    "release": {
+      "track": "rokoko/Hawkeye_Archery",
+      "start": 9.38
+    },
+    "draw_time": 0.7,
+    "body_yaw_deg": -76.0
   },
   "projectile": {
     "kind": "arrow",

@@ -2,7 +2,8 @@
 //! (`assets/anim/movesets/{bow,crossbow,knives}.json`, wielded from the chest like any weapon).
 //! - Secondary held aims: the set's `aim` clip on the upper body (held at its `hold` time), the
 //!   body turned to the camera's look point (or the lock-on target), half speed, a crosshair.
-//! - Primary fires. With `aim.draw_time > 0` (bow) holding primary draws: release shoots, the
+//! - Primary fires. With `aim.draw_time > 0` (bow) holding primary draws (an `aim.draw` clip on
+//!   the aim track is scrubbed from its start to `hold` with the pull): release shoots, the
 //!   arrow's speed and damage growing with the draw (`DRAW_MIN`..1). Without (crossbow, knives) a
 //!   press shoots at once. `Moveset.cooldown` spaces shots; a `reload` clip plays through it.
 //! - Projectiles (`ProjectileDef`: speed, gravity, radius, damage, poise, knockback, count and
@@ -14,7 +15,7 @@
 //! projectile kind: arrow, bolt, knife).
 //! Shooting owns the `Action` (`Owner::Ranged`, `ActionKind::Aim` / `Shoot` / `Reload`); hit
 //! reactions interrupt it.
-use super::combat::{CombatSet, segment_distance};
+use super::combat::{CombatSet, Weapon, WeaponSlot, segment_distance};
 use super::deeds::Deed;
 use super::moveset::{Kind, Moveset, Movesets, ProjectileDef};
 use super::stats::Derived;
@@ -47,7 +48,7 @@ const MUZZLE_FORWARD: f32 = 0.45;
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn_crosshair)
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
-        .add_systems(Update, (shoot, fly, crosshair).chain().in_set(PlaySet::Act).after(CombatSet));
+        .add_systems(Update, (shoot, hold_bow, fly, crosshair).chain().in_set(PlaySet::Act).after(CombatSet));
 }
 
 /// Smoke-test driver: `GB_SHOOT=bow|crossbow|knives` equips that weapon, aims at the nearest
@@ -149,7 +150,9 @@ fn shoot(
             .and_then(|t| globals.get(t).ok())
             .map(|g| g.translation() + Vec3::Y * 0.3)
             .unwrap_or(intent.look);
-        let muzzle = tf.translation + Vec3::Y * MUZZLE_UP + tf.forward() * MUZZLE_FORWARD;
+        // From the chest toward the aim (not the body's facing: an archer stands side-on).
+        let ahead = (look - tf.translation).with_y(0.0).normalize_or(tf.forward().as_vec3());
+        let muzzle = tf.translation + Vec3::Y * MUZZLE_UP + ahead * MUZZLE_FORWARD;
         let dir = (look - muzzle).normalize_or(tf.forward().as_vec3());
         let yaw = dir.x.atan2(dir.z);
 
@@ -184,7 +187,7 @@ fn shoot(
             if !ours || action.kind != ActionKind::Aim {
                 action.start(ActionKind::Aim, Owner::Ranged, Some(ActionLayer::new(aim.clip.track.clone(), aim.hold, Mask::Upper)));
             }
-            mover.face = Some(yaw);
+            mover.face = Some(yaw + aim.body_yaw_deg.to_radians());
             mover.move_scale = AIM_MOVE;
         } else if ours {
             action.clear();
@@ -192,6 +195,16 @@ fn shoot(
             mover.move_scale = 1.0;
             st.draw = 0.0;
             continue;
+        }
+
+        // A draw clip on the aim track scrubs from its start (arrow nocked) to `hold` (full draw)
+        // as the pull grows.
+        if let Some(draw) = aim.draw.as_ref().filter(|d| d.track == aim.clip.track)
+            && action.kind == ActionKind::Aim
+            && let Some(layer) = action.layer.as_mut()
+        {
+            let pull = if draw_time > 0.0 { (st.draw / draw_time).clamp(0.0, 1.0) } else { 0.0 };
+            layer.time = draw.start + (aim.hold - draw.start) * pull;
         }
 
         if want_fire {
@@ -222,6 +235,42 @@ fn shoot(
                 action.kind = ActionKind::Reload;
             }
         }
+    }
+}
+
+/// Cant of a held bow's stave (rad): its top tips away from the string hand, as archers hold it.
+const BOW_CANT: f32 = 0.18;
+
+/// Bows on a draw clip (side-on archery): while the bow is up, its stave stands upright in the
+/// bow hand, canted a little, whatever the hand bone's frame (the weapon's grip in the moveset
+/// suits other poses). `combat::arm` puts the grip back when the action ends.
+#[allow(clippy::type_complexity)]
+fn hold_bow(
+    sets: Res<Movesets>,
+    archers: Query<(&Transform, &Intent, &Action, &Loadout, &WeaponSlot)>,
+    mut weapons: Query<(&mut Transform, &ChildOf), (With<Weapon>, Without<Intent>)>,
+    globals: Query<&GlobalTransform>,
+) {
+    for (tf, intent, action, loadout, slot) in &archers {
+        let Some(set) = ranged_set(&sets, loadout) else { continue };
+        let Some(aim) = set.aim.as_ref() else { continue };
+        // A primitive stave runs from the weapon origin up its length: grip it in the middle.
+        let half = set
+            .weapon
+            .as_ref()
+            .and_then(|w| w.primitive.as_ref().map(|p| p.size[1] * 0.5 * w.scale))
+            .unwrap_or(0.0);
+        if aim.draw.is_none() || action.owner != Owner::Ranged {
+            continue;
+        }
+        let Ok((mut wtf, parent)) = weapons.get_mut(slot.weapon) else { continue };
+        let Ok(hand) = globals.get(parent.parent()) else { continue };
+        let ahead = (intent.look - tf.translation).with_y(0.0).normalize_or(Vec3::Z);
+        let stave = Quat::from_axis_angle(ahead, -BOW_CANT) * Vec3::Y;
+        let (hand_scale, hand_rot, _) = hand.to_scale_rotation_translation();
+        let s = hand_scale.x.abs().max(1e-3);
+        wtf.rotation = hand_rot.inverse() * Quat::from_rotation_arc(Vec3::Y, stave);
+        wtf.translation = hand_rot.inverse() * (-stave * half) / s;
     }
 }
 

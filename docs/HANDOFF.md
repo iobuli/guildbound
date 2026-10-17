@@ -173,6 +173,7 @@ Log line: `t character relation side value mode action speed`.
 - **Title insignia**: titled characters wear a glowing badge on the left breast; presets earn titles at once (`skills::entitle`), so the Opponent (Swordsmanship 20) wears Blade Adept. Placement checked on screen (left breast, just below the collarbone).
 - **Day and night**: a full day every 24 game minutes; at dusk the sky goes orange then deep blue, torches carry the night, the moon lights it faintly. F9 skips an hour. Civilians switch to a `night` routine (sit, tend the torch).
 - **Occupations** (lane C): the Smith works the anvil, drinks at the well, sits, tends the torch; the Farmer plants, waters, harvests, drinks, reads the board. Civilians are team 0, never targeted by the brain, revive at home after 8 s, and roll traits like NPCs.
+- **Bow on a real archery clip**: `rokoko/Hawkeye_Archery` (measured: draw 7.95 → 8.3 s, anchored at the face to 9.3 s, release 9.38 s). The aim layer scrubs from the nock (`aim.draw.start`) to full draw (`hold` 8.7) with the pull; the release plays from 9.38. The clip shoots side-on (arrow 76° left of the hips), so `aim.body_yaw_deg` −76 turns the body; arrows leave along the aim from the chest. While the bow is up, `ranged::hold_bow` stands the stave upright (canted 0.18 rad) and grips it mid-stave; `combat::arm` restores the carry grip afterwards.
 - **Faulds**: two nested hoops round the hips under the cuirass (`FAULD_TOP` 1.135 leaves a gap below its 1.18 bottom so the spine bends; lower over the hip sides than at the front / back, where the thigh folds). 18 plates now; torso padding 0.065 m.
 - **Diving** (lane B): in the pond, C dives toward the floor (breath 12 s, refills at the surface ×3), Space comes up.
 - Ward hits flare: sparks and a soft clank where a blow meets the shell.
@@ -202,6 +203,7 @@ Log line: `t character relation side value mode action speed`.
   16. Armour stand: the faulds close the waist under the cuirass; put it on and raise a knee (sprint, kick) to check the thigh clears them.
   17. The Smith kneels at the anvil, then wanders to the well, the chair, the torch; the Farmer works the plots.
   18. F9 a few times: dawn, noon, dusk, night; the minimap readout shows the time; at night the Smith sits and tends the torch.
+  19. Bow from the chest: hold RMB to aim (side-on), hold LMB to draw (string hand to the face), release to loose; the stave stands upright.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
 
@@ -249,7 +251,7 @@ Log line: `t character relation side value mode action speed`.
 Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.rs`, `world.rs`) take small additive edits only: record them here.
 
 - **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
-- **B. Done** (traversal, ranged, magic). Diving done. Possible: ledge shimmy, bow draw/release clips (the aim uses the pistol pose). NPC archers (F8 Hunter) and casters are done.
+- **B. Done** (traversal, ranged, magic). Diving and the bow's archery clip done. Possible: ledge shimmy. NPC archers (F8 Hunter) and casters are done.
 - **Next for magic:** done this round: NPC casters and the Aura Ward. Ward-hit sparks done. Faulds and ward mastery (each blow the ward turns is a `ward` deed: mastery and Defence XP) done.
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
 - **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload, titles, events (unique skills) and traits done. Player madlib, title insignia, contracts and the noticeboard done. Occupations, the day clock and guild rank done. Next: standing for NPCs (who may post contracts: business owners, lords), occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.

@@ -845,7 +845,8 @@
       "armour faulds close the waist; thigh clears them when raised",
       "Smith works the anvil/well/chair/torch; Farmer works the plots",
       "F9 through the day: dusk, night (torches, moon), civilians night routine",
-      "WORK tab shows guild rank; rank E/D unlock new postings"
+      "WORK tab shows guild rank; rank E/D unlock new postings",
+      "bow: side-on archery draw/anchor/release, stave upright"
     ]
   },
   "controls": {

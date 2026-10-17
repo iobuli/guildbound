@@ -110,6 +110,10 @@ pub struct Aim {
     /// Seconds to full draw (bow) / charge (spell); 0 = instant.
     #[serde(default)]
     pub draw_time: f32,
+    /// Body yaw relative to the aim while aiming (deg): an archer clip shoots side-on, so the
+    /// body turns this far for the shot to leave along the aim.
+    #[serde(default)]
+    pub body_yaw_deg: f32,
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
