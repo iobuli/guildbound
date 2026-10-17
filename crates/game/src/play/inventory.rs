@@ -1,5 +1,5 @@
 //! The bag: `Inventory` on the player (required by `Player`), `SLOTS` stacks. `inventory` alone
-//! changes it: it applies `items::ItemCollected`, answers `items::ItemRejected` with whatever
+//! changes it: it applies `items::ItemCollected` and `SpendItems` (the guild buying), answers `items::ItemRejected` with whatever
 //! doesn't fit, and reports every change in the HUD log ("+3 Log", one line per kind that counts
 //! up while pickups keep coming; "Bag full", also when `items::BagFull` says something in reach
 //! has no room). I, or a `ToggleBag` message (the hotbar's bag button), opens the bag: a `gbui`
@@ -113,8 +113,28 @@ pub fn plugin(app: &mut App) {
     app.register_required_components::<Player, Inventory>()
         .init_resource::<BagOpen>()
         .add_message::<ToggleBag>()
+        .add_message::<SpendItems>()
         .add_systems(Startup, spawn_ui)
-        .add_systems(Update, (collect, toggle.in_set(PageToggles), refresh, hover).chain());
+        .add_systems(Update, (collect, spend, toggle.in_set(PageToggles), refresh, hover).chain());
+}
+
+/// Take items out of a bag (sold at the guild desk); nothing happens unless all of them are there.
+#[derive(Message, Clone, Copy, Debug)]
+pub struct SpendItems {
+    pub who: Entity,
+    pub kind: ItemKind,
+    pub count: u32,
+}
+
+fn spend(mut spends: MessageReader<SpendItems>, mut bags: Query<&mut Inventory>, mut log: MessageWriter<HudLog>) {
+    for s in spends.read() {
+        if let Ok(mut inv) = bags.get_mut(s.who)
+            && s.count > 0
+            && inv.remove(s.kind, s.count)
+        {
+            log.write(HudLog::new(LogKind::Item, format!("-{} {}", s.count, s.kind.name())));
+        }
+    }
 }
 
 /// Whether the bag panel is open.

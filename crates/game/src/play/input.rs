@@ -91,12 +91,14 @@ fn player_input(
     mut players: Query<(Entity, &Transform, &mut Intent), With<Player>>,
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
     tweak: Option<Res<crate::motion::tweak::Tweak>>,
+    talk: (Option<Res<super::talk::TalkFocus>>, Option<Res<super::talk::Talking>>),
 ) {
     let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
         return;
     };
-    // The pose tweak tool (F2) has the keyboard.
-    if tweak.is_some_and(|t| t.on) {
+    // The pose tweak tool (F2) or a conversation has the keyboard.
+    let talking = talk.1.as_ref().is_some_and(|t| t.active());
+    if tweak.is_some_and(|t| t.on) || talking {
         *intent = Intent {
             look: intent.look,
             ..default()
@@ -224,7 +226,9 @@ fn player_input(
         primary_released,
         secondary_held,
         secondary_pressed,
-        interact_pressed: interact,
+        // F talks to a talkable in front of you rather than using an interactable.
+        interact_pressed: interact && talk.0.as_ref().is_none_or(|f| f.0.is_none()),
+        talk_pressed: interact && talk.0.as_ref().is_some_and(|f| f.0.is_some()),
         art_pressed: art,
         spell_pressed: spell,
         next_spell,

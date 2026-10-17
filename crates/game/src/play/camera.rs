@@ -188,7 +188,7 @@ impl CursorCapture {
 
 /// Private follow state: spring velocity, collision-limited boom, smoothed zoom, fov, shake clock.
 #[derive(Resource, Default)]
-struct FollowState {
+pub(crate) struct FollowState {
     initialized: bool,
     focus_velocity: Vec3,
     boom: f32,
@@ -286,6 +286,7 @@ fn capture_cursor(
     armory: Option<Res<ArmoryOpen>>,
     stats: Option<Res<StatsOpen>>,
     tuning: Option<Res<TuningPanel>>,
+    talking: Option<Res<super::talk::Talking>>,
     mut tweak_page: Local<bool>,
 ) {
     capture.just_captured = false;
@@ -304,6 +305,7 @@ fn capture_cursor(
         || armory.is_some_and(|a| a.0.is_some())
         || stats.is_some_and(|s| s.0.is_some())
         || tuning.is_some_and(|t| t.open)
+        || talking.is_some_and(|t| t.active())
         || *tweak_page;
     if capture.ui_mode && !ui_mode {
         capture.wanted = true;
@@ -374,7 +376,7 @@ fn orbit(
 }
 
 #[allow(clippy::too_many_arguments)]
-fn follow(
+pub(crate) fn follow(
     time: Res<Time>,
     real: Res<Time<Real>>,
     mut rig: ResMut<CameraRig>,

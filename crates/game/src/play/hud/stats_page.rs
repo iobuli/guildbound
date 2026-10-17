@@ -797,10 +797,15 @@ fn refresh_contracts(
     }
     for mut t in &mut texts.p2() {
         let rank = board.rank();
-        let next = contracts::RANKS
-            .get(rank + 1)
-            .map_or(String::new(), |(l, n)| format!("   ·   {} more to {l}", n.saturating_sub(board.done)));
-        let mut line = format!("Guild rank {}   ·   {} done{next}", contracts::RANKS[rank].0, board.done);
+        let mut line = format!("Guild rank {}   ·   {} done", contracts::RANKS[rank].0, board.done);
+        if !board.ready.is_empty() {
+            line += &format!("   ·   {} ready: turn in at the guild desk", board.ready.len());
+        }
+        if board.eligible() > rank {
+            line += &format!("\nEligible for rank {}: apply at the guild desk", contracts::RANKS[board.eligible()].0);
+        } else if let Some((l, n)) = contracts::RANKS.get(rank + 1) {
+            line += &format!("\n{} more to be eligible for {l}", n.saturating_sub(board.done));
+        }
         if let Ok((honours, standing)) = player.single() {
             if let Some(h) = honours.filter(|h| !h.0.is_empty()) {
                 let names: Vec<&str> = h.0.iter().map(|id| honour_book.get(id).map_or(id.as_str(), |d| d.name.as_str())).collect();

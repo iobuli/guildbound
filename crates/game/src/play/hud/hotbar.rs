@@ -82,14 +82,14 @@ fn spawn(mut commands: Commands) {
 
 #[allow(clippy::type_complexity)]
 fn update(
-    player: Query<(&Loadout, Option<&Grimoire>, Option<&Energy>), With<Player>>,
+    player: Query<(&Loadout, Option<&Grimoire>, Option<&Energy>, Option<&crate::play::guild::Purse>), With<Player>>,
     open: Res<BagOpen>,
     mut slots: Query<(&Kind, &Children, &mut UiFlags, &mut Tooltip, &mut Tweens)>,
     mut labels: Query<&mut Text, (With<SlotLabel>, Without<SlotCount>)>,
     mut counts: Query<&mut Text, (With<SlotCount>, Without<SlotLabel>)>,
     mut last: Local<(String, String, String)>,
 ) {
-    let Ok((loadout, grimoire, energy)) = player.single() else { return };
+    let Ok((loadout, grimoire, energy, purse)) = player.single() else { return };
     let g = grimoire.cloned().unwrap_or_default();
     let e = energy.cloned().unwrap_or_default();
     let now = (g.art.to_string(), g.spell.to_string(), loadout.equipped().to_string());
@@ -118,7 +118,10 @@ fn update(
                 let name = loadout.equipped();
                 (code(name), String::new(), format!("{name}  (weapons: the chest)"), false, true, last.2 != now.2)
             }
-            Kind::Bag => ("BAG".to_string(), String::new(), "Bag  [I]".to_string(), false, open.0, false),
+            Kind::Bag => {
+                let gold = purse.map_or(0, |p| p.gold);
+                ("BAG".to_string(), format!("{gold}g"), format!("Bag  [I]  //  {gold} gold"), false, open.0, false)
+            }
         };
         if flags.disabled != dim {
             flags.disabled = dim;

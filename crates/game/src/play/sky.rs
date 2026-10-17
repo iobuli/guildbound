@@ -103,11 +103,20 @@ pub fn plugin(app: &mut App) {
         .filter(|h| h.is_finite())
         .unwrap_or(START_HOUR)
         .rem_euclid(24.0);
-    app.insert_resource(Clock { hour }).add_systems(Update, (tick, shine).chain());
+    app.insert_resource(Clock { hour })
+        .add_message::<SetHour>()
+        .add_systems(Update, (tick, shine).chain());
 }
 
-fn tick(time: Res<Time>, keys: Res<ButtonInput<KeyCode>>, mut clock: ResMut<Clock>) {
+/// Jump the clock to an hour (sleeping until dawn).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct SetHour(pub f32);
+
+fn tick(time: Res<Time>, keys: Res<ButtonInput<KeyCode>>, mut sets: MessageReader<SetHour>, mut clock: ResMut<Clock>) {
     let mut hour = clock.hour + time.delta_secs() * 24.0 / (DAY_MINUTES * 60.0);
+    if let Some(h) = sets.read().last().filter(|h| h.0.is_finite()) {
+        hour = h.0;
+    }
     if keys.just_pressed(KeyCode::F9) {
         hour += 1.0;
     }

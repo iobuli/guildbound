@@ -231,13 +231,33 @@ pub fn courtyard_distance(x: f32, z: f32) -> f32 {
     q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0)
 }
 
-/// Analytic terrain height (m). Exactly 0 inside the courtyard.
+/// The guild terrace east of the courtyard (x, z bounds): flat ground for the Guild Hall, its
+/// training ground and the path from the courtyard (`hall`).
+pub const TERRACE_MIN: Vec2 = Vec2::new(14.0, -18.0);
+pub const TERRACE_MAX: Vec2 = Vec2::new(46.0, 14.0);
+const TERRACE_BLEND: f32 = 8.0;
+
+/// Signed distance to the guild terrace (≤ 0 on it).
+pub fn terrace_distance(x: f32, z: f32) -> f32 {
+    let c = (TERRACE_MIN + TERRACE_MAX) * 0.5;
+    let h = (TERRACE_MAX - TERRACE_MIN) * 0.5;
+    let q = (Vec2::new(x, z) - c).abs() - h;
+    q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0)
+}
+
+/// On (or right by) the guild grounds: no hill rocks, trees or items there.
+pub fn in_guild_grounds(x: f32, z: f32) -> bool {
+    terrace_distance(x, z) < 3.0
+}
+
+/// Analytic terrain height (m). Exactly 0 inside the courtyard and on the guild terrace.
 pub fn ground_height(x: f32, z: f32) -> f32 {
     if !(x.is_finite() && z.is_finite()) {
         return 0.0;
     }
     let hills = guildbound_sim::terrain::ground(x * HILL_SCALE, z * HILL_SCALE)
-        * smoothstep(0.0, COURTYARD_BLEND, courtyard_distance(x, z));
+        * smoothstep(0.0, COURTYARD_BLEND, courtyard_distance(x, z))
+        * smoothstep(0.0, TERRACE_BLEND, terrace_distance(x, z));
     let edge = x.abs().max(z.abs());
     let rim = smoothstep(TERRAIN_HALF - RIM_WIDTH, TERRAIN_HALF, edge).powi(2) * RIM_HEIGHT;
     let pond = Vec2::new(x, z).distance(POND_CENTER);
@@ -289,7 +309,7 @@ pub fn ground_color(x: f32, z: f32, y: f32, n: Vec3) -> [f32; 4] {
     let patch = value_noise(x * 0.3, z * 0.3);
     let fine = value_noise(x * 1.7 + 40.0, z * 1.7 - 13.0);
     let mut c = srgb(0.27, 0.43, 0.17).lerp(srgb(0.40, 0.55, 0.22), patch);
-    let yard = 1.0 - smoothstep(-1.5, 1.0, courtyard_distance(x, z));
+    let yard = 1.0 - smoothstep(-1.5, 1.0, courtyard_distance(x, z).min(terrace_distance(x, z) + 2.0));
     c = c.lerp(srgb(0.55, 0.46, 0.33).lerp(srgb(0.62, 0.53, 0.39), fine), yard);
     let pond = Vec2::new(x, z).distance(POND_CENTER);
     c = c.lerp(srgb(0.70, 0.63, 0.46), smoothstep(POND_RADIUS + 2.0, POND_RADIUS, pond));
@@ -355,23 +375,23 @@ fn face_toward(stand: Vec3) -> f32 {
     if d.x.abs() + d.z.abs() < 1e-5 { 0.0 } else { d.x.atan2(d.z) }
 }
 
-struct Palette {
-    stone: Handle<StandardMaterial>,
-    wall: Handle<StandardMaterial>,
-    wood: Handle<StandardMaterial>,
-    dark_wood: Handle<StandardMaterial>,
-    metal: Handle<StandardMaterial>,
-    soil: Handle<StandardMaterial>,
-    crop: Handle<StandardMaterial>,
-    leaves: Handle<StandardMaterial>,
-    straw: Handle<StandardMaterial>,
-    sand: Handle<StandardMaterial>,
-    rock: Handle<StandardMaterial>,
-    flame: Handle<StandardMaterial>,
-    water: Handle<StandardMaterial>,
-    cloth: Handle<StandardMaterial>,
+pub(crate) struct Palette {
+    pub(crate) stone: Handle<StandardMaterial>,
+    pub(crate) wall: Handle<StandardMaterial>,
+    pub(crate) wood: Handle<StandardMaterial>,
+    pub(crate) dark_wood: Handle<StandardMaterial>,
+    pub(crate) metal: Handle<StandardMaterial>,
+    pub(crate) soil: Handle<StandardMaterial>,
+    pub(crate) crop: Handle<StandardMaterial>,
+    pub(crate) leaves: Handle<StandardMaterial>,
+    pub(crate) straw: Handle<StandardMaterial>,
+    pub(crate) sand: Handle<StandardMaterial>,
+    pub(crate) rock: Handle<StandardMaterial>,
+    pub(crate) flame: Handle<StandardMaterial>,
+    pub(crate) water: Handle<StandardMaterial>,
+    pub(crate) cloth: Handle<StandardMaterial>,
     /// White base for vertex-coloured voxel meshes (trees).
-    voxel: Handle<StandardMaterial>,
+    pub(crate) voxel: Handle<StandardMaterial>,
 }
 
 impl Palette {
@@ -442,15 +462,15 @@ impl Palette {
 }
 
 /// Spawning helpers bundling commands, mesh storage and the palette.
-struct Kit<'a, 'w, 's> {
-    commands: &'a mut Commands<'w, 's>,
-    meshes: &'a mut Assets<Mesh>,
-    pal: Palette,
+pub(crate) struct Kit<'a, 'w, 's> {
+    pub(crate) commands: &'a mut Commands<'w, 's>,
+    pub(crate) meshes: &'a mut Assets<Mesh>,
+    pub(crate) pal: Palette,
 }
 
 impl Kit<'_, '_, '_> {
     /// A standalone static solid (its own static body when it has a collider).
-    fn solid(
+    pub(crate) fn solid(
         &mut self,
         name: &str,
         mesh: impl Into<Mesh>,
@@ -474,7 +494,7 @@ impl Kit<'_, '_, '_> {
     }
 
     /// A child piece of `parent` (a collider attaches to the parent's static body).
-    fn part(
+    pub(crate) fn part(
         &mut self,
         parent: Entity,
         name: &str,
@@ -500,7 +520,7 @@ impl Kit<'_, '_, '_> {
     }
 
     /// An empty static root at feet level.
-    fn root(&mut self, name: &str, at: Vec3) -> Entity {
+    pub(crate) fn root(&mut self, name: &str, at: Vec3) -> Entity {
         self.commands
             .spawn((
                 Name::new(name.to_string()),
@@ -513,21 +533,21 @@ impl Kit<'_, '_, '_> {
 }
 
 /// What an interactable does (`Interactable` minus derived fields).
-struct UseSpec {
-    kind: &'static str,
-    prompt: &'static str,
-    track: &'static str,
-    duration: f32,
-    looping: bool,
-    stand: Vec3,
+pub(crate) struct UseSpec {
+    pub(crate) kind: &'static str,
+    pub(crate) prompt: &'static str,
+    pub(crate) track: &'static str,
+    pub(crate) duration: f32,
+    pub(crate) looping: bool,
+    pub(crate) stand: Vec3,
     /// Override for `face_yaw` (default: face the object).
-    face: Option<f32>,
-    hands: [Option<Vec3>; 2],
+    pub(crate) face: Option<f32>,
+    pub(crate) hands: [Option<Vec3>; 2],
     /// Moving child part the `hands` are relative to.
-    grip: Option<&'static str>,
+    pub(crate) grip: Option<&'static str>,
     /// When the use lands (clip seconds) and when the hands hold fully (see `Interactable`).
-    beat: Option<f32>,
-    reach: Option<(f32, f32)>,
+    pub(crate) beat: Option<f32>,
+    pub(crate) reach: Option<(f32, f32)>,
 }
 
 impl UseSpec {
@@ -579,6 +599,7 @@ fn setup(
     spawn_training_ground(&mut kit);
     spawn_props(&mut kit);
     spawn_interactables(&mut kit, &assets);
+    super::hall::spawn_hall(&mut kit);
     spawn_characters(&mut commands);
 }
 
@@ -760,12 +781,7 @@ fn spawn_traversal(kit: &mut Kit) {
 
 fn spawn_training_ground(kit: &mut Kit) {
     let centre = Vec3::new(8.5, 0.0, -9.0);
-    let (sand, wood, straw, cloth) = (
-        kit.pal.sand.clone(),
-        kit.pal.dark_wood.clone(),
-        kit.pal.straw.clone(),
-        kit.pal.cloth.clone(),
-    );
+    let (sand, wood) = (kit.pal.sand.clone(), kit.pal.dark_wood.clone());
     kit.solid(
         "Training pad",
         Cuboid::new(6.0, 0.02, 5.0),
@@ -782,30 +798,34 @@ fn spawn_training_ground(kit: &mut Kit) {
             Some(Collider::cylinder(0.06, 1.0)),
         );
     }
-    let (radius, length) = (0.28, 1.0);
-    let half = radius + length * 0.5;
     for (i, offset) in [Vec3::new(-1.5, 0.0, 1.0), Vec3::new(0.5, 0.0, -0.5), Vec3::new(2.0, 0.0, 1.5)]
         .into_iter()
         .enumerate()
     {
-        let feet = centre + offset;
-        let dummy = kit
-            .commands
-            .spawn((
-                Name::new(format!("Training dummy {}", i + 1)),
-                TrainingDummy,
-                Transform::from_translation(feet + Vec3::Y * half)
-                    .with_rotation(Quat::from_rotation_y(PI + (i as f32 - 1.0) * 0.4)),
-                Visibility::default(),
-                RigidBody::Static,
-                Collider::capsule(radius, length),
-                CollisionLayers::new(Phys::Character, [Phys::World, Phys::Character, Phys::Projectile]),
-            ))
-            .id();
-        kit.part(dummy, "Dummy body", Capsule3d::new(radius, length), &straw, Transform::default(), None);
-        kit.part(dummy, "Dummy head", Sphere::new(0.17), &cloth, Transform::from_xyz(0.0, half + 0.05, 0.0), None);
-        kit.part(dummy, "Dummy arms", Cuboid::new(1.1, 0.09, 0.09), &wood, Transform::from_xyz(0.0, 0.35, 0.0), None);
+        spawn_dummy(kit, centre + offset, PI + (i as f32 - 1.0) * 0.4, &format!("Training dummy {}", i + 1));
     }
+}
+
+/// A straw training dummy standing at `feet`, facing `yaw`.
+pub(crate) fn spawn_dummy(kit: &mut Kit, feet: Vec3, yaw: f32, name: &str) {
+    let (wood, straw, cloth) = (kit.pal.dark_wood.clone(), kit.pal.straw.clone(), kit.pal.cloth.clone());
+    let (radius, length) = (0.28, 1.0);
+    let half = radius + length * 0.5;
+    let dummy = kit
+        .commands
+        .spawn((
+            Name::new(name.to_string()),
+            TrainingDummy,
+            Transform::from_translation(feet + Vec3::Y * half).with_rotation(Quat::from_rotation_y(yaw)),
+            Visibility::default(),
+            RigidBody::Static,
+            Collider::capsule(radius, length),
+            CollisionLayers::new(Phys::Character, [Phys::World, Phys::Character, Phys::Projectile]),
+        ))
+        .id();
+    kit.part(dummy, "Dummy body", Capsule3d::new(radius, length), &straw, Transform::default(), None);
+    kit.part(dummy, "Dummy head", Sphere::new(0.17), &cloth, Transform::from_xyz(0.0, half + 0.05, 0.0), None);
+    kit.part(dummy, "Dummy arms", Cuboid::new(1.1, 0.09, 0.09), &wood, Transform::from_xyz(0.0, 0.35, 0.0), None);
 }
 
 /// Crates, barrels, rocks and trees.
@@ -849,7 +869,7 @@ fn spawn_props(kit: &mut Kit) {
         let a = i as f32 * 2.399_963;
         let r = 21.0 + hash2(i, 1) * 26.0;
         let (x, z) = (a.cos() * r, a.sin() * r);
-        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 {
+        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) {
             continue;
         }
         let y = ground_height(x, z);
@@ -879,7 +899,7 @@ fn spawn_props(kit: &mut Kit) {
 }
 
 /// Spawn an interactable root on the ground at `at`.
-fn place(kit: &mut Kit, name: &str, at: Vec3, spec: UseSpec) -> Entity {
+pub(crate) fn place(kit: &mut Kit, name: &str, at: Vec3, spec: UseSpec) -> Entity {
     let e = kit.root(name, at);
     kit.commands.entity(e).insert(spec.component());
     e
@@ -1276,6 +1296,7 @@ fn smoke_test(
     mut commands: Commands,
     players: Query<Entity, With<Player>>,
     mut exit: MessageWriter<AppExit>,
+    rig: Option<ResMut<super::camera::CameraRig>>,
 ) {
     let t = time.elapsed_secs();
     if let Some((feet, yaw)) = smoke.spawn
@@ -1285,6 +1306,10 @@ fn smoke_test(
         smoke.spawned = true;
         for p in &players {
             commands.entity(p).try_insert(super::controller::Teleport { feet, yaw });
+        }
+        // The camera looks the way the player was put.
+        if let Some(mut rig) = rig {
+            rig.yaw = yaw;
         }
     }
     if let Some(path) = smoke.shot.clone()
@@ -1314,6 +1339,16 @@ fn smoke_test(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_guild_terrace_is_flat() {
+        for x in [15.0, 20.0, 30.0, 45.5] {
+            for z in [-17.5, -9.0, 0.0, 13.5] {
+                assert_eq!(ground_height(x, z), 0.0, "terrace not flat at {x},{z}");
+            }
+        }
+        assert!(in_guild_grounds(32.0, -9.0) && !in_guild_grounds(-30.0, 30.0));
+    }
 
     #[test]
     fn courtyard_is_flat_and_hills_rise_outside() {

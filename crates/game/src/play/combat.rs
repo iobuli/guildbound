@@ -1033,9 +1033,20 @@ fn blade_mesh(width: f32, thickness: f32, length: f32) -> Mesh {
 fn stamina(
     time: Res<Time>,
     mut spends: MessageReader<StaminaSpend>,
+    mut rests: MessageReader<super::guild::Rested>,
     mut fighters: Query<(&mut Fighter, &mut Melee, &mut Mover, &Action, Option<&Derived>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
+    // A night's sleep (the guild's beds) or the end of a bout: whole again.
+    for r in rests.read() {
+        if let Ok((mut f, ..)) = fighters.get_mut(r.who)
+            && !f.dead
+        {
+            f.hp = f.max_hp;
+            f.stamina = f.max_stamina;
+            f.poise = f.max_poise;
+        }
+    }
     for spend in spends.read() {
         if let Ok((mut fighter, mut melee, ..)) = fighters.get_mut(spend.who) {
             melee.spend(&mut fighter, spend.amount);
@@ -2011,7 +2022,19 @@ type Victim<'a> = (
     Has<Player>,
     Option<&'a Name>,
     Option<&'a Ward>,
+    Option<&'a Sparring>,
 );
+
+/// A friendly bout (the guild's rank exam): no blow takes this fighter below `floor` of its max
+/// hp; reaching it adds `Yielded` instead of a death (written by `guild`; `combat` adds Yielded).
+#[derive(Component, Clone, Copy, Debug)]
+pub struct Sparring {
+    pub floor: f32,
+}
+
+/// Driven to the floor in a `Sparring` bout.
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct Yielded;
 
 /// Feedback shared by every outcome: hitstop, shake, sound, sparks.
 // One lifetime per writer: they are separate system params and `&mut` is invariant.
@@ -2080,7 +2103,7 @@ fn resolve(
         now: time.elapsed_secs(),
     };
     for hit in hits.read() {
-        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _, _)| Attacker {
+        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _, _, _)| Attacker {
             pos: tf.translation,
             scale: scale.map_or(1.0, |s| finite(s.0, 1.0).max(0.0)),
             player,
@@ -2124,7 +2147,7 @@ fn strike(
     fx: &mut Feedback,
     commands: &mut Commands,
 ) -> bool {
-    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward) = victim;
+    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward, sparring) = victim;
     if fighter.dead {
         return false;
     }
@@ -2155,7 +2178,15 @@ fn strike(
         fx.sfx.write(Sfx { kind: SfxKind::Block, at: hit.point, volume: 0.5 });
         fx.deed(hit.target, "ward", "");
     }
-    let damage = hit.damage * factor * scale * kept;
+    let mut damage = hit.damage * factor * scale * kept;
+    // Sparring: blows stop at the floor and the fighter yields there.
+    if let Some(sp) = sparring {
+        let floor = fighter.max_hp * sp.floor.clamp(0.01, 0.9);
+        if fighter.hp - damage <= floor {
+            damage = (fighter.hp - floor).max(0.0);
+            commands.entity(hit.target).try_insert(Yielded);
+        }
+    }
     let poise = hit.poise * factor * scale * kept;
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);
     let involved = attacker.player || player;

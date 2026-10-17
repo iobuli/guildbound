@@ -260,6 +260,21 @@
       "file": "play/sky.rs",
       "role": "day/night clock: sun, moon, sky, fog, ambient; F9 +1 h; GB_HOUR",
       "status": "new"
+    },
+    {
+      "file": "play/hall.rs",
+      "role": "Guild Hall complex on the east terrace: gate, hall, swinging doors, desk, bounty board, lodging, training ground + duel ring",
+      "status": "new"
+    },
+    {
+      "file": "play/talk.rs",
+      "role": "talk to Talkable NPCs: first-person close-up camera, dialogue panel with options",
+      "status": "new"
+    },
+    {
+      "file": "play/guild.rs",
+      "role": "guild people, gold, Mira desk services (turn-in, Guild Card, sell, bounties, apply, beds), Varro rank exam duel",
+      "status": "new"
     }
   ],
   "order": [
@@ -701,6 +716,46 @@
         "insignia",
         "hud"
       ]
+    },
+    {
+      "quantity": "Board.ready, Board.held",
+      "writer": [
+        "contracts"
+      ],
+      "readers": [
+        "guild",
+        "hud"
+      ]
+    },
+    {
+      "quantity": "Purse, Guild, Dialogue",
+      "writer": [
+        "guild"
+      ],
+      "readers": [
+        "hud",
+        "talk"
+      ]
+    },
+    {
+      "quantity": "Talking, TalkFocus, camera during talk",
+      "writer": [
+        "talk"
+      ],
+      "readers": [
+        "input",
+        "occupations",
+        "camera"
+      ]
+    },
+    {
+      "quantity": "Sparring, Varro Fighter.team during a bout",
+      "writer": [
+        "guild"
+      ],
+      "readers": [
+        "combat"
+      ]
     }
   ],
   "data": {
@@ -841,34 +896,15 @@
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
   ],
   "milestone": {
-    "name": "skills, deeds, discovered arts; rival, NPC casters, Aura Ward",
+    "name": "the Guild Hall: desk, gold, Guild Card, rank exam duel, talk view",
     "status": "awaiting playtest",
-    "tests": "171 passed, 1 ignored",
     "playtest": [
-      "K -> SKILLS: punch a dummy, Unarmed is discovered",
-      "cast Cinder Bolt: Fire Manipulation; Sensing shows Lightning affinity",
-      "swim, climb, mantle, roll-land, chop/fell, gather: their skills",
-      "ARTS & MAGIC: undiscovered rows show needed skill levels / SENSED",
-      "STATS: derived values grow with skill levels",
-      "F7: Rival joins and duels the Opponent; F7 again removes it",
-      "Rival and Opponent cast at each other",
-      "Defence 5 + blocking discovers Aura Ward; Q shows the spinning shell",
-      "F8: Hunter shoots from range, everyone fights everyone",
-      "Swordsmanship 10: Title earned: Blade Adept",
-      "log introduces each NPC with its traits; movement and fighting differ",
-      "survive under 15% HP for 8 s: Second Wind (unique)",
-      "K -> STATS madlib: click words, walk style changes",
-      "Opponent badge on the left breast (check placement)",
-      "K -> WORK: finish a contract for XP and a new posting",
-      "noticeboard by the spawn: F opens WORK",
-      "pond: C dives, Space surfaces, breath 12 s",
-      "armour faulds close the waist; thigh clears them when raised",
-      "Smith works the anvil/well/chair/torch; Farmer works the plots",
-      "F9 through the day: dusk, night (torches, moon), civilians night routine",
-      "WORK tab shows guild rank; rank E/D unlock new postings",
-      "bow: side-on archery draw/anchor/release, stave upright",
-      "Smith and Farmer post their own contracts (from the Smith / Farmer)",
-      "climb to a wall top: hang, edge sideways, pull over"
+      "gate east of the courtyard -> Guild Hall; doors swing open",
+      "F on Mira: first-person talk, Guild Card",
+      "contracts wait for turn-in at the desk: gold + XP",
+      "sell items, claim bounties, rent a bed and sleep to dawn",
+      "apply for rank E with 3 contracts, duel Varro in the ring, collect the card",
+      "Kael and Sena chat at the table; Varro drills"
     ]
   },
   "controls": {
@@ -883,7 +919,8 @@
     "rival": "F7",
     "hunter": "F8",
     "dive": "C while swimming (Space surfaces)",
-    "skip_hour": "F9"
+    "skip_hour": "F9",
+    "talk": "F on a guild NPC; 1-7 choose; Esc leave"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -904,6 +941,10 @@
     "GB_RECORD_FPS": "30",
     "GB_HUNTER": "1: the Hunter (archer) joins at start",
     "GB_DIVE": "1: dive once swimming (spawn in the pond, e.g. GB_SPAWN=-24,2,90)",
-    "GB_HOUR": "starting hour (0-24)"
+    "GB_HOUR": "starting hour (0-24)",
+    "GB_TALK": "npc name: talk at 2 s",
+    "GB_GOLD": "starting gold",
+    "GB_CARD": "1: open the Guild Card",
+    "GB_EXAM": "1: book and start the rank exam at 2.5 s"
   }
 }

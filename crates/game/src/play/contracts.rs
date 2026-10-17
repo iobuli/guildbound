@@ -1,9 +1,11 @@
 //! Contracts: posted work for the player (`assets/data/contracts.json`, `ContractBook`). Three are
 //! open at a time (`Board`, written here only); each objective is a deed pattern × count, so
-//! progress comes from the player's `deeds::Deed`s like everything else. A finished contract pays
-//! its experience (`stats::GrantXp`), is logged, and the next template in turn takes its place
-//! (never one already open). **Guild rank** (F, E, D, C, B, A, S) rises with contracts completed
-//! (`RANKS`); a template is only posted once the rank reaches its `rank`. **Issuers**: a template
+//! progress comes from the player's `deeds::Deed`s like everything else. A finished contract waits
+//! in `Board.ready` until it is turned in at the guild desk (`TurnIn` → experience through
+//! `stats::GrantXp`, gold through `Paid`), and the next template in turn takes its place
+//! (never one already open). **Guild rank** (F, E, D, C, B, A, S): contracts completed make you
+//! *eligible* (`RANKS`); the rank *held* rises only when the guild issues the card after the
+//! exam (`RankUp`, from `guild`); a template is only posted once the rank reaches its `rank`. **Issuers**: a template
 //! with an `issuer` is posted only while a character of that name with `Standing` (holdings: the
 //! Smith's forge, the Farmer's fields) is about; the WORK tab names who posted it.
 //! **Honours** (`assets/data/honours.json`, `HonourBook`): standing above rank and titles, granted
@@ -58,6 +60,9 @@ impl Objective {
 pub struct Reward {
     #[serde(default)]
     pub xp: u32,
+    /// Paid at the guild desk on turn-in.
+    #[serde(default)]
+    pub gold: u32,
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -197,12 +202,29 @@ pub struct Board {
     pub open: Vec<Open>,
     /// Next template to offer.
     next: usize,
+    /// Contracts completed (eligibility for the next rank).
     pub done: u32,
+    /// Finished contracts waiting to be turned in at the guild desk.
+    pub ready: Vec<usize>,
+    /// The rank held (index into `RANKS`): raised only by `RankUp` after the exam.
+    pub held: usize,
 }
 
 impl Board {
+    /// The rank held (gates postings and honours).
     pub fn rank(&self) -> usize {
+        self.held
+    }
+    /// The highest rank the contracts done qualify for.
+    pub fn eligible(&self) -> usize {
         rank_for(self.done)
+    }
+    /// Pay out everything ready: (gold, xp, contracts).
+    pub fn turn_in(&mut self, book: &ContractBook) -> (u32, u32, usize) {
+        let defs: Vec<&ContractDef> = self.ready.iter().filter_map(|i| book.0.get(*i)).collect();
+        let paid = (defs.iter().map(|d| d.reward.gold).sum(), defs.iter().map(|d| d.reward.xp).sum(), defs.len());
+        self.ready.clear();
+        paid
     }
     /// Fill up to `OPEN` with the next templates not already open that the rank allows and
     /// whose issuer (if any) is among `issuers`.
@@ -241,6 +263,7 @@ impl Board {
         }
         self.open.retain(|o| !finished.contains(&o.index));
         self.done += finished.len() as u32;
+        self.ready.extend(finished.iter().copied());
         finished
     }
 }
@@ -263,7 +286,61 @@ pub fn plugin(app: &mut App) {
     app.insert_resource(book)
         .insert_resource(board)
         .insert_resource(honours)
-        .add_systems(Update, (progress, honour, yields, read_board).chain());
+        .add_message::<TurnIn>()
+        .add_message::<Paid>()
+        .add_message::<RankUp>()
+        .add_systems(Update, (progress, settle, honour, yields, read_board).chain());
+}
+
+/// Turn in every ready contract (the guild desk).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct TurnIn {
+    pub who: Entity,
+}
+
+/// What a turn-in paid (the guild adds the gold to the purse).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct Paid {
+    pub who: Entity,
+    pub gold: u32,
+    pub xp: u32,
+    pub count: usize,
+}
+
+/// The exam is passed: the rank card is issued (index into `RANKS`).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct RankUp {
+    pub to: usize,
+}
+
+/// Turn-ins and rank cards.
+fn settle(
+    book: Res<ContractBook>,
+    mut board: ResMut<Board>,
+    mut turn_ins: MessageReader<TurnIn>,
+    mut ranks: MessageReader<RankUp>,
+    mut paid: MessageWriter<Paid>,
+    mut grants: MessageWriter<GrantXp>,
+    mut log: MessageWriter<HudLog>,
+) {
+    for t in turn_ins.read() {
+        let (gold, xp, count) = board.turn_in(&book);
+        if count == 0 {
+            continue;
+        }
+        info!("[contracts] payout {count} contracts: {gold} gold {xp} xp");
+        if xp > 0 {
+            grants.write(GrantXp { who: t.who, xp });
+        }
+        paid.write(Paid { who: t.who, gold, xp, count });
+    }
+    for r in ranks.read() {
+        if r.to > board.held && r.to < RANKS.len() {
+            board.held = r.to;
+            info!("[contracts] rank card {}", RANKS[r.to].0);
+            log.write(HudLog::new(LogKind::Item, format!("Guild rank {}: new card, new postings  [K]", RANKS[r.to].0)));
+        }
+    }
 }
 
 fn progress(
@@ -272,7 +349,6 @@ fn progress(
     mut deeds: MessageReader<Deed>,
     players: Query<Entity, With<Player>>,
     issuers: Query<(&Name, &Standing)>,
-    mut grants: MessageWriter<GrantXp>,
     mut log: MessageWriter<HudLog>,
 ) {
     let Some(player) = players.iter().next() else {
@@ -280,19 +356,19 @@ fn progress(
         return;
     };
     for d in deeds.read().filter(|d| d.who == player) {
-        let before = board.rank();
+        let before = board.eligible();
         for i in board.record(&book, d) {
             let def = &book.0[i];
             info!("[contracts] done {}", def.id);
-            log.write(HudLog::new(LogKind::Item, format!("Contract complete: {}  +{} XP  [K]", def.name, def.reward.xp)));
-            if def.reward.xp > 0 {
-                grants.write(GrantXp { who: player, xp: def.reward.xp });
-            }
+            log.write(HudLog::new(
+                LogKind::Item,
+                format!("Contract complete: {}  //  report to the guild desk (+{} gold, +{} XP)", def.name, def.reward.gold, def.reward.xp),
+            ));
         }
-        if board.rank() > before {
-            let r = RANKS[board.rank()].0;
-            info!("[contracts] rank {r}");
-            log.write(HudLog::new(LogKind::Item, format!("Guild rank {r}: new postings on the board  [K]")));
+        if board.eligible() > before && board.eligible() > board.held {
+            let r = RANKS[board.eligible()].0;
+            info!("[contracts] eligible {r}");
+            log.write(HudLog::new(LogKind::Item, format!("Eligible for rank {r}: apply at the guild desk")));
         }
         if board.open.len() < OPEN {
             let present: Vec<String> = issuers.iter().filter(|(_, s)| !s.holdings.is_empty()).map(|(n, _)| n.to_string()).collect();
@@ -445,6 +521,7 @@ mod tests {
         for _ in 0..12 {
             board.open.remove(0);
             board.done += 1;
+            board.held = board.eligible();
             board.fill(&b, &[]);
             seen_d |= board.open.iter().any(|o| b.0[o.index].rank == "D");
             assert!(board.open.iter().all(|o| rank_index(&b.0[o.index].rank).unwrap() <= board.rank()));
@@ -485,6 +562,25 @@ mod tests {
         };
         assert!(cycle(&[]).iter().all(|i| !smith.contains(i)), "no Smith, no Smith work");
         assert!(cycle(&["Smith".to_string()]).iter().any(|i| smith.contains(i)));
+    }
+
+    #[test]
+    fn finished_work_waits_for_the_desk_and_rank_waits_for_the_exam() {
+        let b = book();
+        let e = Entity::PLACEHOLDER;
+        let rival = b.0.iter().position(|c| c.id == "rival").expect("rival");
+        let mut board = Board {
+            open: vec![Open { index: rival, progress: vec![0.0] }],
+            ..default()
+        };
+        board.record(&b, &Deed::new(e, "kill", "Rival", 1.0));
+        assert_eq!(board.ready, [rival]);
+        let (gold, xp, n) = board.turn_in(&b);
+        assert_eq!((gold, xp, n), (b.0[rival].reward.gold, b.0[rival].reward.xp, 1));
+        assert!(gold > 0, "contracts pay gold");
+        assert!(board.ready.is_empty() && board.turn_in(&b).2 == 0, "paid once");
+        board.done = 3;
+        assert_eq!((board.eligible(), board.rank()), (1, 0), "eligible for E, still F until the exam");
     }
 
     #[test]

@@ -26,6 +26,7 @@ pub mod controller;
 pub mod deeds;
 pub mod fx;
 pub mod grass;
+pub mod hall;
 pub mod hud;
 pub mod input;
 pub mod insignia;
@@ -44,6 +45,8 @@ pub mod select;
 pub mod skills;
 pub mod sky;
 pub mod stats;
+pub mod talk;
+pub mod guild;
 pub mod surfaces;
 pub mod traverse;
 pub mod tools;
@@ -96,7 +99,7 @@ pub fn plugin(app: &mut App) {
         armor::plugin,
         audio::plugin,
     ))
-    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin));
+    .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -161,6 +164,8 @@ pub struct Intent {
     pub secondary_held: bool,
     pub secondary_pressed: bool,
     pub interact_pressed: bool,
+    /// F with a `talk::Talkable` in focus: talk instead of interacting.
+    pub talk_pressed: bool,
     /// Q / d-pad up: the bound art (Battlewill). E / d-pad right: the bound spell (magicules).
     pub art_pressed: bool,
     pub spell_pressed: bool,

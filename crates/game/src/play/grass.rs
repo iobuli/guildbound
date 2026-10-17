@@ -262,8 +262,8 @@ fn hash(x: i32, z: i32, salt: u32) -> f32 {
 /// How much grass the ground at (x, z) with height `y` and normal `n` supports, 0..1. Mirrors the
 /// grass / dirt / sand / mud / rock rules of `world::ground_color`, with soft borders.
 pub fn grass_cover(x: f32, z: f32, y: f32, n: Vec3) -> f32 {
-    // zero on the courtyard dirt, full 2.5 m outside it
-    let yard = smoothstep(0.0, 2.5, courtyard_distance(x, z));
+    // zero on the courtyard and the guild terrace's dirt, full 2.5 m outside them
+    let yard = smoothstep(0.0, 2.5, courtyard_distance(x, z).min(crate::play::world::terrace_distance(x, z) + 1.0));
     // the pond's sand ring reaches POND_RADIUS + 2 m
     let pond = smoothstep(POND_RADIUS + 1.6, POND_RADIUS + 3.2, Vec2::new(x, z).distance(POND_CENTER));
     let dry = smoothstep(WATER_LEVEL + 0.1, WATER_LEVEL + 0.5, y);

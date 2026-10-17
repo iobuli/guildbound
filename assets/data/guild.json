@@ -1,0 +1,35 @@
+{
+  "_about": "The Guild Hall: what things are worth at the front desk, bounties by victim name, lodging, the rank exam, and what people say. Prices in gold.",
+  "prices": { "Log": 4, "Stone": 3, "Stick": 1, "Apple": 2 },
+  "bounties": { "Opponent": 20, "Rival": 40, "Hunter": 40 },
+  "bed_cost": 10,
+  "exam": { "captain_level_per_rank": 2, "yield_share": 0.15, "retry_hours": 24 },
+  "lines": {
+    "receptionist_greet": [
+      "Welcome to the Guild. Contracts, appraisals, rank applications: what can I do for you?",
+      "Back again? The board's been busy. What do you need?",
+      "Mind the mud on the floor. How can the Guild help?"
+    ],
+    "captain_greet": [
+      "Feet planted, eyes up. You want something, adventurer?",
+      "The yard's open. Rank exams go through me, but Mira books them.",
+      "Swing like you mean it or don't swing at all."
+    ],
+    "adventurer_greet": [
+      "Heard the archer in the hills never misses twice.",
+      "Mira pays fair. The Captain hits hard. Both true.",
+      "Rent a bed if you're hurt. Nobody heals on the floor.",
+      "They say a knight's badge is real gold."
+    ],
+    "chatter": [
+      "Did you see the size of that oak by the well?",
+      "Varro put me on my back three times this morning.",
+      "Mira says the Smith wants stones again.",
+      "Rank D, they said. Next month, maybe.",
+      "I swear the Rival wasn't that big last week.",
+      "Pass the bread.",
+      "If the Hunter's out tonight, I'm staying in.",
+      "A bed and a hot meal. That's all I ask."
+    ]
+  }
+}

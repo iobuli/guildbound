@@ -410,9 +410,16 @@ pub fn plugin(app: &mut App) {
 fn pools(
     time: Res<Time>,
     mut hits: MessageReader<Hit>,
+    mut rests: MessageReader<super::guild::Rested>,
     mut q: Query<(&mut Energy, &Grimoire, Option<&Derived>, &Fighter)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
+    for r in rests.read() {
+        if let Ok((mut e, ..)) = q.get_mut(r.who) {
+            e.battlewill = e.max_battlewill;
+            e.magicules = e.max_magicules;
+        }
+    }
     for hit in hits.read() {
         if hit.kind == HitKind::Melee
             && let Ok((mut e, ..)) = q.get_mut(hit.attacker)

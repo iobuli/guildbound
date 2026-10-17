@@ -5,6 +5,7 @@
 //! place and plays the clip), stay `stay` s on a looping use (anvil, chair, torch) then press again
 //! to stop, and move on. `work` is the only writer of a civilian's `Intent`.
 //! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one.
+//! While the player talks to a civilian (`talk::Talking`) it stops and looks at them.
 //! The courtyard has a Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well,
 //! the noticeboard).
 use super::interact::{Using, stand_and_face};
@@ -16,14 +17,36 @@ use bevy::prelude::*;
 const ARRIVE: f32 = 0.45;
 const PRESS_EVERY: f32 = 1.0;
 const GIVE_UP: f32 = 30.0;
+/// A neighbour this close (m) while using something gets looked at (company at a table).
+const SITTER_NEAR: f32 = 3.5;
 /// Walking stick share.
 const STROLL: f32 = 0.55;
+/// Run-up behind a post (m), close enough to it (m), seconds between drill swings.
+const POST_RUNUP: f32 = 0.7;
+const POST_ARRIVE: f32 = 0.18;
+const DRILL_EVERY: f32 = 1.4;
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Step {
+    /// An interactable kind, or "post": stand at `at` facing its yaw.
     pub kind: String,
     #[serde(default)]
     pub stay: f32,
+    /// For "post": x, z and the yaw faced (deg).
+    #[serde(default)]
+    pub at: Option<[f32; 3]>,
+    /// At a post: swing at whatever is ahead now and then (a captain's drill).
+    #[serde(default)]
+    pub drill: bool,
+}
+
+/// Where a post step walks in from (behind the post along its facing) so the body arrives
+/// facing the right way, and the post itself.
+pub fn post_points(at: [f32; 3]) -> (Vec3, Vec3) {
+    let yaw = at[2].to_radians();
+    let forward = Vec3::new(yaw.sin(), 0.0, yaw.cos());
+    let post = Vec3::new(at[0], 0.0, at[1]);
+    (post - forward * POST_RUNUP, post)
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -84,6 +107,8 @@ pub struct Occupation {
     stay: f32,
     press_in: f32,
     elapsed: f32,
+    /// Post steps: past the run-up point yet.
+    run_up: bool,
     /// Which routine the step indexes (night or day).
     night: bool,
 }
@@ -98,11 +123,13 @@ impl Occupation {
             stay: 0.0,
             press_in: 0.0,
             elapsed: 0.0,
+            run_up: false,
             night: false,
         }
     }
     fn advance(&mut self, len: usize) {
         self.step = (self.step + 1) % len.max(1);
+        self.run_up = false;
         self.phase = Phase::Going;
         self.elapsed = 0.0;
         self.press_in = 0.0;
@@ -122,8 +149,11 @@ fn work(
     time: Res<Time>,
     book: Res<OccupationBook>,
     clock: Option<Res<super::sky::Clock>>,
+    talking: Option<Res<super::talk::Talking>>,
+    players: Query<Entity, With<super::Player>>,
     mut workers: Query<(Entity, &Transform, &Fighter, &mut Intent, &mut Occupation, Option<&Using>), With<Civilian>>,
     users: Query<&Using>,
+    sitters: Query<(Entity, &Transform), (With<Civilian>, With<Using>)>,
     things: Query<(Entity, &Transform, &Interactable)>,
 ) {
     let dt = time.delta_secs();
@@ -136,6 +166,11 @@ fn work(
         }
         let Some(def) = job.def.and_then(|i| book.0.get(i)) else { continue };
         if fighter.dead {
+            continue;
+        }
+        // Spoken to: stop and look at the speaker.
+        if talking.as_deref().is_some_and(|t| t.npc == Some(me)) {
+            intent.target = players.iter().next();
             continue;
         }
         let night = clock.as_deref().is_some_and(|c| c.is_night()) && !def.night.is_empty();
@@ -152,6 +187,12 @@ fn work(
         let step = &routine[job.step % len];
         job.elapsed += dt;
         if let Some(u) = using {
+            // Sitting with company: look at the nearest other sitter (talking at the table).
+            intent.target = sitters
+                .iter()
+                .filter(|(e, t)| *e != me && t.translation.distance(tf.translation) < SITTER_NEAR)
+                .min_by(|a, b| a.1.translation.distance(tf.translation).total_cmp(&b.1.translation.distance(tf.translation)))
+                .map(|(e, _)| e);
             if job.phase == Phase::Going {
                 job.phase = Phase::Working;
                 job.stay = step.stay;
@@ -165,11 +206,45 @@ fn work(
             }
             continue;
         }
+        let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
+        // A post: walk in from behind it, then stand (drilling, if asked) for `stay` s.
+        if let (Some(at), true) = (step.at, step.kind == "post") {
+            let (run_up, post) = post_points(at);
+            let yaw = at[2].to_radians();
+            let ahead = Vec3::new(yaw.sin(), 0.0, yaw.cos());
+            if job.phase == Phase::Working {
+                job.stay -= dt;
+                intent.look = feet + ahead * 3.0 + Vec3::Y * 1.4;
+                if step.drill {
+                    job.press_in -= dt;
+                    if job.press_in <= 0.0 {
+                        job.press_in = DRILL_EVERY;
+                        intent.primary_pressed = true;
+                    }
+                }
+                if job.stay <= 0.0 {
+                    job.advance(len);
+                }
+                continue;
+            }
+            let goal = if job.run_up { post } else { run_up };
+            let to = (goal - feet).with_y(0.0);
+            if !job.run_up && to.length() < ARRIVE {
+                job.run_up = true;
+            } else if job.run_up && to.length() < POST_ARRIVE {
+                job.phase = Phase::Working;
+                job.stay = step.stay;
+                job.press_in = DRILL_EVERY;
+            } else {
+                intent.move_dir = to.normalize_or_zero() * if job.run_up { 0.3 } else { STROLL };
+                intent.walk = true;
+            }
+            continue;
+        }
         if job.phase == Phase::Working || job.elapsed > GIVE_UP {
             job.advance(len);
             continue;
         }
-        let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
         let target = things
             .iter()
             .filter(|(e, _, it)| it.kind == step.kind && !busy.iter().any(|b| b == e && *b != me))
@@ -205,12 +280,21 @@ mod tests {
     fn occupations_load_and_name_real_kinds() {
         let b = OccupationBook::load(&occupations_path()).expect("occupations.json");
         assert!(b.index("smith").is_some() && b.index("farmer").is_some());
-        let kinds = ["chest", "table", "chair", "anvil", "torch", "lever", "board", "well", "crop", "watering", "seed"];
+        let kinds = ["chest", "table", "chair", "anvil", "torch", "lever", "board", "well", "crop", "watering", "seed", "bed", "post"];
         for o in &b.0 {
             for s in &o.routine {
                 assert!(kinds.contains(&s.kind.as_str()), "{}: unknown kind {}", o.id, s.kind);
+                assert_eq!(s.kind == "post", s.at.is_some(), "{}: a post needs `at`", o.id);
             }
         }
+    }
+
+    #[test]
+    fn posts_are_walked_into_facing_their_yaw() {
+        let (run_up, post) = post_points([10.0, 5.0, 90.0]);
+        // Facing +X: the run-up sits behind, at −X, so the last steps face +X.
+        assert!((post - Vec3::new(10.0, 0.0, 5.0)).length() < 1e-5);
+        assert!(run_up.x < post.x && (run_up.z - post.z).abs() < 1e-4);
     }
 
     #[test]
