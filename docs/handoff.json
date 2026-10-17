@@ -681,6 +681,15 @@
         "occupations",
         "minimap"
       ]
+    },
+    {
+      "quantity": "Standing (holdings)",
+      "writer": [
+        "world (spawn)"
+      ],
+      "readers": [
+        "contracts"
+      ]
     }
   ],
   "data": {
@@ -767,7 +776,7 @@
       "status": "v1 + titles, events, traits, madlib, insignia, contracts",
       "ideas": [
         "stat-weighted affinity",
-        "standing (who may post)"
+        "honours and player holdings"
       ]
     },
     {
@@ -846,7 +855,8 @@
       "Smith works the anvil/well/chair/torch; Farmer works the plots",
       "F9 through the day: dusk, night (torches, moon), civilians night routine",
       "WORK tab shows guild rank; rank E/D unlock new postings",
-      "bow: side-on archery draw/anchor/release, stave upright"
+      "bow: side-on archery draw/anchor/release, stave upright",
+      "Smith and Farmer post their own contracts (from the Smith / Farmer)"
     ]
   },
   "controls": {

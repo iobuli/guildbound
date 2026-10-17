@@ -1214,9 +1214,11 @@ fn spawn_characters(commands: &mut Commands) {
             },
             Some(tint),
         );
+        let holdings = vec![if job == "smith" { "forge" } else { "fields" }.to_string()];
         commands.entity(e).insert((
             Civilian,
             Occupation::new(job),
+            super::contracts::Standing { holdings },
             super::combat::Revive {
                 after: 8.0,
                 home: Some((feet, 0.0)),

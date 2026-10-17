@@ -775,7 +775,10 @@ fn refresh_contracts(
     };
     let get = |i: usize| board.open.get(i).and_then(|o| book.0.get(o.index).map(|d| (o, d)));
     for (c, mut t) in &mut texts.p0() {
-        let line = get(c.0).map_or(String::new(), |(_, d)| format!("{}   +{} XP", d.name, d.reward.xp));
+        let line = get(c.0).map_or(String::new(), |(_, d)| {
+            let from = d.issuer.as_ref().map_or(String::new(), |who| format!("   ·   from the {who}"));
+            format!("{}   +{} XP{from}", d.name, d.reward.xp)
+        });
         set(&mut t, line);
     }
     for (c, mut t) in &mut texts.p1() {

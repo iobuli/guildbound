@@ -3,7 +3,9 @@
 //! progress comes from the player's `deeds::Deed`s like everything else. A finished contract pays
 //! its experience (`stats::GrantXp`), is logged, and the next template in turn takes its place
 //! (never one already open). **Guild rank** (F, E, D, C, B, A, S) rises with contracts completed
-//! (`RANKS`); a template is only posted once the rank reaches its `rank`. Shown on the stats page's WORK tab, which the courtyard noticeboard
+//! (`RANKS`); a template is only posted once the rank reaches its `rank`. **Issuers**: a template
+//! with an `issuer` is posted only while a character of that name with `Standing` (holdings: the
+//! Smith's forge, the Farmer's fields) is about; the WORK tab names who posted it. Shown on the stats page's WORK tab, which the courtyard noticeboard
 //! (interactable kind "board", F) opens.
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
@@ -64,6 +66,15 @@ pub struct ContractDef {
     /// Guild rank needed before it is posted.
     #[serde(default = "rank_f")]
     pub rank: String,
+    /// Who posts it (a character's name); `None` = the guild.
+    #[serde(default)]
+    pub issuer: Option<String>,
+}
+
+/// Holdings that let a character post contracts (written by `world` at spawn).
+#[derive(Component, Clone, Debug, Default)]
+pub struct Standing {
+    pub holdings: Vec<String>,
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -110,8 +121,9 @@ impl Board {
     pub fn rank(&self) -> usize {
         rank_for(self.done)
     }
-    /// Fill up to `OPEN` with the next templates not already open that the rank allows.
-    pub fn fill(&mut self, book: &ContractBook) {
+    /// Fill up to `OPEN` with the next templates not already open that the rank allows and
+    /// whose issuer (if any) is among `issuers`.
+    pub fn fill(&mut self, book: &ContractBook, issuers: &[String]) {
         let n = book.0.len();
         let rank = self.rank();
         let mut tries = 0;
@@ -119,7 +131,9 @@ impl Board {
             let i = self.next % n;
             self.next += 1;
             tries += 1;
-            let allowed = rank_index(&book.0[i].rank).is_some_and(|r| r <= rank);
+            let def = &book.0[i];
+            let allowed = rank_index(&def.rank).is_some_and(|r| r <= rank)
+                && def.issuer.as_ref().is_none_or(|who| issuers.contains(who));
             if allowed && !self.open.iter().any(|o| o.index == i) {
                 self.open.push(Open {
                     index: i,
@@ -158,7 +172,7 @@ pub fn plugin(app: &mut App) {
         ContractBook::default()
     });
     let mut board = Board::default();
-    board.fill(&book);
+    board.fill(&book, &[]);
     app.insert_resource(book).insert_resource(board).add_systems(Update, (progress, read_board));
 }
 
@@ -167,6 +181,7 @@ fn progress(
     mut board: ResMut<Board>,
     mut deeds: MessageReader<Deed>,
     players: Query<Entity, With<Player>>,
+    issuers: Query<(&Name, &Standing)>,
     mut grants: MessageWriter<GrantXp>,
     mut log: MessageWriter<HudLog>,
 ) {
@@ -190,7 +205,8 @@ fn progress(
             log.write(HudLog::new(LogKind::Item, format!("Guild rank {r}: new postings on the board  [K]")));
         }
         if board.open.len() < OPEN {
-            board.fill(&book);
+            let present: Vec<String> = issuers.iter().filter(|(_, s)| !s.holdings.is_empty()).map(|(n, _)| n.to_string()).collect();
+            board.fill(&book, &present);
         }
     }
 }
@@ -225,7 +241,7 @@ mod tests {
     fn board_opens_three_distinct() {
         let b = book();
         let mut board = Board::default();
-        board.fill(&b);
+        board.fill(&b, &[]);
         assert_eq!(board.open.len(), OPEN);
         let mut ids: Vec<usize> = board.open.iter().map(|o| o.index).collect();
         ids.dedup();
@@ -237,7 +253,7 @@ mod tests {
         let b = book();
         let e = Entity::PLACEHOLDER;
         let mut board = Board::default();
-        board.fill(&b);
+        board.fill(&b, &[]);
         let first = board.open[0].index;
         let def = b.0[first].clone();
         let mut finished = Vec::new();
@@ -249,7 +265,7 @@ mod tests {
         }
         assert!(finished.contains(&first));
         assert_eq!(board.done as usize, finished.len());
-        board.fill(&b);
+        board.fill(&b, &[]);
         assert_eq!(board.open.len(), OPEN);
         assert!(board.open.iter().all(|o| o.index != first) || b.0.len() <= OPEN);
     }
@@ -261,18 +277,37 @@ mod tests {
         assert_eq!(RANKS[rank_for(3)].0, "E");
         assert_eq!(RANKS[rank_for(100)].0, "S");
         let mut board = Board::default();
-        board.fill(&b);
+        board.fill(&b, &[]);
         assert!(board.open.iter().all(|o| b.0[o.index].rank == "F"), "rank F posts only F work");
         // Cycle through many completions: higher-rank work appears once the rank allows it.
         let mut seen_d = false;
         for _ in 0..12 {
             board.open.remove(0);
             board.done += 1;
-            board.fill(&b);
+            board.fill(&b, &[]);
             seen_d |= board.open.iter().any(|o| b.0[o.index].rank == "D");
             assert!(board.open.iter().all(|o| rank_index(&b.0[o.index].rank).unwrap() <= board.rank()));
         }
         assert!(seen_d, "D work posted by rank D");
+    }
+
+    #[test]
+    fn issuer_work_needs_its_issuer() {
+        let b = book();
+        let smith: Vec<usize> = (0..b.0.len()).filter(|i| b.0[*i].issuer.as_deref() == Some("Smith")).collect();
+        assert!(!smith.is_empty());
+        let cycle = |issuers: &[String]| {
+            let mut board = Board::default();
+            let mut seen = Vec::new();
+            for _ in 0..40 {
+                board.fill(&b, issuers);
+                seen.extend(board.open.iter().map(|o| o.index));
+                board.open.clear();
+            }
+            seen
+        };
+        assert!(cycle(&[]).iter().all(|i| !smith.contains(i)), "no Smith, no Smith work");
+        assert!(cycle(&["Smith".to_string()]).iter().any(|i| smith.contains(i)));
     }
 
     #[test]
