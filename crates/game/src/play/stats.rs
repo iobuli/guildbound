@@ -13,12 +13,14 @@
 //! Dexterity → might (less), cast speed; Intelligence → mana, spell power; Faith → mana regen,
 //! mana, spell power (less).
 //!
-//! Levelling: killing an enemy grants the player `XP_PER_KILL` × the enemy's level; each level
+//! Levelling: a kill grants the killer (the last to strike the victim, player or NPC)
+//! `XP_PER_KILL` × the victim's level; each level
 //! needs `xp_to_next` and gives `POINTS_PER_LEVEL` points. `SpendPoint` (the stats panel's +
 //! buttons) raises an attribute while points remain. NPC strength comes from their `Stats` (e.g.
 //! `Stats::preset`), not from a separate difficulty knob.
 use super::combat::DamageScale;
-use super::{Fighter, Player};
+use super::{Fighter, Hit};
+use std::collections::HashMap;
 use bevy::prelude::*;
 
 /// Attribute value of an ordinary person; every derived value is "normal" at all-10s.
@@ -237,7 +239,7 @@ pub struct SpendPoint {
     pub attr: Attr,
 }
 
-/// The player levelled up (HUD log, effects).
+/// A fighter levelled up (the HUD logs the player's).
 #[derive(Message, Clone, Copy, Debug)]
 pub struct LevelUp {
     pub who: Entity,
@@ -259,28 +261,36 @@ fn spend(mut spends: MessageReader<SpendPoint>, mut stats: Query<&mut Stats>) {
     }
 }
 
-/// Enemies that just died give the player experience.
+/// A fighter that just died gives experience to whoever struck it last (player or NPC).
 fn award_xp(
-    fighters: Query<(Entity, &Fighter, &Stats), Without<Player>>,
-    mut players: Query<(Entity, &Fighter, &mut Stats), With<Player>>,
+    mut hits: MessageReader<Hit>,
+    mut fighters: Query<(Entity, &Fighter, &mut Stats)>,
     mut ups: MessageWriter<LevelUp>,
     mut dead: Local<Vec<Entity>>,
+    mut last: Local<HashMap<Entity, Entity>>,
 ) {
-    let mut xp = 0;
+    for h in hits.read() {
+        if h.attacker != h.target {
+            last.insert(h.target, h.attacker);
+        }
+    }
+    let mut awards = Vec::new();
     for (e, f, s) in &fighters {
         let was = dead.contains(&e);
         if f.dead && !was {
             dead.push(e);
-            xp += XP_PER_KILL * s.level;
+            if let Some(killer) = last.remove(&e) {
+                awards.push((killer, XP_PER_KILL * s.level));
+            }
         } else if !f.dead && was {
             dead.retain(|d| *d != e);
         }
     }
-    if xp == 0 {
-        return;
-    }
-    for (e, f, mut s) in &mut players {
-        if !f.dead && s.gain(xp) > 0 {
+    for (killer, xp) in awards {
+        if let Ok((e, f, mut s)) = fighters.get_mut(killer)
+            && !f.dead
+            && s.gain(xp) > 0
+        {
             ups.write(LevelUp { who: e, level: s.level });
         }
     }

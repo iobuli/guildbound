@@ -9,14 +9,28 @@
 //! - defence: an incoming swing is noticed after `Difficulty.reaction`, then guarded (sometimes
 //!   raised late, inside the parry window), dodged sideways, or taken;
 //! - low hp: retreat with the guard up until stamina recovers;
+//! - magic (`cast`): the bound spell (E) from range when magicules allow, the bound art (Q) up
+//!   close when Battlewill allows, each a `Difficulty.casting` chance per look, a few seconds
+//!   apart; never mid-swing or while guarding;
 //! - nothing while dead or down; with no enemy in `AGGRO` range, walk home and stand.
 //! `enroll` gives every new `Npc` a `Difficulty` and `combat::Revive` (back at its spawn point).
 //! How hard an NPC hits and how much it takes comes from its `stats::Stats`, the same universal
 //! base as the player's; `Difficulty` is only how it behaves.
 use super::combat::{self, Melee, Revive, Tell};
+use super::magic::{Energy, Grimoire, MASTERED_COST, ability};
 use super::moveset::Movesets;
 use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, PlaySet};
 use bevy::prelude::*;
+
+/// Casting: first chance after spotting an enemy, re-look interval, pause after a cast (s), and
+/// the spell range (m) past the weapon's reach.
+const CAST_FIRST: f32 = 2.0;
+const CAST_LOOK: f32 = 0.5;
+const CAST_PAUSE: [f32; 2] = [2.5, 5.0];
+const SPELL_FROM: f32 = 1.5;
+const SPELL_TO: f32 = 12.0;
+/// Arts are used within the reach plus this (m).
+const ART_REACH: f32 = 2.5;
 
 /// Enemies farther than this (m) are ignored.
 const AGGRO: f32 = 14.0;
@@ -91,6 +105,8 @@ pub struct Difficulty {
     pub guard: f32,
     /// 0..1: how often an open chance to attack is taken, and how short the pause after one.
     pub aggression: f32,
+    /// 0..1: chance of casting when a cast is possible (checked every `CAST_LOOK` s).
+    pub casting: f32,
 }
 
 impl Default for Difficulty {
@@ -101,6 +117,7 @@ impl Default for Difficulty {
             dodge: 0.2,
             guard: 0.35,
             aggression: 0.6,
+            casting: 0.35,
         }
     }
 }
@@ -129,6 +146,8 @@ pub struct Brain {
     retreating: bool,
     /// Spawn feet and yaw.
     home: Option<(Vec3, f32)>,
+    /// Seconds until the next cast may be considered.
+    cast_in: f32,
 }
 
 impl Default for Brain {
@@ -148,6 +167,7 @@ impl Default for Brain {
             linger: 0.0,
             retreating: false,
             home: None,
+            cast_in: CAST_FIRST,
         }
     }
 }
@@ -353,6 +373,33 @@ fn flat(v: Vec3) -> Vec3 {
     Vec3::new(v.x, 0.0, v.z)
 }
 
+/// What casting sees: the distance to the enemy, the weapon reach, and for the bound art and
+/// spell whether its pool can pay. `busy`: attacking, guarding or exhausted.
+#[derive(Clone, Copy, Debug)]
+pub struct CastView {
+    pub dist: f32,
+    pub reach: f32,
+    pub art_ready: bool,
+    pub spell_ready: bool,
+    pub busy: bool,
+}
+
+/// Cast this frame? (art, spell). Spells from range, arts up close.
+pub fn cast(v: &CastView, d: &Difficulty, b: &mut Brain, dt: f32) -> (bool, bool) {
+    b.cast_in -= if dt.is_finite() { dt.clamp(0.0, 0.1) } else { 0.0 };
+    if b.cast_in > 0.0 || v.busy {
+        return (false, false);
+    }
+    b.cast_in = CAST_LOOK;
+    let spell = v.spell_ready && (v.reach + SPELL_FROM..=SPELL_TO).contains(&v.dist);
+    let art = v.art_ready && v.dist <= v.reach + ART_REACH;
+    if !(spell || art) || b.roll() >= d.casting.clamp(0.0, 1.0) {
+        return (false, false);
+    }
+    b.cast_in = CAST_PAUSE[0] + (CAST_PAUSE[1] - CAST_PAUSE[0]) * b.roll();
+    if spell { (false, true) } else { (true, false) }
+}
+
 /// New NPCs: difficulty, revive at home, a per-NPC random seed.
 fn enroll(
     mut commands: Commands,
@@ -379,10 +426,13 @@ fn think(
     time: Res<Time>,
     movesets: Res<Movesets>,
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
-    mut npcs: Query<(Entity, &mut Intent, &mut Brain, Option<&Difficulty>), Or<(With<Npc>, With<Autopilot>)>>,
+    mut npcs: Query<
+        (Entity, &mut Intent, &mut Brain, Option<&Difficulty>, Option<&Energy>, Option<&Grimoire>),
+        Or<(With<Npc>, With<Autopilot>)>,
+    >,
 ) {
     let dt = time.delta_secs();
-    for (entity, mut intent, mut brain, difficulty) in &mut npcs {
+    for (entity, mut intent, mut brain, difficulty, energy, grimoire) in &mut npcs {
         let Ok((_, tf, fighter, melee, mover, loadout)) = fighters.get(entity) else {
             continue;
         };
@@ -416,7 +466,28 @@ fn think(
             }),
             home: brain.home.map(|h| h.0 + Vec3::Y * HALF_HEIGHT),
         };
-        let o = decide(&view, &difficulty.copied().unwrap_or_default(), &mut brain, dt);
+        let difficulty = difficulty.copied().unwrap_or_default();
+        let o = decide(&view, &difficulty, &mut brain, dt);
+        let (art, spell) = match (foe, energy, grimoire) {
+            (Some((_, pos, _)), Some(e), Some(g)) => {
+                let can_pay = |id: &str| {
+                    ability(id).is_some_and(|a| {
+                        let cost = a.cost * if g.is_mastered(a.id) { MASTERED_COST } else { 1.0 };
+                        let pool = if a.is_art() { e.battlewill } else { e.magicules };
+                        pool >= cost
+                    })
+                };
+                let cv = CastView {
+                    dist: flat(pos - me).length(),
+                    reach,
+                    art_ready: can_pay(g.art),
+                    spell_ready: can_pay(g.spell),
+                    busy: melee.attacking() || melee.guarding() || melee.exhausted() || o.press || o.hold || o.guard,
+                };
+                cast(&cv, &difficulty, &mut brain, dt)
+            }
+            _ => (false, false),
+        };
         let look = foe.map_or_else(
             || {
                 let yaw = brain.home.map_or(mover.yaw, |h| h.1);
@@ -435,6 +506,8 @@ fn think(
             secondary_held: o.guard,
             secondary_pressed: o.guard && !intent.secondary_held,
             target: foe.map(|f| f.0),
+            art_pressed: art,
+            spell_pressed: spell,
             ..default()
         };
     }
@@ -477,6 +550,48 @@ mod tests {
         let o = decide(&view(10.0), &Difficulty::default(), &mut b, 1.0 / 60.0);
         assert!(o.move_dir.z > 0.9 && o.sprint);
         assert!(!o.press);
+    }
+
+    fn cast_view(dist: f32) -> CastView {
+        CastView {
+            dist,
+            reach: 1.5,
+            art_ready: true,
+            spell_ready: true,
+            busy: false,
+        }
+    }
+
+    #[test]
+    fn casts_spells_from_range_and_arts_up_close() {
+        let d = Difficulty {
+            casting: 1.0,
+            ..default()
+        };
+        let first = |v: CastView| {
+            let mut b = Brain::default();
+            (0..400).map(|_| cast(&v, &d, &mut b, 1.0 / 60.0)).find(|c| c.0 || c.1)
+        };
+        assert_eq!(first(cast_view(8.0)), Some((false, true)));
+        assert_eq!(first(cast_view(1.2)), Some((true, false)));
+        assert_eq!(first(cast_view(20.0)), None, "out of spell range");
+        assert_eq!(first(CastView { busy: true, ..cast_view(8.0) }), None);
+        assert_eq!(first(CastView { spell_ready: false, ..cast_view(8.0) }), None, "no magicules");
+    }
+
+    #[test]
+    fn casts_are_spaced() {
+        let d = Difficulty {
+            casting: 1.0,
+            ..default()
+        };
+        let mut b = Brain::default();
+        let casts = (0..600).filter(|_| {
+            let c = cast(&cast_view(8.0), &d, &mut b, 1.0 / 60.0);
+            c.0 || c.1
+        });
+        // 10 s: the first after CAST_FIRST, then one per CAST_PAUSE at most.
+        assert!((1..=4).contains(&casts.count()));
     }
 
     #[test]

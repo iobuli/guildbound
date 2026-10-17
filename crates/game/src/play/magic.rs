@@ -87,6 +87,9 @@ pub enum Shape {
     Lance { range: f32, chains: u32 },
     Orbs { count: u32, speed: f32 },
     Step { distance: f32 },
+    /// A shell of aura on the caster: for `duration` s, `share` of every blow's damage and poise
+    /// is turned aside (`Ward`, read by `combat`).
+    Ward { duration: f32, share: f32 },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -115,7 +118,7 @@ impl Ability {
     }
 }
 
-pub static ABILITIES: [Ability; 8] = [
+pub static ABILITIES: [Ability; 9] = [
     // --- Arts (Battlewill, Q).
     Ability {
         id: "crescent_edge",
@@ -184,6 +187,23 @@ pub static ABILITIES: [Ability; 8] = [
         knockback: 6.0,
         shape: Shape::Quake { radius: 3.2 },
         about: "Drive aura into the ground: a shockwave throws everyone near.",
+    },
+    Ability {
+        id: "aura_ward",
+        name: "Aura Ward",
+        pool: Pool::Battlewill,
+        element: Element::Aura,
+        cost: 30.0,
+        track: "ual1/Spell_Simple_Enter",
+        start: 0.0,
+        end: 0.53,
+        speed: 1.2,
+        release: 0.7,
+        damage: 0.0,
+        poise: 0.0,
+        knockback: 0.0,
+        shape: Shape::Ward { duration: 5.0, share: 0.6 },
+        about: "Wrap the body in hardened aura: for five seconds, blows lose most of their bite.",
     },
     // --- Spells (magicules, E).
     Ability {
@@ -319,6 +339,21 @@ impl Grimoire {
     }
 }
 
+/// An active Aura Ward (written by `magic`; `combat` reads `share`).
+#[derive(Component, Clone, Copy, Debug)]
+pub struct Ward {
+    pub left: f32,
+    pub share: f32,
+    shell: Entity,
+}
+
+/// The visible shell of a ward, a child of its owner.
+#[derive(Component)]
+struct WardShell {
+    owner: Entity,
+    age: f32,
+}
+
 /// Bind an ability to its slot (Q for arts, E for spells).
 #[derive(Message, Clone, Copy, Debug)]
 pub struct Bind {
@@ -364,7 +399,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
         .add_systems(
             Update,
-            (pools, bind, start_cast, drive_cast, fly)
+            (pools, bind, start_cast, drive_cast, fly, ward)
                 .chain()
                 .in_set(PlaySet::Act)
                 .after(CombatSet),
@@ -916,8 +951,95 @@ fn release(
             }
         }
         Shape::Step { .. } => {}
+        Shape::Ward { duration, share } => {
+            // A faint tint and three bright bands spinning on tilted axes (a gyroscope of aura).
+            let tint = vfx::glow(materials, a.element.core() * 0.07);
+            let band = vfx::glow(materials, a.element.core() * 0.9);
+            let ring = meshes.add(vfx::ring(WARD_RADIUS - 0.025, WARD_RADIUS));
+            let shell = commands
+                .spawn((
+                    Name::new("Ward shell"),
+                    WardShell { owner, age: 0.0 },
+                    Mesh3d(meshes.add(Sphere::new(WARD_RADIUS))),
+                    MeshMaterial3d(tint),
+                    Transform::from_xyz(0.0, WARD_LIFT, 0.0),
+                    ChildOf(owner),
+                    bevy::light::NotShadowCaster,
+                ))
+                .with_children(|sh| {
+                    for (i, tilt) in WARD_TILTS.into_iter().enumerate() {
+                        sh.spawn((
+                            WardBand {
+                                axis: Quat::from_euler(EulerRot::XYZ, tilt[0].to_radians(), 0.0, tilt[1].to_radians()),
+                                speed: WARD_SPIN * if i % 2 == 0 { 1.0 } else { -1.3 },
+                            },
+                            Mesh3d(ring.clone()),
+                            MeshMaterial3d(band.clone()),
+                            Transform::default(),
+                            bevy::light::NotShadowCaster,
+                        ));
+                    }
+                })
+                .id();
+            commands.entity(owner).try_insert(Ward {
+                left: duration * flair,
+                share: (share * if flair > 1.0 { 1.15 } else { 1.0 }).min(0.85),
+                shell,
+            });
+            vfx::impact(commands, meshes, materials, world.vfx, Element::Aura, tf.translation + Vec3::Y * WARD_LIFT, 1.4 * flair);
+        }
     }
     landed
+}
+
+/// Ward shell: radius (m) and height of its centre above the body's centre; band tilts (deg about
+/// x, z) and spin (rad/s).
+const WARD_RADIUS: f32 = 0.95;
+const WARD_LIFT: f32 = 0.1;
+const WARD_TILTS: [[f32; 2]; 3] = [[0.0, 0.0], [62.0, 20.0], [-58.0, -35.0]];
+const WARD_SPIN: f32 = 2.4;
+
+/// One spinning band of a ward shell.
+#[derive(Component)]
+struct WardBand {
+    axis: Quat,
+    speed: f32,
+}
+
+/// Wards run down; shells breathe, shrink away at the end, and go with their ward.
+fn ward(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut wards: Query<(Entity, &mut Ward, &Fighter)>,
+    mut shells: Query<(Entity, &mut WardShell, &mut Transform), Without<WardBand>>,
+    mut bands: Query<(&WardBand, &mut Transform), Without<WardShell>>,
+) {
+    for (b, mut tf) in &mut bands {
+        tf.rotation = b.axis * Quat::from_rotation_y(b.speed * time.elapsed_secs());
+    }
+    let dt = time.delta_secs();
+    for (e, mut w, f) in &mut wards {
+        w.left -= dt;
+        if w.left <= 0.0 || f.dead {
+            commands.entity(e).try_remove::<Ward>();
+            commands.entity(w.shell).try_despawn();
+        }
+    }
+    for (e, mut shell, mut tf) in &mut shells {
+        shell.age += dt;
+        let Ok((_, w, _)) = wards.get(shell.owner) else {
+            commands.entity(e).try_despawn();
+            continue;
+        };
+        if w.shell != e {
+            commands.entity(e).try_despawn();
+            continue;
+        }
+        let grow = (shell.age / 0.15).min(1.0);
+        let fade = (w.left / 0.4).clamp(0.0, 1.0);
+        let breathe = 1.0 + 0.04 * (shell.age * 7.0).sin();
+        tf.scale = Vec3::splat((grow * fade * breathe).max(0.01));
+    }
 }
 
 /// Lissajous orbit offset around the owner's chest at `t` s for a mote starting at `phase`:
@@ -1172,6 +1294,14 @@ mod tests {
         assert_eq!(g.debt, MASTERED_DEBT);
         gain(&mut g, "cinder_bolt", 5);
         assert_eq!(g.debt, MASTERED_DEBT, "only once");
+    }
+
+    #[test]
+    fn ward_is_an_art_that_never_strikes() {
+        let w = ability("aura_ward").expect("ward");
+        assert!(w.is_art());
+        assert!(matches!(w.shape, Shape::Ward { share, .. } if share > 0.0 && share < 1.0));
+        assert_eq!(w.damage, 0.0);
     }
 
     #[test]

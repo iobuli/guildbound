@@ -45,6 +45,7 @@ use super::camera::CameraShake;
 use super::controller::{Teleport, wrap_angle, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::deeds::Deed;
+use super::magic::Ward;
 use super::monitor::Monitor;
 use super::moveset::{Attack, ClipRef, Moveset, Movesets, Primitive, WeaponDef};
 use super::ragdoll::RagdollRequest;
@@ -2007,6 +2008,7 @@ type Victim<'a> = (
     Option<&'a DamageScale>,
     Has<Player>,
     Option<&'a Name>,
+    Option<&'a Ward>,
 );
 
 /// Feedback shared by every outcome: hitstop, shake, sound, sparks.
@@ -2076,7 +2078,7 @@ fn resolve(
         now: time.elapsed_secs(),
     };
     for hit in hits.read() {
-        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _)| Attacker {
+        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _, _)| Attacker {
             pos: tf.translation,
             scale: scale.map_or(1.0, |s| finite(s.0, 1.0).max(0.0)),
             player,
@@ -2120,7 +2122,7 @@ fn strike(
     fx: &mut Feedback,
     commands: &mut Commands,
 ) -> bool {
-    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name) = victim;
+    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward) = victim;
     if fighter.dead {
         return false;
     }
@@ -2143,8 +2145,10 @@ fn strike(
     let factor = speed_factor(hit.speed);
     // Spells arrive already scaled by the caster's spell power; `might` is for weapons.
     let scale = if hit.kind == HitKind::Melee { attacker.scale } else { 1.0 };
-    let damage = hit.damage * factor * scale;
-    let poise = hit.poise * factor * scale;
+    // An Aura Ward (`magic`) turns aside its share of damage and poise.
+    let kept = 1.0 - ward.map_or(0.0, |w| finite(w.share, 0.0).clamp(0.0, 0.9));
+    let damage = hit.damage * factor * scale * kept;
+    let poise = hit.poise * factor * scale * kept;
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);
     let involved = attacker.player || player;
     let who = name.map_or("?", |n| n.as_str()).to_string();

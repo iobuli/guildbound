@@ -14,6 +14,7 @@
 //! The player is told with a log line and a flourish; levels log too. Skill levels add their
 //! row's `bonus` per level to `stats::SkillBonus`, which `stats` folds into `Derived`.
 //! Everyone carries a `Sheet` (required by `Fighter`): NPCs progress the same way.
+//! `skills.json` hot-reloads (`reload`, checked every second).
 use super::deeds::Deed;
 use super::hud::log::{HudLog, LogKind};
 use super::items::ItemCollected;
@@ -292,7 +293,46 @@ pub fn plugin(app: &mut App) {
     info!("[skills] {} skills", book.0.len());
     app.insert_resource(book)
         .register_required_components::<Fighter, Sheet>()
-        .add_systems(Update, (seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
+        .add_systems(Update, (reload, seed, progress, publish).chain().after(super::PlaySet::Act).before(super::PlaySet::Select));
+}
+
+/// How often `skills.json` is checked for edits (real s).
+const RELOAD_EVERY: f32 = 1.0;
+
+/// Hot reload: an edited `skills.json` replaces the book once it loads and validates (a bad edit
+/// is logged and the old book kept); every sheet then re-publishes its bonus.
+fn reload(
+    time: Res<Time<Real>>,
+    mut book: ResMut<SkillBook>,
+    mut sheets: Query<&mut Sheet>,
+    mut log: MessageWriter<HudLog>,
+    mut state: Local<(f32, Option<std::time::SystemTime>)>,
+) {
+    state.0 += time.delta_secs();
+    if state.0 < RELOAD_EVERY {
+        return;
+    }
+    state.0 = 0.0;
+    let path = skills_path();
+    let Some(stamp) = std::fs::metadata(&path).and_then(|m| m.modified()).ok() else { return };
+    let Some(seen) = state.1.replace(stamp) else { return };
+    if seen == stamp {
+        return;
+    }
+    match SkillBook::load(&path) {
+        Ok(new) => {
+            info!("[skills] reloaded: {} skills", new.0.len());
+            *book = new;
+            for mut s in &mut sheets {
+                s.set_changed();
+            }
+            log.write(HudLog::new(LogKind::System, "skills.json reloaded").key(7201));
+        }
+        Err(e) => {
+            error!("[skills] {e}");
+            log.write(HudLog::new(LogKind::Warn, "skills.json: error, kept the old one (see log)").key(7201));
+        }
+    }
 }
 
 /// Give every sheet its own seed (from its entity) before its first deed.

@@ -24,10 +24,11 @@
 //! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
 //! abilities at the nearest NPC (see `magic::demo`). `GB_RIVAL=1` brings in the rival at start.
 //!
-//! F7 toggles a second enemy, the Rival (team 2, greatsword): it and the Opponent (team 1) fight
+//! F7 toggles a second enemy, the Rival (team 2, greatsword, Earthbreaker and Frost Bloom): it and the Opponent (team 1) fight
 //! each other as readily as the player.
 use super::armor::spawn_stand;
 use super::hud::log::{HudLog, LogKind};
+use super::magic::Grimoire;
 use super::skills::{Sheet, xp_for_level};
 use super::stats::{Attr, Stats};
 use super::surfaces::{PROP_TILE, Surfaces, TERRAIN_TILE, world_uvs};
@@ -140,12 +141,21 @@ fn spawn_rival(commands: &mut Commands) {
         },
         Some(Color::srgb(0.36, 0.30, 0.78)),
     );
-    // A heavy brawler: strength, endurance and vigor, a greatsword and the skills behind it.
+    // A heavy brawler: strength, endurance and vigor, a greatsword and the skills behind it;
+    // it slams the ground (Earthbreaker) and throws frost.
     let build = [Attr::Strength, Attr::Endurance, Attr::Vigor];
     let mut sheet = Sheet::default();
     sheet.grant("swordsmanship", xp_for_level(15));
     sheet.grant("defence", xp_for_level(8));
-    commands.entity(rival).insert((Npc, Rival, Stats::preset(4, &build), sheet));
+    sheet.grant("aura_arts", xp_for_level(10));
+    sheet.grant("frost", xp_for_level(5));
+    sheet.abilities.extend(["earthbreaker", "frost_bloom"]);
+    let grimoire = Grimoire {
+        art: "earthbreaker",
+        spell: "frost_bloom",
+        ..default()
+    };
+    commands.entity(rival).insert((Npc, Rival, Stats::preset(4, &build), sheet, grimoire));
 }
 
 /// Where `R` puts the player back.

@@ -24,6 +24,8 @@ use gbui::prelude::*;
 const WIDTH: f32 = 430.0;
 const ROW: f32 = 24.0;
 const SKILL_ROW: f32 = 21.0;
+/// Extra SKILLS rows beyond the book at startup.
+const SPARE_ROWS: usize = 8;
 /// Undiscovered skills hinted at on the SKILLS tab.
 const HINTS: usize = 3;
 const FOOTER_RATE: f32 = 110.0;
@@ -314,7 +316,8 @@ fn spawn(mut commands: Commands, book: Res<SkillBook>) {
                 },
             ))
             .with_children(|page| {
-                for i in 0..book.0.len() {
+                // Spare rows for skills added by a hot reload.
+                for i in 0..book.0.len() + SPARE_ROWS {
                     page.spawn((
                         SkillRow(i),
                         button(

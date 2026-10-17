@@ -57,7 +57,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `play/ai.rs` | Rule-based NPC brain → `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive` | new |
 | `play/ragdoll.rs` | Impact ragdoll (F6 on the player): on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled → stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again | new |
 | `play/ranged.rs` | Movesets of kind `ranged` (`bow`, `crossbow`, `knives`, from the chest): RMB aims (upper-body aim clip, half speed, crosshair), LMB fires; the bow draws (hold, power grows with the draw), the crossbow reloads, knives throw in fans of 3. Shots arc under gravity, sweep body capsules, emit `Hit` (`HitKind::Projectile`, × might); arrows and bolts stick in the world; `GB_SHOOT` hook | new |
-| `play/magic.rs` | Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 4 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step; mastery per landed blow → **Mastered** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known = discovered (`skills::Sheet::abilities`); `GB_CAST` demo hook | new |
+| `play/magic.rs` | Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 5 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker, Aura Ward) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step / Ward (a shell that turns aside 60 % of damage and poise for 5 s; spinning gyroscope bands); mastery per landed blow → **Mastered** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known = discovered (`skills::Sheet::abilities`); `GB_CAST` demo hook | new |
 | `play/traverse.rs` | Swim (chest under the surface, bob, sprint costs stamina, wade out), wall climb (jump at a tall `Climbable` face; stick climbs / shimmies; hand and foot holds on a grid; jump kicks off, dodge lets go, stamina runs out → fall), mantle over the top, vault onto waist-high blocks (`ActionKind::Mantle`, scripted rise-then-over path); `GB_CLIMB` smoke hook | new |
 
 ## Frame order
@@ -110,6 +110,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
 | `Stats`, `Derived`, `DamageScale` | `stats` | combat (maxima, regen, might), magic (pools, spell power), HUD |
 | `Deed` message | combat, magic, ranged, traverse, parkour, trees emit | `skills` alone reads |
 | `Sheet` (skill XP, affinities, discovered abilities), `SkillBonus` | `skills` (presets at spawn in `world`; the `GB_CAST` demo marks abilities discovered) | magic (`known`, casting), stats (`derive_with`), HUD |
+| `Ward` (Aura Ward: time left, share) | `magic` | `combat` (scales damage and poise) |
 | `Energy` (Battlewill, magicules), `Grimoire` (bindings, mastery, mastery debt) | `magic` (the stats page binds through `magic::Bind`) | HUD |
 | `Loadout.current` | `combat` (`Equip` messages from `armory`) | select, HUD |
 | `ArmoryOpen`, `StatsOpen` | `armory`, `hud::stats_page` | `camera` (cursor) |
@@ -153,7 +154,10 @@ Log line: `t character relation side value mode action speed`.
 - The old mastered-ability "Skill" is renamed **Mastered** (`Grimoire::is_mastered`, `MASTERED_*`), so "skill" means only the new use-based skills.
 - The Opponent has Swordsmanship 20 and Defence 12 and levels the same way.
 - **F7** toggles a second enemy, the **Rival** (team 2, greatsword, purple; Swordsmanship 15, Defence 8). Teams differ, so the brain sends each NPC at its nearest foe: the Rival and the Opponent fight each other as readily as the player. A ragdolled Rival leaves once it is back up. `GB_RIVAL=1` brings it in at start; `GB_FIGHT=<moveset>` puts the player on the NPC brain (`ai::Autopilot`) with that weapon.
-- Known: `stats::award_xp` still gives the player XP for any NPC death, including Rival-vs-Opponent kills (skill `kill` deeds are attributed correctly).
+- Kill XP goes to the killer (the last to strike the victim, read from `Hit`), player or NPC: NPCs level up from their kills too.
+- NPCs cast: the brain (`ai::cast`, pure and tested) throws the bound spell from 1.5–12 m past its reach and uses the bound art up close, each a `Difficulty.casting` (0.35) chance per half-second look, 2.5–5 s apart, never mid-swing or guarding. The Opponent casts Crescent Edge / Cinder Bolt; the Rival Earthbreaker / Frost Bloom.
+- **Aura Ward** (art, 30 BW): discoverable at Defence 5 (block and parry to train it).
+- `skills.json` hot-reloads (checked every second; a bad edit keeps the old book and logs the error). The SKILLS tab keeps 8 spare rows for added skills.
 - Training dummies count as deeds (practice teaches); the 600 XP per skill per 30 s cap stops farming.
 - Tests: 171 passed, 1 ignored. The headless screenshot of the SKILLS tab was not taken this round (`GB_STATS=skills GB_CAST=crescent_edge,cinder_bolt` with a long `GB_AUTOQUIT` does it).
 - Playtest checklist:
@@ -162,7 +166,8 @@ Log line: `t character relation side value mode action speed`.
   3. Swim, climb, mantle, roll-land, chop and fell a tree, pick things up: Swimming, Climbing, Breakfall, Woodcutting, Gathering.
   4. K → ARTS & MAGIC: undiscovered rows read "· · ·" with the skill levels they need (or SENSED once those are met).
   5. STATS tab: the derived values grow a little with skill levels.
-  6. F7: the Rival joins; stand back and watch it and the Opponent duel; F7 again sends it away.
+  6. F7: the Rival joins; stand back and watch it and the Opponent duel (slams, frost, crescents); F7 again sends it away.
+  7. Block and parry until Defence 5, then keep blocking: Aura Ward is discovered; Q with it bound shows the spinning shell, and blows hurt less.
 
 ## Stats, magic, weapon chest, controls (previous milestone)
 
@@ -211,9 +216,9 @@ Each lane stays in its own stub files. The shared files (`play/mod.rs`, `select.
 
 - **A. Melee:** done (`combat.rs`, melee movesets, `ai.rs`, `ragdoll.rs`). Possible next steps: a face-down get-up clip (only `LayToIdle` exists, so bodies lying face down roll over during the get-up), and an active ragdoll (PD drive toward the animated pose).
 - **B. Done** (traversal, ranged, magic). Possible: ledge shimmy, diving, bow draw/release clips (the aim uses the pistol pose), NPC archers and casters.
-- **Next for magic:** NPC casters (the AI only fights in melee), a Battlewill shield art, a faulds skirt to close the armour's hips.
+- **Next for magic:** done this round: NPC casters and the Aura Ward. Open: a faulds skirt to close the armour's hips, ward-hit feedback (sparks on the shell), mastery for the ward (it lands no blows).
   - **Tightrope / balance beam (user idea):** low exaggeration with high lean already plays like balancing. Add a beam to the world and a balance state: sideways lean drift that the player counters, arms spread for balance (arm swing / `HandTargets`), and too much tilt → wobble → fall. Build it on contact lean, `secondary` arm inertia, and `body` self-collision.
-- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Next: hot reload of `skills.json`, titles, occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
+- **C. Character systems: v1 done** (`deeds.rs`, `skills.rs`, `assets/data/skills.json`, SKILLS tab). Hot reload done. Next: titles, occupations, contracts, events, traits (the madlib → per-character `MotionStyle`), stat-weighted affinity, NPC casters using discovered spells.
 - **D. Done:** `motion/tweak.rs` (F2). Possible: N to author new keys (`authored` tracks).
 - **Parkour reference:** `docs/reference/parkour_jump.md` (frames pending: Vimeo needs a login, so drop the mp4 at `staging/ref/parkour.mp4`).
 

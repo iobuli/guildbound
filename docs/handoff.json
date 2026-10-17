@@ -173,7 +173,7 @@
     },
     {
       "file": "play/ai.rs",
-      "role": "rule-based NPC brain writing Intent: spacing, strafe, attack in reach, reads the foe's Melee::tell to guard / parry late / dodge, retreats when hurt, walks home; no network or language model; Difficulty knob; enroll inserts DamageScale + Revive",
+      "role": "rule-based NPC brain writing Intent: spacing, strafe, attack in reach, reads the foe's Melee::tell to guard / parry late / dodge, retreats when hurt, walks home; no network or language model; Difficulty knob; enroll inserts DamageScale + Revive; casts the bound spell from range and art up close (ai::cast); Autopilot (GB_FIGHT)",
       "status": "new"
     },
     {
@@ -188,7 +188,7 @@
     },
     {
       "file": "play/magic.rs",
-      "role": "arts (Q, Battlewill) and spells (E, magicules; MB5 cycles), ABILITIES table, shapes bolt/crescent/quake/lance/orbs/step, mastery -> Mastered at a magicule cost, known = discovered (skills::Sheet), GB_CAST demo",
+      "role": "arts (Q, Battlewill) and spells (E, magicules; MB5 cycles), ABILITIES table, shapes bolt/crescent/quake/lance/orbs/step/ward (Aura Ward), mastery -> Mastered at a magicule cost, known = discovered (skills::Sheet), GB_CAST demo",
       "status": "new"
     },
     {
@@ -582,6 +582,15 @@
         "hud"
       ],
       "note": "world presets the Opponent at spawn; magic demo marks abilities discovered"
+    },
+    {
+      "quantity": "Ward",
+      "writer": [
+        "magic"
+      ],
+      "readers": [
+        "combat"
+      ]
     }
   ],
   "data": {
@@ -667,14 +676,12 @@
       ],
       "status": "v1 done (skills, deeds, discovered arts)",
       "ideas": [
-        "hot reload skills.json",
         "titles",
         "occupations",
         "contracts",
         "events",
         "traits madlib -> MotionStyle",
-        "stat-weighted affinity",
-        "NPC casters"
+        "stat-weighted affinity"
       ]
     },
     {
@@ -728,7 +735,7 @@
     "M6 extras: mining rocks (pickaxe), campfire crafting (3 logs + 5 stones), wind magic gust"
   ],
   "milestone": {
-    "name": "skills, deeds, discovered arts (lane C v1)",
+    "name": "skills, deeds, discovered arts; rival, NPC casters, Aura Ward",
     "status": "awaiting playtest",
     "tests": "171 passed, 1 ignored",
     "playtest": [
@@ -737,7 +744,9 @@
       "swim, climb, mantle, roll-land, chop/fell, gather: their skills",
       "ARTS & MAGIC: undiscovered rows show needed skill levels / SENSED",
       "STATS: derived values grow with skill levels",
-      "F7: Rival joins and duels the Opponent; F7 again removes it"
+      "F7: Rival joins and duels the Opponent; F7 again removes it",
+      "Rival and Opponent cast at each other",
+      "Defence 5 + blocking discovers Aura Ward; Q shows the spinning shell"
     ]
   },
   "controls": {
