@@ -1,0 +1,7 @@
+  scorch.png  OK  coverage  28.1%  centroid offset  1.0 px  border 0  beyond r232 0
+  frost.png   OK  coverage   5.7%  centroid offset  1.2 px  border 0  beyond r232 0
+  crack.png   OK  coverage   5.8%  centroid offset  9.1 px  border 0  beyond r232 0
+  char.png    OK  coverage   3.9%  centroid offset 33.9 px  border 0  beyond r232 0
+  crack_n.png  OK  normal z mean 0.9824
+checked 5 files in /home/user/3bbaab7a-d021-4588-9336-b4168a512322/guildhouse/assets/textures/marks
+all spell marks pass
