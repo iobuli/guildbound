@@ -1,5 +1,16 @@
 # Agent log (newest first)
 
+## 2026-10-18T15:17Z · agent-2
+
+**Branch:** feat-monk   ·  **Range:** `e9ecf30..HEAD`
+
+**What:** Test fix only: ai::outranked_humans_run_and_wary_ones_stop_first failed because a fresh Brain starts with cooldown 1.0. Before this fix feat-monk built clean and cargo test gave 274 passed, 1 failed (this test). Game code unchanged. Not re-run after the fix (build in progress elsewhere).
+
+**Config / try it:** git fetch origin feat-monk; cargo test -p guildbound outranked
+
+- `8498c64` AI hesitation test: start the brain off cooldown
+    - crates/game/src/play/ai.rs: +737
+
 ## 2026-10-18 · reviewer (cloud Claude)
 
 **Branch:** feat-monk   ·  **Range:** `26c5552..e9ecf30`   ·  **Kind:** code review only (no code changed, nothing built here)
