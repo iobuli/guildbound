@@ -1,5 +1,17 @@
 # Agent log (newest first)
 
+## 2026-10-18T21:43Z · agent-2
+
+**Branch:** ev/E1-monk-deflect   ·  **Range:** `79370a2..HEAD`
+
+**What:** E1 Monk deflect: held guard = two-finger deflect on the blade's path (reduced dmg); perfect timing = Counter (bare hands) / Disarm (weapon, close rank: weapon drops, back after 8 s, no dmg) / Seize (weapon, 2+ ranks below: blade seized, weaponless, Broken 3.5 s, no ragdoll); monk hit on a Broken foe = finisher. Replaces Stunned->ragdoll. Built on int/E7-E8-E14 (79370a2). Build OK, cargo test 282/0. Not yet seen in game.
+
+**Config / try it:** GB_CLASS=monk GB_RANK=6 vs the Opponent (katana) for seize; GB_RANK=0..1 for disarm. Log: [discipline] deflect/disarms/seizes/finisher. Merge after int/E7-E8-E14 lands on overhaul.
+
+- `9514b8e` E1 Monk: two-finger deflect, perfect defence disarms or seizes, Broken foes take a finisher
+    - crates/game/src/play/combat.rs: +50-53 +216-220 +2228 +2364-2372 +2374-2383 +2385-2398 +2400-2401 +2408-2409 +2414 +2429 +2527 +2533-2540 …
+    - crates/game/src/play/discipline.rs: +9-21 +35-36 +38 +109 +111 +115-160 +260-261 +401-402 +405-523 +717-728
+
 ## 2026-10-18T17:46Z · agent-1
 
 **Branch:** int/E7-E8-E14   ·  **Range:** `fc15f67..79370a2`
