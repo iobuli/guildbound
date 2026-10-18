@@ -2,8 +2,8 @@
 //! the system that owns the value, never around it:
 //! - target readout: hp / poise / stamina, path and rank of the lock-on target (`Intent.target`),
 //!   else the nearest living foe;
-//! - 1 god (self): toggles `Invulnerable` on the player (combat skips hp and poise loss for it);
-//! - 2 tireless (self): toggles `Tireless` (combat skips its `StaminaSpend`);
+//! - 1 god (self): toggles `Invulnerable` on the player (hits pass through it, like a dodge);
+//! - 2 tireless (self): toggles `Tireless` (stamina stays full);
 //! - 3 kill target: an unblockable `Hit` (`HitKind::Grab`) worth more than its hp (an ordinary
 //!   knock unless `GB_GOD_KNOCK` says otherwise), so `combat` resolves the death itself;
 //! - 4 revive target: `combat::Revive { after: 0 }`, so combat's own revive runs;
@@ -12,15 +12,14 @@
 //! The digit keys only act while this panel is open and the F12 list is closed. `GB_GOD=1` turns
 //! god mode and tireless on for the player at start (smoke runs, recordings); `GB_GOD_KILL=<s>`
 //! kills the nearest foe at that game time (a defeat on demand, for E7's recordings).
-//! The markers act through combat's own hooks (agent-1, E14): `Invulnerable` will call
-//! `Melee::shield(0.2)` every frame (hits pass through like a dodge) and `Tireless` will call
-//! `Melee::refresh()` and top up stamina, after `CombatSet`. Those hooks land with E14; until then
-//! the panel marks both toggles "(needs E14)". "Hit lands, no damage" is a `resolve` change for
+//! The markers act through combat's own hooks (E14), in `hold` after `CombatSet`: `Invulnerable`
+//! calls `Melee::shield(SHIELD)` every frame (hits pass through like a dodge) and `Tireless` calls
+//! `Melee::refresh()` and tops stamina up. "Hit lands, no damage" is a `resolve` change for
 //! combat's owner (agent-2), v2.
 //! Hook for the debug stats panel (E11): `GodState` is a resource another panel can read and
 //! drive; this panel's own UI is just one view of it.
 use super::ai::Peaceful;
-use super::combat::Revive;
+use super::combat::{CombatSet, Melee, Revive};
 use super::debug::DebugToggles;
 use super::discipline::Mastery;
 use super::{Fighter, Hit, HitKind, Intent, Player};
@@ -55,7 +54,24 @@ const LOOK: f32 = 30.0;
 pub fn plugin(app: &mut App) {
     app.init_resource::<GodState>()
         .add_systems(Startup, (spawn_panel, smoke_start))
-        .add_systems(Update, (keys, pick_target, apply_markers, smoke_kill, show).chain());
+        .add_systems(Update, (keys, pick_target, apply_markers, smoke_kill, show).chain())
+        .add_systems(Update, hold.after(CombatSet));
+}
+
+/// Seconds of untouchability `Invulnerable` renews every frame (longer than any frame).
+const SHIELD: f32 = 0.2;
+
+/// God and tireless, through combat's hooks: after combat has spent and hurt this frame.
+fn hold(mut q: Query<(&mut Melee, &mut Fighter, Has<Invulnerable>, Has<Tireless>), Or<(With<Invulnerable>, With<Tireless>)>>) {
+    for (mut melee, mut fighter, god, tireless) in &mut q {
+        if god {
+            melee.shield(SHIELD);
+        }
+        if tireless {
+            melee.refresh();
+            fighter.stamina = fighter.max_stamina;
+        }
+    }
 }
 
 #[derive(Component)]
@@ -275,11 +291,9 @@ fn smoke_kill(
 pub fn panel_text(god: &GodState, target: Option<(&str, &Fighter, Option<&Mastery>)>, peaceful: bool) -> String {
     let on = |b: bool| if b { "■" } else { "□" };
     let mut s = format!(
-        " 1  {} god (hits pass through){}\n 2  {} tireless{}\n 3  kill target\n 4  revive target\n 5  {} peaceful\n",
+        " 1  {} god (hits pass through)\n 2  {} tireless\n 3  kill target\n 4  revive target\n 5  {} peaceful\n",
         on(god.god),
-        " (needs E14)",
         on(god.tireless),
-        " (needs E14)",
         on(peaceful),
     );
     match target {
