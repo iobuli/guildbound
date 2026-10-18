@@ -1,0 +1,777 @@
+{
+  "_about": "Guildhouse object layout, world metres, y up. Derived from the verified placement and the measured dimensions; yaw so the door faces -x.",
+  "_fx_excluded": [
+    "hearth_fire",
+    "lounge_fire"
+  ],
+  "_note": "fx_only entries are marked for the particle system and need no geometry. Lantern lights are kept.",
+  "_floors": [
+    "ground",
+    "roof",
+    "structure",
+    "terrace",
+    "tower",
+    "upper"
+  ],
+  "objects": [
+    {
+      "floor": "terrace",
+      "name": "podium",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 0.75,
+      "z": -9.0,
+      "note": "16.0 x 13.4 x 1.5 m block",
+      "sx": 16.0,
+      "sy": 1.5,
+      "sz": 13.4
+    },
+    {
+      "floor": "terrace",
+      "name": "step_1",
+      "kind": "structure",
+      "x": 23.79,
+      "y": 0.12,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "step_2",
+      "kind": "structure",
+      "x": 23.38,
+      "y": 0.38,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "step_3",
+      "kind": "structure",
+      "x": 22.96,
+      "y": 0.62,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "step_4",
+      "kind": "structure",
+      "x": 22.54,
+      "y": 0.88,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "step_5",
+      "kind": "structure",
+      "x": 22.12,
+      "y": 1.12,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "step_6",
+      "kind": "structure",
+      "x": 21.71,
+      "y": 1.38,
+      "z": -9.0,
+      "note": "4.2 m wide, 0.25 m rise",
+      "sx": 0.4166666666666667,
+      "sy": 0.25,
+      "sz": 4.2
+    },
+    {
+      "floor": "terrace",
+      "name": "porch_roof",
+      "kind": "structure",
+      "x": 24.85,
+      "y": 6.7,
+      "z": -9.0,
+      "note": "4.1 x 1.8 m, top 5.2 m above podium",
+      "sx": 1.8,
+      "sy": 0.2,
+      "sz": 4.1
+    },
+    {
+      "floor": "terrace",
+      "name": "porch_post_left",
+      "kind": "structure",
+      "x": 24.1,
+      "y": 4.1,
+      "z": -10.9,
+      "note": "porch support"
+    },
+    {
+      "floor": "terrace",
+      "name": "porch_post_right",
+      "kind": "structure",
+      "x": 24.1,
+      "y": 4.1,
+      "z": -7.1,
+      "note": "porch support"
+    },
+    {
+      "floor": "ground",
+      "name": "floor",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 1.5,
+      "z": -9.0,
+      "note": "plank floor over the podium",
+      "sx": 9.9,
+      "sy": 0.1,
+      "sz": 12.8
+    },
+    {
+      "floor": "ground",
+      "name": "walls",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 3.3,
+      "z": -9.0,
+      "note": "stone, 0.4 m thick, 3.6 m tall",
+      "sx": 9.9,
+      "sy": 3.6,
+      "sz": 12.8
+    },
+    {
+      "floor": "ground",
+      "name": "door",
+      "kind": "aperture",
+      "x": 25.75,
+      "y": 3.1,
+      "z": -9.0,
+      "note": "hatched/skinned opening",
+      "sx": 0.4,
+      "sy": 3.2,
+      "sz": 2.6
+    },
+    {
+      "floor": "ground",
+      "name": "front_window_l",
+      "kind": "aperture",
+      "x": 25.75,
+      "y": 3.1,
+      "z": -12.5,
+      "note": "hatched/skinned opening",
+      "sx": 0.4,
+      "sy": 1.6,
+      "sz": 1.3
+    },
+    {
+      "floor": "ground",
+      "name": "front_window_r",
+      "kind": "aperture",
+      "x": 25.75,
+      "y": 3.1,
+      "z": -5.5,
+      "note": "hatched/skinned opening",
+      "sx": 0.4,
+      "sy": 1.6,
+      "sz": 1.3
+    },
+    {
+      "floor": "ground",
+      "name": "back_window_1",
+      "kind": "aperture",
+      "x": 35.65,
+      "y": 3.1,
+      "z": -12.0,
+      "note": "offsets taken from the door line",
+      "sx": 0.4,
+      "sy": 1.6,
+      "sz": 1.3
+    },
+    {
+      "floor": "ground",
+      "name": "back_window_2",
+      "kind": "aperture",
+      "x": 35.65,
+      "y": 3.1,
+      "z": -7.0,
+      "note": "offsets taken from the door line",
+      "sx": 0.4,
+      "sy": 1.6,
+      "sz": 1.3
+    },
+    {
+      "floor": "ground",
+      "name": "yard_door",
+      "kind": "aperture",
+      "x": 28.0,
+      "y": 3.0,
+      "z": -2.6,
+      "note": "moved off the tower corner (see conflicts)",
+      "sx": 1.0,
+      "sy": 3.0,
+      "sz": 0.4
+    },
+    {
+      "floor": "ground",
+      "name": "front_desk",
+      "kind": "furniture",
+      "x": 35.0,
+      "y": 1.5,
+      "z": -9.0,
+      "note": "faces the door, yaw -pi/2 (matches DESK_STAND)",
+      "yaw": -1.5707963267948966
+    },
+    {
+      "floor": "ground",
+      "name": "desk_bell",
+      "kind": "prop",
+      "x": 35.15,
+      "y": 2.35,
+      "z": -9.35,
+      "note": "on the desk"
+    },
+    {
+      "floor": "ground",
+      "name": "desk_ledgers",
+      "kind": "prop",
+      "x": 35.15,
+      "y": 2.32,
+      "z": -8.6,
+      "note": "stack of two"
+    },
+    {
+      "floor": "ground",
+      "name": "notice_board",
+      "kind": "furniture",
+      "x": 30.7,
+      "y": 3.2,
+      "z": -15.15,
+      "note": "contract board, left wall mid-depth"
+    },
+    {
+      "floor": "ground",
+      "name": "hearth",
+      "kind": "structure",
+      "x": 27.5,
+      "y": 2.1,
+      "z": -14.9,
+      "note": "left wall",
+      "sx": 1.8,
+      "sy": 1.2,
+      "sz": 0.9
+    },
+    {
+      "floor": "ground",
+      "name": "chimney_breast",
+      "kind": "structure",
+      "x": 27.5,
+      "y": 3.6,
+      "z": -14.7,
+      "note": "projects into the room"
+    },
+    {
+      "floor": "structure",
+      "name": "chimney_stack",
+      "kind": "structure",
+      "x": 27.5,
+      "y": 7.9,
+      "z": -16.0,
+      "note": "stack runs from the hearth up past the eaves; outside face at the left wall",
+      "sx": 1.2,
+      "sy": 10.7,
+      "sz": 1.2
+    },
+    {
+      "floor": "ground",
+      "name": "hearth_fire",
+      "kind": "fx",
+      "x": 27.5,
+      "y": 2.0,
+      "z": -14.8,
+      "note": "particle effect only, no mesh",
+      "fx_only": true
+    },
+    {
+      "floor": "ground",
+      "name": "weapon_rack",
+      "kind": "furniture",
+      "x": 30.0,
+      "y": 3.0,
+      "z": -2.9,
+      "note": "right wall",
+      "sx": 2.2,
+      "sy": 2.0,
+      "sz": 0.3
+    },
+    {
+      "floor": "ground",
+      "name": "stairs",
+      "kind": "structure",
+      "x": 33.65,
+      "y": 3.3,
+      "z": -3.8,
+      "note": "straight run up the right side to the upper landing",
+      "sx": 4.0,
+      "sy": 3.6,
+      "sz": 1.2
+    },
+    {
+      "floor": "ground",
+      "name": "stair_landing",
+      "kind": "structure",
+      "x": 33.65,
+      "y": 5.0,
+      "z": -5.0,
+      "note": "top of the run"
+    },
+    {
+      "floor": "ground",
+      "name": "chandelier",
+      "kind": "light",
+      "x": 30.7,
+      "y": 4.2,
+      "z": -10.0,
+      "note": "hanging from the ceiling beams"
+    },
+    {
+      "floor": "ground",
+      "name": "ceiling_beams",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 5.1,
+      "z": -9.0,
+      "note": "heavy timber beams",
+      "sx": 9.9,
+      "sy": 0.3,
+      "sz": 12.8
+    },
+    {
+      "floor": "ground",
+      "name": "banner_left",
+      "kind": "banner",
+      "x": 24.0,
+      "y": 4.85,
+      "z": -12.4,
+      "note": "guild blue/gold, top 5.5 m above the podium",
+      "sx": 0.1,
+      "sy": 4.0,
+      "sz": 1.2
+    },
+    {
+      "floor": "ground",
+      "name": "lantern_left",
+      "kind": "light",
+      "x": 24.1,
+      "y": 3.9,
+      "z": -10.6,
+      "note": "iron lantern, light kept"
+    },
+    {
+      "floor": "ground",
+      "name": "banner_right",
+      "kind": "banner",
+      "x": 24.0,
+      "y": 4.85,
+      "z": -5.6,
+      "note": "guild blue/gold, top 5.5 m above the podium",
+      "sx": 0.1,
+      "sy": 4.0,
+      "sz": 1.2
+    },
+    {
+      "floor": "ground",
+      "name": "lantern_right",
+      "kind": "light",
+      "x": 24.1,
+      "y": 3.9,
+      "z": -7.4,
+      "note": "iron lantern, light kept"
+    },
+    {
+      "floor": "ground",
+      "name": "window_lantern_1",
+      "kind": "light",
+      "x": 28.9,
+      "y": 4.1,
+      "z": -15.2,
+      "note": "wall light on the left wall, cast light only"
+    },
+    {
+      "floor": "ground",
+      "name": "window_lantern_2",
+      "kind": "light",
+      "x": 32.5,
+      "y": 4.1,
+      "z": -2.8,
+      "note": "wall light on the right wall, cast light only"
+    },
+    {
+      "floor": "ground",
+      "name": "coat_pegs",
+      "kind": "prop",
+      "x": 26.05,
+      "y": 3.2,
+      "z": -6.4,
+      "note": "by the door"
+    },
+    {
+      "floor": "ground",
+      "name": "bench",
+      "kind": "furniture",
+      "x": 27.35,
+      "y": 1.75,
+      "z": -3.6,
+      "note": "front wall, under the windows"
+    },
+    {
+      "floor": "upper",
+      "name": "floor",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 5.1,
+      "z": -9.0,
+      "note": "timber upper floor, overhangs 0.3 m",
+      "sx": 9.9,
+      "sy": 0.1,
+      "sz": 12.8
+    },
+    {
+      "floor": "upper",
+      "name": "walls",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 6.45,
+      "z": -9.0,
+      "note": "plaster over timber frame, 2.7 m tall",
+      "sx": 9.9,
+      "sy": 2.7,
+      "sz": 12.8
+    },
+    {
+      "floor": "upper",
+      "name": "office_desk",
+      "kind": "furniture",
+      "x": 34.4,
+      "y": 5.85,
+      "z": -4.2,
+      "note": "guildmaster office, back-right, faces the door"
+    },
+    {
+      "floor": "upper",
+      "name": "map_table",
+      "kind": "furniture",
+      "x": 33.0,
+      "y": 5.6,
+      "z": -8.6,
+      "note": "office"
+    },
+    {
+      "floor": "upper",
+      "name": "bookshelf_1",
+      "kind": "furniture",
+      "x": 32.0,
+      "y": 6.2,
+      "z": -3.0,
+      "note": "office, right wall"
+    },
+    {
+      "floor": "upper",
+      "name": "bookshelf_2",
+      "kind": "furniture",
+      "x": 33.6,
+      "y": 6.2,
+      "z": -3.0,
+      "note": "office, right wall"
+    },
+    {
+      "floor": "upper",
+      "name": "office_banner",
+      "kind": "banner",
+      "x": 35.45,
+      "y": 6.7,
+      "z": -6.5,
+      "note": "office wall"
+    },
+    {
+      "floor": "upper",
+      "name": "office_window",
+      "kind": "aperture",
+      "x": 35.65,
+      "y": 6.6,
+      "z": -7.6,
+      "note": "looks over the courtyard"
+    },
+    {
+      "floor": "upper",
+      "name": "records_shelf_1",
+      "kind": "furniture",
+      "x": 26.25,
+      "y": 6.5,
+      "z": -15.0,
+      "note": "records, front-left"
+    },
+    {
+      "floor": "upper",
+      "name": "records_shelf_2",
+      "kind": "furniture",
+      "x": 26.25,
+      "y": 6.5,
+      "z": -12.4,
+      "note": "records"
+    },
+    {
+      "floor": "upper",
+      "name": "filing_chest_1",
+      "kind": "furniture",
+      "x": 27.55,
+      "y": 5.45,
+      "z": -5.6,
+      "note": "records"
+    },
+    {
+      "floor": "upper",
+      "name": "filing_chest_2",
+      "kind": "furniture",
+      "x": 27.55,
+      "y": 5.45,
+      "z": -7.0,
+      "note": "records"
+    },
+    {
+      "floor": "upper",
+      "name": "standing_desk",
+      "kind": "furniture",
+      "x": 29.15,
+      "y": 5.7,
+      "z": -13.8,
+      "note": "clerk's desk, records"
+    },
+    {
+      "floor": "upper",
+      "name": "ladder",
+      "kind": "prop",
+      "x": 26.65,
+      "y": 6.3,
+      "z": -10.8,
+      "note": "records"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_table",
+      "kind": "furniture",
+      "x": 28.75,
+      "y": 5.5,
+      "z": -4.2,
+      "note": "members lounge, front-right, long table"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_bench_1",
+      "kind": "furniture",
+      "x": 28.75,
+      "y": 5.35,
+      "z": -5.2,
+      "note": "lounge"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_bench_2",
+      "kind": "furniture",
+      "x": 28.75,
+      "y": 5.35,
+      "z": -3.2,
+      "note": "lounge"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_stool_1",
+      "kind": "furniture",
+      "x": 27.15,
+      "y": 5.3,
+      "z": -6.0,
+      "note": "lounge"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_stool_2",
+      "kind": "furniture",
+      "x": 27.15,
+      "y": 5.3,
+      "z": -7.1,
+      "note": "lounge"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_stool_3",
+      "kind": "furniture",
+      "x": 27.15,
+      "y": 5.3,
+      "z": -8.2,
+      "note": "lounge"
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_hearth",
+      "kind": "structure",
+      "x": 26.35,
+      "y": 5.6,
+      "z": -4.6,
+      "note": "small hearth sharing the chimney",
+      "sx": 0.4,
+      "sy": 1.0,
+      "sz": 1.4
+    },
+    {
+      "floor": "upper",
+      "name": "lounge_fire",
+      "kind": "fx",
+      "x": 26.45,
+      "y": 5.5,
+      "z": -4.6,
+      "note": "particle effect only",
+      "fx_only": true
+    },
+    {
+      "floor": "upper",
+      "name": "trophy_mount_1",
+      "kind": "prop",
+      "x": 35.45,
+      "y": 6.8,
+      "z": -3.4,
+      "note": "hunted monster trophy on the wall"
+    },
+    {
+      "floor": "upper",
+      "name": "trophy_mount_2",
+      "kind": "prop",
+      "x": 29.15,
+      "y": 6.8,
+      "z": -2.9,
+      "note": "hunted monster trophy on the wall"
+    },
+    {
+      "floor": "upper",
+      "name": "trophy_mount_3",
+      "kind": "prop",
+      "x": 26.05,
+      "y": 6.8,
+      "z": -9.0,
+      "note": "hunted monster trophy on the wall"
+    },
+    {
+      "floor": "upper",
+      "name": "upper_chandelier",
+      "kind": "light",
+      "x": 29.75,
+      "y": 7.1,
+      "z": -12.4,
+      "note": "lounge light"
+    },
+    {
+      "floor": "upper",
+      "name": "stair_well",
+      "kind": "structure",
+      "x": 33.65,
+      "y": 5.15,
+      "z": -5.0,
+      "note": "opening at the top of the run"
+    },
+    {
+      "floor": "roof",
+      "name": "ridge",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 12.2,
+      "z": -9.0,
+      "note": "ridge runs side to side, top 10.7 m above the podium"
+    },
+    {
+      "floor": "roof",
+      "name": "eaves",
+      "kind": "structure",
+      "x": 30.7,
+      "y": 8.1,
+      "z": -9.0,
+      "note": "overhang 0.5-0.65 m",
+      "sx": 11.0,
+      "sy": 0.3,
+      "sz": 13.9
+    },
+    {
+      "floor": "tower",
+      "name": "walls",
+      "kind": "structure",
+      "x": 34.0,
+      "y": 7.7,
+      "z": -4.25,
+      "note": "3.3 m square, walls to 12.4 m above the podium",
+      "sx": 3.3,
+      "sy": 13.9,
+      "sz": 3.3
+    },
+    {
+      "floor": "tower",
+      "name": "spiral_stair",
+      "kind": "structure",
+      "x": 33.25,
+      "y": 8.45,
+      "z": -5.0,
+      "note": "inner spiral to the belfry"
+    },
+    {
+      "floor": "tower",
+      "name": "belfry_floor",
+      "kind": "structure",
+      "x": 34.0,
+      "y": 13.9,
+      "z": -4.25,
+      "note": "open bell room",
+      "sx": 3.3,
+      "sy": 0.2,
+      "sz": 3.3
+    },
+    {
+      "floor": "tower",
+      "name": "bell",
+      "kind": "prop",
+      "x": 34.0,
+      "y": 14.8,
+      "z": -4.25,
+      "note": "hangs in the open room"
+    },
+    {
+      "floor": "tower",
+      "name": "tower_door",
+      "kind": "aperture",
+      "x": 32.55,
+      "y": 6.1,
+      "z": -5.1,
+      "note": "office into the tower"
+    },
+    {
+      "floor": "tower",
+      "name": "point_roof",
+      "kind": "structure",
+      "x": 34.0,
+      "y": 15.35,
+      "z": -4.25,
+      "note": "pyramid roof, point 15.3 m above the podium",
+      "sx": 3.9,
+      "sy": 2.9000000000000004,
+      "sz": 3.9
+    }
+  ]
+}

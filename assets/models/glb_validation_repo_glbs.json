@@ -1,0 +1,1462 @@
+{
+  "files": 64,
+  "problems": 0,
+  "warnings": 2,
+  "per_dir": {
+    "assets/anim": {
+      "files": 5,
+      "joint_counts": [
+        [
+          52
+        ],
+        [
+          65
+        ],
+        [
+          66
+        ]
+      ],
+      "generators": [
+        "Khronos glTF Blender I/O v4.3.47",
+        "Khronos glTF Blender I/O v4.5.48",
+        "Khronos glTF Blender I/O v5.2.40",
+        "guildbound tools/model"
+      ]
+    },
+    "assets/characters/hero/female": {
+      "files": 29,
+      "joint_counts": [
+        [
+          65
+        ]
+      ],
+      "generators": [
+        "guildbound tools/model"
+      ]
+    },
+    "assets/characters/hero/male": {
+      "files": 30,
+      "joint_counts": [
+        [
+          65
+        ]
+      ],
+      "generators": [
+        "guildbound tools/model"
+      ]
+    }
+  },
+  "results": [
+    {
+      "file": "assets/anim/hero_styled.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 95,
+        "meshes": 26,
+        "materials": 12,
+        "textures": 11,
+        "images": 11,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.961,
+        "primitives": 27,
+        "skinned_primitives": 27
+      }
+    },
+    {
+      "file": "assets/anim/rokoko.glb",
+      "problems": [],
+      "warnings": [
+        "mesh 'mixamorig:Body_Mesh' primitive has no material",
+        "mesh 'mixamorig:HeadFaceless_Mesh' primitive has no material"
+      ],
+      "info": {
+        "generator": "Khronos glTF Blender I/O v5.2.40",
+        "version": "2.0",
+        "nodes": 55,
+        "meshes": 2,
+        "materials": 0,
+        "textures": 0,
+        "images": 0,
+        "skins": 1,
+        "animations": 28,
+        "joint_counts": [
+          52
+        ],
+        "max_dim_m": 1.899,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/anim/sekiro.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "Khronos glTF Blender I/O v5.2.40",
+        "version": "2.0",
+        "nodes": 69,
+        "meshes": 2,
+        "materials": 2,
+        "textures": 0,
+        "images": 0,
+        "skins": 1,
+        "animations": 57,
+        "joint_counts": [
+          66
+        ],
+        "max_dim_m": 1.885,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/anim/ual1.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "Khronos glTF Blender I/O v4.3.47",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 2,
+        "textures": 0,
+        "images": 0,
+        "skins": 1,
+        "animations": 45,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.944,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/anim/ual2.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "Khronos glTF Blender I/O v4.5.48",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 2,
+        "textures": 0,
+        "images": 0,
+        "skins": 1,
+        "animations": 43,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.944,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/apron.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.583,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/baldric.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 68,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.476,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/belt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 69,
+        "meshes": 1,
+        "materials": 2,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.39,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/body.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 83,
+        "meshes": 17,
+        "materials": 2,
+        "textures": 3,
+        "images": 3,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.965,
+        "primitives": 17,
+        "skinned_primitives": 17
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/boots.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.37,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/bracers.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.34,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/brows_regular.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.13,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/brows_soft.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.132,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/cloak.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.154,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/gloves.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.737,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hair_buns.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.317,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hair_buzzed.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.204,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hair_buzzed_f.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.208,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hair_long.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.294,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hair_parted.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.202,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hakama.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.0,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/haori.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.4,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/hood.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.467,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/kilt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.508,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/leg_wraps.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.347,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/mantle.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.734,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/robe_skirt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.833,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/robe_top.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.344,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/shirt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.747,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/shoes.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.353,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/tabard.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.901,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/trousers.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.968,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/tunic.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.429,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/female/vest.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 2.024,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/apron.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.581,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/baldric.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 68,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.512,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/beard.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.17,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/belt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 69,
+        "meshes": 1,
+        "materials": 2,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.366,
+        "primitives": 2,
+        "skinned_primitives": 2
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/body.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 83,
+        "meshes": 17,
+        "materials": 2,
+        "textures": 3,
+        "images": 3,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.961,
+        "primitives": 17,
+        "skinned_primitives": 17
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/boots.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.38,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/bracers.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.343,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/brows_regular.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.131,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/brows_soft.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.135,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/cloak.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.152,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/gloves.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.752,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hair_buns.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.322,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hair_buzzed.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.2,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hair_buzzed_f.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.204,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hair_long.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.293,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hair_parted.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.196,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hakama.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.992,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/haori.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.424,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/hood.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.456,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/kilt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.496,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/leg_wraps.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.357,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/mantle.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.736,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/robe_skirt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.831,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/robe_top.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.355,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/shirt.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.75,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/shoes.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.354,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/tabard.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.9,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/trousers.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 0.966,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/tunic.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 1.441,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    },
+    {
+      "file": "assets/characters/hero/male/vest.glb",
+      "problems": [],
+      "warnings": [],
+      "info": {
+        "generator": "guildbound tools/model",
+        "version": "2.0",
+        "nodes": 67,
+        "meshes": 1,
+        "materials": 1,
+        "textures": 2,
+        "images": 2,
+        "skins": 1,
+        "animations": 0,
+        "joint_counts": [
+          65
+        ],
+        "max_dim_m": 2.023,
+        "primitives": 1,
+        "skinned_primitives": 1
+      }
+    }
+  ]
+}

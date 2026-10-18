@@ -1,0 +1,75 @@
+floor,name,kind,x,y,z,fx_only,note
+terrace,podium,structure,30.7,0.75,-9.0,False,16.0 x 13.4 x 1.5 m block
+terrace,step_1,structure,23.79,0.12,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,step_2,structure,23.38,0.38,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,step_3,structure,22.96,0.62,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,step_4,structure,22.54,0.88,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,step_5,structure,22.12,1.12,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,step_6,structure,21.71,1.38,-9.0,False,"4.2 m wide, 0.25 m rise"
+terrace,porch_roof,structure,24.85,6.7,-9.0,False,"4.1 x 1.8 m, top 5.2 m above podium"
+terrace,porch_post_left,structure,24.1,4.1,-10.9,False,porch support
+terrace,porch_post_right,structure,24.1,4.1,-7.1,False,porch support
+ground,floor,structure,30.7,1.5,-9.0,False,plank floor over the podium
+ground,walls,structure,30.7,3.3,-9.0,False,"stone, 0.4 m thick, 3.6 m tall"
+ground,door,aperture,25.75,3.1,-9.0,False,hatched/skinned opening
+ground,front_window_l,aperture,25.75,3.1,-12.5,False,hatched/skinned opening
+ground,front_window_r,aperture,25.75,3.1,-5.5,False,hatched/skinned opening
+ground,back_window_1,aperture,35.65,3.1,-12.0,False,offsets taken from the door line
+ground,back_window_2,aperture,35.65,3.1,-7.0,False,offsets taken from the door line
+ground,yard_door,aperture,28.0,3.0,-2.6,False,moved off the tower corner (see conflicts)
+ground,front_desk,furniture,35.0,1.5,-9.0,False,"faces the door, yaw -pi/2 (matches DESK_STAND)"
+ground,desk_bell,prop,35.15,2.35,-9.35,False,on the desk
+ground,desk_ledgers,prop,35.15,2.32,-8.6,False,stack of two
+ground,notice_board,furniture,30.7,3.2,-15.15,False,"contract board, left wall mid-depth"
+ground,hearth,structure,27.5,2.1,-14.9,False,left wall
+ground,chimney_breast,structure,27.5,3.6,-14.7,False,projects into the room
+structure,chimney_stack,structure,27.5,7.9,-16.0,False,stack runs from the hearth up past the eaves; outside face at the left wall
+ground,hearth_fire,fx,27.5,2.0,-14.8,True,"particle effect only, no mesh"
+ground,weapon_rack,furniture,30.0,3.0,-2.9,False,right wall
+ground,stairs,structure,33.65,3.3,-3.8,False,straight run up the right side to the upper landing
+ground,stair_landing,structure,33.65,5.0,-5.0,False,top of the run
+ground,chandelier,light,30.7,4.2,-10.0,False,hanging from the ceiling beams
+ground,ceiling_beams,structure,30.7,5.1,-9.0,False,heavy timber beams
+ground,banner_left,banner,24.0,4.85,-12.4,False,"guild blue/gold, top 5.5 m above the podium"
+ground,lantern_left,light,24.1,3.9,-10.6,False,"iron lantern, light kept"
+ground,banner_right,banner,24.0,4.85,-5.6,False,"guild blue/gold, top 5.5 m above the podium"
+ground,lantern_right,light,24.1,3.9,-7.4,False,"iron lantern, light kept"
+ground,window_lantern_1,light,28.9,4.1,-15.2,False,"wall light on the left wall, cast light only"
+ground,window_lantern_2,light,32.5,4.1,-2.8,False,"wall light on the right wall, cast light only"
+ground,coat_pegs,prop,26.05,3.2,-6.4,False,by the door
+ground,bench,furniture,27.35,1.75,-3.6,False,"front wall, under the windows"
+upper,floor,structure,30.7,5.1,-9.0,False,"timber upper floor, overhangs 0.3 m"
+upper,walls,structure,30.7,6.45,-9.0,False,"plaster over timber frame, 2.7 m tall"
+upper,office_desk,furniture,34.4,5.85,-4.2,False,"guildmaster office, back-right, faces the door"
+upper,map_table,furniture,33.0,5.6,-8.6,False,office
+upper,bookshelf_1,furniture,32.0,6.2,-3.0,False,"office, right wall"
+upper,bookshelf_2,furniture,33.6,6.2,-3.0,False,"office, right wall"
+upper,office_banner,banner,35.45,6.7,-6.5,False,office wall
+upper,office_window,aperture,35.65,6.6,-7.6,False,looks over the courtyard
+upper,records_shelf_1,furniture,26.25,6.5,-15.0,False,"records, front-left"
+upper,records_shelf_2,furniture,26.25,6.5,-12.4,False,records
+upper,filing_chest_1,furniture,27.55,5.45,-5.6,False,records
+upper,filing_chest_2,furniture,27.55,5.45,-7.0,False,records
+upper,standing_desk,furniture,29.15,5.7,-13.8,False,"clerk's desk, records"
+upper,ladder,prop,26.65,6.3,-10.8,False,records
+upper,lounge_table,furniture,28.75,5.5,-4.2,False,"members lounge, front-right, long table"
+upper,lounge_bench_1,furniture,28.75,5.35,-5.2,False,lounge
+upper,lounge_bench_2,furniture,28.75,5.35,-3.2,False,lounge
+upper,lounge_stool_1,furniture,27.15,5.3,-6.0,False,lounge
+upper,lounge_stool_2,furniture,27.15,5.3,-7.1,False,lounge
+upper,lounge_stool_3,furniture,27.15,5.3,-8.2,False,lounge
+upper,lounge_hearth,structure,26.35,5.6,-4.6,False,small hearth sharing the chimney
+upper,lounge_fire,fx,26.45,5.5,-4.6,True,particle effect only
+upper,trophy_mount_1,prop,35.45,6.8,-3.4,False,hunted monster trophy on the wall
+upper,trophy_mount_2,prop,29.15,6.8,-2.9,False,hunted monster trophy on the wall
+upper,trophy_mount_3,prop,26.05,6.8,-9.0,False,hunted monster trophy on the wall
+upper,upper_chandelier,light,29.75,7.1,-12.4,False,lounge light
+upper,stair_well,structure,33.65,5.15,-5.0,False,opening at the top of the run
+roof,ridge,structure,30.7,12.2,-9.0,False,"ridge runs side to side, top 10.7 m above the podium"
+roof,eaves,structure,30.7,8.1,-9.0,False,overhang 0.5-0.65 m
+tower,walls,structure,34.0,7.7,-4.25,False,"3.3 m square, walls to 12.4 m above the podium"
+tower,spiral_stair,structure,33.25,8.45,-5.0,False,inner spiral to the belfry
+tower,belfry_floor,structure,34.0,13.9,-4.25,False,open bell room
+tower,bell,prop,34.0,14.8,-4.25,False,hangs in the open room
+tower,tower_door,aperture,32.55,6.1,-5.1,False,office into the tower
+tower,point_roof,structure,34.0,15.35,-4.25,False,"pyramid roof, point 15.3 m above the podium"
