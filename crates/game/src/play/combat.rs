@@ -406,6 +406,15 @@ impl Melee {
     pub fn exhausted(&self) -> bool {
         self.exhausted
     }
+    /// Untouchable for at least `secs` (god mode keeps this topped up).
+    pub fn shield(&mut self, secs: f32) {
+        self.iframes = self.iframes.max(secs);
+    }
+    /// No longer out of breath (god mode's infinite stamina).
+    pub fn refresh(&mut self) {
+        self.exhausted = false;
+        self.rested = self.rested.max(REGEN_DELAY);
+    }
     /// Seconds since this fighter last took damage.
     pub fn since_hurt(&self) -> f32 {
         self.hurt
@@ -2679,5 +2688,32 @@ fn apply_hitstop(real: Res<Time<Real>>, mut stop: ResMut<Hitstop>, mut virt: Res
     let speed = hitstop_speed(stop.t, stop.duration);
     if (virt.relative_speed() - speed).abs() > 1e-4 {
         virt.set_relative_speed(speed.clamp(HITSTOP_SPEED, 1.0));
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn attack_speed_shortens_the_windup_more_than_the_strike() {
+        let (windup, active, span, rate) = (0.4, 0.6, 1.0, 1.0);
+        let at = |s| {
+            (
+                phase_seconds(0.0, windup, windup, active, s, span, rate),
+                phase_seconds(windup, active, windup, active, s, span, rate),
+                phase_seconds(0.0, 1.0, windup, active, s, span, rate),
+            )
+        };
+        let (w1, a1, t1) = at(1.0);
+        let (w2, a2, t2) = at(1.4);
+        assert!((w1 - 0.4).abs() < 1e-5 && (a1 - 0.2).abs() < 1e-5 && (t1 - 1.0).abs() < 1e-5);
+        assert!(t2 < t1);
+        assert!(w2 / w1 < a2 / a1, "windup {w2}/{w1} vs strike {a2}/{a1}");
+        // Speed never runs time backwards, and the stat and rank stay in bounds.
+        assert!(phase_speed(0.5, windup, active, f32::NAN) > 0.0);
+        assert_eq!(attack_speed(1.0, 0), 1.0);
+        assert!(attack_speed(1.5, 10) <= MAX_ATTACK_SPEED);
+        assert!(attack_speed(0.1, 0) >= 0.5);
     }
 }
