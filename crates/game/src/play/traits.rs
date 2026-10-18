@@ -5,11 +5,11 @@
 //!   bounces and lingers, a light one barely touches the ground;
 //! - fight and temper → its `ai::Difficulty` (aggression, guard, parry, dodge, reaction,
 //!   casting), added to whatever the spawner set and clamped.
-//! The log introduces each one ("Opponent: a grim fighter who walks proudly and fights coldly.").
+//! Each roll goes to the console log only (`[traits] Opponent: a grim fighter who walks proudly and
+//! fights coldly.`); the HUD log stays for play messages.
 //! The player picks theirs on the stats page (the STATS tab's madlib: click a word to cycle it,
 //! `SetTrait`); for the player only the walk matters (no brain to shift).
 use super::ai::Difficulty;
-use super::hud::log::{HudLog, LogKind};
 use super::occupations::Civilian;
 use super::{Npc, PlaySet};
 use crate::motion::compose::StyleScale;
@@ -195,7 +195,6 @@ fn assign(
     book: Res<TraitBook>,
     mut commands: Commands,
     npcs: Query<(Entity, Option<&Name>, Option<&Difficulty>), (Or<(With<Npc>, With<Civilian>)>, Without<Traits>)>,
-    mut log: MessageWriter<HudLog>,
 ) {
     if book.walk.is_empty() {
         return;
@@ -206,7 +205,6 @@ fn assign(
         let line = book.sentence(&t);
         let who = name.map_or("Someone", |n| n.as_str());
         info!("[traits] {who}: {line} ({d:?})");
-        log.write(HudLog::new(LogKind::System, format!("{who}: {line}.")));
         commands.entity(e).try_insert((t, book.style(&t), d));
     }
 }
