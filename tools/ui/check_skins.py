@@ -28,7 +28,7 @@ EXPECT = {
               "ticks.png": (256, 24), "cap.png": (24, 24)},
     "panel": {"glass.png": (256, 256), "frame.png": (256, 256), "bracket.png": (48, 48),
               "title_rule.png": (256, 8), "tab.png": (96, 28)},
-    "map": {"glass.png": (256, 256), "bezel.png": (256, 256), "ticks.png": (256, 256), "north.png": (256, 256)},
+    "map": {"glass.png": (288, 288), "bezel.png": (288, 288), "ticks.png": (288, 288), "north.png": (288, 288)},
     "reticle": {"ring.png": (128, 128), "dot.png": (128, 128), "tick.png": (128, 128),
                 "range.png": (256, 256), "land.png": (128, 128)},
     "prompt": {"chip.png": (128, 32), "key.png": (32, 32)},
@@ -76,7 +76,74 @@ def check_image(path, size, problems):
         problems.append(f"{path}: pixels on the canvas edge - the piece should sit inside it")
 
 
+def check_icons(root, problems):
+    """Icons mode for H1: sheet + manifest, sizes, alpha present, neutral white RGB, cell count
+    equal to the manifest, ink inside the glyph box, and empty cells genuinely empty."""
+    checked = packs = 0
+    for pack in sorted(os.listdir(root)):
+        d = os.path.join(root, pack)
+        man = os.path.join(d, "manifest.json")
+        sh = os.path.join(d, "sheet.png")
+        if not os.path.isfile(man):
+            continue
+        packs += 1
+        m = json.load(open(man))
+        g = m["grid"]
+        cols, rows, cw, ch = g["cols"], g["rows"], g["cell_w"], g["cell_h"]
+        if not os.path.isfile(sh):
+            problems.append(f"{pack}: no sheet.png")
+            continue
+        im = Image.open(sh)
+        if im.mode != "RGBA":
+            problems.append(f"{pack}/sheet.png: mode {im.mode}, expected RGBA")
+        if im.size != (cols * cw, rows * ch):
+            problems.append(f"{pack}/sheet.png: {im.size[0]}x{im.size[1]}, expected {cols * cw}x{rows * ch}")
+        icons = m.get("icons", [])
+        if len(icons) != cols * rows:
+            problems.append(f"{pack}/manifest.json: {len(icons)} icons for {cols * rows} cells")
+        a = np.asarray(im.convert("RGBA"), np.float32)
+        box = float(m.get("glyph_box", 0.8))
+        inset = int(cw * (1 - box) / 2) - 1
+        named = 0
+        for ic in icons:
+            r, c = ic["row"] - 1, ic["col"] - 1
+            cell = a[r * ch:(r + 1) * ch, c * cw:(c + 1) * cw]
+            if cell.size == 0:
+                problems.append(f"{pack}/{ic.get('name')}: cell outside the sheet")
+                continue
+            al = cell[..., 3]
+            if ic.get("empty"):
+                if (al > 8).any():
+                    problems.append(f"{pack}/{ic.get('name')}: marked empty but has ink")
+                continue
+            named += 1
+            if al.max() <= 8:
+                problems.append(f"{pack}/{ic.get('name')}: cell is blank")
+                continue
+            rgb = cell[..., :3][al > 8]
+            if rgb.min() < 250:
+                problems.append(f"{pack}/{ic.get('name')}: not neutral white RGB (min {rgb.min():.0f})")
+            outer = al.copy()
+            outer[inset:ch - inset, inset:cw - inset] = 0
+            if (outer > 8).any():
+                problems.append(f"{pack}/{ic.get('name')}: ink outside the {int(box * 100)}% glyph box")
+            checked += 1
+    print(f"checked {checked} glyphs in {packs} packs in {root}")
+    return checked, packs
+
+
 def main():
+    if "--icons" in sys.argv:
+        root = sys.argv[sys.argv.index("--icons") + 1]
+        problems = []
+        check_icons(root, problems)
+        if problems:
+            print(f"{len(problems)} problem(s):")
+            for p in problems:
+                print("  " + p)
+            return 1
+        print("all glyph packs match the brief")
+        return 0
     root = sys.argv[1] if len(sys.argv) > 1 else "assets/ui/skins"
     problems, checked = [], 0
     for pack, files in EXPECT.items():

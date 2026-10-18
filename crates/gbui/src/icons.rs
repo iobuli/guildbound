@@ -62,18 +62,20 @@ pub struct Icon {
     pub sheet: String,
     pub name: String,
     pub tint: IconTint,
+    /// Colour multiplied into the sprite (glyphs ship white, so the owner picks the colour).
+    pub color: Color,
     /// Extra alpha for overlays: `Icon::overlay(.., 0.25)` draws the same sprite as a ghost.
     pub alpha: f32,
 }
 
 impl Icon {
     pub fn new(sheet: impl Into<String>, name: impl Into<String>) -> Self {
-        Self { sheet: sheet.into(), name: name.into(), tint: IconTint::Full, alpha: 1.0 }
+        Self { sheet: sheet.into(), name: name.into(), tint: IconTint::Full, color: Color::WHITE, alpha: 1.0 }
     }
 
     /// The same sprite at `alpha`, for a ghost, a trail or a watermark.
     pub fn overlay(sheet: impl Into<String>, name: impl Into<String>, alpha: f32) -> Self {
-        Self { sheet: sheet.into(), name: name.into(), tint: IconTint::Plain, alpha: alpha.clamp(0.0, 1.0) }
+        Self { sheet: sheet.into(), name: name.into(), tint: IconTint::Plain, color: Color::WHITE, alpha: alpha.clamp(0.0, 1.0) }
     }
 
     pub fn tinted(mut self, tint: IconTint) -> Self {
@@ -176,7 +178,10 @@ pub fn drive_icons(
             None => continue, // no sheet yet, or no such sprite: draw nothing rather than another cell
         }
         let inherited = crate::style::inherited_opacity(entity, &parents, &opacities);
-        node.color = node.color.with_alpha(icon.tint.alpha() * icon.alpha * inherited);
+        let c = icon.color.with_alpha(icon.tint.alpha() * icon.alpha * inherited);
+        if node.color != c {
+            node.color = c;
+        }
     }
 }
 

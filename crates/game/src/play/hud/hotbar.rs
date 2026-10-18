@@ -117,6 +117,16 @@ fn glyph(sheet: &str) -> impl Bundle {
     )
 }
 
+/// Glyph colour per slot (the glyphs ship white): arts in Battlewill gold, spells in Magicules
+/// violet, the weapon in the HUD accent.
+fn glyph_color(kind: Kind) -> Color {
+    match kind {
+        Kind::Art => Color::srgb_u8(0xFF, 0xC8, 0x57),
+        Kind::Spell => Color::srgb_u8(0xB7, 0x9C, 0xFF),
+        _ => Color::srgb_u8(0x2E, 0xE6, 0xC5),
+    }
+}
+
 /// The `bag` sheet's sprite for a weapon (the axe weapon is the battleaxe; the tool is `axe`).
 fn weapon_glyph(name: &str) -> &str {
     if name == "axe" { "axe_battle" } else { name }
@@ -216,11 +226,12 @@ fn update(
         for child in children.iter() {
             if let Some((sheet, name, tint)) = &layer
                 && let Ok(mut icon) = glyphs.get_mut(child)
-                && (icon.sheet != *sheet || icon.name != *name || icon.tint != *tint)
+                && (icon.sheet != *sheet || icon.name != *name || icon.tint != *tint || icon.color != glyph_color(*kind))
             {
                 icon.sheet = sheet.to_string();
                 icon.name = name.clone();
                 icon.tint = *tint;
+                icon.color = glyph_color(*kind);
             }
             if let Ok(mut text) = labels.get_mut(child)
                 && text.0 != label

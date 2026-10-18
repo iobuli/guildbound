@@ -30,7 +30,7 @@ from PIL import Image
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import textures as tx  # noqa: E402
 
-STRENGTH = 2.5  # cloth strength, as in textures.cloth()
+STRENGTH = 2.5  # cloth strength, as in textures.cloth(); glossy cloth wants 1.2-1.5
 
 
 def to_image(a):
@@ -82,50 +82,63 @@ def main():
     ap.add_argument("swatch")
     ap.add_argument("kind")
     ap.add_argument("--n", type=int, default=None, help="threads per tile (default: from the lattice)")
-    ap.add_argument("--size", type=int, default=1024)
+    ap.add_argument("--size", type=int, default=1024, help="output size (cloth ai_tex uses 512)")
     ap.add_argument("--colour", default="DBCCA8", help="palette colour for the tinted variant")
     ap.add_argument("--band", type=int, default=32, help="seam cross-fade width in px")
+    ap.add_argument("--no-lattice", action="store_true",
+                    help="skip lattice/straighten: for materials with no weave lattice, e.g. leather")
+    ap.add_argument("--mean", type=float, default=0.909,
+                    help="target albedo mean, so the tile matches the procedural cloth(kind) mean")
+    ap.add_argument("--strength", type=float, default=STRENGTH,
+                    help="normal_from_height strength: 2-3 woven cloth, 1.2-1.5 glossy knit, 4 leather")
     ap.add_argument("--out", default=".")
     args = ap.parse_args()
 
     src = np.asarray(Image.open(args.swatch).convert("RGB"), np.float32) / 255.0
-    print(f"{os.path.basename(args.swatch)}: {src.shape[1]}x{src.shape[0]}, sharpness {sharpness(src):.4f}, "
+    print(f"{os.path.basename(args.swatch)}: {src.shape[1]}x{src.shape[0]}, "
           f"seam {seam_ratio(src):.2f}x")
-
     lit = tx.even_lighting(src, radius=128)
-    lat = tx.lattice(lit)
-    n_hint = args.n or int(round(args.size / lat["pitch"]))
-    print(f"lattice: pitch {lat['pitch']:.3f} px ({lat['nx']:.1f} x {lat['ny']:.1f} threads), "
-          f"skew {np.degrees(lat['rotation']):+.2f} deg, peak {lat['peak']:.0f}x; affine scale for n={n_hint}")
 
-    # n=None lets phase_lock use the cycle count it measures on each axis (least stretch)
-    tile, info = tx.straighten(lit, n=args.n, size=args.size)
-    print(f"phase-locked: {{axis: (threads, measured cycles)}} = {info['locked']}")
-    print(f"straighten: scale {info['scale']:.4f} -> pitch {info['pitch_after']:.3f} px, "
-          f"sharpness {sharpness(tile):.4f} ({100 * sharpness(tile) / max(sharpness(lit), 1e-9):.0f}% of the lit swatch), "
-          f"seam {seam_ratio(tile):.2f}x")
-    faded = tx.seam_fade(tile, band=args.band)
-    print(f"seam_fade({args.band}px): seam {seam_ratio(faded):.2f}x  -> "
-          f"{'SEAMLESS' if seam_ratio(faded) <= 1.2 else 'STILL SEAMED'}")
+    if args.no_lattice:
+        # No weave lattice to solve: even lighting and a seam cross-fade is the whole tiling step.
+        tile = tx.seam_fade(lit, band=args.band)
+        print(f"no lattice: even_lighting + seam_fade({args.band}px) -> seam {seam_ratio(tile):.2f}x")
+    else:
+        lat = tx.lattice(lit)
+        n_hint = args.n or int(round(args.size / lat["pitch"]))
+        print(f"lattice: pitch {lat['pitch']:.3f} px, skew {np.degrees(lat['rotation']):+.2f} deg, "
+              f"peak {lat['peak']:.0f}x; affine scale for n={n_hint}")
+        # n=None lets phase_lock use the cycle count it measures on each axis (least stretch)
+        tile, info = tx.straighten(lit, n=args.n, size=args.size)
+        print(f"phase-locked: {info['locked']} | straighten scale {info['scale']:.4f}, "
+              f"sharpness {100 * sharpness(tile) / max(sharpness(lit), 1e-9):.0f}% of the lit swatch, "
+              f"seam {seam_ratio(tile):.2f}x")
+        tile = tx.seam_fade(tile, band=args.band)
 
-    height = tx.height_from_albedo(faded, small=1.0, large=24.0)
-    normal = tx.normal_from_height(height, STRENGTH)
-    alb = neutral(faded)
+    if tile.shape[0] != args.size or tile.shape[1] != args.size:
+        tile = np.asarray(Image.fromarray((np.clip(tile, 0, 1) * 255 + 0.5).astype(np.uint8), "RGB")
+                          .resize((args.size, args.size), Image.LANCZOS), np.float32) / 255.0
+    print(f"final tile {tile.shape[1]}x{tile.shape[0]} | seam {seam_ratio(tile):.2f}x")
+
+    height = tx.height_from_albedo(tile, small=1.0, large=24.0)
+    normal = tx.normal_from_height(height, args.strength)
+    alb = neutral(tile, mean=args.mean)
     tinted = tx.tint(alb, tx._rgb(args.colour))
-    print(f"albedo mean {alb.mean():.3f} (cloth(\"linen\") is 0.909), max {alb.max():.3f}, "
-          f"rgb {alb.mean((0, 1)).round(3)} | tinted "
+    print(f"albedo mean {alb.mean():.3f} (target {args.mean:.3f}), max {alb.max():.3f} | tinted "
           f"{tinted.mean((0, 1)).round(3)} vs palette {tx._rgb(args.colour).round(3)}")
-    print(f"height range {height.min():.3f}-{height.max():.3f} | normal mean rgb {normal.mean((0, 1)).round(3)}")
+    z = (np.asarray(to_image(normal).convert("RGB"), np.float32)[..., 2] / 127.5 - 1.0).mean()
+    print(f"height range {height.min():.3f}-{height.max():.3f} | normal strength {args.strength} "
+          f"| normal z mean {z:.4f}")
 
     os.makedirs(args.out, exist_ok=True)
     k = args.kind
-    to_image(alb).save(os.path.join(args.out, f"{k}_albedo.png"))
-    to_image(tinted).save(os.path.join(args.out, f"{k}_albedo_tinted.png"))
-    to_image(height).convert("L").save(os.path.join(args.out, f"{k}_height.png"))
-    to_image(normal).save(os.path.join(args.out, f"{k}_normal.png"))
+    to_image(alb).convert("RGBA").save(os.path.join(args.out, f"{k}_albedo.png"))
+    to_image(tinted).convert("RGBA").save(os.path.join(args.out, f"{k}_albedo_tinted.png"))
+    to_image(height).convert("RGB").convert("RGBA").save(os.path.join(args.out, f"{k}_height.png"))
+    to_image(normal).convert("RGBA").save(os.path.join(args.out, f"{k}_normal.png"))
     preview(alb, os.path.join(args.out, f"preview_{k}_albedo_2x2.png"))
     preview(normal, os.path.join(args.out, f"preview_{k}_normal_2x2.png"))
-    print("wrote", ", ".join(sorted(f for f in os.listdir(args.out) if f.startswith(("linen", "preview")))))
+    print(f"wrote {k}_albedo/height/normal at {args.size}px plus 2x2 previews")
 
 
 if __name__ == "__main__":

@@ -1,42 +1,181 @@
 {
- "sheet": "abilities",
- "source": "hf_20261018_183320_34c1e710-f184-445b-ba28-14e3fc75399f.png",
- "grid": {
-  "cols": 8,
-  "rows": 2,
-  "cell_w": 96,
-  "cell_h": 96
- },
- "icons": [
-  {
-   "name": "crescent_edge"
+  "sheet": "abilities",
+  "grid": {
+    "cols": 8,
+    "rows": 2,
+    "cell_w": 96,
+    "cell_h": 96,
+    "sheet_w": 768,
+    "sheet_h": 192
   },
-  {
-   "name": "flash_step"
-  },
-  {
-   "name": "aura_bullet"
-  },
-  {
-   "name": "earthbreaker"
-  },
-  {
-   "name": "aura_ward"
-  },
-  {
-   "name": "veil"
-  },
-  {
-   "name": "cinder_bolt"
-  },
-  {
-   "name": "frost_bloom"
-  },
-  {
-   "name": "storm_lance"
-  },
-  {
-   "name": "orbit_motes"
-  }
- ]
+  "glyph_size": 96,
+  "stroke_px_at_96": 5.5,
+  "glyph_box": 0.8,
+  "uv_origin": "top-left (glTF/Bevy TextureAtlas convention)",
+  "generated_by": "tools/ui/glyphs.py",
+  "source": "procedural vectors, drawn here; no generator, no licence to record",
+  "icons": [
+    {
+      "name": "crescent_edge",
+      "row": 1,
+      "col": 1,
+      "empty": false,
+      "uv": [
+        0.0,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "flash_step",
+      "row": 1,
+      "col": 2,
+      "empty": false,
+      "uv": [
+        0.125,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "aura_bullet",
+      "row": 1,
+      "col": 3,
+      "empty": false,
+      "uv": [
+        0.25,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "earthbreaker",
+      "row": 1,
+      "col": 4,
+      "empty": false,
+      "uv": [
+        0.375,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "aura_ward",
+      "row": 1,
+      "col": 5,
+      "empty": false,
+      "uv": [
+        0.5,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "veil",
+      "row": 1,
+      "col": 6,
+      "empty": false,
+      "uv": [
+        0.625,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "cinder_bolt",
+      "row": 1,
+      "col": 7,
+      "empty": false,
+      "uv": [
+        0.75,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "frost_bloom",
+      "row": 1,
+      "col": 8,
+      "empty": false,
+      "uv": [
+        0.875,
+        0.0,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "storm_lance",
+      "row": 2,
+      "col": 1,
+      "empty": false,
+      "uv": [
+        0.0,
+        0.5,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "orbit_motes",
+      "row": 2,
+      "col": 2,
+      "empty": false,
+      "uv": [
+        0.125,
+        0.5,
+        0.125,
+        0.5
+      ]
+    },
+    {
+      "name": "-r2c3",
+      "row": 2,
+      "col": 3,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r2c4",
+      "row": 2,
+      "col": 4,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r2c5",
+      "row": 2,
+      "col": 5,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r2c6",
+      "row": 2,
+      "col": 6,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r2c7",
+      "row": 2,
+      "col": 7,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r2c8",
+      "row": 2,
+      "col": 8,
+      "empty": true,
+      "uv": null
+    }
+  ]
 }

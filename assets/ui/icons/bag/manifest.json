@@ -1,72 +1,287 @@
 {
- "sheet": "bag",
- "source": "hf_20261018_183320_ded62876-abdf-4ddb-9124-ed9174c67d41.png",
- "grid": {
-  "cols": 8,
-  "rows": 3,
-  "cell_w": 96,
-  "cell_h": 96
- },
- "icons": [
-  {
-   "name": "log"
+  "sheet": "bag",
+  "grid": {
+    "cols": 8,
+    "rows": 3,
+    "cell_w": 96,
+    "cell_h": 96,
+    "sheet_w": 768,
+    "sheet_h": 288
   },
-  {
-   "name": "stick"
-  },
-  {
-   "name": "stone"
-  },
-  {
-   "name": "apple"
-  },
-  {
-   "name": "axe"
-  },
-  {
-   "name": "unarmed"
-  },
-  {
-   "name": "katana"
-  },
-  {
-   "name": "greatsword"
-  },
-  {
-   "name": "dagger"
-  },
-  {
-   "name": "knives"
-  },
-  {
-   "name": "crossbow"
-  },
-  {
-   "name": "bow"
-  },
-  {
-   "name": "axe_battle"
-  },
-  {
-   "name": "bascinet"
-  },
-  {
-   "name": "cuirass"
-  },
-  {
-   "name": "pauldrons"
-  },
-  {
-   "name": "vambraces"
-  },
-  {
-   "name": "rerebraces"
-  },
-  {
-   "name": "cuisses"
-  },
-  {
-   "name": "greaves"
-  }
- ]
+  "glyph_size": 96,
+  "stroke_px_at_96": 5.5,
+  "glyph_box": 0.8,
+  "uv_origin": "top-left (glTF/Bevy TextureAtlas convention)",
+  "generated_by": "tools/ui/glyphs.py",
+  "source": "procedural vectors, drawn here; no generator, no licence to record",
+  "icons": [
+    {
+      "name": "log",
+      "row": 1,
+      "col": 1,
+      "empty": false,
+      "uv": [
+        0.0,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "stick",
+      "row": 1,
+      "col": 2,
+      "empty": false,
+      "uv": [
+        0.125,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "stone",
+      "row": 1,
+      "col": 3,
+      "empty": false,
+      "uv": [
+        0.25,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "apple",
+      "row": 1,
+      "col": 4,
+      "empty": false,
+      "uv": [
+        0.375,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "axe",
+      "row": 1,
+      "col": 5,
+      "empty": false,
+      "uv": [
+        0.5,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "unarmed",
+      "row": 1,
+      "col": 6,
+      "empty": false,
+      "uv": [
+        0.625,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "katana",
+      "row": 1,
+      "col": 7,
+      "empty": false,
+      "uv": [
+        0.75,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "greatsword",
+      "row": 1,
+      "col": 8,
+      "empty": false,
+      "uv": [
+        0.875,
+        0.0,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "dagger",
+      "row": 2,
+      "col": 1,
+      "empty": false,
+      "uv": [
+        0.0,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "knives",
+      "row": 2,
+      "col": 2,
+      "empty": false,
+      "uv": [
+        0.125,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "crossbow",
+      "row": 2,
+      "col": 3,
+      "empty": false,
+      "uv": [
+        0.25,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "bow",
+      "row": 2,
+      "col": 4,
+      "empty": false,
+      "uv": [
+        0.375,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "axe_battle",
+      "row": 2,
+      "col": 5,
+      "empty": false,
+      "uv": [
+        0.5,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "bascinet",
+      "row": 2,
+      "col": 6,
+      "empty": false,
+      "uv": [
+        0.625,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "cuirass",
+      "row": 2,
+      "col": 7,
+      "empty": false,
+      "uv": [
+        0.75,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "pauldrons",
+      "row": 2,
+      "col": 8,
+      "empty": false,
+      "uv": [
+        0.875,
+        0.333333,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "vambraces",
+      "row": 3,
+      "col": 1,
+      "empty": false,
+      "uv": [
+        0.0,
+        0.666667,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "rerebraces",
+      "row": 3,
+      "col": 2,
+      "empty": false,
+      "uv": [
+        0.125,
+        0.666667,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "cuisses",
+      "row": 3,
+      "col": 3,
+      "empty": false,
+      "uv": [
+        0.25,
+        0.666667,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "greaves",
+      "row": 3,
+      "col": 4,
+      "empty": false,
+      "uv": [
+        0.375,
+        0.666667,
+        0.125,
+        0.333333
+      ]
+    },
+    {
+      "name": "-r3c5",
+      "row": 3,
+      "col": 5,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r3c6",
+      "row": 3,
+      "col": 6,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r3c7",
+      "row": 3,
+      "col": 7,
+      "empty": true,
+      "uv": null
+    },
+    {
+      "name": "-r3c8",
+      "row": 3,
+      "col": 8,
+      "empty": true,
+      "uv": null
+    }
+  ]
 }
