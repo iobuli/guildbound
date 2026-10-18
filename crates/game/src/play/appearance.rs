@@ -22,7 +22,18 @@
 //!
 //! The player: `GB_HERO` = `look` (default: the wardrobe's `player` look, or `GB_LOOK=<name>`),
 //! `styled` (`anim/hero_styled.glb`, the default look baked into one file), or `mannequin` (the
-//! old yellow ual2 model). NPCs keep the mannequin; `dress` puts any look on any root.
+//! old yellow ual2 model). Choosing a class (`class`) re-dresses the player in the wardrobe's
+//! `classes` look for it (`dress_class`).
+//!
+//! The cast: every other fighter is dressed when it appears (`cast`), from the wardrobe's `cast`
+//! table by name, else from the style of the nearest `areas` entry (guild, village, ruins,
+//! pond...), with every choice (body, hair, colours, which outfit and pieces) seeded by its name,
+//! so no two villagers match and each keeps its look from run to run. `GB_HERO=mannequin` keeps
+//! NPCs on the mannequin too.
+//!
+//! A look's `pieces` are `looks`'s procedural extras (kasa, hood, helm, shield, scarf...), placed
+//! by `looks` on the hero body; its `scale` scales the model about the feet (Thoral).
+//! Re-dressing (a new `Appearance` on a dressed root) despawns the old parts (`Worn`) first.
 use super::HALF_HEIGHT;
 use crate::motion::bank::PoseBank;
 use crate::motion::{ModelRequest, MotionSet, Rig};
@@ -38,7 +49,7 @@ use std::collections::HashMap;
 pub const STYLED_GLB: &str = "anim/hero_styled.glb";
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, dress_rigged)
+    app.add_systems(Update, (cast, dress_rigged).chain())
         .add_systems(PostUpdate, attach_parts.before(MotionSet::Compose));
 }
 
@@ -85,7 +96,40 @@ pub struct Look {
     pub outfit: Vec<String>,
     #[serde(default)]
     pub colors: HashMap<String, Paint>,
+    /// `looks` pieces worn over the outfit ("kasa", "helm", "shield", "scarf"...).
+    #[serde(default)]
+    pub pieces: Vec<String>,
+    /// Model scale about the feet.
+    #[serde(default = "one")]
+    pub scale: f32,
 }
+
+fn one() -> f32 {
+    1.0
+}
+
+/// How people dress in one part of the world (`areas`): choices seeded per person.
+#[derive(Deserialize, Clone, Debug, Default)]
+pub struct Area {
+    /// Ground position (x, z) of the area's middle; a person takes the nearest area.
+    pub at: [f32; 2],
+    pub bases: Vec<String>,
+    pub skins: Vec<Paint>,
+    pub hair_colors: Vec<Paint>,
+    pub hair_male: Vec<String>,
+    pub hair_female: Vec<String>,
+    /// Whole outfits to choose from (garment lists).
+    pub outfits: Vec<Vec<String>>,
+    /// Colours for cloth garments and for leather ones (`LEATHER`).
+    pub cloth: Vec<Paint>,
+    pub leather: Vec<Paint>,
+    /// Piece sets to choose from (an empty set is allowed).
+    #[serde(default)]
+    pub pieces: Vec<Vec<String>>,
+}
+
+/// Garments coloured from an area's `leather` list.
+const LEATHER: [&str; 8] = ["boots", "shoes", "belt", "baldric", "gloves", "vest", "bracers", "apron"];
 
 fn brown() -> String {
     "brown".into()
@@ -94,6 +138,14 @@ fn brown() -> String {
 #[derive(Deserialize, Clone, Debug)]
 pub struct Wardrobe {
     pub player: String,
+    /// Character name → look.
+    #[serde(default)]
+    pub cast: HashMap<String, String>,
+    /// Class (`class::Class` in lower case) → the player's look.
+    #[serde(default)]
+    pub classes: HashMap<String, String>,
+    #[serde(default)]
+    pub areas: HashMap<String, Area>,
     #[serde(default)]
     pub palette: HashMap<String, [f32; 3]>,
     pub looks: HashMap<String, Look>,
@@ -119,6 +171,73 @@ impl Wardrobe {
     /// Resolve a look by name into what `appearance` applies.
     pub fn appearance(&self, name: &str) -> Result<Appearance, String> {
         let look = self.looks.get(name).ok_or_else(|| format!("no look {name:?}"))?;
+        self.resolve(name, look)
+    }
+
+    /// The look for a character: its `cast` entry, else one made from its nearest area's style
+    /// (seeded by its name).
+    pub fn for_character(&self, name: &str, at: Vec3) -> Result<Appearance, String> {
+        if let Some(look) = self.cast.get(name) {
+            return self.appearance(look);
+        }
+        let (area_name, area) = self
+            .areas
+            .iter()
+            .min_by(|a, b| {
+                let d = |x: &Area| Vec2::from(x.at).distance(Vec2::new(at.x, at.z));
+                d(a.1).total_cmp(&d(b.1)).then_with(|| a.0.cmp(b.0))
+            })
+            .ok_or("no areas in the wardrobe")?;
+        let look = Self::generate(area, name)?;
+        self.resolve(&format!("{area_name}:{name}"), &look)
+    }
+
+    /// A look from an area's style, every choice seeded by `seed`.
+    pub fn generate(area: &Area, seed: &str) -> Result<Look, String> {
+        let mut rng = seed.bytes().fold(0x811c_9dc5u32, |h, b| (h ^ b as u32).wrapping_mul(0x0100_0193)) | 1;
+        let mut roll = move |n: usize| -> usize {
+            rng ^= rng << 13;
+            rng ^= rng >> 17;
+            rng ^= rng << 5;
+            if n == 0 { 0 } else { (rng % n as u32) as usize }
+        };
+        let pick = |list: &[String], i: usize| list.get(i).cloned().unwrap_or_default();
+        let base = pick(&area.bases, roll(area.bases.len()));
+        let male = base == "male";
+        let hairs = if male { &area.hair_male } else { &area.hair_female };
+        let outfit = area.outfits.get(roll(area.outfits.len())).cloned().ok_or("an area has no outfits")?;
+        let mut colors = HashMap::new();
+        for g in &outfit {
+            let list = if LEATHER.contains(&g.as_str()) { &area.leather } else { &area.cloth };
+            if let Some(c) = list.get(roll(list.len())) {
+                colors.insert(g.clone(), c.clone());
+            }
+        }
+        let shape = Shape {
+            bulk: [0.0, 0.2, 0.45][roll(3)],
+            heavy: [0.0, 0.0, 0.3, 0.6][roll(4)],
+            slim: [0.0, 0.0, 0.4][roll(3)],
+            jaw: if male { [0.0, 0.3, 0.6][roll(3)] } else { 0.0 },
+        };
+        let skin = area.skins.get(roll(area.skins.len())).cloned().ok_or("an area has no skins")?;
+        let hair_color = area.hair_colors.get(roll(area.hair_colors.len())).cloned().ok_or("an area has no hair colours")?;
+        Ok(Look {
+            base: base.clone(),
+            skin,
+            eyes: ["brown", "brown", "hazel", "green", "blue", "grey", "amber"][roll(7)].to_string(),
+            hair: pick(hairs, roll(hairs.len())),
+            hair_color,
+            brows: if male { "brows_regular" } else { "brows_soft" }.to_string(),
+            beard: if male && roll(3) == 0 { "beard".to_string() } else { String::new() },
+            shape,
+            outfit,
+            colors,
+            pieces: area.pieces.get(roll(area.pieces.len())).cloned().unwrap_or_default(),
+            scale: 1.0,
+        })
+    }
+
+    fn resolve(&self, name: &str, look: &Look) -> Result<Appearance, String> {
         if look.base != "male" && look.base != "female" {
             return Err(format!("look {name:?}: base must be male or female, not {:?}", look.base));
         }
@@ -142,6 +261,8 @@ impl Wardrobe {
             outfit: look.outfit.clone(),
             colors,
             shape: [look.shape.bulk, look.shape.heavy, look.shape.slim, look.shape.jaw],
+            pieces: look.pieces.clone(),
+            scale: if look.scale.is_finite() { look.scale.clamp(0.5, 2.0) } else { 1.0 },
         })
     }
 }
@@ -164,6 +285,10 @@ pub struct Appearance {
     /// Morph weights in the hero GLBs' target order (`tools/model/build.py` `MORPHS`):
     /// bulk, heavy, slim, jaw.
     pub shape: [f32; 4],
+    /// `looks` pieces worn over the outfit.
+    pub pieces: Vec<String>,
+    /// Model scale about the feet.
+    pub scale: f32,
 }
 
 impl Appearance {
@@ -232,9 +357,57 @@ pub fn dress_player(commands: &mut Commands, player: Entity) {
     }
 }
 
-/// On a root: the model entity its look was applied to (re-dress when the model changes).
+/// On a root: the model entity its look was applied to and the look's name (re-dress when either
+/// changes).
 #[derive(Component)]
-pub struct Dressed(pub Entity);
+pub struct Dressed(pub Entity, pub String);
+
+/// A part's mesh or mount moved onto a dressed rig (despawned when the look changes).
+#[derive(Component)]
+struct Worn;
+
+/// Dress every new fighter that has no look yet (not the player; not with `GB_HERO=mannequin`).
+#[allow(clippy::type_complexity)]
+fn cast(
+    mut commands: Commands,
+    mut wardrobe: Local<Option<Option<Wardrobe>>>,
+    fighters: Query<(Entity, &Name, &Transform), (Added<super::Fighter>, Without<Appearance>, Without<super::Player>)>,
+) {
+    if fighters.is_empty() {
+        return;
+    }
+    if std::env::var("GB_HERO").is_ok_and(|m| matches!(m.trim(), "mannequin" | "ual2")) {
+        return;
+    }
+    let w = wardrobe.get_or_insert_with(|| Wardrobe::load(&wardrobe_path()).map_err(|e| warn!("[appearance] {e}")).ok());
+    let Some(w) = w.as_ref() else { return };
+    for (e, name, tf) in &fighters {
+        match w.for_character(name.as_str(), tf.translation) {
+            Ok(look) => {
+                info!("[appearance] {name}: {:?}", look.look);
+                dress(&mut commands, e, look);
+            }
+            Err(err) => warn!("[appearance] {name}: {err}; keeping the mannequin"),
+        }
+    }
+}
+
+/// Re-dress the player in the look the wardrobe gives `class` (no-op on the mannequin).
+pub fn dress_class(commands: &mut Commands, player: Entity, worn: Option<&Appearance>, class: &str) {
+    if worn.is_none() {
+        return;
+    }
+    match Wardrobe::load(&wardrobe_path()).and_then(|w| {
+        let look = w.classes.get(class).ok_or_else(|| format!("no class look for {class:?}"))?;
+        w.appearance(look)
+    }) {
+        Ok(look) => {
+            info!("[appearance] class {class}: {:?}", look.look);
+            dress(commands, player, look);
+        }
+        Err(e) => warn!("[appearance] {e}"),
+    }
+}
 
 /// A part scene waiting to be attached: (character root, part file stem).
 #[derive(Component)]
@@ -255,10 +428,12 @@ fn dress_rigged(
     roots: Query<(Entity, &Rig, &Appearance, Option<&Dressed>, &ModelRequest), Or<(Changed<Rig>, Changed<Appearance>, Without<Dressed>)>>,
     children: Query<&Children>,
     names: Query<&Name>,
+    worn: Query<(), With<Worn>>,
+    mut models: Query<&mut Transform>,
     mut styling: Styling,
 ) {
     for (root, rig, look, dressed, request) in &roots {
-        if dressed.is_some_and(|d| d.0 == rig.model) {
+        if dressed.is_some_and(|d| d.0 == rig.model && d.1 == look.look) {
             continue;
         }
         if request.path != look.body_path() {
@@ -270,7 +445,18 @@ fn dress_rigged(
             });
             continue;
         }
-        let nodes: Vec<Entity> = children.iter_descendants(rig.model).collect();
+        // A new look on the same body: the old parts go.
+        let mut nodes: Vec<Entity> = Vec::new();
+        for node in children.iter_descendants(rig.model) {
+            if worn.contains(node) {
+                commands.entity(node).try_despawn();
+            } else {
+                nodes.push(node);
+            }
+        }
+        if let Ok(mut m) = models.get_mut(rig.model) {
+            m.scale = Vec3::splat(look.scale);
+        }
         for &node in &nodes {
             if let Ok(name) = names.get(node)
                 && name.as_str().starts_with("body_hide_")
@@ -288,7 +474,7 @@ fn dress_rigged(
                 .id();
             commands.entity(rig.model).add_child(entity);
         }
-        commands.entity(root).insert(Dressed(rig.model));
+        commands.entity(root).insert(Dressed(rig.model, look.look.clone()));
         info!("[appearance] {root}: dressing as {:?} ({} parts)", look.look, look.parts.len());
     }
 }
@@ -349,10 +535,12 @@ fn attach_parts(
                 && let Some(b) = bone(joint.as_str())
             {
                 commands.entity(b).add_child(node);
+                commands.entity(node).insert(Worn);
             }
         }
         for &node in &moved {
             commands.entity(rig.model).add_child(node);
+            commands.entity(node).insert(Worn);
         }
         styling.apply(&mut commands, &assets, &nodes, look);
         // The part's skeleton copy and scene root go (despawn is recursive); its meshes and
@@ -427,6 +615,41 @@ mod tests {
             }
         }
         assert!(root.join(STYLED_GLB).exists());
+    }
+
+    #[test]
+    fn the_cast_classes_and_areas_resolve_to_parts_that_exist() {
+        let w = wardrobe();
+        let root = std::path::Path::new(crate::ASSETS);
+        let exists = |a: &Appearance| {
+            for p in &a.parts {
+                assert!(root.join(a.part_path(p)).exists(), "{}: {}", a.look, a.part_path(p));
+            }
+            for p in &a.pieces {
+                assert!(super::super::looks::Piece::from_name(p).is_some(), "{}: unknown piece {p}", a.look);
+            }
+        };
+        for class in ["blade", "arcanist", "hunter"] {
+            let look = w.classes.get(class).unwrap_or_else(|| panic!("no look for class {class}"));
+            exists(&w.appearance(look).unwrap());
+        }
+        for (name, look) in &w.cast {
+            exists(&w.appearance(look).unwrap_or_else(|e| panic!("{name}: {e}")));
+        }
+        assert!((w.appearance("thoral").unwrap().scale - 1.2).abs() < 1e-6);
+        // Strangers: seeded per name, stable, and varied within an area.
+        let mut seen = std::collections::HashSet::new();
+        for i in 0..24 {
+            let a = w.for_character(&format!("Villager {i}"), Vec3::new(1.0, 0.0, 1.0)).unwrap();
+            assert!(a.look.starts_with("village:"), "{}", a.look);
+            exists(&a);
+            seen.insert(format!("{:?}{:?}{}", a.parts, a.colors.values().map(|c| c.to_srgba().red).collect::<Vec<_>>(), a.base));
+        }
+        assert!(seen.len() >= 18, "only {} different villagers of 24", seen.len());
+        let again = w.for_character("Villager 3", Vec3::ZERO).unwrap();
+        assert_eq!(again, w.for_character("Villager 3", Vec3::ZERO).unwrap());
+        let ruin = w.for_character("Bandit", Vec3::new(0.0, 0.0, 33.0)).unwrap();
+        assert!(ruin.look.starts_with("ruins:"), "{}", ruin.look);
     }
 
     #[test]

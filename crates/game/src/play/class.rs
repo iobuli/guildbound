@@ -5,6 +5,7 @@
 //! - Arcanist: dagger; Frost 5, Lightning 3; Frost Bloom and Storm Lance, Frost Bloom on E;
 //!   Intelligence ×2, Faith.
 //! - Hunter: bow; Archery 5, Stealth 3; Veil bound to Q; Dexterity ×2, Endurance.
+//! The choice also dresses the player for the path (`appearance::dress_class`).
 //! While the panel is open the player's input is held (`input`) and nobody attacks (`ai`).
 //! Smoke runs (any `GB_*` set) skip the panel; `GB_CLASS=blade|arcanist|hunter` picks one.
 use super::combat::Equip;
@@ -146,16 +147,20 @@ fn choose(keys: Res<ButtonInput<KeyCode>>, mut choice: ResMut<ClassChoice>) {
 #[allow(clippy::type_complexity)]
 fn apply(
     mut choice: ResMut<ClassChoice>,
-    mut players: Query<(Entity, &mut Sheet, &mut Grimoire, &mut Stats), With<Player>>,
+    mut players: Query<(Entity, &mut Sheet, &mut Grimoire, &mut Stats, Option<&super::appearance::Appearance>), With<Player>>,
     mut equip: MessageWriter<Equip>,
+    mut commands: Commands,
     mut log: MessageWriter<HudLog>,
 ) {
     if choice.applied {
         return;
     }
     let Some(class) = choice.picked else { return };
-    let Ok((e, mut sheet, mut grimoire, mut stats)) = players.single_mut() else { return };
+    let Ok((e, mut sheet, mut grimoire, mut stats, worn)) = players.single_mut() else { return };
     let kit = class.kit();
+    // Dressed for the path (`appearance.json` `classes`).
+    let class_name = format!("{class:?}").to_lowercase();
+    super::appearance::dress_class(&mut commands, e, worn, &class_name);
     equip.write(Equip { who: e, set: kit.weapon.to_string() });
     for (skill, level) in kit.skills {
         sheet.grant(skill, xp_for_level(*level));

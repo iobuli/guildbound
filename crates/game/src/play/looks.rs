@@ -9,8 +9,8 @@
 //!   (head top, neck, pelvis, shoulders, relative to the body's facing) converted into its bone's
 //!   frame once, so it then rides the animation. Pieces use the skin material too (ink look,
 //!   presence rim). Debug view 13 hides them.
-//! Characters wearing a modelled look (`appearance::Appearance`, the hero bodies) are skipped:
-//! their outfit is their own.
+//! Characters wearing a modelled look (`appearance::Appearance`, the hero bodies) keep their own
+//! proportions and outfit and get only the pieces their look lists (`Piece::from_name`).
 //! - Tails (`Flap`): scarf and sash tails hang from a pivot and swing on a spring, trailing the
 //!   body's velocity and acceleration (`TAIL_SWING`, `TAIL_STIFF`, `TAIL_DAMP`).
 use super::debug::{DebugToggles, View};
@@ -43,6 +43,25 @@ pub enum Piece {
     Shield,
     /// An iron helm with a nasal guard.
     Helm,
+}
+
+impl Piece {
+    /// A piece by its name in `appearance.json` (`kasa`, `hood`, `helm`...).
+    pub fn from_name(name: &str) -> Option<Self> {
+        Some(match name {
+            "kasa" => Self::Kasa,
+            "hood" => Self::Hood,
+            "topknot" => Self::Topknot,
+            "headband" => Self::Headband,
+            "scarf" => Self::Scarf,
+            "sash" => Self::Sash,
+            "pauldrons" => Self::Pauldrons,
+            "pouch" => Self::Pouch,
+            "shield" => Self::Shield,
+            "helm" => Self::Helm,
+            _ => return None,
+        })
+    }
 }
 
 /// One character's look.
@@ -116,7 +135,26 @@ struct Flap {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (dress, wear_helm, flaps, show_pieces).chain());
+    app.add_systems(Update, (undress, dress, wear_helm, flaps, show_pieces).chain());
+}
+
+/// A modelled look changed (the class choice re-dresses the player): take the pieces off so
+/// `dress` puts on the new look's.
+#[allow(clippy::type_complexity)]
+fn undress(
+    mut commands: Commands,
+    changed: Query<(Entity, &Rig), (Changed<super::appearance::Appearance>, With<Dressed>)>,
+    children: Query<&Children>,
+    pieces: Query<(), Or<(With<PieceMesh>, With<Flap>)>>,
+) {
+    for (e, rig) in &changed {
+        for node in children.iter_descendants(rig.model) {
+            if pieces.contains(node) {
+                commands.entity(node).try_despawn();
+            }
+        }
+        commands.entity(e).try_remove::<(Dressed, Dressing)>();
+    }
 }
 
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
@@ -126,17 +164,19 @@ fn dress(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut skins: ResMut<Assets<SkinMaterial>>,
-    mut characters: Query<(Entity, &Name, &Rig, &mut Skin, Option<&mut Dressing>), (Without<Dressed>, With<super::Fighter>, Without<super::appearance::Appearance>)>,
+    mut characters: Query<(Entity, &Name, &Rig, &mut Skin, Option<&mut Dressing>, Option<&super::appearance::Appearance>), (Without<Dressed>, With<super::Fighter>)>,
     mut models: Query<&mut Transform>,
     globals: Query<&GlobalTransform>,
 ) {
     let Some(bank) = bank else { return };
-    for (e, name, rig, mut skin, dressing) in &mut characters {
+    for (e, name, rig, mut skin, dressing, worn) in &mut characters {
         let Some(mut d) = dressing else {
             commands.entity(e).try_insert(Dressing::default());
-            // Proportions at once (the pose settles with them).
+            // Proportions at once (the pose settles with them); a modelled look has its own.
             let look = look_for(name.as_str());
-            if let Ok(mut m) = models.get_mut(rig.model) {
+            if worn.is_none()
+                && let Ok(mut m) = models.get_mut(rig.model)
+            {
                 m.scale = Vec3::new(look.breadth, look.height, look.breadth);
             }
             continue;
@@ -145,7 +185,11 @@ fn dress(
         if d.0 < SETTLE {
             continue;
         }
-        let look = look_for(name.as_str());
+        let mut look = look_for(name.as_str());
+        if let Some(worn) = worn {
+            // A modelled look: its outfit is its own; only the pieces it asks for go on.
+            look.pieces = worn.pieces.iter().filter_map(|p| Piece::from_name(p)).collect();
+        }
         skin.accent = look.accent;
         let Ok(root) = globals.get(e) else { continue };
         let at = |i: usize| {

@@ -1,40 +1,246 @@
 {
-  "_doc": "Character looks (play/appearance.rs). A look picks a base body (male | female) and fills slots with parts from assets/characters/hero/<base>/<part>.glb, built by tools/model/build.py on ual2's skeleton. Colours are sRGB [r, g, b] or a name from `palette`. shape: morph weights 0..1 (bulk = muscle, heavy = belly and soft weight, slim = leaner, jaw = stronger jaw). eyes: a colour with a texture assets/characters/hero/tex/eye_<colour>.png. GB_LOOK=<look> picks the player's look; GB_HERO=mannequin restores the yellow mannequin, GB_HERO=styled loads assets/anim/hero_styled.glb (the wanderer baked into one file).",
+  "_doc": "Character looks (play/appearance.rs). A look picks a base body (male | female) and fills slots with parts from assets/characters/hero/<base>/<part>.glb, built by tools/model/build.py on ual2's skeleton. Colours are sRGB [r, g, b] or a name from `palette`. shape: morph weights 0..1 (bulk = muscle, heavy = belly and soft weight, slim = leaner, jaw = stronger jaw). eyes: a colour with a texture assets/characters/hero/tex/eye_<colour>.png. GB_LOOK=<look> picks the player's look; GB_HERO=mannequin restores the yellow mannequin, GB_HERO=styled loads assets/anim/hero_styled.glb (the wanderer baked into one file). cast: character name -> look (anyone else gets a seeded look from the nearest `areas` style). classes: the player's look per class (class.rs). A look's pieces are looks.rs extras (kasa hood topknot headband scarf sash pauldrons pouch shield helm); scale scales the model about the feet.",
   "player": "wanderer",
   "slots": {
-    "hair": ["hair_parted", "hair_buzzed", "hair_buzzed_f", "hair_long", "hair_buns"],
-    "brows": ["brows_regular", "brows_soft"],
-    "beard": ["beard"],
-    "top": ["tunic", "shirt"],
-    "legs": ["trousers"],
-    "feet": ["boots", "shoes"],
-    "hands": ["gloves"],
-    "belt": ["belt"],
-    "strap": ["baldric"],
-    "eyes": ["brown", "blue", "green", "grey", "hazel", "amber"],
-    "_note": "beard exists for the male base only. Every hair and brow style is fitted to both bases."
+    "hair": [
+      "hair_parted",
+      "hair_buzzed",
+      "hair_buzzed_f",
+      "hair_long",
+      "hair_buns"
+    ],
+    "brows": [
+      "brows_regular",
+      "brows_soft"
+    ],
+    "beard": [
+      "beard"
+    ],
+    "top": [
+      "tunic",
+      "shirt",
+      "robe_top"
+    ],
+    "legs": [
+      "trousers",
+      "hakama"
+    ],
+    "feet": [
+      "boots",
+      "shoes"
+    ],
+    "hands": [
+      "gloves"
+    ],
+    "belt": [
+      "belt"
+    ],
+    "strap": [
+      "baldric"
+    ],
+    "eyes": [
+      "brown",
+      "blue",
+      "green",
+      "grey",
+      "hazel",
+      "amber"
+    ],
+    "_note": "beard exists for the male base only. Every hair and brow style is fitted to both bases.",
+    "coat": [
+      "haori",
+      "vest"
+    ],
+    "cape": [
+      "mantle",
+      "cloak"
+    ],
+    "head": [
+      "hood"
+    ],
+    "wrists": [
+      "bracers"
+    ],
+    "shins": [
+      "leg_wraps"
+    ],
+    "skirt": [
+      "robe_skirt",
+      "kilt"
+    ],
+    "apron": [
+      "apron"
+    ],
+    "tabard": [
+      "tabard"
+    ]
   },
   "palette": {
-    "skin_fair": [0.93, 0.76, 0.64],
-    "skin_light": [0.86, 0.66, 0.52],
-    "skin_olive": [0.76, 0.57, 0.42],
-    "skin_brown": [0.58, 0.40, 0.28],
-    "skin_deep": [0.38, 0.25, 0.18],
-    "hair_black": [0.08, 0.07, 0.07],
-    "hair_brown": [0.30, 0.20, 0.12],
-    "hair_chestnut": [0.45, 0.24, 0.12],
-    "hair_auburn": [0.58, 0.26, 0.14],
-    "hair_blond": [0.86, 0.70, 0.42],
-    "hair_grey": [0.62, 0.62, 0.60],
-    "madder": [0.56, 0.17, 0.14],
-    "moss": [0.30, 0.40, 0.22],
-    "woad": [0.22, 0.32, 0.46],
-    "linen": [0.86, 0.80, 0.66],
-    "ochre": [0.72, 0.52, 0.22],
-    "umber": [0.33, 0.26, 0.19],
-    "charcoal": [0.20, 0.20, 0.21],
-    "leather": [0.45, 0.31, 0.19],
-    "dark_leather": [0.26, 0.17, 0.11]
+    "skin_fair": [
+      0.93,
+      0.76,
+      0.64
+    ],
+    "skin_light": [
+      0.86,
+      0.66,
+      0.52
+    ],
+    "skin_olive": [
+      0.76,
+      0.57,
+      0.42
+    ],
+    "skin_brown": [
+      0.58,
+      0.4,
+      0.28
+    ],
+    "skin_deep": [
+      0.38,
+      0.25,
+      0.18
+    ],
+    "hair_black": [
+      0.08,
+      0.07,
+      0.07
+    ],
+    "hair_brown": [
+      0.3,
+      0.2,
+      0.12
+    ],
+    "hair_chestnut": [
+      0.45,
+      0.24,
+      0.12
+    ],
+    "hair_auburn": [
+      0.58,
+      0.26,
+      0.14
+    ],
+    "hair_blond": [
+      0.86,
+      0.7,
+      0.42
+    ],
+    "hair_grey": [
+      0.62,
+      0.62,
+      0.6
+    ],
+    "madder": [
+      0.56,
+      0.17,
+      0.14
+    ],
+    "moss": [
+      0.3,
+      0.4,
+      0.22
+    ],
+    "woad": [
+      0.22,
+      0.32,
+      0.46
+    ],
+    "linen": [
+      0.86,
+      0.8,
+      0.66
+    ],
+    "ochre": [
+      0.72,
+      0.52,
+      0.22
+    ],
+    "umber": [
+      0.33,
+      0.26,
+      0.19
+    ],
+    "charcoal": [
+      0.2,
+      0.2,
+      0.21
+    ],
+    "leather": [
+      0.45,
+      0.31,
+      0.19
+    ],
+    "dark_leather": [
+      0.26,
+      0.17,
+      0.11
+    ],
+    "indigo": [
+      0.18,
+      0.2,
+      0.34
+    ],
+    "night": [
+      0.12,
+      0.12,
+      0.16
+    ],
+    "plum": [
+      0.36,
+      0.2,
+      0.36
+    ],
+    "forest": [
+      0.2,
+      0.26,
+      0.18
+    ],
+    "guild_blue": [
+      0.2,
+      0.3,
+      0.55
+    ],
+    "guild_gold": [
+      0.78,
+      0.62,
+      0.26
+    ],
+    "rust": [
+      0.52,
+      0.26,
+      0.14
+    ],
+    "straw": [
+      0.74,
+      0.64,
+      0.4
+    ],
+    "slate": [
+      0.32,
+      0.34,
+      0.38
+    ],
+    "teal": [
+      0.18,
+      0.38,
+      0.4
+    ],
+    "ash": [
+      0.48,
+      0.46,
+      0.44
+    ],
+    "blood": [
+      0.4,
+      0.08,
+      0.08
+    ],
+    "iron": [
+      0.26,
+      0.26,
+      0.28
+    ]
   },
   "looks": {
     "wanderer": {
@@ -45,9 +251,28 @@
       "hair_color": "hair_brown",
       "brows": "brows_regular",
       "beard": "beard",
-      "shape": { "bulk": 0.0, "heavy": 0.0, "slim": 0.0, "jaw": 0.3 },
-      "outfit": ["tunic", "trousers", "boots", "gloves", "belt", "baldric"],
-      "colors": { "tunic": "madder", "trousers": "umber", "boots": "dark_leather", "gloves": "leather", "belt": "dark_leather", "baldric": "dark_leather" }
+      "shape": {
+        "bulk": 0.0,
+        "heavy": 0.0,
+        "slim": 0.0,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "tunic",
+        "trousers",
+        "boots",
+        "gloves",
+        "belt",
+        "baldric"
+      ],
+      "colors": {
+        "tunic": "madder",
+        "trousers": "umber",
+        "boots": "dark_leather",
+        "gloves": "leather",
+        "belt": "dark_leather",
+        "baldric": "dark_leather"
+      }
     },
     "ranger": {
       "base": "female",
@@ -57,9 +282,28 @@
       "hair_color": "hair_auburn",
       "brows": "brows_soft",
       "beard": "",
-      "shape": { "bulk": 0.2, "heavy": 0.0, "slim": 0.3, "jaw": 0.0 },
-      "outfit": ["tunic", "trousers", "boots", "gloves", "belt", "baldric"],
-      "colors": { "tunic": "moss", "trousers": "umber", "boots": "dark_leather", "gloves": "leather", "belt": "dark_leather", "baldric": "leather" }
+      "shape": {
+        "bulk": 0.2,
+        "heavy": 0.0,
+        "slim": 0.3,
+        "jaw": 0.0
+      },
+      "outfit": [
+        "tunic",
+        "trousers",
+        "boots",
+        "gloves",
+        "belt",
+        "baldric"
+      ],
+      "colors": {
+        "tunic": "moss",
+        "trousers": "umber",
+        "boots": "dark_leather",
+        "gloves": "leather",
+        "belt": "dark_leather",
+        "baldric": "leather"
+      }
     },
     "villager": {
       "base": "female",
@@ -69,9 +313,24 @@
       "hair_color": "hair_black",
       "brows": "brows_soft",
       "beard": "",
-      "shape": { "bulk": 0.0, "heavy": 0.4, "slim": 0.0, "jaw": 0.0 },
-      "outfit": ["shirt", "trousers", "shoes", "belt"],
-      "colors": { "shirt": "linen", "trousers": "woad", "shoes": "leather", "belt": "leather" }
+      "shape": {
+        "bulk": 0.0,
+        "heavy": 0.4,
+        "slim": 0.0,
+        "jaw": 0.0
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "trousers": "woad",
+        "shoes": "leather",
+        "belt": "leather"
+      }
     },
     "smith": {
       "base": "male",
@@ -81,9 +340,745 @@
       "hair_color": "hair_black",
       "brows": "brows_regular",
       "beard": "beard",
-      "shape": { "bulk": 0.8, "heavy": 0.5, "slim": 0.0, "jaw": 0.6 },
-      "outfit": ["shirt", "trousers", "boots", "belt"],
-      "colors": { "shirt": "ochre", "trousers": "charcoal", "boots": "dark_leather", "belt": "leather" }
+      "shape": {
+        "bulk": 0.8,
+        "heavy": 0.5,
+        "slim": 0.0,
+        "jaw": 0.6
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "boots",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "ochre",
+        "trousers": "charcoal",
+        "boots": "dark_leather",
+        "belt": "leather"
+      }
+    },
+    "blade": {
+      "base": "male",
+      "skin": "skin_light",
+      "eyes": "brown",
+      "hair": "hair_parted",
+      "hair_color": "hair_brown",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "shirt",
+        "haori",
+        "hakama",
+        "leg_wraps",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "haori": "indigo",
+        "hakama": "night",
+        "leg_wraps": "linen",
+        "shoes": "dark_leather",
+        "belt": "madder"
+      },
+      "pieces": [
+        "kasa"
+      ],
+      "scale": 1.0
+    },
+    "arcanist": {
+      "base": "male",
+      "skin": "skin_light",
+      "eyes": "grey",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_brown",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "robe_top",
+        "robe_skirt",
+        "mantle",
+        "hood",
+        "bracers",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "robe_top": "woad",
+        "robe_skirt": "woad",
+        "mantle": "plum",
+        "hood": "plum",
+        "bracers": "leather",
+        "shoes": "dark_leather",
+        "belt": "dark_leather"
+      },
+      "pieces": [],
+      "scale": 1.0
+    },
+    "hunter": {
+      "base": "male",
+      "skin": "skin_light",
+      "eyes": "green",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_brown",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "shirt",
+        "vest",
+        "trousers",
+        "cloak",
+        "bracers",
+        "leg_wraps",
+        "boots",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "vest": "leather",
+        "trousers": "umber",
+        "cloak": "forest",
+        "bracers": "dark_leather",
+        "leg_wraps": "ash",
+        "boots": "dark_leather",
+        "belt": "dark_leather"
+      },
+      "pieces": [],
+      "scale": 1.0
+    },
+    "duelist": {
+      "base": "male",
+      "skin": "skin_olive",
+      "eyes": "hazel",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "",
+      "shape": {
+        "bulk": 0.45,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0.6
+      },
+      "outfit": [
+        "shirt",
+        "haori",
+        "hakama",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "ash",
+        "haori": "blood",
+        "hakama": "night",
+        "shoes": "dark_leather",
+        "belt": "night"
+      },
+      "pieces": [
+        "headband"
+      ],
+      "scale": 1.0
+    },
+    "captain": {
+      "base": "male",
+      "skin": "skin_fair",
+      "eyes": "grey",
+      "hair": "hair_parted",
+      "hair_color": "hair_grey",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 0.6,
+        "heavy": 0.2,
+        "slim": 0,
+        "jaw": 0.6
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "tabard",
+        "boots",
+        "gloves",
+        "belt",
+        "baldric"
+      ],
+      "colors": {
+        "shirt": "slate",
+        "trousers": "night",
+        "tabard": "guild_blue",
+        "boots": "dark_leather",
+        "gloves": "dark_leather",
+        "belt": "dark_leather",
+        "baldric": "dark_leather"
+      },
+      "pieces": [
+        "pauldrons"
+      ],
+      "scale": 1.0
+    },
+    "receptionist": {
+      "base": "female",
+      "skin": "skin_light",
+      "eyes": "blue",
+      "hair": "hair_buns",
+      "hair_color": "hair_auburn",
+      "brows": "brows_soft",
+      "beard": "",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0
+      },
+      "outfit": [
+        "shirt",
+        "tabard",
+        "kilt",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "tabard": "guild_blue",
+        "kilt": "night",
+        "shoes": "leather",
+        "belt": "leather"
+      },
+      "pieces": [],
+      "scale": 1.0
+    },
+    "adventurer_axe": {
+      "base": "male",
+      "skin": "skin_brown",
+      "eyes": "brown",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 0.6,
+        "heavy": 0.3,
+        "slim": 0,
+        "jaw": 0.6
+      },
+      "outfit": [
+        "tunic",
+        "trousers",
+        "boots",
+        "gloves",
+        "belt",
+        "baldric",
+        "bracers"
+      ],
+      "colors": {
+        "tunic": "rust",
+        "trousers": "umber",
+        "boots": "dark_leather",
+        "gloves": "leather",
+        "belt": "dark_leather",
+        "baldric": "dark_leather",
+        "bracers": "leather"
+      },
+      "pieces": [],
+      "scale": 1.0
+    },
+    "scout": {
+      "base": "female",
+      "skin": "skin_olive",
+      "eyes": "green",
+      "hair": "hair_long",
+      "hair_color": "hair_chestnut",
+      "brows": "brows_soft",
+      "beard": "",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0.4,
+        "jaw": 0
+      },
+      "outfit": [
+        "shirt",
+        "vest",
+        "trousers",
+        "boots",
+        "bracers",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "ash",
+        "vest": "leather",
+        "trousers": "teal",
+        "boots": "dark_leather",
+        "bracers": "dark_leather",
+        "belt": "dark_leather"
+      },
+      "pieces": [
+        "scarf"
+      ],
+      "scale": 1.0
+    },
+    "farmer": {
+      "base": "male",
+      "skin": "skin_brown",
+      "eyes": "hazel",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "",
+      "shape": {
+        "bulk": 0.2,
+        "heavy": 0.3,
+        "slim": 0,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "apron",
+        "leg_wraps",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "trousers": "umber",
+        "apron": "straw",
+        "leg_wraps": "ash",
+        "shoes": "leather",
+        "belt": "leather"
+      },
+      "pieces": [
+        "kasa"
+      ],
+      "scale": 1.0
+    },
+    "rival": {
+      "base": "male",
+      "skin": "skin_fair",
+      "eyes": "amber",
+      "hair": "hair_parted",
+      "hair_color": "hair_blond",
+      "brows": "brows_regular",
+      "beard": "",
+      "shape": {
+        "bulk": 0.4,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0.6
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "cloak",
+        "boots",
+        "gloves",
+        "belt",
+        "baldric"
+      ],
+      "colors": {
+        "shirt": "night",
+        "trousers": "night",
+        "cloak": "plum",
+        "boots": "dark_leather",
+        "gloves": "dark_leather",
+        "belt": "night",
+        "baldric": "night"
+      },
+      "pieces": [
+        "pauldrons"
+      ],
+      "scale": 1.0
+    },
+    "huntress": {
+      "base": "female",
+      "skin": "skin_light",
+      "eyes": "green",
+      "hair": "hair_long",
+      "hair_color": "hair_auburn",
+      "brows": "brows_soft",
+      "beard": "",
+      "shape": {
+        "bulk": 0,
+        "heavy": 0,
+        "slim": 0,
+        "jaw": 0
+      },
+      "outfit": [
+        "shirt",
+        "vest",
+        "trousers",
+        "cloak",
+        "bracers",
+        "leg_wraps",
+        "boots",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "linen",
+        "vest": "leather",
+        "trousers": "forest",
+        "cloak": "moss",
+        "bracers": "leather",
+        "leg_wraps": "ash",
+        "boots": "dark_leather",
+        "belt": "leather"
+      },
+      "pieces": [
+        "hood"
+      ],
+      "scale": 1.0
+    },
+    "thoral": {
+      "base": "male",
+      "skin": "skin_olive",
+      "eyes": "amber",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 1.0,
+        "heavy": 0.5,
+        "slim": 0,
+        "jaw": 1.0
+      },
+      "outfit": [
+        "shirt",
+        "trousers",
+        "tabard",
+        "boots",
+        "gloves",
+        "belt"
+      ],
+      "colors": {
+        "shirt": "iron",
+        "trousers": "night",
+        "tabard": "blood",
+        "boots": "dark_leather",
+        "gloves": "dark_leather",
+        "belt": "night"
+      },
+      "pieces": [
+        "helm",
+        "pauldrons",
+        "shield"
+      ],
+      "scale": 1.2
+    }
+  },
+  "classes": {
+    "blade": "blade",
+    "arcanist": "arcanist",
+    "hunter": "hunter"
+  },
+  "cast": {
+    "Opponent": "duelist",
+    "Varro": "captain",
+    "Mira": "receptionist",
+    "Kael": "adventurer_axe",
+    "Sena": "scout",
+    "Smith": "smith",
+    "Farmer": "farmer",
+    "Rival": "rival",
+    "Hunter": "huntress",
+    "Thoral": "thoral"
+  },
+  "areas": {
+    "guild": {
+      "at": [
+        28,
+        -6
+      ],
+      "bases": [
+        "male",
+        "female"
+      ],
+      "skins": [
+        "skin_fair",
+        "skin_light",
+        "skin_olive",
+        "skin_brown",
+        "skin_deep"
+      ],
+      "hair_colors": [
+        "hair_black",
+        "hair_brown",
+        "hair_chestnut",
+        "hair_blond",
+        "hair_grey"
+      ],
+      "hair_male": [
+        "hair_parted",
+        "hair_buzzed"
+      ],
+      "hair_female": [
+        "hair_buns",
+        "hair_long",
+        "hair_buzzed_f"
+      ],
+      "outfits": [
+        [
+          "shirt",
+          "tabard",
+          "trousers",
+          "boots",
+          "belt"
+        ],
+        [
+          "shirt",
+          "tabard",
+          "kilt",
+          "shoes",
+          "belt"
+        ],
+        [
+          "tunic",
+          "trousers",
+          "boots",
+          "belt",
+          "baldric"
+        ]
+      ],
+      "cloth": [
+        "guild_blue",
+        "slate",
+        "night",
+        "linen"
+      ],
+      "leather": [
+        "leather",
+        "dark_leather"
+      ],
+      "pieces": [
+        [],
+        [],
+        [
+          "pauldrons"
+        ]
+      ]
+    },
+    "village": {
+      "at": [
+        0,
+        0
+      ],
+      "bases": [
+        "male",
+        "female"
+      ],
+      "skins": [
+        "skin_light",
+        "skin_olive",
+        "skin_brown",
+        "skin_deep"
+      ],
+      "hair_colors": [
+        "hair_black",
+        "hair_brown",
+        "hair_chestnut",
+        "hair_auburn"
+      ],
+      "hair_male": [
+        "hair_buzzed",
+        "hair_parted"
+      ],
+      "hair_female": [
+        "hair_buns",
+        "hair_long"
+      ],
+      "outfits": [
+        [
+          "shirt",
+          "trousers",
+          "apron",
+          "shoes",
+          "belt"
+        ],
+        [
+          "shirt",
+          "kilt",
+          "leg_wraps",
+          "shoes",
+          "belt"
+        ],
+        [
+          "tunic",
+          "trousers",
+          "shoes",
+          "belt"
+        ]
+      ],
+      "cloth": [
+        "linen",
+        "umber",
+        "woad",
+        "moss",
+        "ochre",
+        "madder",
+        "ash",
+        "straw"
+      ],
+      "leather": [
+        "leather",
+        "dark_leather"
+      ],
+      "pieces": [
+        [],
+        [
+          "kasa"
+        ],
+        [
+          "headband"
+        ],
+        [
+          "sash"
+        ]
+      ]
+    },
+    "ruins": {
+      "at": [
+        0.0,
+        33.0
+      ],
+      "bases": [
+        "male",
+        "male",
+        "female"
+      ],
+      "skins": [
+        "skin_light",
+        "skin_olive",
+        "skin_brown"
+      ],
+      "hair_colors": [
+        "hair_black",
+        "hair_brown",
+        "hair_grey"
+      ],
+      "hair_male": [
+        "hair_buzzed"
+      ],
+      "hair_female": [
+        "hair_buzzed_f",
+        "hair_long"
+      ],
+      "outfits": [
+        [
+          "shirt",
+          "vest",
+          "trousers",
+          "cloak",
+          "boots",
+          "bracers"
+        ],
+        [
+          "tunic",
+          "trousers",
+          "leg_wraps",
+          "boots",
+          "bracers",
+          "belt"
+        ]
+      ],
+      "cloth": [
+        "night",
+        "ash",
+        "blood",
+        "iron",
+        "forest"
+      ],
+      "leather": [
+        "dark_leather"
+      ],
+      "pieces": [
+        [
+          "hood"
+        ],
+        [
+          "scarf"
+        ],
+        [
+          "headband"
+        ],
+        []
+      ]
+    },
+    "pond": {
+      "at": [
+        -24.0,
+        2.0
+      ],
+      "bases": [
+        "male",
+        "female"
+      ],
+      "skins": [
+        "skin_olive",
+        "skin_brown",
+        "skin_deep"
+      ],
+      "hair_colors": [
+        "hair_black",
+        "hair_brown"
+      ],
+      "hair_male": [
+        "hair_buzzed"
+      ],
+      "hair_female": [
+        "hair_buns"
+      ],
+      "outfits": [
+        [
+          "shirt",
+          "kilt",
+          "leg_wraps",
+          "shoes"
+        ],
+        [
+          "shirt",
+          "trousers",
+          "shoes",
+          "belt"
+        ]
+      ],
+      "cloth": [
+        "straw",
+        "teal",
+        "linen",
+        "woad"
+      ],
+      "leather": [
+        "leather"
+      ],
+      "pieces": [
+        [
+          "kasa"
+        ],
+        [
+          "kasa"
+        ],
+        []
+      ]
     }
   }
 }
