@@ -124,6 +124,8 @@ fn player_input(
     let mut dodge = keys.any_just_pressed([KeyCode::ControlLeft, KeyCode::ControlRight]);
     let mut crouch_toggle = keys.just_pressed(KeyCode::KeyC);
     let mut interact = keys.just_pressed(KeyCode::KeyF);
+    let sheathe = keys.just_pressed(KeyCode::KeyX);
+    let grab = keys.just_pressed(KeyCode::KeyG);
     let mut art = keys.just_pressed(KeyCode::KeyQ);
     let mut spell = keys.just_pressed(KeyCode::KeyE);
     let mut next_spell = mouse.just_pressed(MouseButton::Forward);
@@ -246,6 +248,8 @@ fn player_input(
         spell_pressed: spell,
         next_spell,
         target,
+        sheathe_pressed: sheathe,
+        grab_pressed: grab,
     };
 }
 

@@ -39,7 +39,8 @@
 //!
 //! The weapon (`WeaponDef`: a `sword` primitive built here, a basic primitive or a glTF scene)
 //! is a child of the hand bone, placed like `tools` places the axe: the grip transform under the
-//! bone, compensating the bone's global scale. `Equip` messages (the weapon chest) switch
+//! bone, compensating the bone's global scale; while `sheath::Sheath` has it on its mount, `arm`
+//! leaves it to `sheath`. `Equip` messages (the weapon chest) switch
 //! `Loadout.current` while free. Monitor log lines: `hit_*`, `parry`, `guard_break`, `knockdown`, `death`, `revive`.
 use super::camera::CameraShake;
 use super::controller::{Teleport, yaw_of};
@@ -861,7 +862,7 @@ fn equip(
 }
 
 /// Grip transform of `def` under a hand bone with global scale `bone_scale`.
-fn grip(def: &WeaponDef, bone_scale: f32) -> Transform {
+pub(crate) fn grip(def: &WeaponDef, bone_scale: f32) -> Transform {
     let s = if bone_scale.is_finite() && bone_scale > 1e-3 { bone_scale } else { 1.0 };
     let [x, y, z] = def.rotation_deg.map(f32::to_radians);
     Transform {
@@ -881,12 +882,12 @@ fn arm(
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    characters: Query<(Entity, &Loadout, &Rig, Option<&WeaponSlot>, Has<Holding>)>,
+    characters: Query<(Entity, &Loadout, &Rig, Option<&WeaponSlot>, Has<Holding>, Option<&super::sheath::Sheath>)>,
     globals: Query<&GlobalTransform>,
     mut weapons: Query<(&mut Transform, &mut Visibility), With<Weapon>>,
 ) {
     let Some(bank) = bank else { return };
-    for (entity, loadout, rig, slot, holding) in &characters {
+    for (entity, loadout, rig, slot, holding, sheath) in &characters {
         let def = movesets.get(loadout.equipped()).and_then(|m| m.weapon.as_ref());
         let hand = def.and_then(|d| {
             let side = usize::from(d.hand != "l");
@@ -900,6 +901,11 @@ fn arm(
                     commands.entity(entity).try_remove::<WeaponSlot>();
                     continue;
                 };
+                if sheath.is_some_and(|s| !s.in_hand()) {
+                    // On its mount: `sheath` places it, and it stays visible.
+                    vis.set_if_neq(Visibility::Inherited);
+                    continue;
+                }
                 let scale = globals.get(hand).map_or(1.0, |g| g.compute_transform().scale.abs().max_element());
                 tf.set_if_neq(grip(def, scale));
                 vis.set_if_neq(if holding { Visibility::Hidden } else { Visibility::Inherited });

@@ -56,6 +56,7 @@ pub mod ragdoll;
 pub mod ranged;
 pub mod record;
 pub mod select;
+pub mod sheath;
 pub mod skills;
 pub mod sky;
 pub mod stats;
@@ -115,7 +116,7 @@ pub fn plugin(app: &mut App) {
     ))
     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin))
-    .add_plugins(doors::plugin);
+    .add_plugins((doors::plugin, sheath::plugin,));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -189,6 +190,10 @@ pub struct Intent {
     pub next_spell: bool,
     /// Lock-on target, if any.
     pub target: Option<Entity>,
+    /// X: draw / sheathe the weapon (`sheath`).
+    pub sheathe_pressed: bool,
+    /// G: command grab (`combat`).
+    pub grab_pressed: bool,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]

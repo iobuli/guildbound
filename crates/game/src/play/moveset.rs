@@ -193,6 +193,24 @@ pub struct WeaponDef {
     /// Blade/haft length along the weapon's local +Y after rotation (used for hitboxes).
     #[serde(default)]
     pub length: f32,
+    /// Where the weapon rides on the body when sheathed (`sheath`); `None` uses the default for
+    /// the moveset's name (greatsword / axe on the back, katana left hip, dagger right hip).
+    #[serde(default)]
+    pub carry: Option<Carry>,
+}
+
+/// A sheathed weapon's place on the body, in MODEL space at the rest pose (+Z forward, +X the
+/// body's left, metres from the feet); it rides on `at`'s bone from there.
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
+pub struct Carry {
+    /// "back" (rides the chest, `spine_03`) or "hip" (rides the pelvis).
+    pub at: String,
+    /// Grip point (the weapon root's origin).
+    pub grip: [f32; 3],
+    /// Direction of the weapon's +Y (grip to tip).
+    pub blade: [f32; 3],
+    /// Direction the weapon's +Z faces.
+    pub face: [f32; 3],
 }
 
 #[derive(Clone, Debug, serde::Deserialize, serde::Serialize)]
