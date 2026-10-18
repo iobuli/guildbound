@@ -512,6 +512,7 @@ fn think(
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
     civilians: Query<(), With<Civilian>>,
     peaceful: Res<Peaceful>,
+    choosing: Option<Res<super::class::ClassChoice>>,
     players: Query<(), With<Player>>,
     mut npcs: Query<
         (
@@ -531,7 +532,8 @@ fn think(
     for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring, awareness) in &mut npcs {
         // The player is a foe only once noticed (`senses`), never in peaceful mode, always in a bout.
         let noticed = sparring || awareness.is_none_or(|a| a.alerted);
-        let spare_player = !sparring && (peaceful.0 || !noticed);
+        // Nobody attacks while the player is still choosing a class.
+        let spare_player = !sparring && (peaceful.0 || !noticed || choosing.as_deref().is_some_and(|c| c.open));
         let Ok((_, tf, fighter, melee, mover, loadout)) = fighters.get(entity) else {
             continue;
         };

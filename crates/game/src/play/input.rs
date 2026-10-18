@@ -95,14 +95,15 @@ fn player_input(
     mut players: Query<(Entity, &Transform, &mut Intent), With<Player>>,
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
     tweak: Option<Res<crate::motion::tweak::Tweak>>,
-    talk: (Option<Res<super::talk::TalkFocus>>, Option<Res<super::talk::Talking>>),
+    talk: (Option<Res<super::talk::TalkFocus>>, Option<Res<super::talk::Talking>>, Option<Res<super::class::ClassChoice>>),
     spatial: SpatialQuery,
 ) {
     let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
         return;
     };
     // The pose tweak tool (F2) or a conversation has the keyboard.
-    let talking = talk.1.as_ref().is_some_and(|t| t.active());
+    // Talking, or choosing a class at the start: the panel has the keyboard.
+    let talking = talk.1.as_ref().is_some_and(|t| t.active()) || talk.2.as_ref().is_some_and(|c| c.open);
     if tweak.is_some_and(|t| t.on) || talking {
         *intent = Intent {
             look: intent.look,

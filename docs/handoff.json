@@ -322,6 +322,11 @@
       "status": "new"
     },
     {
+      "file": "play/class.rs",
+      "role": "class choice at the start: Blade, Arcanist, Hunter kits",
+      "status": "new"
+    },
+    {
       "file": "play/beam.rs",
       "role": "balance beam: inverted-pendulum sway countered by the sideways stick, Posture lean + narrow stance, arms out, wobble and fall; balance / beam deeds; GB_BEAM",
       "status": "new"
