@@ -9,6 +9,8 @@
 //! - Seat (`seat`): the rider gets `select::Mounted` (the seated clip holds its legs), and its
 //!   model is raised until its pelvis sits on the saddle, measured from the bones (so it works for
 //!   any rider size).
+//! - Body: a capsule collider in the character layer, so others bump into the horse; the rider's
+//!   controller leaves it out of its own slide and ground probe (`Ridden.1`).
 use super::select::Mounted;
 use super::{HALF_HEIGHT, Mover};
 use crate::motion::Rig;
@@ -38,9 +40,9 @@ pub struct Horse {
     barrel: Entity,
 }
 
-/// On a rider: its horse.
+/// On a rider: its horse and the horse's collider (which the rider's own controller ignores).
 #[derive(Component)]
-pub struct Ridden(pub Entity);
+pub struct Ridden(pub Entity, pub Entity);
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, (gait, seat));
@@ -116,8 +118,18 @@ pub fn spawn_horse(
         hips[i] = hip;
         knees[i] = knee;
     }
+    // A body others bump into (it rides on the rider's kinematic body; the rider ignores it).
+    let collider = commands
+        .spawn((
+            Name::new("Horse collider"),
+            avian3d::prelude::Collider::capsule(0.32, 0.8),
+            avian3d::prelude::CollisionLayers::new(super::Phys::Character, [super::Phys::World, super::Phys::Character]),
+            Transform::from_xyz(0.0, 0.82, 0.0).with_rotation(Quat::from_rotation_x(FRAC_PI_2)),
+            ChildOf(root),
+        ))
+        .id();
     commands.entity(root).insert(Horse { rider, phase: 0.0, clock: 0.0, hips, knees, head, tail, barrel });
-    commands.entity(rider).insert((Ridden(root), Mounted { track: SEAT_TRACK.to_string(), time: SEAT_TIME }));
+    commands.entity(rider).insert((Ridden(root, collider), Mounted { track: SEAT_TRACK.to_string(), time: SEAT_TIME }));
     root
 }
 

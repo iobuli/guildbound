@@ -347,6 +347,7 @@ fn move_characters(
         &Intent,
         &mut ControllerState,
         Option<&Teleport>,
+        Option<&super::horse::Ridden>,
     )>,
 ) {
     let dt = time.delta_secs().clamp(1e-4, 1.0 / 30.0);
@@ -354,7 +355,7 @@ fn move_characters(
     let last_tick_of_frame = time.overstep() < time.timestep();
     let feel = &*feel;
 
-    for (entity, collider, mut transform, mut mover, intent, mut state, teleport) in &mut bodies {
+    for (entity, collider, mut transform, mut mover, intent, mut state, teleport, ridden) in &mut bodies {
         if let Some(tp) = teleport
             && mover.mode != MoveMode::Ragdoll
         {
@@ -495,7 +496,11 @@ fn move_characters(
         let horizontal = state.locomotion + external.with_y(0.0) + root_motion.with_y(0.0);
         let mut velocity = if grounded { horizontal } else { horizontal + Vec3::Y * vy };
         velocity.y += root_motion.y;
-        let filter = movement_filter(entity);
+        let mut filter = movement_filter(entity);
+        // A rider never meets its own horse.
+        if let Some(r) = ridden {
+            filter.excluded_entities.insert(r.1);
+        }
         let Step { mut position, walls } = slide(&mas, collider, start, velocity, dt, grounded, &filter);
 
         // --- Support: stand on the ground under the body; steps become a drawn offset.

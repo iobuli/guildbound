@@ -97,7 +97,9 @@ const MAX_TIME: f32 = 4.0;
 const GET_UP: &str = "ual2/LayToIdle";
 const GET_UP_RATE: f32 = 1.3;
 /// Damping on every segment, and the joints' compliance (softens the limit stops).
-const LINEAR_DAMPING: f32 = 0.1;
+const LINEAR_DAMPING: f32 = 0.3;
+/// Segment friction: bodies come to rest on a slope instead of sledging down it.
+const SEGMENT_FRICTION: f32 = 1.0;
 const ANGULAR_DAMPING: f32 = 1.2;
 const LIMIT_COMPLIANCE: f32 = 1e-5;
 /// F6 throws the player backwards at this speed (m/s).
@@ -361,6 +363,7 @@ fn spawn_segments(
                 LinearVelocity(body_velocity + (dv + omega.cross(centre(k) - com)) * kick),
                 AngularVelocity(omega),
                 LinearDamping(LINEAR_DAMPING),
+                Friction::new(SEGMENT_FRICTION),
                 AngularDamping(ANGULAR_DAMPING),
                 SweptCcd::default(),
             ))
@@ -538,6 +541,9 @@ fn drive(
             .cast_ray(from, Dir3::NEG_Y, 4.0, true, &filter)
             .map_or(pelvis.translation.y - 0.15, |hit| from.y - hit.distance);
         root.translation = Vec3::new(pelvis.translation.x, ground + HALF_HEIGHT, pelvis.translation.z);
+        if player {
+            info!("[ragdoll] player came to rest at ({:.1}, {:.1})", pelvis.translation.x, pelvis.translation.z);
+        }
         root.rotation = Quat::from_rotation_y(yaw);
         mover.yaw = yaw;
         mover.velocity = Vec3::ZERO;

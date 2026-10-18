@@ -10,6 +10,8 @@
 //! - Leash: drawn more than `LEASH` m from the dais, he rides back to it before fighting on.
 //! - Death: a banner line and a kill deed (the guild pays a bounty on "Thoral"); he returns to
 //!   the dais `RETURN` s later (`combat::Revive`).
+//! - Theme: a synthesized taiko-and-flute loop (`tools/synth_boss_theme.py`) fades in while the
+//!   bar is up and out after.
 //! - Smoke: `GB_THORAL=1` puts the player at the torii facing him.
 use super::ai::Difficulty;
 use super::combat::Revive;
@@ -34,7 +36,7 @@ const CHARGE_TIME: f32 = 1.8;
 const CHARGE_COOLDOWN: f32 = 7.0;
 const TRAMPLE_REACH: f32 = 1.7;
 const TRAMPLE_DAMAGE: f32 = 22.0;
-const TRAMPLE_KNOCKBACK: f32 = 9.0;
+const TRAMPLE_KNOCKBACK: f32 = 7.0;
 /// He will not be drawn further than this from the dais (m); he rides back until within
 /// `HOME_NEAR` m, then takes up the fight again.
 const LEASH: f32 = 28.0;
@@ -57,10 +59,24 @@ pub fn home() -> (Vec3, f32) {
     (Vec3::new(RUINS_CENTER.x, ruins_level() + 0.3, RUINS_CENTER.y), std::f32::consts::PI)
 }
 
+/// The boss theme (`tools/synth_boss_theme.py`): its loudness while he is engaged, and how fast it
+/// fades in and out (per s).
+const MUSIC: &str = "audio/synth/boss_thoral.wav";
+const MUSIC_VOLUME: f32 = 0.55;
+const MUSIC_FADE: f32 = 0.5;
+
+/// Whether the boss bar (and the theme) is up this frame.
+#[derive(Resource, Default)]
+pub struct Engaged(pub bool);
+
+#[derive(Component)]
+struct Theme(f32);
+
 pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, (spawn, spawn_bar))
+    app.init_resource::<Engaged>()
+        .add_systems(Startup, (spawn, spawn_bar, spawn_theme))
         .add_systems(Update, charge.after(PlaySet::Think).before(PlaySet::Act))
-        .add_systems(Update, (fallen, bar, smoke));
+        .add_systems(Update, (fallen, bar, theme, smoke).chain());
 }
 
 fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
@@ -168,7 +184,7 @@ fn charge(
                 speed: 8.0,
                 kind: HitKind::Melee,
             });
-            info!("[boss] trample");
+            info!("[boss] trample at ({:.1}, {:.1})", ptf.translation.x, ptf.translation.z);
             boss.charging = 0.0;
             boss.cooldown = CHARGE_COOLDOWN;
         } else if boss.charging <= 0.0 {
@@ -231,11 +247,15 @@ fn bar(
     players: Query<&Transform, With<Player>>,
     mut root: Query<&mut Node, (With<Bar>, Without<BarFill>)>,
     mut fill: Query<&mut Node, (With<BarFill>, Without<Bar>)>,
+    mut engaged: ResMut<Engaged>,
 ) {
     let (Ok((tf, f, aware)), Ok(p)) = (bosses.single(), players.single()) else { return };
     let near = Vec2::new(p.translation.x, p.translation.z).distance(RUINS_CENTER) < BAR_NEAR;
     let after_you = aware.is_some_and(|a| a.alerted) && tf.translation.distance(p.translation) < 40.0;
     let show = !f.dead && (near || after_you);
+    if engaged.0 != show {
+        engaged.0 = show;
+    }
     for mut n in &mut root {
         let want = if show { Display::Flex } else { Display::None };
         if n.display != want {
@@ -246,6 +266,25 @@ fn bar(
         for mut n in &mut fill {
             n.width = percent(100.0 * (f.hp / f.max_hp.max(1.0)).clamp(0.0, 1.0));
         }
+    }
+}
+
+fn spawn_theme(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.spawn((
+        Name::new("Boss theme"),
+        Theme(0.0),
+        AudioPlayer::new(assets.load(MUSIC)),
+        PlaybackSettings::LOOP.with_volume(bevy::audio::Volume::Linear(0.0)),
+    ));
+}
+
+/// Fade the theme in while he is engaged, out after.
+fn theme(time: Res<Time>, engaged: Res<Engaged>, mut theme: Query<(&mut Theme, &mut AudioSink)>) {
+    let target = if engaged.0 { MUSIC_VOLUME } else { 0.0 };
+    for (mut t, mut sink) in &mut theme {
+        let step = MUSIC_VOLUME * MUSIC_FADE * time.delta_secs();
+        t.0 = if t.0 < target { (t.0 + step).min(target) } else { (t.0 - step).max(target) };
+        sink.set_volume(bevy::audio::Volume::Linear(t.0));
     }
 }
 

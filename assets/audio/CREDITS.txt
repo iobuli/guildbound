@@ -38,3 +38,5 @@ Which recordings each generated cue is built from:
 
 impactWood_heavy_*, impactWood_medium_*, impactPlank_medium_*: Kenney "Impact Sounds" 1.0 (CC0),
 added for axe chops, tree falls and picking up / putting down the axe (play/fx.rs).
+
+synth/boss_thoral.wav (Thoral's theme: taiko-like drums, drone, pentatonic flute, iron hits) is fully synthesized by tools/synth_boss_theme.py. CC0 / public domain.
