@@ -376,6 +376,10 @@ impl Melee {
     pub fn since_hurt(&self) -> f32 {
         self.hurt
     }
+    /// Can be seized by a grab: not dodging through i-frames, not down, not dead.
+    pub fn grabbable(&self) -> bool {
+        self.iframes <= 0.0 && !self.down() && !matches!(self.state, State::Dead { .. })
+    }
     /// Guard up (blocking or parrying).
     pub fn guarding(&self) -> bool {
         matches!(self.state, State::Guard { .. } | State::Parry { .. })
@@ -1342,7 +1346,6 @@ fn owned(state: &State, action: &Action) -> bool {
     }
 }
 
-/// Hand the body back to the player / AI.
 /// Speed (m/s) at `t` s into a block step of `length` m: a smooth bell over `BLOCK_STEP_TIME`
 /// whose integral is `length`.
 pub fn step_speed(t: f32, length: f32) -> f32 {
@@ -1355,6 +1358,7 @@ pub fn step_length(knockback: f32) -> f32 {
     (BLOCK_STEP + BLOCK_STEP_PER * finite(knockback, 0.0).max(0.0)).min(BLOCK_STEP_MAX)
 }
 
+/// Hand the body back to the player / AI.
 fn release(b: &mut Body) -> State {
     b.action.clear();
     b.mover.move_scale = 1.0;
@@ -2211,7 +2215,9 @@ fn strike(
     let set = movesets.get(loadout.equipped());
     let facing = mover.forward();
     let from = flat(attacker.pos - tf.translation).normalize_or(-hit.direction);
+    // A grab's throw goes through any guard.
     let guard = match melee.state {
+        _ if hit.kind == HitKind::Grab => None,
         State::Guard { t } => set.and_then(|s| s.guard.as_ref()).map(|g| {
             let arc = (finite(g.arc, 120.0).clamp(0.0, 360.0) * 0.5).to_radians().cos();
             (t, g.parry_window, g.absorb, arc)

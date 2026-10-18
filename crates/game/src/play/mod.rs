@@ -26,6 +26,7 @@ pub mod controller;
 pub mod deeds;
 pub mod doors;
 pub mod fx;
+pub mod grab;
 pub mod grass;
 pub mod aim;
 pub mod debug;
@@ -117,7 +118,7 @@ pub fn plugin(app: &mut App) {
     ))
     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin))
-    .add_plugins((doors::plugin, sheath::plugin, block::plugin,));
+    .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin,));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -337,6 +338,8 @@ pub enum ActionKind {
     HardLand,
     /// Walking a balance beam (`beam`): steered along the beam, swaying, arms out.
     Balance,
+    /// A command grab, on the grabber and on the one held (`grab`).
+    Grab,
 }
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
@@ -352,6 +355,8 @@ pub enum Owner {
     Hit,
     /// `ragdoll`'s get-up after physics hands the body back.
     Ragdoll,
+    /// `grab`: the grabber's whole grab and the victim's time in its hands.
+    Grab,
 }
 
 /// One clip-driven layer requested by an action. `select` converts it to a `motion::Layer`.
@@ -458,6 +463,8 @@ pub enum HitKind {
     Melee,
     Projectile,
     Spell,
+    /// A command grab's throw (`grab`): unblockable.
+    Grab,
 }
 
 /// Something the player can use with E. Spawned by `world`, driven by `interact`.

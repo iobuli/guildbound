@@ -76,6 +76,11 @@ const STRAFE_SPAN: f32 = 2.5;
 const REVIVE_AFTER: f32 = 6.0;
 /// Home is "reached" within this distance (m).
 const HOME_RADIUS: f32 = 1.0;
+/// A foe that keeps its guard up this long (s) gets grabbed: the brain closes in to
+/// `GRAB_CLOSE` short of `grab::RANGE` and grabs, with this chance per look (scaled by aggression).
+const GRAB_AFTER: f32 = 1.2;
+const GRAB_CLOSE: f32 = 0.35;
+const GRAB_CHANCE: f32 = 0.7;
 
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Npc, Brain>()
@@ -180,6 +185,9 @@ pub struct Brain {
     /// Ranged: draw time left (s) while drawing, and seconds until the next shot.
     drawing: f32,
     shot_in: f32,
+    /// Seconds the foe has kept its guard up; closing in to grab it.
+    guarded: f32,
+    grabbing: bool,
 }
 
 impl Default for Brain {
@@ -202,6 +210,8 @@ impl Default for Brain {
             cast_in: CAST_FIRST,
             drawing: 0.0,
             shot_in: SHOT_FIRST,
+            guarded: 0.0,
+            grabbing: false,
         }
     }
 }
@@ -258,6 +268,7 @@ pub struct Orders {
     pub release: bool,
     pub guard: bool,
     pub dodge: bool,
+    pub grab: bool,
 }
 
 /// One frame of thought.
@@ -380,6 +391,27 @@ pub fn decide(v: &View, d: &Difficulty, b: &mut Brain, dt: f32) -> Orders {
         let radial = ((dist - want) * 1.5).clamp(-0.5, 0.5);
         (left * b.side * 0.55 + ahead * radial).clamp_length_max(1.0)
     };
+
+    // A turtling foe gets grabbed: close in, then seize it (a guard can't stop a throw).
+    b.guarded = if foe.guarding && foe.tell.is_none() { b.guarded + dt } else { 0.0 };
+    if b.guarded > GRAB_AFTER && !b.grabbing && !v.attacking && b.cooldown <= 0.0 && v.stamina > ATTACK_STAMINA {
+        b.cooldown = 0.4;
+        b.grabbing = b.roll() < GRAB_CHANCE * d.aggression.clamp(0.05, 1.0);
+    }
+    if b.grabbing {
+        if !foe.guarding || v.attacking {
+            b.grabbing = false;
+        } else if dist > super::grab::RANGE - GRAB_CLOSE {
+            o.move_dir = ahead;
+            return o;
+        } else {
+            b.grabbing = false;
+            b.guarded = 0.0;
+            b.cooldown = 1.2;
+            o.grab = true;
+            return o;
+        }
+    }
 
     // Attack when open.
     let in_reach = dist <= v.reach + ATTACK_SLACK;
@@ -615,6 +647,7 @@ fn think(
             target: foe.map(|f| f.0),
             art_pressed: art,
             spell_pressed: spell,
+            grab_pressed: o.grab,
             ..default()
         };
     }
@@ -752,6 +785,34 @@ mod tests {
             pressed |= decide(&view(1.4), &d, &mut b, 1.0 / 60.0).press;
         }
         assert!(pressed);
+    }
+
+    #[test]
+    fn closes_in_and_grabs_a_foe_that_keeps_its_guard_up() {
+        let d = Difficulty { aggression: 1.0, ..default() };
+        let mut b = Brain { cooldown: 0.0, ..default() };
+        let mut v = view(1.6);
+        v.enemy.as_mut().unwrap().guarding = true;
+        let (mut closed, mut grabbed) = (false, false);
+        for _ in 0..600 {
+            let o = decide(&v, &d, &mut b, 1.0 / 60.0);
+            // Walk the foe closer whenever the brain steps in.
+            if o.move_dir.z > 0.9 {
+                closed = true;
+                let foe = v.enemy.as_mut().unwrap();
+                foe.pos.z = (foe.pos.z - 0.02).max(0.5);
+            }
+            if o.grab {
+                grabbed = true;
+                assert!(v.enemy.unwrap().pos.z <= super::super::grab::RANGE - GRAB_CLOSE + 1e-3);
+                break;
+            }
+        }
+        assert!(closed && grabbed, "closed {closed} grabbed {grabbed}");
+        // An open foe is never grabbed.
+        let mut b = Brain { cooldown: 0.0, ..default() };
+        let open = view(1.0);
+        assert!((0..300).all(|_| !decide(&open, &d, &mut b, 1.0 / 60.0).grab));
     }
 
     #[test]
