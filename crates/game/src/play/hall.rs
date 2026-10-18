@@ -1,10 +1,11 @@
 //! The Guild Hall complex on the terrace east of the courtyard (`world::TERRACE_MIN..MAX`), built
 //! once at startup with `world::Kit`:
-//! - a timber **gate** at the courtyard's east edge and a packed path to the hall door;
-//! - the **hall**: stone walls with a west door and a north door to the yard, a pitched roof,
-//!   a plank floor, wall torches. Inside: the **front desk** (counter, bell, ledgers behind; the
-//!   receptionist stands at `DESK_STAND`), an indoor **bounty board** (interactable `board`), and
-//!   the **lodging** corner (three `bed`s, a table and chairs);
+//! - a timber **gate** at the courtyard's east edge and a packed path to the foot of the steps;
+//! - the **hall**: the ground floor of the `guildhouse` (which builds the building itself: podium,
+//!   walls, upper floor, roof, tower), its floor `FLOOR_Y` up on the podium, a west door and a
+//!   +z door to the yard, wall sconces. Inside: the **front desk** (counter, bell, ledgers behind;
+//!   the receptionist stands at `DESK_STAND`), an indoor **bounty board** (interactable `board`),
+//!   and the **lodging** corner (three `bed`s along the −z wall, a table and chairs);
 //! - the **training ground** north of the hall: a sand yard, a fence, a stone-marked **duel ring**
 //!   (`RING_CENTER`, `RING_RADIUS`), dummies, a weapon rack and a **balance beam** (`BEAM_START`–
 //!   `BEAM_END`, `beam::Beam`) with a mounting block at each end.
@@ -17,21 +18,28 @@ use bevy::light::NotShadowCaster;
 use bevy::prelude::*;
 use std::f32::consts::{FRAC_PI_2, PI};
 
-/// Hall footprint (x, z) and wall height / thickness (m).
-pub const HALL_MIN: Vec2 = Vec2::new(24.0, -16.0);
-pub const HALL_MAX: Vec2 = Vec2::new(38.0, -2.0);
-const WALL_H: f32 = 4.2;
-const WALL_T: f32 = 0.4;
-/// The west door (centre z, width, height) and the north door to the yard (centre x).
+/// Hall footprint (x, z): the guildhouse's main block, wall centre lines (`guildhouse.json`
+/// `main_block`, front on x = 25.75). Wall thickness (m).
+pub const HALL_MIN: Vec2 = Vec2::new(25.75, -15.4);
+pub const HALL_MAX: Vec2 = Vec2::new(35.65, -2.6);
+pub const WALL_T: f32 = 0.4;
+/// The hall floor: the top of the guildhouse podium (m).
+pub const FLOOR_Y: f32 = 1.5;
+/// The west door (centre z, width, height) and the +z door to the yard (centre x).
 pub const DOOR_Z: f32 = -9.0;
-const DOOR_W: f32 = 2.8;
-const DOOR_H: f32 = 3.0;
-pub const YARD_DOOR_X: f32 = 34.0;
+const DOOR_W: f32 = 2.6;
+const DOOR_H: f32 = 3.2;
+pub const YARD_DOOR_X: f32 = 27.4;
+/// The foot of the west steps (x) and of the yard steps (z): where walkers line up to climb.
+pub const STEPS_FOOT_X: f32 = 20.75;
+pub const YARD_STEPS_FOOT_Z: f32 = 1.5;
 /// Where the receptionist stands behind the desk (feet) and the yaw she faces (the door).
-pub const DESK_STAND: Vec3 = Vec3::new(35.0, 0.0, -9.0);
+pub const DESK_STAND: Vec3 = Vec3::new(34.4, FLOOR_Y, -9.0);
 pub const DESK_FACE: f32 = -FRAC_PI_2;
 /// The counter's centre line (x) the player talks across.
-pub const DESK_X: f32 = 33.8;
+pub const DESK_X: f32 = 33.2;
+/// The training ground's west fence (x).
+const YARD_X0: f32 = 24.0;
 /// The duel ring in the training ground.
 pub const RING_CENTER: Vec3 = Vec3::new(32.0, 0.0, 7.0);
 pub const RING_RADIUS: f32 = 3.6;
@@ -66,15 +74,19 @@ pub fn inside(p: Vec3) -> bool {
 
 /// Where to walk next from `feet` toward `goal`: straight there unless the hall's walls are in the
 /// way (one end inside, the other out), then through the doorway that makes the shorter trip —
-/// first to a point just on this side of it, then to one just past it.
+/// first to a point on this side of it (from outside: the foot of its steps, lined up with the
+/// door), then to one just past it.
 pub fn route(feet: Vec3, goal: Vec3) -> Vec3 {
     if inside(feet) == inside(goal) {
         return goal;
     }
-    // (doorway centre, unit pointing out of the hall)
-    let doors = [(Vec3::new(HALL_MIN.x, 0.0, DOOR_Z), Vec3::NEG_X), (Vec3::new(YARD_DOOR_X, 0.0, HALL_MAX.y), Vec3::Z)];
+    // (doorway centre, unit pointing out of the hall, distance out to the foot of its steps)
+    let doors = [
+        (Vec3::new(HALL_MIN.x, 0.0, DOOR_Z), Vec3::NEG_X, HALL_MIN.x - STEPS_FOOT_X + 0.6),
+        (Vec3::new(YARD_DOOR_X, 0.0, HALL_MAX.y), Vec3::Z, YARD_STEPS_FOOT_Z - HALL_MAX.y + 0.6),
+    ];
     let flat = |v: Vec3| v.with_y(0.0);
-    let (door, out) = doors
+    let (door, out, reach) = doors
         .into_iter()
         .min_by(|a, b| {
             let cost = |d: Vec3| flat(d - feet).length() + flat(goal - d).length();
@@ -82,7 +94,7 @@ pub fn route(feet: Vec3, goal: Vec3) -> Vec3 {
         })
         .unwrap_or(doors[0]);
     let side = if inside(feet) { -1.0 } else { 1.0 };
-    let near = door + out * side * 0.9;
+    let near = door + out * side * if side > 0.0 { reach } else { 0.9 };
     let past = door - out * side * 1.2;
     // Lined up with the doorway already: go through.
     let lined = flat(feet - door).dot(out) * side > 0.0 && flat(feet - near).length() < 0.6;
@@ -169,33 +181,13 @@ fn doors(kit: &mut Kit, centre: Vec3, along: Vec3, inward: Vec3, width: f32) {
 
 pub fn spawn_hall(kit: &mut Kit) {
     spawn_gate_and_path(kit);
-    spawn_walls_and_roof(kit);
-    doors(kit, Vec3::new(HALL_MIN.x, 0.0, DOOR_Z), Vec3::Z, Vec3::X, DOOR_W);
-    doors(kit, Vec3::new(YARD_DOOR_X, 0.0, HALL_MAX.y), Vec3::X, Vec3::NEG_Z, DOOR_W);
+    doors(kit, Vec3::new(HALL_MIN.x, FLOOR_Y, DOOR_Z), Vec3::Z, Vec3::X, DOOR_W);
+    doors(kit, Vec3::new(YARD_DOOR_X, FLOOR_Y, HALL_MAX.y), Vec3::X, Vec3::NEG_Z, DOOR_W);
     spawn_desk(kit);
     spawn_board(kit);
     spawn_lodging(kit);
     spawn_training_ground(kit);
     spawn_lights(kit);
-}
-
-/// A straight wall segment from `a` to `b` (x, z) between heights `y0..y1`.
-fn wall(kit: &mut Kit, name: &str, a: Vec2, b: Vec2, y0: f32, y1: f32) {
-    let mat = kit.pal.wall.clone();
-    let d = b - a;
-    let len = d.length();
-    if len < 0.05 || y1 <= y0 {
-        return;
-    }
-    let mid = (a + b) * 0.5;
-    let size = Vec3::new(len, y1 - y0, WALL_T);
-    kit.solid(
-        name,
-        Cuboid::from_size(size),
-        &mat,
-        Transform::from_xyz(mid.x, (y0 + y1) * 0.5, mid.y).with_rotation(Quat::from_rotation_y(-d.y.atan2(d.x))),
-        Some(Collider::cuboid(size.x, size.y, size.z)),
-    );
 }
 
 fn spawn_gate_and_path(kit: &mut Kit) {
@@ -217,75 +209,13 @@ fn spawn_gate_and_path(kit: &mut Kit) {
         Transform::from_translation(GATE + Vec3::new(-0.2, 2.85, 0.0)),
         None,
     );
-    // Packed path from the courtyard through the gate to the hall door.
-    let (from, to) = (14.0, HALL_MIN.x);
+    // Packed path from the courtyard through the gate to the foot of the steps.
+    let (from, to) = (14.0, STEPS_FOOT_X);
     kit.solid(
         "Guild path",
         Cuboid::new(to - from, 0.012, 2.6),
         &soil,
         Transform::from_xyz((from + to) * 0.5, 0.006, DOOR_Z),
-        None,
-    );
-}
-
-fn spawn_walls_and_roof(kit: &mut Kit) {
-    let (x0, z0, x1, z1) = (HALL_MIN.x, HALL_MIN.y, HALL_MAX.x, HALL_MAX.y);
-    let half_door = DOOR_W * 0.5;
-    // West wall with the front door, north wall with the yard door.
-    wall(kit, "Hall wall W", Vec2::new(x0, z0), Vec2::new(x0, DOOR_Z - half_door), 0.0, WALL_H);
-    wall(kit, "Hall wall W", Vec2::new(x0, DOOR_Z + half_door), Vec2::new(x0, z1), 0.0, WALL_H);
-    wall(kit, "Hall lintel W", Vec2::new(x0, DOOR_Z - half_door), Vec2::new(x0, DOOR_Z + half_door), DOOR_H, WALL_H);
-    wall(kit, "Hall wall N", Vec2::new(x0, z1), Vec2::new(YARD_DOOR_X - half_door, z1), 0.0, WALL_H);
-    wall(kit, "Hall wall N", Vec2::new(YARD_DOOR_X + half_door, z1), Vec2::new(x1, z1), 0.0, WALL_H);
-    wall(kit, "Hall lintel N", Vec2::new(YARD_DOOR_X - half_door, z1), Vec2::new(YARD_DOOR_X + half_door, z1), DOOR_H, WALL_H);
-    wall(kit, "Hall wall E", Vec2::new(x1, z1), Vec2::new(x1, z0), 0.0, WALL_H);
-    wall(kit, "Hall wall S", Vec2::new(x1, z0), Vec2::new(x0, z0), 0.0, WALL_H);
-
-    let (dark, wood, stone) = (kit.pal.dark_wood.clone(), kit.pal.wood.clone(), kit.pal.stone.clone());
-    let (cx, cz) = ((x0 + x1) * 0.5, (z0 + z1) * 0.5);
-    let (w, d) = (x1 - x0, z1 - z0);
-    // Plank floor (no collider: the ground under it is flat).
-    kit.solid("Hall floor", Cuboid::new(w - WALL_T, 0.02, d - WALL_T), &wood, Transform::from_xyz(cx, 0.012, cz), None);
-    // Corner and door posts.
-    for (x, z) in [(x0, z0), (x0, z1), (x1, z0), (x1, z1), (x0, DOOR_Z - half_door), (x0, DOOR_Z + half_door)] {
-        kit.solid("Hall post", Cuboid::new(0.5, WALL_H + 0.1, 0.5), &dark, Transform::from_xyz(x, (WALL_H + 0.1) * 0.5, z), None);
-    }
-    // Pitched roof: two slabs meeting at a ridge along x, with eaves past the walls.
-    let rise = 1.9;
-    let run = d * 0.5 + 0.6;
-    let slope = (rise / run).atan();
-    let slab = Vec3::new(w + 1.2, 0.22, (run * run + rise * rise).sqrt());
-    for side in [-1.0f32, 1.0] {
-        let z = cz + side * run * 0.5;
-        kit.solid(
-            "Hall roof",
-            Cuboid::from_size(slab),
-            &dark,
-            Transform::from_xyz(cx, WALL_H + rise * 0.5, z).with_rotation(Quat::from_rotation_x(side * slope)),
-            None,
-        );
-    }
-    // Gables: stepped stone filling the triangle at each end.
-    for x in [x0, x1] {
-        for k in 0..4 {
-            let t = (k as f32 + 0.5) / 4.0;
-            let width = d * (1.0 - t);
-            let h = rise / 4.0;
-            kit.solid(
-                "Hall gable",
-                Cuboid::new(WALL_T, h, width),
-                &stone,
-                Transform::from_xyz(x, WALL_H + h * (k as f32 + 0.5), cz),
-                None,
-            );
-        }
-    }
-    // A sign over the front door.
-    kit.solid(
-        "Guild sign",
-        Cuboid::new(0.1, 0.7, 2.6),
-        &wood,
-        Transform::from_xyz(x0 - 0.3, DOOR_H + 0.55, DOOR_Z),
         None,
     );
 }
@@ -299,15 +229,15 @@ fn spawn_desk(kit: &mut Kit) {
         "Front desk",
         Cuboid::new(0.7, 1.05, len),
         &dark,
-        Transform::from_xyz(DESK_X, 0.525, DOOR_Z),
+        Transform::from_xyz(DESK_X, FLOOR_Y + 0.525, DOOR_Z),
         Some(Collider::cuboid(0.7, 1.05, len)),
     );
-    kit.solid("Desk top", Cuboid::new(0.85, 0.06, len + 0.15), &wood, Transform::from_xyz(DESK_X, 1.08, DOOR_Z), None);
-    kit.solid("Desk bell", Cylinder::new(0.07, 0.07), &metal, Transform::from_xyz(DESK_X - 0.15, 1.15, DOOR_Z + 0.9), None);
-    kit.solid("Ledger", Cuboid::new(0.3, 0.05, 0.4), &cloth, Transform::from_xyz(DESK_X, 1.14, DOOR_Z - 0.8), None);
+    kit.solid("Desk top", Cuboid::new(0.85, 0.06, len + 0.15), &wood, Transform::from_xyz(DESK_X, FLOOR_Y + 1.08, DOOR_Z), None);
+    kit.solid("Desk bell", Cylinder::new(0.07, 0.07), &metal, Transform::from_xyz(DESK_X - 0.15, FLOOR_Y + 1.15, DOOR_Z + 0.9), None);
+    kit.solid("Ledger", Cuboid::new(0.3, 0.05, 0.4), &cloth, Transform::from_xyz(DESK_X, FLOOR_Y + 1.14, DOOR_Z - 0.8), None);
     // Shelves of ledgers and scrolls on the wall behind the desk.
     let back = HALL_MAX.x - WALL_T * 0.5 - 0.25;
-    for (k, y) in [0.9f32, 1.6, 2.3].into_iter().enumerate() {
+    for (k, y) in [0.9f32, 1.6, 2.3].map(|y| y + FLOOR_Y).into_iter().enumerate() {
         kit.solid("Shelf", Cuboid::new(0.45, 0.06, 3.6), &wood, Transform::from_xyz(back, y, DOOR_Z), None);
         for j in 0..7 {
             let z = DOOR_Z - 1.5 + j as f32 * 0.5 + (k as f32 * 0.17).sin() * 0.1;
@@ -319,8 +249,8 @@ fn spawn_desk(kit: &mut Kit) {
 
 fn spawn_board(kit: &mut Kit) {
     let (wood, dark, straw) = (kit.pal.wood.clone(), kit.pal.dark_wood.clone(), kit.pal.straw.clone());
-    // Against the south wall, notices facing into the hall (+Z).
-    let at = Vec3::new(28.0, 0.0, HALL_MIN.y + WALL_T * 0.5 + 0.12);
+    // Against the −z wall (front of the hearth), notices facing into the hall (+Z).
+    let at = Vec3::new(27.6, FLOOR_Y, HALL_MIN.y + WALL_T * 0.5 + 0.12);
     let board = place(kit, "Bounty board", at, UseSpec {
         kind: "board",
         prompt: "Read the bounties",
@@ -345,10 +275,10 @@ fn spawn_board(kit: &mut Kit) {
 fn spawn_lodging(kit: &mut Kit) {
     let (wood, dark, cloth, straw) =
         (kit.pal.wood.clone(), kit.pal.dark_wood.clone(), kit.pal.cloth.clone(), kit.pal.straw.clone());
-    // Three beds along the north wall (heads to the wall), west of the yard door.
-    let head_z = HALL_MAX.y - WALL_T * 0.5 - 0.05;
-    for (i, x) in [25.4f32, 27.3, 29.2].into_iter().enumerate() {
-        let at = Vec3::new(x, 0.0, head_z - 1.05);
+    // Three beds along the −z wall behind the desk (heads to the wall: turned half round).
+    let head_z = HALL_MIN.y + WALL_T * 0.5 + 0.05;
+    for (i, x) in [32.4f32, 33.6, 34.8].into_iter().enumerate() {
+        let at = Vec3::new(x, FLOOR_Y, head_z + 1.05);
         let bed = place(kit, &format!("Bed {}", i + 1), at, UseSpec {
             kind: "bed",
             prompt: "Rest",
@@ -362,6 +292,7 @@ fn spawn_lodging(kit: &mut Kit) {
             beat: None,
             reach: None,
         });
+        kit.commands.entity(bed).insert(Transform::from_translation(at).with_rotation(Quat::from_rotation_y(PI)));
         kit.part(bed, "Bed frame", Cuboid::new(0.95, 0.38, 2.0), &dark, Transform::from_xyz(0.0, 0.19, 0.0), Some(Collider::cuboid(0.95, 0.38, 2.0)));
         kit.part(bed, "Mattress", Cuboid::new(0.85, 0.12, 1.9), &straw, Transform::from_xyz(0.0, 0.44, 0.0), None);
         kit.part(bed, "Blanket", Cuboid::new(0.88, 0.05, 1.1), &cloth, Transform::from_xyz(0.0, 0.52, -0.35), None);
@@ -369,7 +300,7 @@ fn spawn_lodging(kit: &mut Kit) {
         kit.part(bed, "Headboard", Cuboid::new(0.95, 0.9, 0.08), &wood, Transform::from_xyz(0.0, 0.45, 0.98), None);
     }
     // Table and chairs for the lodgers.
-    let table = Vec3::new(27.3, 0.0, -6.0);
+    let table = Vec3::new(28.4, FLOOR_Y, -11.6);
     kit.solid("Lodging table", Cuboid::new(1.6, 0.08, 0.9), &wood, Transform::from_translation(table + Vec3::Y * 0.74), Some(Collider::cuboid(1.6, 0.08, 0.9)));
     for (x, z) in [(-0.7, -0.35), (0.7, -0.35), (-0.7, 0.35), (0.7, 0.35)] {
         kit.solid("Table leg", Cuboid::new(0.08, 0.7, 0.08), &dark, Transform::from_translation(table + Vec3::new(x, 0.35, z)), None);
@@ -398,7 +329,7 @@ fn spawn_lodging(kit: &mut Kit) {
 fn spawn_training_ground(kit: &mut Kit) {
     let (sand, dark, stone, metal) =
         (kit.pal.sand.clone(), kit.pal.dark_wood.clone(), kit.pal.stone.clone(), kit.pal.metal.clone());
-    let (x0, x1, z0, z1) = (HALL_MIN.x, 41.0, 0.0, 13.0);
+    let (x0, x1, z0, z1) = (YARD_X0, 41.0, 0.0, 13.0);
     let (cx, cz) = ((x0 + x1) * 0.5, (z0 + z1) * 0.5);
     kit.solid("Yard sand", Cuboid::new(x1 - x0, 0.015, z1 - z0), &sand, Transform::from_xyz(cx, 0.008, cz), None);
     // Fence: posts and two rails, open toward the hall's yard door.
@@ -489,14 +420,10 @@ fn spawn_lights(kit: &mut Kit) {
             },
         ));
     };
-    // Inside: by the desk, the board, the lodging. Outside: either side of both doors.
-    sconce(kit, Vec3::new(HALL_MAX.x - 0.35, 2.6, DOOR_Z - 2.6), 11.0);
-    sconce(kit, Vec3::new(28.0, 2.6, HALL_MIN.y + 0.35), 10.0);
-    sconce(kit, Vec3::new(27.3, 2.6, HALL_MAX.y - 0.35), 10.0);
-    for dz in [-1.9, 1.9] {
-        sconce(kit, Vec3::new(HALL_MIN.x - 0.35, 2.4, DOOR_Z + dz), 8.0);
-    }
-    sconce(kit, Vec3::new(YARD_DOOR_X + 1.9, 2.4, HALL_MAX.y + 0.35), 9.0);
+    // Inside: by the desk and over the lodging. (The lanterns at the west door, the hearth and
+    // the lounge lamp are the guildhouse's.)
+    sconce(kit, Vec3::new(HALL_MAX.x - 0.35, FLOOR_Y + 2.6, DOOR_Z - 2.6), 11.0);
+    sconce(kit, Vec3::new(33.6, FLOOR_Y + 2.6, HALL_MIN.y + 0.35), 10.0);
 }
 
 #[cfg(test)]
@@ -513,11 +440,13 @@ mod tests {
         assert!(RING_CENTER.x - RING_RADIUS > HALL_MIN.x + 1.0 && RING_CENTER.z + RING_RADIUS < 13.0);
         // The receptionist stands behind the counter, between it and the back wall.
         assert!(DESK_STAND.x > DESK_X + 0.5 && DESK_STAND.x < HALL_MAX.x - 0.5);
+        // The yard door opens off the hall's +z wall onto the yard, clear of the fence posts.
+        assert!(YARD_DOOR_X > YARD_X0 + 1.6 && YARD_DOOR_X < HALL_MAX.x);
     }
 
     #[test]
     fn walkers_leave_the_hall_by_a_door() {
-        let lodging = Vec3::new(28.0, 0.0, -4.6);
+        let lodging = Vec3::new(28.4, FLOOR_Y, -10.6);
         let beam_end = Vec3::new(26.6, 0.0, 12.0);
         let w = route(lodging, beam_end);
         assert!((w.x - YARD_DOOR_X).abs() < 0.1 && w.z < HALL_MAX.y, "to the yard door first: {w}");
@@ -528,6 +457,12 @@ mod tests {
         assert_eq!(route(Vec3::new(30.0, 0.0, 5.0), beam_end), beam_end);
         // From the gate to the desk: the west door.
         let w = route(Vec3::new(17.0, 0.0, -9.0), DESK_STAND);
-        assert!((w.z - DOOR_Z).abs() < 0.1 && w.x < HALL_MIN.x, "{w}");
+        assert!((w.z - DOOR_Z).abs() < 0.1 && w.x < STEPS_FOOT_X, "to the foot of the steps: {w}");
+        // Lined up at the foot: up the steps and in.
+        let w = route(Vec3::new(STEPS_FOOT_X - 0.6, 0.0, DOOR_Z), DESK_STAND);
+        assert!(w.x > HALL_MIN.x, "{w}");
+        // From the yard: to the foot of the yard steps first.
+        let w = route(beam_end, DESK_STAND);
+        assert!((w.x - YARD_DOOR_X).abs() < 0.1 && w.z > YARD_STEPS_FOOT_Z, "{w}");
     }
 }
