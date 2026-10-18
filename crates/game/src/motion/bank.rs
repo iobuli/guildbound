@@ -67,6 +67,9 @@ impl PoseBank {
                 .map(|h| h.join().unwrap_or_else(|_| Err("donor loader panicked".into())))
                 .collect::<Result<Vec<_>, String>>()
         })?;
+        // Mocap takes (one small library per file, all named `cmu`).
+        let mut libs = libs;
+        libs.extend(super::bvh::load_dir("cmu", &root.join(super::CMU_DIR)));
         let model_lib = LIBRARIES
             .iter()
             .position(|&(_, rel)| rel == MODEL_GLB)
@@ -94,10 +97,13 @@ impl PoseBank {
                 .collect::<Result<Vec<_>, String>>()
         })?;
 
-        let mut counts = Vec::new();
+        let mut counts: Vec<(String, usize)> = Vec::new();
         let mut tracks = HashMap::new();
         for (lib, lib_tracks) in libs.iter().zip(per_lib) {
-            counts.push(format!("{} {}", lib.lib, lib_tracks.len()));
+            match counts.iter_mut().find(|c| c.0 == lib.lib) {
+                Some(c) => c.1 += lib_tracks.len(),
+                None => counts.push((lib.lib.clone(), lib_tracks.len())),
+            }
             for t in lib_tracks {
                 tracks.insert(t.name.clone(), t);
             }
@@ -128,7 +134,7 @@ impl PoseBank {
         info!(
             "[bank] {} tracks ({}{authored}), {keys} keys in {:.2}s",
             bank.tracks.len(),
-            counts.join(", "),
+            counts.iter().map(|(l, n)| format!("{l} {n}")).collect::<Vec<_>>().join(", "),
             started.elapsed().as_secs_f32()
         );
         Ok((bank, file))

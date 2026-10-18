@@ -1,6 +1,7 @@
 //! Donor clip → canonical skeleton.
 //! - Same-skeleton libraries (`ual1`, `ual2`): copy local rotations by bone name.
-//! - Mixamo (`sekiro`): name map, then per mapped bone in model space
+//! - Mixamo (`sekiro`, `rokoko`) and CMU mocap (`cmu`, BVH via `bvh`): name map (`MIXAMO_MAP` /
+//!   `CMU_MAP`), then per mapped bone in model space
 //!   `W_dst(t) = W_src(t) · W_src_bind⁻¹ · W_dst_bind`, converted back to local through the
 //!   destination parent chain. Both binds are T-pose, +Z forward, so this removes axis-convention
 //!   differences. Unmapped destination bones keep rest. Pelvis translation is the source hips
@@ -84,6 +85,33 @@ pub const MIXAMO_MAP: &[(&str, &str)] = &[
     ("RightHandPinky3", "pinky_03_r"),
 ];
 
+/// (CMU BVH joint, canonical UAL name). CMU's spine is LowerBack → Spine → Spine1 and its neck
+/// Neck → Neck1 → Head; fingers are a single base bone, left unmapped (the hand rig poses them).
+pub const CMU_MAP: &[(&str, &str)] = &[
+    ("Hips", "pelvis"),
+    ("LowerBack", "spine_01"),
+    ("Spine", "spine_02"),
+    ("Spine1", "spine_03"),
+    ("Neck", "neck_01"),
+    ("Head", "Head"),
+    ("LeftShoulder", "clavicle_l"),
+    ("LeftArm", "upperarm_l"),
+    ("LeftForeArm", "lowerarm_l"),
+    ("LeftHand", "hand_l"),
+    ("RightShoulder", "clavicle_r"),
+    ("RightArm", "upperarm_r"),
+    ("RightForeArm", "lowerarm_r"),
+    ("RightHand", "hand_r"),
+    ("LeftUpLeg", "thigh_l"),
+    ("LeftLeg", "calf_l"),
+    ("LeftFoot", "foot_l"),
+    ("LeftToeBase", "ball_l"),
+    ("RightUpLeg", "thigh_r"),
+    ("RightLeg", "calf_r"),
+    ("RightFoot", "foot_r"),
+    ("RightToeBase", "ball_r"),
+];
+
 /// Bind / reference clips that carry no motion.
 const SKIPPED: [&str; 2] = ["A_TPose", "T-Pose"];
 /// Name fragments of cyclic clips.
@@ -138,6 +166,8 @@ enum Mode {
     ByName,
     /// Mixamo rig: model-space bind-delta.
     Mixamo,
+    /// CMU mocap (BVH): model-space bind-delta with `CMU_MAP`.
+    Cmu,
 }
 
 /// Precomputed per-library mapping onto the canonical skeleton.
@@ -162,6 +192,8 @@ impl Mapping {
     fn new(lib: &DonorLib, target: &Skeleton, bones: &Bones) -> Self {
         let mode = if lib.node(&format!("{MIXAMO_PREFIX}Hips")).is_some() {
             Mode::Mixamo
+        } else if lib.node("LowerBack").is_some() && lib.node("LHipJoint").is_some() {
+            Mode::Cmu
         } else {
             Mode::ByName
         };
@@ -182,6 +214,13 @@ impl Mapping {
                 for (mixamo, canonical) in MIXAMO_MAP {
                     if let Some(i) = target.find(canonical) {
                         src[i] = node_of.get(format!("{MIXAMO_PREFIX}{mixamo}").as_str()).copied();
+                    }
+                }
+            }
+            Mode::Cmu => {
+                for (cmu, canonical) in CMU_MAP {
+                    if let Some(i) = target.find(canonical) {
+                        src[i] = node_of.get(cmu).copied();
                     }
                 }
             }
@@ -311,7 +350,7 @@ fn retarget_frame(
     let mut rot: Vec<Quat> = target.rest.iter().map(|r| r.rotation).collect();
     let mut world_rot = vec![Quat::IDENTITY; n];
     let src_world = match map.mode {
-        Mode::Mixamo => Some(lib.world_at(clip, t)),
+        Mode::Mixamo | Mode::Cmu => Some(lib.world_at(clip, t)),
         Mode::ByName => None,
     };
     for &i in &map.order {
@@ -322,7 +361,7 @@ fn retarget_frame(
                 .get(&s)
                 .filter(|c| !c.times.is_empty())
                 .map_or(target.rest[i].rotation, |c| c.sample(t)),
-            (Mode::Mixamo, Some(s)) => {
+            (Mode::Mixamo | Mode::Cmu, Some(s)) => {
                 let w = src_world.as_ref().map_or(Quat::IDENTITY, |w| w[s].rotation);
                 parent_world.inverse() * (w * map.bind_delta[i])
             }

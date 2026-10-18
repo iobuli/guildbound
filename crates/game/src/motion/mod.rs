@@ -18,12 +18,13 @@
 //! - `Pose.rot[i]` is the LOCAL rotation of canonical bone `i` (parent-relative), the same
 //!   value that goes into that bone entity's `Transform::rotation`.
 //! - `Pose.pelvis` is the pelvis LOCAL translation offset from its rest translation.
-//! - Track names are `"{lib}/{clip}"`, lib ∈ {`ual1`, `ual2`, `sekiro`}, clip = glTF animation
+//! - Track names are `"{lib}/{clip}"`, lib ∈ {`ual1`, `ual2`, `sekiro`, `rokoko`, `cmu`}, clip = glTF animation
 //!   name verbatim, e.g. `"ual1/Punch_Jab"`, `"sekiro/Inward Slash"`. Times are seconds in the
 //!   original clip.
 
 pub mod bank;
 pub mod body;
+pub mod bvh;
 pub mod compose;
 pub mod contact;
 pub mod donor;
@@ -42,6 +43,8 @@ use std::collections::HashMap;
 pub const SAMPLE_HZ: f32 = 30.0;
 /// The character model and canonical skeleton.
 pub const MODEL_GLB: &str = "anim/ual2.glb";
+/// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
+pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
 pub const LIBRARIES: [(&str, &str); 4] = [
     ("ual1", "anim/ual1.glb"),
