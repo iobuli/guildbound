@@ -60,26 +60,40 @@ pub fn plugin(app: &mut App) {
 }
 
 /// Give every newly bound character its own skin materials.
+/// Swaps every skinned mesh under a rigged model that still has a `StandardMaterial`, so parts
+/// that arrive later (a modelled look's clothes and hair, `appearance`) get the skin too. A root
+/// being dressed by `appearance` waits until its look is applied, so the swap keeps the look's
+/// recoloured material as its base.
 #[allow(clippy::type_complexity)]
 fn dress(
     mut commands: Commands,
-    rigs: Query<(Entity, &Rig), Without<Skin>>,
+    mut rigs: Query<(Entity, &Rig, Option<&mut Skin>, Option<&super::appearance::Appearance>, Option<&super::appearance::Dressed>)>,
     children: Query<&Children>,
     bodies: Query<&MeshMaterial3d<StandardMaterial>, With<SkinnedMesh>>,
     standard: Res<Assets<StandardMaterial>>,
     mut skins: ResMut<Assets<SkinMaterial>>,
 ) {
-    for (e, rig) in &rigs {
+    for (e, rig, skin, look, dressed) in &mut rigs {
+        if look.is_some() && dressed.is_none_or(|d| d.0 != rig.model) {
+            continue;
+        }
+        let params = skin.as_ref().map_or(SkinParams::default(), |s| s.last);
         let mut made = Vec::new();
         for d in children.iter_descendants(rig.model) {
             let Ok(handle) = bodies.get(d) else { continue };
             let Some(base) = standard.get(&handle.0).cloned() else { continue };
-            let skin = skins.add(SkinMaterial { base, extension: SkinExt { skin: SkinParams::default() } });
-            commands.entity(d).remove::<MeshMaterial3d<StandardMaterial>>().insert(MeshMaterial3d(skin.clone()));
-            made.push(skin);
+            let made_skin = skins.add(SkinMaterial { base, extension: SkinExt { skin: params } });
+            commands.entity(d).remove::<MeshMaterial3d<StandardMaterial>>().insert(MeshMaterial3d(made_skin.clone()));
+            made.push(made_skin);
         }
-        if !made.is_empty() {
-            commands.entity(e).try_insert(Skin { materials: made, last: SkinParams { look: Vec4::splat(-1.0), ..default() }, ..default() });
+        if made.is_empty() {
+            continue;
+        }
+        match skin {
+            Some(mut s) => s.materials.extend(made),
+            None => {
+                commands.entity(e).try_insert(Skin { materials: made, last: SkinParams { look: Vec4::splat(-1.0), ..default() }, ..default() });
+            }
         }
     }
 }

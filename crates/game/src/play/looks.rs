@@ -9,6 +9,8 @@
 //!   (head top, neck, pelvis, shoulders, relative to the body's facing) converted into its bone's
 //!   frame once, so it then rides the animation. Pieces use the skin material too (ink look,
 //!   presence rim). Debug view 13 hides them.
+//! Characters wearing a modelled look (`appearance::Appearance`, the hero bodies) are skipped:
+//! their outfit is their own.
 //! - Tails (`Flap`): scarf and sash tails hang from a pivot and swing on a spring, trailing the
 //!   body's velocity and acceleration (`TAIL_SWING`, `TAIL_STIFF`, `TAIL_DAMP`).
 use super::debug::{DebugToggles, View};
@@ -124,7 +126,7 @@ fn dress(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut skins: ResMut<Assets<SkinMaterial>>,
-    mut characters: Query<(Entity, &Name, &Rig, &mut Skin, Option<&mut Dressing>), (Without<Dressed>, With<super::Fighter>)>,
+    mut characters: Query<(Entity, &Name, &Rig, &mut Skin, Option<&mut Dressing>), (Without<Dressed>, With<super::Fighter>, Without<super::appearance::Appearance>)>,
     mut models: Query<&mut Transform>,
     globals: Query<&GlobalTransform>,
 ) {
