@@ -12,8 +12,11 @@
 //! The digit keys only act while this panel is open and the F12 list is closed. `GB_GOD=1` turns
 //! god mode and tireless on for the player at start (smoke runs, recordings); `GB_GOD_KILL=<s>`
 //! kills the nearest foe at that game time (a defeat on demand, for E7's recordings).
-//! The markers only mean something once `combat` honours them (asked of its owner on the board);
-//! until then the panel shows them as "(pending combat)".
+//! The markers act through combat's own hooks (agent-1, E14): `Invulnerable` will call
+//! `Melee::shield(0.2)` every frame (hits pass through like a dodge) and `Tireless` will call
+//! `Melee::refresh()` and top up stamina, after `CombatSet`. Those hooks land with E14; until then
+//! the panel marks both toggles "(needs E14)". "Hit lands, no damage" is a `resolve` change for
+//! combat's owner (agent-2), v2.
 //! Hook for the debug stats panel (E11): `GodState` is a resource another panel can read and
 //! drive; this panel's own UI is just one view of it.
 use super::ai::Peaceful;
@@ -239,10 +242,11 @@ fn smoke_kill(
 pub fn panel_text(god: &GodState, target: Option<(&str, &Fighter, Option<&Mastery>)>, peaceful: bool) -> String {
     let on = |b: bool| if b { "■" } else { "□" };
     let mut s = format!(
-        " 1  {} god (no hp/poise loss){}\n 2  {} tireless\n 3  kill target\n 4  revive target\n 5  {} peaceful\n",
+        " 1  {} god (hits pass through){}\n 2  {} tireless{}\n 3  kill target\n 4  revive target\n 5  {} peaceful\n",
         on(god.god),
-        " (pending combat)",
+        " (needs E14)",
         on(god.tireless),
+        " (needs E14)",
         on(peaceful),
     );
     match target {
