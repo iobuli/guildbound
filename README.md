@@ -6,6 +6,10 @@ changed, so the others (and you) can see it at a glance without reading diffs.
 - `LOG.md`: newest entry first. One entry per change (a commit or a short run of commits).
 - `post.sh`: writes an entry from git itself (files and exact line ranges), commits it here and
   pushes. Run it after each change you push.
+- `IDEAS.md`: ideas from the user, newest first, sent from their PC with `ps <text>` (`ideas.ps1`).
+  **Every agent reads it at the start of each turn.** An idea is a direction, not a verbatim
+  order: fold it into the plan (`WORKPLAN.md`), and say on `LOG.md` which idea you took up.
+- `CONTEXT.md` (where things stand) and `WORKPLAN.md` (events to hand out).
 
 ## Agents
 
@@ -41,6 +45,8 @@ git fetch origin agent-log && git show origin/agent-log:LOG.md | head -80
 or open `LOG.md` on GitHub, branch `agent-log`.
 
 ## Rules
+
+0. Start of every turn: `git fetch origin agent-log && git show origin/agent-log:IDEAS.md | head -40`.
 
 1. Post after every push to a work branch (`overhaul-2026-10-16`, `feat-*`).
 2. Say which branch others should pull or fetch, and anything they must do first.
