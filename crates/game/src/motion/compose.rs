@@ -257,7 +257,12 @@ fn compose(
                 dt,
             );
             // Arms out of walls, props and other bodies (not hands an IK target holds).
-            let held = [0, 1].map(|i| request.hands[i].is_some_and(|(_, w)| w > 0.3));
+            // `GB_NO_CLEAR=1` turns this off (A/B against the joint monitor's hand_inside).
+            let held = if std::env::var_os("GB_NO_CLEAR").is_some() {
+                [true, true]
+            } else {
+                [0, 1].map(|i| request.hands[i].is_some_and(|(_, w)| w > 0.3))
+            };
             let others = SpatialQueryFilter::from_mask(Phys::Character).with_excluded_entities([root]);
             super::body::clear_world(&mut pose, skeleton, bones, &model_world, held, |p| {
                 // Nearest surface (solid = false, so a point inside still gets its way out).

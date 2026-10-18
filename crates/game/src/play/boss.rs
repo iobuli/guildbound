@@ -99,16 +99,19 @@ fn charge(
     peaceful: Res<super::ai::Peaceful>,
     mut log: MessageWriter<HudLog>,
     mut hits: MessageWriter<Hit>,
-    mut bosses: Query<(Entity, &Transform, &mut Boss, &mut Intent, &Fighter, &Action, Option<&Awareness>)>,
+    mut bosses: Query<(Entity, &Transform, &mut Boss, &mut Intent, &mut super::Mover, &Fighter, &Action, Option<&Awareness>)>,
     players: Query<(Entity, &Transform, &Fighter), With<Player>>,
 ) {
     let dt = time.delta_secs();
     let Ok((player, ptf, pf)) = players.single() else { return };
-    for (e, tf, mut boss, mut intent, fighter, action, awareness) in &mut bosses {
+    for (e, tf, mut boss, mut intent, mut mover, fighter, action, awareness) in &mut bosses {
         boss.cooldown = (boss.cooldown - dt).max(0.0);
         let noticed = awareness.is_none_or(|a| a.alerted) && !peaceful.0 && !pf.dead;
         if fighter.dead || !noticed {
             boss.charging = 0.0;
+            if action.is_free() {
+                mover.face = None;
+            }
             continue;
         }
         // The leash: too far from the dais, ride back to it first.
@@ -123,6 +126,9 @@ fn charge(
         }
         if boss.returning {
             boss.charging = 0.0;
+            if action.is_free() {
+                mover.face = None;
+            }
             intent.move_dir = (home - tf.translation).with_y(0.0).normalize_or_zero();
             intent.sprint = false;
             intent.primary_pressed = false;
@@ -131,6 +137,10 @@ fn charge(
         }
         let to = (ptf.translation - tf.translation).with_y(0.0);
         let distance = to.length();
+        // The horse turns to face you between blows (the rider cannot twist round in the saddle).
+        if action.is_free() && distance > 0.5 {
+            mover.face = Some(to.x.atan2(to.z));
+        }
         if boss.charging <= 0.0 {
             if action.is_free() && wants_charge(noticed, boss.cooldown, distance) {
                 boss.charging = CHARGE_TIME;
