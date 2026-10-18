@@ -279,6 +279,9 @@ fn presence(
         }
         let bw = energy.map_or(1.0, |en| en.battlewill / en.max_battlewill.max(1.0));
         let power = aura_power(stats.map_or(1, |s| s.level), bw, mover.crouch, mover.sprinting, warded, hushed);
+        if hushed && aura.as_ref().is_some_and(|a| a.power > power * 2.0) {
+            info!("[senses] veiled: aura power {power:.2}");
+        }
         match aura {
             Some(mut a) => a.power = power,
             None => {

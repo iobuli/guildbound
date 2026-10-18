@@ -114,10 +114,12 @@ fn charge(
         // The leash: too far from the dais, ride back to it first.
         let (home, _) = home();
         let from_home = (tf.translation - home).with_y(0.0).length();
-        if from_home > LEASH {
+        if from_home > LEASH && !boss.returning {
             boss.returning = true;
-        } else if from_home < HOME_NEAR {
+            info!("[boss] leashed at {from_home:.1} m: riding back to the dais");
+        } else if from_home < HOME_NEAR && boss.returning {
             boss.returning = false;
+            info!("[boss] back on the dais");
         }
         if boss.returning {
             boss.charging = 0.0;

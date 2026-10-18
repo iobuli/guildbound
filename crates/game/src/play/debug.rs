@@ -125,7 +125,8 @@ pub fn shown(v: View) -> impl Fn(Res<DebugToggles>) -> bool {
 }
 
 pub fn plugin(app: &mut App) {
-    let toggles = std::env::var("GB_DEBUG").map(|s| DebugToggles::from_env(&s)).unwrap_or_default();
+    let mut toggles = std::env::var("GB_DEBUG").map(|s| DebugToggles::from_env(&s)).unwrap_or_default();
+    toggles.list_open = std::env::var("GB_DEBUG_LIST").is_ok_and(|v| v.trim() == "1");
     app.insert_resource(toggles)
         .add_systems(Startup, spawn_list)
         .add_systems(Update, (keys, show_list).chain())

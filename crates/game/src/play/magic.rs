@@ -813,7 +813,7 @@ fn finish(commands: &mut Commands, entity: Entity, action: &mut Action, mover: &
 const BLINK_RANGE: f32 = 16.0;
 const BLINK_GAP: f32 = 1.4;
 const DROP_PROBE: f32 = 40.0;
-const DROP_MIN: f32 = 1.0;
+const DROP_MIN: f32 = 0.5;
 
 /// Where a blink to `target` (body centre, facing `target_fwd`) lands: behind it if that is clear,
 /// else on the near side, else beside it. `clear(a, b)`: nothing between; `floor(p)`: the ground
@@ -1430,6 +1430,8 @@ fn demo(
         return;
     }
     let Ok((tf, mut intent, mut g, mut e, mut sheet)) = players.single_mut() else { return };
+    // GB_AIR_BLINK=1: jump just before each cast and cast with no target (an air blink).
+    let air = std::env::var("GB_AIR_BLINK").is_ok_and(|v| v.trim() == "1");
     for a in &st.0 {
         if !sheet.has_ability(a.id) {
             sheet.abilities.push(a.id);
@@ -1438,6 +1440,15 @@ fn demo(
     e.battlewill = e.max_battlewill;
     e.magicules = e.max_magicules;
     let due = ((time.elapsed_secs() - 2.0) / st.2) as usize;
+    if air {
+        // Jump so the cast comes at the top of the jump.
+        let lead = 2.0 + st.1 as f32 * st.2 - time.elapsed_secs();
+        if lead <= 0.3 && lead > 0.3 - time.delta_secs() {
+            intent.jump_pressed = true;
+        }
+        // Held, so the jump is not cut short.
+        intent.jump_held = lead > 0.0 && lead <= 0.3;
+    }
     if due < st.1 {
         return;
     }
@@ -1446,9 +1457,12 @@ fn demo(
     let target = dummies
         .iter()
         .min_by(|x, y| x.1.translation.distance(tf.translation).total_cmp(&y.1.translation.distance(tf.translation)));
-    if let Some((e, t)) = target {
+    if let Some((e, t)) = target.filter(|_| !air) {
         intent.target = Some(e);
         intent.look = t.translation;
+    }
+    if air {
+        intent.target = None;
     }
     if a.is_art() {
         g.art = a.id;

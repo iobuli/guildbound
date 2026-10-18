@@ -177,6 +177,32 @@ pub struct Mounted {
     pub time: f32,
 }
 
+/// Riding straddle: thighs spread apart (rad about the vertical) and dropped from the chair's
+/// level toward a rider's angle (rad about the lateral axis).
+const STRADDLE_SPREAD: f32 = 0.5;
+const STRADDLE_DROP: f32 = 0.55;
+
+/// Turn a seated pose into a straddle: each thigh swings out to its side and down, in model space
+/// about its hip (the shins follow).
+pub fn straddle(bank: &PoseBank, pose: &mut crate::motion::Pose, spread: f32, drop: f32) {
+    let skeleton = &bank.skeleton;
+    if pose.rot.len() != skeleton.len() {
+        return;
+    }
+    let model = skeleton.fk(pose, bank.bones.pelvis);
+    for side in 0..2 {
+        // +X is the body's left: the left thigh turns toward +X.
+        let s = if side == 0 { 1.0 } else { -1.0 };
+        let delta = Quat::from_rotation_y(s * spread) * Quat::from_rotation_x(drop);
+        let bone = bank.bones.thigh[side];
+        let parent = skeleton.parent[bone].map_or(skeleton.base.rotation, |p| model[p].rotation);
+        let local = (parent.inverse() * delta * model[bone].rotation).normalize();
+        if local.is_finite() {
+            pose.rot[bone] = local;
+        }
+    }
+}
+
 /// Stance fade time (s), and a stance width (m) wider than any animated one (the fade starts there).
 const STANCE_TIME: f32 = 0.15;
 const FREE_STANCE: f32 = 0.5;
@@ -1004,14 +1030,12 @@ fn update_character(
         channel.emit(&mut out.layers);
     }
 
-    // 7. Riding: the seat holds the legs whatever the rest is doing.
+    // 7. Riding: the seat, turned into a straddle, holds the legs whatever the rest is doing.
     if let Some(m) = input.mounted.filter(|m| bank.has(&m.track)) {
+        let mut seat = bank.sample_raw(&m.track, m.time, true);
+        straddle(bank, &mut seat, STRADDLE_SPREAD, STRADDLE_DROP);
         out.layers.push(Layer {
-            source: Source::Track {
-                name: m.track.clone(),
-                time: m.time,
-                looping: true,
-            },
+            source: Source::Pose(seat),
             weight: 1.0,
             mask: Mask::Lower,
             style: None,
