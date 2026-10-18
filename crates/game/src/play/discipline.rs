@@ -1,12 +1,14 @@
 //! Discipline: what a fighter has mastered and how far, and what that does in a fight.
 //! - `Mastery { path, rank }` on every fighter. The player's path is the class picked
 //!   (`class::ClassChoice`) and its rank the guild rank (`contracts::Board`, F..S = 0..6); an NPC's
-//!   path follows its weapon (fists → Monk, blades → Blade, bow → Hunter, magic → Arcanist) and its
-//!   rank its level (`stats::Stats`, every `LEVELS_PER_RANK` levels).
+//!   path is Monk for the order (`looks::is_monk` names), else follows its weapon (blades → Blade,
+//!   bow → Hunter, magic → Arcanist, bare hands → none) and is recomputed when the weapon changes;
+//!   its rank follows its level (`stats::Stats`, every `LEVELS_PER_RANK` levels).
 //! - Monk: fists hit harder than any weapon in his hands (`weapon_scale`), his guard is a
 //!   defensive state that turns aside more and costs less (`guard_bonus`), and a guard raised
 //!   inside the enemy's blow (the parry window, wider for a monk) is a full **auto counter**:
-//!   the riposte lands at once and the attacker is `Stunned` for `STUN` s. A stunned fighter goes
+//!   the riposte (the blow's damage × `Counter.damage` × his fists' `weapon_scale`) lands at once
+//!   and the attacker is `Stunned` for `STUN` s. A stunned fighter goes
 //!   down as a ragdoll on the next blow that lands (`combat`).
 //! - Every path at max rank (S) gets its own counter, the same rule shown differently
 //!   (`Flare`): Monk a golden palm burst, Blade a white iai flash, Arcanist a frost bloom that
@@ -18,7 +20,8 @@
 //! - Monk hands (`hands`, through `select::HandForm` into the hand rig's `Form`s): fists while
 //!   fighting bare-handed, a cupped lead palm and a rear fist on guard, soft cupped hands at ease.
 //!   His guard also catches what flies at him (`combat`): arrows are flicked aside between two
-//!   fingers, spells cupped and drunk as over-mana (`magic::OVER_CAP`); a countered blade is caught
+//!   fingers, spells cupped and drunk as mana (`combat::ABSORB_SHARE` of the spell's damage, the pool
+//!   may run over to `magic::OVER_CAP` × its maximum); a countered blade is caught
 //!   between two fingers (`HandFlash`).
 //! Log lines: `[discipline] <who> counters <whom> (<flare>)`, `[discipline] <who> flees`.
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
@@ -50,11 +53,16 @@ pub enum Path {
 }
 
 impl Path {
-    /// The path an NPC's weapon suggests.
-    pub fn of_weapon(set: &str, kind: Option<super::moveset::Kind>) -> Path {
+    /// The path an NPC walks: monks of the order (`looks::is_monk`: Brother, Sister, Elder,
+    /// Novice) are Monks whatever they hold; anyone else follows the weapon. Bare hands alone don't
+    /// make a monk (a brawler or a disarmed duelist has no path).
+    pub fn of_npc(name: &str, set: &str, kind: Option<super::moveset::Kind>) -> Path {
         use super::moveset::Kind;
+        if super::looks::is_monk(name) {
+            return Path::Monk;
+        }
         match kind {
-            Some(Kind::Unarmed) => Path::Monk,
+            Some(Kind::Unarmed) => Path::None,
             Some(Kind::Ranged) => Path::Hunter,
             Some(Kind::Magic) => Path::Arcanist,
             _ if ["katana", "longsword", "shortsword", "knight_sword", "claymore", "greatsword", "dagger"].contains(&set) => Path::Blade,
@@ -178,9 +186,17 @@ pub struct HandFlash {
     pub left: f32,
 }
 
-/// Mana drunk from a caught spell (applied by `absorb` into `magic::Energy`).
-#[derive(Component, Clone, Copy, Debug)]
+/// Mana drunk from caught spells this frame (applied by `absorb` into `magic::Energy`). Spells
+/// caught in the same frame add up (`Absorb::add`).
+#[derive(Component, Clone, Copy, Debug, Default)]
 pub struct Absorb(pub f32);
+
+impl Absorb {
+    /// Queue `amount` more mana for `who`, adding to anything caught earlier this frame.
+    pub fn add(commands: &mut Commands, who: Entity, amount: f32) {
+        commands.entity(who).entry::<Absorb>().or_default().and_modify(move |mut a| a.0 += amount);
+    }
+}
 
 pub fn plugin(app: &mut App) {
     app.add_message::<Countered>()
@@ -273,19 +289,37 @@ fn absorb(mut commands: Commands, mut q: Query<(Entity, &Absorb, Option<&mut sup
     }
 }
 
-/// Give fighters without a mastery one from their weapon and level.
+/// Give each NPC fighter its mastery (path from its name or weapon, rank from its level), and
+/// recompute the path whenever its weapon changes (armory, pickup, disarm). A rank already set
+/// (at spawn) is kept. The player's comes from `player_rank`.
 #[allow(clippy::type_complexity)]
 fn assign(
     mut commands: Commands,
     movesets: Option<Res<super::moveset::Movesets>>,
-    fighters: Query<(Entity, &super::Loadout, Option<&super::stats::Stats>, Has<Player>), (With<Fighter>, Without<Mastery>)>,
+    mut fighters: Query<
+        (Entity, &super::Loadout, Option<&super::stats::Stats>, Option<&Name>, Option<&mut Mastery>),
+        (With<Fighter>, Without<Player>, Or<(Without<Mastery>, Changed<super::Loadout>)>),
+    >,
+    players: Query<Entity, (With<Player>, Without<Mastery>)>,
 ) {
-    for (e, loadout, stats, player) in &fighters {
+    for e in &players {
+        commands.entity(e).try_insert(Mastery::default());
+    }
+    for (e, loadout, stats, name, mastery) in &mut fighters {
         let set = loadout.equipped();
         let kind = movesets.as_deref().and_then(|m| m.get(set)).map(|s| s.kind);
-        let path = if player { Path::None } else { Path::of_weapon(set, kind) };
-        let rank = if player { 0 } else { stats.map_or(0, |s| rank_of_level(s.level)) };
-        commands.entity(e).try_insert(Mastery { path, rank });
+        let path = Path::of_npc(name.map_or("", |n| n.as_str()), set, kind);
+        match mastery {
+            Some(mut m) => {
+                if m.path != path {
+                    m.path = path;
+                }
+            }
+            None => {
+                let rank = stats.map_or(0, |s| rank_of_level(s.level));
+                commands.entity(e).try_insert(Mastery { path, rank });
+            }
+        }
     }
 }
 
@@ -491,6 +525,17 @@ mod tests {
         assert_eq!(fighting_hands(Path::Monk, true, true, true, None)[0].map(|f| f.0), Some(Form::Cupped));
         // A catch shows even with a weapon in hand (it is the off hand's moment).
         assert_eq!(fighting_hands(Path::Monk, false, true, true, Some(Form::TwoFinger))[1].map(|f| f.0), Some(Form::TwoFinger));
+    }
+
+    #[test]
+    fn only_the_order_are_monks() {
+        use super::super::moveset::Kind;
+        assert_eq!(Path::of_npc("Brother Ishin", "unarmed", Some(Kind::Unarmed)), Path::Monk);
+        assert_eq!(Path::of_npc("Elder Tadao", "katana", Some(Kind::Melee)), Path::Monk);
+        // A bare-handed brawler or a disarmed duelist is no monk.
+        assert_eq!(Path::of_npc("Opponent", "unarmed", Some(Kind::Unarmed)), Path::None);
+        assert_eq!(Path::of_npc("Opponent", "katana", Some(Kind::Melee)), Path::Blade);
+        assert_eq!(Path::of_npc("Hunter", "bow", Some(Kind::Ranged)), Path::Hunter);
     }
 
     #[test]

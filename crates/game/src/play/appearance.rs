@@ -636,7 +636,7 @@ mod tests {
                 assert!(super::super::looks::Piece::from_name(p).is_some(), "{}: unknown piece {p}", a.look);
             }
         };
-        for class in ["blade", "arcanist", "hunter"] {
+        for class in ["blade", "arcanist", "hunter", "monk"] {
             let look = w.classes.get(class).unwrap_or_else(|| panic!("no look for class {class}"));
             exists(&w.appearance(look).unwrap());
         }

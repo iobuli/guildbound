@@ -200,7 +200,8 @@ const KNOCKDOWN_POISE_KB: f32 = 3.5;
 const KNOCKDOWN_LIFT: f32 = 2.4;
 /// A stunned fighter struck is thrown at least this fast (m/s).
 const STUNNED_THROW: f32 = 6.0;
-/// A monk's guard catches projectiles and spells from inside this (cos of the half arc).
+/// A monk's guard, raised inside the parry window, catches projectiles and spells from inside
+/// this (cos of the half arc).
 const CATCH_ARC: f32 = 0.3;
 /// Seconds the catching hand holds its shape; share of a caught spell drunk as mana.
 const CATCH_HOLD: f32 = 0.7;
@@ -2259,11 +2260,12 @@ fn resolve(
         };
         let riposte = strike(hit, &attacker, victim, &bank, &movesets, &feel, &mut fx, &mut commands);
         // Who countered, for the log and the flare.
-        let (by, path) = fighters
+        let (by, defender) = fighters
             .get(hit.target)
             .ok()
-            .map(|v| (v.9.map_or(String::new(), |n| n.to_string()), v.12.copied().unwrap_or_default().path))
+            .map(|v| (v.9.map_or(String::new(), |n| n.to_string()), v.12.copied().unwrap_or_default()))
             .unwrap_or_default();
+        let path = defender.path;
         if riposte != Riposte::None
             && let Ok((tf, mut mover, mut action, mut fighter, mut melee, .., name, _, _, _, _)) = fighters.get_mut(hit.attacker)
         {
@@ -2274,7 +2276,8 @@ fn resolve(
             // that lands throws him (`Stunned`).
             if let Riposte::Countered(c) = riposte {
                 r.duration = r.duration.max(c.stun);
-                let riposte = hit.damage.max(0.0) * c.damage;
+                // The blow turned back on its maker, driven by the monk's own fists.
+                let riposte = hit.damage.max(0.0) * c.damage * weapon_scale(defender, path == Path::Monk);
                 // The counter never kills by itself: it opens the attacker up.
                 fighter.hp = (fighter.hp - riposte).max(fighter.hp.min(1.0));
                 fighter.poise = 0.0;
@@ -2360,10 +2363,12 @@ fn strike(
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);
     let involved = attacker.player || player;
     let who = name.map_or("?", |n| n.as_str()).to_string();
-    // A monk's guard catches what flies at him: arrows are flicked aside, spells cupped and drunk
-    // as over-mana (`discipline`).
+    // A monk's guard raised in time (inside the parry window) catches what flies at him: arrows
+    // are flicked aside, spells cupped and drunk as mana (`discipline`). Late, it is an ordinary
+    // block (stamina, damage through).
+    let in_time = guard.is_some_and(|(t, window, ..)| t <= window);
     if mastery.path == Path::Monk
-        && matches!(melee.state, State::Guard { .. })
+        && in_time
         && matches!(hit.kind, HitKind::Projectile | HitKind::Spell)
         && facing.dot(from) > CATCH_ARC
     {
@@ -2371,10 +2376,9 @@ fn strike(
         fx.strike(involved, HITSTOP_BLOCK, SHAKE_BLOCK, SfxKind::Parry, hit.point, 0.8);
         fx.sparks(hit.point, from, SPARKS_BLOCK);
         let (form, what) = if absorb { (Form::Cupped, "absorb") } else { (Form::TwoFinger, "deflect") };
-        let mut c = commands.entity(hit.target);
-        c.try_insert(HandFlash { form, left: CATCH_HOLD });
+        commands.entity(hit.target).try_insert(HandFlash { form, left: CATCH_HOLD });
         if absorb {
-            c.try_insert(Absorb(hit.damage.max(0.0) * ABSORB_SHARE));
+            Absorb::add(commands, hit.target, hit.damage.max(0.0) * ABSORB_SHARE);
         }
         fx.monitor.write(&format!("{:.2} {who} {what} - {:.1}", fx.now, hit.damage));
         info!("[discipline] {who} {what}s a {:?} ({:.0})", hit.kind, hit.damage);

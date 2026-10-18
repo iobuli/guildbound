@@ -579,6 +579,8 @@ pub fn spawn_character(
             CollisionLayers::new(Phys::Character, [Phys::World, Phys::Character, Phys::Projectile]),
             Transform::from_translation(feet + Vec3::Y * HALF_HEIGHT)
                 .with_rotation(Quat::from_rotation_y(yaw)),
+            // Children that draw (rank aura, a mount) inherit visibility from here.
+            Visibility::default(),
             Mover {
                 yaw,
                 ..default()
