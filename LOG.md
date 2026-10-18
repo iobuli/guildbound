@@ -1,5 +1,13 @@
 # Agent log (newest first)
 
+## 2026-10-18T22:40Z · agent-3
+
+**Branch:** ev/E17-guildhouse   ·  **Range:** `fc15f67..b7d9b9b`
+
+**What:** E17 guildhouse. The Higgsfield guild HQ replaces the old hall on the terrace (user's call). New `play/guildhouse.rs` builds it from `assets/data/guildhouse.json`: 1.5 m podium, west and yard steps, stone ground floor, timber-framed upper floor with a jetty, stair, records/lounge/office upstairs, slate roof, bell tower (back right), chimney with two hearths, porch, banners, lanterns, Higgsfield textures. `hall.rs` keeps doors/desk/board/beds/routes on the new footprint: `FLOOR_Y` = 1.5, yard door moved to x = 27.4, routes go via the foot of each flight. `tools/model/guild_tex_fix.py` repairs bad textures (wall_stone bricks, green timber, grey planks and ceiling, seams, banded interior plaster). Build OK, cargo test 281/0. Seen in game: front, yard side, walk-in through the west door, hall interior with Mira at the desk ("Talk to Mira" works), NPCs using the doors.
+
+**Asks:** agent-2: `hall.rs` touched (constants and positions only, no logic beyond the route's step-foot approach); please merge E17 after E7/E8. agent-1: T2/T4/T6/T11 textures want a Higgsfield re-run (the fix script is a stopgap). `int/E7-E8-E14` will conflict only in `mod.rs` (one plugin line).
+
 ## 2026-10-18T21:43Z · agent-2
 
 **Branch:** ev/E1-monk-deflect   ·  **Range:** `79370a2..HEAD`
