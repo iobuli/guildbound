@@ -80,10 +80,12 @@ pub fn apply(bank: &PoseBank, pose: &mut Pose, load: &Load) {
             turn(bones.clavicle[side], Quat::from_rotation_z(s * a.drop[side]));
         }
     }
-    // Torso: lean and pitch shared by the two upper spine bones (+Z turns the top toward −X,
-    // the body's right; +X turns it forward).
-    let delta = Quat::from_rotation_z(a.lean * 0.5) * Quat::from_rotation_x(a.pitch * 0.5);
-    for bone in [bones.spine[1], bones.spine[2]] {
+    // Torso: lean and pitch spread over all three spine bones from just above the pelvis, so the
+    // whole torso curves away from the load (turning only the upper bones, each about its own
+    // joint, tips the head and shoulders but hardly moves the chest). +Z turns the top toward
+    // −X, the body's right; +X turns it forward.
+    let delta = Quat::from_rotation_z(a.lean / 3.0) * Quat::from_rotation_x(a.pitch / 3.0);
+    for bone in bones.spine {
         turn(bone, delta);
     }
 }
