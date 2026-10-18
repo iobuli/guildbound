@@ -171,6 +171,9 @@ pub struct Derived {
     pub mana_regen: f32,
     /// Cast animation speed multiplier.
     pub cast_speed: f32,
+    /// Melee attack speed multiplier (`combat::phase_speed` turns it into a shorter wind-up,
+    /// not a faster clip).
+    pub attack_speed: f32,
 }
 
 /// Everything at 10 gives 100 hp / stamina / mana, 50 poise and ×1 multipliers.
@@ -187,6 +190,7 @@ pub fn derive(s: &Stats) -> Derived {
         regen: (1.0 + 0.02 * a(Attr::Endurance)).max(0.3),
         mana_regen: (1.0 + 0.03 * a(Attr::Faith) + 0.01 * a(Attr::Intelligence)).max(0.3),
         cast_speed: (1.0 + 0.01 * a(Attr::Dexterity)).clamp(0.5, 1.6),
+        attack_speed: (1.0 + 0.02 * a(Attr::Dexterity)).clamp(0.7, 1.5),
     }
 }
 

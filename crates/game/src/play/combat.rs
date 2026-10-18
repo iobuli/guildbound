@@ -127,6 +127,18 @@ const FIST_REACH: f32 = 0.15;
 const PLUNGE_HOP: f32 = 2.0;
 const PLUNGE_SPEED: f32 = 16.0;
 const PLUNGE_HOLD: f32 = 0.92;
+/// Attack speed (`stats::Derived::attack_speed` × rank): how much each phase of a swing gains
+/// from it. The wind-up shortens fully, the strike barely (its contact keeps its weight), the
+/// recovery in between (`phase_speed`).
+pub const STRIKE_SHARE: f32 = 0.3;
+pub const RECOVER_SHARE: f32 = 0.8;
+/// Attack speed per rank above F, and the largest total.
+const RANK_SPEED: f32 = 0.03;
+const MAX_ATTACK_SPEED: f32 = 1.7;
+/// Above this attack speed a swing holds its wind-up pose this long (s) before the strike, so a
+/// quick attack still reads as a gathering and a release (`Swing.anticipate`).
+pub const ANTICIPATE_FROM: f32 = 1.15;
+pub const ANTICIPATE: f32 = 2.0 / 30.0;
 const PLUNGE_RADIUS: f32 = 1.6;
 const PLUNGE_TIMEOUT: f32 = 2.5;
 
@@ -382,6 +394,14 @@ impl Melee {
             _ => None,
         }
     }
+    /// A swing in progress: (attack speed, seconds since it started, its strike frames are on).
+    /// Read by `afterimage`.
+    pub fn swing_speed(&self) -> Option<(f32, f32, bool)> {
+        match &self.state {
+            State::Swing(sw) if sw.recover.is_none() => Some((sw.speed, sw.elapsed, sw.active())),
+            _ => None,
+        }
+    }
     /// Out of stamina until it refills.
     pub fn exhausted(&self) -> bool {
         self.exhausted
@@ -547,6 +567,43 @@ struct Swing {
     whoosh: bool,
     /// The full-charge cue has played (heavy).
     primed: bool,
+    /// Attack speed for this swing (`phase_speed`), and seconds of wind-up hold left (`None`
+    /// until the wind-up ends; a quick swing pauses there for `ANTICIPATE`).
+    speed: f32,
+    anticipate: Option<f32>,
+}
+
+/// Clip-rate multiplier at window fraction `u` of an attack whose windows are `windup` / `active`,
+/// for attack speed `s`: `s` through the wind-up, `s^STRIKE_SHARE` through the strike,
+/// `s^RECOVER_SHARE` after it. Faster attacks shorten the gathering, not the blow.
+pub fn phase_speed(u: f32, windup: f32, active: f32, s: f32) -> f32 {
+    let s = if s.is_finite() { s.clamp(0.25, 4.0) } else { 1.0 };
+    if u < windup {
+        s
+    } else if u < active {
+        s.powf(STRIKE_SHARE)
+    } else {
+        s.powf(RECOVER_SHARE)
+    }
+}
+
+/// A fighter's attack speed from its stat and rank (0 = F).
+pub fn attack_speed(stat: f32, rank: u8) -> f32 {
+    let stat = if stat.is_finite() { stat } else { 1.0 };
+    (stat * (1.0 + RANK_SPEED * rank as f32)).clamp(0.5, MAX_ATTACK_SPEED)
+}
+
+/// Real seconds a window `[a, b]` (fractions) of an attack takes at attack speed `s`, for a clip
+/// window of `span` s played at `rate`.
+pub fn phase_seconds(a: f32, b: f32, windup: f32, active: f32, s: f32, span: f32, rate: f32) -> f32 {
+    let mut t = 0.0;
+    for (lo, hi) in [(0.0, windup), (windup, active), (active, f32::INFINITY)] {
+        let (x, y) = (a.max(lo), b.min(hi));
+        if y > x {
+            t += (y - x) * span / (rate * phase_speed((x + y) * 0.5, windup, active, s)).max(1e-4);
+        }
+    }
+    t
 }
 
 impl Swing {
@@ -560,7 +617,8 @@ impl Swing {
     fn tell(&self) -> Tell {
         let span = self.clip.to - self.clip.from;
         let charging = self.heavy() && self.clip.u() >= self.attack.windup && self.charged < self.attack.charge;
-        let until = ((self.attack.windup - self.clip.u()) * span / self.clip.rate).max(0.0);
+        let windup = phase_seconds(self.clip.u().min(self.attack.windup), self.attack.windup, self.attack.windup, self.attack.active, self.speed, span, self.clip.rate);
+        let until = windup + self.anticipate.unwrap_or(if self.speed > ANTICIPATE_FROM { ANTICIPATE } else { 0.0 });
         Tell {
             elapsed: self.elapsed,
             until_active: if charging && !self.active() { f32::INFINITY } else { until },
@@ -1175,6 +1233,8 @@ struct Ctx<'a> {
     set_name: &'a str,
     /// Chance a light or heavy is swapped for a library strike (`discipline::variety`).
     variety: f32,
+    /// Attack speed multiplier for new swings (`phase_speed`).
+    attack_speed: f32,
 }
 
 /// A fighter's own components during its step.
@@ -1257,6 +1317,7 @@ fn drive(
         Option<&Name>,
         Option<&Repertoire>,
         Option<&Mastery>,
+        Option<&super::stats::Derived>,
     )>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
 ) {
@@ -1287,7 +1348,7 @@ fn drive(
     }));
     let now = time.elapsed_secs();
 
-    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery) in
+    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery, derived) in
         &mut fighters
     {
         let cx = Ctx {
@@ -1302,6 +1363,7 @@ fn drive(
             repertoire,
             set_name: loadout.equipped(),
             variety: mastery.map_or(VARIANT_CHANCE, |m| variety(*m)),
+            attack_speed: attack_speed(derived.map_or(1.0, |d| d.attack_speed), mastery.map_or(0, |m| m.rank)),
         };
         if melee.rng == 0 {
             melee.rng = (entity.to_bits() as u32) | 1;
@@ -1519,6 +1581,8 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         plunge,
         whoosh: false,
         primed: false,
+        speed: cx.attack_speed,
+        anticipate: None,
     })))
 }
 
@@ -1540,7 +1604,17 @@ fn swing(mut sw: Swing, cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
         sw.charged += cx.dt;
         m.spend(b.fighter, CHARGE_COST * cx.dt);
     } else if !plunge(&mut sw, b) {
-        sw.clip.t += cx.dt * sw.clip.rate;
+        // Attack speed shortens the wind-up most; a quick swing holds its gathered pose a beat
+        // at the end of the wind-up, so it still reads as a release, not a fast-forward.
+        let u = sw.clip.u();
+        let mut dt = cx.dt;
+        if u >= sw.attack.windup {
+            let hold = sw.anticipate.get_or_insert(if sw.speed > ANTICIPATE_FROM { ANTICIPATE } else { 0.0 });
+            let held = dt.min(*hold);
+            *hold -= held;
+            dt -= held;
+        }
+        sw.clip.t += dt * sw.clip.rate * phase_speed(u, sw.attack.windup, sw.attack.active, sw.speed);
     }
     let u = sw.clip.u();
     if u >= sw.attack.cancel {
