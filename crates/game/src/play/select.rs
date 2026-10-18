@@ -169,6 +169,14 @@ pub struct Posture {
     pub stance: f32,
 }
 
+/// Riding: the legs hold a seated pose (`track` at `time`) over everything else, and the feet
+/// leave the ground (no foot IK). Written by `horse`.
+#[derive(Component, Clone, Debug)]
+pub struct Mounted {
+    pub track: String,
+    pub time: f32,
+}
+
 /// Stance fade time (s), and a stance width (m) wider than any animated one (the fade starts there).
 const STANCE_TIME: f32 = 0.15;
 const FREE_STANCE: f32 = 0.5;
@@ -665,7 +673,7 @@ type CharacterQuery<'a> = (
     Option<&'a Action>,
     Option<&'a Intent>,
     Option<&'a Loadout>,
-    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>),
+    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a Mounted>),
     Option<&'a mut SelectState>,
     Option<&'a StyleScale>,
 );
@@ -691,7 +699,7 @@ fn select(
         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
         bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
     };
-    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture), state, scale) in &mut characters {
+    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, mounted), state, scale) in &mut characters {
         let frame = Frame {
             bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
             ..frame
@@ -735,6 +743,7 @@ fn select(
             hands,
             feet,
             posture,
+            mounted,
             look_at,
             strafing,
             aim,
@@ -767,6 +776,7 @@ struct CharacterInput<'a> {
     hands: Option<&'a HandTargets>,
     feet: Option<&'a FootTargets>,
     posture: Option<&'a Posture>,
+    mounted: Option<&'a Mounted>,
     look_at: Option<Vec3>,
     strafing: bool,
     aim: Option<Vec3>,
@@ -994,6 +1004,20 @@ fn update_character(
         channel.emit(&mut out.layers);
     }
 
+    // 7. Riding: the seat holds the legs whatever the rest is doing.
+    if let Some(m) = input.mounted.filter(|m| bank.has(&m.track)) {
+        out.layers.push(Layer {
+            source: Source::Track {
+                name: m.track.clone(),
+                time: m.time,
+                looping: true,
+            },
+            weight: 1.0,
+            mask: Mask::Lower,
+            style: None,
+        });
+    }
+
     // Contact requests.
     let full_body_action = action.is_some_and(|a| {
         matches!(
@@ -1006,7 +1030,7 @@ fn update_character(
                 | ActionKind::Roll
         )
     });
-    let foot_target = if mode == MoveMode::Ground && !full_body_action { 1.0 } else { 0.0 };
+    let foot_target = if mode == MoveMode::Ground && !full_body_action && input.mounted.is_none() { 1.0 } else { 0.0 };
     state.foot_ik = if snap {
         foot_target
     } else {

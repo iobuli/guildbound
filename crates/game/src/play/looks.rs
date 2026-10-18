@@ -37,6 +37,10 @@ pub enum Piece {
     Sash,
     Pauldrons,
     Pouch,
+    /// A round shield on the left forearm.
+    Shield,
+    /// An iron helm with a nasal guard.
+    Helm,
 }
 
 /// One character's look.
@@ -73,6 +77,7 @@ pub fn look_for(name: &str) -> Look {
         "Smith" => l(0.98, 1.1, [0.8, 0.4, 0.2], [0.3, 0.22, 0.15], [0.5, 0.5, 0.5], vec![Headband, Pouch, Sash]),
         "Farmer" => l(0.98, 1.0, [0.5, 0.7, 0.3], [0.5, 0.45, 0.3], [0.3, 0.4, 0.2], vec![Kasa, Sash]),
         "Rival" => l(1.06, 1.08, [0.6, 0.3, 0.8], [0.12, 0.1, 0.16], [0.6, 0.15, 0.2], vec![Hood, Pauldrons, Sash]),
+        "Thoral" => l(1.3, 1.28, [0.5, 0.5, 0.6], [0.18, 0.18, 0.2], [0.55, 0.12, 0.1], vec![Helm, Pauldrons, Shield, Sash]),
         "Hunter" => l(1.0, 0.97, [0.4, 0.6, 0.3], [0.22, 0.3, 0.18], [0.45, 0.35, 0.2], vec![Hood, Scarf, Pouch]),
         _ => l(1.0, 1.0, [0.5, 0.5, 0.5], [0.35, 0.3, 0.28], [0.6, 0.55, 0.45], vec![Sash]),
     }
@@ -159,8 +164,11 @@ fn dress(
         let straw = material(Color::srgb(0.78, 0.66, 0.4), look.accent);
         let hair = material(Color::srgb(0.06, 0.05, 0.05), look.accent);
         // Spawn `mesh` with world pose (`pos`, `rot`) as a child of `bone`.
+        // Pieces are sized for an ordinary build: bigger people get bigger pieces.
+        let k = look.height;
         let place = |commands: &mut Commands, bone: (Entity, Transform), mesh: Handle<Mesh>, mat: Handle<SkinMaterial>, pos: Vec3, rot: Quat, scale: Vec3| {
             let parent = bone.1;
+            let scale = scale * k;
             let local = Transform {
                 translation: parent.rotation.inverse() * (pos - parent.translation) / parent.scale,
                 rotation: parent.rotation.inverse() * rot,
@@ -187,7 +195,7 @@ fn dress(
                 ChildOf(pivot),
             ));
         };
-        let head_top = head.1.translation + up * 0.13;
+        let head_top = head.1.translation + up * 0.13 * k;
         for piece in &look.pieces {
             match piece {
                 Piece::Kasa => {
@@ -235,6 +243,25 @@ fn dress(
                         let m = meshes.add(Sphere::new(1.0));
                         place(&mut commands, arm, m, trim.clone(), arm.1.translation + up * 0.05 + out * 0.03, face, Vec3::new(0.11, 0.07, 0.12));
                     }
+                }
+                Piece::Shield => {
+                    let (Some(fore), Some(hand)) = (at(b.lowerarm[0]), at(b.hand[0])) else { continue };
+                    let mid = fore.1.translation.lerp(hand.1.translation, 0.45) + left * 0.1;
+                    let disc = Quat::from_rotation_arc(Vec3::Y, left);
+                    let m = meshes.add(Cylinder::new(0.42, 0.05));
+                    place(&mut commands, fore, m, cloth.clone(), mid, disc, Vec3::ONE);
+                    let rim = meshes.add(Torus { minor_radius: 0.025, major_radius: 0.42 });
+                    place(&mut commands, fore, rim, trim.clone(), mid, disc, Vec3::ONE);
+                    let boss = meshes.add(Sphere::new(0.08));
+                    place(&mut commands, fore, boss, trim.clone(), mid + left * 0.04, disc, Vec3::ONE);
+                }
+                Piece::Helm => {
+                    let m = meshes.add(Sphere::new(1.0));
+                    place(&mut commands, head, m, trim.clone(), head_top - up * 0.035, face, Vec3::new(0.135, 0.12, 0.14));
+                    let nasal = meshes.add(Cuboid::new(0.025, 0.11, 0.02));
+                    place(&mut commands, head, nasal, trim.clone(), head_top - up * 0.1 + fwd * 0.13, face, Vec3::ONE);
+                    let crest = meshes.add(Cuboid::new(0.02, 0.06, 0.24));
+                    place(&mut commands, head, crest, cloth.clone(), head_top + up * 0.08, face, Vec3::ONE);
                 }
                 Piece::Pouch => {
                     let m = meshes.add(Cuboid::new(0.09, 0.1, 0.05));

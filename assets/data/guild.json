@@ -1,7 +1,7 @@
 {
   "_about": "The Guild Hall: what things are worth at the front desk, bounties by victim name, lodging, the rank exam, and what people say. Prices in gold.",
   "prices": { "Log": 4, "Stone": 3, "Stick": 1, "Apple": 2 },
-  "bounties": { "Opponent": 20, "Rival": 40, "Hunter": 40 },
+  "bounties": { "Opponent": 20, "Rival": 40, "Hunter": 40, "Thoral": 250 },
   "bed_cost": 10,
   "exam": { "captain_level_per_rank": 2, "yield_share": 0.15, "retry_hours": 24 },
   "lines": {

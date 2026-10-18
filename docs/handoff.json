@@ -307,6 +307,16 @@
       "status": "new"
     },
     {
+      "file": "play/horse.rs",
+      "role": "procedural horse, trot gait, Mounted seat for riders",
+      "status": "new"
+    },
+    {
+      "file": "play/boss.rs",
+      "role": "Thoral boss: mounted, charge/trample, boss bar, bounty, return",
+      "status": "new"
+    },
+    {
       "file": "play/beam.rs",
       "role": "balance beam: inverted-pendulum sway countered by the sideways stick, Posture lean + narrow stance, arms out, wobble and fall; balance / beam deeds; GB_BEAM",
       "status": "new"
