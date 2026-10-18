@@ -3,15 +3,21 @@
   "male": {
    "groups": {
     "body": 5752,
-    "body_hide_tunic": 748,
-    "body_hide_shirt": 14,
-    "body_hide_tunic+shirt": 1768,
-    "body_hide_trousers": 1614,
-    "body_hide_tunic+trousers": 78,
+    "body_hide_tunic": 68,
+    "body_hide_shirt": 6,
     "body_hide_boots": 408,
-    "body_hide_trousers+boots": 400,
+    "body_hide_trousers+boots": 10,
     "body_hide_boots+shoes": 980,
     "body_hide_gloves": 804,
+    "body_hide_tunic+robe_top": 676,
+    "body_hide_shirt+robe_top": 8,
+    "body_hide_tunic+shirt+robe_top": 1704,
+    "body_hide_trousers+hakama": 1614,
+    "body_hide_tunic+trousers+hakama": 62,
+    "body_hide_trousers+boots+hakama": 390,
+    "body_hide_tunic+robe_top+hakama": 4,
+    "body_hide_tunic+shirt+robe_top+hakama": 64,
+    "body_hide_tunic+trousers+robe_top+hakama": 16,
     "eyes": 768
    },
    "vertices": 7281,
@@ -21,16 +27,21 @@
   "female": {
    "groups": {
     "body": 5692,
-    "body_hide_tunic": 766,
-    "body_hide_shirt": 46,
-    "body_hide_tunic+shirt": 2044,
-    "body_hide_trousers": 1582,
-    "body_hide_tunic+trousers": 80,
-    "body_hide_tunic+shirt+trousers": 4,
+    "body_hide_tunic": 128,
+    "body_hide_shirt": 28,
     "body_hide_boots": 352,
-    "body_hide_trousers+boots": 406,
+    "body_hide_trousers+boots": 14,
     "body_hide_boots+shoes": 1022,
     "body_hide_gloves": 818,
+    "body_hide_tunic+robe_top": 638,
+    "body_hide_shirt+robe_top": 18,
+    "body_hide_tunic+shirt+robe_top": 1958,
+    "body_hide_trousers+hakama": 1582,
+    "body_hide_tunic+trousers+hakama": 70,
+    "body_hide_trousers+boots+hakama": 392,
+    "body_hide_tunic+shirt+robe_top+hakama": 86,
+    "body_hide_tunic+trousers+robe_top+hakama": 10,
+    "body_hide_tunic+shirt+trousers+robe_top+hakama": 4,
     "eyes": 768
    },
    "vertices": 7376,
@@ -143,6 +154,162 @@
     "mounts": [
      "sheath_back"
     ]
+   }
+  },
+  "haori": {
+   "male": {
+    "vertices": 5042,
+    "triangles": 7280,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 5424,
+    "triangles": 7884,
+    "mounts": []
+   }
+  },
+  "robe_top": {
+   "male": {
+    "vertices": 4094,
+    "triangles": 6436,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 4358,
+    "triangles": 7044,
+    "mounts": []
+   }
+  },
+  "vest": {
+   "male": {
+    "vertices": 7374,
+    "triangles": 10360,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 7134,
+    "triangles": 10104,
+    "mounts": []
+   }
+  },
+  "mantle": {
+   "male": {
+    "vertices": 2676,
+    "triangles": 3680,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 2978,
+    "triangles": 4364,
+    "mounts": []
+   }
+  },
+  "hood": {
+   "male": {
+    "vertices": 3156,
+    "triangles": 4440,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3446,
+    "triangles": 4980,
+    "mounts": []
+   }
+  },
+  "bracers": {
+   "male": {
+    "vertices": 1184,
+    "triangles": 1248,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 1152,
+    "triangles": 1216,
+    "mounts": []
+   }
+  },
+  "hakama": {
+   "male": {
+    "vertices": 3330,
+    "triangles": 5416,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3368,
+    "triangles": 5476,
+    "mounts": []
+   }
+  },
+  "leg_wraps": {
+   "male": {
+    "vertices": 1740,
+    "triangles": 2168,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 1596,
+    "triangles": 2008,
+    "mounts": []
+   }
+  },
+  "robe_skirt": {
+   "male": {
+    "vertices": 2912,
+    "triangles": 4928,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 2912,
+    "triangles": 4928,
+    "mounts": []
+   }
+  },
+  "kilt": {
+   "male": {
+    "vertices": 2912,
+    "triangles": 4928,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 2912,
+    "triangles": 4928,
+    "mounts": []
+   }
+  },
+  "apron": {
+   "male": {
+    "vertices": 3124,
+    "triangles": 5012,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3124,
+    "triangles": 5012,
+    "mounts": []
+   }
+  },
+  "cloak": {
+   "male": {
+    "vertices": 3612,
+    "triangles": 5924,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3612,
+    "triangles": 5924,
+    "mounts": []
+   }
+  },
+  "tabard": {
+   "male": {
+    "vertices": 6248,
+    "triangles": 10024,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 6248,
+    "triangles": 10024,
+    "mounts": []
    }
   }
  },

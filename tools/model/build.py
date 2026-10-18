@@ -36,6 +36,8 @@ sys.path.insert(0, HERE)
 import gbmesh as gm  # noqa: E402
 import rebind  # noqa: E402
 import surface as sf  # noqa: E402
+import drape  # noqa: E402
+import textures as tx  # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 ASSETS = os.path.join(ROOT, "assets")
@@ -265,6 +267,80 @@ GARMENTS = {
                 lambda p, wd: 0.5 - wd[:, ji("Head")] - wd[:, ji("neck_01")]],
         hide=[], outer=0.020, inner=0.016, bead=0.001, smooth=0, span=0.06, flare=None),
 }
+
+
+def front_open(gap):
+    """> 0 except in a strip `gap` wide down the front centre (open jackets and vests)."""
+    return lambda p, wd: np.maximum(np.abs(p[:, 0]) - gap, -p[:, 2])
+
+
+def face_hole(p, wd):
+    """> 0 outside the face opening of a hood."""
+    inside = np.minimum.reduce([p[:, 2] - 0.035, 0.08 - np.abs(p[:, 0]), p[:, 1] - 1.55, 1.765 - p[:, 1]])
+    return -inside
+
+
+def lowerarm_band(p, wd):
+    return np.minimum.reduce([wd[:, ji("lowerarm_l")] + wd[:, ji("lowerarm_r")] + wd[:, ji("hand_l")] + wd[:, ji("hand_r")] - 0.5,
+                              np.abs(p[:, 0]) - 0.50, 0.668 - np.abs(p[:, 0])])
+
+
+TAU = 2 * np.pi
+GARMENTS.update({
+    # Class, area and world-place clothing (2026-10-18). Shells on the body surface first.
+    "haori": dict(
+        slot="coat", colour=(0.20, 0.22, 0.30), rough=0.9,
+        fields=[lambda p, wd: p[:, 1] - 0.80, lambda p, wd: 0.69 - np.abs(p[:, 0]), neckline(0.13, 0.085), not_head, front_open(0.035)],
+        hide=[], outer=0.026, inner=0.021, bead=0.003, smooth=0, span=0.11,
+        flare=lambda p, wd: 0.06 * smoothstep(0.30, 0.64, np.abs(p[:, 0])) * armness(p, wd) + 0.02 * smoothstep(0.95, 0.80, p[:, 1])),
+    "robe_top": dict(
+        slot="top", colour=(0.22, 0.24, 0.40), rough=0.9,
+        fields=[lambda p, wd: p[:, 1] - 0.93, lambda p, wd: 0.665 - np.abs(p[:, 0]), neckline(0.06, 0.06), not_head],
+        hide=[(lambda p, wd: p[:, 1] - 0.93, 0.035), (lambda p, wd: 0.665 - np.abs(p[:, 0]), 0.03),
+              (neckline(0.06, 0.06), 0.02), (not_head, 0.2)],
+        outer=0.016, inner=0.012, bead=0.0025, smooth=0, span=0.11,
+        flare=lambda p, wd: 0.03 * smoothstep(0.45, 0.66, np.abs(p[:, 0])) * armness(p, wd)),
+    "vest": dict(
+        slot="coat", colour=(0.36, 0.24, 0.14), rough=0.7,
+        fields=[lambda p, wd: p[:, 1] - 0.97, lambda p, wd: 0.25 - armness(p, wd), neckline(0.15, 0.10), not_head, front_open(0.04)],
+        hide=[], outer=0.027, inner=0.022, bead=0.0025, smooth=0, span=0.11,
+        flare=lambda p, wd: 0.01 * smoothstep(1.05, 0.97, p[:, 1])),
+    "mantle": dict(
+        slot="cape", colour=(0.30, 0.18, 0.30), rough=0.9,
+        fields=[lambda p, wd: p[:, 1] - 1.20, lambda p, wd: 0.36 - np.abs(p[:, 0]), neckline(0.04, 0.06), not_head],
+        hide=[], outer=0.034, inner=0.029, bead=0.003, smooth=0, span=0.11,
+        flare=lambda p, wd: 0.035 * smoothstep(1.36, 1.20, p[:, 1])),
+    "hood": dict(
+        slot="head", colour=(0.24, 0.28, 0.20), rough=0.92,
+        fields=[lambda p, wd: p[:, 1] - 1.40, lambda p, wd: 0.21 - np.abs(p[:, 0]), lambda p, wd: 0.25 - armness(p, wd), face_hole],
+        hide=[], outer=0.036, inner=0.031, bead=0.004, smooth=0, span=0.12,
+        flare=lambda p, wd: 0.025 * smoothstep(1.62, 1.78, p[:, 1]) * smoothstep(0.05, -0.08, p[:, 2])),
+    "bracers": dict(
+        slot="wrists", colour=(0.36, 0.24, 0.14), rough=0.65,
+        fields=[lowerarm_band], hide=[], outer=0.011, inner=0.007, bead=0.002, smooth=0, flare=None),
+    "hakama": dict(
+        slot="legs", colour=(0.18, 0.18, 0.22), rough=0.92,
+        fields=[lambda p, wd: 1.06 - p[:, 1], lambda p, wd: p[:, 1] - 0.08],
+        hide=[(lambda p, wd: 1.06 - p[:, 1], 0.03), (lambda p, wd: p[:, 1] - 0.08, 0.03)],
+        outer=0.012, inner=0.008, bead=0.002, smooth=0, span=0.08,
+        flare=lambda p, wd: 0.11 * smoothstep(0.88, 0.12, p[:, 1])),
+    "leg_wraps": dict(
+        slot="shins", colour=(0.62, 0.56, 0.44), rough=0.95,
+        fields=[lambda p, wd: 0.47 - p[:, 1], lambda p, wd: p[:, 1] - 0.13],
+        hide=[], outer=0.013, inner=0.009, bead=0.0015, smooth=0, span=0.04, flare=None),
+    # Hanging cloth (`drape.py`): ring grids around the body, not body-surface shells.
+    "robe_skirt": dict(slot="skirt", colour=(0.22, 0.24, 0.40), rough=0.9, hide=[], outer=0.006, inner=0.0, bead=0.002,
+                       drape=dict(top=1.03, bottom=0.20, clear=0.022, flare=0.11)),
+    "kilt": dict(slot="skirt", colour=(0.30, 0.26, 0.16), rough=0.92, hide=[], outer=0.006, inner=0.0, bead=0.002,
+                 drape=dict(top=1.03, bottom=0.55, clear=0.02, flare=0.05)),
+    "apron": dict(slot="apron", colour=(0.48, 0.36, 0.22), rough=0.8, hide=[], outer=0.005, inner=0.0, bead=0.002,
+                  drape=dict(top=1.04, bottom=0.46, arc=(-1.05, 1.05), clear=0.035, flare=0.02)),
+    "cloak": dict(slot="cape", colour=(0.20, 0.24, 0.18), rough=0.92, hide=[], outer=0.006, inner=0.0, bead=0.003,
+                  drape=dict(top=1.45, bottom=0.30, arc=(0.85, TAU - 0.85), clear=0.075, flare=0.13, rings=26, max_x=0.23)),
+    "tabard": dict(slot="tabard", colour=(0.22, 0.30, 0.52), rough=0.88, hide=[], outer=0.005, inner=0.0, bead=0.002,
+                   drape=[dict(top=1.40, bottom=0.50, arc=(-0.6, 0.6), clear=0.04, flare=0.01),
+                          dict(top=1.40, bottom=0.50, arc=(np.pi - 0.6, np.pi + 0.6), clear=0.04, flare=0.01)]),
+})
 HIDING = [g for g, d in GARMENTS.items() if d["hide"]]
 
 
@@ -282,14 +358,27 @@ def hide_mask(body: Body):
     return mask
 
 
+def merge_surfs(surfs):
+    pos, nrm, w, morph, tri, off = [], [], [], [], [], 0
+    for s in surfs:
+        pos.append(s.pos); nrm.append(s.nrm); w.append(s.w); morph.append(s.morph); tri.append(s.tri + off)
+        off += len(s.pos)
+    return sf.Surf(np.concatenate(pos), np.concatenate(nrm), np.concatenate(w), np.concatenate(morph), np.concatenate(tri))
+
+
 def make_garment(body: Body, name: str):
     g = GARMENTS[name]
-    s = body.surf.copy()
-    for f in g["fields"]:
-        s = sf.cut(s, f(s.pos, s.w))
-    # drop tiny islands (fewer than 12 triangles) left by the cuts
-    s = drop_islands(s, 12)
-    flare = g["flare"](s.pos, s.w) if g.get("flare") else None
+    if "drape" in g:
+        specs = g["drape"] if isinstance(g["drape"], list) else [g["drape"]]
+        s = merge_surfs([drape.drape_surf(body, ji, J, **spec) for spec in specs])
+        flare = None
+    else:
+        s = body.surf.copy()
+        for f in g["fields"]:
+            s = sf.cut(s, f(s.pos, s.w))
+        # drop tiny islands (fewer than 12 triangles) left by the cuts
+        s = drop_islands(s, 12)
+        flare = g["flare"](s.pos, s.w) if g.get("flare") else None
     sh = sf.shell(s, g["outer"], g["inner"], smooth_iters=4, bead=g["bead"], extra=flare, span=g.get("span", 0.0))
     if g.get("sole"):
         floor = body.sole_y - 0.005
@@ -521,6 +610,9 @@ def neutral_hair(data: bytes, size=512) -> Image.Image:
     return Image.fromarray((out * 255).astype(np.uint8))
 
 
+# Iris colours (sRGB) for our eye textures.
+IRIS_COLOURS = {"brown": (0.36, 0.20, 0.09), "blue": (0.30, 0.48, 0.70), "green": (0.28, 0.48, 0.30), "grey": (0.50, 0.54, 0.58),
+                "hazel": (0.48, 0.38, 0.18), "amber": (0.70, 0.46, 0.12)}
 EYE_COLOURS = {"brown": None, "blue": (0.58, 0.55), "green": (0.30, 0.55), "grey": (0.58, 0.08), "hazel": (0.14, 0.55),
                "amber": (0.10, 0.85)}
 
@@ -673,13 +765,22 @@ def body_prims(body: Body, out: Out, skin_colour=(1, 1, 1)):
     return groups, mask
 
 
+# Which generated weave each garment wears (`textures.cloth`).
+FABRIC = {"tunic": "wool", "shirt": "linen", "trousers": "twill", "boots": "leather", "shoes": "leather", "gloves": "leather",
+          "belt": "leather", "baldric": "leather", "haori": "twill", "vest": "leather", "mantle": "wool", "hood": "wool",
+          "bracers": "leather", "hakama": "twill", "leg_wraps": "linen", "robe_top": "twill", "robe_skirt": "twill",
+          "kilt": "wool", "apron": "leather", "cloak": "wool", "tabard": "twill"}
+
+
 def garment_prims(body: Body, name: str, out: Out, colour=None):
     g = GARMENTS[name]
     s, sh = make_garment(body, name)
     colour = colour or g["colour"]
-    mat = out.material(f"cloth_{name}", colour, rough=g["rough"])
+    fabric = FABRIC.get(name, "linen")
+    mat = out.material(f"cloth_{name}", colour, rough=g["rough"], base=f"cloth_{fabric}.png", normal=f"cloth_{fabric}_normal.png")
     col = garment_colors(sh, g, seed=sum(map(ord, name)))
-    prims = [prim_out(sh["pos"], sh["nrm"], sh["w"], sh["morph"], sh["tri"], mat, color=col.astype(np.float32))]
+    uv = tx.cloth_uv(sh["pos"], armness(sh["pos"], sh["w"]), tile=0.09 if fabric == "leather" else 0.12)
+    prims = [prim_out(sh["pos"], sh["nrm"], sh["w"], sh["morph"], sh["tri"], mat, uv=uv, color=col.astype(np.float32))]
     if g.get("buckle"):
         bk = buckle(sh, None)
         mm = out.material(f"metal_{name}", (0.74, 0.60, 0.32), rough=0.35, metal=0.9)
@@ -713,18 +814,22 @@ def main():
     bodies = {s: Body(s) for s in ("male", "female")}
     report = {"bodies": {}, "garments": {}, "hair": {}}
     # textures
+    # Our own textures (`textures.py`): generated from the meshes, no source pixels copied.
     for s, b in bodies.items():
-        neutral_skin(b.tex_base).save(os.path.join(OUT, "tex", f"{s}_skin.png"), optimize=True)
-        Image.open(io.BytesIO(b.tex_normal)).convert("RGB").resize((1024, 1024), Image.LANCZOS).save(
-            os.path.join(OUT, "tex", f"{s}_skin_normal.png"), optimize=True)
-    eye_src = bodies["male"].tex_eye
-    for c, v in EYE_COLOURS.items():
-        eye_variant(eye_src, v).save(os.path.join(OUT, "tex", f"eye_{c}.png"), optimize=True)
-    for k in ("1", "2"):
-        with open(os.path.join(BASE_DIR, f"T_Hair_{k}_BaseColor.png"), "rb") as f:
-            neutral_hair(f.read()).save(os.path.join(OUT, "tex", f"hair_{k}_base.png"), optimize=True)
-        Image.open(os.path.join(BASE_DIR, f"T_Hair_{k}_Normal.png")).convert("RGB").resize((512, 512), Image.LANCZOS).save(
-            os.path.join(OUT, "tex", f"hair_{k}_normal.png"), optimize=True)
+        base, normal = tx.skin(b, J)
+        base.save(os.path.join(OUT, "tex", f"{s}_skin.png"), optimize=True)
+        normal.save(os.path.join(OUT, "tex", f"{s}_skin_normal.png"), optimize=True)
+    centre, radius = tx.find_iris(Image.open(io.BytesIO(bodies["male"].tex_eye)))
+    for c, srgb in IRIS_COLOURS.items():
+        tx.iris(srgb, centre, radius, seed=sum(map(ord, c))).save(os.path.join(OUT, "tex", f"eye_{c}.png"), optimize=True)
+    for k, seed in (("1", 11), ("2", 12)):
+        hb, hn = tx.hair(seed=seed)
+        hb.save(os.path.join(OUT, "tex", f"hair_{k}_base.png"), optimize=True)
+        hn.save(os.path.join(OUT, "tex", f"hair_{k}_normal.png"), optimize=True)
+    for kind in tx.CLOTH_KINDS:
+        cb, cn = tx.cloth(kind, seed=sum(map(ord, kind)))
+        cb.save(os.path.join(OUT, "tex", f"cloth_{kind}.png"), optimize=True)
+        cn.save(os.path.join(OUT, "tex", f"cloth_{kind}_normal.png"), optimize=True)
 
     hairs = {n: load_hair(n) for n in HAIR}
     styled = Out(embed=True)

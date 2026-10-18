@@ -169,6 +169,45 @@ cf. Palette.cloth 0.70 0.21 0.17), moss, woad, linen, ochre, umber, charcoal, le
 dark leather 0.26 0.17 0.11 (cf. dark_wood 0.39 0.26 0.15), brass buckle. Garments carry painterly
 vertex colours (soft low-frequency variation ±7 %, darker low down, inner faces 0.55, rims 0.8).
 
+## 5b. The wardrobe (2026-10-18)
+
+Thirteen more garments, built for both bodies:
+
+| Kind | Garments | Built as |
+|---|---|---|
+| Body-surface shells (`GARMENTS`) | `haori` (open front, wide sleeves), `robe_top` (long sleeves), `vest` (open front, no sleeves), `mantle`, `hood` (face opening), `bracers`, `hakama` (legs flaring to the ankle), `leg_wraps` | like the first set |
+| Hanging cloth (`tools/model/drape.py`) | `robe_skirt`, `kilt`, `apron` (front only), `cloak` (open front, fitted to the torso, not the T-posed arms), `tabard` (front and back panels) | ring grids around the body axis: each ring wraps the 2D convex hull of the body's cross-section in a thin band (arms out), and is never narrower than the ring above, so the cloth falls from the widest point and bridges the legs; `flare` widens the hem |
+
+Hanging cloth weights:
+- The top follows the nearest body surface.
+- Below the hips, each side blends toward its own thigh, then its own calf, keeping 20 % pelvis.
+- The front and back centre lines are shared between the legs, so a stride swings the skirt without tearing it between them.
+- Morph targets come from the nearest body vertices.
+
+The game wires them up through `appearance.json`:
+- `classes` sets the player's look per class:
+  - Blade: haori, hakama, sash, kasa;
+  - Arcanist: robe, mantle, hood;
+  - Hunter: vest, cloak, bracers, leg wraps.
+- `cast` gives every named NPC a look.
+- `areas` (guild, village, ruins, pond) provides seeded outfits for anyone else.
+
+## 5c. Our own textures (`tools/model/textures.py`)
+
+Every texture the kit ships is generated; no pixel of the Quaternius textures is used, only the meshes' UV layouts.
+- **Skin** (base colour + normal map, 1024²), baked in UV space from the mesh:
+  - cavity (nearby surface above the tangent plane) darkens and cools creases;
+  - convexity lightens ridges;
+  - flushed zones near the cheeks, nose, ears, knuckles, elbows and knees;
+  - eye sockets around the eye meshes, and lips as an ellipsoid below the nose tip (the head's frontmost point);
+  - fractal mottling and pores;
+  - the normal map comes from a height field of the same features.
+
+  It is near-white and neutral: the game multiplies it by the look's skin tone.
+- **Eyes:** sclera with veins, a fibrous iris with collarette and limbal ring, pupil and catchlight, painted where the eye mesh's UVs put the iris; one per eye colour.
+- **Hair:** anisotropic strand streaks with clumping, neutral for tinting, plus a normal map.
+- **Cloth:** tileable linen, twill, wool, leather and silk, each with a normal map. Garments get UVs (`textures.cloth_uv`): wrapped around the body axis, or around and along the arm for sleeves, tiling every 0.12 m (0.09 m for leather). `build.FABRIC` picks each garment's weave.
+
 ## 6. Files
 
 - `assets/characters/hero/{male,female}/body.glb`: skeleton + body groups + eyes, morphs.
