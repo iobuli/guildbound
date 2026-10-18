@@ -811,8 +811,8 @@ mod tests {
         // Ground rising along +x at 25 degrees, as a grid of triangles (wound like the terrain).
         let slope = 25f32.to_radians().tan();
         let ground = |x: f32| x * slope;
-        let n = 20usize;
-        let (lo, step) = (-10.0f32, 1.0f32);
+        let n = 40usize;
+        let (lo, step) = (-40.0f32, 2.0f32);
         let mut verts = Vec::new();
         for iz in 0..=n {
             for ix in 0..=n {
@@ -869,7 +869,9 @@ mod tests {
             let above = (t - Vec3::new(t.x, ground(t.x), t.z)).dot(normal) - SEGS[k].radius;
             worst = worst.min(above);
         }
-        assert!(worst > -0.05, "a segment sank {worst:.3} m into the slope");
+        let pelvis = w.get::<Transform>(segs[0]).unwrap().translation;
+        assert!(pelvis.x.abs() < 38.0 && pelvis.z.abs() < 38.0, "left the test slope at {pelvis}");
+        assert!(worst > -0.05, "a segment sank {worst:.3} m into the slope (pelvis at {pelvis})");
     }
 
     #[test]
