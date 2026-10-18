@@ -426,6 +426,9 @@ fn spawn_segments(
                 Mass(seg.mass),
                 CollisionLayers::new(Phys::Ragdoll, [Phys::World, Phys::Ragdoll]),
                 Transform::from_translation(pos).with_rotation(rot),
+                // Physics pose set up front, so the joints built this frame read the real pose.
+                Position(pos),
+                Rotation(rot),
                 LinearVelocity(body_velocity + (dv + omega.cross(centre(k) - com)) * kick),
                 AngularVelocity(omega),
                 LinearDamping(LINEAR_DAMPING),
@@ -443,9 +446,15 @@ fn spawn_segments(
         // Twist about the limb (joint → end), swing in a cone around where it pointed at the hit.
         let basis = Quat::from_rotation_arc(Vec3::Y, (end - pos).normalize_or(Vec3::Y));
         let (swing, twist) = (seg.swing.to_radians(), seg.twist.to_radians());
+        // Frames given locally on each body from the exact spawn pose (a world anchor and basis
+        // resolved by the solver later left twisted poses, like a death, starting outside their
+        // limits: the limbs snapped and the body launched itself).
+        let (prot, ppos) = (placed[p].0, placed[p].1);
         let mut joint = SphericalJoint::new(segs[p], segs[k])
-            .with_anchor(pos)
-            .with_basis(basis)
+            .with_local_anchor1(prot.inverse() * (pos - ppos))
+            .with_local_anchor2(Vec3::ZERO)
+            .with_local_basis1(prot.inverse() * basis)
+            .with_local_basis2(placed[k].0.inverse() * basis)
             .with_swing_limits(-swing, swing)
             .with_twist_limits(-twist, twist);
         joint.swing_compliance = LIMIT_COMPLIANCE;
@@ -904,6 +913,60 @@ mod tests {
         let pelvis = w.get::<Transform>(segs[0]).unwrap().translation;
         assert!(pelvis.x.abs() < 38.0 && pelvis.z.abs() < 38.0, "left the test slope at {pelvis}");
         assert!(worst > -0.05, "a segment sank {worst:.3} m into the slope (pelvis at {pelvis})");
+    }
+
+    /// The defeat pose (`Death01` a moment in, knees going, arms across the body) handed to
+    /// physics on the ground falls and stays down: it never launches itself (limbs that start
+    /// inside each other must not shove the body into the air).
+    #[test]
+    fn a_limp_death_pose_falls_instead_of_launching() {
+        use bevy::time::TimeUpdateStrategy;
+        use std::time::Duration;
+        let b = bank();
+        let s = b.skeleton.clone();
+        let pose = b.sample_raw("ual1/Death01", DEATH_LIMP, false);
+        let fk = s.fk(&pose, b.bones.pelvis);
+        let feet = fk.iter().map(|t| t.translation.y).fold(f32::MAX, f32::min);
+        let lift = Vec3::Y * (0.02 - feet);
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, TransformPlugin, bevy::asset::AssetPlugin::default(), bevy::mesh::MeshPlugin, PhysicsPlugins::default()))
+            .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(1.0 / 60.0)))
+            .insert_resource(Gravity(Vec3::NEG_Y * 9.81));
+        app.finish();
+        app.cleanup();
+        app.world_mut().spawn((
+            RigidBody::Static,
+            Collider::half_space(Vec3::Y),
+            CollisionLayers::new(Phys::World, LayerMask::ALL),
+            Transform::default(),
+        ));
+        let request = RagdollRequest { velocity: Vec3::new(0.0, 0.0, 1.2), point: lift + Vec3::Y * 0.3 };
+        let segs = {
+            let world = app.world_mut();
+            let mut queue = bevy::ecs::world::CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, world);
+            let out = spawn_segments(&mut commands, &s, |i| Some((fk[i].rotation, fk[i].translation + lift)), Vec3::ZERO, &request)
+                .expect("segments");
+            queue.apply(world);
+            out.0
+        };
+        let start = fk[s.find("pelvis").unwrap()].translation.y + lift.y;
+        let mut highest = f32::MIN;
+        let mut fastest = 0.0f32;
+        for f in 0..(60 * 3) {
+            app.update();
+            let w = app.world_mut();
+            highest = highest.max(w.get::<Transform>(segs[0]).unwrap().translation.y);
+            for (k, &e) in segs.iter().enumerate() {
+                let v = w.get::<LinearVelocity>(e).unwrap().0.length();
+                if v > fastest && v > 4.0 {
+                    eprintln!("frame {f}: {} at {v:.1} m/s", SEGS[k].bone);
+                }
+                fastest = fastest.max(v);
+            }
+        }
+        assert!(highest < start + 0.3, "pelvis rose from {start:.2} to {highest:.2} m (fastest segment {fastest:.1} m/s)");
+        assert!(fastest < 6.0, "a segment reached {fastest:.1} m/s");
     }
 
     #[test]
