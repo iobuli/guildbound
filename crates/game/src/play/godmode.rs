@@ -219,17 +219,44 @@ fn apply_markers(god: Res<GodState>, mut commands: Commands, player: Query<(Enti
     }
 }
 
-/// `GB_GOD_KILL=<s>`: at that game time, kill the nearest foe (a defeat on demand).
+/// `GB_GOD_KILL=<s>`: at that game time, kill the nearest foe (a defeat on demand), then log the
+/// victim's state every 0.5 s for 3 s (`[god] watch`), so a smoke run can check the death from the
+/// log alone.
+#[allow(clippy::type_complexity)]
 fn smoke_kill(
     time: Res<Time>,
     mut at: Local<Option<Option<f32>>>,
+    mut watch: Local<Option<(Entity, f32)>>,
     god: Res<GodState>,
     player: Query<(Entity, &Transform), With<Player>>,
     fighters: Query<(&Transform, &Fighter)>,
+    states: Query<(&Fighter, &Transform, &super::Mover, Option<&Name>)>,
     mut hits: MessageWriter<Hit>,
 ) {
     let Some(when) = *at.get_or_insert_with(|| env_secs("GB_GOD_KILL")) else { return };
     let (t, dt) = (time.elapsed_secs(), time.delta_secs());
+    if let Some((who, from)) = *watch {
+        let step = ((t - from) / 0.5).floor();
+        if step > ((t - dt - from) / 0.5).floor() {
+            match states.get(who) {
+                Ok((f, tf, m, n)) => info!(
+                    "[god] watch +{:.1}s {}: hp {:.0} dead {} mode {:?} at ({:.1}, {:.2}, {:.1})",
+                    t - from,
+                    n.map_or("?", |n| n.as_str()),
+                    f.hp,
+                    f.dead,
+                    m.mode,
+                    tf.translation.x,
+                    tf.translation.y,
+                    tf.translation.z
+                ),
+                Err(_) => info!("[god] watch +{:.1}s: target gone (despawned)", t - from),
+            }
+        }
+        if t - from > 3.0 {
+            *watch = None;
+        }
+    }
     if !(t >= when && t - dt < when) {
         return;
     }
@@ -237,7 +264,11 @@ fn smoke_kill(
         info!("[god] GB_GOD_KILL: no target in reach");
         return;
     };
+    if let Ok((f, tf, _, n)) = states.get(target) {
+        info!("[god] GB_GOD_KILL: {} hp {:.0} at ({:.1}, {:.1})", n.map_or("?", |n| n.as_str()), f.hp, tf.translation.x, tf.translation.z);
+    }
     kill(&mut hits, me, me_tf.translation, target, &fighters);
+    *watch = Some((target, t));
 }
 
 /// The panel text: the toggles and the target's numbers.
