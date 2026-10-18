@@ -1,0 +1,2630 @@
+{
+ "static": {
+  "characters/hero/female/baldric.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.0978193283081055e-08,
+   "max_joint_index": 55,
+   "vertices": 1734,
+   "triangles": 1516,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [
+    "sheath_back"
+   ],
+   "ok": true
+  },
+  "characters/hero/female/belt.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.0978193283081055e-08,
+   "max_joint_index": 60,
+   "vertices": 1006,
+   "triangles": 888,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [
+    "sheath_hip_l",
+    "sheath_hip_r"
+   ],
+   "ok": true
+  },
+  "characters/hero/female/body.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.6566128730773926e-08,
+   "max_joint_index": 63,
+   "vertices": 8419,
+   "triangles": 13580,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/boots.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 63,
+   "vertices": 2348,
+   "triangles": 4048,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/brows_regular.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 0.0,
+   "max_joint_index": 6,
+   "vertices": 646,
+   "triangles": 984,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/brows_soft.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 0.0,
+   "max_joint_index": 6,
+   "vertices": 912,
+   "triangles": 1480,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/gloves.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.470348358154297e-08,
+   "max_joint_index": 53,
+   "vertices": 2500,
+   "triangles": 2976,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/hair_buns.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 3501,
+   "triangles": 3284,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/hair_buzzed.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 466,
+   "triangles": 830,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/hair_buzzed_f.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 466,
+   "triangles": 830,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/hair_long.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.284083843231201e-08,
+   "max_joint_index": 32,
+   "vertices": 3080,
+   "triangles": 2906,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/hair_parted.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 757,
+   "triangles": 1301,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/shirt.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.5693013817071915e-08,
+   "max_joint_index": 60,
+   "vertices": 3708,
+   "triangles": 5728,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/shoes.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 63,
+   "vertices": 1940,
+   "triangles": 3144,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/trousers.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.0978193283081055e-08,
+   "max_joint_index": 62,
+   "vertices": 3282,
+   "triangles": 5304,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/female/tunic.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.5693013817071915e-08,
+   "max_joint_index": 60,
+   "vertices": 4734,
+   "triangles": 7620,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/baldric.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.0978193283081055e-08,
+   "max_joint_index": 55,
+   "vertices": 1680,
+   "triangles": 1400,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [
+    "sheath_back"
+   ],
+   "ok": true
+  },
+  "characters/hero/male/beard.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 3.8533471524715424e-08,
+   "max_joint_index": 31,
+   "vertices": 596,
+   "triangles": 1034,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/belt.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.470348358154297e-08,
+   "max_joint_index": 60,
+   "vertices": 976,
+   "triangles": 828,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [
+    "sheath_hip_l",
+    "sheath_hip_r"
+   ],
+   "ok": true
+  },
+  "characters/hero/male/body.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.842877388000488e-08,
+   "max_joint_index": 63,
+   "vertices": 8292,
+   "triangles": 13334,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/boots.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 63,
+   "vertices": 2392,
+   "triangles": 4136,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/brows_regular.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 0.0,
+   "max_joint_index": 6,
+   "vertices": 646,
+   "triangles": 984,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/brows_soft.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 0.0,
+   "max_joint_index": 6,
+   "vertices": 912,
+   "triangles": 1480,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/gloves.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.470348358154297e-08,
+   "max_joint_index": 53,
+   "vertices": 2588,
+   "triangles": 3072,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/hair_buns.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 3.4458935260772705e-08,
+   "max_joint_index": 31,
+   "vertices": 3501,
+   "triangles": 3284,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/hair_buzzed.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 466,
+   "triangles": 830,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/hair_buzzed_f.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 31,
+   "vertices": 466,
+   "triangles": 830,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/hair_long.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 3.818422555923462e-08,
+   "max_joint_index": 31,
+   "vertices": 3080,
+   "triangles": 2906,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/hair_parted.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 6,
+   "vertices": 757,
+   "triangles": 1301,
+   "morph_targets": [
+    0
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/shirt.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.842877388000488e-08,
+   "max_joint_index": 60,
+   "vertices": 3312,
+   "triangles": 4952,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/shoes.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 2.9802322387695312e-08,
+   "max_joint_index": 63,
+   "vertices": 1972,
+   "triangles": 3160,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/trousers.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.470348358154297e-08,
+   "max_joint_index": 62,
+   "vertices": 3350,
+   "triangles": 5376,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "characters/hero/male/tunic.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.842877388000488e-08,
+   "max_joint_index": 60,
+   "vertices": 4286,
+   "triangles": 6756,
+   "morph_targets": [
+    4
+   ],
+   "mounts": [],
+   "ok": true
+  },
+  "anim/hero_styled.glb": {
+   "joints_equal": true,
+   "ibm_max_abs_diff": 0.0,
+   "skeleton_trs_max_abs_diff": 0.0,
+   "parents_equal": true,
+   "weight_sum_max_err": 4.842877388000488e-08,
+   "max_joint_index": 63,
+   "vertices": 25563,
+   "triangles": 38221,
+   "morph_targets": [
+    0,
+    4
+   ],
+   "mounts": [
+    "sheath_hip_l",
+    "sheath_hip_r",
+    "sheath_back"
+   ],
+   "ok": true
+  }
+ },
+ "penetration": {
+  "male": {
+   "body>tunic": {
+    "probe_vertices": 1684,
+    "dropped_other_bones": 284,
+    "none": {
+     "worst_mm": 44.27,
+     "worst_pose": "sekiro/Zombie Death Backwards@1.50",
+     "p99_mm": 6.28,
+     "frac_through": 0.01505
+    },
+    "none+exag1.3": {
+     "worst_mm": 43.3,
+     "worst_pose": "ual2/Zombie_Scratch@1.35",
+     "p99_mm": 9.2,
+     "frac_through": 0.02023
+    },
+    "bulk+heavy": {
+     "worst_mm": 49.85,
+     "worst_pose": "sekiro/Walk-Backwards@0.93",
+     "p99_mm": 17.47,
+     "frac_through": 0.02745
+    },
+    "slim": {
+     "worst_mm": 43.71,
+     "worst_pose": "sekiro/Magic Action Small Projectile@1.75",
+     "p99_mm": 2.36,
+     "frac_through": 0.01195
+    },
+    "visible_body_worst_mm": 49.85
+   },
+   "body>shirt": {
+    "probe_vertices": 1264,
+    "dropped_other_bones": 168,
+    "none": {
+     "worst_mm": 43.38,
+     "worst_pose": "sekiro/Zombie Death Backwards@1.50",
+     "p99_mm": 5.92,
+     "frac_through": 0.01359
+    },
+    "none+exag1.3": {
+     "worst_mm": 42.27,
+     "worst_pose": "sekiro/Thrust Slash@3.03",
+     "p99_mm": 8.4,
+     "frac_through": 0.01683
+    },
+    "bulk+heavy": {
+     "worst_mm": 44.18,
+     "worst_pose": "ual2/Shield_OneShot@0.21",
+     "p99_mm": 16.81,
+     "frac_through": 0.02452
+    },
+    "slim": {
+     "worst_mm": 42.7,
+     "worst_pose": "sekiro/Magic Action Small Projectile@1.75",
+     "p99_mm": 1.66,
+     "frac_through": 0.01085
+    },
+    "visible_body_worst_mm": 33.54
+   },
+   "body>trousers": {
+    "probe_vertices": 1470,
+    "dropped_other_bones": 77,
+    "none": {
+     "worst_mm": 16.84,
+     "worst_pose": "ual1/Push_Loop@1.33",
+     "p99_mm": -2.29,
+     "frac_through": 0.00496
+    },
+    "none+exag1.3": {
+     "worst_mm": 18.0,
+     "worst_pose": "sekiro/Run-Right@0.55",
+     "p99_mm": -0.96,
+     "frac_through": 0.00796
+    },
+    "bulk+heavy": {
+     "worst_mm": 56.77,
+     "worst_pose": "sekiro/Magic Walk Backwards@0.31",
+     "p99_mm": 3.17,
+     "frac_through": 0.01342
+    },
+    "slim": {
+     "worst_mm": 14.76,
+     "worst_pose": "sekiro/Magic Walk Forwards@0.87",
+     "p99_mm": -2.61,
+     "frac_through": 0.00475
+    },
+    "visible_body_worst_mm": 15.62
+   },
+   "body>boots": {
+    "probe_vertices": 1168,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 17.26,
+     "worst_pose": "ual1/Roll@0.00",
+     "p99_mm": -5.94,
+     "frac_through": 0.00033
+    },
+    "none+exag1.3": {
+     "worst_mm": 17.2,
+     "worst_pose": "ual1/Jump_Land@0.32",
+     "p99_mm": -5.94,
+     "frac_through": 0.0009
+    },
+    "bulk+heavy": {
+     "worst_mm": 17.2,
+     "worst_pose": "ual2/Melee_Hook@0.35",
+     "p99_mm": -5.94,
+     "frac_through": 0.00051
+    },
+    "slim": {
+     "worst_mm": 17.03,
+     "worst_pose": "ual1/Roll_RM@0.00",
+     "p99_mm": -5.94,
+     "frac_through": 0.00032
+    },
+    "visible_body_worst_mm": -19.97
+   },
+   "body>shoes": {
+    "probe_vertices": 879,
+    "dropped_other_bones": 18,
+    "none": {
+     "worst_mm": 14.33,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -5.61,
+     "frac_through": 0.00022
+    },
+    "none+exag1.3": {
+     "worst_mm": 12.93,
+     "worst_pose": "ual2/Sword_Regular_B@0.27",
+     "p99_mm": -5.01,
+     "frac_through": 0.00057
+    },
+    "bulk+heavy": {
+     "worst_mm": 13.66,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -5.3,
+     "frac_through": 0.00023
+    },
+    "slim": {
+     "worst_mm": 14.13,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -5.62,
+     "frac_through": 0.00021
+    },
+    "visible_body_worst_mm": 14.33
+   },
+   "body>gloves": {
+    "probe_vertices": 721,
+    "dropped_other_bones": 366,
+    "none": {
+     "worst_mm": 25.61,
+     "worst_pose": "sekiro/Zombie Smash@1.17",
+     "p99_mm": 6.37,
+     "frac_through": 0.02315
+    },
+    "none+exag1.3": {
+     "worst_mm": 26.02,
+     "worst_pose": "sekiro/Zombie Smash@1.17",
+     "p99_mm": 7.72,
+     "frac_through": 0.02582
+    },
+    "bulk+heavy": {
+     "worst_mm": 25.48,
+     "worst_pose": "ual1/Hit_Chest@0.25",
+     "p99_mm": 7.95,
+     "frac_through": 0.02712
+    },
+    "slim": {
+     "worst_mm": 25.43,
+     "worst_pose": "ual1/Hit_Chest@0.25",
+     "p99_mm": 6.37,
+     "frac_through": 0.02317
+    },
+    "visible_body_worst_mm": 26.02
+   },
+   "trousers>tunic": {
+    "probe_vertices": 534,
+    "dropped_other_bones": 5,
+    "none": {
+     "worst_mm": 34.9,
+     "worst_pose": "sekiro/Inward Slash@1.05",
+     "p99_mm": -4.48,
+     "frac_through": 0.00234
+    },
+    "none+exag1.3": {
+     "worst_mm": 32.84,
+     "worst_pose": "sekiro/Run-Left@0.55",
+     "p99_mm": -3.25,
+     "frac_through": 0.00497
+    },
+    "bulk+heavy": {
+     "worst_mm": 40.98,
+     "worst_pose": "sekiro/Magic Walk Forwards@0.00",
+     "p99_mm": 5.42,
+     "frac_through": 0.0133
+    },
+    "slim": {
+     "worst_mm": 27.8,
+     "worst_pose": "sekiro/Outward Slash@0.62",
+     "p99_mm": -4.7,
+     "frac_through": 0.00172
+    }
+   },
+   "trousers>shirt": {
+    "probe_vertices": 495,
+    "dropped_other_bones": 5,
+    "none": {
+     "worst_mm": 11.7,
+     "worst_pose": "ual2/Slide_Loop@1.50",
+     "p99_mm": -3.79,
+     "frac_through": 0.00098
+    },
+    "none+exag1.3": {
+     "worst_mm": 16.52,
+     "worst_pose": "ual1/Roll_RM@0.73",
+     "p99_mm": -3.33,
+     "frac_through": 0.00263
+    },
+    "bulk+heavy": {
+     "worst_mm": 21.15,
+     "worst_pose": "sekiro/Falling Idle@0.55",
+     "p99_mm": -1.54,
+     "frac_through": 0.00755
+    },
+    "slim": {
+     "worst_mm": 10.26,
+     "worst_pose": "ual1/Jump_Start@0.00",
+     "p99_mm": -3.82,
+     "frac_through": 0.00069
+    }
+   },
+   "trousers>boots": {
+    "probe_vertices": 891,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 6.25,
+     "worst_pose": "sekiro/Magic Action Energy Beam@1.68",
+     "p99_mm": -3.36,
+     "frac_through": 0.00024
+    },
+    "none+exag1.3": {
+     "worst_mm": 7.51,
+     "worst_pose": "ual2/Sword_Regular_B@0.27",
+     "p99_mm": -3.33,
+     "frac_through": 0.00064
+    },
+    "bulk+heavy": {
+     "worst_mm": 6.65,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -3.44,
+     "frac_through": 0.00041
+    },
+    "slim": {
+     "worst_mm": 5.87,
+     "worst_pose": "ual1/Sword_Attack_RM@0.38",
+     "p99_mm": -3.35,
+     "frac_through": 0.00023
+    }
+   },
+   "trousers>shoes": {
+    "probe_vertices": 607,
+    "dropped_other_bones": 16,
+    "none": {
+     "worst_mm": 5.33,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -3.25,
+     "frac_through": 2e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 5.32,
+     "worst_pose": "ual2/Sword_Regular_A@0.33",
+     "p99_mm": -3.23,
+     "frac_through": 0.00022
+    },
+    "bulk+heavy": {
+     "worst_mm": 4.9,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -3.08,
+     "frac_through": 6e-05
+    },
+    "slim": {
+     "worst_mm": 5.74,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -3.31,
+     "frac_through": 3e-05
+    }
+   },
+   "trousers>belt": {
+    "probe_vertices": 442,
+    "dropped_other_bones": 7,
+    "none": {
+     "worst_mm": 15.8,
+     "worst_pose": "sekiro/Zombie Death Forwards@2.52",
+     "p99_mm": -13.89,
+     "frac_through": 2e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 14.36,
+     "worst_pose": "sekiro/Zombie Death Forwards@2.52",
+     "p99_mm": -12.91,
+     "frac_through": 0.00011
+    },
+    "bulk+heavy": {
+     "worst_mm": 27.18,
+     "worst_pose": "sekiro/Falling Idle@0.00",
+     "p99_mm": -7.93,
+     "frac_through": 0.00169
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -13.91,
+     "frac_through": 0.0
+    }
+   },
+   "gloves>tunic": {
+    "probe_vertices": 396,
+    "dropped_other_bones": 136,
+    "none": {
+     "worst_mm": 5.3,
+     "worst_pose": "ual1/Push_Loop@0.00",
+     "p99_mm": -8.05,
+     "frac_through": 2e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 7.31,
+     "worst_pose": "sekiro/Zombie Death Forwards@2.52",
+     "p99_mm": -8.0,
+     "frac_through": 9e-05
+    },
+    "bulk+heavy": {
+     "worst_mm": 8.02,
+     "worst_pose": "ual1/Push_Loop@2.67",
+     "p99_mm": -8.24,
+     "frac_through": 5e-05
+    },
+    "slim": {
+     "worst_mm": 4.11,
+     "worst_pose": "ual1/Push_Loop@2.67",
+     "p99_mm": -7.93,
+     "frac_through": 2e-05
+    }
+   },
+   "tunic>belt": {
+    "probe_vertices": 197,
+    "dropped_other_bones": 5,
+    "none": {
+     "worst_mm": 10.33,
+     "worst_pose": "sekiro/Zombie Death Forwards@2.52",
+     "p99_mm": -5.03,
+     "frac_through": 0.00012
+    },
+    "none+exag1.3": {
+     "worst_mm": 9.49,
+     "worst_pose": "sekiro/Zombie Death Forwards@2.52",
+     "p99_mm": -4.66,
+     "frac_through": 0.00047
+    },
+    "bulk+heavy": {
+     "worst_mm": 16.05,
+     "worst_pose": "sekiro/Falling Idle@0.00",
+     "p99_mm": -2.74,
+     "frac_through": 0.00326
+    },
+    "slim": {
+     "worst_mm": 1.35,
+     "worst_pose": "ual2/Sword_Regular_A_Rec@0.00",
+     "p99_mm": -4.84,
+     "frac_through": 4e-05
+    }
+   },
+   "shirt>belt": {
+    "probe_vertices": 489,
+    "dropped_other_bones": 61,
+    "none": {
+     "worst_mm": 13.23,
+     "worst_pose": "sekiro/Death@3.93",
+     "p99_mm": 1.54,
+     "frac_through": 0.02451
+    },
+    "none+exag1.3": {
+     "worst_mm": 13.86,
+     "worst_pose": "sekiro/Magic Walk Forwards@1.17",
+     "p99_mm": 2.44,
+     "frac_through": 0.03737
+    },
+    "bulk+heavy": {
+     "worst_mm": 19.87,
+     "worst_pose": "sekiro/Falling Idle@0.00",
+     "p99_mm": 1.22,
+     "frac_through": 0.01664
+    },
+    "slim": {
+     "worst_mm": 11.78,
+     "worst_pose": "ual1/Jump_Start@1.00",
+     "p99_mm": 1.99,
+     "frac_through": 0.03297
+    }
+   },
+   "tunic>baldric": {
+    "probe_vertices": 299,
+    "dropped_other_bones": 57,
+    "none": {
+     "worst_mm": 30.66,
+     "worst_pose": "ual2/Melee_Hook@0.12",
+     "p99_mm": 0.94,
+     "frac_through": 0.03052
+    },
+    "none+exag1.3": {
+     "worst_mm": 34.8,
+     "worst_pose": "ual2/Melee_Hook@0.23",
+     "p99_mm": 1.33,
+     "frac_through": 0.03145
+    },
+    "bulk+heavy": {
+     "worst_mm": 25.88,
+     "worst_pose": "ual2/NinjaJump_Idle_Loop@1.00",
+     "p99_mm": 1.39,
+     "frac_through": 0.03144
+    },
+    "slim": {
+     "worst_mm": 12.52,
+     "worst_pose": "sekiro/Magic Death Forwards@3.70",
+     "p99_mm": 1.23,
+     "frac_through": 0.03079
+    }
+   },
+   "shirt>baldric": {
+    "probe_vertices": 273,
+    "dropped_other_bones": 72,
+    "none": {
+     "worst_mm": 30.89,
+     "worst_pose": "ual2/Melee_Hook@0.12",
+     "p99_mm": 0.87,
+     "frac_through": 0.03836
+    },
+    "none+exag1.3": {
+     "worst_mm": 34.96,
+     "worst_pose": "ual2/Melee_Hook@0.23",
+     "p99_mm": 0.88,
+     "frac_through": 0.03621
+    },
+    "bulk+heavy": {
+     "worst_mm": 26.5,
+     "worst_pose": "ual2/NinjaJump_Idle_Loop@1.00",
+     "p99_mm": 1.51,
+     "frac_through": 0.04573
+    },
+    "slim": {
+     "worst_mm": 11.73,
+     "worst_pose": "sekiro/Magic Death Forwards@3.70",
+     "p99_mm": 0.84,
+     "frac_through": 0.03728
+    }
+   },
+   "baldric>belt": {
+    "probe_vertices": 225,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -7.45,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -7.02,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -6.49,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -7.39,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<tunic": {
+    "probe_vertices": 148,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 10.17,
+     "worst_pose": "sekiro/Magic Action Energy Beam@1.68",
+     "p99_mm": -10.58,
+     "frac_through": 0.00021
+    },
+    "none+exag1.3": {
+     "worst_mm": 20.57,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -9.85,
+     "frac_through": 0.00082
+    },
+    "bulk+heavy": {
+     "worst_mm": 10.52,
+     "worst_pose": "sekiro/Magic Death Backwards@1.83",
+     "p99_mm": 2.6,
+     "frac_through": 0.07184
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -14.56,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<shirt": {
+    "probe_vertices": 148,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 9.11,
+     "worst_pose": "sekiro/Magic Action Energy Beam@1.68",
+     "p99_mm": -11.76,
+     "frac_through": 0.00017
+    },
+    "none+exag1.3": {
+     "worst_mm": 19.6,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -10.96,
+     "frac_through": 0.00053
+    },
+    "bulk+heavy": {
+     "worst_mm": 9.38,
+     "worst_pose": "sekiro/Magic Death Backwards@1.83",
+     "p99_mm": 1.48,
+     "frac_through": 0.04921
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -15.74,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<body": {
+    "probe_vertices": 474,
+    "dropped_other_bones": 8,
+    "none": {
+     "worst_mm": 42.58,
+     "worst_pose": "sekiro/Magic Death Forwards@1.85",
+     "p99_mm": -22.02,
+     "frac_through": 0.00048
+    },
+    "none+exag1.3": {
+     "worst_mm": 44.08,
+     "worst_pose": "sekiro/Magic Action Small Projectile@0.58",
+     "p99_mm": -19.27,
+     "frac_through": 0.00248
+    },
+    "bulk+heavy": {
+     "worst_mm": 17.95,
+     "worst_pose": "ual1/Death01@1.80",
+     "p99_mm": -9.71,
+     "frac_through": 0.00059
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -26.17,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<tunic": {
+    "probe_vertices": 24,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -22.74,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 6.15,
+     "worst_pose": "sekiro/Zombie Smack Left@1.93",
+     "p99_mm": -18.2,
+     "frac_through": 0.00047
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -12.36,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -28.07,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<shirt": {
+    "probe_vertices": 24,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -22.83,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 6.06,
+     "worst_pose": "sekiro/Zombie Smack Left@1.93",
+     "p99_mm": -18.28,
+     "frac_through": 0.00047
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -12.45,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -28.15,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<body": {
+    "probe_vertices": 56,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -26.48,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -25.21,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -20.29,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -27.97,
+     "frac_through": 0.0
+    }
+   }
+  },
+  "female": {
+   "body>tunic": {
+    "probe_vertices": 1959,
+    "dropped_other_bones": 259,
+    "none": {
+     "worst_mm": 31.42,
+     "worst_pose": "sekiro/Sitting Idle@2.72",
+     "p99_mm": 3.23,
+     "frac_through": 0.01371
+    },
+    "none+exag1.3": {
+     "worst_mm": 44.76,
+     "worst_pose": "sekiro/Magic Action Small Projectile@1.17",
+     "p99_mm": 7.62,
+     "frac_through": 0.02164
+    },
+    "bulk+heavy": {
+     "worst_mm": 62.99,
+     "worst_pose": "ual1/Hit_Head@0.11",
+     "p99_mm": 20.67,
+     "frac_through": 0.06075
+    },
+    "slim": {
+     "worst_mm": 56.96,
+     "worst_pose": "sekiro/Sitting Idle@5.45",
+     "p99_mm": -0.9,
+     "frac_through": 0.00923
+    },
+    "visible_body_worst_mm": 62.99
+   },
+   "body>shirt": {
+    "probe_vertices": 1491,
+    "dropped_other_bones": 123,
+    "none": {
+     "worst_mm": 25.3,
+     "worst_pose": "sekiro/Zombie Walk@3.05",
+     "p99_mm": 4.25,
+     "frac_through": 0.01614
+    },
+    "none+exag1.3": {
+     "worst_mm": 26.74,
+     "worst_pose": "ual1/Roll_RM@0.73",
+     "p99_mm": 8.47,
+     "frac_through": 0.02528
+    },
+    "bulk+heavy": {
+     "worst_mm": 30.92,
+     "worst_pose": "sekiro/Standing Up@1.52",
+     "p99_mm": 20.43,
+     "frac_through": 0.09042
+    },
+    "slim": {
+     "worst_mm": 25.44,
+     "worst_pose": "sekiro/Jump@1.10",
+     "p99_mm": -0.22,
+     "frac_through": 0.00971
+    },
+    "visible_body_worst_mm": 30.92
+   },
+   "body>trousers": {
+    "probe_vertices": 1489,
+    "dropped_other_bones": 56,
+    "none": {
+     "worst_mm": 26.25,
+     "worst_pose": "ual2/Sword_Regular_C@1.00",
+     "p99_mm": -1.93,
+     "frac_through": 0.00692
+    },
+    "none+exag1.3": {
+     "worst_mm": 41.1,
+     "worst_pose": "ual2/Sword_Regular_C@1.00",
+     "p99_mm": 0.61,
+     "frac_through": 0.01117
+    },
+    "bulk+heavy": {
+     "worst_mm": 42.3,
+     "worst_pose": "sekiro/Jog Strafe Right@0.57",
+     "p99_mm": 6.25,
+     "frac_through": 0.02196
+    },
+    "slim": {
+     "worst_mm": 21.91,
+     "worst_pose": "ual2/ClimbUp_1m@0.50",
+     "p99_mm": 0.01,
+     "frac_through": 0.01001
+    },
+    "visible_body_worst_mm": 9.64
+   },
+   "body>boots": {
+    "probe_vertices": 1114,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 17.17,
+     "worst_pose": "ual1/Push_Loop@0.67",
+     "p99_mm": -3.14,
+     "frac_through": 0.00069
+    },
+    "none+exag1.3": {
+     "worst_mm": 17.39,
+     "worst_pose": "sekiro/Magic Walk Left@0.90",
+     "p99_mm": -3.14,
+     "frac_through": 0.00136
+    },
+    "bulk+heavy": {
+     "worst_mm": 16.65,
+     "worst_pose": "ual1/Push_Loop@0.67",
+     "p99_mm": -3.14,
+     "frac_through": 0.00108
+    },
+    "slim": {
+     "worst_mm": 17.28,
+     "worst_pose": "sekiro/Magic Walk Right@0.31",
+     "p99_mm": -3.13,
+     "frac_through": 0.00064
+    },
+    "visible_body_worst_mm": -23.29
+   },
+   "body>shoes": {
+    "probe_vertices": 852,
+    "dropped_other_bones": 28,
+    "none": {
+     "worst_mm": 14.06,
+     "worst_pose": "sekiro/Kneel to Stand@0.82",
+     "p99_mm": -3.13,
+     "frac_through": 0.00036
+    },
+    "none+exag1.3": {
+     "worst_mm": 14.34,
+     "worst_pose": "sekiro/Kneel Idle@0.90",
+     "p99_mm": -3.03,
+     "frac_through": 0.00073
+    },
+    "bulk+heavy": {
+     "worst_mm": 13.71,
+     "worst_pose": "sekiro/Kneel Idle@0.67",
+     "p99_mm": -3.11,
+     "frac_through": 0.00039
+    },
+    "slim": {
+     "worst_mm": 14.13,
+     "worst_pose": "ual1/Sword_Attack_RM@0.38",
+     "p99_mm": -3.12,
+     "frac_through": 0.00036
+    },
+    "visible_body_worst_mm": 14.13
+   },
+   "body>gloves": {
+    "probe_vertices": 660,
+    "dropped_other_bones": 283,
+    "none": {
+     "worst_mm": 20.68,
+     "worst_pose": "sekiro/Finisher on Kneeling Victim@1.24",
+     "p99_mm": -1.29,
+     "frac_through": 0.00773
+    },
+    "none+exag1.3": {
+     "worst_mm": 24.89,
+     "worst_pose": "sekiro/Zombie Death Forwards@0.84",
+     "p99_mm": -0.42,
+     "frac_through": 0.00916
+    },
+    "bulk+heavy": {
+     "worst_mm": 27.16,
+     "worst_pose": "sekiro/Finisher on Kneeling Victim@1.24",
+     "p99_mm": -0.74,
+     "frac_through": 0.00839
+    },
+    "slim": {
+     "worst_mm": 20.6,
+     "worst_pose": "sekiro/Finisher on Kneeling Victim@1.24",
+     "p99_mm": -1.32,
+     "frac_through": 0.00773
+    },
+    "visible_body_worst_mm": 27.16
+   },
+   "trousers>tunic": {
+    "probe_vertices": 497,
+    "dropped_other_bones": 18,
+    "none": {
+     "worst_mm": 31.34,
+     "worst_pose": "sekiro/Run-Forwards@0.55",
+     "p99_mm": 0.34,
+     "frac_through": 0.01066
+    },
+    "none+exag1.3": {
+     "worst_mm": 38.8,
+     "worst_pose": "ual2/Melee_Hook@0.35",
+     "p99_mm": 2.72,
+     "frac_through": 0.01639
+    },
+    "bulk+heavy": {
+     "worst_mm": 40.63,
+     "worst_pose": "ual2/Melee_Hook@0.35",
+     "p99_mm": 12.78,
+     "frac_through": 0.04993
+    },
+    "slim": {
+     "worst_mm": 41.28,
+     "worst_pose": "ual2/Shield_Dash@0.00",
+     "p99_mm": -0.14,
+     "frac_through": 0.00979
+    }
+   },
+   "trousers>shirt": {
+    "probe_vertices": 464,
+    "dropped_other_bones": 21,
+    "none": {
+     "worst_mm": 16.09,
+     "worst_pose": "ual1/Roll_RM@0.73",
+     "p99_mm": -0.47,
+     "frac_through": 0.00909
+    },
+    "none+exag1.3": {
+     "worst_mm": 19.24,
+     "worst_pose": "ual1/Roll_RM@0.73",
+     "p99_mm": 1.67,
+     "frac_through": 0.01428
+    },
+    "bulk+heavy": {
+     "worst_mm": 17.28,
+     "worst_pose": "sekiro/Standing Up@1.52",
+     "p99_mm": 8.4,
+     "frac_through": 0.05278
+    },
+    "slim": {
+     "worst_mm": 15.94,
+     "worst_pose": "ual1/Roll@0.73",
+     "p99_mm": -2.43,
+     "frac_through": 0.0056
+    }
+   },
+   "trousers>boots": {
+    "probe_vertices": 850,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 6.57,
+     "worst_pose": "ual2/Melee_Hook@0.12",
+     "p99_mm": -3.95,
+     "frac_through": 0.00055
+    },
+    "none+exag1.3": {
+     "worst_mm": 6.58,
+     "worst_pose": "ual1/Push_Loop@0.67",
+     "p99_mm": -3.92,
+     "frac_through": 0.00101
+    },
+    "bulk+heavy": {
+     "worst_mm": 6.55,
+     "worst_pose": "ual2/Sword_Regular_A@0.22",
+     "p99_mm": -4.01,
+     "frac_through": 0.00095
+    },
+    "slim": {
+     "worst_mm": 6.56,
+     "worst_pose": "ual2/Sword_Regular_C@0.00",
+     "p99_mm": -3.92,
+     "frac_through": 0.00048
+    }
+   },
+   "trousers>shoes": {
+    "probe_vertices": 594,
+    "dropped_other_bones": 17,
+    "none": {
+     "worst_mm": 3.77,
+     "worst_pose": "ual2/Sword_Regular_C@0.00",
+     "p99_mm": -3.89,
+     "frac_through": 4e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 5.59,
+     "worst_pose": "ual1/Jump_Start@0.00",
+     "p99_mm": -3.86,
+     "frac_through": 0.00019
+    },
+    "bulk+heavy": {
+     "worst_mm": 3.86,
+     "worst_pose": "ual1/Jump_Land@0.32",
+     "p99_mm": -3.96,
+     "frac_through": 8e-05
+    },
+    "slim": {
+     "worst_mm": 3.68,
+     "worst_pose": "ual2/Sword_Regular_A@0.22",
+     "p99_mm": -3.85,
+     "frac_through": 4e-05
+    }
+   },
+   "trousers>belt": {
+    "probe_vertices": 418,
+    "dropped_other_bones": 10,
+    "none": {
+     "worst_mm": 31.32,
+     "worst_pose": "sekiro/Kneel Idle@0.22",
+     "p99_mm": -2.2,
+     "frac_through": 0.00725
+    },
+    "none+exag1.3": {
+     "worst_mm": 30.4,
+     "worst_pose": "ual2/Farm_Watering@2.85",
+     "p99_mm": -0.41,
+     "frac_through": 0.00952
+    },
+    "bulk+heavy": {
+     "worst_mm": 39.21,
+     "worst_pose": "sekiro/Finisher on Kneeling Victim@1.24",
+     "p99_mm": 15.88,
+     "frac_through": 0.04401
+    },
+    "slim": {
+     "worst_mm": 29.89,
+     "worst_pose": "ual1/Sitting_Enter@0.32",
+     "p99_mm": -5.82,
+     "frac_through": 0.00447
+    }
+   },
+   "gloves>tunic": {
+    "probe_vertices": 422,
+    "dropped_other_bones": 108,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -9.84,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -9.84,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -9.98,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -9.77,
+     "frac_through": 0.0
+    }
+   },
+   "tunic>belt": {
+    "probe_vertices": 178,
+    "dropped_other_bones": 33,
+    "none": {
+     "worst_mm": 23.85,
+     "worst_pose": "ual1/PickUp_Table@0.21",
+     "p99_mm": 3.57,
+     "frac_through": 0.01852
+    },
+    "none+exag1.3": {
+     "worst_mm": 23.51,
+     "worst_pose": "ual1/Dance_Loop@0.25",
+     "p99_mm": 4.31,
+     "frac_through": 0.02216
+    },
+    "bulk+heavy": {
+     "worst_mm": 29.99,
+     "worst_pose": "sekiro/Magic Walk Right@0.31",
+     "p99_mm": 12.06,
+     "frac_through": 0.07972
+    },
+    "slim": {
+     "worst_mm": 22.95,
+     "worst_pose": "ual1/Sitting_Enter@0.32",
+     "p99_mm": -0.26,
+     "frac_through": 0.00943
+    }
+   },
+   "shirt>belt": {
+    "probe_vertices": 326,
+    "dropped_other_bones": 181,
+    "none": {
+     "worst_mm": 13.02,
+     "worst_pose": "ual2/Sword_Regular_A@0.33",
+     "p99_mm": 0.31,
+     "frac_through": 0.01072
+    },
+    "none+exag1.3": {
+     "worst_mm": 13.59,
+     "worst_pose": "sekiro/Magic Walk Forwards@1.17",
+     "p99_mm": 0.98,
+     "frac_through": 0.01288
+    },
+    "bulk+heavy": {
+     "worst_mm": 17.13,
+     "worst_pose": "sekiro/Hit Reaction From Behind@0.00",
+     "p99_mm": 9.18,
+     "frac_through": 0.04276
+    },
+    "slim": {
+     "worst_mm": 10.92,
+     "worst_pose": "sekiro/Finisher on Kneeling Victim@1.24",
+     "p99_mm": -0.67,
+     "frac_through": 0.00819
+    }
+   },
+   "tunic>baldric": {
+    "probe_vertices": 287,
+    "dropped_other_bones": 71,
+    "none": {
+     "worst_mm": 13.47,
+     "worst_pose": "ual1/Fixing_Kneeling@3.90",
+     "p99_mm": 0.82,
+     "frac_through": 0.03771
+    },
+    "none+exag1.3": {
+     "worst_mm": 16.5,
+     "worst_pose": "ual2/OverhandThrow@0.33",
+     "p99_mm": 0.9,
+     "frac_through": 0.04402
+    },
+    "bulk+heavy": {
+     "worst_mm": 21.07,
+     "worst_pose": "sekiro/Magic Death Backwards@1.83",
+     "p99_mm": 11.5,
+     "frac_through": 0.07746
+    },
+    "slim": {
+     "worst_mm": 9.39,
+     "worst_pose": "sekiro/Zombie Death Backwards@2.25",
+     "p99_mm": 0.88,
+     "frac_through": 0.04608
+    }
+   },
+   "shirt>baldric": {
+    "probe_vertices": 272,
+    "dropped_other_bones": 40,
+    "none": {
+     "worst_mm": 14.28,
+     "worst_pose": "ual1/Fixing_Kneeling@3.90",
+     "p99_mm": 0.7,
+     "frac_through": 0.01742
+    },
+    "none+exag1.3": {
+     "worst_mm": 15.84,
+     "worst_pose": "ual2/OverhandThrow@0.33",
+     "p99_mm": 1.39,
+     "frac_through": 0.02258
+    },
+    "bulk+heavy": {
+     "worst_mm": 21.65,
+     "worst_pose": "sekiro/Thrust Slash@2.27",
+     "p99_mm": 7.36,
+     "frac_through": 0.04067
+    },
+    "slim": {
+     "worst_mm": 9.97,
+     "worst_pose": "ual2/Sword_Regular_C@0.00",
+     "p99_mm": 1.01,
+     "frac_through": 0.02063
+    }
+   },
+   "baldric>belt": {
+    "probe_vertices": 129,
+    "dropped_other_bones": 27,
+    "none": {
+     "worst_mm": 5.87,
+     "worst_pose": "sekiro/Death@0.98",
+     "p99_mm": -2.05,
+     "frac_through": 0.00235
+    },
+    "none+exag1.3": {
+     "worst_mm": 7.5,
+     "worst_pose": "sekiro/Death@0.98",
+     "p99_mm": -2.5,
+     "frac_through": 0.00238
+    },
+    "bulk+heavy": {
+     "worst_mm": 5.85,
+     "worst_pose": "sekiro/Magic Walk Forwards@0.00",
+     "p99_mm": 0.38,
+     "frac_through": 0.012
+    },
+    "slim": {
+     "worst_mm": 3.45,
+     "worst_pose": "sekiro/Death@1.97",
+     "p99_mm": -1.54,
+     "frac_through": 0.00363
+    }
+   },
+   "hair_buzzed<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_parted<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buzzed_f<body": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<tunic": {
+    "probe_vertices": 162,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.17,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -13.93,
+     "frac_through": 3e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 7.42,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -13.24,
+     "frac_through": 0.00028
+    },
+    "bulk+heavy": {
+     "worst_mm": 10.55,
+     "worst_pose": "sekiro/Hit Reaction From Front@0.40",
+     "p99_mm": 6.87,
+     "frac_through": 0.01719
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -20.54,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<shirt": {
+    "probe_vertices": 162,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -15.35,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 6.66,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -14.54,
+     "frac_through": 0.00024
+    },
+    "bulk+heavy": {
+     "worst_mm": 9.19,
+     "worst_pose": "sekiro/Hit Reaction From Front@0.40",
+     "p99_mm": 5.42,
+     "frac_through": 0.01542
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -21.96,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<baldric": {
+    "probe_vertices": 28,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 1.92,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -17.08,
+     "frac_through": 0.0004
+    },
+    "none+exag1.3": {
+     "worst_mm": 9.38,
+     "worst_pose": "sekiro/Magic Action Energy Beam@2.52",
+     "p99_mm": -14.42,
+     "frac_through": 0.00161
+    },
+    "bulk+heavy": {
+     "worst_mm": 4.32,
+     "worst_pose": "ual1/Death01@1.80",
+     "p99_mm": -3.06,
+     "frac_through": 0.00332
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -23.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_long<body": {
+    "probe_vertices": 160,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 1.85,
+     "worst_pose": "sekiro/Magic Death Forwards@1.85",
+     "p99_mm": -32.5,
+     "frac_through": 2e-05
+    },
+    "none+exag1.3": {
+     "worst_mm": 47.12,
+     "worst_pose": "ual1/Pistol_Reload@0.42",
+     "p99_mm": -29.46,
+     "frac_through": 0.00016
+    },
+    "bulk+heavy": {
+     "worst_mm": 24.34,
+     "worst_pose": "ual1/Death01@1.80",
+     "p99_mm": -13.89,
+     "frac_through": 0.00105
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -37.82,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<tunic": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<shirt": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<baldric": {
+    "probe_vertices": 0,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": 0.0,
+     "frac_through": 0.0
+    }
+   },
+   "hair_buns<body": {
+    "probe_vertices": 14,
+    "dropped_other_bones": 0,
+    "none": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -36.37,
+     "frac_through": 0.0
+    },
+    "none+exag1.3": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -35.41,
+     "frac_through": 0.0
+    },
+    "bulk+heavy": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -32.51,
+     "frac_through": 0.0
+    },
+    "slim": {
+     "worst_mm": 0.0,
+     "worst_pose": "",
+     "p99_mm": -37.48,
+     "frac_through": 0.0
+    }
+   }
+  }
+ },
+ "static_worst": {
+  "ibm": 0.0,
+  "trs": 0.0,
+  "wsum": 4.842877388000488e-08
+ },
+ "clips": {
+  "ual1": 45,
+  "ual2": 43,
+  "sekiro": 57
+ },
+ "frames": 710
+}

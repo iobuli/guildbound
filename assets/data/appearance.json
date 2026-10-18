@@ -1,0 +1,89 @@
+{
+  "_doc": "Character looks (play/appearance.rs). A look picks a base body (male | female) and fills slots with parts from assets/characters/hero/<base>/<part>.glb, built by tools/model/build.py on ual2's skeleton. Colours are sRGB [r, g, b] or a name from `palette`. shape: morph weights 0..1 (bulk = muscle, heavy = belly and soft weight, slim = leaner, jaw = stronger jaw). eyes: a colour with a texture assets/characters/hero/tex/eye_<colour>.png. GB_LOOK=<look> picks the player's look; GB_HERO=mannequin restores the yellow mannequin, GB_HERO=styled loads assets/anim/hero_styled.glb (the wanderer baked into one file).",
+  "player": "wanderer",
+  "slots": {
+    "hair": ["hair_parted", "hair_buzzed", "hair_buzzed_f", "hair_long", "hair_buns"],
+    "brows": ["brows_regular", "brows_soft"],
+    "beard": ["beard"],
+    "top": ["tunic", "shirt"],
+    "legs": ["trousers"],
+    "feet": ["boots", "shoes"],
+    "hands": ["gloves"],
+    "belt": ["belt"],
+    "strap": ["baldric"],
+    "eyes": ["brown", "blue", "green", "grey", "hazel", "amber"],
+    "_note": "beard exists for the male base only. Every hair and brow style is fitted to both bases."
+  },
+  "palette": {
+    "skin_fair": [0.93, 0.76, 0.64],
+    "skin_light": [0.86, 0.66, 0.52],
+    "skin_olive": [0.76, 0.57, 0.42],
+    "skin_brown": [0.58, 0.40, 0.28],
+    "skin_deep": [0.38, 0.25, 0.18],
+    "hair_black": [0.08, 0.07, 0.07],
+    "hair_brown": [0.30, 0.20, 0.12],
+    "hair_chestnut": [0.45, 0.24, 0.12],
+    "hair_auburn": [0.58, 0.26, 0.14],
+    "hair_blond": [0.86, 0.70, 0.42],
+    "hair_grey": [0.62, 0.62, 0.60],
+    "madder": [0.56, 0.17, 0.14],
+    "moss": [0.30, 0.40, 0.22],
+    "woad": [0.22, 0.32, 0.46],
+    "linen": [0.86, 0.80, 0.66],
+    "ochre": [0.72, 0.52, 0.22],
+    "umber": [0.33, 0.26, 0.19],
+    "charcoal": [0.20, 0.20, 0.21],
+    "leather": [0.45, 0.31, 0.19],
+    "dark_leather": [0.26, 0.17, 0.11]
+  },
+  "looks": {
+    "wanderer": {
+      "base": "male",
+      "skin": "skin_light",
+      "eyes": "brown",
+      "hair": "hair_parted",
+      "hair_color": "hair_brown",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": { "bulk": 0.0, "heavy": 0.0, "slim": 0.0, "jaw": 0.3 },
+      "outfit": ["tunic", "trousers", "boots", "gloves", "belt", "baldric"],
+      "colors": { "tunic": "madder", "trousers": "umber", "boots": "dark_leather", "gloves": "leather", "belt": "dark_leather", "baldric": "dark_leather" }
+    },
+    "ranger": {
+      "base": "female",
+      "skin": "skin_olive",
+      "eyes": "green",
+      "hair": "hair_long",
+      "hair_color": "hair_auburn",
+      "brows": "brows_soft",
+      "beard": "",
+      "shape": { "bulk": 0.2, "heavy": 0.0, "slim": 0.3, "jaw": 0.0 },
+      "outfit": ["tunic", "trousers", "boots", "gloves", "belt", "baldric"],
+      "colors": { "tunic": "moss", "trousers": "umber", "boots": "dark_leather", "gloves": "leather", "belt": "dark_leather", "baldric": "leather" }
+    },
+    "villager": {
+      "base": "female",
+      "skin": "skin_brown",
+      "eyes": "brown",
+      "hair": "hair_buns",
+      "hair_color": "hair_black",
+      "brows": "brows_soft",
+      "beard": "",
+      "shape": { "bulk": 0.0, "heavy": 0.4, "slim": 0.0, "jaw": 0.0 },
+      "outfit": ["shirt", "trousers", "shoes", "belt"],
+      "colors": { "shirt": "linen", "trousers": "woad", "shoes": "leather", "belt": "leather" }
+    },
+    "smith": {
+      "base": "male",
+      "skin": "skin_deep",
+      "eyes": "hazel",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": { "bulk": 0.8, "heavy": 0.5, "slim": 0.0, "jaw": 0.6 },
+      "outfit": ["shirt", "trousers", "boots", "belt"],
+      "colors": { "shirt": "ochre", "trousers": "charcoal", "boots": "dark_leather", "belt": "leather" }
+    }
+  }
+}

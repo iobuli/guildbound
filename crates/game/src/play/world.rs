@@ -21,7 +21,7 @@
 //!
 //! Smoke-test env vars: `GB_AUTOQUIT=<seconds>` sends `AppExit` after that much real time (waits
 //! up to 5 s more for a pending screenshot); `GB_SCREENSHOT=<path>` saves the primary window at
-//! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg` moves the player there. `GB_CAST=<ids>` makes the player cast those
+//! ~3 s (`GB_SCREENSHOT_AT=<seconds>` to choose). `GB_SPAWN=x,z,yaw_deg[,camera_deg]` moves the player there (camera turned by camera_deg). `GB_HERO` / `GB_LOOK` pick the player's model (`appearance`). `GB_CAST=<ids>` makes the player cast those
 //! abilities at the nearest NPC (see `magic::demo`). `GB_RIVAL=1` / `GB_HUNTER=1` bring in the
 //! guests at start.
 //!
@@ -1260,6 +1260,8 @@ fn spawn_characters(commands: &mut Commands) {
         None,
     );
     commands.entity(player).insert(Player);
+    // The player's look (`GB_HERO`, `GB_LOOK`; `appearance`): replaces the mannequin's ModelRequest.
+    super::appearance::dress_player(commands, player);
     let forward = Vec3::new(SPAWN_YAW.sin(), 0.0, SPAWN_YAW.cos());
     let feet = SPAWN_FEET + forward * 4.0;
     let npc = spawn_character(
@@ -1323,8 +1325,10 @@ struct Smoke {
     /// slow software rendering still catches timed events.
     shot_at: f32,
     shot_requested: bool,
-    /// `GB_SPAWN=x,z,yaw_deg`: where the player is put once the world is up.
+    /// `GB_SPAWN=x,z,yaw_deg[,camera_deg]`: where the player is put once the world is up; the
+    /// optional 4th value turns the camera from behind the player (180 looks at the face).
     spawn: Option<(Vec3, f32)>,
+    camera_turn: f32,
     spawned: bool,
     shot_done: bool,
     exit_sent: bool,
@@ -1342,15 +1346,17 @@ impl Smoke {
             .and_then(|s| s.trim().parse::<f32>().ok())
             .filter(|s| s.is_finite() && *s >= 0.0)
             .unwrap_or(SCREENSHOT_AT);
-        let spawn = std::env::var("GB_SPAWN").ok().and_then(|s| {
-            let v: Vec<f32> = s.split(',').filter_map(|p| p.trim().parse().ok()).collect();
-            (v.len() == 3).then(|| (Vec3::new(v[0], ground_height(v[0], v[1]), v[1]), v[2].to_radians()))
-        });
+        let values: Vec<f32> = std::env::var("GB_SPAWN")
+            .map(|s| s.split(',').filter_map(|p| p.trim().parse().ok()).collect())
+            .unwrap_or_default();
+        let spawn = (values.len() >= 3).then(|| (Vec3::new(values[0], ground_height(values[0], values[1]), values[1]), values[2].to_radians()));
+        let camera_turn = values.get(3).copied().unwrap_or(0.0).to_radians();
         Self {
             quit_after,
             shot,
             shot_at,
             spawn,
+            camera_turn,
             ..default()
         }
     }
@@ -1376,7 +1382,7 @@ fn smoke_test(
         }
         // The camera looks the way the player was put.
         if let Some(mut rig) = rig {
-            rig.yaw = yaw;
+            rig.yaw = yaw + smoke.camera_turn;
         }
     }
     if let Some(path) = smoke.shot.clone()

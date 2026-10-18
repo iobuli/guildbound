@@ -6,6 +6,9 @@
 //! only), then insert `Rig`, `Springs`, `ContactState` and `MotionLayers` on the root.
 //! Pattern reference: the old `ranger.rs` `spawn`/`ready`/`prepare` (see git history).
 //!
+//! `tint` recolours the model's materials, except `hero_*` ones (the character kit's skin, hair,
+//! cloth: `play::appearance` colours those from the look).
+//!
 //! Lifecycle: changing / re-inserting the `ModelRequest` replaces the model (the old one is
 //! despawned, `Rig` removed until the new one binds); removing it despawns the model; if the
 //! model entity disappears on its own, `Rig` is removed so `compose` never writes stale bones.
@@ -128,6 +131,7 @@ fn bind_models(
         )>,
     >,
     mesh_materials: Query<&MeshMaterial3d<StandardMaterial>>,
+    material_names: Query<&bevy::gltf::GltfMaterialName>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut warned: Local<HashSet<String>>,
 ) {
@@ -192,7 +196,12 @@ fn bind_models(
         }
 
         if let Some(tint) = request.and_then(|r| r.tint) {
-            tint_materials(&mut commands, &nodes, &mesh_materials, &mut materials, tint);
+            let tintable: Vec<Entity> = nodes
+                .iter()
+                .copied()
+                .filter(|&e| !material_names.get(e).is_ok_and(|n| n.0.starts_with("hero_")))
+                .collect();
+            tint_materials(&mut commands, &tintable, &mesh_materials, &mut materials, tint);
         }
 
         commands
@@ -377,6 +386,17 @@ mod tests {
         assert!((tinted.red - want.red).abs() < 1e-4 && (tinted.blue - want.blue).abs() < 1e-4);
         let untouched = materials.get(&original).unwrap().base_color;
         assert_eq!(untouched, Color::srgb(0.8, 0.4, 0.04));
+    }
+
+    #[test]
+    fn tint_leaves_hero_materials_alone() {
+        let (mut world, _, _, _, mesh, original) = scene("", Some(Color::srgb(0.1, 0.5, 0.9)));
+        world
+            .entity_mut(mesh)
+            .insert(bevy::gltf::GltfMaterialName("hero_skin".into()));
+        world.run_system_once(bind_models).unwrap();
+        let handle = world.get::<MeshMaterial3d<StandardMaterial>>(mesh).unwrap();
+        assert_eq!(handle.0.id(), original.id(), "hero_* keeps its material");
     }
 
     #[test]

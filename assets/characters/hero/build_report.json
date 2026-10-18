@@ -1,0 +1,257 @@
+{
+ "bodies": {
+  "male": {
+   "groups": {
+    "body": 5752,
+    "body_hide_tunic": 748,
+    "body_hide_shirt": 14,
+    "body_hide_tunic+shirt": 1768,
+    "body_hide_trousers": 1614,
+    "body_hide_tunic+trousers": 78,
+    "body_hide_boots": 408,
+    "body_hide_trousers+boots": 400,
+    "body_hide_boots+shoes": 980,
+    "body_hide_gloves": 804,
+    "eyes": 768
+   },
+   "vertices": 7281,
+   "triangles": 12566,
+   "sole_y": -0.00950950797506497
+  },
+  "female": {
+   "groups": {
+    "body": 5692,
+    "body_hide_tunic": 766,
+    "body_hide_shirt": 46,
+    "body_hide_tunic+shirt": 2044,
+    "body_hide_trousers": 1582,
+    "body_hide_tunic+trousers": 80,
+    "body_hide_tunic+shirt+trousers": 4,
+    "body_hide_boots": 352,
+    "body_hide_trousers+boots": 406,
+    "body_hide_boots+shoes": 1022,
+    "body_hide_gloves": 818,
+    "eyes": 768
+   },
+   "vertices": 7376,
+   "triangles": 12812,
+   "sole_y": -0.0062998234893980164
+  }
+ },
+ "garments": {
+  "tunic": {
+   "male": {
+    "vertices": 4286,
+    "triangles": 6756,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 4734,
+    "triangles": 7620,
+    "mounts": []
+   }
+  },
+  "shirt": {
+   "male": {
+    "vertices": 3312,
+    "triangles": 4952,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3708,
+    "triangles": 5728,
+    "mounts": []
+   }
+  },
+  "trousers": {
+   "male": {
+    "vertices": 3350,
+    "triangles": 5376,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 3282,
+    "triangles": 5304,
+    "mounts": []
+   }
+  },
+  "boots": {
+   "male": {
+    "vertices": 2392,
+    "triangles": 4136,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 2348,
+    "triangles": 4048,
+    "mounts": []
+   }
+  },
+  "shoes": {
+   "male": {
+    "vertices": 1972,
+    "triangles": 3160,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 1940,
+    "triangles": 3144,
+    "mounts": []
+   }
+  },
+  "gloves": {
+   "male": {
+    "vertices": 2588,
+    "triangles": 3072,
+    "mounts": []
+   },
+   "female": {
+    "vertices": 2500,
+    "triangles": 2976,
+    "mounts": []
+   }
+  },
+  "belt": {
+   "male": {
+    "vertices": 976,
+    "triangles": 828,
+    "mounts": [
+     "sheath_hip_l",
+     "sheath_hip_r"
+    ]
+   },
+   "female": {
+    "vertices": 1006,
+    "triangles": 888,
+    "mounts": [
+     "sheath_hip_l",
+     "sheath_hip_r"
+    ]
+   }
+  },
+  "baldric": {
+   "male": {
+    "vertices": 1680,
+    "triangles": 1400,
+    "mounts": [
+     "sheath_back"
+    ]
+   },
+   "female": {
+    "vertices": 1734,
+    "triangles": 1516,
+    "mounts": [
+     "sheath_back"
+    ]
+   }
+  }
+ },
+ "hair": {
+  "hair_buzzed": {
+   "male": {
+    "vertices": 466,
+    "triangles": 830,
+    "native": true,
+    "moved_max": 0.0
+   },
+   "female": {
+    "vertices": 466,
+    "triangles": 830,
+    "native": false,
+    "moved_max": 0.023053230089041254
+   }
+  },
+  "hair_parted": {
+   "male": {
+    "vertices": 757,
+    "triangles": 1301,
+    "native": true,
+    "moved_max": 0.0
+   },
+   "female": {
+    "vertices": 757,
+    "triangles": 1301,
+    "native": false,
+    "moved_max": 0.028082003530056063
+   }
+  },
+  "hair_buzzed_f": {
+   "male": {
+    "vertices": 466,
+    "triangles": 830,
+    "native": false,
+    "moved_max": 0.02032603562991809
+   },
+   "female": {
+    "vertices": 466,
+    "triangles": 830,
+    "native": true,
+    "moved_max": 0.0
+   }
+  },
+  "hair_long": {
+   "male": {
+    "vertices": 3080,
+    "triangles": 2906,
+    "native": false,
+    "moved_max": 0.06302912892908233
+   },
+   "female": {
+    "vertices": 3080,
+    "triangles": 2906,
+    "native": true,
+    "moved_max": 0.048616641356072195
+   }
+  },
+  "hair_buns": {
+   "male": {
+    "vertices": 3501,
+    "triangles": 3284,
+    "native": false,
+    "moved_max": 0.06905123351806244
+   },
+   "female": {
+    "vertices": 3501,
+    "triangles": 3284,
+    "native": true,
+    "moved_max": 0.019558558782180206
+   }
+  },
+  "brows_regular": {
+   "male": {
+    "vertices": 646,
+    "triangles": 984,
+    "native": true,
+    "moved_max": 0.0
+   },
+   "female": {
+    "vertices": 646,
+    "triangles": 984,
+    "native": false,
+    "moved_max": 0.014395509342666486
+   }
+  },
+  "brows_soft": {
+   "male": {
+    "vertices": 912,
+    "triangles": 1480,
+    "native": false,
+    "moved_max": 0.018682406634273663
+   },
+   "female": {
+    "vertices": 912,
+    "triangles": 1480,
+    "native": true,
+    "moved_max": 0.0
+   }
+  },
+  "beard": {
+   "male": {
+    "vertices": 596,
+    "triangles": 1034,
+    "native": true,
+    "moved_max": 0.0
+   }
+  }
+ }
+}
