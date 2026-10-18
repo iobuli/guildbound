@@ -734,7 +734,7 @@ mod tests {
         // Wary: within some tries the first move is a stop (guard up, stepping back), not a blow.
         let mut stopped = false;
         for seed in 1..40u32 {
-            let mut b = Brain { rng: seed * 7919, ..Brain::default() };
+            let mut b = Brain { rng: seed * 7919, cooldown: 0.0, ..Brain::default() };
             let mut v = view(1.0);
             v.awe = Awe::Wary;
             decide(&v, &d, &mut b, 1.0 / 60.0);
