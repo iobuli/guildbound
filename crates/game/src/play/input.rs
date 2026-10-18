@@ -193,6 +193,8 @@ fn player_input(
     let grab = keys.just_pressed(KeyCode::KeyG);
     let mut art = keys.just_pressed(KeyCode::KeyQ);
     let mut spell = keys.just_pressed(KeyCode::KeyE);
+    let mut art_held = keys.pressed(KeyCode::KeyQ);
+    let mut spell_held = keys.pressed(KeyCode::KeyE);
     let mut next_spell = mouse.just_pressed(MouseButton::Forward);
     let mut lock_toggle = keys.just_pressed(KeyCode::Tab);
     let mut reset = keys.just_pressed(KeyCode::KeyR);
@@ -226,6 +228,8 @@ fn player_input(
             || pad.get(GamepadButton::LeftTrigger2).unwrap_or(0.0) > TRIGGER_THRESHOLD;
         art |= pad.just_pressed(GamepadButton::DPadUp);
         spell |= pad.just_pressed(GamepadButton::DPadRight);
+        art_held |= pad.pressed(GamepadButton::DPadUp);
+        spell_held |= pad.pressed(GamepadButton::DPadRight);
         next_spell |= pad.just_pressed(GamepadButton::DPadLeft);
     }
     // Gamepad button edges for the analog-capable buttons.
@@ -311,6 +315,8 @@ fn player_input(
         talk_pressed: interact && talk.0.as_ref().is_some_and(|f| f.0.is_some()),
         art_pressed: art,
         spell_pressed: spell,
+        art_held,
+        spell_held,
         next_spell,
         target,
         sheathe_pressed: sheathe,
