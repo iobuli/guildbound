@@ -6,4 +6,4 @@
 | `assets/anim/ual1.glb`, `assets/anim/ual2.glb` | Quaternius, Universal Animation Library 1 and 2 | CC0 1.0 | |
 | `assets/vfx/kenney/*`, `assets/audio/kenney/*` | Kenney (kenney.nl) | CC0 1.0 | See the license files beside them. |
 
-Other animation libraries (`sekiro.glb`, `rokoko.glb`) and the weapon packs come from sources whose licences the project owner holds; see the archived notes in `docs/archive/`.
+Not listed here (licence terms not recorded in this repository): `assets/anim/sekiro.glb`, `assets/anim/rokoko.glb` (converted from `Rokoko_Free_Mocap_FBX_263`, per `motion/mod.rs`) and `assets/packs/weapons/*`.

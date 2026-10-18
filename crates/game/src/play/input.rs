@@ -32,7 +32,72 @@ const TRIGGER_THRESHOLD: f32 = 0.35;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<Latches>()
-        .add_systems(Update, player_input.in_set(PlaySet::Input));
+        .add_systems(Update, (player_input, scripted).chain().in_set(PlaySet::Input));
+}
+
+/// One scripted press: key, game time it starts (s), how long it is held (s).
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Press {
+    pub key: char,
+    pub at: f32,
+    pub hold: f32,
+}
+
+/// Parse `GB_PRESS`: comma-separated `KEY@seconds[+hold]`, e.g. `F@3,B@5+1.5,W@7+2`.
+pub fn parse_presses(spec: &str) -> Vec<Press> {
+    spec.split(',')
+        .filter_map(|item| {
+            let (key, rest) = item.trim().split_once('@')?;
+            let key = key.trim().chars().next()?.to_ascii_uppercase();
+            let (at, hold) = match rest.split_once('+') {
+                Some((a, h)) => (a.trim().parse().ok()?, h.trim().parse().ok()?),
+                None => (rest.trim().parse().ok()?, 0.0),
+            };
+            Some(Press { key, at, hold })
+        })
+        .collect()
+}
+
+/// Smoke-test hook `GB_PRESS` (see `parse_presses`): after the real input, the player's `Intent`
+/// gets the scripted keys. F interact, X draw / sheathe, G grab, L light attack, H heavy (held),
+/// B block (held), W / S / A / D walk (camera-free: world +Z / −Z / +X / −X). Edge flags fire on
+/// the first frame at or after `at`; holds last `hold` s.
+fn scripted(time: Res<Time>, mut presses: Local<Option<Vec<Press>>>, mut players: Query<&mut Intent, With<Player>>) {
+    let list = presses.get_or_insert_with(|| std::env::var("GB_PRESS").map(|s| parse_presses(&s)).unwrap_or_default());
+    if list.is_empty() {
+        return;
+    }
+    let (now, dt) = (time.elapsed_secs(), time.delta_secs());
+    for mut intent in &mut players {
+        for p in list.iter() {
+            let edge = now >= p.at && now - dt < p.at;
+            let held = now >= p.at && now < p.at + p.hold.max(dt);
+            match p.key {
+                'F' if edge => intent.interact_pressed = true,
+                'X' if edge => intent.sheathe_pressed = true,
+                'G' if edge => intent.grab_pressed = true,
+                'L' if edge => {
+                    intent.primary_pressed = true;
+                    intent.primary_held = true;
+                }
+                'L' if now - dt < p.at + 2.0 * dt && now >= p.at + dt => intent.primary_released = true,
+                'H' if held => {
+                    intent.primary_pressed |= edge;
+                    intent.primary_held = true;
+                }
+                'H' if now >= p.at + p.hold && now - dt < p.at + p.hold => intent.primary_released = true,
+                'B' if held => {
+                    intent.secondary_pressed |= edge;
+                    intent.secondary_held = true;
+                }
+                'W' if held => intent.move_dir = Vec3::Z * 0.6,
+                'S' if held => intent.move_dir = Vec3::NEG_Z * 0.6,
+                'A' if held => intent.move_dir = Vec3::X * 0.6,
+                'D' if held => intent.move_dir = Vec3::NEG_X * 0.6,
+                _ => {}
+            }
+        }
+    }
 }
 
 /// Toggle / edge state that outlives a frame.
@@ -255,6 +320,15 @@ fn player_input(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn parses_scripted_presses() {
+        let p = super::parse_presses("F@3, b@5+1.5,W@7+2,junk,X@");
+        assert_eq!(p.len(), 3);
+        assert_eq!((p[0].key, p[0].at, p[0].hold), ('F', 3.0, 0.0));
+        assert_eq!((p[1].key, p[1].at, p[1].hold), ('B', 5.0, 1.5));
+        assert_eq!(p[2].key, 'W');
+    }
+
     use super::*;
 
     #[test]

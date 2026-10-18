@@ -1,6 +1,6 @@
 {
   "schema": "guildbound-handoff/1",
-  "date": "2026-10-17",
+  "date": "2026-10-18",
   "branch": "overhaul-2026-10-16",
   "build": {
     "cargo_home": "D:\\dev\\cargo",
@@ -339,6 +339,41 @@
     {
       "file": "play/guild.rs",
       "role": "guild people, gold, Mira desk services (turn-in, Guild Card, sell, bounties, apply, beds), Varro rank exam duel",
+      "status": "new"
+    },
+    {
+      "file": "motion/hand.rs",
+      "role": "hand rig: finger grips (cylinder, knob sphere, flat palm, in-hand) around the arm IK",
+      "status": "new"
+    },
+    {
+      "file": "motion/bvh.rs",
+      "role": "BVH mocap donors (assets/anim/cmu, library cmu, Mode::Cmu retarget)",
+      "status": "new"
+    },
+    {
+      "file": "play/doors.rs",
+      "role": "hinged knob door and push door, either face, door block collider",
+      "status": "new"
+    },
+    {
+      "file": "play/sheath.rs",
+      "role": "weapons on back / hips; draw and sheathe (X)",
+      "status": "new"
+    },
+    {
+      "file": "play/block.rs",
+      "role": "guard puts the blade across the coming swing",
+      "status": "new"
+    },
+    {
+      "file": "play/grab.rs",
+      "role": "command grab (G): seize, swing, unblockable throw; NPCs grab turtles",
+      "status": "new"
+    },
+    {
+      "file": "play/repertoire.rs",
+      "role": "mocap strike library, chain variants, learning moves from attackers",
       "status": "new"
     }
   ],
@@ -985,7 +1020,9 @@
     "hunter": "F8",
     "dive": "C while swimming (Space surfaces)",
     "skip_hour": "F9",
-    "talk": "F on a guild NPC; 1-7 choose; Esc leave"
+    "talk": "F on a guild NPC; 1-7 choose; Esc leave",
+    "X": "draw / sheathe",
+    "G": "grab"
   },
   "smoke_env": {
     "GB_AUTOQUIT": "s",
@@ -1016,6 +1053,7 @@
     "GB_PASSED": "1: exam passed",
     "GB_CHOOSE": "option ids picked in a talk, 1.5 s apart",
     "GB_SLEEP": "1: hurt, go to a bed, use it (after GB_CHOOSE=bed,leave); logs hp and hour",
-    "GB_WALK": "x,z: the player walks there from 1 s"
+    "GB_WALK": "x,z: the player walks there from 1 s",
+    "GB_PRESS": "scripted keys: F X G L H B W S A D at game seconds, e.g. F@3,B@5+1.5"
   }
 }
