@@ -67,7 +67,134 @@ Use the ART_PROMPTS section 1 template (seamless, orthographic top view, even li
   - A walk test: up the steps, through the door, into the hall.
   - The full test suite.
 
+
+## 6. Build parameters: what the builder reads (fill from the views)
+The builder (`play/guildhouse.rs`) generates the whole building from **`assets/data/guildhouse.json`**. Every number below is one field: unit, allowed range, default (used until a view says otherwise), and the view to measure it from. Fill a field by reading it off G2/G3/G4/G6 against the 1 m grid. The builder clamps every value to its range, so a bad reading can't break the game.
+
+### 6.1 Site and podium
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `site.x`, `site.z` | m | inside ±45, off the courtyard, terrace, pond and ruins | chosen by agent-3 from ground heights | — |
+| `site.face` | — | `courtyard` or a yaw in degrees | `courtyard` | — |
+| `podium.margin` | m | 0.5–3 | 1.5 (podium edge past the walls, sides and back) | G2, G3 |
+| `podium.front` | m | 1–4 | 2.5 (terrace in front of the door) | G3, G4 |
+| `podium.min_height` | m | 0.3–1.5 | 0.5 (above the highest ground under it) | G2 |
+| `podium.material` | slot | — | `podium_stone` | G1 |
+| `steps.width` | m | 3–10 | 6 | G2 |
+| `steps.rise` / `steps.tread` | m | 0.2–0.3 / 0.35–0.5 | 0.25 / 0.4 | G3 |
+| `steps.side` | — | `front`, `front_and_sides` | `front` | G2, G4 |
+
+### 6.2 Main block and storeys
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `block.width` (along the front) | m | 12–18 | 16 | G2 |
+| `block.depth` | m | 8–12 | 10 | G3, G4 |
+| `block.wall_thickness` | m | 0.3–0.8 | 0.6 | G4 |
+| `ground.height` | m | 3.8–4.8 | 4.5 | G2 |
+| `ground.material` | slot | — | `wall_stone` | G1 |
+| `upper.height` | m | 2.8–3.8 | 3.4 | G2 |
+| `upper.jetty` (overhang past the ground walls) | m | 0–0.8 | 0.4 | G3 |
+| `upper.style` | — | `timber_frame`, `stone` | `timber_frame` | G1 |
+| `frame.post_spacing` | m | 1.2–3 | 2.0 | G2 |
+| `frame.rails` (heights within the upper storey, 0–1) | list | 0–1 | [0, 0.45, 1] | G2 |
+| `frame.braces` | — | `none`, `corners`, `every_bay` | `corners` | G2 |
+| `frame.member` (beam section) | m | 0.15–0.35 | 0.25 | G6 |
+
+### 6.3 Entrance
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `door.width` / `door.height` | m | 2.6–4 / 3.2–4.2 | 3.0 / 3.6 | G2, G6 |
+| `door.arch` | — | `flat`, `stepped`, `pointed` | `stepped` | G6 |
+| `door.arch_rise` | m | 0–1.5 | 0.6 | G6 |
+| `door.leaves` | count | 1–2 | 2 | G6 |
+| `porch.depth` / `porch.width` | m | 0–3 / 3–7 | 1.8 / 4.2 | G3, G6 |
+| `porch.roof_height` | m | 3.4–4.5 | 4.0 | G6 |
+| `banners` | list of {`x`, `width`, `height`, `bottom`} on the front | width 0.6–1.5, height 1.5–4 | two at x = ±2.6, 0.9 × 3.0, bottom 1.0 | G2, G6 |
+| `lanterns` | list of {`x`, `height`} | height 2–3.5 | two at x = ±1.9, 2.6 | G6 |
+
+### 6.4 Windows (per facade: `front`, `back`, `left`, `right`)
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `windows.<facade>.ground` | list of x centres | — | front: [−5.5, 5.5]; sides: [0] | G2, G3, G4 |
+| `windows.<facade>.upper` | list of x centres | — | front: [−5.5, −2, 2, 5.5] | G2, G3 |
+| `windows.size_ground` / `size_upper` | m (w × h) | 0.8–2 × 1–2.4 | 1.2 × 1.8 / 1.0 × 1.4 | G2 |
+| `windows.sill_ground` / `sill_upper` | m above the storey floor | 0.6–1.4 | 1.1 / 0.9 | G2 |
+| `windows.style` | — | `recessed_dark`, `shuttered`, `leaded` | `shuttered` | G6 |
+
+### 6.5 Roof, tower, chimney
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `roof.pitch` | deg | 35–60 | 48 | G3 |
+| `roof.ridge_axis` | — | `width`, `depth` | `width` | G2, G3 |
+| `roof.overhang` | m | 0.3–1.2 | 0.6 | G2, G3 |
+| `roof.material` | slot | — | `roof_slate` | G1 |
+| `roof.dormers` | list of {`x`, `width`} on the front | width 1.2–2.5 | [] | G2 |
+| `tower.corner` | — | `front_left`, `front_right`, `back_left`, `back_right`, `none` | `front_left` | G1, G4 |
+| `tower.size` | m | 4–6 | 5 | G2, G4 |
+| `tower.height` (to the eaves) | m | 9–14 | 12 | G2 |
+| `tower.roof` | — | `pyramid`, `spire`, `crenellated` | `pyramid` | G1 |
+| `tower.roof_height` | m | 2–6 | 4 | G2 |
+| `tower.belfry` | — | `true` / `false` (open arches at the top) | true | G1, G2 |
+| `chimney.side` | — | `left`, `right`, `none` | `right` | G2 |
+| `chimney.size` / `chimney.above_ridge` | m | 0.8–1.6 / 0.5–2 | 1.2 / 1.0 | G2 |
+
+### 6.6 Interior (ground floor, from G4 and G7)
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `interior.floor` | slot | — | `floor_planks` | G7 |
+| `interior.desk` | {`x`, `z`, `length`, `facing`} | inside the walls | centre-back, 4 m, facing the door | G4 |
+| `interior.board` | {`wall`, `offset`, `width`} | — | left wall, 0, 2.4 m | G4 |
+| `interior.hearth` | {`wall`, `offset`, `width`} | — | right wall, 0, 2.2 m | G4 |
+| `interior.stairs` | {`corner`, `width`} | — | back_left, 1.2 m (visual in v1) | G4 |
+| `interior.beams` | spacing m | 1.5–3.5 | 2.5 | G7 |
+
+### 6.7 Template: `assets/data/guildhouse.json`
+```json
+{
+  "site": { "x": null, "z": null, "face": "courtyard" },
+  "podium": { "margin": 1.5, "front": 2.5, "min_height": 0.5, "material": "podium_stone" },
+  "steps": { "width": 6, "rise": 0.25, "tread": 0.4, "side": "front" },
+  "block": { "width": 16, "depth": 10, "wall_thickness": 0.6 },
+  "ground": { "height": 4.5, "material": "wall_stone" },
+  "upper": { "height": 3.4, "jetty": 0.4, "style": "timber_frame", "material": "plaster" },
+  "frame": { "post_spacing": 2.0, "rails": [0, 0.45, 1], "braces": "corners", "member": 0.25, "material": "timber" },
+  "door": { "width": 3.0, "height": 3.6, "arch": "stepped", "arch_rise": 0.6, "leaves": 2 },
+  "porch": { "depth": 1.8, "width": 4.2, "roof_height": 4.0 },
+  "banners": [ { "x": -2.6, "width": 0.9, "height": 3.0, "bottom": 1.0 }, { "x": 2.6, "width": 0.9, "height": 3.0, "bottom": 1.0 } ],
+  "lanterns": [ { "x": -1.9, "height": 2.6 }, { "x": 1.9, "height": 2.6 } ],
+  "windows": {
+    "front": { "ground": [-5.5, 5.5], "upper": [-5.5, -2, 2, 5.5] },
+    "back":  { "ground": [-4, 4], "upper": [-4, 0, 4] },
+    "left":  { "ground": [0], "upper": [-2, 2] },
+    "right": { "ground": [], "upper": [-2, 2] },
+    "size_ground": [1.2, 1.8], "size_upper": [1.0, 1.4],
+    "sill_ground": 1.1, "sill_upper": 0.9, "style": "shuttered"
+  },
+  "roof": { "pitch": 48, "ridge_axis": "width", "overhang": 0.6, "material": "roof_slate", "dormers": [] },
+  "tower": { "corner": "front_left", "size": 5, "height": 12, "roof": "pyramid", "roof_height": 4, "belfry": true },
+  "chimney": { "side": "right", "size": 1.2, "above_ridge": 1.0 },
+  "interior": {
+    "floor": "floor_planks",
+    "desk": { "x": 0, "z": -2.5, "length": 4, "facing": "door" },
+    "board": { "wall": "left", "offset": 0, "width": 2.4 },
+    "hearth": { "wall": "right", "offset": 0, "width": 2.2 },
+    "stairs": { "corner": "back_left", "width": 1.2 },
+    "beams": 2.5
+  }
+}
+```
+Coordinates: building-local metres, origin at the centre of the main block's floor (on the podium top), +z toward the front (the door), x across the front, left as seen from outside.
+
+### 6.8 How the views get read into numbers (agent-3)
+1. G2 front elevation: block width, storey heights, door and windows (x, size, sill), banners, lanterns, tower width and height, chimney.
+2. G3 side elevation: depth, jetty, roof pitch and overhang, porch depth, steps.
+3. G4 plan: wall thickness, interior placements, tower corner, stairs.
+4. G6 entrance: door and arch, porch, banner and lantern detail.
+
+Each reading is written into `guildhouse.json` with the view it came from (`"_source": {"block.width": "G2"}`). The builder logs every value it clamped.
+
 ## Status
 - [ ] G1 concept (agent-1 / Higgsfield) · [ ] G2 · [ ] G3 · [ ] G4 · [ ] G6 · [ ] G7
 - [ ] textures: podium_stone · wall_stone · plaster · timber · roof_slate · floor_planks · iron_trim · banner_cloth
+- [ ] parameters read from G2/G3/G4/G6 into guildhouse.json (agent-3) · [ ] builder from the parameters (agent-3; can start now on the defaults)
 - [ ] build (agent-3) · [ ] texture loader (agent-3) · [ ] in-game comparison
