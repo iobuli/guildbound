@@ -111,6 +111,8 @@ const LIMIT_COMPLIANCE: f32 = 1e-5;
 /// backwards from the body's facing) on top of its own velocity.
 const DEATH_LIMP: f32 = 0.3;
 const DEATH_SLUMP: f32 = 1.2;
+/// Most sideways speed a dead body keeps as it goes limp (m/s).
+const LIMP_DRIFT: f32 = 2.0;
 /// A settled dead segment whose surface is more than this below the ground is lifted onto it (m).
 const SUNK: f32 = 0.03;
 /// Deepest a segment is looked for under the surface (m); anything deeper is left alone.
@@ -205,14 +207,20 @@ fn debug_key(
 #[allow(clippy::type_complexity)]
 fn limp(
     mut commands: Commands,
-    bodies: Query<(Entity, &Transform, &Mover, &Action, &Fighter), (Without<Ragdolled>, Without<RagdollRequest>, Without<GettingUp>)>,
+    mut bodies: Query<(Entity, &Transform, &mut Mover, &Action, &Fighter), (Without<Ragdolled>, Without<RagdollRequest>, Without<GettingUp>)>,
 ) {
-    for (entity, tf, mover, action, fighter) in &bodies {
+    for (entity, tf, mut mover, action, fighter) in &mut bodies {
         if !fighter.dead || action.kind != ActionKind::Dead || action.elapsed < DEATH_LIMP {
             continue;
         }
+        // The body falls from where it stands: at most a gentle drift along the ground, never up
+        // (`take_over` adds this velocity to every segment). The request adds only the slump.
+        let v = mover.velocity;
+        let flat = Vec3::new(v.x, 0.0, v.z).clamp_length_max(LIMP_DRIFT);
+        mover.velocity = if v.is_finite() { Vec3::new(flat.x, v.y.min(0.0), flat.z) } else { Vec3::ZERO };
+        info!("[ragdoll] limp: body velocity {v:.2?} -> {:.2?}", mover.velocity);
         commands.entity(entity).try_insert(RagdollRequest {
-            velocity: mover.velocity - mover.forward() * DEATH_SLUMP,
+            velocity: -mover.forward() * DEATH_SLUMP,
             point: tf.translation + Vec3::Y * 0.3,
         });
     }
@@ -266,6 +274,7 @@ fn take_over(
     bone_locals: Query<&Transform, Without<Rig>>,
     globals: Query<&GlobalTransform>,
     mut velocities: Query<(&Transform, &mut LinearVelocity, &mut AngularVelocity), Without<Rig>>,
+    spatial: SpatialQuery,
 ) {
     let Some(bank) = bank else { return };
     for (entity, request, rig, mut mover, mut action, mut layers, ragdolled, getting_up) in &mut bodies {
@@ -306,7 +315,13 @@ fn take_over(
                 }
             }
         }
-        let world = |i: usize| bone_world(rig, &globals, i);
+        // Nothing may start under the ground (a pose that sinks a foot or knee into the terrain
+        // would be shoved out violently): lift the whole body by the deepest bone's depth.
+        let lift = start_lift(&spatial, rig, &globals, skeleton);
+        if lift > 0.0 {
+            info!("[ragdoll] spawn lifted {lift:.3} m out of the ground");
+        }
+        let world = |i: usize| bone_world(rig, &globals, i).map(|(r, p)| (r, p + Vec3::Y * lift));
         let Some(segs_out) = spawn_segments(&mut commands, skeleton, world, mover.velocity, request) else {
             continue;
         };
@@ -333,6 +348,23 @@ fn take_over(
         mover.face = None;
         layers.raw = true;
     }
+}
+
+/// How far the body must rise so no segment's bone sits below the ground under it (m): the
+/// deepest bone of `SEGS`, measured with a ray from above the pelvis.
+fn start_lift(spatial: &SpatialQuery, rig: &Rig, globals: &Query<&GlobalTransform>, skeleton: &Skeleton) -> f32 {
+    let filter = SpatialQueryFilter::from_mask(Phys::World);
+    let mut lift = 0.0f32;
+    for seg in &SEGS {
+        let Some(i) = skeleton.find(seg.bone) else { continue };
+        let Some((_, p)) = bone_world(rig, globals, i) else { continue };
+        let from = p + Vec3::Y * 0.8;
+        if let Some(hit) = spatial.cast_ray(from, Dir3::NEG_Y, 3.0, false, &filter) {
+            let ground = from.y - hit.distance;
+            lift = lift.max(ground + seg.radius - p.y);
+        }
+    }
+    lift.clamp(0.0, 1.0)
 }
 
 type Spawned = (Vec<Entity>, Vec<Entity>, Vec<usize>);
