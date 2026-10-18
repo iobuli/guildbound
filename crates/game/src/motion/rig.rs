@@ -146,7 +146,7 @@ fn bind_models(
     };
     let skeleton = &bank.skeleton;
     for (model, &ModelOf(root)) in &pending {
-        commands.entity(model).remove::<PendingBind>();
+        commands.entity(model).try_remove::<PendingBind>();
         if slots.get(root).map(|s| s.0) != Ok(model) {
             // Superseded by a newer request (or the root is gone).
             commands.entity(model).try_despawn();
@@ -163,7 +163,7 @@ fn bind_models(
                 && bones[i] == Entity::PLACEHOLDER
             {
                 bones[i] = node;
-                commands.entity(node).insert(RigBone);
+                commands.entity(node).try_insert(RigBone);
             }
             if animated.contains(node) {
                 commands

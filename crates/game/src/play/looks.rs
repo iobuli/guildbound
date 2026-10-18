@@ -326,8 +326,8 @@ fn dress(
                     let a = place(&mut commands, head, m, straw.clone(), head_top + up * 0.1, face, Vec3::ONE);
                     let rim = meshes.add(Cylinder::new(0.36, 0.012));
                     let b = place(&mut commands, head, rim, straw.clone(), head_top + up * 0.02, face, Vec3::ONE);
-                    commands.entity(a).insert(KasaMesh);
-                    commands.entity(b).insert(KasaMesh);
+                    commands.entity(a).try_insert(KasaMesh);
+                    commands.entity(b).try_insert(KasaMesh);
                 }
                 Piece::Hood => {
                     let m = meshes.add(Sphere::new(1.0));

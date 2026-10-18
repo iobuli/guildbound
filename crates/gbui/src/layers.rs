@@ -227,11 +227,12 @@ pub fn build_layers(
         skinned.built = version;
         for child in children.into_iter().flatten() {
             if layer_nodes.contains(*child) {
-                commands.entity(*child).despawn();
+                commands.entity(*child).try_despawn();
             }
         }
         let dir = format!("ui/skins/{}", skin.dir.as_deref().unwrap_or(&skinned.skin));
-        commands.entity(entity).with_children(|p| {
+        let Ok(mut owner) = commands.get_entity(entity) else { continue };
+        owner.with_children(|p| {
             for (i, def) in skin.layers.iter().enumerate() {
                 let image = assets.load(format!("{dir}/{}", def.file));
                 let z = ZIndex(if def.top { 10 + i as i32 } else { -100 + i as i32 });

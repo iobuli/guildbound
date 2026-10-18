@@ -83,7 +83,7 @@ fn dress(
             let Ok(handle) = bodies.get(d) else { continue };
             let Some(base) = standard.get(&handle.0).cloned() else { continue };
             let made_skin = skins.add(SkinMaterial { base, extension: SkinExt { skin: params } });
-            commands.entity(d).remove::<MeshMaterial3d<StandardMaterial>>().insert(MeshMaterial3d(made_skin.clone()));
+            commands.entity(d).try_remove::<MeshMaterial3d<StandardMaterial>>().try_insert(MeshMaterial3d(made_skin.clone()));
             made.push(made_skin);
         }
         if made.is_empty() {

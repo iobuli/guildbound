@@ -216,13 +216,13 @@ fn mount(
         if sheath.in_hand() {
             if parent != Some(hand) {
                 let scale = globals.get(hand).map_or(1.0, |g| g.compute_transform().scale.abs().max_element());
-                commands.entity(slot.weapon).insert((ChildOf(hand), super::combat::grip(def, scale)));
+                commands.entity(slot.weapon).try_insert((ChildOf(hand), super::combat::grip(def, scale)));
             }
         } else {
             if parent != Some(bone) {
-                commands.entity(slot.weapon).insert(ChildOf(bone));
+                commands.entity(slot.weapon).try_insert(ChildOf(bone));
             }
-            commands.entity(slot.weapon).insert((local, Visibility::Inherited));
+            commands.entity(slot.weapon).try_insert((local, Visibility::Inherited));
         }
 
         // The reach: the weapon hand goes to the mount's grip and back.
@@ -237,13 +237,13 @@ fn mount(
                     let target = g.transform_point(local.translation);
                     let mut targets = [None, None];
                     targets[side] = Some((target, w));
-                    commands.entity(entity).insert(HandTargets { hands: targets, ..default() });
+                    commands.entity(entity).try_insert(HandTargets { hands: targets, ..default() });
                     sheath.reaching = true;
                 }
             }
             _ => {
                 if sheath.reaching {
-                    commands.entity(entity).remove::<HandTargets>();
+                    commands.entity(entity).try_remove::<HandTargets>();
                     sheath.reaching = false;
                 }
             }

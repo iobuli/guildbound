@@ -328,7 +328,7 @@ impl Appearance {
 
 /// Put a look on a character root: the body model through `ModelRequest`, the rest once rigged.
 pub fn dress(commands: &mut Commands, root: Entity, appearance: Appearance) {
-    commands.entity(root).insert((
+    commands.entity(root).try_insert((
         ModelRequest {
             path: appearance.body_path(),
             offset: Vec3::new(0.0, -HALF_HEIGHT, 0.0),
@@ -344,7 +344,7 @@ pub fn dress_player(commands: &mut Commands, player: Entity) {
     match mode.trim() {
         "mannequin" | "ual2" => info!("[appearance] GB_HERO={mode}: the yellow mannequin"),
         "styled" => {
-            commands.entity(player).insert(ModelRequest {
+            commands.entity(player).try_insert(ModelRequest {
                 path: STYLED_GLB.to_string(),
                 offset: Vec3::new(0.0, -HALF_HEIGHT, 0.0),
                 tint: None,
@@ -445,7 +445,7 @@ fn dress_rigged(
         }
         if request.path != look.body_path() {
             // The look changed base: ask for the new body; dress once it is rigged.
-            commands.entity(root).insert(ModelRequest {
+            commands.entity(root).try_insert(ModelRequest {
                 path: look.body_path(),
                 offset: request.offset,
                 tint: None,
@@ -469,7 +469,7 @@ fn dress_rigged(
                 && name.as_str().starts_with("body_hide_")
             {
                 let vis = if look.hides(name.as_str()) { Visibility::Hidden } else { Visibility::Inherited };
-                commands.entity(node).insert(vis);
+                commands.entity(node).try_insert(vis);
             }
         }
         styling.apply(&mut commands, &assets, &nodes, look);
@@ -479,9 +479,9 @@ fn dress_rigged(
                 .spawn((Name::new(format!("part {part}")), PartOf(root), WorldAssetRoot(scene), Transform::default()))
                 .observe(on_part_ready)
                 .id();
-            commands.entity(rig.model).add_child(entity);
+            commands.entity(entity).try_insert(ChildOf(rig.model));
         }
-        commands.entity(root).insert(Dressed(rig.model, look.look.clone()));
+        commands.entity(root).try_insert(Dressed(rig.model, look.look.clone()));
         info!("[appearance] {root}: dressing as {:?} ({} parts)", look.look, look.parts.len());
     }
 }
@@ -503,7 +503,7 @@ fn attach_parts(
 ) {
     let Some(bank) = bank else { return };
     for (part, &PartOf(root), child_of) in &parts {
-        commands.entity(part).remove::<PartReady>();
+        commands.entity(part).try_remove::<PartReady>();
         let Ok((rig, look)) = roots.get(root) else {
             commands.entity(part).try_despawn();
             continue;
@@ -541,13 +541,13 @@ fn attach_parts(
                 && let Ok(joint) = names.get(p.parent())
                 && let Some(b) = bone(joint.as_str())
             {
-                commands.entity(b).add_child(node);
-                commands.entity(node).insert(Worn);
+                commands.entity(node).try_insert(ChildOf(b));
+                commands.entity(node).try_insert(Worn);
             }
         }
         for &node in &moved {
-            commands.entity(rig.model).add_child(node);
-            commands.entity(node).insert(Worn);
+            commands.entity(node).try_insert(ChildOf(rig.model));
+            commands.entity(node).try_insert(Worn);
         }
         styling.apply(&mut commands, &assets, &nodes, look);
         // The part's skeleton copy and scene root go (despawn is recursive); its meshes and
@@ -589,7 +589,7 @@ impl Styling<'_, '_> {
                         h
                     }
                 };
-                commands.entity(node).insert(MeshMaterial3d(handle));
+                commands.entity(node).try_insert(MeshMaterial3d(handle));
             }
             if let Ok(mut w) = self.morphs.get_mut(node) {
                 for (slot, value) in w.weights_mut().iter_mut().zip(look.shape) {

@@ -308,7 +308,7 @@ fn hands(
         if let Some(mut f) = flash {
             f.left -= dt;
             if f.left <= 0.0 {
-                commands.entity(e).remove::<HandFlash>();
+                commands.entity(e).try_remove::<HandFlash>();
             } else {
                 shown = Some(f.form);
             }
@@ -337,7 +337,7 @@ fn hands(
 /// Pour caught spells into the pool, past its top (over-mana, `magic::OVER_CAP`).
 fn absorb(mut commands: Commands, mut q: Query<(Entity, &Absorb, Option<&mut super::magic::Energy>)>, mut log: MessageWriter<super::hud::log::HudLog>, players: Query<(), With<Player>>) {
     for (e, a, energy) in &mut q {
-        commands.entity(e).remove::<Absorb>();
+        commands.entity(e).try_remove::<Absorb>();
         let Some(mut energy) = energy else { continue };
         let cap = energy.max_magicules * super::magic::OVER_CAP;
         energy.magicules = (energy.magicules + a.0).min(cap.max(energy.magicules));
@@ -402,7 +402,7 @@ fn tick_broken(time: Res<Time>, mut commands: Commands, mut broken: Query<(Entit
     for (e, mut s) in &mut broken {
         s.left -= time.delta_secs();
         if s.left <= 0.0 {
-            commands.entity(e).remove::<Broken>();
+            commands.entity(e).try_remove::<Broken>();
         }
     }
 }
@@ -425,7 +425,7 @@ fn disarm(
     names: Query<&Name>,
 ) {
     for (e, d, mut loadout, tf, name) in &mut fighters {
-        commands.entity(e).remove::<Disarm>();
+        commands.entity(e).try_remove::<Disarm>();
         if d.set.is_empty() || d.set == "unarmed" || loadout.equipped() != d.set {
             continue;
         }
@@ -471,7 +471,7 @@ fn recover_weapons(
         if alive.get(d.owner).is_ok_and(|f| !f.dead) {
             equip.write(super::combat::Equip { who: d.owner, set: d.set.clone() });
         }
-        commands.entity(e).despawn();
+        commands.entity(e).try_despawn();
     }
 }
 
@@ -489,9 +489,9 @@ fn deflect_reach(
     for (e, mut r, targets, owned) in &mut reaching {
         r.left -= time.delta_secs();
         if r.left <= 0.0 {
-            commands.entity(e).remove::<DeflectReach>();
+            commands.entity(e).try_remove::<DeflectReach>();
             if owned {
-                commands.entity(e).remove::<(super::select::HandTargets, ReachOwned)>();
+                commands.entity(e).try_remove::<(super::select::HandTargets, ReachOwned)>();
             }
             continue;
         }
@@ -584,7 +584,7 @@ fn flare_fade(
             m.params.color = (f.colour * (1.0 - u)).extend(1.0);
         }
         if u >= 1.0 {
-            commands.entity(e).despawn();
+            commands.entity(e).try_despawn();
         }
     }
 }
@@ -612,7 +612,7 @@ fn rank_aura(
                 continue;
             }
             commands.entity(a.shell).try_despawn();
-            commands.entity(e).remove::<RankAura>();
+            commands.entity(e).try_remove::<RankAura>();
         }
         if m.rank < AURA_FROM {
             continue;
