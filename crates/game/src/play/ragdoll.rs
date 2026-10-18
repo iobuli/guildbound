@@ -19,6 +19,11 @@
 //!   segments despawn, and the get-up `Action` (`Owner::Ragdoll`, `ActionKind::GetUp`,
 //!   `ual2/LayToIdle`) plays; the springs ease the pose from the lying body into the clip.
 //!   Dead bodies stay down as ragdolls until combat revives them (its own get-up then plays).
+//! - Defeat (`limp`): a fighter killed without a ragdoll-sized blow plays the first `DEATH_LIMP`
+//!   s of its death clip (the knees go), then goes limp the same way, so the body falls onto
+//!   whatever ground is there (slopes, steps, rocks) instead of a flat-floor clip sinking into it.
+//!   When a dead body first comes to rest, every segment is checked against the ground under it
+//!   (`[ragdoll] down` log line); a segment found under the surface is lifted back onto it.
 //! - A new request while down kicks the segments again.
 //! - Weight: a blow is one impulse on the whole body (`fling`): the centre of mass takes the push
 //!   (capped at `MAX_FLING`) and the off-centre part spins the body by its inertia (capped at
@@ -102,6 +107,14 @@ const LINEAR_DAMPING: f32 = 0.3;
 const SEGMENT_FRICTION: f32 = 1.0;
 const ANGULAR_DAMPING: f32 = 1.2;
 const LIMIT_COMPLIANCE: f32 = 1e-5;
+/// Defeat: seconds of the death clip before the body goes limp, and the push it falls with (m/s,
+/// backwards from the body's facing) on top of its own velocity.
+const DEATH_LIMP: f32 = 0.3;
+const DEATH_SLUMP: f32 = 1.2;
+/// A settled dead segment whose surface is more than this below the ground is lifted onto it (m).
+const SUNK: f32 = 0.03;
+/// Deepest a segment is looked for under the surface (m); anything deeper is left alone.
+const MAX_SINK: f32 = 0.6;
 /// F6 throws the player backwards at this speed (m/s).
 const DEBUG_PUSH: f32 = 6.0;
 
@@ -139,7 +152,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, fling_smoke.after(PlaySet::Input).before(PlaySet::Act));
     app.add_systems(
         Update,
-        (debug_key, take_over, drive, bounce)
+        (debug_key, limp, take_over, drive, bounce)
             .chain()
             .in_set(PlaySet::Act)
             .after(CombatSet),
@@ -160,6 +173,8 @@ pub struct Ragdolled {
     pelvis_model: Vec3,
     t: f32,
     still: f32,
+    /// A dead body's rest was checked against the ground (`drive`).
+    checked: bool,
 }
 
 /// The get-up clip in progress after a ragdoll (`Owner::Ragdoll`).
@@ -181,6 +196,24 @@ fn debug_key(
         commands.entity(entity).try_insert(RagdollRequest {
             velocity: -mover.forward() * DEBUG_PUSH + Vec3::Y * 2.0,
             point: tf.translation + Vec3::Y * 0.4,
+        });
+    }
+}
+
+/// Defeat: a dead fighter that isn't a ragdoll yet goes limp `DEATH_LIMP` s into its death clip
+/// (combat's `Dead` action), falling with its own velocity and a slump backwards.
+#[allow(clippy::type_complexity)]
+fn limp(
+    mut commands: Commands,
+    bodies: Query<(Entity, &Transform, &Mover, &Action, &Fighter), (Without<Ragdolled>, Without<RagdollRequest>, Without<GettingUp>)>,
+) {
+    for (entity, tf, mover, action, fighter) in &bodies {
+        if !fighter.dead || action.kind != ActionKind::Dead || action.elapsed < DEATH_LIMP {
+            continue;
+        }
+        commands.entity(entity).try_insert(RagdollRequest {
+            velocity: mover.velocity - mover.forward() * DEATH_SLUMP,
+            point: tf.translation + Vec3::Y * 0.3,
         });
     }
 }
@@ -288,6 +321,7 @@ fn take_over(
             pelvis_model: model_pelvis,
             t: 0.0,
             still: 0.0,
+            checked: false,
         });
         if getting_up || !action.is_free() {
             action.clear();
@@ -526,6 +560,37 @@ fn drive(
             }
         }
         let settled = (r.t >= MIN_TIME && r.still >= SETTLE_TIME) || r.t >= MAX_TIME;
+        if fighter.dead && settled && !r.checked {
+            r.checked = true;
+            let filter = SpatialQueryFilter::from_mask(Phys::World);
+            let mut lowest = f32::MAX;
+            for (k, (seg, s)) in r.segs.iter().zip(&read).enumerate() {
+                let Some((tf, _)) = s else { continue };
+                // Up from under the segment to the first surface: with the ground one sheet, that
+                // surface is the one the segment rests on or sank through (a ray from high above
+                // would start inside rock under an overhang or beside a cliff and read "sunk").
+                // Nothing within reach below means the segment is clear of the ground: measure the
+                // gap down from it instead, for the log.
+                let r_seg = SEGS[k].radius;
+                let start = tf.translation - Vec3::Y * MAX_SINK;
+                let gap = if let Some(u) = spatial.cast_ray(start, Dir3::Y, MAX_SINK + r_seg, false, &filter) {
+                    (tf.translation.y - r_seg) - (start.y + u.distance)
+                } else if let Some(d) = spatial.cast_ray(tf.translation, Dir3::NEG_Y, 3.0, false, &filter) {
+                    d.distance - r_seg
+                } else {
+                    continue;
+                };
+                lowest = lowest.min(gap);
+                if gap < -SUNK {
+                    commands
+                        .entity(*seg)
+                        .try_insert((Transform { translation: tf.translation + Vec3::Y * -gap, ..*tf }, LinearVelocity::ZERO, AngularVelocity::ZERO));
+                }
+            }
+            if lowest < f32::MAX {
+                info!("[ragdoll] down: lowest segment {:+.3} m from the ground{}", lowest, if lowest < -SUNK { " (lifted)" } else { "" });
+            }
+        }
         let revived = !fighter.dead && action.owner == Owner::Hit && action.kind == ActionKind::GetUp;
         if !(revived || (settled && !fighter.dead)) {
             continue;
@@ -731,6 +796,80 @@ mod tests {
                 assert!(d < 0.7, "{} drifted {d} m from its parent", seg.bone);
             }
         }
+    }
+
+    /// A body falling onto a slope made of terrain-style triangles (a one-sided trimesh, like
+    /// `world`'s ground) comes to rest on it: no segment ends up under the surface.
+    #[test]
+    fn ragdoll_on_a_trimesh_slope_stays_above_ground() {
+        use bevy::time::TimeUpdateStrategy;
+        use std::time::Duration;
+        let b = bank();
+        let s = b.skeleton.clone();
+        let fk = s.fk(&b.rest, b.bones.pelvis);
+        let feet = fk.iter().map(|t| t.translation.y).fold(f32::MAX, f32::min);
+        // Ground rising along +x at 25 degrees, as a grid of triangles (wound like the terrain).
+        let slope = 25f32.to_radians().tan();
+        let ground = |x: f32| x * slope;
+        let n = 20usize;
+        let (lo, step) = (-10.0f32, 1.0f32);
+        let mut verts = Vec::new();
+        for iz in 0..=n {
+            for ix in 0..=n {
+                let (x, z) = (lo + ix as f32 * step, lo + iz as f32 * step);
+                verts.push(Vec3::new(x, ground(x), z));
+            }
+        }
+        let stride = (n + 1) as u32;
+        let mut tris = Vec::new();
+        for iz in 0..n as u32 {
+            for ix in 0..n as u32 {
+                let a = iz * stride + ix;
+                let (bb, c) = (a + 1, a + stride);
+                tris.extend([[a, c, bb], [bb, c, c + 1]]);
+            }
+        }
+        let mut app = App::new();
+        app.add_plugins((MinimalPlugins, TransformPlugin, bevy::asset::AssetPlugin::default(), bevy::mesh::MeshPlugin, PhysicsPlugins::default()))
+            .insert_resource(TimeUpdateStrategy::ManualDuration(Duration::from_secs_f64(1.0 / 60.0)))
+            .insert_resource(Gravity(Vec3::NEG_Y * 9.81));
+        app.finish();
+        app.cleanup();
+        app.world_mut().spawn((
+            RigidBody::Static,
+            Collider::trimesh(verts, tris),
+            CollisionLayers::new(Phys::World, LayerMask::ALL),
+            Transform::default(),
+        ));
+        // Standing on the slope at x = 0 and thrown downhill hard (a killing blow).
+        let lift = Vec3::Y * (0.05 - feet);
+        let request = RagdollRequest {
+            velocity: Vec3::new(-7.0, 2.0, 0.0),
+            point: lift + Vec3::Y * 1.2,
+        };
+        let segs = {
+            let world = app.world_mut();
+            let mut queue = bevy::ecs::world::CommandQueue::default();
+            let mut commands = Commands::new(&mut queue, world);
+            let out = spawn_segments(&mut commands, &s, |i| Some((fk[i].rotation, fk[i].translation + lift)), Vec3::ZERO, &request)
+                .expect("segments");
+            queue.apply(world);
+            out.0
+        };
+        let mut worst = f32::MAX;
+        for _ in 0..(60 * 6) {
+            app.update();
+        }
+        let w = app.world_mut();
+        for (k, &e) in segs.iter().enumerate() {
+            let t = w.get::<Transform>(e).unwrap().translation;
+            assert!(t.is_finite());
+            // Height of the segment's centre above the slope, along the slope's normal.
+            let normal = Vec3::new(-slope, 1.0, 0.0).normalize();
+            let above = (t - Vec3::new(t.x, ground(t.x), t.z)).dot(normal) - SEGS[k].radius;
+            worst = worst.min(above);
+        }
+        assert!(worst > -0.05, "a segment sank {worst:.3} m into the slope");
     }
 
     #[test]
