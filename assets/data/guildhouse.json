@@ -1,0 +1,426 @@
+{
+  "_status": "draft, structured from agent-1's readings off the views",
+  "_source": "agent-1, read from G2/G3/G4/I1/I9 by hand; the 1 m grids are uneven and the labels disagree, so everything is scaled from G4's 16 m mark",
+  "_confidence": "rough - good enough to build and then correct against a render, not to cut stone from",
+  "_independent_check": {
+    "note": "Higgsfield's own numeric pass over the same images found the same thing: only 4 of 10 views carry a measurable ruler and their pitches disagree by about 2x, so the ground truth here is agent-1's hand reading, not the grid.",
+    "method": "tools/model/measure_guildhouse.py - autocorrelation of the line-response profile, with a harmonic guard; overlays in guild_measure/ for eyeballing"
+  },
+  "_conflict": {
+    "tower_corner": {
+      "art_says": "G1 puts the tower at the front-right corner",
+      "plans_say": "G4, I1 and I9 put it at the back-right",
+      "resolution": "plans win - G1 is concept art, the plans are the build"
+    }
+  },
+  "_units": "metres, world Y up, origin at the centre of the podium top",
+  "podium": {
+    "size_xy": [
+      16.0,
+      13.4
+    ],
+    "height": 1.5,
+    "aprons_m": {
+      "front": 2.5,
+      "back": 1.0,
+      "sides": 1.6
+    },
+    "sources": [
+      "G4",
+      "G2"
+    ]
+  },
+  "steps": {
+    "count": 6,
+    "rise": 0.25,
+    "width": 4.2,
+    "projection": 2.5,
+    "sources": [
+      "G4",
+      "G2"
+    ]
+  },
+  "main_block": {
+    "width": 12.8,
+    "depth": 9.9,
+    "sources": [
+      "G4"
+    ]
+  },
+  "storeys": [
+    {
+      "name": "stone ground floor",
+      "material": "wall_stone",
+      "height": 3.6
+    },
+    {
+      "name": "timber upper floor",
+      "material": "plaster",
+      "height": 2.7,
+      "overhang": 0.3
+    }
+  ],
+  "storey_sources": [
+    "G2",
+    "G3"
+  ],
+  "roof": {
+    "material": "roof_slate",
+    "ridge_axis": "side to side",
+    "height": 4.4,
+    "ridge_top_above_podium": 10.7,
+    "eave_overhang": [
+      0.5,
+      0.65
+    ],
+    "sources": [
+      "G2",
+      "G3"
+    ]
+  },
+  "tower": {
+    "corner": "back-right",
+    "size_xy": [
+      3.3,
+      3.3
+    ],
+    "wall_top_above_podium": 12.4,
+    "point_top_above_podium": 15.3,
+    "open_bell_room": true,
+    "sources": [
+      "G4",
+      "I1",
+      "G2"
+    ]
+  },
+  "chimney": {
+    "material": "wall_stone",
+    "wall": "left",
+    "position": "mid-depth",
+    "width": 1.2,
+    "top_above_podium": 12.2,
+    "sources": [
+      "G2",
+      "G4"
+    ]
+  },
+  "door": {
+    "width": 2.6,
+    "height": 3.2,
+    "arched": true,
+    "note": "agent-1's minimum; the drawing reads narrower",
+    "sources": [
+      "G2"
+    ]
+  },
+  "porch": {
+    "width": 4.1,
+    "depth": 1.8,
+    "top_above_podium": 5.2,
+    "sources": [
+      "G2",
+      "G3"
+    ]
+  },
+  "banners": {
+    "x": [
+      -3.4,
+      3.4
+    ],
+    "size": [
+      1.2,
+      4.0
+    ],
+    "top_above_podium": 5.5,
+    "texture": "banner_cloth",
+    "sources": [
+      "G2"
+    ]
+  },
+  "lanterns": {
+    "x": [
+      -1.6,
+      1.6
+    ],
+    "height_above_podium": 2.4,
+    "sources": [
+      "G2"
+    ]
+  },
+  "windows_ground": {
+    "front_x": [
+      -3.5,
+      3.5
+    ],
+    "width": 1.3,
+    "back_x": [
+      -3.0,
+      2.0
+    ],
+    "sources": [
+      "G4"
+    ]
+  },
+  "interior": {
+    "ground": {
+      "hall": true,
+      "hearth": {
+        "wall": "left"
+      },
+      "office_area": {
+        "corner": "back-right"
+      },
+      "front_desk": {
+        "facing": "the door"
+      },
+      "stairs": {
+        "type": "straight run",
+        "side": "right"
+      }
+    },
+    "upper": {
+      "guildmaster_office": {
+        "corner": "back-right",
+        "door_into_tower": true
+      },
+      "records": {
+        "corner": "front-left"
+      },
+      "lounge": {
+        "corner": "front-right",
+        "small_hearth": true
+      }
+    },
+    "sources": [
+      "G4",
+      "I9",
+      "I1"
+    ]
+  },
+  "_checks": {
+    "storey_arithmetic": "3.6 + 2.7 + 4.4 = 10.7, exactly the recorded ridge top above the podium",
+    "podium_arithmetic": "16.0 - 12.8 = 3.2 = front apron 2.5 + back apron 1.0; 13.4 - 9.9 = 3.5",
+    "apron_symmetry": "(16.0 - 12.8) / 2 = 1.6, exactly the recorded side apron",
+    "chimney_plausible": "12.2 sits between the eaves and the ridge top, as a chimney should",
+    "tower_plausible": "walls to 12.4 and point to 15.3 both clear the 10.7 ridge, so the tower reads as the tallest element"
+  },
+  "placement": {
+    "_status": "not a choice - the site is already fixed by play/hall.rs; this aligns the art to it",
+    "terrace": {
+      "min": [
+        14.0,
+        -18.0
+      ],
+      "max": [
+        46.0,
+        14.0
+      ],
+      "size": [
+        32.0,
+        32.0
+      ],
+      "note": "ground_height() returns exactly 0.0 here, so the podium needs no levelling"
+    },
+    "existing_hall": {
+      "min": [
+        24.0,
+        -16.0
+      ],
+      "max": [
+        38.0,
+        -2.0
+      ],
+      "wall_height": 4.2,
+      "wall_thickness": 0.4,
+      "note": "a 14x14 m box with 4.2 m walls - the guildhouse replaces it in place"
+    },
+    "fixed_anchors": {
+      "door_z": -9.0,
+      "door_width": 2.8,
+      "door_height": 3.0,
+      "door_faces": "-x (west, toward the courtyard)",
+      "gate": [
+        16.5,
+        -9.0
+      ],
+      "desk_stand": [
+        35.0,
+        -9.0
+      ],
+      "desk_face_rad": -1.5707963267948966,
+      "yard_door": {
+        "x": 34.0,
+        "z": -2.0,
+        "faces": "+z"
+      },
+      "ring_center": [
+        32.0,
+        7.0
+      ],
+      "ring_radius": 3.6,
+      "captain_post": [
+        36.5,
+        7.0
+      ],
+      "beam": {
+        "start": [
+          28.6,
+          12.0
+        ],
+        "end": [
+          37.6,
+          12.0
+        ]
+      }
+    },
+    "proposed": {
+      "yaw": "front faces -x (west, toward the courtyard), so the door plane stays on the x = 24 line the old hall used",
+      "podium_box": {
+        "x": [
+          24.0,
+          37.4
+        ],
+        "z": [
+          -17.0,
+          -1.0
+        ],
+        "depth_along_x": 13.4,
+        "width_along_z": 16.0
+      },
+      "steps_west_edge_x": 21.5,
+      "main_block_box": {
+        "x": [
+          25.75,
+          35.65
+        ],
+        "z": [
+          -15.4,
+          -2.6
+        ],
+        "depth_along_x": 9.9,
+        "width_along_z": 12.8,
+        "note": "door line z = -9 is the wall centre"
+      },
+      "tower_corner": {
+        "back": "+x",
+        "right": "+z",
+        "box": {
+          "x": [
+            32.35,
+            35.65
+          ],
+          "z": [
+            -5.9,
+            -2.6
+          ]
+        }
+      },
+      "clears": [
+        "ring (32, 7), captain post (36.5, 7) and beam (z = 12) all sit south of the podium's z = -1 edge",
+        "the gate at (16.5, -9) is 5 m west of the steps, so the approach survives",
+        "the desk at (35, -9) lands 0.79 m from the block's east wall, inside, facing the west door as before"
+      ]
+    },
+    "conflicts_to_resolve": [
+      {
+        "what": "tower footprint vs the existing yard door",
+        "detail": "the tower at the back-right needs x 32.35..35.65, z -5.90..-2.60; YARD_DOOR_X = 34.0 is inside that x range and its wall (z = -2 old, -2.6 new) is the tower's wall",
+        "options": [
+          "move the tower to the back-left (-z) corner, which frees the yard door",
+          "move the yard door west to about x = 28",
+          "keep it and let that door open into the tower base as the stair door"
+        ]
+      },
+      {
+        "what": "door line vs the old footprint",
+        "detail": "the old hall's +z wall sat at z = -2; the art's 12.8 m front wall centred on z = -9 puts it at z = -2.6",
+        "options": [
+          "accept the 0.6 m shift",
+          "or widen the block to 13.4 m along z so the old wall line is kept"
+        ]
+      },
+      {
+        "what": "wall height change",
+        "detail": "old hall 4.2 m to the eaves; the art is 6.3 m to the eaves and 10.7 m to the ridge",
+        "options": [
+          "check camera framing and anything that ray-casts the old roofline"
+        ]
+      }
+    ],
+    "_sources": [
+      "crates/game/src/play/hall.rs",
+      "crates/game/src/play/world.rs",
+      "crates/sim/src/terrain.rs"
+    ]
+  },
+  "calibration": {
+    "_why": "the grids are not a reliable metre, so the scale comes from the drawing's own labelled mark",
+    "independent_agreement": {
+      "agent1": "G4's 16 m mark = 71.9 px/m in a 1400 px copy",
+      "mine": "106.1 px/m in the 2048 px copy",
+      "scaled_agent1": 105.2,
+      "verdict": "within about 1 percent - the 16 m anchor is sound and both readings agree on scale"
+    },
+    "grid_is_not_a_metre": {
+      "plans": "two periodicities: floor tiles at about 0.64 m and a grid at about 0.93 m, so measuring by the grid inflates dimensions by roughly 8 percent even on the right feature",
+      "elevations": "detected cell 0.44 m at the calibrated scale, so the drawn cell is not 1 m here either"
+    },
+    "where_my_automatic_extents_disagree": {
+      "G4/I1 depth": "measured 15.59 m vs 13.4 m (+16 percent): the mask captures podium PLUS steps (13.4 + 2.5 = 15.9), so 13.4 is right for the podium alone",
+      "G2/G3 height": "measured 8.42-8.44 m vs 12.2 m (-31 percent): the mask drops the slate roof, seeing the walls (1.5 + 6.3) and not the ridge",
+      "conclusion": "the scale is trustworthy, the automatic extents are not - hand reading stays ground truth, and the overlays show where the mask stops"
+    },
+    "confirmed": [
+      "tower at the back-right (G4, I1, I9) matches the draft",
+      "podium depth 13.4 m once the steps are excluded",
+      "the 1.75 m figure and the 16 m mark are the anchors, not the grid"
+    ],
+    "_overlays": "guild_measure/*_calibrated.jpg - detected footprint in red, calibrated 1 m ruler in turquoise",
+    "per_view": {
+      "G2_front_elevation": {
+        "px_per_m": 161.81,
+        "box_m": [
+          16.0,
+          8.42
+        ],
+        "grid_cell_m": [
+          0.44,
+          0.45
+        ]
+      },
+      "G3_side_elevation": {
+        "px_per_m": 162.77,
+        "box_m": [
+          15.9,
+          8.44
+        ],
+        "grid_cell_m": [
+          0.44,
+          0.44
+        ]
+      },
+      "G4_ground_plan": {
+        "px_per_m": 106.06,
+        "box_m": [
+          16.0,
+          15.59
+        ],
+        "grid_cell_m": [
+          0.93,
+          0.93
+        ]
+      },
+      "I1_upper_plan": {
+        "px_per_m": 106.06,
+        "box_m": [
+          16.0,
+          15.59
+        ],
+        "grid_cell_m": [
+          0.93,
+          0.93
+        ]
+      }
+    }
+  }
+}
