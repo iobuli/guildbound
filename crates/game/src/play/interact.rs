@@ -264,7 +264,7 @@ pub fn focus_score(feet: Vec3, view: Vec3, center: Vec3, stand: Vec3, range: f32
 
 /// Hand IK weight over a use: in after the reach starts, out before the clip ends. `reach`
 /// (clip seconds) overrides when the hands hold fully; they ramp over `REACH_RAMP` around it.
-fn hand_weight(t: f32, duration: f32, looping: bool, reach: Option<(f32, f32)>) -> f32 {
+pub(crate) fn hand_weight(t: f32, duration: f32, looping: bool, reach: Option<(f32, f32)>) -> f32 {
     let smooth = |a: f32, b: f32, x: f32| {
         let u = ((x - a) / (b - a)).clamp(0.0, 1.0);
         u * u * (3.0 - 2.0 * u)

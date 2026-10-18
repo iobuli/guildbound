@@ -7,19 +7,30 @@
 //! fills the doorway while the leaf is shut and is switched off (`ColliderDisabled`) as soon as it
 //! starts to open, so the open leaf never shoves anyone.
 //!
-//! Either face works. `aim` (before `Act`) finds the nearest character and which face of the
-//! leaf it is on (from the leaf's current turn, so an open leaf works too), then rewrites the
-//! door's `Interactable` (`stand`, `face_yaw`, `hands`, `prompt`) and its `interact::Grasp` (a
-//! `Sphere` on the knob, or `Flat` on the leaf face) for that face. While anyone is within
-//! `FREEZE` of the doorway it leaves them alone, so the side cannot flip mid-use. `toggle` reacts
-//! to `UseEffect` (the knob has turned / the push has landed): it flips `PropState.on`, and an
-//! opening leaf swings away from whoever opened it. `swing` eases the hinge.
+//! Either face works. `aim` (before `Act`) serves the face of whoever is using the door
+//! (`interact::Using` on it), else of the nearest character, judged from the leaf's current turn
+//! (so an open leaf works too), and rewrites the door's `Interactable` (`stand`, `face_yaw`,
+//! `hands`, `prompt`) and its `interact::Grasp` (a `Sphere` on the knob, or `Flat` on the leaf
+//! face) for that face. `toggle` reacts to `UseEffect` (the knob has turned / the push has
+//! landed): it flips `PropState.on`, and an opening leaf swings away from the user who opened it
+//! (their side of the leaf at that moment). It logs how far the user's hand was from its target.
+//!
+//! The knob (a ball with a ridge across its face) sits on a `Knob` pivot that `turn_knobs` turns
+//! about the spindle with the same weight that rolls the user's wrist (`interact::hand_weight`),
+//! so knob and hand turn together, before the latch lets the leaf go at the use beat.
+//!
+//! `swing` eases the hinge, but never into a body: the leaf (hinge to free edge) is checked
+//! against every character's capsule circle at its next angle; on contact the character is
+//! nudged out of the way (`Mover.external`, at most `NUDGE` m/s) and the leaf holds that frame.
 //!
 //! Ownership: the door kinds' `Interactable` stand / face / hands / prompt and `Grasp`, their
-//! `PropState.on`, the leaf transform and the block's `ColliderDisabled` (all here).
-use super::interact::{Grasp, PropState, UseEffect};
+//! `PropState.on`, the leaf and knob transforms, the block's `ColliderDisabled`, and a nudge on
+//! `Mover.external` while a leaf pushes a character (all here).
+use super::interact::{Grasp, Phase, PropState, UseEffect, Using, hand_weight};
 use super::world::{Kit, UseSpec, place};
-use super::{Interactable, Mover, PlaySet};
+use super::{CAPSULE_RADIUS, Interactable, Mover, PlaySet};
+use crate::motion::Rig;
+use crate::motion::bank::PoseBank;
 use crate::motion::hand::Shape;
 use avian3d::prelude::*;
 use bevy::prelude::*;
@@ -47,8 +58,8 @@ const PUSH_Y: f32 = 1.12;
 /// at the right hand.
 const STAND_BACK: f32 = 0.52;
 const KNOB_SIDE: f32 = 0.18;
-/// Nobody within this distance of the doorway: the door may switch the face it serves (m).
-const FREEZE: f32 = 1.3;
+/// Largest speed (m/s) at which a swinging leaf nudges a character out of its way.
+const NUDGE: f32 = 1.2;
 /// Interaction timing on `ual1/Interact` (2 s): the hands hold over `REACH`, the use lands at `BEAT`.
 const TRACK: &str = "ual1/Interact";
 const REACH: (f32, f32) = (0.45, 1.5);
@@ -68,12 +79,35 @@ pub struct HingedDoor {
 #[derive(Component)]
 struct Leaf;
 
+/// The pivot a knob turns on (spindle along the leaf's Z); `side` is the face it is on.
+#[derive(Component)]
+struct Knob {
+    side: f32,
+}
+
 #[derive(Component)]
 struct Block;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, aim.before(PlaySet::Act))
-        .add_systems(Update, (toggle, swing).chain().after(super::interact::drive));
+        .add_systems(Update, (toggle, turn_knobs, swing).chain().after(super::interact::drive));
+}
+
+/// Which face of a leaf (`leaf_world`, the leaf in world space) a point is on: +1 / −1.
+pub fn face_of(leaf_world: &Transform, point: Vec3) -> f32 {
+    let normal = leaf_world.rotation * Vec3::Z;
+    if (point - leaf_world.translation).dot(normal) >= 0.0 { 1.0 } else { -1.0 }
+}
+
+/// Whether a leaf hung at `hinge` (world), turned `angle` about +Y from the root's `yaw`
+/// rotation, comes within `radius` (+ half the leaf's thickness) of `body` in the ground plane.
+pub fn leaf_hits(hinge: Vec3, base: Quat, angle: f32, body: Vec3, radius: f32) -> bool {
+    let along = (base * Quat::from_rotation_y(angle) * Vec3::X).with_y(0.0);
+    let (a, b) = (hinge.with_y(0.0), (hinge + along * W).with_y(0.0));
+    let p = body.with_y(0.0);
+    let ab = b - a;
+    let u = ((p - a).dot(ab) / ab.length_squared().max(1e-6)).clamp(0.0, 1.0);
+    p.distance(a + ab * u) < radius + T * 0.5
 }
 
 /// The face's contact geometry in leaf space: hand points `[left, right]`, grasp shapes, and the
@@ -106,24 +140,26 @@ fn stand_for(leaf: &Transform, c: Vec3, side: f32, knob: bool) -> (Vec3, f32) {
     (stand, facing.x.atan2(facing.z))
 }
 
+#[allow(clippy::type_complexity)]
 fn aim(
     bodies: Query<&GlobalTransform, With<Mover>>,
-    mut doors: Query<(&mut HingedDoor, &Transform, &mut Interactable, &mut Grasp, &PropState, &Children)>,
+    users: Query<(&Using, &GlobalTransform)>,
+    mut doors: Query<(Entity, &mut HingedDoor, &Transform, &mut Interactable, &mut Grasp, &PropState, &Children)>,
     leaves: Query<&Transform, (With<Leaf>, Without<HingedDoor>)>,
 ) {
-    for (mut door, root, mut it, mut grasp, prop, children) in &mut doors {
+    for (entity, mut door, root, mut it, mut grasp, prop, children) in &mut doors {
         let Some(leaf) = children.iter().find_map(|c| leaves.get(c).ok()) else { continue };
         let leaf_world = root.mul_transform(*leaf);
-        let nearest = bodies
-            .iter()
-            .map(|b| b.translation())
-            .min_by(|a, b| a.distance_squared(root.translation).total_cmp(&b.distance_squared(root.translation)));
-        if let Some(body) = nearest {
-            let flat_dist = (body - root.translation).with_y(0.0).length();
-            if flat_dist > FREEZE {
-                let normal = leaf_world.rotation * Vec3::Z;
-                door.side = if (body - leaf_world.translation).dot(normal) >= 0.0 { 1.0 } else { -1.0 };
-            }
+        // Whoever is using this door, else whoever is nearest.
+        let user = users.iter().find(|(u, _)| u.target == entity).map(|(_, g)| g.translation());
+        let nearest = || {
+            bodies
+                .iter()
+                .map(|b| b.translation())
+                .min_by(|a, b| a.distance_squared(root.translation).total_cmp(&b.distance_squared(root.translation)))
+        };
+        if let Some(body) = user.or_else(nearest) {
+            door.side = face_of(&leaf_world, body);
         }
         let (hands, shapes, centre) = contact(door.knob, door.side);
         let (stand, face) = stand_for(leaf, centre, door.side, door.knob);
@@ -139,31 +175,118 @@ fn aim(
     }
 }
 
-fn toggle(mut effects: MessageReader<UseEffect>, mut doors: Query<(&mut HingedDoor, &mut PropState)>) {
+#[allow(clippy::type_complexity)]
+fn toggle(
+    mut effects: MessageReader<UseEffect>,
+    bank: Option<Res<PoseBank>>,
+    mut doors: Query<(&mut HingedDoor, &mut PropState, &Transform, &Children)>,
+    leaves: Query<&Transform, (With<Leaf>, Without<HingedDoor>)>,
+    users: Query<(&GlobalTransform, Option<&Rig>)>,
+    globals: Query<&GlobalTransform>,
+) {
     for e in effects.read() {
-        let Ok((mut door, mut prop)) = doors.get_mut(e.target) else { continue };
+        let Ok((mut door, mut prop, root, children)) = doors.get_mut(e.target) else { continue };
+        let Some(leaf) = children.iter().find_map(|c| leaves.get(c).ok()) else { continue };
+        let leaf_world = root.mul_transform(*leaf);
+        let user = users.get(e.user).ok();
         prop.on = !prop.on;
         if prop.on && door.amount < 0.05 {
             // Away from the opener: the free edge (+X from the hinge) turns toward −side·Z, and a
-            // turn of +θ about +Y carries +X toward −Z.
-            door.open_dir = door.side;
+            // turn of +θ about +Y carries +X toward −Z, so the turn's sign is the opener's side.
+            door.open_dir = user.map_or(door.side, |(g, _)| face_of(&leaf_world, g.translation()));
         }
-        info!("[door] {} {}", if door.knob { "knob door" } else { "push door" }, if prop.on { "opens" } else { "closes" });
+        // How close the hand got to what it reached for (the knob, or the middle of the palms).
+        let (targets, _, _) = contact(door.knob, door.side);
+        let reach = user.and_then(|(_, rig)| {
+            let (bank, rig) = (bank.as_deref()?, rig?);
+            let mut worst = 0.0f32;
+            for (i, t) in targets.iter().enumerate() {
+                let Some(t) = t else { continue };
+                let hand = globals.get(*rig.bones.get(bank.bones.hand[i])?).ok()?.translation();
+                worst = worst.max(hand.distance(leaf_world.transform_point(*t)));
+            }
+            Some(worst)
+        });
+        let what = if door.knob { "knob door" } else { "push door" };
+        let state = if prop.on { "opens" } else { "closes" };
+        match reach {
+            Some(d) => info!("[door] {what} {state} (hand {d:.2} m from its target)"),
+            None => info!("[door] {what} {state}"),
+        }
     }
 }
 
+/// Knobs turn with the hand that holds them.
+#[allow(clippy::type_complexity)]
+fn turn_knobs(
+    time: Res<Time>,
+    bank: Option<Res<PoseBank>>,
+    users: Query<&Using>,
+    doors: Query<(Entity, &HingedDoor, &Interactable, &Children)>,
+    leaves: Query<&Children, With<Leaf>>,
+    mut knobs: Query<(&Knob, &mut Transform)>,
+) {
+    let dt = time.delta_secs().clamp(0.0, 0.1);
+    for (entity, door, it, children) in &doors {
+        if !door.knob {
+            continue;
+        }
+        let duration = bank.as_deref().filter(|b| b.has(&it.track)).map_or(it.duration, |b| b.duration(&it.track)).max(0.2);
+        let turn = users
+            .iter()
+            .find(|u| u.target == entity && u.phase == Phase::Use)
+            .map_or(0.0, |u| hand_weight(u.t, duration, it.looping, it.reach));
+        for leaf in children.iter().filter_map(|c| leaves.get(c).ok()) {
+            for child in leaf.iter() {
+                let Ok((knob, mut tf)) = knobs.get_mut(child) else { continue };
+                // Only the knob in the hand turns; the far one follows the spindle back.
+                let goal = if knob.side == door.side { KNOB_TURN * turn * knob.side } else { 0.0 };
+                let (_, _, now) = tf.rotation.to_euler(EulerRot::XYZ);
+                let next = now + (goal - now) * (12.0 * dt).min(1.0);
+                tf.rotation = Quat::from_rotation_z(next);
+            }
+        }
+    }
+}
+
+#[allow(clippy::type_complexity)]
 fn swing(
     mut commands: Commands,
     time: Res<Time>,
-    mut doors: Query<(&mut HingedDoor, &PropState, &Children)>,
-    mut leaves: Query<&mut Transform, With<Leaf>>,
+    mut doors: Query<(&mut HingedDoor, &PropState, &Transform, &Children)>,
+    mut leaves: Query<&mut Transform, (With<Leaf>, Without<HingedDoor>)>,
     blocks: Query<(Entity, Has<ColliderDisabled>), With<Block>>,
+    mut bodies: Query<(&GlobalTransform, &mut Mover)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
-    for (mut door, prop, children) in &mut doors {
+    let eased = |a: f32| a * a * (3.0 - 2.0 * a);
+    for (mut door, prop, root, children) in &mut doors {
         let goal = if prop.on { 1.0 } else { 0.0 };
-        door.amount += (goal - door.amount).clamp(-RATE * dt, RATE * dt);
-        let eased = door.amount * door.amount * (3.0 - 2.0 * door.amount);
+        let next = door.amount + (goal - door.amount).clamp(-RATE * dt, RATE * dt);
+        // Never into a body: nudge it along the leaf's motion and hold this frame.
+        if next != door.amount {
+            let hinge = root.transform_point(Vec3::new(-W * 0.5, 0.0, 0.0));
+            let (from, to) = (door.open_dir * OPEN * eased(door.amount), door.open_dir * OPEN * eased(next));
+            let mut blocked = false;
+            for (g, mut mover) in &mut bodies {
+                let p = g.translation();
+                if (p.y - root.translation.y).abs() > H + 1.0 || !leaf_hits(hinge, root.rotation, to, p, CAPSULE_RADIUS) {
+                    continue;
+                }
+                blocked = true;
+                // The leaf's motion at the body: tangential to the hinge, in the turn's direction.
+                let arm = (p - hinge).with_y(0.0);
+                let push = (Vec3::Y.cross(arm) * (to - from).signum()).normalize_or_zero() * NUDGE;
+                if push.length_squared() > mover.external.with_y(0.0).length_squared() {
+                    mover.external.x = push.x;
+                    mover.external.z = push.z;
+                }
+            }
+            if !blocked {
+                door.amount = next;
+            }
+        }
+        let eased = eased(door.amount);
         let shut = door.amount < 0.02 && !prop.on;
         for child in children.iter() {
             if let Ok(mut tf) = leaves.get_mut(child) {
@@ -236,9 +359,16 @@ fn door(kit: &mut Kit, name: &str, at: Vec3, knob: bool) {
     }
     for z in [-1.0f32, 1.0] {
         if knob {
-            let stem = T * 0.5 + KNOB_OUT * 0.5;
-            kit.part(leaf, "Knob stem", Cylinder::new(0.012, KNOB_OUT), &metal, Transform::from_xyz(KNOB_X, KNOB_Y, z * stem).with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), None);
-            kit.part(leaf, "Door knob", Sphere::new(KNOB_R), &metal, Transform::from_xyz(KNOB_X, KNOB_Y, z * (T * 0.5 + KNOB_OUT)), None);
+            // Rose plate on the leaf, then the knob on a pivot turning about the spindle.
+            kit.part(leaf, "Knob rose", Cylinder::new(0.035, 0.008), &metal, Transform::from_xyz(KNOB_X, KNOB_Y, z * (T * 0.5 + 0.004)).with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), None);
+            let pivot = kit
+                .commands
+                .spawn((Name::new("Knob pivot"), Knob { side: z }, Transform::from_xyz(KNOB_X, KNOB_Y, z * T * 0.5), Visibility::default(), ChildOf(leaf)))
+                .id();
+            kit.part(pivot, "Knob stem", Cylinder::new(0.012, KNOB_OUT), &metal, Transform::from_xyz(0.0, 0.0, z * KNOB_OUT * 0.5).with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), None);
+            kit.part(pivot, "Door knob", Sphere::new(KNOB_R), &metal, Transform::from_xyz(0.0, 0.0, z * KNOB_OUT), None);
+            // A ridge across the knob's face, so its turn shows.
+            kit.part(pivot, "Knob ridge", Cuboid::new(KNOB_R * 2.3, 0.014, 0.022), &dark, Transform::from_xyz(0.0, 0.0, z * (KNOB_OUT + KNOB_R * 0.55)), None);
         } else {
             // Push plates where the palms go.
             for x in PUSH_X {
@@ -282,6 +412,35 @@ mod tests {
             assert!(r.dot(right) > l.dot(right), "side {side}: right hand must be to the right");
             let Some(Shape::Flat { normal, .. }) = shapes[0] else { panic!() };
             assert_eq!(normal, Vec3::Z * side);
+        }
+    }
+
+    #[test]
+    fn the_leaf_swings_away_from_its_user_not_the_nearest_body() {
+        // A shut leaf (hinge at x = −W/2, faces ±Z); the user on its −Z face, an NPC on its +Z face.
+        let leaf = Transform::from_xyz(-W * 0.5, 0.0, 0.0);
+        let user = Vec3::new(0.3, 1.0, -0.9);
+        let npc = Vec3::new(0.2, 1.0, 0.6);
+        assert_eq!(face_of(&leaf, user), -1.0);
+        assert_eq!(face_of(&leaf, npc), 1.0);
+        // `toggle` turns the leaf by open_dir = the user's side: the free edge moves away to +Z.
+        let open_dir = face_of(&leaf, user);
+        let free_edge = Quat::from_rotation_y(open_dir * OPEN) * Vec3::X * W + leaf.translation;
+        assert!(free_edge.z > 0.5, "free edge {free_edge}");
+        assert!(free_edge.distance(user) > 1.0);
+    }
+
+    #[test]
+    fn a_body_in_the_arc_stops_the_leaf_and_one_behind_the_hinge_does_not() {
+        let hinge = Vec3::new(-W * 0.5, 0.0, 0.0);
+        // Opening toward +Z (angle −OPEN): a body standing half a metre out on +Z in the arc.
+        let in_arc = Vec3::new(-0.1, 1.0, 0.45);
+        assert!(!leaf_hits(hinge, Quat::IDENTITY, 0.0, in_arc, CAPSULE_RADIUS), "shut leaf clear of it");
+        assert!(leaf_hits(hinge, Quat::IDENTITY, -OPEN * 0.6, in_arc, CAPSULE_RADIUS), "the swinging leaf meets it");
+        // Behind the hinge post, outside the leaf's reach.
+        let behind = Vec3::new(-W * 0.5 - 0.7, 1.0, 0.3);
+        for k in 0..=10 {
+            assert!(!leaf_hits(hinge, Quat::IDENTITY, -OPEN * k as f32 / 10.0, behind, CAPSULE_RADIUS));
         }
     }
 
