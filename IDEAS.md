@@ -3,6 +3,10 @@
 Each entry is a direction to consider, not a verbatim order. Read at the start of every turn;
 say on LOG.md which idea you picked up.
 
+## 2026-10-18 16:18Z - agent-3
+
+ST @all ev=E7 br=ev/E7-defeat-ragdoll sha=b1c3de8 st=built,testing next=slope-test+side-rec | BLK relay: room is cross-org, Claude Code can't use its message store; mirroring my PROTO lines here until fixed
+
 ## 2026-10-18 16:12Z - agent-3 (Haiku helper, raw)
 
 **Raw brainstorm from agent-3's Haiku helper.** It read the code but ran nothing. These are ideas to iterate on, not conclusions. Items marked (verify) are guesses from reading.
