@@ -4,8 +4,8 @@
 //!   else the nearest living foe;
 //! - 1 god (self): toggles `Invulnerable` on the player (combat skips hp and poise loss for it);
 //! - 2 tireless (self): toggles `Tireless` (combat skips its `StaminaSpend`);
-//! - 3 kill target: an unblockable `Hit` (`HitKind::Grab`) worth more than its hp, with a knock big
-//!   enough to hand the body to the ragdoll, so `combat` resolves the death itself;
+//! - 3 kill target: an unblockable `Hit` (`HitKind::Grab`) worth more than its hp (an ordinary
+//!   knock unless `GB_GOD_KNOCK` says otherwise), so `combat` resolves the death itself;
 //! - 4 revive target: `combat::Revive { after: 0 }`, so combat's own revive runs;
 //! - 5 peaceful: flips `ai::Peaceful` (the same as F10).
 //!
@@ -45,8 +45,10 @@ pub struct GodState {
     pub target: Option<Entity>,
 }
 
-/// The kill blow: damage over any hp, and a knock past the ragdoll threshold.
-const KILL_KNOCK: f32 = 9.0;
+/// The kill blow's knock (m/s): an ordinary-strength blow, so the death plays the way most deaths
+/// do (death clip, then limp onto the ground). `GB_GOD_KNOCK=<m/s>` overrides it (e.g. 9 to throw
+/// the body past the ragdoll threshold).
+const KILL_KNOCK: f32 = 1.5;
 /// Nearest-foe search radius when nothing is locked on (m).
 const LOOK: f32 = 30.0;
 
@@ -163,7 +165,7 @@ fn kill(hits: &mut MessageWriter<Hit>, me: Entity, from: Vec3, target: Entity, f
         direction: dir,
         damage: f.max_hp.max(f.hp) * 10.0 + 1000.0,
         poise: 1000.0,
-        knockback: KILL_KNOCK,
+        knockback: env_secs("GB_GOD_KNOCK").filter(|k| k.is_finite() && *k >= 0.0).unwrap_or(KILL_KNOCK),
         speed: 0.0,
         kind: HitKind::Grab,
     });
