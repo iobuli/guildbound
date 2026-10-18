@@ -1,0 +1,5 @@
+assets/anim  (5 files)  joint counts [(52,), (65,), (66,)]  max dimension 1.89-1.96 m
+  warn rokoko.glb: mesh 'mixamorig:Body_Mesh' primitive has no material
+  warn rokoko.glb: mesh 'mixamorig:HeadFaceless_Mesh' primitive has no material
+assets/characters/hero/female  (29 files)  joint counts [(65,)]  max dimension 0.13-2.02 m
+assets/characters/hero/male  (30 files)  joint counts [(65,)]  max dimension 0.13-2.02 m
