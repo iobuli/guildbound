@@ -1,5 +1,34 @@
 # Agent log (newest first)
 
+## 2026-10-18T15:13Z · agent-2
+
+**Branch:** feat-monk   ·  **Range:** `26c5552..e9ecf30`
+
+**What:** Monk + discipline (UNTESTED build on this commit). play/discipline.rs: Mastery path+rank; Monk fists x1.35+, guard absorbs more for less stamina; guard inside the blow = auto counter -> Stunned 1.5 s -> ragdoll on next hit; max rank (S) counter per class with its own flare; rank aura from D; humans 2+ ranks below flee, others hesitate, demons never flee; arrows deflected, spells absorbed as over-mana (1.5x). Hand Forms (fist, cupped, two-finger, claw) + fit checker. Climb: body pushed off the wall, weapon sheathes. Armour no longer changes motion. CMU clips placed on the floor. New NPCs: Brother Ishin, Sister Ren, Elder Tadao, Oni. appearance.json: order area (monks), monk class look, oni look. looks.rs: beads, wraps, horns.
+
+**Config / try it:** Class panel key 4 or GB_CLASS=monk; GB_RANK=0..6 forces the player's rank; GB_CHECK=1 logs [fit] lines; GB_ARMOR_PADDING=1 restores old armour padding; cargo test floor_report -- --ignored --nocapture. Fetch: git fetch origin feat-monk.
+
+- `e9ecf30` WIP: Monk discipline, counters, hand forms, fit checker, climb wall push, mocap floor placement
+    - assets/data/appearance.json: +787-852 +858-859 +871-872 +1150-1261
+    - crates/game/src/motion/bank.rs: +100-129 +631-675 +892-958
+    - crates/game/src/motion/body.rs: +253-292
+    - crates/game/src/motion/compose.rs: +201 +213-218 +261-276 +323-337
+    - crates/game/src/motion/contact.rs: +1251-1252
+    - crates/game/src/motion/hand.rs: +34-63 +129-130 +280-356 +431 +452 +522-548
+    - crates/game/src/motion/mod.rs: +272-276 +293-294
+    - crates/game/src/play/ai.rs: +12-14 +29 +73-75 +198-201 +226-227 +265-277 +391-405 +461-466 +591 +606-607 +613 +618 …
+    - crates/game/src/play/appearance.rs: +183-189
+    - crates/game/src/play/armor.rs: +5-6 +1525-1529 +1616-1619
+    - crates/game/src/play/class.rs: +8-10 +28 +44 +78-98 +155 +163
+    - crates/game/src/play/combat.rs: +50-51 +201-207 +1175-1176 +1258 +1289 +1303 +1481 +2118-2120 +2137-2138 +2204 +2221 +2226-2227 …
+    - crates/game/src/play/discipline.rs: +1-505
+    - crates/game/src/play/looks.rs: +46-51 +68-70 +100-102 +104 +120-175 +391-419 +524-542
+    - crates/game/src/play/magic.rs: +52-54 +312-313 +471-478 -480
+    - crates/game/src/play/mod.rs: +28 +124-125
+    - crates/game/src/play/select.rs: +162-166 +715 +741 +800 +1145-1146
+    - crates/game/src/play/sheath.rs: +9 +122 +125-128
+    - crates/game/src/play/world.rs: +1287-1335
+
 ## 2026-10-18T15:13Z · agent-1
 
 **Branch:** feat-monk overhaul-2026-10-16   ·  **Range:** `e9edea7..26c5552`
