@@ -230,6 +230,73 @@ pub fn resolve(pose: &mut Pose, skeleton: &Skeleton, bones: &Bones, padding: &Bo
     }
 }
 
+/// Pull `point` (on a limb from `pivot`) back by `depth` along `out`: a swing where `out` crosses
+/// the limb, else (pushing straight back along it) a fold toward the limb's down side by the angle
+/// that shortens its reach enough.
+fn retract(pivot: Vec3, point: Vec3, out: Vec3, depth: f32) -> Option<Quat> {
+    if let Some(q) = swing_away(pivot, point, out, depth) {
+        return Some(q);
+    }
+    let lever = point - pivot;
+    let length = lever.length();
+    let along = lever.try_normalize()?;
+    if along.dot(out) > -0.5 || length < 1e-3 {
+        return None;
+    }
+    let side = Vec3::NEG_Y - along * along.dot(Vec3::NEG_Y);
+    let side = side.try_normalize().or_else(|| Vec3::Z.cross(along).try_normalize())?;
+    let angle = (1.0 - (depth / length).min(1.0)).clamp(-1.0, 1.0).acos().min(2.0 * MAX_SWING);
+    let axis = along.cross(side).try_normalize()?;
+    angle.is_finite().then(|| Quat::from_axis_angle(axis, angle))
+}
+
+/// Keep the arms out of the world and other bodies, after contact IK. `probe(p)` (world space)
+/// returns the way out of whatever `p` is inside, and how deep (m). For each arm not held by an
+/// IK target (`held`), a hand that is inside swings the forearm out about the elbow; an elbow that
+/// is inside swings the upper arm out about the shoulder (smallest rotation, `MAX_SWING` at most).
+pub fn clear_world(
+    pose: &mut Pose,
+    skeleton: &Skeleton,
+    bones: &Bones,
+    model_world: &Transform,
+    held: [bool; 2],
+    mut probe: impl FnMut(Vec3) -> Option<(Vec3, f32)>,
+) {
+    if pose.rot.len() != skeleton.len() {
+        return;
+    }
+    let scale = model_world.scale.max_element().max(1e-3);
+    let to_model = |out: Vec3| (model_world.rotation.inverse() * out).normalize_or_zero();
+    for _ in 0..PASSES {
+        let model = skeleton.fk(pose, bones.pelvis);
+        let pos = |i: usize| model[i].translation;
+        let mut moved = false;
+        for side in 0..2 {
+            if held[side] {
+                continue;
+            }
+            let (shoulder, elbow, wrist) = (pos(bones.upperarm[side]), pos(bones.lowerarm[side]), pos(bones.hand[side]));
+            let hand = wrist + (wrist - elbow).normalize_or_zero() * HAND_LENGTH;
+            if let Some((out, depth)) = probe(model_world.transform_point(hand))
+                && let Some(delta) = retract(elbow, hand, to_model(out), depth / scale + MARGIN)
+            {
+                rotate(pose, &model, skeleton, bones.lowerarm[side], delta);
+                moved = true;
+                continue;
+            }
+            if let Some((out, depth)) = probe(model_world.transform_point(elbow))
+                && let Some(delta) = retract(shoulder, elbow, to_model(out), depth / scale + MARGIN)
+            {
+                rotate(pose, &model, skeleton, bones.upperarm[side], delta);
+                moved = true;
+            }
+        }
+        if !moved {
+            break;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -270,5 +337,25 @@ mod tests {
         }
         assert!(depth(&pose) < 0.01, "left {}", depth(&pose));
         assert!(pose.rot.iter().all(|q| q.is_finite()));
+    }
+
+    #[test]
+    fn an_arm_reaching_into_a_wall_is_pulled_out_unless_held() {
+        let (skeleton, bones) = skeleton();
+        let rest = skeleton.rest_pose();
+        let hand_x = |p: &Pose| skeleton.fk(p, bones.pelvis)[bones.hand[0]].translation.x;
+        // A wall just short of the left hand (the T-pose reaches along +x).
+        let wall = hand_x(&rest) - 0.12;
+        let probe = |p: Vec3| (p.x > wall).then(|| (Vec3::NEG_X, p.x - wall));
+        let mut pose = rest.clone();
+        for _ in 0..4 {
+            clear_world(&mut pose, &skeleton, &bones, &Transform::IDENTITY, [false, false], probe);
+        }
+        assert!(hand_x(&pose) < wall + 0.03, "hand {} wall {wall}", hand_x(&pose));
+        assert!(pose.rot.iter().all(|q| q.is_finite()));
+        // A hand an IK target holds (a climb hold, a lever) is left where it is.
+        let mut held = rest.clone();
+        clear_world(&mut held, &skeleton, &bones, &Transform::IDENTITY, [true, true], probe);
+        assert_eq!(held, rest);
     }
 }

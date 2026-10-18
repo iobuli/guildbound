@@ -59,6 +59,36 @@ pub struct Door {
     centre: Vec3,
 }
 
+/// Inside the hall's walls (x, z).
+pub fn inside(p: Vec3) -> bool {
+    p.x > HALL_MIN.x && p.x < HALL_MAX.x && p.z > HALL_MIN.y && p.z < HALL_MAX.y
+}
+
+/// Where to walk next from `feet` toward `goal`: straight there unless the hall's walls are in the
+/// way (one end inside, the other out), then through the doorway that makes the shorter trip —
+/// first to a point just on this side of it, then to one just past it.
+pub fn route(feet: Vec3, goal: Vec3) -> Vec3 {
+    if inside(feet) == inside(goal) {
+        return goal;
+    }
+    // (doorway centre, unit pointing out of the hall)
+    let doors = [(Vec3::new(HALL_MIN.x, 0.0, DOOR_Z), Vec3::NEG_X), (Vec3::new(YARD_DOOR_X, 0.0, HALL_MAX.y), Vec3::Z)];
+    let flat = |v: Vec3| v.with_y(0.0);
+    let (door, out) = doors
+        .into_iter()
+        .min_by(|a, b| {
+            let cost = |d: Vec3| flat(d - feet).length() + flat(goal - d).length();
+            cost(a.0).total_cmp(&cost(b.0))
+        })
+        .unwrap_or(doors[0]);
+    let side = if inside(feet) { -1.0 } else { 1.0 };
+    let near = door + out * side * 0.9;
+    let past = door - out * side * 1.2;
+    // Lined up with the doorway already: go through.
+    let lined = flat(feet - door).dot(out) * side > 0.0 && flat(feet - near).length() < 0.6;
+    if lined || flat(feet - door).length() < 0.8 { past.with_y(feet.y) } else { near.with_y(feet.y) }
+}
+
 pub fn plugin(app: &mut App) {
     app.add_systems(Update, swing)
         .add_systems(Update, walk.after(super::PlaySet::Input).before(super::PlaySet::Act));
@@ -483,5 +513,21 @@ mod tests {
         assert!(RING_CENTER.x - RING_RADIUS > HALL_MIN.x + 1.0 && RING_CENTER.z + RING_RADIUS < 13.0);
         // The receptionist stands behind the counter, between it and the back wall.
         assert!(DESK_STAND.x > DESK_X + 0.5 && DESK_STAND.x < HALL_MAX.x - 0.5);
+    }
+
+    #[test]
+    fn walkers_leave_the_hall_by_a_door() {
+        let lodging = Vec3::new(28.0, 0.0, -4.6);
+        let beam_end = Vec3::new(26.6, 0.0, 12.0);
+        let w = route(lodging, beam_end);
+        assert!((w.x - YARD_DOOR_X).abs() < 0.1 && w.z < HALL_MAX.y, "to the yard door first: {w}");
+        // At the doorway: through it.
+        let at_door = Vec3::new(YARD_DOOR_X, 0.0, HALL_MAX.y - 0.9);
+        assert!(route(at_door, beam_end).z > HALL_MAX.y, "then out");
+        // Both outside: straight.
+        assert_eq!(route(Vec3::new(30.0, 0.0, 5.0), beam_end), beam_end);
+        // From the gate to the desk: the west door.
+        let w = route(Vec3::new(17.0, 0.0, -9.0), DESK_STAND);
+        assert!((w.z - DOOR_Z).abs() < 0.1 && w.x < HALL_MIN.x, "{w}");
     }
 }

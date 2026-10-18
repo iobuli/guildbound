@@ -74,6 +74,9 @@ impl StyleScale {
 
 /// Longest downward ground probe (m) from pelvis height.
 const GROUND_PROBE: f32 = 3.0;
+/// Arms keep this far from world surfaces (m); another body's capsule counts only this far in (m).
+const ARM_CLEARANCE: f32 = 0.04;
+const BODY_SLACK: f32 = 0.12;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<MotionFeel>().add_systems(
@@ -253,6 +256,29 @@ fn compose(
                 &mut state,
                 dt,
             );
+            // Arms out of walls, props and other bodies (not hands an IK target holds).
+            let held = [0, 1].map(|i| request.hands[i].is_some_and(|(_, w)| w > 0.3));
+            let others = SpatialQueryFilter::from_mask(Phys::Character).with_excluded_entities([root]);
+            super::body::clear_world(&mut pose, skeleton, bones, &model_world, held, |p| {
+                // Nearest surface (solid = false, so a point inside still gets its way out).
+                let wall = spatial.project_point(p, false, &filter).and_then(|hit| {
+                    let to_surface = hit.point - p;
+                    let d = to_surface.length();
+                    if hit.is_inside {
+                        Some((to_surface.normalize_or(Vec3::Y), d + ARM_CLEARANCE))
+                    } else {
+                        (d < ARM_CLEARANCE).then(|| ((-to_surface).normalize_or(Vec3::Y), ARM_CLEARANCE - d))
+                    }
+                });
+                // Capsules are fatter than the bodies inside them: only the inner part counts.
+                wall.or_else(|| {
+                    spatial.project_point(p, false, &others).filter(|h| h.is_inside).and_then(|hit| {
+                        let to_surface = hit.point - p;
+                        let depth = to_surface.length() - BODY_SLACK;
+                        (depth > 0.0).then(|| (to_surface.normalize_or(Vec3::Y), depth))
+                    })
+                })
+            });
         }
         layers.impulses.clear();
         if let Some(mut out) = rig_pose {

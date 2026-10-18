@@ -6,6 +6,9 @@
 //! to stop, and move on. `work` is the only writer of a civilian's `Intent`.
 //! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one.
 //! While the player talks to a civilian (`talk::Talking`) it stops and looks at them.
+//! Walking: through the hall's doorways when one end is inside (`hall::route`); no progress for
+//! `STALL` s sidesteps for `DODGE` s (alternating sides); a post not reached in `POST_GIVE_UP` s
+//! is skipped.
 //! The courtyard has a Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well,
 //! the noticeboard).
 use super::interact::{Using, stand_and_face};
@@ -19,6 +22,12 @@ const PRESS_EVERY: f32 = 1.0;
 const GIVE_UP: f32 = 30.0;
 /// A neighbour this close (m) while using something gets looked at (company at a table).
 const SITTER_NEAR: f32 = 3.5;
+/// Stuck: under `STALL_MOVE` m of progress for `STALL` s sidesteps for `DODGE` s; a post not
+/// reached in `POST_GIVE_UP` s is skipped.
+const STALL_MOVE: f32 = 0.25;
+const STALL: f32 = 1.2;
+const DODGE: f32 = 0.9;
+const POST_GIVE_UP: f32 = 45.0;
 /// Walking stick share.
 const STROLL: f32 = 0.55;
 /// Run-up behind a post (m), close enough to it (m), seconds between drill swings.
@@ -111,6 +120,12 @@ pub struct Occupation {
     run_up: bool,
     /// Which routine the step indexes (night or day).
     night: bool,
+    /// Stuck detection while walking: where the walker last made progress, for how long it has
+    /// not, and a sidestep in progress (seconds left, side).
+    anchor: Vec3,
+    stalled: f32,
+    dodge: f32,
+    side: f32,
 }
 
 impl Occupation {
@@ -125,7 +140,35 @@ impl Occupation {
             elapsed: 0.0,
             run_up: false,
             night: false,
+            anchor: Vec3::ZERO,
+            stalled: 0.0,
+            dodge: 0.0,
+            side: 1.0,
         }
+    }
+
+    /// The stick toward `to` (horizontal) from `feet`, scaled by `speed`, stepping around whatever
+    /// blocks the way: no progress for `STALL` s starts a sidestep of `DODGE` s, alternating sides.
+    fn walk(&mut self, feet: Vec3, to: Vec3, speed: f32, dt: f32, balancing: bool) -> Vec3 {
+        // A beam is walked slowly on purpose: that is not being stuck.
+        if balancing || feet.distance(self.anchor) > STALL_MOVE {
+            self.anchor = feet;
+            self.stalled = 0.0;
+        } else {
+            self.stalled += dt;
+        }
+        if self.stalled > STALL {
+            self.stalled = 0.0;
+            self.dodge = DODGE;
+            self.side = -self.side;
+        }
+        let dir = to.with_y(0.0).normalize_or_zero();
+        if self.dodge > 0.0 {
+            self.dodge -= dt;
+            let around = Vec3::new(-dir.z, 0.0, dir.x) * self.side;
+            return (dir * 0.4 + around).normalize_or_zero() * speed;
+        }
+        dir * speed
     }
     fn advance(&mut self, len: usize) {
         self.step = (self.step + 1) % len.max(1);
@@ -151,14 +194,17 @@ fn work(
     clock: Option<Res<super::sky::Clock>>,
     talking: Option<Res<super::talk::Talking>>,
     players: Query<Entity, With<super::Player>>,
-    mut workers: Query<(Entity, &Transform, &Fighter, &mut Intent, &mut Occupation, Option<&Using>), With<Civilian>>,
+    mut workers: Query<
+        (Entity, &Transform, &Fighter, &mut Intent, &mut Occupation, Option<&Using>, Has<super::beam::Balancing>),
+        With<Civilian>,
+    >,
     users: Query<&Using>,
     sitters: Query<(Entity, &Transform), (With<Civilian>, With<Using>)>,
     things: Query<(Entity, &Transform, &Interactable)>,
 ) {
     let dt = time.delta_secs();
     let busy: Vec<Entity> = users.iter().map(|u| u.target).collect();
-    for (me, tf, fighter, mut intent, mut job, using) in &mut workers {
+    for (me, tf, fighter, mut intent, mut job, using, balancing) in &mut workers {
         let look = intent.look;
         *intent = Intent { look, ..default() };
         if job.def.is_none() {
@@ -229,14 +275,19 @@ fn work(
             }
             let goal = if job.run_up { post } else { run_up };
             let to = (goal - feet).with_y(0.0);
+            let way = (super::hall::route(feet, goal) - feet).with_y(0.0);
             if !job.run_up && to.length() < ARRIVE {
                 job.run_up = true;
             } else if job.run_up && to.length() < POST_ARRIVE {
                 job.phase = Phase::Working;
                 job.stay = step.stay;
                 job.press_in = DRILL_EVERY;
+            } else if job.elapsed > POST_GIVE_UP {
+                info!("[occ] {} gave up on post step {}", def.id, job.step);
+                job.advance(len);
             } else {
-                intent.move_dir = to.normalize_or_zero() * if job.run_up { 0.3 } else { STROLL };
+                let speed = if job.run_up { 0.3 } else { STROLL };
+                intent.move_dir = job.walk(feet, way, speed, dt, balancing);
                 intent.walk = true;
             }
             continue;
@@ -260,7 +311,8 @@ fn work(
         intent.look = center;
         let to = (stand - feet).with_y(0.0);
         if to.length() > ARRIVE {
-            intent.move_dir = to.normalize() * STROLL;
+            let way = (super::hall::route(feet, stand) - feet).with_y(0.0);
+            intent.move_dir = job.walk(feet, way, STROLL, dt, balancing);
             intent.walk = true;
         } else {
             job.press_in -= dt;

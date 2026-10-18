@@ -155,8 +155,9 @@ fn steer(
         let Ok(beam) = beams.get(bal.beam) else { continue };
         let (dir, side) = (beam.dir(), beam.side());
         let mut stick = intent.move_dir.with_y(0.0);
-        if smoke != 0 {
-            stick = dir;
+        if smoke == 1 || smoke == 2 {
+            // Smoke walkers go straight along the beam, whichever way they were heading.
+            stick = dir * if stick.dot(dir) < 0.0 { -1.0 } else { 1.0 };
         }
         let along = stick.dot(dir);
         let mut input = stick.dot(side).clamp(-1.0, 1.0);

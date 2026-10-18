@@ -20,8 +20,17 @@
 //!   `ual2/LayToIdle`) plays; the springs ease the pose from the lying body into the clip.
 //!   Dead bodies stay down as ragdolls until combat revives them (its own get-up then plays).
 //! - A new request while down kicks the segments again.
+//! - Weight: a blow is one impulse on the whole body (`fling`): the centre of mass takes the push
+//!   (capped at `MAX_FLING`) and the off-centre part spins the body by its inertia (capped at
+//!   `MAX_SPIN`), so every segment leaves with one rigid motion; the segment struck gets a little
+//!   extra (`KICK`).
+//! - Air recovery (player): jump while flung clear of the ground (`RECOVER_HEIGHT`, after
+//!   `RECOVER_AFTER` s, `RECOVER_COST` stamina) to leave the ragdoll in the air with the momentum;
+//!   the landing then bounces toward the lock-on target or nearest foe into a run (`bounce`).
 use super::combat::CombatSet;
-use super::{Action, ActionKind, ActionLayer, Fighter, HALF_HEIGHT, MoveMode, Mover, Owner, Phys, PlaySet, Player};
+use super::{
+    Action, ActionKind, ActionLayer, Fighter, HALF_HEIGHT, Intent, MoveMode, Mover, Owner, Phys, PlaySet, Player, StaminaSpend,
+};
 use crate::motion::bank::PoseBank;
 use crate::motion::{Layer, Mask, MotionLayers, Pose, Rig, Skeleton, Source};
 use avian3d::prelude::*;
@@ -39,8 +48,45 @@ pub struct RagdollRequest {
     pub point: Vec3,
 }
 
-/// The segment nearest the blow leaves this many times faster than the rest of the push.
-const KICK: f32 = 1.6;
+/// The segment nearest the blow gets this much more of the push (a local snap on top of the
+/// whole-body fling).
+const KICK: f32 = 1.15;
+/// Fling limits: the body's centre never leaves faster than `MAX_FLING` m/s, nor spins faster
+/// than `MAX_SPIN` rad/s.
+const MAX_FLING: f32 = 18.0;
+const MAX_SPIN: f32 = 12.0;
+/// Air recovery (player): earliest (s), height above the ground the pelvis needs (m), stamina it
+/// costs, the fastest the body keeps (m/s); the landing bounce toward the nearest foe (m/s, up m/s)
+/// and how far to look for one (m).
+const RECOVER_AFTER: f32 = 0.25;
+const RECOVER_HEIGHT: f32 = 0.7;
+const RECOVER_COST: f32 = 15.0;
+const RECOVER_KEEP: f32 = 12.0;
+const BOUNCE: f32 = 7.5;
+const BOUNCE_UP: f32 = 3.0;
+const BOUNCE_LOOK: f32 = 18.0;
+
+/// A blow on a body of point masses `(position, mass)` that should move its centre of mass by
+/// `dv` (m/s), landing at `hit`: the centre's velocity change (capped at `MAX_FLING`) and the
+/// spin the same impulse gives about the centre (ω = I⁻¹ (r × J), capped at `MAX_SPIN`), so a
+/// blow high on a light body spins it hard and one through the middle just throws it.
+pub fn fling(masses: &[(Vec3, f32)], hit: Vec3, dv: Vec3) -> (Vec3, Vec3, Vec3) {
+    let total: f32 = masses.iter().map(|(_, m)| m).sum::<f32>().max(1e-3);
+    let com = masses.iter().map(|(p, m)| *p * *m).sum::<Vec3>() / total;
+    let dv = dv.clamp_length_max(MAX_FLING);
+    // Inertia tensor about the centre (point masses plus a small own term each).
+    let mut inertia = Mat3::ZERO;
+    for (p, m) in masses {
+        let r = *p - com;
+        inertia += (Mat3::IDENTITY * r.length_squared() - Mat3::from_cols(r * r.x, r * r.y, r * r.z)) * *m;
+        inertia += Mat3::IDENTITY * (0.01 * m);
+    }
+    let impulse = dv * total;
+    let torque = (hit - com).cross(impulse);
+    let omega = if inertia.determinant().abs() > 1e-6 { inertia.inverse() * torque } else { Vec3::ZERO };
+    let omega = if omega.is_finite() { omega.clamp_length_max(MAX_SPIN) } else { Vec3::ZERO };
+    (com, dv, omega)
+}
 /// Settled: every segment slower than this (m/s) for `SETTLE_TIME` s, after at least `MIN_TIME`
 /// s down; get up after `MAX_TIME` s regardless.
 const SETTLE_SPEED: f32 = 0.6;
@@ -88,9 +134,10 @@ const HEAD: usize = 2;
 const HEAD_REACH: f32 = 0.1;
 
 pub fn plugin(app: &mut App) {
+    app.add_systems(Update, fling_smoke.after(PlaySet::Input).before(PlaySet::Act));
     app.add_systems(
         Update,
-        (debug_key, take_over, drive)
+        (debug_key, take_over, drive, bounce)
             .chain()
             .in_set(PlaySet::Act)
             .after(CombatSet),
@@ -136,6 +183,30 @@ fn debug_key(
     }
 }
 
+/// Smoke: `GB_FLING=1` throws the player forward and up at 3 s and presses jump at 3.45 s (air
+/// recovery, then the landing bounce).
+fn fling_smoke(
+    time: Res<Time>,
+    mut on: Local<Option<bool>>,
+    mut commands: Commands,
+    mut players: Query<(Entity, &Transform, &Mover, &mut Intent), With<Player>>,
+) {
+    if !*on.get_or_insert_with(|| std::env::var("GB_FLING").is_ok_and(|v| v.trim() == "1")) {
+        return;
+    }
+    let (t, dt) = (time.elapsed_secs(), time.delta_secs());
+    let Ok((e, tf, mover, mut intent)) = players.single_mut() else { return };
+    if t >= 3.0 && t - dt < 3.0 {
+        commands.entity(e).try_insert(RagdollRequest {
+            velocity: mover.forward() * 9.0 + Vec3::Y * 7.0,
+            point: tf.translation + Vec3::Y * 0.5,
+        });
+    }
+    if t >= 3.45 && t - dt < 3.45 {
+        intent.jump_pressed = true;
+    }
+}
+
 /// World rotation and position of every bone (no scale), from the bone entities.
 fn bone_world(rig: &Rig, globals: &Query<&GlobalTransform>, i: usize) -> Option<(Quat, Vec3)> {
     let e = rig.bones.get(i).copied().filter(|e| *e != Entity::PLACEHOLDER)?;
@@ -159,7 +230,7 @@ fn take_over(
     )>,
     bone_locals: Query<&Transform, Without<Rig>>,
     globals: Query<&GlobalTransform>,
-    mut velocities: Query<(&Transform, &mut LinearVelocity), Without<Rig>>,
+    mut velocities: Query<(&Transform, &mut LinearVelocity, &mut AngularVelocity), Without<Rig>>,
 ) {
     let Some(bank) = bank else { return };
     for (entity, request, rig, mut mover, mut action, mut layers, ragdolled, getting_up) in &mut bodies {
@@ -169,10 +240,18 @@ fn take_over(
         }
         // Already down: kick the segments again.
         if let Some(r) = ragdolled {
+            let masses: Vec<(Vec3, f32)> = r
+                .segs
+                .iter()
+                .zip(&SEGS)
+                .filter_map(|(s, seg)| velocities.get(*s).ok().map(|(tf, _, _)| (tf.translation, seg.mass)))
+                .collect();
+            let (com, dv, omega) = fling(&masses, request.point, request.velocity);
             for &seg in &r.segs {
-                if let Ok((tf, mut v)) = velocities.get_mut(seg) {
+                if let Ok((tf, mut v, mut w)) = velocities.get_mut(seg) {
                     let near = tf.translation.distance(request.point) < 0.35;
-                    v.0 += request.velocity * if near { KICK } else { 1.0 };
+                    v.0 += (dv + omega.cross(tf.translation - com)) * if near { KICK } else { 1.0 };
+                    w.0 += omega;
                 }
             }
             continue;
@@ -253,6 +332,14 @@ fn spawn_segments(
             d(a.1).total_cmp(&d(b.1))
         })
         .map(|(i, _)| i);
+    // The blow as one impulse on the whole body: each segment leaves with the body's velocity,
+    // the centre's push and the spin about the centre at its own place.
+    let centre = |k: usize| {
+        let (_, pos, end) = placed[k];
+        if SEGS[k].end.is_some() { (pos + end) * 0.5 } else { end }
+    };
+    let masses: Vec<(Vec3, f32)> = (0..SEGS.len()).map(|k| (centre(k), SEGS[k].mass)).collect();
+    let (com, dv, omega) = fling(&masses, request.point, request.velocity);
     let mut segs = Vec::with_capacity(SEGS.len());
     for (k, (seg, &(rot, pos, end))) in SEGS.iter().zip(&placed).enumerate() {
         let local_end = rot.inverse() * (end - pos);
@@ -271,7 +358,8 @@ fn spawn_segments(
                 Mass(seg.mass),
                 CollisionLayers::new(Phys::Ragdoll, [Phys::World, Phys::Ragdoll]),
                 Transform::from_translation(pos).with_rotation(rot),
-                LinearVelocity(body_velocity + request.velocity * kick),
+                LinearVelocity(body_velocity + (dv + omega.cross(centre(k) - com)) * kick),
+                AngularVelocity(omega),
                 LinearDamping(LINEAR_DAMPING),
                 AngularDamping(ANGULAR_DAMPING),
                 SweptCcd::default(),
@@ -346,15 +434,18 @@ fn drive(
             &Fighter,
             Option<&mut Ragdolled>,
             Option<&mut GettingUp>,
+            Option<&Intent>,
+            Has<Player>,
         ),
         Without<RagdollSegment>,
     >,
     models: Query<&Transform, (Without<Rig>, Without<RagdollSegment>)>,
     segments: Query<(&Transform, &LinearVelocity), With<RagdollSegment>>,
+    mut stamina: MessageWriter<StaminaSpend>,
 ) {
     let Some(bank) = bank else { return };
     let dt = time.delta_secs().clamp(0.0, 0.1);
-    for (entity, rig, mut root, mut mover, mut action, mut layers, fighter, ragdolled, getting_up) in &mut bodies {
+    for (entity, rig, mut root, mut mover, mut action, mut layers, fighter, ragdolled, getting_up, intent, player) in &mut bodies {
         if let Some(mut up) = getting_up {
             // Our get-up clip: advance it until it ends or another owner takes the body.
             if action.owner != Owner::Ragdoll || action.kind != ActionKind::GetUp {
@@ -407,6 +498,30 @@ fn drive(
             style: None,
         }];
 
+        // Air recovery: jump while flung clear of the ground to snap out of it, keeping the
+        // momentum (once per fling; costs stamina; too close to the ground and you just land).
+        let wants = player && intent.is_some_and(|i| i.jump_pressed);
+        if wants && !fighter.dead && r.t >= RECOVER_AFTER && fighter.stamina >= RECOVER_COST {
+            let filter = SpatialQueryFilter::from_mask(Phys::World);
+            let clear = spatial.cast_ray(pelvis.translation, Dir3::NEG_Y, 8.0, true, &filter).map_or(8.0, |h| h.distance);
+            if clear > RECOVER_HEIGHT {
+                let flat = pelvis_v.with_y(0.0);
+                let yaw = if flat.length_squared() > 0.25 { flat.x.atan2(flat.z) } else { mover.yaw };
+                root.translation = pelvis.translation;
+                root.rotation = Quat::from_rotation_y(yaw);
+                mover.yaw = yaw;
+                release(&mut commands, entity, &r, &mut mover, &mut layers);
+                mover.mode = MoveMode::Air;
+                mover.grounded = false;
+                mover.velocity = Vec3::ZERO;
+                let keep = pelvis_v.clamp_length_max(RECOVER_KEEP);
+                mover.external = keep.with_y(keep.y.max(0.0) + 2.0);
+                stamina.write(StaminaSpend { who: entity, amount: RECOVER_COST });
+                commands.entity(entity).try_insert(AirRecovered(0.0));
+                info!("[ragdoll] air recovery at {:.1} m up, carrying {:.1} m/s", clear, keep.length());
+                continue;
+            }
+        }
         let settled = (r.t >= MIN_TIME && r.still >= SETTLE_TIME) || r.t >= MAX_TIME;
         let revived = !fighter.dead && action.owner == Owner::Hit && action.kind == ActionKind::GetUp;
         if !(revived || (settled && !fighter.dead)) {
@@ -433,6 +548,49 @@ fn drive(
             mover.move_scale = 0.0;
             commands.entity(entity).try_insert(GettingUp { t: 0.0, duration });
         }
+    }
+}
+
+/// Recovered in the air (seconds since): the landing bounces toward the nearest foe.
+#[derive(Component, Clone, Copy, Debug)]
+pub struct AirRecovered(f32);
+
+/// On touchdown after an air recovery: spring off the landing spot toward the lock-on target or
+/// the nearest foe (else where the stick points, else ahead) and run on.
+#[allow(clippy::type_complexity)]
+fn bounce(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut deeds: MessageWriter<super::deeds::Deed>,
+    mut bodies: Query<(Entity, &Transform, &mut Mover, &Fighter, Option<&Intent>, &mut AirRecovered)>,
+    others: Query<(Entity, &Transform, &Fighter), Without<AirRecovered>>,
+) {
+    for (e, tf, mut mover, fighter, intent, mut rec) in &mut bodies {
+        rec.0 += time.delta_secs();
+        if rec.0 > 6.0 || fighter.dead {
+            commands.entity(e).try_remove::<AirRecovered>();
+            continue;
+        }
+        if mover.mode != MoveMode::Ground || rec.0 < 0.05 {
+            continue;
+        }
+        let me = tf.translation;
+        let locked = intent.and_then(|i| i.target).and_then(|t| others.get(t).ok()).map(|(_, t, _)| t.translation);
+        let nearest = || {
+            others
+                .iter()
+                .filter(|(o, t, f)| *o != e && !f.dead && f.team != fighter.team && t.translation.distance(me) < BOUNCE_LOOK)
+                .min_by(|a, b| a.1.translation.distance(me).total_cmp(&b.1.translation.distance(me)))
+                .map(|(_, t, _)| t.translation)
+        };
+        let toward = locked.or_else(nearest).map(|p| (p - me).with_y(0.0).normalize_or_zero());
+        let stick = intent.map(|i| i.move_dir.with_y(0.0)).filter(|d| d.length_squared() > 0.04).map(|d| d.normalize());
+        let dir = toward.filter(|d| d.length_squared() > 0.5).or(stick).unwrap_or_else(|| mover.forward());
+        mover.external = dir * BOUNCE + Vec3::Y * BOUNCE_UP;
+        mover.yaw = dir.x.atan2(dir.z);
+        commands.entity(e).try_remove::<AirRecovered>();
+        deeds.write(super::deeds::Deed::new(e, "land", "Recover", 1.0));
+        info!("[ragdoll] landing bounce toward ({:.1}, {:.1})", dir.x, dir.z);
     }
 }
 
@@ -567,5 +725,18 @@ mod tests {
                 assert!(d < 0.7, "{} drifted {d} m from its parent", seg.bone);
             }
         }
+    }
+
+    #[test]
+    fn a_blow_through_the_centre_throws_and_one_off_centre_spins() {
+        let body = [(Vec3::new(0.0, 1.0, 0.0), 30.0), (Vec3::new(0.0, 1.6, 0.0), 20.0), (Vec3::new(0.0, 0.4, 0.0), 16.0)];
+        let total: f32 = body.iter().map(|b| b.1).sum();
+        let com = body.iter().map(|b| b.0 * b.1).sum::<Vec3>() / total;
+        let (_, dv, w) = fling(&body, com, Vec3::X * 6.0);
+        assert!((dv - Vec3::X * 6.0).length() < 1e-4 && w.length() < 1e-3, "through the centre: no spin");
+        let (_, _, w) = fling(&body, com + Vec3::Y * 0.6, Vec3::X * 6.0);
+        assert!(w.z < -0.5, "a high blow tips the body over: {w}");
+        let (_, dv, w) = fling(&body, com + Vec3::Y * 0.6, Vec3::X * 100.0);
+        assert!(dv.length() <= MAX_FLING + 1e-3 && w.length() <= MAX_SPIN + 1e-3, "capped");
     }
 }
