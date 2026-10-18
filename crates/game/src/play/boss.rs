@@ -104,6 +104,11 @@ fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
     spawn_horse(&mut commands, &mut meshes, &mut materials, e, Color::srgb(0.32, 0.22, 0.14), Color::srgb(0.45, 0.08, 0.08));
 }
 
+/// Which way a trample throws: mostly to the side the player stands on, a little onward.
+pub fn trample_direction(charge: Vec3, toward_side: Vec3) -> Vec3 {
+    (toward_side.normalize_or_zero() * 0.85 + charge.normalize_or_zero() * 0.35).normalize_or(charge)
+}
+
 /// Pure charge decision: start one when noticed, ready and in the window.
 pub fn wants_charge(noticed: bool, cooldown: f32, distance: f32) -> bool {
     noticed && cooldown <= 0.0 && (CHARGE_NEAR..=CHARGE_FAR).contains(&distance)
@@ -173,11 +178,16 @@ fn charge(
         intent.primary_pressed = false;
         intent.target = Some(player);
         if distance < TRAMPLE_REACH {
+            // The horse barges you aside rather than straight on (the fight stays in the arena).
+            // Aside to whichever flank of the horse the player is on.
+            let flank = Vec3::Y.cross(mover.forward());
+            let side = if flank.dot(to) >= 0.0 { flank } else { -flank };
+            let thrown = trample_direction(dir, side);
             hits.write(Hit {
                 attacker: e,
                 target: player,
                 point: ptf.translation + Vec3::Y * 0.2,
-                direction: dir,
+                direction: thrown,
                 damage: TRAMPLE_DAMAGE,
                 poise: 60.0,
                 knockback: TRAMPLE_KNOCKBACK,
@@ -324,5 +334,11 @@ mod tests {
     fn he_waits_on_the_dais() {
         let (feet, _) = home();
         assert!((feet.y - (ruins_level() + 0.3)).abs() < 1e-4);
+    }
+
+    #[test]
+    fn a_trample_throws_mostly_aside() {
+        let d = trample_direction(Vec3::Z, Vec3::X);
+        assert!(d.x > 0.8 && d.z > 0.2 && d.z < 0.5);
     }
 }
