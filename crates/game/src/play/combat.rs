@@ -47,7 +47,10 @@ use super::camera::CameraShake;
 use super::controller::{Teleport, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::deeds::Deed;
-use super::discipline::{Absorb, Counter, Countered, HandFlash, Mastery, Path, Stunned, counter, guard_bonus, variety, weapon_scale};
+use super::discipline::{
+    Absorb, Broken, Counter, Countered, DeflectReach, Disarm, HandFlash, Mastery, Outcome, Path, counter, guard_bonus, perfect_outcome,
+    variety, weapon_scale,
+};
 use crate::motion::hand::Form;
 use super::magic::Ward;
 use super::monitor::Monitor;
@@ -210,8 +213,11 @@ const STAGGER_PUSH: f32 = 1.5;
 const KNOCKDOWN_SPEED: f32 = 5.5;
 const KNOCKDOWN_POISE_KB: f32 = 3.5;
 const KNOCKDOWN_LIFT: f32 = 2.4;
-/// A stunned fighter struck is thrown at least this fast (m/s).
-const STUNNED_THROW: f32 = 6.0;
+/// Monk finisher on a Broken foe: damage × this, at least this share of its max hp, and the
+/// body is thrown at least this fast (m/s).
+const FINISHER_MULT: f32 = 3.0;
+const FINISHER_SHARE: f32 = 0.4;
+const FINISHER_THROW: f32 = 6.0;
 /// A monk's guard, raised inside the parry window, catches projectiles and spells from inside
 /// this (cos of the half arc).
 const CATCH_ARC: f32 = 0.3;
@@ -2219,7 +2225,7 @@ type Victim<'a> = (
     Option<&'a Ward>,
     Option<&'a Sparring>,
     Option<&'a Mastery>,
-    Has<Stunned>,
+    Has<Broken>,
 );
 
 /// A friendly bout (the guild's rank exam): no blow takes this fighter below `floor` of its max
@@ -2355,35 +2361,57 @@ fn resolve(
             let mut r = React::new(ReactKind::Stagger, STAGGER, 0.0, PARRIED_RATE, 0.0);
             r.face = Some(mover.yaw);
             begin_react(&mut r, &mut action, &mut mover, Some(&bank));
-            // A counter: the riposte lands at once and the attacker stands stunned; the next blow
-            // that lands throws him (`Stunned`).
-            if let Riposte::Countered(c) = riposte {
-                r.duration = r.duration.max(c.stun);
-                // The blow turned back on its maker, driven by the monk's own fists.
-                let riposte = hit.damage.max(0.0) * c.damage * weapon_scale(defender, path == Path::Monk);
-                // The counter never kills by itself: it opens the attacker up.
-                fighter.hp = (fighter.hp - riposte).max(fighter.hp.min(1.0));
-                fighter.poise = 0.0;
-                commands.entity(hit.attacker).try_insert(Stunned { left: c.stun });
+            // A perfect defence (`discipline::perfect_outcome`):
+            // - Counter (a bare-handed attacker): the riposte lands and he stands Broken briefly;
+            // - Disarm (a weapon, the attacker close in rank): the weapon is knocked from his hand
+            //   (`Disarm`); no damage, he fights on with his fists;
+            // - Seize (a weapon, the attacker far below): the monk grips the blade and strikes; the
+            //   attacker staggers weaponless and stays `Broken`, open to a finisher. No ragdoll.
+            if let Riposte::Perfect(c, outcome) = riposte {
                 let whom = name.map_or("?".to_string(), |n| n.to_string());
-                info!("[discipline] {by} counters {whom} ({:?}, {riposte:.0} dmg, stunned {:.1}s)", c.flare, c.stun);
+                // The blow turned back on its maker, driven by the defender's own fists.
+                let riposte = hit.damage.max(0.0) * c.damage * weapon_scale(defender, path == Path::Monk);
+                let toward = flat(tf.translation - hit.point).normalize_or(hit.direction);
+                let (broken, hurt, form) = match outcome {
+                    Outcome::Counter => (Some(c.stun), true, Form::Cupped),
+                    Outcome::Disarm => (None, false, Form::TwoFinger),
+                    Outcome::Seize => (Some(c.stun.max(super::discipline::BROKEN)), true, Form::Cupped),
+                };
+                if hurt {
+                    // A riposte never kills by itself: it opens the attacker up.
+                    fighter.hp = (fighter.hp - riposte).max(fighter.hp.min(1.0));
+                }
+                fighter.poise = 0.0;
+                if let Some(left) = broken {
+                    r.duration = r.duration.max(left);
+                    commands.entity(hit.attacker).try_insert(Broken { left });
+                }
+                if outcome != Outcome::Counter {
+                    commands.entity(hit.attacker).try_insert(Disarm { set: attacker.weapon.clone(), toward, by: hit.target });
+                }
+                info!(
+                    "[discipline] {by} {} {whom} ({:?}, {:.0} dmg{})",
+                    match outcome { Outcome::Counter => "counters", Outcome::Disarm => "disarms", Outcome::Seize => "seizes the blade of" },
+                    c.flare,
+                    if hurt { riposte } else { 0.0 },
+                    broken.map_or(String::new(), |b| format!(", broken {b:.1}s"))
+                );
                 countered.write(Countered { by: hit.target, at: (hit.point + tf.translation) * 0.5, flare: c.flare, path });
-                // A blade is caught between two fingers; a fist or kick is met with an open palm.
-                let form = if attacker.unarmed { Form::Cupped } else { Form::TwoFinger };
-                commands.entity(hit.target).try_insert(HandFlash { form, left: CATCH_HOLD });
-                fx.deed(hit.target, "counter", "");
+                commands.entity(hit.target).try_insert((HandFlash { form, left: CATCH_HOLD }, DeflectReach { point: hit.point, left: CATCH_HOLD }));
+                fx.deed(hit.target, match outcome { Outcome::Counter => "counter", Outcome::Disarm => "disarm", Outcome::Seize => "seize" }, "");
             }
             melee.state = State::React(r);
         }
     }
 }
 
-/// What a blow did to its attacker: nothing, a parry (it staggers) or a counter (stunned).
+/// What a blow did to its attacker: nothing, a parry (it staggers) or a perfect defence with
+/// its outcome (`discipline::Outcome`).
 #[derive(Clone, Copy, Debug, PartialEq)]
 enum Riposte {
     None,
     Parried,
-    Countered(Counter),
+    Perfect(Counter, Outcome),
 }
 
 /// Apply one blow to its target; says whether it was parried or countered.
@@ -2398,7 +2426,7 @@ fn strike(
     fx: &mut Feedback,
     commands: &mut Commands,
 ) -> Riposte {
-    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward, sparring, mastery, stunned) = victim;
+    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward, sparring, mastery, broken) = victim;
     if fighter.dead {
         return Riposte::None;
     }
@@ -2496,12 +2524,20 @@ fn strike(
             log(fx, "parry", 0.0, &action, &mover);
             fx.deed(hit.target, "parry", "");
             match counter(mastery) {
-                Some(c) if hit.kind == HitKind::Melee => Riposte::Countered(c),
+                Some(c) if hit.kind == HitKind::Melee => Riposte::Perfect(c, perfect_outcome(mastery, attacker.mastery, attacker.unarmed)),
                 _ => Riposte::Parried,
             }
         }
         Verdict::Blocked { damage, stamina } => {
             melee.spend(&mut fighter, stamina * guard_cost);
+            // A monk's held guard deflects a blade on two fingers, laid on the blade's path.
+            if mastery.path == Path::Monk && hit.kind == HitKind::Melee && !attacker.unarmed {
+                commands.entity(hit.target).try_insert((
+                    HandFlash { form: Form::TwoFinger, left: CATCH_HOLD * 0.6 },
+                    DeflectReach { point: hit.point, left: CATCH_HOLD * 0.6 },
+                ));
+                fx.deed(hit.target, "deflect", "");
+            }
             fighter.hp = (fighter.hp - damage).max(0.0);
             // The guard gives ground: a real step back (the legs walk it), not a slide.
             let back = flat(hit.direction).normalize_or(-facing);
@@ -2538,6 +2574,17 @@ fn strike(
             Riposte::None
         }
         Verdict::Struck { damage } => {
+            // A monk striking a Broken foe: the finisher.
+            let finisher = broken && hit.kind == HitKind::Melee && attacker.mastery.path == Path::Monk;
+            let damage = if finisher {
+                commands.entity(hit.target).remove::<Broken>();
+                let d = (damage * FINISHER_MULT).max(fighter.max_hp * FINISHER_SHARE);
+                info!("[discipline] finisher on {who} ({d:.0} dmg)");
+                fx.deed(hit.attacker, "finisher", "");
+                d
+            } else {
+                damage
+            };
             hurt(&mut fighter, &mut melee, damage, poise);
             let feet = tf.translation.y - HALF_HEIGHT;
             let head = hit.point.y - feet > HEAD_HEIGHT;
@@ -2552,17 +2599,13 @@ fn strike(
                 _ => (1.0, SHAKE_LIGHT),
             };
             fx.strike(involved, stop, trauma, sound, hit.point, 1.0);
-            // A stunned fighter (countered) goes down limp on the next blow that lands.
-            if knockback > feel.ragdoll_threshold || (stunned && outcome != Reaction::Death) {
-                let speed = if stunned { knockback.max(STUNNED_THROW) } else { knockback };
+            // A monk's finisher throws the broken body; anything else past the threshold too.
+            if knockback > feel.ragdoll_threshold || (finisher && outcome != Reaction::Death) {
+                let speed = if finisher { knockback.max(FINISHER_THROW) } else { knockback };
                 commands.entity(hit.target).try_insert(RagdollRequest {
                     velocity: hit.direction * speed + Vec3::Y * KNOCKDOWN_LIFT,
                     point: hit.point,
                 });
-                if stunned {
-                    commands.entity(hit.target).remove::<Stunned>();
-                    log(fx, "stunned_down", speed, &action, &mover);
-                }
             }
             log(fx, &format!("hit_{outcome:?}").to_lowercase(), damage, &action, &mover);
             if hit.kind == HitKind::Melee {
