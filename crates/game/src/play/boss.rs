@@ -229,7 +229,7 @@ fn spawn_bar(mut commands: Commands) {
             Node {
                 display: Display::None,
                 position_type: PositionType::Absolute,
-                top: px(18.0),
+                top: px(34.0),
                 left: percent(25.0),
                 width: percent(50.0),
                 flex_direction: FlexDirection::Column,

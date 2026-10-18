@@ -35,6 +35,7 @@ pub mod ground;
 pub mod ruins;
 pub mod horse;
 pub mod boss;
+pub mod waypoint;
 pub mod wind_aura;
 pub mod beam;
 pub mod hall;
@@ -111,7 +112,7 @@ pub fn plugin(app: &mut App) {
         audio::plugin,
     ))
     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
-    .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, horse::plugin, boss::plugin));
+    .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, horse::plugin, boss::plugin, waypoint::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

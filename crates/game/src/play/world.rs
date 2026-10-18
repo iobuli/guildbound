@@ -657,6 +657,7 @@ fn setup(
     spawn_interactables(&mut kit, &assets);
     super::hall::spawn_hall(&mut kit);
     super::ruins::spawn_ruins(&mut kit);
+    super::waypoint::spawn_shrines(&mut kit);
     spawn_characters(&mut commands);
 }
 
