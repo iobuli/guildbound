@@ -51,6 +51,10 @@ Use the ART_PROMPTS section 1 template (seamless, orthographic top view, even li
 | `roof_slate` | slate tiles, charcoal-blue | overlapping rows, chipped edges | 1.5 m | roofs, tower cap |
 | `floor_planks` | weathered wood planks (T10) | grain, nail holes | 1.5 m | floors |
 | `iron_trim` | forged iron straps and studs | hammer dents | 0.5 m | door straps, lantern frames |
+| `interior_plaster` | warm interior plaster | smoke-stained near the top | 2.0 m | inner walls |
+| `wainscot` | dark oak panelling | framed panels | 1.2 m | lower inner walls |
+| `ceiling_boards` | ceiling boards | tongue-and-groove, soot | 1.5 m | ceilings |
+| `rug` | guild blue / madder wool rug | not tiled: one 2:3 image | whole rug | rugs |
 | `banner_cloth` | guild blue wool, gold border | not tiled: one banner image 1:3, guild emblem | whole banner | banners |
 
 ## 5. Build plan (agent-3) once G1–G4 are approved
@@ -148,6 +152,23 @@ The builder (`play/guildhouse.rs`) generates the whole building from **`assets/d
 | `interior.stairs` | {`corner`, `width`} | — | back_left, 1.2 m (visual in v1) | G4 |
 | `interior.beams` | spacing m | 1.5–3.5 | 2.5 | G7 |
 
+
+### 6.6b Interior, full (from I1–I10)
+The interior is walkable on both floors from v1 on: the stairs and the upper floor get colliders.
+| field | unit | range | default | from |
+|---|---|---|---|---|
+| `interior.ceiling` (ground storey, beams' underside) | m | 3.2–4.2 | 3.8 | I2–I5 |
+| `interior.wainscot_height` | m | 0–1.4 | 1.0 | I2–I5 |
+| `interior.walls` / `wainscot` / `ceiling_material` | slot | — | `interior_plaster` / `wainscot` / `ceiling_boards` | I2–I5 |
+| `interior.stairs` | {`corner`, `width`, `rise`, `tread`, `turn`} | width 1–1.6, rise 0.2–0.25, turn `straight`/`l_turn` | back_left, 1.2, 0.22, 0.3, `l_turn` | I4, I9 |
+| `interior.upper_rooms` | list of {`name`, `x0`, `z0`, `x1`, `z1`, `door`: {`wall`, `offset`}} | inside the walls | office back-right, records back-left, lounge front | I1 |
+| `interior.partition_thickness` | m | 0.1–0.3 | 0.15 | I1 |
+| `interior.props` | list of {`kind`, `x`, `z`, `floor`, `yaw`} with kinds from I10: `desk`, `board`, `long_table`, `bench`, `stool`, `ledger_shelf`, `chest`, `map_table`, `weapon_rack`, `hearth`, `lantern`, `chandelier` | inside rooms | desk, board, hearth, 2 benches (ground); office desk, map table, 2 shelves; records 4 shelves, 2 chests; lounge long table, 2 benches, small hearth | I1, I6–I8, I10 |
+| `interior.prop_sizes` | per kind {`w`, `d`, `h`} m | — | from I10 (desk 4×0.8×1.05, board 2.4×0.1×1.6, long table 3×1×0.8, bench 2.4×0.4×0.45, shelf 1.6×0.45×2.4, chest 1×0.6×0.6, map table 2×1.2×0.9, rack 1.6×0.4×1.8) | I10 |
+| `interior.rugs` | list of {`x`, `z`, `floor`, `w`, `d`} | — | one 3×4.5 in the hall | G7 |
+| `interior.lights` | list of {`kind`: `lantern`/`chandelier`/`hearth`, `x`, `z`, `floor`, `height`} | ≤ 6 lights (budget) | hall chandelier + hearth, one lantern per upper room | G7, I6–I8 |
+| `tower.inside` | {`stair`: `spiral`, `bell`: true} | — | spiral to the belfry, bell at the top | I9 |
+
 ### 6.7 Template: `assets/data/guildhouse.json`
 ```json
 {
@@ -179,7 +200,18 @@ The builder (`play/guildhouse.rs`) generates the whole building from **`assets/d
     "board": { "wall": "left", "offset": 0, "width": 2.4 },
     "hearth": { "wall": "right", "offset": 0, "width": 2.2 },
     "stairs": { "corner": "back_left", "width": 1.2 },
-    "beams": 2.5
+    "beams": 2.5,
+    "ceiling": 3.8, "wainscot_height": 1.0,
+    "walls": "interior_plaster", "wainscot": "wainscot", "ceiling_material": "ceiling_boards",
+    "partition_thickness": 0.15,
+    "upper_rooms": [
+      { "name": "office",  "x0": 2,  "z0": -5, "x1": 8,  "z1": 0, "door": { "wall": "front", "offset": -1.5 } },
+      { "name": "records", "x0": -8, "z0": -5, "x1": -2, "z1": 0, "door": { "wall": "front", "offset": 1.5 } },
+      { "name": "lounge",  "x0": -8, "z0": 0,  "x1": 8,  "z1": 5, "door": null }
+    ],
+    "props": [],
+    "rugs": [ { "x": 0, "z": 1, "floor": 0, "w": 3, "d": 4.5 } ],
+    "lights": [ { "kind": "chandelier", "x": 0, "z": 0, "floor": 0, "height": 3.2 }, { "kind": "hearth", "x": 7.4, "z": 0, "floor": 0, "height": 0.6 } ]
   }
 }
 ```
@@ -194,7 +226,8 @@ Coordinates: building-local metres, origin at the centre of the main block's flo
 Each reading is written into `guildhouse.json` with the view it came from (`"_source": {"block.width": "G2"}`). The builder logs every value it clamped.
 
 ## Status
-- [ ] G1 concept (agent-1 / Higgsfield) · [ ] G2 · [ ] G3 · [ ] G4 · [ ] G6 · [ ] G7
-- [ ] textures: podium_stone · wall_stone · plaster · timber · roof_slate · floor_planks · iron_trim · banner_cloth
+- [ ] G1 concept (user / Higgsfield) · [ ] G2 · [ ] G3 · [ ] G4 · [ ] G6 · [ ] G7
+- [ ] interior: I1 upper plan · I2–I5 hall walls · I6 office · I7 records · I8 lounge · I9 stairs + tower · I10 furniture
+- [ ] textures: podium_stone · wall_stone · plaster · timber · roof_slate · floor_planks · iron_trim · banner_cloth · interior_plaster · wainscot · ceiling_boards · rug
 - [ ] parameters read from G2/G3/G4/G6 into guildhouse.json (agent-3) · [ ] builder from the parameters (agent-3; can start now on the defaults)
 - [ ] build (agent-3) · [ ] texture loader (agent-3) · [ ] in-game comparison
