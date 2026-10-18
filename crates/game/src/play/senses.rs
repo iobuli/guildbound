@@ -230,6 +230,7 @@ pub fn plugin(app: &mut App) {
         Update,
         (
             volumes,
+            sneak,
             rays.run_if(shown(View::SenseRays)),
             aura_radius.run_if(shown(View::AuraRadius)),
             meters.run_if(shown(View::Awareness)),
@@ -252,15 +253,26 @@ fn presence(
     time: Res<Time>,
     mut commands: Commands,
     mut players: Query<
-        (Entity, &Mover, Option<&Stats>, Option<&Energy>, Has<Ward>, Option<&mut Veiled>, Option<&mut AuraPresence>),
+        (
+            Entity,
+            &Mover,
+            &super::Action,
+            Option<&Stats>,
+            Option<&Energy>,
+            Has<Ward>,
+            Option<&mut Veiled>,
+            Option<&mut AuraPresence>,
+        ),
         With<Player>,
     >,
 ) {
-    for (e, mover, stats, energy, warded, veiled, aura) in &mut players {
+    for (e, mover, action, stats, energy, warded, veiled, aura) in &mut players {
         let mut hushed = false;
         if let Some(mut v) = veiled {
             v.0 -= time.delta_secs();
-            hushed = v.0 > 0.0;
+            // Swinging a weapon tears the veil.
+            let attacking = action.owner == super::Owner::Combat && action.kind == super::ActionKind::Attack;
+            hushed = v.0 > 0.0 && !attacking;
             if !hushed {
                 commands.entity(e).try_remove::<Veiled>();
             }
@@ -345,6 +357,32 @@ fn tick(
         } else if !aware.alerted && aware.level == 0.29 {
             info!("[senses] {who} lost you");
         }
+    }
+}
+
+/// Near an enemy that has not noticed you (m), and the awareness under which it counts as unaware.
+const SNEAK_NEAR: f32 = 10.0;
+const SNEAK_UNAWARE: f32 = 0.5;
+
+/// Seconds spent close to unaware enemies are `sneak` deeds (the Stealth skill, which unlocks Veil).
+fn sneak(
+    time: Res<Time>,
+    mut held: Local<f32>,
+    mut deeds: MessageWriter<super::deeds::Deed>,
+    players: Query<(Entity, &Transform), With<Player>>,
+    enemies: Query<(&Transform, &Awareness, &super::Fighter)>,
+) {
+    let Ok((player, ptf)) = players.single() else { return };
+    let close = enemies.iter().any(|(tf, a, f)| {
+        !f.dead && !a.alerted && a.level < SNEAK_UNAWARE && tf.translation.distance(ptf.translation) < SNEAK_NEAR
+    });
+    if !close {
+        return;
+    }
+    *held += time.delta_secs();
+    while *held >= 1.0 {
+        *held -= 1.0;
+        deeds.write(super::deeds::Deed::new(player, "sneak", "", 1.0));
     }
 }
 

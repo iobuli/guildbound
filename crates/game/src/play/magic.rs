@@ -90,6 +90,9 @@ pub enum Shape {
     /// A shell of aura on the caster: for `duration` s, `share` of every blow's damage and poise
     /// is turned aside (`Ward`, read by `combat`).
     Ward { duration: f32, share: f32 },
+    /// Hush the caster's aura for `duration` s (`senses::Veiled`): enemies' sense rays stop
+    /// bending toward them. Attacking or casting anything else ends it.
+    Veil { duration: f32 },
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -118,7 +121,7 @@ impl Ability {
     }
 }
 
-pub static ABILITIES: [Ability; 9] = [
+pub static ABILITIES: [Ability; 10] = [
     // --- Arts (Battlewill, Q).
     Ability {
         id: "crescent_edge",
@@ -204,6 +207,23 @@ pub static ABILITIES: [Ability; 9] = [
         knockback: 0.0,
         shape: Shape::Ward { duration: 5.0, share: 0.6 },
         about: "Wrap the body in hardened aura: for five seconds, blows lose most of their bite.",
+    },
+    Ability {
+        id: "veil",
+        name: "Veil",
+        pool: Pool::Battlewill,
+        element: Element::Arcane,
+        cost: 20.0,
+        track: "ual1/Spell_Simple_Enter",
+        start: 0.0,
+        end: 0.4,
+        speed: 1.4,
+        release: 0.6,
+        damage: 0.0,
+        poise: 0.0,
+        knockback: 0.0,
+        shape: Shape::Veil { duration: 12.0 },
+        about: "Draw the aura in until it barely stirs: for twelve seconds, enemies cannot feel you. Attacking ends it.",
     },
     // --- Spells (magicules, E).
     Ability {
@@ -375,6 +395,8 @@ struct Casting {
     aim_point: Vec3,
     target: Option<Entity>,
     motes: Option<Entity>,
+    /// Flash Step blinked (teleported) instead of dashing.
+    blinked: bool,
 }
 
 /// A flying spell or art.
@@ -401,7 +423,7 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
         .add_systems(
             Update,
-            (pools, bind, start_cast, drive_cast, fly, ward, ward_mastery)
+            (pools, bind, start_cast, blink, drive_cast, superhero_land, fly, ward, ward_mastery)
                 .chain()
                 .in_set(PlaySet::Act)
                 .after(CombatSet),
@@ -586,7 +608,11 @@ fn start_cast(
             aim_point,
             target,
             motes,
+            blinked: false,
         });
+        if a.id != "veil" {
+            commands.entity(entity).try_remove::<super::senses::Veiled>();
+        }
     }
 }
 
@@ -701,7 +727,12 @@ fn drive_cast(
             // The dash: aura blows the body along the aim; afterimage sparks trail it.
             let dir = Vec3::new(c.aim.x, 0.0, c.aim.z).normalize_or(tf.forward().as_vec3());
             let elapsed = action.elapsed;
-            if elapsed <= STEP_TIME {
+            if c.blinked {
+                // Already there (`blink`): just let the burst finish.
+                if elapsed > STEP_TIME {
+                    finish(&mut commands, entity, &mut action, &mut mover, &c);
+                }
+            } else if elapsed <= STEP_TIME {
                 mover.root_motion = dir * (distance / STEP_TIME);
                 vfx::burst(&mut commands, world.vfx.burst(Element::Aura), tf.translation, 0.5);
             } else {
@@ -775,6 +806,134 @@ fn finish(commands: &mut Commands, entity: Entity, action: &mut Action, mover: &
     mover.face = None;
     mover.root_motion = Vec3::ZERO;
     commands.entity(entity).try_remove::<Casting>();
+}
+
+/// Flash Step blink: farthest reach (m), how far from the target it lands (m), how far down an
+/// air blink looks for ground (m), and the least drop that counts as one (m).
+const BLINK_RANGE: f32 = 16.0;
+const BLINK_GAP: f32 = 1.4;
+const DROP_PROBE: f32 = 40.0;
+const DROP_MIN: f32 = 1.0;
+
+/// Where a blink to `target` (body centre, facing `target_fwd`) lands: behind it if that is clear,
+/// else on the near side, else beside it. `clear(a, b)`: nothing between; `floor(p)`: the ground
+/// under `p`. Returns the feet and the yaw that faces the target.
+pub fn blink_spot(
+    from: Vec3,
+    target: Vec3,
+    target_fwd: Vec3,
+    mut clear: impl FnMut(Vec3, Vec3) -> bool,
+    mut floor: impl FnMut(Vec3) -> Option<Vec3>,
+) -> Option<(Vec3, f32)> {
+    let fwd = target_fwd.with_y(0.0).normalize_or(Vec3::Z);
+    let near = (from - target).with_y(0.0).normalize_or(-fwd);
+    let quarter = Quat::from_rotation_y(std::f32::consts::FRAC_PI_2);
+    for side in [-fwd, near, quarter * near, quarter.inverse() * near] {
+        let spot = target + side * BLINK_GAP;
+        if !(clear(from, spot) && clear(target, spot)) {
+            continue;
+        }
+        let Some(feet) = floor(spot).filter(|f| (f.y - (target.y - super::HALF_HEIGHT)).abs() < 1.5) else { continue };
+        let face = target - spot;
+        return Some((feet, face.x.atan2(face.z)));
+    }
+    None
+}
+
+/// A blinked caster that has to land hard (blinked down from the air).
+#[derive(Component)]
+struct Superhero;
+
+/// Flash Step as a blink: with a lock-on target in reach, teleport beside or behind it facing it;
+/// in the air without one, drop straight to the ground ahead (a superhero landing follows).
+/// Otherwise the step stays the dash `drive_cast` plays.
+#[allow(clippy::type_complexity)]
+fn blink(
+    mut commands: Commands,
+    vfx: Option<Res<Vfx>>,
+    spatial: SpatialQuery,
+    mut shake: ResMut<CameraShake>,
+    mut casters: Query<(Entity, &Transform, &Mover, &mut Casting, Has<Player>)>,
+    globals: Query<&GlobalTransform>,
+    fighters: Query<&Fighter>,
+) {
+    let Some(vfx) = vfx else { return };
+    let filter = SpatialQueryFilter::from_mask(super::Phys::World);
+    let clear = |a: Vec3, b: Vec3| {
+        let d = b - a;
+        let len = d.length();
+        Dir3::new(d).map_or(true, |dir| spatial.cast_ray(a, dir, len, true, &filter).is_none())
+    };
+    let floor = |p: Vec3| {
+        let from = p + Vec3::Y * 1.5;
+        spatial.cast_ray(from, Dir3::NEG_Y, DROP_PROBE, true, &filter).map(|h| from - Vec3::Y * h.distance)
+    };
+    for (e, tf, mover, mut c, player) in &mut casters {
+        if c.blinked || !matches!(c.ability.shape, Shape::Step { .. }) {
+            continue;
+        }
+        let from = tf.translation;
+        let target = c
+            .target
+            .filter(|t| fighters.get(*t).map_or(true, |f| !f.dead))
+            .and_then(|t| globals.get(t).ok())
+            .map(|g| (g.translation(), g.rotation() * Vec3::Z))
+            .filter(|(p, _)| p.distance(from) <= BLINK_RANGE);
+        let (dest, hero) = match target {
+            Some((at, fwd)) => (blink_spot(from, at, fwd, clear, floor), false),
+            None if mover.mode == MoveMode::Air => {
+                let ahead = Vec3::new(c.aim.x, 0.0, c.aim.z).normalize_or_zero() * 2.0;
+                let down = floor(from + ahead).filter(|f| from.y - super::HALF_HEIGHT - f.y > DROP_MIN);
+                (down.map(|f| (f, mover.yaw)), true)
+            }
+            None => (None, false),
+        };
+        let Some((feet, yaw)) = dest else { continue };
+        c.blinked = true;
+        commands.entity(e).try_insert(super::controller::Teleport { feet, yaw });
+        vfx::burst(&mut commands, vfx.burst(Element::Aura), from, 0.7);
+        vfx::burst(&mut commands, vfx.burst(Element::Aura), feet + Vec3::Y * super::HALF_HEIGHT, 0.9);
+        if hero {
+            commands.entity(e).try_insert(Superhero);
+        }
+        if player {
+            shake.add(0.15);
+        }
+        info!("[magic] blink {} ({:.1}, {:.1}, {:.1})", if hero { "down to" } else { "to target at" }, feet.x, feet.y, feet.z);
+    }
+}
+
+/// After an air blink: touch down in the deep hard-land crouch with a burst and a thud.
+#[allow(clippy::type_complexity)]
+fn superhero_land(
+    mut commands: Commands,
+    vfx: Option<Res<Vfx>>,
+    mut shake: ResMut<CameraShake>,
+    mut deeds: MessageWriter<Deed>,
+    mut bodies: Query<
+        (Entity, &Transform, &Mover, &mut Action, Option<&mut super::parkour::Landing>, Has<Player>),
+        (With<Superhero>, Without<Casting>),
+    >,
+) {
+    let Some(vfx) = vfx else { return };
+    for (e, tf, mover, mut action, landing, player) in &mut bodies {
+        if mover.mode != MoveMode::Ground {
+            continue;
+        }
+        commands.entity(e).try_remove::<Superhero>();
+        if let Some(mut l) = landing
+            && action.is_free()
+        {
+            super::parkour::superhero(&mut action, &mut l);
+        }
+        let feet = tf.translation - Vec3::Y * super::HALF_HEIGHT;
+        vfx::burst(&mut commands, vfx.burst(Element::Aura), feet + Vec3::Y * 0.1, 1.6);
+        if player {
+            shake.add(0.5);
+        }
+        deeds.write(Deed::new(e, "land", "Hard", 1.0));
+        info!("[magic] superhero landing at ({:.1}, {:.1}, {:.1})", feet.x, feet.y, feet.z);
+    }
 }
 
 /// Add mastery for `n` landed blows.
@@ -982,6 +1141,10 @@ fn release(
             }
         }
         Shape::Step { .. } => {}
+        Shape::Veil { duration } => {
+            commands.entity(owner).try_insert(super::senses::Veiled(duration * flair));
+            vfx::burst(commands, world.vfx.burst(Element::Arcane), tf.translation, 0.6);
+        }
         Shape::Ward { duration, share } => {
             // A faint tint and three bright bands spinning on tilted axes (a gyroscope of aura).
             let tint = vfx::glow(materials, a.element.core() * 0.07);

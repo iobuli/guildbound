@@ -14,7 +14,7 @@ pub struct Deed {
     pub who: Entity,
     /// What happened: "hit", "block", "parry", "kill", "cast", "cast_hit", "shoot",
     /// "shoot_hit", "swim", "climb", "mantle", "land", "chop", "fell", "gather", "struck", "dive", "ward",
-    /// "balance" (a metre on a beam), "beam" ("crossed" / "fell"),
+    /// "balance" (a metre on a beam), "beam" ("crossed" / "fell"), "sneak" (a second near unaware enemies),
     /// "survive".
     pub kind: &'static str,
     /// Detail matched by skill sources: a moveset, ability id, projectile kind, item, grade.

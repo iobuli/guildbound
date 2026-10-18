@@ -54,6 +54,15 @@ pub enum Grade {
     Hard,
 }
 
+/// Start a superhero landing (the deep, locked hard-land crouch) on a body that is already down,
+/// e.g. after an air blink (`magic`).
+pub fn superhero(action: &mut Action, landing: &mut Landing) {
+    landing.dir = Vec3::ZERO;
+    landing.speed = 0.0;
+    landing.duration = HARD_LOCK_MAX;
+    action.start(ActionKind::HardLand, Owner::Move, Some(ActionLayer::new(HARD, HARD_OFFSET, Mask::Full)));
+}
+
 /// Landing grade from the downward speed at touchdown and the horizontal speed (m/s).
 pub fn grade(impact: f32, speed: f32) -> Grade {
     if !(impact.is_finite() && speed.is_finite()) {
