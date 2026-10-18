@@ -6,10 +6,19 @@
 //!   its rank follows its level (`stats::Stats`, every `LEVELS_PER_RANK` levels).
 //! - Monk: fists hit harder than any weapon in his hands (`weapon_scale`), his guard is a
 //!   defensive state that turns aside more and costs less (`guard_bonus`), and a guard raised
-//!   inside the enemy's blow (the parry window, wider for a monk) is a full **auto counter**:
-//!   the riposte (the blow's damage × `Counter.damage` × his fists' `weapon_scale`) lands at once
-//!   and the attacker is `Stunned` for `STUN` s. A stunned fighter goes
-//!   down as a ragdoll on the next blow that lands (`combat`).
+//!   inside the enemy's blow (the parry window, wider for a monk) is a **perfect defence**.
+//!   Against a blade, the held guard is a deflect: two fingers laid on the blade's path
+//!   (`DeflectReach`, `Form::TwoFinger`), damage reduced. The perfect one depends on who attacks
+//!   (`perfect_outcome`):
+//!   - bare hands → **Counter**: the riposte (the blow's damage × `Counter.damage` × the monk's
+//!     fists) lands and the attacker is `Broken` for the counter's `stun` s;
+//!   - a weapon, attacker within `SEIZE_GAP` ranks → **Disarm**: the weapon flies from his hand
+//!     (`Disarm`, a dropped blade he takes back after `DISARM_RECOVER` s); no damage, he fights on
+//!     bare-handed;
+//!   - a weapon, attacker `SEIZE_GAP`+ ranks below → **Seize**: the monk grips the blade and
+//!     strikes; the attacker staggers weaponless and is `Broken` for `BROKEN` s. No ragdoll.
+//!   A monk striking a `Broken` foe lands a **finisher** (`combat`: ×3 damage, at least 40% of
+//!   its max hp, the body thrown).
 //! - Every path at max rank (S) gets its own counter, the same rule shown differently
 //!   (`Flare`): Monk a golden palm burst, Blade a white iai flash, Arcanist a frost bloom that
 //!   holds longer, Hunter a green snare that leaves the attacker open longer.
@@ -23,8 +32,10 @@
 //!   fingers, spells cupped and drunk as mana (`combat::ABSORB_SHARE` of the spell's damage, the pool
 //!   may run over to `magic::OVER_CAP` × its maximum); a countered blade is caught
 //!   between two fingers (`HandFlash`).
-//! Log lines: `[discipline] <who> counters <whom> (<flare>)`, `[discipline] <who> flees`.
+//! Log lines: `[discipline] <who> counters|disarms|seizes the blade of <whom> (<flare>, …)`,
+//! `[discipline] <who> loses the <weapon> to <whom>`, `[discipline] finisher on <whom>`, `[discipline] <who> flees`.
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
+use avian3d::prelude::{AngularVelocity, Collider, CollisionLayers, Friction, LinearVelocity, RigidBody};
 use super::select::HandForm;
 use crate::motion::hand::Form;
 use super::wind_aura::{WindAura, WindAuraParams};
@@ -95,10 +106,56 @@ pub enum Species {
     Demon,
 }
 
-/// Countered: the next blow that lands throws this fighter as a ragdoll.
+/// Broken by a perfect defence: staggering, open; a monk's next blow on it is a finisher.
 #[derive(Component, Clone, Copy, Debug)]
-pub struct Stunned {
+pub struct Broken {
     pub left: f32,
+}
+
+/// What a perfect defence does to the attacker.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Outcome {
+    /// Bare-handed attacker: riposte, briefly Broken.
+    Counter,
+    /// Weapon, attacker close in rank: knocked from the hand.
+    Disarm,
+    /// Weapon, attacker far below: blade seized, attacker struck and Broken, weaponless.
+    Seize,
+}
+
+/// The weapon leaves this fighter's hand (`combat` on a disarm or seize; applied by `disarm`).
+#[derive(Component, Clone, Debug)]
+pub struct Disarm {
+    pub set: String,
+    /// Flat direction the weapon flies.
+    pub toward: Vec3,
+    /// Who took it.
+    pub by: Entity,
+}
+
+/// The deflecting hand reaches for the point the blade crossed (`DeflectReach`, `HandTargets`).
+#[derive(Component, Clone, Copy, Debug)]
+pub struct DeflectReach {
+    pub point: Vec3,
+    pub left: f32,
+}
+
+/// Ranks below the defender at which a perfect defence seizes the blade instead of disarming.
+pub const SEIZE_GAP: u8 = 2;
+/// Seconds a seized attacker stays Broken.
+pub const BROKEN: f32 = 3.5;
+/// Seconds before a disarmed fighter has its weapon back.
+pub const DISARM_RECOVER: f32 = 8.0;
+
+/// What a perfect defence by `defender` does to `attacker`.
+pub fn perfect_outcome(defender: Mastery, attacker: Mastery, attacker_unarmed: bool) -> Outcome {
+    if attacker_unarmed {
+        Outcome::Counter
+    } else if defender.rank >= attacker.rank.saturating_add(SEIZE_GAP) {
+        Outcome::Seize
+    } else {
+        Outcome::Disarm
+    }
 }
 
 /// How a counter shows.
@@ -200,7 +257,8 @@ impl Absorb {
 
 pub fn plugin(app: &mut App) {
     app.add_message::<Countered>()
-        .add_systems(Update, (assign, player_rank, tick_stun, flare, flare_fade, rank_aura, absorb))
+        .add_systems(Update, (assign, player_rank, tick_broken, flare, flare_fade, rank_aura, absorb))
+        .add_systems(Update, (disarm, recover_weapons, deflect_reach, finisher_prompt))
         .add_systems(Update, hands.after(super::PlaySet::Act));
 }
 
@@ -340,11 +398,129 @@ fn player_rank(
     }
 }
 
-fn tick_stun(time: Res<Time>, mut commands: Commands, mut stunned: Query<(Entity, &mut Stunned)>) {
-    for (e, mut s) in &mut stunned {
+fn tick_broken(time: Res<Time>, mut commands: Commands, mut broken: Query<(Entity, &mut Broken)>) {
+    for (e, mut s) in &mut broken {
         s.left -= time.delta_secs();
         if s.left <= 0.0 {
-            commands.entity(e).remove::<Stunned>();
+            commands.entity(e).remove::<Broken>();
+        }
+    }
+}
+
+/// A weapon on the ground after a disarm; its owner takes it back after `left` s.
+#[derive(Component)]
+struct DroppedWeapon {
+    owner: Entity,
+    set: String,
+    left: f32,
+}
+
+/// Take the weapon out of the hand (the fighter fights on bare-handed) and throw a blade on the
+/// ground where it flew.
+fn disarm(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut fighters: Query<(Entity, &Disarm, &mut super::Loadout, &Transform, Option<&Name>)>,
+    names: Query<&Name>,
+) {
+    for (e, d, mut loadout, tf, name) in &mut fighters {
+        commands.entity(e).remove::<Disarm>();
+        if d.set.is_empty() || d.set == "unarmed" || loadout.equipped() != d.set {
+            continue;
+        }
+        let index = loadout.slots.iter().position(|s| s == "unarmed").unwrap_or_else(|| {
+            loadout.slots.push("unarmed".into());
+            loadout.slots.len() - 1
+        });
+        loadout.current = index;
+        let steel = materials.add(StandardMaterial { base_color: Color::srgb(0.75, 0.77, 0.8), metallic: 0.9, perceptual_roughness: 0.3, ..default() });
+        let at = tf.translation + Vec3::Y * 0.5 + d.toward * 0.4;
+        let spin = Quat::from_rotation_z(1.2) * Quat::from_rotation_y(d.toward.x.atan2(d.toward.z));
+        commands.spawn((
+            Name::new(format!("Dropped {}", d.set)),
+            DroppedWeapon { owner: e, set: d.set.clone(), left: DISARM_RECOVER },
+            Mesh3d(meshes.add(Cuboid::new(0.035, 0.9, 0.01))),
+            MeshMaterial3d(steel),
+            Transform::from_translation(at).with_rotation(spin),
+            RigidBody::Dynamic,
+            Collider::cuboid(0.035, 0.9, 0.02),
+            CollisionLayers::new(super::Phys::Debris, [super::Phys::World, super::Phys::Debris]),
+            LinearVelocity(d.toward * 3.0 + Vec3::Y * 3.5),
+            AngularVelocity(Vec3::new(4.0, 0.0, 9.0)),
+            Friction::new(0.9),
+        ));
+        let by = names.get(d.by).map_or("someone", |n| n.as_str());
+        info!("[discipline] {} loses the {} to {by}", name.map_or("?", |n| n.as_str()), d.set);
+    }
+}
+
+/// After `DISARM_RECOVER` s the disarmed fighter has its weapon back (equipped once it is free).
+fn recover_weapons(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut dropped: Query<(Entity, &mut DroppedWeapon)>,
+    mut equip: MessageWriter<super::combat::Equip>,
+    alive: Query<&Fighter>,
+) {
+    for (e, mut d) in &mut dropped {
+        d.left -= time.delta_secs();
+        if d.left > 0.0 {
+            continue;
+        }
+        if alive.get(d.owner).is_ok_and(|f| !f.dead) {
+            equip.write(super::combat::Equip { who: d.owner, set: d.set.clone() });
+        }
+        commands.entity(e).despawn();
+    }
+}
+
+/// Marks `HandTargets` this module put on (so it only removes its own).
+#[derive(Component)]
+struct ReachOwned;
+
+/// The deflecting (right) hand reaches out to where the blade crossed, rising and easing back
+/// over the reach's life, unless something else already drives the hands.
+fn deflect_reach(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut reaching: Query<(Entity, &mut DeflectReach, Option<&super::select::HandTargets>, Has<ReachOwned>)>,
+) {
+    for (e, mut r, targets, owned) in &mut reaching {
+        r.left -= time.delta_secs();
+        if r.left <= 0.0 {
+            commands.entity(e).remove::<DeflectReach>();
+            if owned {
+                commands.entity(e).remove::<(super::select::HandTargets, ReachOwned)>();
+            }
+            continue;
+        }
+        if targets.is_some() && !owned {
+            continue;
+        }
+        // Up fast, back slow.
+        let w = (r.left / 0.35).clamp(0.0, 1.0) * 0.85;
+        commands.entity(e).try_insert((
+            super::select::HandTargets { hands: [None, Some((r.point, w))], grips: [None, None] },
+            ReachOwned,
+        ));
+    }
+}
+
+/// A monk player sees when a foe is Broken and open to a finisher.
+fn finisher_prompt(
+    players: Query<(&Transform, &Mastery), With<Player>>,
+    broken: Query<(&Transform, Option<&Name>), Added<Broken>>,
+    mut log: MessageWriter<super::hud::log::HudLog>,
+) {
+    let Ok((me, m)) = players.single() else { return };
+    if m.path != Path::Monk {
+        return;
+    }
+    for (tf, name) in &broken {
+        if tf.translation.distance(me.translation) < 4.0 {
+            let who = name.map_or("Your foe", |n| n.as_str());
+            log.write(super::hud::log::HudLog::new(super::hud::log::LogKind::System, format!("{who} is broken: strike to finish")).key(7610));
         }
     }
 }
@@ -536,6 +712,18 @@ mod tests {
         assert_eq!(Path::of_npc("Opponent", "unarmed", Some(Kind::Unarmed)), Path::None);
         assert_eq!(Path::of_npc("Opponent", "katana", Some(Kind::Melee)), Path::Blade);
         assert_eq!(Path::of_npc("Hunter", "bow", Some(Kind::Ranged)), Path::Hunter);
+    }
+
+    #[test]
+    fn perfect_defence_disarms_close_ranks_and_seizes_far_lower() {
+        let monk = m(Path::Monk, 3);
+        assert_eq!(perfect_outcome(monk, m(Path::Blade, 3), true), Outcome::Counter);
+        assert_eq!(perfect_outcome(monk, m(Path::Blade, 3), false), Outcome::Disarm);
+        assert_eq!(perfect_outcome(monk, m(Path::Blade, 2), false), Outcome::Disarm);
+        assert_eq!(perfect_outcome(monk, m(Path::Blade, 1), false), Outcome::Seize);
+        assert_eq!(perfect_outcome(monk, m(Path::None, 0), false), Outcome::Seize);
+        // A stronger attacker is only ever disarmed.
+        assert_eq!(perfect_outcome(m(Path::Monk, 0), m(Path::Blade, 6), false), Outcome::Disarm);
     }
 
     #[test]
