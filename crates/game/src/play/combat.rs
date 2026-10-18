@@ -51,6 +51,7 @@ use super::magic::Ward;
 use super::monitor::Monitor;
 use super::moveset::{Attack, ClipRef, Moveset, Movesets, Primitive, WeaponDef};
 use super::ragdoll::RagdollRequest;
+use super::repertoire::{Repertoire, Slot, VARIANT_CHANCE, Witnessed, roll};
 use super::stats::Derived;
 use super::tools::Holding;
 use super::world::TrainingDummy;
@@ -338,6 +339,8 @@ pub struct Melee {
     slowed: bool,
     /// A blocked blow's step back: (seconds in, direction, length m).
     step_back: Option<(f32, Vec3, f32)>,
+    /// xorshift state for picking repertoire variants (seeded from the entity).
+    rng: u32,
 }
 
 impl Default for Melee {
@@ -356,6 +359,7 @@ impl Default for Melee {
             facing: false,
             slowed: false,
             step_back: None,
+            rng: 0,
         }
     }
 }
@@ -375,6 +379,13 @@ impl Melee {
     /// Seconds since this fighter last took damage.
     pub fn since_hurt(&self) -> f32 {
         self.hurt
+    }
+    /// The attack in progress and its repertoire slot (`Heavy` for heavy chains).
+    pub fn current_attack(&self) -> Option<(&Attack, Slot)> {
+        match &self.state {
+            State::Swing(sw) => Some((&sw.attack, if matches!(sw.kind, SwingKind::Heavy(_)) { Slot::Heavy } else { Slot::Light })),
+            _ => None,
+        }
     }
     /// Can be seized by a grab: not dodging through i-frames, not down, not dead.
     pub fn grabbable(&self) -> bool {
@@ -1148,6 +1159,10 @@ struct Ctx<'a> {
     team: u8,
     pos: Vec3,
     holding: bool,
+    /// This fighter's repertoire (library strikes, learned moves).
+    repertoire: Option<&'a Repertoire>,
+    /// The equipped moveset's name.
+    set_name: &'a str,
 }
 
 /// A fighter's own components during its step.
@@ -1228,6 +1243,7 @@ fn drive(
         Has<Holding>,
         Option<&Revive>,
         Option<&Name>,
+        Option<&Repertoire>,
     )>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
 ) {
@@ -1258,7 +1274,7 @@ fn drive(
     }));
     let now = time.elapsed_secs();
 
-    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name) in
+    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire) in
         &mut fighters
     {
         let cx = Ctx {
@@ -1270,7 +1286,12 @@ fn drive(
             team: fighter.team,
             pos: tf.translation,
             holding,
+            repertoire,
+            set_name: loadout.equipped(),
         };
+        if melee.rng == 0 {
+            melee.rng = (entity.to_bits() as u32) | 1;
+        }
         let mut b = Body {
             mover: &mut mover,
             action: &mut action,
@@ -1435,7 +1456,20 @@ fn attack_of(set: &Moveset, kind: SwingKind) -> Option<&Attack> {
 
 fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option<State> {
     let set = cx.set?;
-    let attack = attack_of(set, kind)?.clone();
+    let mut attack = attack_of(set, kind)?.clone();
+    // Now and then one of the fighter's own extras (library strikes, learned moves) instead.
+    let slot = match kind {
+        SwingKind::Light(_) => Some(Slot::Light),
+        SwingKind::Heavy(_) => Some(Slot::Heavy),
+        _ => None,
+    };
+    if let (Some(slot), Some(rep)) = (slot, cx.repertoire) {
+        let extras: Vec<&Attack> = rep.for_slot(cx.set_name, slot).filter(|a| cx.bank.has(&a.clip.track)).collect();
+        if !extras.is_empty() && roll(&mut m.rng) < VARIANT_CHANCE {
+            let pick = (roll(&mut m.rng) * extras.len() as f32) as usize % extras.len();
+            attack = extras[pick].clone();
+        }
+    }
     let clip = Clip::new(&attack.clip, cx.bank);
     m.spend(b.fighter, attack.stamina);
     m.chain = match kind {
@@ -2148,6 +2182,7 @@ fn resolve(
     mut monitor: ResMut<Monitor>,
     mut commands: Commands,
     mut fighters: Query<Victim>,
+    mut witnessed: MessageWriter<Witnessed>,
 ) {
     let Some(bank) = bank else {
         hits.clear();
@@ -2176,6 +2211,19 @@ fn resolve(
             player: false,
             weapon: String::new(),
         });
+        // What reached the victim, for it to learn (`repertoire`).
+        if hit.kind == HitKind::Melee
+            && let Ok((_, _, _, _, melee, loadout, _, _, _, name, ..)) = fighters.get(hit.attacker)
+            && let Some((attack, slot)) = melee.current_attack()
+        {
+            witnessed.write(Witnessed {
+                learner: hit.target,
+                who: name.map_or("someone".to_string(), |n| n.to_string()),
+                set: loadout.equipped().to_string(),
+                slot,
+                attack: attack.clone(),
+            });
+        }
         let Ok(victim) = fighters.get_mut(hit.target) else {
             // A training dummy (or anything else that can't be hurt): feedback only.
             let heavy = hit.knockback >= KNOCKDOWN_POISE_KB;
