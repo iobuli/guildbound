@@ -1,6 +1,9 @@
 {
   "_about": "Titles: earned automatically once every requirement holds, never lost. requires.skills: skill id -> level; requires.deeds: deed kind -> lifetime count. bonus: flat additions to stats::Derived (same keys as a skill's bonus, not per level).",
   "titles": [
+    { "id": "iron_bane", "name": "Bane of the Iron Rider", "about": "Thoral beaten, his helm taken.",
+      "requires": { "skills": {}, "deeds": { "trophy": 1 } },
+      "bonus": { "max_hp": 20 } },
     { "id": "blade_adept", "name": "Blade Adept", "about": "Ten levels of the sword.",
       "requires": { "skills": { "swordsmanship": 10 }, "deeds": {} },
       "bonus": { "might": 0.03 } },

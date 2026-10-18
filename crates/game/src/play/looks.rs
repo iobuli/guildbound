@@ -95,6 +95,14 @@ pub struct Dressed;
 #[derive(Component)]
 struct PieceMesh;
 
+/// The kasa's meshes (a helm replaces it).
+#[derive(Component)]
+struct KasaMesh;
+
+/// Wear the Iron Rider's helm (Thoral's trophy): it goes on over the head, the kasa comes off.
+#[derive(Component)]
+pub struct WearHelm;
+
 /// A swinging tail: its owner and spring state (pitch, roll in the body's frame).
 #[derive(Component)]
 struct Flap {
@@ -106,7 +114,7 @@ struct Flap {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, (dress, flaps, show_pieces).chain());
+    app.add_systems(Update, (dress, wear_helm, flaps, show_pieces).chain());
 }
 
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
@@ -174,7 +182,7 @@ fn dress(
                 rotation: parent.rotation.inverse() * rot,
                 scale: scale / parent.scale,
             };
-            commands.spawn((PieceMesh, Mesh3d(mesh), MeshMaterial3d(mat), local, ChildOf(bone.0)));
+            commands.spawn((PieceMesh, Mesh3d(mesh), MeshMaterial3d(mat), local, ChildOf(bone.0))).id()
         };
         // A tail: a pivot at `pos` on `bone`, the strip hanging below it.
         let tail = |commands: &mut Commands, bone: (Entity, Transform), mesh: Handle<Mesh>, mat: Handle<SkinMaterial>, pos: Vec3, len: f32, splay: f32| {
@@ -200,9 +208,11 @@ fn dress(
             match piece {
                 Piece::Kasa => {
                     let m = meshes.add(Cone { radius: 0.36, height: 0.17 });
-                    place(&mut commands, head, m, straw.clone(), head_top + up * 0.1, face, Vec3::ONE);
+                    let a = place(&mut commands, head, m, straw.clone(), head_top + up * 0.1, face, Vec3::ONE);
                     let rim = meshes.add(Cylinder::new(0.36, 0.012));
-                    place(&mut commands, head, rim, straw.clone(), head_top + up * 0.02, face, Vec3::ONE);
+                    let b = place(&mut commands, head, rim, straw.clone(), head_top + up * 0.02, face, Vec3::ONE);
+                    commands.entity(a).insert(KasaMesh);
+                    commands.entity(b).insert(KasaMesh);
                 }
                 Piece::Hood => {
                     let m = meshes.add(Sphere::new(1.0));
@@ -271,6 +281,55 @@ fn dress(
         }
         commands.entity(e).try_remove::<Dressing>().try_insert(Dressed);
         info!("[looks] {} dressed: {:?}", name.as_str(), look.pieces);
+    }
+}
+
+/// Put the Iron Rider's helm on a dressed character (the kasa comes off).
+#[allow(clippy::type_complexity)]
+fn wear_helm(
+    bank: Option<Res<PoseBank>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut skins: ResMut<Assets<SkinMaterial>>,
+    mut wearers: Query<(Entity, &Name, &Rig, &mut Skin), (With<Dressed>, Added<WearHelm>)>,
+    kasas: Query<(Entity, &ChildOf), With<KasaMesh>>,
+    globals: Query<&GlobalTransform>,
+) {
+    let Some(bank) = bank else { return };
+    for (e, name, rig, mut skin) in &mut wearers {
+        let Some(head_bone) = rig.bones.get(bank.bones.head).copied() else { continue };
+        let (Ok(head), Ok(root)) = (globals.get(head_bone), globals.get(e)) else { continue };
+        for (k, parent) in &kasas {
+            if parent.parent() == head_bone {
+                commands.entity(k).try_despawn();
+            }
+        }
+        let head = head.compute_transform();
+        let k = look_for(name.as_str()).height;
+        let face = root.rotation();
+        let (up, fwd) = (Vec3::Y, face * Vec3::Z);
+        let top = head.translation + up * 0.13 * k;
+        let mut mat = |c: Color| {
+            let h = skins.add(SkinMaterial {
+                base: StandardMaterial { base_color: c, perceptual_roughness: 0.45, metallic: 0.6, ..default() },
+                extension: SkinExt { skin: SkinParams::default() },
+            });
+            skin.materials.push(h.clone());
+            h
+        };
+        let (iron, crest) = (mat(Color::srgb(0.32, 0.32, 0.35)), mat(Color::srgb(0.6, 0.1, 0.08)));
+        let mut put = |mesh: Mesh, m: &Handle<SkinMaterial>, pos: Vec3, scale: Vec3| {
+            let local = Transform {
+                translation: head.rotation.inverse() * (pos - head.translation) / head.scale,
+                rotation: head.rotation.inverse() * face,
+                scale: scale * k / head.scale,
+            };
+            commands.spawn((PieceMesh, Mesh3d(meshes.add(mesh)), MeshMaterial3d(m.clone()), local, ChildOf(head_bone)));
+        };
+        put(Sphere::new(1.0).into(), &iron, top - up * 0.035 * k, Vec3::new(0.135, 0.12, 0.14));
+        put(Cuboid::new(0.025, 0.11, 0.02).into(), &iron, top - up * 0.1 * k + fwd * 0.13 * k, Vec3::ONE);
+        put(Cuboid::new(0.02, 0.06, 0.24).into(), &crest, top + up * 0.08 * k, Vec3::ONE);
+        info!("[looks] {} wears the Iron Rider's helm", name.as_str());
     }
 }
 

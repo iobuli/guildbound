@@ -8,11 +8,14 @@
 //! - Boss bar: his name and health across the top of the screen while you are in the ruins or he
 //!   is after you.
 //! - Leash: drawn more than `LEASH` m from the dais, he rides back to it before fighting on.
+//! - Death: he falls from the saddle (a ragdoll; the horse stays, riderless) and his helm drops
+//!   (`Trophy`: walk over it to wear it, `looks::WearHelm`, and earn "Bane of the Iron Rider").
 //! - Death: a banner line and a kill deed (the guild pays a bounty on "Thoral"); he returns to
 //!   the dais `RETURN` s later (`combat::Revive`).
 //! - Theme: a synthesized taiko-and-flute loop (`tools/synth_boss_theme.py`) fades in while the
 //!   bar is up and out after.
-//! - Smoke: `GB_THORAL=1` puts the player at the torii facing him.
+//! - Smoke: `GB_THORAL=1` puts the player at the torii facing him; `GB_THORAL_DOWN=1` fells him at
+//!   3 s (his helm drops).
 use super::ai::Difficulty;
 use super::combat::Revive;
 use super::horse::spawn_horse;
@@ -76,7 +79,7 @@ pub fn plugin(app: &mut App) {
     app.init_resource::<Engaged>()
         .add_systems(Startup, (spawn, spawn_bar, spawn_theme))
         .add_systems(Update, charge.after(PlaySet::Think).before(PlaySet::Act))
-        .add_systems(Update, (fallen, bar, theme, smoke).chain());
+        .add_systems(Update, (fallen, bar, theme, smoke, trophy).chain());
 }
 
 fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
@@ -203,15 +206,64 @@ fn charge(
     }
 }
 
+/// Thoral's trophy lying where he fell: his helm, until someone without one takes it.
+#[derive(Component)]
+struct Trophy {
+    clock: f32,
+    base: Vec3,
+}
+
+const TROPHY_REACH: f32 = 1.6;
+
 /// The fall and the return.
-fn fallen(mut log: MessageWriter<HudLog>, mut shake: ResMut<super::camera::CameraShake>, mut bosses: Query<(&Fighter, &mut Boss)>) {
-    for (f, mut b) in &mut bosses {
+#[allow(clippy::type_complexity)]
+fn fallen(
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut log: MessageWriter<HudLog>,
+    mut shake: ResMut<super::camera::CameraShake>,
+    mut bosses: Query<(Entity, &Transform, &Fighter, &mut Boss, Option<&super::horse::Ridden>)>,
+    wearers: Query<(), (With<Player>, With<super::looks::WearHelm>)>,
+    trophies: Query<(), With<Trophy>>,
+    globals: Query<&GlobalTransform>,
+) {
+    for (e, tf, f, mut b, ridden) in &mut bosses {
         if f.dead && !b.was_dead {
+            // He falls from the saddle; the horse stays where it stood, riderless.
+            if let Some(r) = ridden {
+                if let Ok(g) = globals.get(r.0) {
+                    commands.entity(r.0).remove::<ChildOf>().insert(g.compute_transform());
+                }
+                commands.entity(e).remove::<super::select::Mounted>().insert(super::ragdoll::RagdollRequest {
+                    velocity: tf.rotation * Vec3::X * 2.5 + Vec3::Y * 1.0,
+                    point: tf.translation + Vec3::Y * 0.6,
+                });
+            }
             log.write(HudLog::new(LogKind::System, "— THORAL HAS FALLEN —"));
             shake.add(0.6);
             info!("[boss] Thoral defeated");
+            // His helm falls where he did (once: not again if you already wear one).
+            if wearers.is_empty() && trophies.is_empty() {
+                let at = tf.translation - Vec3::Y * (super::HALF_HEIGHT - 0.45);
+                let iron = materials.add(StandardMaterial { base_color: Color::srgb(0.32, 0.32, 0.35), metallic: 0.6, perceptual_roughness: 0.4, ..default() });
+                let crest = materials.add(StandardMaterial { base_color: Color::srgb(0.6, 0.1, 0.08), ..default() });
+                commands
+                    .spawn((Name::new("Iron Rider's helm"), Trophy { clock: 0.0, base: at }, Transform::from_translation(at), Visibility::default()))
+                    .with_children(|t| {
+                        t.spawn((Mesh3d(meshes.add(Sphere::new(1.0))), MeshMaterial3d(iron), Transform::from_scale(Vec3::new(0.18, 0.16, 0.19))));
+                        t.spawn((Mesh3d(meshes.add(Cuboid::new(0.03, 0.08, 0.3))), MeshMaterial3d(crest), Transform::from_xyz(0.0, 0.16, 0.0)));
+                        t.spawn((PointLight { color: Color::srgb(1.0, 0.8, 0.4), intensity: 25_000.0, range: 4.0, shadow_maps_enabled: false, ..default() }, Transform::from_xyz(0.0, 0.3, 0.0)));
+                    });
+                log.write(HudLog::new(LogKind::Item, "Thoral's helm lies in the dust."));
+            }
         } else if !f.dead && b.was_dead {
             log.write(HudLog::new(LogKind::Warn, "Hoofbeats in the ruins: Thoral has returned."));
+            // Back in the saddle.
+            if let Some(r) = ridden {
+                commands.entity(r.0).insert((ChildOf(e), Transform::from_xyz(0.0, -super::HALF_HEIGHT, 0.0)));
+                commands.entity(e).insert(super::select::Mounted { track: super::horse::SEAT_TRACK.to_string(), time: super::horse::SEAT_TIME });
+            }
         }
         b.was_dead = f.dead;
     }
@@ -298,8 +350,57 @@ fn theme(time: Res<Time>, engaged: Res<Engaged>, mut theme: Query<(&mut Theme, &
     }
 }
 
+/// The helm bobs and turns; walk over it to take it (`looks::WearHelm`, a `trophy` deed: the
+/// "Bane of the Iron Rider" title).
+fn trophy(
+    time: Res<Time>,
+    mut commands: Commands,
+    mut deeds: MessageWriter<super::deeds::Deed>,
+    mut log: MessageWriter<HudLog>,
+    mut trophies: Query<(Entity, &mut Trophy, &mut Transform)>,
+    players: Query<(Entity, &Transform), (With<Player>, Without<Trophy>)>,
+) {
+    let Ok((player, ptf)) = players.single() else { return };
+    for (e, mut t, mut tf) in &mut trophies {
+        t.clock += time.delta_secs();
+        tf.translation = t.base + Vec3::Y * (0.08 * (t.clock * 2.0).sin());
+        tf.rotation = Quat::from_rotation_y(t.clock * 0.8);
+        if tf.translation.with_y(0.0).distance(ptf.translation.with_y(0.0)) < TROPHY_REACH {
+            commands.entity(e).try_despawn();
+            commands.entity(player).try_insert(super::looks::WearHelm);
+            deeds.write(super::deeds::Deed::new(player, "trophy", "thoral_helm", 1.0));
+            log.write(HudLog::new(LogKind::Item, "You take the Iron Rider's helm."));
+            info!("[boss] trophy taken");
+        }
+    }
+}
+
 /// `GB_THORAL=1`: the player stands at the torii, facing the dais.
-fn smoke(time: Res<Time>, mut done: Local<bool>, mut commands: Commands, players: Query<Entity, With<Player>>) {
+fn smoke(
+    time: Res<Time>,
+    mut done: Local<bool>,
+    mut commands: Commands,
+    players: Query<Entity, With<Player>>,
+    bosses: Query<(Entity, &Transform), With<Boss>>,
+    mut hits: MessageWriter<Hit>,
+) {
+    // `GB_THORAL_DOWN=1`: a blow nobody survives at 3 s (through `combat`, like any other).
+    let t = time.elapsed_secs();
+    if t >= 3.0 && t - time.delta_secs() < 3.0 && std::env::var("GB_THORAL_DOWN").is_ok_and(|v| v.trim() == "1") {
+        if let (Ok(p), Ok((b, btf))) = (players.single(), bosses.single()) {
+            hits.write(Hit {
+                attacker: p,
+                target: b,
+                point: btf.translation,
+                direction: Vec3::Z,
+                damage: 1.0e5,
+                poise: 1.0e3,
+                knockback: 0.0,
+                speed: 10.0,
+                kind: HitKind::Melee,
+            });
+        }
+    }
     // After the world has placed the player at the spawn (it does so once it is up).
     if *done || time.elapsed_secs() < 2.5 {
         return;

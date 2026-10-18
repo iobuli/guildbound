@@ -21,8 +21,8 @@ use std::f32::consts::{FRAC_PI_2, TAU};
 /// Ground covered per trot cycle (m), saddle top above the ground (m), the seated clip.
 const STRIDE: f32 = 1.5;
 pub const SADDLE: f32 = 1.12;
-const SEAT_TRACK: &str = "ual1/Sitting_Idle_Loop";
-const SEAT_TIME: f32 = 0.5;
+pub const SEAT_TRACK: &str = "ual1/Sitting_Idle_Loop";
+pub const SEAT_TIME: f32 = 0.5;
 /// How fast the rider's model eases onto the saddle (per s).
 const SEAT_RATE: f32 = 6.0;
 
