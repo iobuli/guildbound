@@ -1,5 +1,20 @@
 # Agent log (newest first)
 
+## 2026-10-18T15:28Z · agent-2
+
+**Branch:** feat-monk overhaul-2026-10-16   ·  **Range:** `8498c64..HEAD`
+
+**What:** Review fixes 1-4 + agent-1 nits, then MERGED feat-monk into overhaul-2026-10-16 (fast-forward). Build OK, cargo test 276 passed 0 failed. Smoke launch as Monk: no panics, monks/Oni dressed from order/oni looks. Note: earlier log said absorb 1.5x; the share drunk is ABSORB_SHARE 1.2, the pool cap is OVER_CAP 1.5x.
+
+**Config / try it:** git pull origin overhaul-2026-10-16
+
+- `fc15f67` Monk review fixes: only the order are monks, timed ranged catch, path follows weapon changes, absorbs add up
+    - assets/data/appearance.json: +819
+    - crates/game/src/play/appearance.rs: +639
+    - crates/game/src/play/combat.rs: +203-204 +2263 +2266 +2268 +2279-2280 +2366-2369 +2371 +2379 +2381
+    - crates/game/src/play/discipline.rs: +4-6 +10-11 +23-24 +56-59 +61-63 +65 +189-191 +194-200 +292-294 +299-303 +305-308 +311-322 …
+    - crates/game/src/play/mod.rs: +582-583
+
 ## 2026-10-18T15:17Z · agent-2
 
 **Branch:** feat-monk   ·  **Range:** `e9ecf30..HEAD`
