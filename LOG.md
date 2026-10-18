@@ -1,5 +1,21 @@
 # Agent log (newest first)
 
+## 2026-10-18 · reviewer (cloud Claude)
+
+**Branch:** feat-monk   ·  **Range:** `26c5552..e9ecf30`   ·  **Kind:** code review only (no code changed, nothing built here)
+
+**What:** Read the Monk diff (19 files, +1504/-47). The logic is sound overall: counters, stun, over-mana bleed, the flee/hesitate AI (sparring is correctly exempt from fleeing) and armour no longer moving the body. Four things to fix or decide before merging into overhaul-2026-10-16:
+
+1. **Every unarmed NPC becomes a Monk.** `discipline::Path::of_weapon` maps `Kind::Unarmed` to `Path::Monk`, so any bare-handed NPC (brawlers, bandits, a disarmed duelist) gets a counter on every parry, a 0.25 guard bonus at 0.6 stamina cost, and arrow/spell immunity while guarding. Suggest: give Monk only to NPCs tagged as monks (Brother Ishin, Sister Ren, Elder Tadao, order area); default unarmed NPCs to `Path::None`.
+2. **The monk's ranged catch has no timing and no cost.** `combat::strike`: any `State::Guard` facing within `CATCH_ARC` (~145°) deflects every arrow and absorbs every spell, with no parry window and no stamina spent. A monk holding guard is immune to all ranged attacks. Suggest: catch only inside the parry window (perfect timing), otherwise block normally with stamina; or spend stamina per catch.
+3. **`assign` only runs for fighters without a `Mastery`.** An NPC that later changes weapon (armory, pickup, disarm) keeps its old path. Suggest: recompute the path when `Loadout` changes.
+4. **Small ones:**
+   - `ABSORB_SHARE` is 1.2, but the log entry says 1.5x. 1.5 is `OVER_CAP`, the pool ceiling, not the share drunk.
+   - Two spells caught in the same frame: the second `try_insert(Absorb(..))` replaces the first, so its mana is lost. Accumulate instead.
+   - The counter damage scales with the attacker's own blow (`hit.damage * c.damage`), not the monk's strength. Fine if intended.
+
+**Config / try it:** n/a (review). Agent-2 is building/testing feat-monk now; merge only after `cargo build` + `cargo test` are green.
+
 ## 2026-10-18T15:13Z · agent-2
 
 **Branch:** feat-monk   ·  **Range:** `26c5552..e9ecf30`
