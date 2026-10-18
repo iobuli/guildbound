@@ -1,5 +1,47 @@
 # Agent log (newest first)
 
+## 2026-10-18T17:46Z · agent-1
+
+**Branch:** int/E7-E8-E14   ·  **Range:** `fc15f67..79370a2`
+
+**What:** PROTO v1 · ST @all br=int/E7-E8-E14 sha=79370a2 st=built,tested 281/0. = E14 (attack-speed warp, afterimages, Melee::shield/refresh) + agent-3 E7 (aaa33f7) + E8 (6ea8494) + godmode hold system (Invulnerable→shield, Tireless→refresh+stamina, after CombatSet). conflict: play/mod.rs plugin tuples, kept both. @agent-2 merge int/E7-E8-E14 → overhaul-2026-10-16 (fast-forward of fc15f67). @agent-3 your godmode.rs touched: hold() + panel labels; '(needs E14)' gone. combat.rs timing claim released. next agent-1: E12 carry.
+
+**Config / try it:** GB_GOD=1 god+tireless from start; F11 panel
+
+- `b1c3de8` WIP E7 defeat ragdoll (untested): dead fighters go limp, settled corpses checked against the ground
+    - crates/game/src/play/ragdoll.rs: +22-26 +110-117 +155 +176-177 +203-220 +324 +563-593 +801-874
+- `b8effdc` E7: bigger slope test mesh (the body slid off the 20 m one), report where it ended
+    - crates/game/src/play/ragdoll.rs: +814-815 +872-874
+- `939fdab` WIP E14: attack speed warps the swing (not built yet)
+    - crates/game/src/play/afterimage.rs: +1-175
+    - crates/game/src/play/combat.rs: +130-141 +397-404 +570-606 +620-621 +1236-1237 +1320 +1351 +1366 +1584-1585 +1607-1617
+    - crates/game/src/play/mod.rs: +61 +125
+    - crates/game/src/play/stats.rs: +174-176 +193
+- `5645c13` WIP E14: attack-speed test, god-mode hooks Melee::shield/refresh (not built yet)
+    - crates/game/src/play/combat.rs: +409-417 +2693-2719
+- `6f27b23` E8 god mode v1: F11 panel, kill/revive target through combat, god/tireless markers
+    - crates/game/src/play/godmode.rs: +1-312
+    - crates/game/src/play/mod.rs: +39 +124
+- `b6b6e15` E8 god mode v1 built: markers act through agent-1's E14 hooks (Melee::shield / refresh)
+    - crates/game/src/play/godmode.rs: +15-19 +245 +247 +249
+- `b65f837` E8: god-mode kill is an ordinary-strength blow by default (GB_GOD_KNOCK overrides)
+    - crates/game/src/play/godmode.rs: +7-8 +48-51 +168
+- `6ea8494` E8: GB_GOD_KILL logs who it hit and watches the victim for 3 s ([god] watch)
+    - crates/game/src/play/godmode.rs: +222-225 +229 +233 +238-259 +267-269 +271
+- `779e3f1` E7: a limp body falls, never launches: sane start velocity, start lifted clear of the ground
+    - crates/game/src/play/ragdoll.rs: +114-115 +210 +212 +216-221 +223 +277 +318-324 +353-369
+- `aaa33f7` E7: ragdoll joints from local frames: a twisted pose no longer launches the body
+    - crates/game/src/play/ragdoll.rs: +429-431 +449-452 +454-457 +918-971
+- `7a56355` Art prompts for Higgsfield: master style, textures, concepts, poses, UI
+    - docs/ART_PROMPTS.md: +1-95
+- `c6d774a` Merge remote-tracking branch 'origin/ev/E7-defeat-ragdoll' into int/E7-E8-E14
+    - crates/game/src/play/ragdoll.rs: +22-26 +110-119 +157 +178-179 +205-228 +277 +318-324 +339 +353-369 +429-431 +449-452 +454-457 …
+- `08cf6bf` Merge remote-tracking branch 'origin/ev/E8-god-mode' into int/E7-E8-E14
+    - crates/game/src/play/godmode.rs: +1-349
+    - crates/game/src/play/mod.rs: +39 +125
+- `79370a2` E8 god mode through E14's hooks: Invulnerable shields, Tireless refreshes, after CombatSet
+    - crates/game/src/play/godmode.rs: +5-6 +15-17 +22 +57-74 +294 -295 -296
+
 ## 2026-10-18 · agent-3
 
 **E7 + E8 ready for merge.** `ev/E7-defeat-ragdoll` @ `aaa33f7` · `ev/E8-god-mode` @ `6ea8494` (both from `fc15f67`, independent; full suite 278/278 on E7).
