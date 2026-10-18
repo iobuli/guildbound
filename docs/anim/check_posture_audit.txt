@@ -1,0 +1,72 @@
+  sekiro/Upward Thrust: skipped (KeyError: 'pelvis')
+  sekiro/Thrust Slash: skipped (KeyError: 'pelvis')
+  sekiro/Outward Slash: skipped (KeyError: 'pelvis')
+  sekiro/Kneel to Stand: skipped (KeyError: 'pelvis')
+  sekiro/Kneel Idle: skipped (KeyError: 'pelvis')
+  sekiro/Inward Slash: skipped (KeyError: 'pelvis')
+  sekiro/Hit Reaction From Front: skipped (KeyError: 'pelvis')
+  sekiro/Hit Reaction From Behind: skipped (KeyError: 'pelvis')
+  sekiro/Finisher on Kneeling Victim: skipped (KeyError: 'pelvis')
+  sekiro/Dizzy Idle: skipped (KeyError: 'pelvis')
+  sekiro/Death Kneeling: skipped (KeyError: 'pelvis')
+  sekiro/Death Backstab: skipped (KeyError: 'pelvis')
+  sekiro/Death: skipped (KeyError: 'pelvis')
+  sekiro/Blocking: skipped (KeyError: 'pelvis')
+  sekiro/Standing Up: skipped (KeyError: 'pelvis')
+  sekiro/Sitting Idle: skipped (KeyError: 'pelvis')
+  sekiro/Drinking: skipped (KeyError: 'pelvis')
+  sekiro/Magic Walk Right: skipped (KeyError: 'pelvis')
+  sekiro/Magic Walk Left: skipped (KeyError: 'pelvis')
+  sekiro/Magic Walk Forwards: skipped (KeyError: 'pelvis')
+  sekiro/Magic Walk Backwards: skipped (KeyError: 'pelvis')
+  sekiro/Magic Idle Inactive: skipped (KeyError: 'pelvis')
+  sekiro/Magic Idle Active: skipped (KeyError: 'pelvis')
+  sekiro/Magic Death Forwards: skipped (KeyError: 'pelvis')
+  sekiro/Magic Death Backwards: skipped (KeyError: 'pelvis')
+  sekiro/Magic Action Small Projectile: skipped (KeyError: 'pelvis')
+  sekiro/Magic Action Energy Beam: skipped (KeyError: 'pelvis')
+  sekiro/Magic Action Big Projectile: skipped (KeyError: 'pelvis')
+  sekiro/Walk-Right: skipped (KeyError: 'pelvis')
+  sekiro/Walk-Left: skipped (KeyError: 'pelvis')
+  sekiro/Walk-Forwards: skipped (KeyError: 'pelvis')
+  sekiro/Walk-Backwards: skipped (KeyError: 'pelvis')
+  sekiro/Turn-Right-90: skipped (KeyError: 'pelvis')
+  sekiro/Turn-Right-180: skipped (KeyError: 'pelvis')
+  sekiro/Turn-Left-90: skipped (KeyError: 'pelvis')
+  sekiro/Turn-Left-180: skipped (KeyError: 'pelvis')
+  sekiro/T-Pose: skipped (KeyError: 'pelvis')
+  sekiro/Run-Right: skipped (KeyError: 'pelvis')
+  sekiro/Run-Left: skipped (KeyError: 'pelvis')
+  sekiro/Run-Forwards: skipped (KeyError: 'pelvis')
+  sekiro/Jump: skipped (KeyError: 'pelvis')
+  sekiro/Jog Strafe Right: skipped (KeyError: 'pelvis')
+  sekiro/Jog Strafe Left: skipped (KeyError: 'pelvis')
+  sekiro/Jog Forward: skipped (KeyError: 'pelvis')
+  sekiro/Jog Backward: skipped (KeyError: 'pelvis')
+  sekiro/Idle Inactive: skipped (KeyError: 'pelvis')
+  sekiro/Idle Active: skipped (KeyError: 'pelvis')
+  sekiro/Falling Idle: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Walk: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Smash: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Smack Right: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Smack Left: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Kick: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Idle Active: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Idle: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Death Forwards: skipped (KeyError: 'pelvis')
+  sekiro/Zombie Death Backwards: skipped (KeyError: 'pelvis')
+audited 88 clips
+  mean lean over 4 deg: 20 clips ['ual1/Swim_Fwd_Loop', 'ual1/Roll', 'ual1/Roll_RM', 'ual2/OverhandThrow', 'ual2/LayToIdle', 'ual2/ClimbUp_1m']
+  idle/walk shoulder diff over 3 cm: 8 clips ['ual2/LayToIdle', 'ual2/Zombie_Idle_Loop', 'ual1/Sword_Idle', 'ual2/Idle_Shield_Break', 'ual2/NinjaJump_Idle_Loop', 'ual1/Crouch_Idle_Loop']
+  top-lean/pitch clips plotted: ual1/Swim_Fwd_Loop, ual2/Hit_Knockback, ual2/Sword_Heavy_Combo, ual2/Slide_Loop, ual1/Death01, ual1/Push_Loop ...
+wrote posture_audit.json/.csv/_note.json and posture_audit_top.png to ../anim_pack/docs/anim
+  unarmed: no weapon.mass, skipped
+case                    mass  hand   drop L/R (deg)    lean   pitch   measured lean base -> carried (engine sign)
+dagger                   0.4     r      [0.0, 0.69]   -0.41    0.00      1.13 ->    1.06
+katana                   1.1     r      [0.0, 1.89]   -1.13    0.00      1.13 ->    0.93
+axe                      2.2     r      [0.0, 3.78]   -2.27    0.29      1.13 ->    0.73
+greatsword               3.0     r      [0.0, 5.16]   -3.09    1.43      1.13 ->    0.59
+crossbow                 3.0     r      [0.0, 5.16]   -3.09    1.43      1.13 ->    0.59
+greatsword sheathed    0.8999999999999999  back       [0.0, 0.0]    0.00    0.62      1.13 ->    1.13
+checks: 1 problems: ['axe/Idle_Loop: pitch should tilt the upper chest forward (14.693 -> 14.279 deg)']
+wrote carry_targets_from_code.json and carry_predicted.png to ../anim_pack/docs/anim

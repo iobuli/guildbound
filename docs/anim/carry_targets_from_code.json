@@ -1,0 +1,589 @@
+{
+ "_port": "crates/game/src/motion/carry.rs angles()/apply(), ev/E12-carry",
+ "_constants": {
+  "DROP_PER_KG": 0.03,
+  "DROP_MAX": 0.14,
+  "LEAN_PER_KG": 0.018,
+  "LEAN_MAX": 0.08,
+  "PITCH_BACK_PER_KG": 0.012,
+  "PITCH_HELD_PER_KG": 0.025,
+  "PITCH_MAX": 0.12
+ },
+ "_convention": "reported lean is the engine's: + = toward the body's right",
+ "cases": {
+  "dagger": {
+   "mass_kg": 0.4,
+   "hand": "r",
+   "hand_kg": [
+    0.0,
+    0.4
+   ],
+   "back_kg": 0.0,
+   "drop_deg": [
+    0.0,
+    0.69
+   ],
+   "lean_deg": -0.41,
+   "pitch_deg": 0.0,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.693
+    },
+    "lean_only": {
+     "head_offset_mm": 2.29,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.567
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 1.059,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 2.29,
+     "head_fwd_mm": -0.71,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.567,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -0.347,
+     "pitch_deg": 4.816,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 1.045,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": 2.29,
+     "head_fwd_mm": -0.71,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 14.286,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -0.347,
+     "pitch_deg": 4.757,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.43
+    },
+    "lean_only": {
+     "head_offset_mm": 2.27,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.485
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.295,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 2.27,
+     "head_fwd_mm": 0.27,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.485,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -3.581,
+     "pitch_deg": 9.526,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 2.289,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": 2.27,
+     "head_fwd_mm": 0.27,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 15.406,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 3.454,
+     "pitch_deg": 8.988,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  },
+  "katana": {
+   "mass_kg": 1.1,
+   "hand": "r",
+   "hand_kg": [
+    0.0,
+    1.1
+   ],
+   "back_kg": 0.0,
+   "drop_deg": [
+    0.0,
+    1.89
+   ],
+   "lean_deg": -1.13,
+   "pitch_deg": 0.0,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.693
+    },
+    "lean_only": {
+     "head_offset_mm": 6.29,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.347
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 0.932,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 6.29,
+     "head_fwd_mm": -1.96,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.347,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -1.069,
+     "pitch_deg": 4.776,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 0.918,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": 6.3,
+     "head_fwd_mm": -1.97,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 14.067,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -1.069,
+     "pitch_deg": 4.718,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.43
+    },
+    "lean_only": {
+     "head_offset_mm": 6.23,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.581
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.422,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 6.23,
+     "head_fwd_mm": 0.74,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.581,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -4.303,
+     "pitch_deg": 9.541,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 2.161,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": 6.23,
+     "head_fwd_mm": 0.74,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 15.473,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 2.732,
+     "pitch_deg": 9.003,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  },
+  "axe": {
+   "mass_kg": 2.2,
+   "hand": "r",
+   "hand_kg": [
+    0.0,
+    2.2
+   ],
+   "back_kg": 0.0,
+   "drop_deg": [
+    0.0,
+    3.78
+   ],
+   "lean_deg": -2.27,
+   "pitch_deg": 0.29,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.966
+    },
+    "lean_only": {
+     "head_offset_mm": 12.58,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.006
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 0.733,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 12.57,
+     "head_fwd_mm": -2.42,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.279,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -2.271,
+     "pitch_deg": 4.762,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 0.719,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": 12.59,
+     "head_fwd_mm": -2.42,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 13.999,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -2.271,
+     "pitch_deg": 4.704,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.715
+    },
+    "lean_only": {
+     "head_offset_mm": 12.45,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.738
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.623,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 12.44,
+     "head_fwd_mm": 3.04,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 17.022,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -5.405,
+     "pitch_deg": 9.615,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 1.961,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": 12.47,
+     "head_fwd_mm": 3.05,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 15.866,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 1.565,
+     "pitch_deg": 9.076,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  },
+  "greatsword": {
+   "mass_kg": 3.0,
+   "hand": "r",
+   "hand_kg": [
+    0.0,
+    3.0
+   ],
+   "back_kg": 0.0,
+   "drop_deg": [
+    0.0,
+    5.16
+   ],
+   "lean_deg": -3.09,
+   "pitch_deg": 1.43,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 16.057
+    },
+    "lean_only": {
+     "head_offset_mm": 17.16,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 13.76
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 0.588,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 17.09,
+     "head_fwd_mm": 2.19,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 15.132,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -3.366,
+     "pitch_deg": 4.909,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 0.575,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": 17.11,
+     "head_fwd_mm": 2.19,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 14.851,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -3.367,
+     "pitch_deg": 4.85,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 17.851
+    },
+    "lean_only": {
+     "head_offset_mm": 16.97,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.856
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.769,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 16.89,
+     "head_fwd_mm": 9.79,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 18.277,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -6.097,
+     "pitch_deg": 9.832,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 1.817,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": 16.94,
+     "head_fwd_mm": 9.81,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 17.085,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 0.609,
+     "pitch_deg": 9.292,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  },
+  "crossbow": {
+   "mass_kg": 3.0,
+   "hand": "r",
+   "hand_kg": [
+    0.0,
+    3.0
+   ],
+   "back_kg": 0.0,
+   "drop_deg": [
+    0.0,
+    5.16
+   ],
+   "lean_deg": -3.09,
+   "pitch_deg": 1.43,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 16.057
+    },
+    "lean_only": {
+     "head_offset_mm": 17.16,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 13.76
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 0.588,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 17.09,
+     "head_fwd_mm": 2.19,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 15.132,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -3.366,
+     "pitch_deg": 4.909,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 0.575,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": 17.11,
+     "head_fwd_mm": 2.19,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 14.851,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -3.367,
+     "pitch_deg": 4.85,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 17.851
+    },
+    "lean_only": {
+     "head_offset_mm": 16.97,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.856
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.769,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 16.89,
+     "head_fwd_mm": 9.79,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 18.277,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -6.097,
+     "pitch_deg": 9.832,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 1.817,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": 16.94,
+     "head_fwd_mm": 9.81,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 17.085,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 0.609,
+     "pitch_deg": 9.292,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  },
+  "greatsword sheathed": {
+   "mass_kg": 0.8999999999999999,
+   "hand": "back",
+   "hand_kg": [
+    0.0,
+    0.0
+   ],
+   "back_kg": 0.8999999999999999,
+   "drop_deg": [
+    0.0,
+    0.0
+   ],
+   "lean_deg": 0.0,
+   "pitch_deg": 0.62,
+   "Idle_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 15.282
+    },
+    "lean_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 14.693
+    }
+   },
+   "Idle_Loop": {
+    "0": {
+     "lean_deg": 1.131,
+     "lean_base_deg": 1.131,
+     "head_offset_mm": 0.0,
+     "head_fwd_mm": 3.25,
+     "upper_pitch_deg_base": 14.693,
+     "upper_pitch_deg": 15.282,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -0.081,
+     "pitch_deg": 4.941,
+     "pitch_base_deg": 4.838,
+     "foot_moved_m": 7.850462293418876e-17
+    },
+    "38": {
+     "lean_deg": 1.118,
+     "lean_base_deg": 1.117,
+     "head_offset_mm": -0.0,
+     "head_fwd_mm": 3.26,
+     "upper_pitch_deg_base": 14.413,
+     "upper_pitch_deg": 15.002,
+     "shoulder_tilt_deg_base": 0.065,
+     "shoulder_tilt_deg": -0.081,
+     "pitch_deg": 4.883,
+     "pitch_base_deg": 4.78,
+     "foot_moved_m": 8.886119947416683e-17
+    }
+   },
+   "Walk_Loop_isolated": {
+    "pitch_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 17.044
+    },
+    "lean_only": {
+     "head_offset_mm": 0.0,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 16.43
+    }
+   },
+   "Walk_Loop": {
+    "0": {
+     "lean_deg": -2.223,
+     "lean_base_deg": -2.222,
+     "head_offset_mm": 0.0,
+     "head_fwd_mm": 3.37,
+     "upper_pitch_deg_base": 16.43,
+     "upper_pitch_deg": 17.044,
+     "shoulder_tilt_deg_base": -3.169,
+     "shoulder_tilt_deg": -3.097,
+     "pitch_deg": 9.625,
+     "pitch_base_deg": 9.517,
+     "foot_moved_m": 1.1188630228279524e-16
+    },
+    "20": {
+     "lean_deg": 2.362,
+     "lean_base_deg": 2.362,
+     "head_offset_mm": -0.0,
+     "head_fwd_mm": 3.37,
+     "upper_pitch_deg_base": 15.369,
+     "upper_pitch_deg": 15.986,
+     "shoulder_tilt_deg_base": 3.867,
+     "shoulder_tilt_deg": 3.796,
+     "pitch_deg": 9.088,
+     "pitch_base_deg": 8.98,
+     "foot_moved_m": 2.3592239273284576e-16
+    }
+   }
+  }
+ },
+ "_checks": {
+  "problems": "none: lean goes away from the heavy hand in every case, feet are untouched, no bone flips",
+  "feet_expected": "foot IK runs after carry and the offsets only touch spine and clavicles"
+ }
+}

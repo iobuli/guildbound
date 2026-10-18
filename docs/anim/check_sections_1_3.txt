@@ -1,0 +1,18 @@
+=== section 1: posture audit (checker log)
+audited 88 clips
+  mean lean over 4 deg: 20 clips ['ual1/Swim_Fwd_Loop', 'ual1/Roll', 'ual1/Roll_RM', 'ual2/OverhandThrow', 'ual2/LayToIdle', 'ual2/ClimbUp_1m']
+  idle/walk shoulder diff over 3 cm: 8 clips ['ual2/LayToIdle', 'ual2/Zombie_Idle_Loop', 'ual1/Sword_Idle', 'ual2/Idle_Shield_Break', 'ual2/NinjaJump_Idle_Loop', 'ual1/Crouch_Idle_Loop']
+  top-lean/pitch clips plotted: ual1/Swim_Fwd_Loop, ual2/Hit_Knockback, ual2/Sword_Heavy_Combo, ual2/Slide_Loop, ual1/Death01, ual1/Push_Loop ...
+wrote posture_audit.json/.csv/_note.json and posture_audit_top.png to ../anim_out
+
+=== section 3: carry prediction
+  unarmed: no weapon.mass, skipped
+case                    mass  hand   drop L/R (deg)    lean   pitch   measured lean base -> carried (engine sign)
+dagger                   0.4     r      [0.0, 0.69]   -0.41    0.00      1.13 ->    1.06
+katana                   1.1     r      [0.0, 1.89]   -1.13    0.00      1.13 ->    0.93
+axe                      2.2     r      [0.0, 3.78]   -2.27    0.29      1.13 ->    0.73
+greatsword               3.0     r      [0.0, 5.16]   -3.09    1.43      1.13 ->    0.59
+crossbow                 3.0     r      [0.0, 5.16]   -3.09    1.43      1.13 ->    0.59
+greatsword sheathed    0.8999999999999999  back       [0.0, 0.0]    0.00    0.62      1.13 ->    1.13
+checks: none: lean goes away from the heavy hand in every case, feet are untouched, no bone flips
+wrote carry_targets_from_code.json and carry_predicted.png to ../anim_out
