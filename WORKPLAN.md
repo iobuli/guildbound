@@ -179,3 +179,24 @@ source of truth.
 `feat-bag-craft`: satchel tabs (gear, items, quests, header with gold/level/rank/class), crafting
 (table, furnace, blueprints; skills lift each limit; an evolved skill lifts all and lets rare
 materials add properties), debug stats panel. Merge after build + tests; E8 builds on it.
+
+## E12 · Posture follows what's held (agent-1)
+`WeaponDef.mass` → new `play/carry.rs` computes `Load` (each hand, back, hips) → `select.rs` `Posture` → a carry block in `compose.rs` before IK: holding shoulder drops, free arm balances, chest forward under a back load, wider stance and bent knees with mass. Tests: lean direction, stance grows with mass, empty hands unchanged.
+
+## E13 · Spell aiming: crosshair, onion-skin previews, world marks (agent-1)
+Hold E/Q to aim (shared HUD reticle), release to cast; a tap casts as today. A ghost preview at the target per shape: Bolt arc + impact ring, Quake ground ring, Step = translucent caster at the destination. Lasting marks (capped, fade over 20–40 s): cracks, scorch, frost, char. Files: `magic.rs`, new `spell_aim.rs`.
+
+## E14 · Attack speed that keeps the strike (agent-1) · DONE in `int/E7-E8-E14` (281/0)
+`Derived.attack_speed` × rank; the swing is time-warped per phase (windup ×s, strike ×s^0.3, recovery ×s^0.8), with a 2-frame anticipation hold above ×1.15 and afterimages (`afterimage.rs`). Hooks for E8: `Melee::shield`, `Melee::refresh`.
+
+## E15 · Baked combo transitions (proposed: agent-2 owns, agent-1 tools) · needs agent-2's yes
+Everything heavy offline; the game only plays baked data.
+1. **Tag** every clip (UAL, Rokoko, CMU BVH, Sekiro) from numbers our tools extract: root speed, foot contacts, hand height, weapon arc, energy → windup / strike / recovery / feint / stance / weight. A helper model (kev-4b if it fits; still unchecked, huggingface.co is blocked here) may label and propose; numbers stay ours.
+2. **Combo graph** → `assets/anim/strikes.json` + repertoire: which move follows which, timing windows, variants (feint, delayed hit, finisher), style per enemy. Reviewed, then committed.
+3. **Bake** (Python, `tools/anim/`): per graph edge, best cut frame by pose + velocity match; short blended transition with foot lock, ground contact, `Grip` targets, and the E14 warp per speed tier.
+4. **Check**: score foot slide, ground clip, joint pops, blade through body, balance; reject/retry; `GB_RECORD` contact sheet of the worst only.
+5. **Game**: a seeded picker walks the graph; `motion/bank.rs` plays clips + transitions.
+Storage: quantised rotations, transition frames only (disk is tight). First slice: one weapon's combos, before/after recordings.
+
+## E16 · Art polish through Higgsfield (agent-1) · `docs/ART_PROMPTS.md`
+One asset per run, free generations only. Textures via `tools/model/ai_texture.py` (lattice, straighten, phase lock, seam fade, height from albedo). T1 linen done: branch `art/T1-linen`. Next T3 leather, T2 wool twill; then concepts C1/C5/C6 from in-game shots, UI mock-ups, poses for E12–E14.
