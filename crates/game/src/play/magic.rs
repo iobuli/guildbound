@@ -49,6 +49,9 @@ pub const MASTERED_SPEED: f32 = 1.35;
 pub const MASTERED_POWER: f32 = 1.2;
 pub const MASTERED_FLAIR: f32 = 1.35;
 pub const MASTERED_DEBT: f32 = 8.0;
+/// Over-mana: the most a pool can hold above its maximum (× max), and how fast it bleeds (/s).
+pub const OVER_CAP: f32 = 1.5;
+pub const OVER_DECAY: f32 = 4.0;
 /// Pools: Battlewill per landed melee blow / per blow taken, at rest (/s); magicules (/s) after
 /// `MP_DELAY` s without casting.
 const BW_ON_HIT: f32 = 7.0;
@@ -306,7 +309,8 @@ pub fn known(discovered: &[&'static str], arts: bool) -> impl Iterator<Item = &'
     ABILITIES.iter().filter(move |a| discovered.contains(&a.id) && a.is_art() == arts)
 }
 
-/// The two pools (written by `magic` only).
+/// The two pools (written by `magic`; `discipline` adds over-mana from absorbed spells, up to
+/// `OVER_CAP` × the maximum, which bleeds away at `OVER_DECAY` /s).
 #[derive(Component, Clone, Debug)]
 pub struct Energy {
     pub battlewill: f32,
@@ -464,11 +468,16 @@ fn pools(
         }
         e.rested += dt;
         let mp_rate = MP_REGEN * d.map_or(1.0, |d| d.mana_regen);
-        if e.rested > MP_DELAY {
-            e.magicules += mp_rate * dt;
+        if e.magicules > e.max_magicules {
+            // Over-mana (spells a monk caught, `discipline`) bleeds back down to the pool's top.
+            e.magicules = (e.magicules - OVER_DECAY * dt).max(e.max_magicules);
+        } else {
+            if e.rested > MP_DELAY {
+                e.magicules += mp_rate * dt;
+            }
+            e.magicules = e.magicules.min(e.max_magicules);
         }
         e.battlewill += BW_REST * dt;
-        e.magicules = e.magicules.min(e.max_magicules);
         e.battlewill = e.battlewill.min(e.max_battlewill);
     }
 }

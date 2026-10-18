@@ -9,6 +9,9 @@
 //! - defence: an incoming swing is noticed after `Difficulty.reaction`, then guarded (sometimes
 //!   raised late, inside the parry window), dodged sideways, or taken;
 //! - low hp: retreat with the guard up until stamina recovers;
+//! - rank (`discipline`): a human facing a foe `discipline::FLEE_GAP` ranks above it runs (sprints
+//!   away, no blows); facing any higher rank it hesitates before each attack (a stop, guard up, a
+//!   half step back, then it commits); demons never run but hesitate the same way;
 //! - ranged sets (`archer`): keep `SHOOT_NEAR`..`SHOOT_FAR` from the enemy (back-pedal, close in,
 //!   strafe), aim (secondary), draw to full and release (bow) or press (crossbow, knives), a
 //!   pause between shots;
@@ -23,6 +26,7 @@ use super::combat::{self, Melee, Revive, Tell};
 use super::occupations::Civilian;
 use super::magic::{Energy, Grimoire, MASTERED_COST, ability};
 use super::moveset::{Kind, Movesets};
+use super::discipline::{Mastery, Species, flees};
 use super::hud::log::{HudLog, LogKind};
 use super::{Fighter, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Npc, Player, PlaySet};
 use bevy::prelude::*;
@@ -66,6 +70,9 @@ const DODGE_STAMINA: f32 = 22.0;
 const GUARD_LINGER: f32 = 0.2;
 /// Parry timing: raise the guard this long before the blow lands (s).
 const PARRY_LEAD: f32 = 0.1;
+/// Outranked: chance to stop before an attack, and how long the stop lasts (s).
+const HESITATE_CHANCE: f32 = 0.55;
+const HESITATE: [f32; 2] = [0.35, 0.8];
 /// Retreat below this hp share, until stamina is back above `RETREAT_UNTIL`.
 const RETREAT_HP: f32 = 0.25;
 const RETREAT_UNTIL: f32 = 80.0;
@@ -188,6 +195,10 @@ pub struct Brain {
     /// Seconds the foe has kept its guard up; closing in to grab it.
     guarded: f32,
     grabbing: bool,
+    /// Seconds left of a stop before attacking a higher rank.
+    hesitate: f32,
+    /// Running from a far higher rank (for the log line).
+    fleeing: bool,
 }
 
 impl Default for Brain {
@@ -212,6 +223,8 @@ impl Default for Brain {
             shot_in: SHOT_FIRST,
             guarded: 0.0,
             grabbing: false,
+            hesitate: 0.0,
+            fleeing: false,
         }
     }
 }
@@ -249,6 +262,19 @@ pub struct View {
     pub enemy: Option<Foe>,
     /// Spawn feet, if known.
     pub home: Option<Vec3>,
+    /// How the foe's rank weighs on me.
+    pub awe: Awe,
+}
+
+/// How a foe's rank weighs on a fighter (`discipline::flees`).
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum Awe {
+    #[default]
+    None,
+    /// Outranked: stop before each attack.
+    Wary,
+    /// Far outranked (and human): run.
+    Flee,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -362,6 +388,21 @@ pub fn decide(v: &View, d: &Difficulty, b: &mut Brain, dt: f32) -> Orders {
         }
     }
 
+    // Far outranked: run, guard up if it is close.
+    if v.awe == Awe::Flee {
+        o.move_dir = (-ahead + left * b.side * 0.25).normalize();
+        o.sprint = !v.exhausted;
+        o.guard = dist < v.reach;
+        return o;
+    }
+    // Outranked: a stop before committing (guard up, a half step back), then the attack.
+    if b.hesitate > 0.0 {
+        b.hesitate -= dt;
+        o.move_dir = -ahead * 0.35;
+        o.guard = true;
+        return o;
+    }
+
     // Retreat while hurt and winded.
     if v.hp < RETREAT_HP && v.stamina < RETREAT_UNTIL {
         b.retreating = true;
@@ -417,6 +458,12 @@ pub fn decide(v: &View, d: &Difficulty, b: &mut Brain, dt: f32) -> Orders {
     let in_reach = dist <= v.reach + ATTACK_SLACK;
     if in_reach && !o.guard && !v.attacking && b.cooldown <= 0.0 && v.stamina > ATTACK_STAMINA && !v.exhausted {
         let aggression = d.aggression.clamp(0.05, 1.0);
+        // Against a higher rank the first move is often a stop, not a blow.
+        if v.awe == Awe::Wary && b.roll() < HESITATE_CHANCE {
+            b.hesitate = HESITATE[0] + (HESITATE[1] - HESITATE[0]) * b.roll();
+            b.cooldown = b.hesitate;
+            return o;
+        }
         b.cooldown = 0.5 + (1.0 - aggression) * 1.5 + b.roll() * 0.6;
         if b.roll() < aggression {
             let heavy = if foe.guarding { 0.6 } else { 0.2 };
@@ -541,7 +588,7 @@ fn enroll(
 fn think(
     time: Res<Time>,
     movesets: Res<Movesets>,
-    fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout)>,
+    fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout, Option<&Mastery>)>,
     civilians: Query<(), With<Civilian>>,
     peaceful: Res<Peaceful>,
     choosing: Option<Res<super::class::ClassChoice>>,
@@ -556,17 +603,19 @@ fn think(
             Option<&Grimoire>,
             Has<combat::Sparring>,
             Option<&super::senses::Awareness>,
+            Option<&Species>,
+            Option<&Name>,
         ),
         Or<(With<Npc>, With<Autopilot>)>,
     >,
 ) {
     let dt = time.delta_secs();
-    for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring, awareness) in &mut npcs {
+    for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring, awareness, species, name) in &mut npcs {
         // The player is a foe only once noticed (`senses`), never in peaceful mode, always in a bout.
         let noticed = sparring || awareness.is_none_or(|a| a.alerted);
         // Nobody attacks while the player is still choosing a class.
         let spare_player = !sparring && (peaceful.0 || !noticed || choosing.as_deref().is_some_and(|c| c.open));
-        let Ok((_, tf, fighter, melee, mover, loadout)) = fighters.get(entity) else {
+        let Ok((_, tf, fighter, melee, mover, loadout, mastery)) = fighters.get(entity) else {
             continue;
         };
         let me = tf.translation;
@@ -582,8 +631,8 @@ fn think(
             .iter()
             .filter(|(e, _, f, ..)| *e != entity && !f.dead && f.team != fighter.team && !civilians.contains(*e))
             .filter(|(e, ..)| !(spare_player && players.contains(*e)))
-            .map(|(e, t, _, m, ..)| (e, t.translation, m))
-            .filter(|(_, p, _)| flat(*p - me).length() < AGGRO)
+            .map(|(e, t, _, m, _, _, r)| (e, t.translation, m, r.map_or(0, |r| r.rank)))
+            .filter(|(_, p, ..)| flat(*p - me).length() < AGGRO)
             .min_by(|a, b| flat(a.1 - me).length().total_cmp(&flat(b.1 - me).length()));
         let reach = movesets.get(loadout.equipped()).map_or(1.0, combat::reach);
         let view = View {
@@ -593,22 +642,39 @@ fn think(
             exhausted: melee.exhausted(),
             attacking: melee.attacking(),
             reach,
-            enemy: foe.map(|(_, pos, m)| Foe {
+            awe: {
+                let own = mastery.map_or(0, |m| m.rank);
+                let species = species.copied().unwrap_or_default();
+                // Sparring is a bout: no running from the examiner.
+                match foe {
+                    Some((.., theirs)) if !sparring && flees(species, own, theirs) => Awe::Flee,
+                    Some((.., theirs)) if theirs > own => Awe::Wary,
+                    _ => Awe::None,
+                }
+            },
+            enemy: foe.map(|(_, pos, m, _)| Foe {
                 pos,
                 tell: m.tell(),
                 guarding: m.guarding(),
             }),
             home: brain.home.map(|h| h.0 + Vec3::Y * HALF_HEIGHT),
         };
+        let fleeing = view.awe == Awe::Flee;
+        if fleeing != brain.fleeing {
+            brain.fleeing = fleeing;
+            if fleeing {
+                info!("[discipline] {} flees", name.map_or("?", |n| n.as_str()));
+            }
+        }
         let difficulty = difficulty.copied().unwrap_or_default();
         let set = movesets.get(loadout.equipped());
         let ranged = set.filter(|s| s.kind == Kind::Ranged).map(|s| s.aim.as_ref().map_or(0.0, |a| a.draw_time.max(0.0)));
         let o = match (ranged, foe) {
-            (Some(draw_time), Some((_, pos, _))) => archer(&ArcherView { me, foe: pos, draw_time }, &difficulty, &mut brain, dt),
+            (Some(draw_time), Some((_, pos, ..))) => archer(&ArcherView { me, foe: pos, draw_time }, &difficulty, &mut brain, dt),
             _ => decide(&view, &difficulty, &mut brain, dt),
         };
         let (art, spell) = match (foe, energy, grimoire) {
-            (Some((_, pos, _)), Some(e), Some(g)) => {
+            (Some((_, pos, ..)), Some(e), Some(g)) => {
                 let can_pay = |id: &str| {
                     ability(id).is_some_and(|a| {
                         let cost = a.cost * if g.is_mastered(a.id) { MASTERED_COST } else { 1.0 };
@@ -657,6 +723,30 @@ fn think(
 mod tests {
     use super::*;
 
+    #[test]
+    fn outranked_humans_run_and_wary_ones_stop_first() {
+        let d = Difficulty::default();
+        let mut b = Brain::default();
+        let mut v = view(1.0);
+        v.awe = Awe::Flee;
+        let o = decide(&v, &d, &mut b, 1.0 / 60.0);
+        assert!(o.move_dir.z < 0.0 && !o.press, "runs: {o:?}");
+        // Wary: within some tries the first move is a stop (guard up, stepping back), not a blow.
+        let mut stopped = false;
+        for seed in 1..40u32 {
+            let mut b = Brain { rng: seed * 7919, ..Brain::default() };
+            let mut v = view(1.0);
+            v.awe = Awe::Wary;
+            decide(&v, &d, &mut b, 1.0 / 60.0);
+            if b.hesitate > 0.0 {
+                let o = decide(&v, &d, &mut b, 1.0 / 60.0);
+                stopped = o.guard && !o.press && o.move_dir.z < 0.0;
+                break;
+            }
+        }
+        assert!(stopped);
+    }
+
     fn view(dist: f32) -> View {
         View {
             me: Vec3::ZERO,
@@ -671,6 +761,7 @@ mod tests {
                 guarding: false,
             }),
             home: None,
+            awe: Awe::None,
         }
     }
 

@@ -5,6 +5,9 @@
 //! - Arcanist: dagger; Frost 5, Lightning 3; Frost Bloom and Storm Lance, Frost Bloom on E;
 //!   Intelligence ×2, Faith.
 //! - Hunter: bow; Archery 5, Stealth 3; Veil bound to Q; Dexterity ×2, Endurance.
+//! - Monk: fists; Unarmed 5, Defence 3, Aura Arts 2; Aura Bullet bound to Q; Strength, Dexterity,
+//!   Endurance. Fists hit harder than any weapon he holds; his guard turns blows aside and a
+//!   guard raised inside the blow is an auto counter that stuns (`discipline`).
 //! The choice also dresses the player for the path (`appearance::dress_class`).
 //! While the panel is open the player's input is held (`input`) and nobody attacks (`ai`).
 //! Smoke runs (any `GB_*` set) skip the panel; `GB_CLASS=blade|arcanist|hunter` picks one.
@@ -22,6 +25,7 @@ pub enum Class {
     Blade,
     Arcanist,
     Hunter,
+    Monk,
 }
 
 /// What a class starts with.
@@ -37,7 +41,7 @@ pub struct Kit {
 }
 
 impl Class {
-    pub const ALL: [Class; 3] = [Class::Blade, Class::Arcanist, Class::Hunter];
+    pub const ALL: [Class; 4] = [Class::Blade, Class::Arcanist, Class::Hunter, Class::Monk];
 
     pub fn kit(self) -> Kit {
         match self {
@@ -71,6 +75,27 @@ impl Class {
                 spell: None,
                 attrs: [Attr::Dexterity, Attr::Dexterity, Attr::Endurance],
             },
+            Class::Monk => Kit {
+                name: "Monk",
+                about: "Empty hands, iron guard: turn the blow aside and answer it before it ends.",
+                weapon: "unarmed",
+                skills: &[("unarmed", 5), ("defence", 3), ("aura_arts", 2)],
+                abilities: &["aura_bullet"],
+                art: Some("aura_bullet"),
+                spell: None,
+                attrs: [Attr::Strength, Attr::Dexterity, Attr::Endurance],
+            },
+        }
+    }
+
+    /// The fighting path this class walks (`discipline`).
+    pub fn path(self) -> super::discipline::Path {
+        use super::discipline::Path;
+        match self {
+            Class::Blade => Path::Blade,
+            Class::Arcanist => Path::Arcanist,
+            Class::Hunter => Path::Hunter,
+            Class::Monk => Path::Monk,
         }
     }
 
@@ -127,7 +152,7 @@ fn spawn_panel(mut commands: Commands) {
                 p.spawn(label(format!("{}.  {}", i + 1, k.name), "row.text"));
                 p.spawn(label(format!("     {}", k.about), "text.dim"));
             }
-            p.spawn(label("Press 1, 2 or 3", "text.dim"));
+            p.spawn(label("Press 1, 2, 3 or 4", "text.dim"));
         });
 }
 
@@ -135,7 +160,7 @@ fn choose(keys: Res<ButtonInput<KeyCode>>, mut choice: ResMut<ClassChoice>) {
     if !choice.open {
         return;
     }
-    for (i, key) in [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3].into_iter().enumerate() {
+    for (i, key) in [KeyCode::Digit1, KeyCode::Digit2, KeyCode::Digit3, KeyCode::Digit4].into_iter().enumerate() {
         if keys.just_pressed(key) {
             choice.picked = Some(Class::ALL[i]);
             choice.open = false;

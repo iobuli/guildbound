@@ -2,7 +2,8 @@
 //! rerebraces, vambraces, cuisses, greaves: steel from shoulder to wrist and hip to ankle) built at
 //! startup from the character's own body and worn as rigid steel.
 //! `armor` owns every plate entity, `ArmorSet`, the armour stand (its pose and availability) and
-//! the wearer's `BodyPadding`.
+//! the wearer's `BodyPadding` (only with `GB_ARMOR_PADDING=1`: by default armour never changes
+//! the body's motion; the plates follow the skin, not the other way round).
 //!
 //! Building (on the async pool, one thread per plate, from `anim/ual2.glb`; bind pose = skeleton
 //! rest to 1 µm, mesh in model space): most plates are idealised shells around a `Profile`, the
@@ -1521,7 +1522,11 @@ fn dress_stands(
                     .id()
             })
             .collect();
-        commands.entity(stand).try_insert(assets.padding);
+        // Armour never changes how the body moves: the padding is kept for reference only (it is
+        // logged and tested), not put on the wearer or the stand. `GB_ARMOR_PADDING=1` restores it.
+        if std::env::var_os("GB_ARMOR_PADDING").is_some() {
+            commands.entity(stand).try_insert(assets.padding);
+        }
     }
 }
 
@@ -1608,7 +1613,10 @@ fn equip(
             }
         }
         if !prop.on {
-            commands.entity(effect.user).try_insert((ArmorSet { plates: moving }, assets.padding));
+            commands.entity(effect.user).try_insert(ArmorSet { plates: moving });
+            if std::env::var_os("GB_ARMOR_PADDING").is_some() {
+                commands.entity(effect.user).try_insert(assets.padding);
+            }
             commands.entity(effect.target).try_remove::<BodyPadding>();
             prop.on = true;
         } else {

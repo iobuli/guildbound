@@ -269,6 +269,11 @@ pub struct ContactRequest {
     /// Finger grips `[left, right]` (`hand::Grip`): door knobs, levers, weapon handles, flat
     /// pushes. A world-space grip also places and turns the wrist (it replaces `hands`).
     pub grips: [Option<hand::Grip>; 2],
+    /// Free-hand finger shapes `[left, right]` (`hand::Form`, weight): fists, cupped palms, the
+    /// two-finger catch. Ignored on a hand with a grip.
+    pub forms: [Option<(hand::Form, f32)>; 2],
+    /// Climbing / hanging: keep the torso, head, knees and feet out of the wall (`body::body_out`).
+    pub wall_clear: bool,
 }
 
 impl Default for ContactRequest {
@@ -285,6 +290,8 @@ impl Default for ContactRequest {
             stance: f32::INFINITY,
             aim: None,
             grips: [None, None],
+            forms: [None, None],
+            wall_clear: false,
         }
     }
 }

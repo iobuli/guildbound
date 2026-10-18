@@ -47,6 +47,8 @@ use super::camera::CameraShake;
 use super::controller::{Teleport, yaw_of};
 use super::fx::{Burst, BurstKind, Sfx, SfxKind};
 use super::deeds::Deed;
+use super::discipline::{Absorb, Counter, Countered, HandFlash, Mastery, Path, Stunned, counter, guard_bonus, variety, weapon_scale};
+use crate::motion::hand::Form;
 use super::magic::Ward;
 use super::monitor::Monitor;
 use super::moveset::{Attack, ClipRef, Moveset, Movesets, Primitive, WeaponDef};
@@ -196,6 +198,13 @@ const STAGGER_PUSH: f32 = 1.5;
 const KNOCKDOWN_SPEED: f32 = 5.5;
 const KNOCKDOWN_POISE_KB: f32 = 3.5;
 const KNOCKDOWN_LIFT: f32 = 2.4;
+/// A stunned fighter struck is thrown at least this fast (m/s).
+const STUNNED_THROW: f32 = 6.0;
+/// A monk's guard catches projectiles and spells from inside this (cos of the half arc).
+const CATCH_ARC: f32 = 0.3;
+/// Seconds the catching hand holds its shape; share of a caught spell drunk as mana.
+const CATCH_HOLD: f32 = 0.7;
+const ABSORB_SHARE: f32 = 1.2;
 const KNOCKDOWN_OFFSET: f32 = 0.08;
 const DOWN_TIME: f32 = 0.6;
 const GET_UP_RATE: f32 = 1.3;
@@ -1163,6 +1172,8 @@ struct Ctx<'a> {
     repertoire: Option<&'a Repertoire>,
     /// The equipped moveset's name.
     set_name: &'a str,
+    /// Chance a light or heavy is swapped for a library strike (`discipline::variety`).
+    variety: f32,
 }
 
 /// A fighter's own components during its step.
@@ -1244,6 +1255,7 @@ fn drive(
         Option<&Revive>,
         Option<&Name>,
         Option<&Repertoire>,
+        Option<&Mastery>,
     )>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
 ) {
@@ -1274,7 +1286,7 @@ fn drive(
     }));
     let now = time.elapsed_secs();
 
-    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire) in
+    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery) in
         &mut fighters
     {
         let cx = Ctx {
@@ -1288,6 +1300,7 @@ fn drive(
             holding,
             repertoire,
             set_name: loadout.equipped(),
+            variety: mastery.map_or(VARIANT_CHANCE, |m| variety(*m)),
         };
         if melee.rng == 0 {
             melee.rng = (entity.to_bits() as u32) | 1;
@@ -1465,7 +1478,7 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
     };
     if let (Some(slot), Some(rep)) = (slot, cx.repertoire) {
         let extras: Vec<&Attack> = rep.for_slot(cx.set_name, slot).filter(|a| cx.bank.has(&a.clip.track)).collect();
-        if !extras.is_empty() && roll(&mut m.rng) < VARIANT_CHANCE {
+        if !extras.is_empty() && roll(&mut m.rng) < cx.variety {
             let pick = (roll(&mut m.rng) * extras.len() as f32) as usize % extras.len();
             attack = extras[pick].clone();
         }
@@ -2102,6 +2115,9 @@ struct Attacker {
     player: bool,
     /// The wielded moveset (the `hit` deed's tag).
     weapon: String,
+    /// Path and rank, and whether the blow came from fists (`discipline::weapon_scale`).
+    mastery: Mastery,
+    unarmed: bool,
 }
 
 #[allow(clippy::type_complexity)]
@@ -2118,6 +2134,8 @@ type Victim<'a> = (
     Option<&'a Name>,
     Option<&'a Ward>,
     Option<&'a Sparring>,
+    Option<&'a Mastery>,
+    Has<Stunned>,
 );
 
 /// A friendly bout (the guild's rank exam): no blow takes this fighter below `floor` of its max
@@ -2183,6 +2201,7 @@ fn resolve(
     mut commands: Commands,
     mut fighters: Query<Victim>,
     mut witnessed: MessageWriter<Witnessed>,
+    mut countered: MessageWriter<Countered>,
 ) {
     let Some(bank) = bank else {
         hits.clear();
@@ -2199,17 +2218,21 @@ fn resolve(
         now: time.elapsed_secs(),
     };
     for hit in hits.read() {
-        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _, _, _)| Attacker {
+        let attacker = fighters.get(hit.attacker).ok().map(|(tf, _, _, _, _, loadout, _, scale, player, _, _, _, mastery, _)| Attacker {
             pos: tf.translation,
             scale: scale.map_or(1.0, |s| finite(s.0, 1.0).max(0.0)),
             player,
             weapon: loadout.equipped().to_string(),
+            mastery: mastery.copied().unwrap_or_default(),
+            unarmed: movesets.get(loadout.equipped()).is_some_and(|s| s.kind == super::moveset::Kind::Unarmed),
         });
         let attacker = attacker.unwrap_or(Attacker {
             pos: hit.point - hit.direction,
             scale: 1.0,
             player: false,
             weapon: String::new(),
+            mastery: Mastery::default(),
+            unarmed: false,
         });
         // What reached the victim, for it to learn (`repertoire`).
         if hit.kind == HitKind::Melee
@@ -2234,17 +2257,50 @@ fn resolve(
             }
             continue;
         };
-        let parried = strike(hit, &attacker, victim, &bank, &movesets, &feel, &mut fx, &mut commands);
-        if parried && let Ok((_, mut mover, mut action, _, mut melee, ..)) = fighters.get_mut(hit.attacker) {
+        let riposte = strike(hit, &attacker, victim, &bank, &movesets, &feel, &mut fx, &mut commands);
+        // Who countered, for the log and the flare.
+        let (by, path) = fighters
+            .get(hit.target)
+            .ok()
+            .map(|v| (v.9.map_or(String::new(), |n| n.to_string()), v.12.copied().unwrap_or_default().path))
+            .unwrap_or_default();
+        if riposte != Riposte::None
+            && let Ok((tf, mut mover, mut action, mut fighter, mut melee, .., name, _, _, _, _)) = fighters.get_mut(hit.attacker)
+        {
             let mut r = React::new(ReactKind::Stagger, STAGGER, 0.0, PARRIED_RATE, 0.0);
             r.face = Some(mover.yaw);
             begin_react(&mut r, &mut action, &mut mover, Some(&bank));
+            // A counter: the riposte lands at once and the attacker stands stunned; the next blow
+            // that lands throws him (`Stunned`).
+            if let Riposte::Countered(c) = riposte {
+                r.duration = r.duration.max(c.stun);
+                let riposte = hit.damage.max(0.0) * c.damage;
+                // The counter never kills by itself: it opens the attacker up.
+                fighter.hp = (fighter.hp - riposte).max(fighter.hp.min(1.0));
+                fighter.poise = 0.0;
+                commands.entity(hit.attacker).try_insert(Stunned { left: c.stun });
+                let whom = name.map_or("?".to_string(), |n| n.to_string());
+                info!("[discipline] {by} counters {whom} ({:?}, {riposte:.0} dmg, stunned {:.1}s)", c.flare, c.stun);
+                countered.write(Countered { by: hit.target, at: (hit.point + tf.translation) * 0.5, flare: c.flare, path });
+                // A blade is caught between two fingers; a fist or kick is met with an open palm.
+                let form = if attacker.unarmed { Form::Cupped } else { Form::TwoFinger };
+                commands.entity(hit.target).try_insert(HandFlash { form, left: CATCH_HOLD });
+                fx.deed(hit.target, "counter", "");
+            }
             melee.state = State::React(r);
         }
     }
 }
 
-/// Apply one blow to its target; true when it was parried (the attacker staggers).
+/// What a blow did to its attacker: nothing, a parry (it staggers) or a counter (stunned).
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Riposte {
+    None,
+    Parried,
+    Countered(Counter),
+}
+
+/// Apply one blow to its target; says whether it was parried or countered.
 #[allow(clippy::too_many_arguments)]
 fn strike(
     hit: &Hit,
@@ -2255,11 +2311,13 @@ fn strike(
     feel: &Feel,
     fx: &mut Feedback,
     commands: &mut Commands,
-) -> bool {
-    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward, sparring) = victim;
+) -> Riposte {
+    let (tf, mut mover, mut action, mut fighter, mut melee, loadout, layers, _, player, name, ward, sparring, mastery, stunned) = victim;
     if fighter.dead {
-        return false;
+        return Riposte::None;
     }
+    let mastery = mastery.copied().unwrap_or_default();
+    let (guard_absorb, guard_window, guard_cost) = guard_bonus(mastery);
     let set = movesets.get(loadout.equipped());
     let facing = mover.forward();
     let from = flat(attacker.pos - tf.translation).normalize_or(-hit.direction);
@@ -2268,7 +2326,7 @@ fn strike(
         _ if hit.kind == HitKind::Grab => None,
         State::Guard { t } => set.and_then(|s| s.guard.as_ref()).map(|g| {
             let arc = (finite(g.arc, 120.0).clamp(0.0, 360.0) * 0.5).to_radians().cos();
-            (t, g.parry_window, g.absorb, arc)
+            (t, g.parry_window + guard_window, (g.absorb + guard_absorb).min(0.95), arc)
         }),
         _ => None,
     };
@@ -2280,7 +2338,7 @@ fn strike(
     };
     let factor = speed_factor(hit.speed);
     // Spells arrive already scaled by the caster's spell power; `might` is for weapons.
-    let scale = if hit.kind == HitKind::Melee { attacker.scale } else { 1.0 };
+    let scale = if hit.kind == HitKind::Melee { attacker.scale * weapon_scale(attacker.mastery, attacker.unarmed) } else { 1.0 };
     // An Aura Ward (`magic`) turns aside its share of damage and poise.
     let kept = 1.0 - ward.map_or(0.0, |w| finite(w.share, 0.0).clamp(0.0, 0.9));
     if kept < 1.0 && !matches!(melee.state, State::Guard { .. }) {
@@ -2302,6 +2360,27 @@ fn strike(
     let knockback = hit.knockback * factor * feel.knockback_scale.max(0.0);
     let involved = attacker.player || player;
     let who = name.map_or("?", |n| n.as_str()).to_string();
+    // A monk's guard catches what flies at him: arrows are flicked aside, spells cupped and drunk
+    // as over-mana (`discipline`).
+    if mastery.path == Path::Monk
+        && matches!(melee.state, State::Guard { .. })
+        && matches!(hit.kind, HitKind::Projectile | HitKind::Spell)
+        && facing.dot(from) > CATCH_ARC
+    {
+        let absorb = hit.kind == HitKind::Spell;
+        fx.strike(involved, HITSTOP_BLOCK, SHAKE_BLOCK, SfxKind::Parry, hit.point, 0.8);
+        fx.sparks(hit.point, from, SPARKS_BLOCK);
+        let (form, what) = if absorb { (Form::Cupped, "absorb") } else { (Form::TwoFinger, "deflect") };
+        let mut c = commands.entity(hit.target);
+        c.try_insert(HandFlash { form, left: CATCH_HOLD });
+        if absorb {
+            c.try_insert(Absorb(hit.damage.max(0.0) * ABSORB_SHARE));
+        }
+        fx.monitor.write(&format!("{:.2} {who} {what} - {:.1}", fx.now, hit.damage));
+        info!("[discipline] {who} {what}s a {:?} ({:.0})", hit.kind, hit.damage);
+        fx.deed(hit.target, what, "");
+        return Riposte::None;
+    }
     let verdict = judge(damage, from, &defense);
     let log = |fx: &mut Feedback, what: &str, value: f32, action: &Action, mover: &Mover| {
         let line = format!(
@@ -2322,17 +2401,20 @@ fn strike(
         }
     };
     match verdict {
-        Verdict::Missed => false,
+        Verdict::Missed => Riposte::None,
         Verdict::Parried => {
             start_parry(set, bank, &mut action, &mut melee);
             fx.strike(involved, HITSTOP_PARRY, SHAKE_PARRY, SfxKind::Parry, hit.point, 1.0);
             fx.sparks(hit.point, from, SPARKS_PARRY);
             log(fx, "parry", 0.0, &action, &mover);
             fx.deed(hit.target, "parry", "");
-            true
+            match counter(mastery) {
+                Some(c) if hit.kind == HitKind::Melee => Riposte::Countered(c),
+                _ => Riposte::Parried,
+            }
         }
         Verdict::Blocked { damage, stamina } => {
-            melee.spend(&mut fighter, stamina);
+            melee.spend(&mut fighter, stamina * guard_cost);
             fighter.hp = (fighter.hp - damage).max(0.0);
             // The guard gives ground: a real step back (the legs walk it), not a slide.
             let back = flat(hit.direction).normalize_or(-facing);
@@ -2347,7 +2429,7 @@ fn strike(
                 fx.deed(hit.attacker, "kill", &who);
                 kill(&mut fighter, &mut action, &mut mover, &mut melee, fx, hit.point, involved);
             }
-            false
+            Riposte::None
         }
         Verdict::GuardBroken { damage } => {
             let (stamina, max_poise) = (fighter.stamina.max(1.0), fighter.max_poise);
@@ -2366,7 +2448,7 @@ fn strike(
             } else {
                 stagger(&mut melee, &mut action, &mut mover, bank, from, hit.direction, knockback);
             }
-            false
+            Riposte::None
         }
         Verdict::Struck { damage } => {
             hurt(&mut fighter, &mut melee, damage, poise);
@@ -2383,11 +2465,17 @@ fn strike(
                 _ => (1.0, SHAKE_LIGHT),
             };
             fx.strike(involved, stop, trauma, sound, hit.point, 1.0);
-            if knockback > feel.ragdoll_threshold {
+            // A stunned fighter (countered) goes down limp on the next blow that lands.
+            if knockback > feel.ragdoll_threshold || (stunned && outcome != Reaction::Death) {
+                let speed = if stunned { knockback.max(STUNNED_THROW) } else { knockback };
                 commands.entity(hit.target).try_insert(RagdollRequest {
-                    velocity: hit.direction * knockback + Vec3::Y * KNOCKDOWN_LIFT,
+                    velocity: hit.direction * speed + Vec3::Y * KNOCKDOWN_LIFT,
                     point: hit.point,
                 });
+                if stunned {
+                    commands.entity(hit.target).remove::<Stunned>();
+                    log(fx, "stunned_down", speed, &action, &mover);
+                }
             }
             log(fx, &format!("hit_{outcome:?}").to_lowercase(), damage, &action, &mover);
             if hit.kind == HitKind::Melee {
@@ -2424,7 +2512,7 @@ fn strike(
                     push(&mut mover, hit.direction, knockback.min(FLINCH_PUSH), 0.0);
                 }
             }
-            false
+            Riposte::None
         }
     }
 }

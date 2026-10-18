@@ -180,6 +180,13 @@ impl Wardrobe {
         if let Some(look) = self.cast.get(name) {
             return self.appearance(look);
         }
+        // Monks wear their order's dress wherever they stand, each one his own (seeded by name).
+        if super::looks::is_monk(name)
+            && let Some(order) = self.areas.get("order")
+        {
+            let look = Self::generate(order, name)?;
+            return self.resolve(&format!("order:{name}"), &look);
+        }
         let (area_name, area) = self
             .areas
             .iter()

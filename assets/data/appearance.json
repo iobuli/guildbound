@@ -784,12 +784,79 @@
         "shield"
       ],
       "scale": 1.2
+    },
+    "monk": {
+      "base": "male",
+      "skin": "skin_olive",
+      "eyes": "brown",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "",
+      "shape": {
+        "bulk": 0.3,
+        "heavy": 0,
+        "slim": 0.3,
+        "jaw": 0.3
+      },
+      "outfit": [
+        "robe_top",
+        "hakama",
+        "leg_wraps",
+        "bracers",
+        "shoes",
+        "belt"
+      ],
+      "colors": {
+        "robe_top": "ochre",
+        "hakama": "umber",
+        "leg_wraps": "linen",
+        "bracers": "linen",
+        "shoes": "dark_leather",
+        "belt": "madder"
+      },
+      "pieces": [
+        "beads",
+        "wraps"
+      ],
+      "scale": 1.0
+    },
+    "oni": {
+      "base": "male",
+      "skin": "blood",
+      "eyes": "amber",
+      "hair": "hair_buzzed",
+      "hair_color": "hair_black",
+      "brows": "brows_regular",
+      "beard": "beard",
+      "shape": {
+        "bulk": 1.0,
+        "heavy": 0.4,
+        "slim": 0,
+        "jaw": 1.0
+      },
+      "outfit": [
+        "hakama",
+        "leg_wraps",
+        "belt"
+      ],
+      "colors": {
+        "hakama": "charcoal",
+        "leg_wraps": "ash",
+        "belt": "rust"
+      },
+      "pieces": [
+        "horns",
+        "wraps"
+      ],
+      "scale": 1.18
     }
   },
   "classes": {
     "blade": "blade",
     "arcanist": "arcanist",
-    "hunter": "hunter"
+    "hunter": "hunter",
+    "monk": "monk"
   },
   "cast": {
     "Opponent": "duelist",
@@ -801,7 +868,8 @@
     "Farmer": "farmer",
     "Rival": "rival",
     "Hunter": "huntress",
-    "Thoral": "thoral"
+    "Thoral": "thoral",
+    "Oni": "oni"
   },
   "areas": {
     "guild": {
@@ -1078,6 +1146,118 @@
           "kasa"
         ],
         []
+      ]
+    },
+    "order": {
+      "at": [
+        -14.0,
+        16.0
+      ],
+      "bases": [
+        "male",
+        "female",
+        "male"
+      ],
+      "skins": [
+        "skin_fair",
+        "skin_light",
+        "skin_olive",
+        "skin_brown",
+        "skin_deep"
+      ],
+      "hair_colors": [
+        "hair_black",
+        "hair_grey",
+        "hair_brown"
+      ],
+      "hair_male": [
+        "hair_buzzed",
+        "hair_buzzed",
+        "hair_parted"
+      ],
+      "hair_female": [
+        "hair_buzzed_f",
+        "hair_buns"
+      ],
+      "outfits": [
+        [
+          "robe_top",
+          "robe_skirt",
+          "shoes",
+          "belt"
+        ],
+        [
+          "robe_top",
+          "hakama",
+          "leg_wraps",
+          "shoes",
+          "belt"
+        ],
+        [
+          "shirt",
+          "hakama",
+          "leg_wraps",
+          "bracers",
+          "belt"
+        ],
+        [
+          "haori",
+          "hakama",
+          "shoes",
+          "belt"
+        ],
+        [
+          "vest",
+          "hakama",
+          "bracers",
+          "leg_wraps",
+          "belt"
+        ],
+        [
+          "robe_top",
+          "robe_skirt",
+          "mantle",
+          "shoes",
+          "belt"
+        ]
+      ],
+      "cloth": [
+        "ochre",
+        "rust",
+        "madder",
+        "ash",
+        "umber",
+        "charcoal",
+        "linen",
+        "plum"
+      ],
+      "leather": [
+        "leather",
+        "dark_leather"
+      ],
+      "pieces": [
+        [
+          "beads"
+        ],
+        [
+          "wraps"
+        ],
+        [
+          "beads",
+          "wraps"
+        ],
+        [
+          "beads",
+          "headband"
+        ],
+        [
+          "wraps",
+          "topknot"
+        ],
+        [
+          "beads",
+          "scarf"
+        ]
       ]
     }
   }

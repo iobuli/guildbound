@@ -1284,6 +1284,55 @@ fn spawn_characters(commands: &mut Commands) {
     sheet.grant("defence", xp_for_level(12));
     commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
 
+    // Monks of the hill road (`discipline`): fists and an iron guard, each one looking his own
+    // (`looks::monk_look`). Two wander as foes (ranks E and C); the Elder (rank S) sits by the
+    // road and fights nobody, his aura plain to see. An Oni (a demon, `Species::Demon`) prowls
+    // west of the ruins: it never runs from rank.
+    let monk_build = [Attr::Strength, Attr::Dexterity, Attr::Endurance];
+    for (name, at, team, level, peaceful) in [
+        ("Brother Ishin", Vec3::new(-16.0, 0.0, 12.0), 3u8, 5u32, false),
+        ("Sister Ren", Vec3::new(-19.0, 0.0, 15.0), 3, 11, false),
+        ("Elder Tadao", Vec3::new(-6.0, 0.0, 21.0), 0, 19, true),
+    ] {
+        let feet = at.with_y(ground_height(at.x, at.z));
+        let e = spawn_character(
+            commands,
+            name,
+            feet,
+            PI * 0.5,
+            Fighter::new(team, 100.0),
+            Loadout { slots: vec!["unarmed".to_string()], current: 0 },
+            None,
+        );
+        let mut sheet = Sheet::default();
+        sheet.grant("unarmed", xp_for_level(8 + level));
+        sheet.grant("defence", xp_for_level(4 + level));
+        let mastery = super::discipline::Mastery { path: super::discipline::Path::Monk, rank: super::discipline::rank_of_level(level) };
+        commands.entity(e).insert((Npc, Stats::preset(level, &monk_build), sheet, mastery));
+        if peaceful {
+            commands.entity(e).insert(Civilian);
+        }
+    }
+    let at = Vec3::new(-14.0, 0.0, 38.0);
+    let oni = spawn_character(
+        commands,
+        "Oni",
+        at.with_y(ground_height(at.x, at.z)),
+        PI,
+        Fighter::new(4, 160.0),
+        Loadout { slots: vec!["unarmed".to_string()], current: 0 },
+        None,
+    );
+    let mut sheet = Sheet::default();
+    sheet.grant("unarmed", xp_for_level(14));
+    commands.entity(oni).insert((
+        Npc,
+        Stats::preset(7, &[Attr::Strength, Attr::Strength, Attr::Vigor]),
+        sheet,
+        super::discipline::Species::Demon,
+        super::discipline::Mastery { path: super::discipline::Path::None, rank: 2 },
+    ));
+
     // Civilians at work: a Smith by the anvil and a Farmer in the plots (team 0; nobody fights
     // them, they fight nobody).
     for (name, job, at, tint) in [

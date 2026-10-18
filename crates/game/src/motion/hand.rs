@@ -31,6 +31,36 @@ const FINGER_MAX: [f32; 3] = [1.55, 1.75, 1.25];
 const THUMB_MAX: [f32; 3] = [0.55, 0.8, 1.0];
 const BISECT: usize = 12;
 
+/// A free hand's shape when it holds nothing (`HandRig::form`): curls per finger
+/// `[thumb, index, middle, ring, pinky]`, 0 = straight, 1 = full curl.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Form {
+    /// A closed fist, thumb across the middle knuckles.
+    Fist,
+    /// A cupped palm (palm strikes, catching a spell): fingers together and gently bent.
+    Cupped,
+    /// Index and middle straight and together, the rest folded under the thumb: the monk's
+    /// two-finger blade catch.
+    TwoFinger,
+    /// Open hand, fingers barely bent.
+    Open,
+    /// Fingers hooked at the tips (a grab coming in).
+    Claw,
+}
+
+impl Form {
+    /// Curl of each finger (thumb first) for this shape.
+    pub fn curls(self) -> [f32; 5] {
+        match self {
+            Form::Fist => [0.85, 1.0, 1.0, 1.0, 1.0],
+            Form::Cupped => [0.35, 0.3, 0.33, 0.36, 0.4],
+            Form::TwoFinger => [0.9, 0.0, 0.02, 1.0, 1.0],
+            Form::Open => [0.1, 0.06, 0.06, 0.08, 0.1],
+            Form::Claw => [0.15, 0.55, 0.58, 0.6, 0.62],
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Shape {
     /// A handle: the segment `a`–`b` with `radius`.
@@ -96,6 +126,8 @@ impl Grip {
 
 #[derive(Clone, Debug)]
 struct Finger {
+    /// Index into `FINGERS` (thumb = 0).
+    index: usize,
     joints: [usize; 3],
     /// Local curl axis of each joint (unit, in that joint's own frame).
     axes: [Vec3; 3],
@@ -245,6 +277,83 @@ impl HandRig {
     }
 }
 
+impl HandRig {
+    /// Shape the fingers of each free hand (`forms`, with a 0..1 weight against the animation).
+    /// A hand with a grip is left to `close`.
+    pub fn form(&self, pose: &mut Pose, skeleton: &Skeleton, forms: &[Option<(Form, f32)>; 2], grips: &[Option<Grip>; 2]) {
+        for side in 0..2 {
+            let (Some((form, weight)), Some(geo), None) = (forms[side], &self.sides[side], grips[side]) else {
+                continue;
+            };
+            let weight = weight.clamp(0.0, 1.0);
+            let curls = form.curls();
+            for finger in &geo.fingers {
+                let curl = curls[finger.index];
+                for (k, &j) in finger.joints.iter().enumerate() {
+                    let q = skeleton.rest[j].rotation * Quat::from_axis_angle(finger.axes[k], curl * finger.max[k]);
+                    pose.rot[j] = pose.rot[j].slerp(q, weight).normalize();
+                }
+            }
+        }
+    }
+}
+
+/// What the fit checker (`HandRig::fit`) measured on one hand.
+#[derive(Clone, Copy, Debug)]
+pub struct HandFit {
+    /// Fingertip distance to the palm centre (m), thumb first.
+    pub tips_to_palm: [f32; 5],
+    /// Closest approach between two different fingers' bones (m, axis to axis); below
+    /// `2 * FINGER_R` they pass through each other.
+    pub crossing: f32,
+    /// How far each finger bends from straight (rad, summed over its joints).
+    pub bend: [f32; 5],
+}
+
+impl HandRig {
+    /// The fit checker: measure a posed hand (model-space `pose`).
+    pub fn fit(&self, skeleton: &Skeleton, bones: &Bones, pose: &Pose, side: usize) -> Option<HandFit> {
+        let geo = self.sides[side].as_ref()?;
+        let world = skeleton.fk(pose, bones.pelvis);
+        let palm = world[geo.hand].transform_point(geo.palm);
+        let mut tips_to_palm = [0.0; 5];
+        let mut bend = [0.0; 5];
+        let mut segments: Vec<(usize, Vec3, Vec3)> = Vec::new();
+        for finger in &geo.fingers {
+            let tip = world[finger.joints[2]].transform_point(finger.tip);
+            tips_to_palm[finger.index] = tip.distance(palm);
+            bend[finger.index] = finger.joints.iter().map(|&j| pose.rot[j].angle_between(skeleton.rest[j].rotation)).sum();
+            let pts = [world[finger.joints[0]].translation, world[finger.joints[1]].translation, world[finger.joints[2]].translation, tip];
+            for w in pts.windows(2) {
+                segments.push((finger.index, w[0], w[1]));
+            }
+        }
+        let mut crossing = f32::MAX;
+        for (i, a) in segments.iter().enumerate() {
+            for b in &segments[i + 1..] {
+                // Neighbouring knuckles start side by side: only the outer bones count.
+                if a.0 == b.0 || a.1 == b.1 {
+                    continue;
+                }
+                crossing = crossing.min(segment_gap(a.1, a.2, b.1, b.2));
+            }
+        }
+        Some(HandFit { tips_to_palm, crossing, bend })
+    }
+}
+
+/// Closest distance between segments `a0`–`a1` and `b0`–`b1` (sampled; good to a few mm).
+fn segment_gap(a0: Vec3, a1: Vec3, b0: Vec3, b1: Vec3) -> f32 {
+    let mut best = f32::MAX;
+    for i in 0..=8 {
+        let p = a0.lerp(a1, i as f32 / 8.0);
+        let d = b1 - b0;
+        let t = ((p - b0).dot(d) / d.length_squared().max(1e-9)).clamp(0.0, 1.0);
+        best = best.min(p.distance(b0 + d * t));
+    }
+    best
+}
+
 /// The largest curl at which the finger stays outside the shape, plus `SQUEEZE`.
 fn reach(skeleton: &Skeleton, base: &Transform, finger: &Finger, open: &[Quat; 3], shape: &Shape) -> f32 {
     let touches = |c: f32| {
@@ -319,7 +428,7 @@ fn measure(skeleton: &Skeleton, rest: &[Transform], hand: usize, s: &str) -> Opt
     let thumb_goal = palm_w + normal_w * 0.03 + across * 0.01;
 
     let mut fingers = Vec::new();
-    for name in FINGERS {
+    for (index, name) in FINGERS.into_iter().enumerate() {
         let thumb = name == "thumb";
         let joints = [1, 2, 3].map(|k| skeleton.find(&format!("{name}_0{k}_{s}")));
         let [Some(a), Some(b), Some(c)] = joints else { continue };
@@ -340,7 +449,7 @@ fn measure(skeleton: &Skeleton, rest: &[Transform], hand: usize, s: &str) -> Opt
             }
             axes[k] = best.1;
         }
-        fingers.push(Finger { joints, axes, tip, max: if thumb { THUMB_MAX } else { FINGER_MAX } });
+        fingers.push(Finger { index, joints, axes, tip, max: if thumb { THUMB_MAX } else { FINGER_MAX } });
     }
     Some(Side { hand, fingers, palm, normal, along })
 }
@@ -408,6 +517,33 @@ mod tests {
         rig.close(&mut pose, &skeleton, &bones, &Transform::IDENTITY, &grips, &plan);
         let world = skeleton.fk(&pose, bones.pelvis);
         (skeleton, bones, rig, pose, world)
+    }
+
+    /// The fit checker on every free-hand form: a fist is closed, a two-finger catch has two
+    /// straight fingers and the rest folded, a cupped palm is between, and no form passes one
+    /// finger through another.
+    #[test]
+    fn forms_pass_the_fit_checker() {
+        let (skeleton, bones) = skeleton();
+        let rig = HandRig::new(&skeleton, &bones);
+        let fit = |form: Form| {
+            let mut pose = skeleton.rest_pose();
+            rig.form(&mut pose, &skeleton, &[Some((form, 1.0)), None], &[None, None]);
+            rig.fit(&skeleton, &bones, &pose, 0).unwrap()
+        };
+        let open = fit(Form::Open);
+        let fist = fit(Form::Fist);
+        let cup = fit(Form::Cupped);
+        let two = fit(Form::TwoFinger);
+        for k in 1..5 {
+            assert!(fist.tips_to_palm[k] < open.tips_to_palm[k] * 0.75, "fist finger {k}: {fist:?}");
+            assert!(cup.tips_to_palm[k] < open.tips_to_palm[k] && cup.tips_to_palm[k] > fist.tips_to_palm[k], "cup finger {k}");
+        }
+        assert!(two.bend[1] < 0.1 && two.bend[2] < 0.1, "two straight fingers: {two:?}");
+        assert!(two.bend[3] > 2.0 && two.bend[4] > 2.0, "the rest folded: {two:?}");
+        for (form, f) in [("fist", fist), ("cup", cup), ("two", two), ("open", open)] {
+            assert!(f.crossing > FINGER_R, "{form}: fingers cross ({:.4} m)", f.crossing);
+        }
     }
 
     #[test]

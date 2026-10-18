@@ -6,7 +6,7 @@
 //! for the grip (`HandTargets`), and at `DRAW_SWAP` (before any attack's active frames) the
 //! weapon moves from its mount bone to the hand, where `combat::arm` places it again. Sheathing
 //! (X, `SHEATHE_AFTER` seconds out of the fight, walking up to use something (`interact::Using`),
-//! or taking up a tool) runs the other way: the hand
+//! or taking up a tool; climbing puts it away at once) runs the other way: the hand
 //! carries the weapon back and it is re-parented to the mount at `SHEATHE_SWAP`. A tool in the
 //! hand sheathes at once (no reach), and nothing is drawn while one is held.
 //!
@@ -119,10 +119,13 @@ fn carry_for(def: &WeaponDef, set: &str) -> Option<Carry> {
 fn decide(
     time: Res<Time>,
     movesets: Res<Movesets>,
-    mut fighters: Query<(&mut Sheath, &Intent, &Action, &Loadout, Has<Holding>, Option<&WeaponSlot>, Has<super::interact::Using>)>,
+    mut fighters: Query<(&mut Sheath, &Intent, &Action, &Loadout, Has<Holding>, Option<&WeaponSlot>, Has<super::interact::Using>, Option<&super::Mover>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
-    for (mut sheath, intent, action, loadout, holding, slot, using) in &mut fighters {
+    for (mut sheath, intent, action, loadout, holding, slot, using, mover) in &mut fighters {
+        // Both hands are on the wall: the blade goes home at once, as for a tool.
+        let climbing = mover.is_some_and(|m| matches!(m.mode, super::MoveMode::Climb | super::MoveMode::Ledge));
+        let holding = holding || climbing;
         let set = loadout.equipped();
         let melee = movesets
             .get(set)

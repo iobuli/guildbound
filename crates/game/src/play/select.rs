@@ -159,6 +159,11 @@ pub struct HandTargets {
 #[derive(Component, Clone, Debug, Default)]
 pub struct HeldGrip(pub [Option<crate::motion::hand::Grip>; 2]);
 
+/// Free-hand finger shapes `[left, right]` (`motion::hand::Form`, weight), forwarded into
+/// `ContactRequest.forms` (written by `discipline`: fists, cupped palms, the two-finger catch).
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct HandForm(pub [Option<(crate::motion::hand::Form, f32)>; 2]);
+
 /// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
 /// `select` forwards them into `ContactRequest.feet` with smoothed weights, like `HandTargets`.
 /// Written by `traverse`; remove it to release (the feet fade back to the animation).
@@ -707,7 +712,7 @@ type CharacterQuery<'a> = (
     Option<&'a Action>,
     Option<&'a Intent>,
     Option<&'a Loadout>,
-    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a Mounted>, Option<&'a HeldGrip>),
+    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a Mounted>, Option<&'a HeldGrip>, Option<&'a HandForm>),
     Option<&'a mut SelectState>,
     Option<&'a StyleScale>,
 );
@@ -733,7 +738,7 @@ fn select(
         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
         bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
     };
-    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, mounted, held), state, scale) in &mut characters {
+    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, mounted, held, form), state, scale) in &mut characters {
         let frame = Frame {
             bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
             ..frame
@@ -792,6 +797,7 @@ fn select(
                 commands.entity(entity).try_insert(state);
             }
         }
+        layers.contact.forms = form.map_or([None, None], |f| f.0);
         if let Some(held) = held {
             for (grip, carried) in layers.contact.grips.iter_mut().zip(held.0) {
                 if grip.is_none() {
@@ -1136,6 +1142,8 @@ fn update_character(
         stance,
         aim: input.aim,
         grips: input.hands.map_or([None, None], |h| h.grips),
+        forms: [None, None],
+        wall_clear: matches!(mover.mode, MoveMode::Climb | MoveMode::Ledge),
     };
 }
 

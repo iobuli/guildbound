@@ -97,6 +97,36 @@ impl PoseBank {
                 .collect::<Result<Vec<_>, String>>()
         })?;
 
+        // Mocap takes stand on their own floor (the capture stage's height and the retarget's leg
+        // scaling leave them floating or sunk): put each one's planted feet on y = 0.
+        let mut per_lib = per_lib;
+        // The floor the hand-made clips stand on (their planted feet), the target for the mocap.
+        let mut reference: Vec<f32> = libs
+            .iter()
+            .zip(per_lib.iter())
+            .filter(|(lib, _)| lib.lib == "ual1" || lib.lib == "ual2")
+            .flat_map(|(_, ts)| ts.iter().filter(|t| t.looping).take(12))
+            .filter_map(|t| floor_height(&t.dense.frames, &skeleton, &bones))
+            .collect();
+        reference.sort_by(f32::total_cmp);
+        let sole = reference.get(reference.len() / 2).copied().unwrap_or(FOOT_SOLE);
+        let (mut placed, mut shift) = (0usize, 0.0f32);
+        for (lib, lib_tracks) in libs.iter().zip(per_lib.iter_mut()) {
+            if lib.lib != "cmu" {
+                continue;
+            }
+            for t in lib_tracks.iter_mut() {
+                let off = place_on_floor(t, &skeleton, &bones, sole);
+                if off != 0.0 {
+                    placed += 1;
+                    shift += off.abs();
+                }
+            }
+        }
+        if placed > 0 {
+            info!("[bank] floor: {placed} mocap takes placed on the ground at {sole:.3} (mean shift {:.3} m)", shift / placed as f32);
+        }
+
         let mut counts: Vec<(String, usize)> = Vec::new();
         let mut tracks = HashMap::new();
         for (lib, lib_tracks) in libs.iter().zip(per_lib) {
@@ -598,6 +628,51 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, hot_reload);
 }
 
+/// Planted-foot height of a clip: per frame the lowest of the feet and balls (model space),
+/// the median over the clip (so a kick or a jump doesn't count). 
+pub fn floor_height(frames: &[Pose], skeleton: &super::Skeleton, bones: &Bones) -> Option<f32> {
+    let feet = [bones.foot[0], bones.foot[1], bones.ball[0], bones.ball[1]];
+    let mut lows: Vec<f32> = frames
+        .iter()
+        .filter(|p| p.rot.len() == skeleton.len())
+        .map(|p| {
+            let fk = skeleton.fk(p, bones.pelvis);
+            feet.iter().map(|&i| fk[i].translation.y).fold(f32::MAX, f32::min)
+        })
+        .collect();
+    if lows.is_empty() {
+        return None;
+    }
+    lows.sort_by(f32::total_cmp);
+    Some(lows[lows.len() / 2])
+}
+
+/// Planted foot-joint height used when no hand-made loop is there to measure (m).
+const FOOT_SOLE: f32 = 0.03;
+/// Clips within this of the floor are left alone (m).
+const FLOOR_SLACK: f32 = 0.01;
+
+/// Shift a track's pelvis so its planted feet are on the floor; returns the shift (m).
+fn place_on_floor(track: &mut Track, skeleton: &super::Skeleton, bones: &Bones, sole: f32) -> f32 {
+    let Some(h) = floor_height(&track.dense.frames, skeleton, bones) else { return 0.0 };
+    let off = sole - h;
+    if off.abs() < FLOOR_SLACK || !off.is_finite() {
+        return 0.0;
+    }
+    // `Pose.pelvis` lives in the pelvis's parent frame (the root bone, often turned): lift along
+    // model up as seen from there.
+    let lift = |p: &mut Pose| {
+        if p.rot.len() != skeleton.len() {
+            return;
+        }
+        let parent = skeleton.parent[bones.pelvis].map_or(skeleton.base, |i| skeleton.fk(p, bones.pelvis)[i]);
+        p.pelvis += parent.rotation.inverse() * (Vec3::Y * off) / parent.scale.max(Vec3::splat(1e-6));
+    };
+    track.dense.frames.iter_mut().for_each(lift);
+    track.keys.iter_mut().for_each(|k| lift(&mut k.pose));
+    off
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -814,6 +889,73 @@ mod tests {
     /// Strike timing probe for authoring movesets: per track in `GB_PROBE` (comma separated),
     /// the duration and, every 1/30 s, the model-space speed (m/s) of each hand and foot and the
     /// right hand's position. Peaks mark where an attack's active window belongs.
+    /// Fit checker on the real UAL hands: every free-hand form closes, opens and folds as it
+    /// should and no finger passes through another.
+    #[test]
+    fn real_hands_pass_the_fit_checker() {
+        use crate::motion::hand::{FINGER_R, Form, HandRig};
+        let b = bank();
+        let rig = HandRig::new(&b.skeleton, &b.bones);
+        for side in 0..2 {
+            let fit = |form: Form| {
+                let mut pose = b.skeleton.rest_pose();
+                let mut forms = [None, None];
+                forms[side] = Some((form, 1.0));
+                rig.form(&mut pose, &b.skeleton, &forms, &[None, None]);
+                rig.fit(&b.skeleton, &b.bones, &pose, side).expect("hand")
+            };
+            let (open, fist, two) = (fit(Form::Open), fit(Form::Fist), fit(Form::TwoFinger));
+            for k in 1..5 {
+                assert!(fist.tips_to_palm[k] < open.tips_to_palm[k] * 0.8, "side {side} fist finger {k}: {fist:?} vs {open:?}");
+            }
+            assert!(two.tips_to_palm[1] > two.tips_to_palm[3] * 1.5, "side {side} two-finger: {two:?}");
+            for (name, f) in [("open", open), ("fist", fist), ("two", two), ("cup", fit(Form::Cupped)), ("claw", fit(Form::Claw))] {
+                assert!(f.crossing > FINGER_R, "side {side} {name}: fingers cross ({:.4} m)", f.crossing);
+            }
+        }
+    }
+
+    /// Lowest foot point of `track` over time (model space, ground at y = 0): (min, median of
+    /// the per-frame lowest points). A clip placed on the floor has a median near 0.
+    fn floor_of(b: &PoseBank, track: &str) -> (f32, f32) {
+        let d = b.duration(track).max(1.0 / 30.0);
+        let feet = [b.bones.foot[0], b.bones.foot[1], b.bones.ball[0], b.bones.ball[1]];
+        let mut lows = Vec::new();
+        let mut t = 0.0;
+        while t <= d {
+            let fk = b.skeleton.fk(&b.sample_raw(track, t, false), b.bones.pelvis);
+            lows.push(feet.iter().map(|&i| fk[i].translation.y).fold(f32::MAX, f32::min));
+            t += 1.0 / 30.0;
+        }
+        lows.sort_by(f32::total_cmp);
+        (lows[0], lows[lows.len() / 2])
+    }
+
+    /// Floor checker over the whole bank (the mocap protocol's first gate): lists every clip
+    /// whose feet float or sink more than 3 cm at rest contact. Prints a table; fails nothing.
+    /// `cargo test -p guildbound floor_report -- --ignored --nocapture`
+    #[test]
+    #[ignore]
+    fn floor_report() {
+        let b = bank();
+        let mut names: Vec<&String> = b.tracks.keys().collect();
+        names.sort();
+        let filter = std::env::var("GB_PROBE").unwrap_or_default();
+        let mut off = 0;
+        for r in ["ual1/Idle_Loop", "ual2/Idle_Loop", "ual1/Walk_Loop", "ual1/Jog_Fwd_Loop"] {
+            if b.tracks.contains_key(r) {
+                println!("ref {r:44} {:?}", floor_of(b, r));
+            }
+        }
+        for name in names.iter().filter(|n| filter.is_empty() || n.starts_with(&filter)) {
+            let (min, median) = floor_of(b, name);
+            let flag = if median.abs() > 0.03 { off += 1; "OFF" } else { "ok" };
+            let dense = floor_height(&b.tracks[*name].dense.frames, &b.skeleton, &b.bones).unwrap_or(f32::NAN);
+            println!("{flag:3} {name:48} min {min:+.3} median {median:+.3} dense {dense:+.3}");
+        }
+        println!("{off} clips off the floor by more than 3 cm");
+    }
+
     /// `GB_PROBE="ual1/Punch_Jab" cargo test -p guildbound clip_probe -- --ignored --nocapture`
     #[test]
     #[ignore]

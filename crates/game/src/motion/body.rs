@@ -250,6 +250,46 @@ fn retract(pivot: Vec3, point: Vec3, out: Vec3, depth: f32) -> Option<Quat> {
     angle.is_finite().then(|| Quat::from_axis_angle(axis, angle))
 }
 
+/// Body spheres kept out of walls while climbing (`body_out`): bone and radius (m).
+pub fn wall_spheres(bones: &Bones) -> Vec<(usize, f32)> {
+    let mut v = vec![(bones.pelvis, 0.13), (bones.spine[0], 0.13), (bones.spine[1], 0.14), (bones.spine[2], 0.14), (bones.neck, 0.07), (bones.head, 0.11)];
+    for side in 0..2 {
+        v.extend([(bones.calf[side], 0.065), (bones.foot[side], 0.05), (bones.upperarm[side], 0.06)]);
+    }
+    v
+}
+
+/// Climbing: push the whole body (the pelvis, so everything rides along) out of the wall
+/// before the hands and feet reach for their holds. `probe(p)` is as for `clear_world`
+/// (the way out of what `p` is inside, and how deep); each sphere's radius is added. Returns the
+/// world push applied (m).
+pub fn body_out(
+    pose: &mut Pose,
+    skeleton: &Skeleton,
+    bones: &Bones,
+    model_world: &Transform,
+    mut probe: impl FnMut(Vec3, f32) -> Option<(Vec3, f32)>,
+) -> Vec3 {
+    if pose.rot.len() != skeleton.len() {
+        return Vec3::ZERO;
+    }
+    let scale = model_world.scale.max_element().max(1e-3);
+    let spheres = wall_spheres(bones);
+    let mut total = Vec3::ZERO;
+    for _ in 0..PASSES {
+        let model = skeleton.fk(pose, bones.pelvis);
+        let deepest = spheres
+            .iter()
+            .filter_map(|&(i, r)| probe(model_world.transform_point(model[i].translation), r * scale))
+            .max_by(|a, b| a.1.total_cmp(&b.1));
+        let Some((out, depth)) = deepest.filter(|d| d.1 > 1e-3) else { break };
+        let push = out * (depth + MARGIN * scale);
+        total += push;
+        pose.pelvis += model_world.rotation.inverse() * push / scale;
+    }
+    total
+}
+
 /// Keep the arms out of the world and other bodies, after contact IK. `probe(p)` (world space)
 /// returns the way out of whatever `p` is inside, and how deep (m). For each arm not held by an
 /// IK target (`held`), a hand that is inside swings the forearm out about the elbow; an elbow that

@@ -1248,6 +1248,8 @@ pub(crate) mod tests {
             stance: f32::NAN,
             aim: Some(Vec3::NAN),
             grips: [None, None],
+            forms: [None, None],
+            wall_clear: false,
         };
         let mut garbage = |_: Vec3| {
             Some(Ground {

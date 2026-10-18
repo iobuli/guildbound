@@ -198,6 +198,7 @@ fn compose(
     mut gizmos: Gizmos,
     mut warned: Local<HashSet<String>>,
     mut hands: Local<Option<(usize, super::hand::HandRig)>>,
+    mut check_clock: Local<f32>,
 ) {
     let Some(bank) = bank else { return };
     let skeleton = &bank.skeleton;
@@ -209,6 +210,12 @@ fn compose(
     let n = skeleton.len();
     let dt = time.delta_secs();
     let filter = SpatialQueryFilter::from_mask(Phys::World);
+    // `GB_CHECK=1`: the fit checker measures every shaped hand once a second (`[fit]` lines).
+    *check_clock += dt;
+    let check = *check_clock >= 1.0 && std::env::var_os("GB_CHECK").is_some();
+    if check {
+        *check_clock = 0.0;
+    }
 
     for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose, scale) in &mut roots {
         if rig.bones.len() != n {
@@ -251,6 +258,22 @@ fn compose(
                         normal: hit.normal,
                     })
             };
+            // Climbing: the body comes off the wall first, then the limbs reach for the holds.
+            if request.wall_clear {
+                let pushed = super::body::body_out(&mut pose, skeleton, bones, &model_world, |p, r| {
+                    let hit = spatial.project_point(p, false, &filter)?;
+                    let to_surface = hit.point - p;
+                    let d = to_surface.length();
+                    if hit.is_inside {
+                        Some((to_surface.normalize_or(Vec3::Y), d + r))
+                    } else {
+                        (d < r).then(|| ((-to_surface).normalize_or(Vec3::Y), r - d))
+                    }
+                });
+                if check && pushed.length() > 1e-3 {
+                    info!("[fit] {root} wall push {:.3} m", pushed.length());
+                }
+            }
             let (wrists, plan) = hand_rig.wrist_targets(&pose, skeleton, bones, &model_world, &request.grips);
             for side in 0..2 {
                 if wrists[side].is_some() {
@@ -297,6 +320,21 @@ fn compose(
                 })
             });
             hand_rig.close(&mut pose, skeleton, bones, &model_world, &request.grips, &plan);
+            hand_rig.form(&mut pose, skeleton, &request.forms, &request.grips);
+            if check {
+                for side in 0..2 {
+                    let (Some((form, _)), None) = (request.forms[side], request.grips[side]) else { continue };
+                    if let Some(f) = hand_rig.fit(skeleton, bones, &pose, side) {
+                        let ok = if f.crossing > super::hand::FINGER_R { "ok" } else { "CROSSING" };
+                        info!(
+                            "[fit] {root} {} {form:?}: tips {:.3?} crossing {:.4} {ok}",
+                            ["left", "right"][side],
+                            f.tips_to_palm,
+                            f.crossing
+                        );
+                    }
+                }
+            }
         }
         layers.impulses.clear();
         if let Some(mut out) = rig_pose {

@@ -43,6 +43,12 @@ pub enum Piece {
     Shield,
     /// An iron helm with a nasal guard.
     Helm,
+    /// Prayer beads round the neck (monks).
+    Beads,
+    /// Cloth wraps on both forearms and knuckles (monks, brawlers).
+    Wraps,
+    /// Two horns (demons).
+    Horns,
 }
 
 impl Piece {
@@ -59,6 +65,9 @@ impl Piece {
             "pouch" => Self::Pouch,
             "shield" => Self::Shield,
             "helm" => Self::Helm,
+            "beads" => Self::Beads,
+            "wraps" => Self::Wraps,
+            "horns" => Self::Horns,
             _ => return None,
         })
     }
@@ -88,7 +97,11 @@ pub fn look_for(name: &str) -> Look {
         trim: Color::srgb(trim[0], trim[1], trim[2]),
         pieces,
     };
+    if is_monk(name) {
+        return monk_look(name);
+    }
     match name {
+        "Oni" => l(1.18, 1.2, [0.95, 0.15, 0.1], [0.3, 0.05, 0.05], [0.9, 0.8, 0.6], vec![Horns, Wraps, Sash]),
         "Player" => l(1.0, 1.0, [0.35, 0.4, 0.9], [0.16, 0.18, 0.38], [0.85, 0.75, 0.5], vec![Kasa, Scarf, Sash]),
         "Opponent" => l(1.02, 1.08, [0.9, 0.3, 0.25], [0.55, 0.12, 0.1], [0.2, 0.2, 0.22], vec![Headband, Pauldrons, Sash]),
         "Varro" => l(1.05, 1.1, [0.8, 0.6, 0.3], [0.2, 0.22, 0.25], [0.75, 0.6, 0.3], vec![Topknot, Pauldrons, Sash]),
@@ -101,6 +114,62 @@ pub fn look_for(name: &str) -> Look {
         "Thoral" => l(1.3, 1.28, [0.5, 0.5, 0.6], [0.18, 0.18, 0.2], [0.55, 0.12, 0.1], vec![Helm, Pauldrons, Shield, Sash]),
         "Hunter" => l(1.0, 0.97, [0.4, 0.6, 0.3], [0.22, 0.3, 0.18], [0.45, 0.35, 0.2], vec![Hood, Scarf, Pouch]),
         _ => l(1.0, 1.0, [0.5, 0.5, 0.5], [0.35, 0.3, 0.28], [0.6, 0.55, 0.45], vec![Sash]),
+    }
+}
+
+/// Monks are named by their order: Brother, Sister, Elder, Novice.
+pub fn is_monk(name: &str) -> bool {
+    ["Brother ", "Sister ", "Elder ", "Novice "].iter().any(|p| name.starts_with(p))
+}
+
+/// A monk's look, varied by name so no two of the order match: build, robe dye, sash, and
+/// which of the order's marks they wear (beads, wraps, headband, topknot or shaved, hood,
+/// scarf). Always the sash and at least one of beads / wraps.
+pub fn monk_look(name: &str) -> Look {
+    use Piece::*;
+    let mut h = 0x811C_9DC5u32;
+    for b in name.bytes() {
+        h = (h ^ b as u32).wrapping_mul(0x0100_0193);
+    }
+    let mut pick = |n: u32| {
+        h ^= h << 13;
+        h ^= h >> 17;
+        h ^= h << 5;
+        h % n
+    };
+    let elder = name.starts_with("Elder ");
+    let novice = name.starts_with("Novice ");
+    const ROBES: [[f32; 3]; 6] = [[0.85, 0.5, 0.12], [0.55, 0.22, 0.1], [0.32, 0.32, 0.34], [0.18, 0.22, 0.4], [0.7, 0.62, 0.48], [0.25, 0.35, 0.22]];
+    const SASHES: [[f32; 3]; 4] = [[0.12, 0.1, 0.08], [0.75, 0.6, 0.25], [0.55, 0.1, 0.1], [0.85, 0.85, 0.8]];
+    let robe = ROBES[pick(ROBES.len() as u32) as usize];
+    let sash = SASHES[pick(SASHES.len() as u32) as usize];
+    let height = if novice { 0.93 } else { 0.95 } + pick(12) as f32 * 0.01;
+    let breadth = if elder { 0.9 } else { 0.92 } + pick(22) as f32 * 0.01;
+    let mut pieces = vec![Sash];
+    match pick(3) {
+        0 => pieces.push(Beads),
+        1 => pieces.push(Wraps),
+        _ => pieces.extend([Beads, Wraps]),
+    }
+    match pick(4) {
+        0 => pieces.push(Headband),
+        1 => pieces.push(Topknot),
+        2 if elder => pieces.push(Hood),
+        _ => {} // shaved
+    }
+    if pick(3) == 0 {
+        pieces.push(Scarf);
+    }
+    if elder && !pieces.contains(&Beads) {
+        pieces.push(Beads);
+    }
+    Look {
+        height,
+        breadth,
+        accent: Vec4::new(robe[0], robe[1], robe[2], 0.5),
+        cloth: Color::srgb(robe[0], robe[1], robe[2]),
+        trim: Color::srgb(sash[0], sash[1], sash[2]),
+        pieces,
     }
 }
 
@@ -319,6 +388,35 @@ fn dress(
                     let crest = meshes.add(Cuboid::new(0.02, 0.06, 0.24));
                     place(&mut commands, head, crest, cloth.clone(), head_top + up * 0.08, face, Vec3::ONE);
                 }
+                Piece::Beads => {
+                    let bead = meshes.add(Sphere::new(0.016));
+                    let wood = material(Color::srgb(0.28, 0.16, 0.08), look.accent);
+                    let centre = neck.1.translation - up * 0.06;
+                    for i in 0..18 {
+                        let a = i as f32 / 18.0 * std::f32::consts::TAU;
+                        // Hangs lower at the front.
+                        let drop = 0.05 * (1.0 + a.cos()) * 0.5;
+                        let at = centre + fwd * (a.cos() * 0.095) + left * (a.sin() * 0.085) - up * drop;
+                        place(&mut commands, neck, bead.clone(), wood.clone(), at, face, Vec3::ONE);
+                    }
+                }
+                Piece::Wraps => {
+                    let wrap = meshes.add(Cylinder::new(0.042, 0.12));
+                    for side in 0..2 {
+                        let (Some(fore), Some(hand)) = (at(b.lowerarm[side]), at(b.hand[side])) else { continue };
+                        let dir = (hand.1.translation - fore.1.translation).normalize_or(Vec3::NEG_Y);
+                        let rot = Quat::from_rotation_arc(Vec3::Y, dir);
+                        place(&mut commands, fore, wrap.clone(), trim.clone(), fore.1.translation.lerp(hand.1.translation, 0.78), rot, Vec3::ONE);
+                    }
+                }
+                Piece::Horns => {
+                    let horn = meshes.add(Cone { radius: 0.035, height: 0.16 });
+                    let bone = material(Color::srgb(0.85, 0.8, 0.65), look.accent);
+                    for s in [-1.0f32, 1.0] {
+                        let rot = Quat::from_rotation_arc(Vec3::Y, (up + left * s * 0.45 - fwd * 0.2).normalize());
+                        place(&mut commands, head, horn.clone(), bone.clone(), head_top - up * 0.02 + left * s * 0.07 + fwd * 0.03, rot, Vec3::ONE);
+                    }
+                }
                 Piece::Pouch => {
                     let m = meshes.add(Cuboid::new(0.09, 0.1, 0.05));
                     place(&mut commands, pelvis, m, cloth.clone(), pelvis.1.translation - left * 0.17 + up * 0.0 + fwd * 0.03, face, Vec3::ONE);
@@ -422,6 +520,25 @@ fn show_pieces(toggles: Res<DebugToggles>, mut pieces: Query<&mut Visibility, Wi
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn monks_vary_but_keep_the_order_marks() {
+        let names = ["Brother Ishin", "Sister Ren", "Elder Tadao", "Novice Kenji", "Brother Sho"];
+        let looks: Vec<Look> = names.iter().map(|n| look_for(n)).collect();
+        for l in &looks {
+            assert!(l.pieces.contains(&Piece::Sash));
+            assert!(l.pieces.contains(&Piece::Beads) || l.pieces.contains(&Piece::Wraps));
+        }
+        let distinct = |f: &dyn Fn(&Look) -> String| {
+            let mut v: Vec<String> = looks.iter().map(f).collect();
+            v.sort();
+            v.dedup();
+            v.len()
+        };
+        assert!(distinct(&|l| format!("{:?}{:.2}{:.2}", l.pieces, l.height, l.breadth)) == names.len(), "no two monks alike");
+        assert!(distinct(&|l| format!("{:?}", l.cloth)) >= 3, "robes vary");
+        assert!(!is_monk("Opponent") && is_monk("Elder Tadao"));
+    }
 
     #[test]
     fn every_named_character_has_a_distinct_look() {
