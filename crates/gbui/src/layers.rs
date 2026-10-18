@@ -10,8 +10,8 @@
 //! ] }
 //! ```
 //! Layers draw bottom to top under the widget's own children (`"top": true` draws above them).
-//! - `alpha`: opacity per state. "idle" is the base; any other listed state that is active
-//!   overrides it, and later entries win over earlier ones. States come from the widget
+//! - `alpha`: opacity per state. "idle" is the base; an active listed state overrides it, the
+//!   highest in `PRECEDENCE` winning (JSON key order is not kept). States come from the widget
 //!   (`hovered`, `pressed` from `Interaction`; `checked`, `disabled` from `UiFlags`) and from the
 //!   owner (`Skinned::set`), e.g. `casting`, `dim`, `mastered`.
 //! - `slice`: 9-slice border in px, so one frame PNG fits any size; 0 stretches the image.
@@ -56,17 +56,23 @@ pub struct LayerDef {
 }
 
 impl LayerDef {
-    /// Opacity for the active states: "idle", then any listed active state, later entries winning.
+    /// Opacity for the active states: the highest-precedence active state the layer lists, else
+    /// "idle" (else 1). A state not in `PRECEDENCE` ranks above all of them.
     pub fn alpha_for(&self, active: &[&str]) -> f32 {
-        let mut a = self.alpha.iter().find(|(s, _)| s == "idle").map_or(1.0, |e| e.1);
-        for (state, v) in &self.alpha {
-            if state != "idle" && active.contains(&state.as_str()) {
-                a = *v;
-            }
-        }
-        a
+        let rank = |s: &str| PRECEDENCE.iter().position(|p| *p == s).unwrap_or(PRECEDENCE.len());
+        self.alpha
+            .iter()
+            .filter(|(s, _)| s != "idle" && active.contains(&s.as_str()))
+            .max_by_key(|(s, _)| rank(s))
+            .or_else(|| self.alpha.iter().find(|(s, _)| s == "idle"))
+            .map_or(1.0, |e| e.1)
     }
 }
+
+/// State precedence, lowest first: when several active states set a layer's alpha, the latest in
+/// this list wins (a dim slot stays dim while hovered; a cast shows over mastery).
+pub const PRECEDENCE: [&str; 11] =
+    ["idle", "hovered", "pressed", "checked", "open", "mastered", "casting", "over", "low", "dim", "disabled"];
 
 /// Whether segment `k` of `n` is lit at drive value `v` (0..1): lit once `v` covers its middle.
 pub fn lit(k: u32, n: u32, v: f32) -> bool {
@@ -308,11 +314,11 @@ pub fn drive_layers(
 mod tests {
     use super::*;
 
-    const SKIN: &str = r#"{ "layers": [
+    const SKIN: &str = r##"{ "layers": [
         { "file": "glass.png", "slice": 12, "alpha": { "idle": 0.5, "hovered": 0.8, "dim": 0.2 } },
         { "file": "wedge.png", "segments": 12, "drive": "progress", "off": 0.1, "alpha": { "idle": 0.0, "casting": 1.0 } },
         { "file": "star.png", "top": true, "tint": "#FFC857", "alpha": { "mastered": 1.0, "idle": 0.0 } }
-    ] }"#;
+    ] }"##;
 
     #[test]
     fn skins_parse_and_states_override_in_order() {
@@ -324,7 +330,7 @@ mod tests {
         let glass = &s.layers[0];
         assert_eq!(glass.alpha_for(&[]), 0.5);
         assert_eq!(glass.alpha_for(&["hovered"]), 0.8);
-        // later entries win: dim over hovered
+        // precedence, not file order: dim over hovered
         assert_eq!(glass.alpha_for(&["hovered", "dim"]), 0.2);
         // "idle" listed last still only acts as the base
         assert_eq!(s.layers[2].alpha_for(&["mastered"]), 1.0);

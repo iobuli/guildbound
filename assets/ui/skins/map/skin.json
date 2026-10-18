@@ -1,0 +1,46 @@
+{
+  "dir": "map",
+  "layers": [
+    {
+      "file": "glass.png",
+      "alpha": {
+        "idle": 0.85,
+        "hovered": 0.85,
+        "disabled": 0.4,
+        "open": 0.9
+      }
+    },
+    {
+      "file": "bezel.png",
+      "tint": "#2EE6C5",
+      "alpha": {
+        "idle": 0.85,
+        "hovered": 0.85,
+        "disabled": 0.3,
+        "open": 0.9
+      }
+    },
+    {
+      "file": "ticks.png",
+      "segments": 36,
+      "off": 0.35,
+      "tint": "#7CFFB2",
+      "alpha": {
+        "idle": 0.55,
+        "hovered": 0.55,
+        "disabled": 0.2,
+        "open": 0.6
+      }
+    },
+    {
+      "file": "north.png",
+      "tint": "#FFC857",
+      "alpha": {
+        "idle": 1.0,
+        "hovered": 1.0,
+        "disabled": 0.4,
+        "open": 1.0
+      }
+    }
+  ]
+}

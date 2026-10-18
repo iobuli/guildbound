@@ -1,0 +1,57 @@
+{
+  "dir": "reticle",
+  "layers": [
+    {
+      "file": "range.png",
+      "tint": "#2EE6C5",
+      "alpha": {
+        "idle": 0.0,
+        "aiming": 0.35,
+        "in-range": 0.5,
+        "out-of-range": 0.5
+      }
+    },
+    {
+      "file": "ring.png",
+      "tint": "#2EE6C5",
+      "alpha": {
+        "idle": 0.0,
+        "aiming": 0.9,
+        "in-range": 0.95,
+        "out-of-range": 0.95
+      }
+    },
+    {
+      "file": "tick.png",
+      "segments": 4,
+      "off": 0.2,
+      "tint": "#7CFFB2",
+      "alpha": {
+        "idle": 0.0,
+        "aiming": 0.8,
+        "in-range": 0.9,
+        "out-of-range": 0.9
+      }
+    },
+    {
+      "file": "dot.png",
+      "tint": "#7CFFB2",
+      "alpha": {
+        "idle": 0.0,
+        "aiming": 1.0,
+        "in-range": 1.0,
+        "out-of-range": 1.0
+      }
+    },
+    {
+      "file": "land.png",
+      "tint": "#7FD8FF",
+      "alpha": {
+        "idle": 0.0,
+        "aiming": 0.0,
+        "in-range": 0.75,
+        "out-of-range": 0.45
+      }
+    }
+  ]
+}
