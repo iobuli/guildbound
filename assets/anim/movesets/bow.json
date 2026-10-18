@@ -2,6 +2,7 @@
   "name": "bow",
   "kind": "ranged",
   "weapon": {
+    "mass": 1.0,
     "primitive": {
       "shape": "cylinder",
       "size": [

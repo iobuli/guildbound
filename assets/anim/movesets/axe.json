@@ -2,6 +2,7 @@
   "name": "axe",
   "kind": "melee",
   "weapon": {
+    "mass": 2.2,
     "mesh": "packs/weapons/battleaxe.glb",
     "mesh_rotation_deg": [90, 0, 0],
     "mesh_offset": [0.0, 0.17, 0.0],

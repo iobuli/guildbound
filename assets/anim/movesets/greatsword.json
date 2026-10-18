@@ -2,6 +2,7 @@
   "name": "greatsword",
   "kind": "melee",
   "weapon": {
+    "mass": 3.0,
     "primitive": { "shape": "sword", "size": [0.06, 0.012, 1.15], "color": [0.62, 0.64, 0.68] },
     "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "length": 1.15
   },

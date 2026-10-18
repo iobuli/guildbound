@@ -197,6 +197,10 @@ pub struct WeaponDef {
     /// the moveset's name (greatsword / axe on the back, katana left hip, dagger right hip).
     #[serde(default)]
     pub carry: Option<Carry>,
+    /// Kilograms, for the carry posture (`play::carry`): a dagger 0.4, a katana 1.1, a
+    /// greatsword 3.
+    #[serde(default)]
+    pub mass: f32,
 }
 
 /// A sheathed weapon's place on the body, in MODEL space at the rest pose (+Z forward, +X the

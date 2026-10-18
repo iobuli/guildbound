@@ -2,6 +2,7 @@
   "name": "crossbow",
   "kind": "ranged",
   "weapon": {
+    "mass": 3.0,
     "primitive": { "shape": "box", "size": [0.07, 0.62, 0.09], "color": [0.35, 0.24, 0.14] },
     "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "length": 0.0
   },

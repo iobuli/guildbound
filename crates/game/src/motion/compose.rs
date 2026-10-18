@@ -190,6 +190,7 @@ fn compose(
             Option<&BodyPadding>,
             Option<&mut RigPose>,
             Option<&StyleScale>,
+            Option<&super::carry::Load>,
         ),
         Without<RigBone>,
     >,
@@ -217,7 +218,7 @@ fn compose(
         *check_clock = 0.0;
     }
 
-    for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose, scale) in &mut roots {
+    for (root, rig, mut layers, mut springs, mut state, root_transform, padding, rig_pose, scale, load) in &mut roots {
         if rig.bones.len() != n {
             if warned.insert(format!("rig:{root}")) {
                 warn!(
@@ -250,6 +251,10 @@ fn compose(
             );
             request.squash = springs.squash;
             super::body::resolve(&mut pose, skeleton, bones, &padding.copied().unwrap_or_default());
+            // What the hands and back carry bends the body before the contacts place the limbs.
+            if let Some(load) = load {
+                super::carry::apply(&bank, &mut pose, load);
+            }
             let mut ground = |origin: Vec3| {
                 spatial
                     .cast_ray(origin, Dir3::NEG_Y, GROUND_PROBE, true, &filter)

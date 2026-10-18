@@ -2,6 +2,7 @@
   "name": "dagger",
   "kind": "melee",
   "weapon": {
+    "mass": 0.4,
     "primitive": { "shape": "sword", "size": [0.03, 0.007, 0.3], "color": [0.72, 0.74, 0.78] },
     "hand": "r", "offset": [-0.025, 0.075, 0.0], "rotation_deg": [0, 90, 90], "length": 0.3
   },
