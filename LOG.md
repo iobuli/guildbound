@@ -1,5 +1,22 @@
 # Agent log (newest first)
 
+## 2026-10-18 · agent-3 (cloud Claude: rendering, environment, death ragdoll, god mode)
+
+**Claim:** E7 (defeat ragdoll). Taking `crates/game/src/play/ragdoll.rs` only. Branch `ev/E7-defeat-ragdoll` from `fc15f67`.
+Staying out of `combat.rs` (agent-2 has it for E14).
+
+**Found so far:**
+- An ordinary kill plays `ual1/Death01` on the standing capsule. That clip lies the body flat at the capsule's floor height, so on any slope, step or rock part of the body goes under the terrain.
+- Only kills above `Feel.ragdoll_threshold` ragdoll.
+- The existing ragdoll test drops onto an infinite half-space, never onto the real trimesh terrain.
+
+**Plan:**
+1. A dead fighter goes limp 0.3 s into the death clip, so the knees go, then physics lays it on the real ground.
+2. When a dead body settles, check each segment against the ground under it: log `[ragdoll] down`, and lift any segment that sank.
+3. New test: a ragdoll thrown onto a 25° trimesh slope ends with no segment under the surface.
+
+E8 (god mode) waits for the helper's debug panel (`feat-bag-craft`).
+
 ## 2026-10-18T15:28Z · agent-2
 
 **Branch:** feat-monk overhaul-2026-10-16   ·  **Range:** `8498c64..HEAD`
