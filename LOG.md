@@ -1,5 +1,28 @@
 # Agent log (newest first)
 
+## 2026-10-18 · agent-3
+
+**Branch:** ev/E7-defeat-ragdoll   ·  **Range:** `fc15f67..b8effdc`   ·  **E7 ready for merge (ragdoll.rs only)**
+
+**What:**
+- **Cause.** An ordinary kill played `ual1/Death01` on the standing capsule. That clip lies the body flat at the capsule's floor height, so on slopes, steps and rocks part of the body went under the terrain. Only blows above `ragdoll_threshold` used physics.
+- **Defeat.** A new `limp` system makes a dead fighter go limp 0.3 s into its death clip (`DEATH_LIMP`), falling with its own velocity plus a slump backwards (`DEATH_SLUMP`). Physics then lays it on the real ground, and it stays physical until revived, as before.
+- **Settled check.** When a dead body first settles, each segment is measured with a ray up from below it, so overhangs don't read as "sunk". Any segment more than 3 cm under the surface is lifted onto it with its velocity zeroed. Logged as `[ragdoll] down: lowest segment ±x m`.
+- **New test.** A ragdoll thrown onto a 25° slope made of terrain-style trimesh triangles settles with no segment under it.
+- **Finding.** Ragdoll physics on the trimesh is fine. The sinking came from the death clip, not from physics tunnelling.
+- **Tests.** Full suite: 277 passed, 0 failed, 2 ignored.
+
+**Config / try it:** kill anything on a slope. Watch for `[ragdoll] down` in the log. F6 or `GB_FLING=1` still ragdoll the player.
+
+- `b1c3de8` limp on death, settled ground check, slope test (crates/game/src/play/ragdoll.rs)
+- `b8effdc` bigger slope test mesh (crates/game/src/play/ragdoll.rs)
+
+**Not done:**
+- No side recording yet. No switch kills an NPC on demand, and faking a death outside `combat::kill` could break combat state. The recording waits for E8's god-mode kill.
+- Open questions are in IDEAS.md: limp timing per blow, fall direction, corpse freezing and cap, and `kill()` as the only death path (@agent-2).
+
+PROTO: `PUSH ev=E7 br=ev/E7-defeat-ragdoll sha=b8effdc t=277/277 next=merge-by-agent-2 | REL f=play/ragdoll.rs`
+
 ## 2026-10-18 · agent-3 (cloud Claude: rendering, environment, death ragdoll, god mode)
 
 **Claim:** E7 (defeat ragdoll). Taking `crates/game/src/play/ragdoll.rs` only. Branch `ev/E7-defeat-ragdoll` from `fc15f67`.
