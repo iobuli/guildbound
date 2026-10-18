@@ -74,7 +74,7 @@ const HOMING: f32 = 5.0;
 const LANCE_CONE: f32 = 0.93;
 const CHAIN_RANGE: f32 = 5.5;
 /// Dash length (s).
-const STEP_TIME: f32 = 0.16;
+const STEP_TIME: f32 = 0.12;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Pool {
@@ -152,7 +152,7 @@ pub static ABILITIES: [Ability; 10] = [
         track: "sekiro/Run-Forwards",
         start: 0.0,
         end: 0.3,
-        speed: 1.0,
+        speed: 1.6,
         release: 0.0,
         damage: 0.0,
         poise: 0.0,
@@ -754,6 +754,10 @@ fn drive_cast(
                 vfx::burst(&mut commands, world.vfx.burst(Element::Aura), tf.translation, 0.5);
             } else {
                 finish(&mut commands, entity, &mut action, &mut mover, &c);
+                // Plant the stop: a quick landing on the spot.
+                if mover.mode == MoveMode::Ground {
+                    commands.entity(entity).try_insert(super::ragdoll::Acrobatics::land());
+                }
             }
             continue;
         }

@@ -25,13 +25,16 @@
 //!   When a dead body first comes to rest, every segment is checked against the ground under it
 //!   (`[ragdoll] down` log line); a segment found under the surface is lifted back onto it.
 //! - A new request while down kicks the segments again.
-//! - Weight: a blow is one impulse on the whole body (`fling`): the centre of mass takes the push
-//!   (capped at `MAX_FLING`) and the off-centre part spins the body by its inertia (capped at
-//!   `MAX_SPIN`), so every segment leaves with one rigid motion; the segment struck gets a little
-//!   extra (`KICK`).
-//! - Air recovery (player): jump while flung clear of the ground (`RECOVER_HEIGHT`, after
-//!   `RECOVER_AFTER` s, `RECOVER_COST` stamina) to leave the ragdoll in the air with the momentum;
-//!   the landing then bounces toward the lock-on target or nearest foe into a run (`bounce`).
+//! - Weight: a blow is one impulse on the whole body (`fling`), felt like a rope around the
+//!   centre: the centre of mass takes the push (capped at `MAX_FLING`) and leads, the pelvis gets
+//!   a little extra (`KICK`), and only `SPIN_SHARE` of the off-centre spin is kept (capped at
+//!   `MAX_SPIN`, damped by `ANGULAR_DAMPING`), so a body is hauled away from the blow, heavy,
+//!   rather than spun like a top.
+//! - Air recovery (player): jump, or tap A / D (a sideways input, which also steers), while flung
+//!   clear of the ground (`RECOVER_HEIGHT`, after `RECOVER_AFTER` s, `RECOVER_COST` stamina) to
+//!   leave the ragdoll in the air with the momentum; `Acrobatics` then tucks into a backflip and
+//!   lands it (`NinjaJump_Land`, or a forward roll when landing fast), and the landing bounces
+//!   toward the lock-on target or nearest foe into a run (`bounce`).
 use super::combat::CombatSet;
 use super::{
     Action, ActionKind, ActionLayer, Fighter, HALF_HEIGHT, Intent, MoveMode, Mover, Owner, Phys, PlaySet, Player, StaminaSpend,
@@ -59,7 +62,9 @@ const KICK: f32 = 1.15;
 /// Fling limits: the body's centre never leaves faster than `MAX_FLING` m/s, nor spins faster
 /// than `MAX_SPIN` rad/s.
 const MAX_FLING: f32 = 18.0;
-const MAX_SPIN: f32 = 12.0;
+const MAX_SPIN: f32 = 6.0;
+/// Share of a blow's off-centre spin a body keeps (the rest goes into the haul).
+const SPIN_SHARE: f32 = 0.35;
 /// Air recovery (player): earliest (s), height above the ground the pelvis needs (m), stamina it
 /// costs, the fastest the body keeps (m/s); the landing bounce toward the nearest foe (m/s, up m/s)
 /// and how far to look for one (m).
@@ -70,6 +75,8 @@ const RECOVER_KEEP: f32 = 12.0;
 const BOUNCE: f32 = 7.5;
 const BOUNCE_UP: f32 = 3.0;
 const BOUNCE_LOOK: f32 = 18.0;
+/// A sideways recovery's steer (m/s).
+const RECOVER_STEER: f32 = 3.5;
 
 /// A blow on a body of point masses `(position, mass)` that should move its centre of mass by
 /// `dv` (m/s), landing at `hit`: the centre's velocity change (capped at `MAX_FLING`) and the
@@ -105,7 +112,7 @@ const GET_UP_RATE: f32 = 1.3;
 const LINEAR_DAMPING: f32 = 0.3;
 /// Segment friction: bodies come to rest on a slope instead of sledging down it.
 const SEGMENT_FRICTION: f32 = 1.0;
-const ANGULAR_DAMPING: f32 = 1.2;
+const ANGULAR_DAMPING: f32 = 2.2;
 const LIMIT_COMPLIANCE: f32 = 1e-5;
 /// Defeat: seconds of the death clip before the body goes limp, and the push it falls with (m/s,
 /// backwards from the body's facing) on top of its own velocity.
@@ -154,7 +161,7 @@ pub fn plugin(app: &mut App) {
     app.add_systems(Update, fling_smoke.after(PlaySet::Input).before(PlaySet::Act));
     app.add_systems(
         Update,
-        (debug_key, limp, take_over, drive, bounce)
+        (debug_key, limp, take_over, drive, bounce, acrobat)
             .chain()
             .in_set(PlaySet::Act)
             .after(CombatSet),
@@ -177,6 +184,8 @@ pub struct Ragdolled {
     still: f32,
     /// A dead body's rest was checked against the ground (`drive`).
     checked: bool,
+    /// A sideways input was held last frame (a recovery needs a fresh tap).
+    side_held: bool,
 }
 
 /// The get-up clip in progress after a ragdoll (`Owner::Ragdoll`).
@@ -291,6 +300,7 @@ fn take_over(
                 .filter_map(|(s, seg)| velocities.get(*s).ok().map(|(tf, _, _)| (tf.translation, seg.mass)))
                 .collect();
             let (com, dv, omega) = fling(&masses, request.point, request.velocity);
+            let omega = omega * SPIN_SHARE;
             for &seg in &r.segs {
                 if let Ok((tf, mut v, mut w)) = velocities.get_mut(seg) {
                     let near = tf.translation.distance(request.point) < 0.35;
@@ -337,6 +347,7 @@ fn take_over(
             t: 0.0,
             still: 0.0,
             checked: false,
+            side_held: true,
         });
         if getting_up || !action.is_free() {
             action.clear();
@@ -408,6 +419,7 @@ fn spawn_segments(
     };
     let masses: Vec<(Vec3, f32)> = (0..SEGS.len()).map(|k| (centre(k), SEGS[k].mass)).collect();
     let (com, dv, omega) = fling(&masses, request.point, request.velocity);
+    let omega = omega * SPIN_SHARE;
     let mut segs = Vec::with_capacity(SEGS.len());
     for (k, (seg, &(rot, pos, end))) in SEGS.iter().zip(&placed).enumerate() {
         let local_end = rot.inverse() * (end - pos);
@@ -416,7 +428,9 @@ fn spawn_segments(
         } else {
             Collider::compound(vec![(local_end, Quat::IDENTITY, Collider::sphere(seg.radius))])
         };
-        let kick = if Some(k) == nearest { KICK } else { 1.0 };
+        // The rope is round the middle: the pelvis leads (the struck segment no longer snaps).
+        let _ = nearest;
+        let kick = if k == 0 { KICK } else { 1.0 };
         let id = commands
             .spawn((
                 Name::new(format!("Ragdoll {}", seg.bone)),
@@ -578,7 +592,14 @@ fn drive(
 
         // Air recovery: jump while flung clear of the ground to snap out of it, keeping the
         // momentum (once per fling; costs stamina; too close to the ground and you just land).
-        let wants = player && intent.is_some_and(|i| i.jump_pressed);
+        let sideways = intent.map_or(Vec3::ZERO, |i| {
+            let look = i.look.with_y(0.0).normalize_or(Vec3::Z);
+            let right = look.cross(Vec3::Y);
+            right * i.move_dir.dot(right)
+        });
+        let tap = sideways.length() > 0.5 && !r.side_held;
+        r.side_held = sideways.length() > 0.5;
+        let wants = player && (intent.is_some_and(|i| i.jump_pressed) || tap);
         if wants && !fighter.dead && r.t >= RECOVER_AFTER && fighter.stamina >= RECOVER_COST {
             let filter = SpatialQueryFilter::from_mask(Phys::World);
             let clear = spatial.cast_ray(pelvis.translation, Dir3::NEG_Y, 8.0, true, &filter).map_or(8.0, |h| h.distance);
@@ -593,9 +614,9 @@ fn drive(
                 mover.grounded = false;
                 mover.velocity = Vec3::ZERO;
                 let keep = pelvis_v.clamp_length_max(RECOVER_KEEP);
-                mover.external = keep.with_y(keep.y.max(0.0) + 2.0);
+                mover.external = keep.with_y(keep.y.max(0.0) + 2.0) + sideways.normalize_or_zero() * RECOVER_STEER;
                 stamina.write(StaminaSpend { who: entity, amount: RECOVER_COST });
-                commands.entity(entity).try_insert(AirRecovered(0.0));
+                commands.entity(entity).try_insert((AirRecovered(0.0), Acrobatics::flip()));
                 info!("[ragdoll] air recovery at {:.1} m up, carrying {:.1} m/s", clear, keep.length());
                 continue;
             }
@@ -703,6 +724,123 @@ fn bounce(
         commands.entity(e).try_remove::<AirRecovered>();
         deeds.write(super::deeds::Deed::new(e, "land", "Recover", 1.0));
         info!("[ragdoll] landing bounce toward ({:.1}, {:.1})", dir.x, dir.z);
+    }
+}
+
+/// Backflip after an air recovery: the tucked jump loop while the model turns once backwards
+/// about the hips (`FLIP_TIME`; the physics body stays upright), then a landing clip on
+/// touchdown: `NinjaJump_Land`, or a forward roll above `ROLL_SPEED`. Also used alone for a
+/// landing (`Acrobatics::land`, e.g. the end of a Flash Step).
+const FLIP_CLIP: &str = "ual2/NinjaJump_Idle_Loop";
+const LAND_CLIP: &str = "ual2/NinjaJump_Land";
+const ROLL_CLIP: &str = "ual1/Roll_RM";
+const FLIP_TIME: f32 = 0.6;
+/// Hip height above the model's origin (m): the flip's pivot.
+const FLIP_PIVOT: f32 = 0.95;
+const ROLL_SPEED: f32 = 6.0;
+const LAND_RATE: f32 = 1.4;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum Stage {
+    Flip,
+    Land { duration: f32, rate: f32 },
+}
+
+#[derive(Component, Clone, Copy, Debug)]
+pub struct Acrobatics {
+    stage: Stage,
+    t: f32,
+    /// The model's own transform before the flip turned it (restored after).
+    base: Option<Transform>,
+}
+
+impl Acrobatics {
+    pub fn flip() -> Self {
+        Self { stage: Stage::Flip, t: 0.0, base: None }
+    }
+    /// Just the landing clip (`rate` × normal speed).
+    pub fn land() -> Self {
+        Self { stage: Stage::Land { duration: 0.0, rate: LAND_RATE * 1.3 }, t: 0.0, base: None }
+    }
+}
+
+/// Backflip turn at flip progress `u` (0..1): one full turn backwards, eased in and out.
+pub fn flip_angle(u: f32) -> f32 {
+    let u = u.clamp(0.0, 1.0);
+    -std::f32::consts::TAU * u * u * (3.0 - 2.0 * u)
+}
+
+#[allow(clippy::type_complexity)]
+fn acrobat(
+    time: Res<Time>,
+    bank: Option<Res<PoseBank>>,
+    mut commands: Commands,
+    mut bodies: Query<(Entity, &Rig, &mut Mover, &mut Action, &mut Acrobatics), (Without<Ragdolled>, Without<RagdollSegment>)>,
+    mut models: Query<&mut Transform, (Without<Rig>, Without<RagdollSegment>)>,
+) {
+    let Some(bank) = bank else { return };
+    let dt = time.delta_secs().clamp(0.0, 0.1);
+    for (e, rig, mut mover, mut action, mut acro) in &mut bodies {
+        let restore = |acro: &mut Acrobatics, models: &mut Query<&mut Transform, (Without<Rig>, Without<RagdollSegment>)>| {
+            if let (Some(base), Ok(mut m)) = (acro.base.take(), models.get_mut(rig.model)) {
+                *m = base;
+            }
+        };
+        // Someone else took the body (a hit, a cast): stop, upright.
+        if acro.t > 0.0 && action.owner != Owner::Ragdoll {
+            restore(&mut acro, &mut models);
+            commands.entity(e).try_remove::<Acrobatics>();
+            continue;
+        }
+        let first = acro.t == 0.0;
+        acro.t += dt;
+        match acro.stage {
+            Stage::Flip => {
+                if first {
+                    action.start(ActionKind::Roll, Owner::Ragdoll, Some(ActionLayer::new(FLIP_CLIP, 0.0, Mask::Full)));
+                    acro.base = models.get(rig.model).ok().copied();
+                }
+                let loop_len = bank.duration(FLIP_CLIP).max(0.1);
+                if let Some(layer) = action.layer.as_mut() {
+                    layer.time = acro.t % loop_len;
+                }
+                let u = acro.t / FLIP_TIME;
+                if let (Some(base), Ok(mut m)) = (acro.base, models.get_mut(rig.model)) {
+                    let turn = Quat::from_rotation_x(flip_angle(u));
+                    let pivot = base.translation + Vec3::Y * FLIP_PIVOT;
+                    m.rotation = turn * base.rotation;
+                    m.translation = pivot + turn * (base.translation - pivot);
+                }
+                if u >= 1.0 {
+                    restore(&mut acro, &mut models);
+                }
+                if mover.mode == MoveMode::Ground && acro.t > 0.1 {
+                    restore(&mut acro, &mut models);
+                    acro.stage = Stage::Land { duration: 0.0, rate: LAND_RATE };
+                    acro.t = 0.0;
+                }
+            }
+            Stage::Land { duration, rate } => {
+                if first || duration == 0.0 {
+                    let roll = mover.velocity.with_y(0.0).length() > ROLL_SPEED;
+                    let clip = if roll { ROLL_CLIP } else { LAND_CLIP };
+                    let kind = if roll { ActionKind::Roll } else { ActionKind::HardLand };
+                    action.start(kind, Owner::Ragdoll, Some(ActionLayer::new(clip, 0.0, Mask::Full)));
+                    acro.stage = Stage::Land { duration: bank.duration(clip) / rate, rate };
+                    acro.t = dt;
+                    continue;
+                }
+                if let Some(layer) = action.layer.as_mut() {
+                    layer.time = acro.t * rate;
+                }
+                action.elapsed = acro.t;
+                if acro.t >= duration {
+                    action.clear();
+                    commands.entity(e).try_remove::<Acrobatics>();
+                }
+            }
+        }
+        let _ = &mut mover;
     }
 }
 
@@ -967,6 +1105,13 @@ mod tests {
         }
         assert!(highest < start + 0.3, "pelvis rose from {start:.2} to {highest:.2} m (fastest segment {fastest:.1} m/s)");
         assert!(fastest < 6.0, "a segment reached {fastest:.1} m/s");
+    }
+
+    #[test]
+    fn the_backflip_turns_once_backwards_and_settles() {
+        assert_eq!(flip_angle(0.0), 0.0);
+        assert!((flip_angle(1.0) + std::f32::consts::TAU).abs() < 1e-5);
+        assert!(flip_angle(0.5) < 0.0 && flip_angle(2.0) == flip_angle(1.0));
     }
 
     #[test]
