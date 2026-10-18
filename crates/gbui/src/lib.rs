@@ -24,6 +24,7 @@
 pub mod anim;
 pub mod glass;
 pub mod icons;
+pub mod layers;
 pub mod ring;
 pub mod style;
 pub mod term;
@@ -39,6 +40,7 @@ pub mod prelude {
     pub use crate::anim::{Blink, Done, Easing, Prop, Repeat, Tween, Tweens};
     pub use crate::ring::{RingMap, RingParams};
     pub use crate::icons::{Icon, IconSheets, IconTint, icon};
+    pub use crate::layers::{Skinned, Skins};
     pub use crate::style::{Glass, Opacity, Styled, Tint, UiFlags};
     pub use crate::term::{Decode, LineEffect, LogWrite, TermLog, Typewriter};
     pub use crate::theme::{Theme, UiFonts};
@@ -74,6 +76,7 @@ impl Plugin for GbuiPlugin {
             (GbuiSet::Animate, GbuiSet::Style).chain().before(UiSystems::Prepare),
         )
         .insert_resource(icons::IconSheets::default())
+        .init_resource::<layers::Skins>()
         .add_systems(Startup, (theme::init_fonts, glass::init, widgets::spawn_tooltip, icons::load_sheets))
         .add_systems(
             PostUpdate,
@@ -92,7 +95,13 @@ impl Plugin for GbuiPlugin {
                 .chain()
                 .in_set(GbuiSet::Style),
         )
-        .add_systems(PostUpdate, icons::drive_icons.after(style::apply).in_set(GbuiSet::Style),
+        .add_systems(PostUpdate, icons::drive_icons.after(style::apply).in_set(GbuiSet::Style))
+        .add_systems(
+            PostUpdate,
+            (layers::reload_skins, layers::build_layers, layers::drive_layers)
+                .chain()
+                .after(style::apply)
+                .in_set(GbuiSet::Style),
         );
     }
 }

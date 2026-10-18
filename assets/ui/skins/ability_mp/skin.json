@@ -1,0 +1,12 @@
+{
+  "dir": "ability",
+  "layers": [
+    { "file": "glass.png", "slice": 16, "alpha": { "idle": 0.62, "hovered": 0.78, "dim": 0.5 } },
+    { "file": "glow.png", "tint": "#7CFFB2", "pulse": 1.6, "alpha": { "idle": 0.0, "mastered": 0.35, "casting": 0.75 } },
+    { "file": "track.png", "tint": "#2EE6C5", "alpha": { "idle": 0.28, "dim": 0.12 } },
+    { "file": "tick.png", "segments": 10, "drive": "cover", "off": 0.18, "tint": "#B79CFF", "alpha": { "idle": 0.9, "dim": 0.75 } },
+    { "file": "wedge.png", "segments": 12, "drive": "progress", "off": 0.0, "tint": "#7CFFB2", "alpha": { "idle": 0.0, "casting": 1.0 } },
+    { "file": "frame.png", "slice": 16, "tint": "#2EE6C5", "alpha": { "idle": 0.45, "hovered": 1.0, "pressed": 1.0, "checked": 1.0, "dim": 0.25, "mastered": 0.8 } },
+    { "file": "star.png", "top": true, "tint": "#FFC857", "alpha": { "idle": 0.0, "mastered": 1.0 } }
+  ]
+}
