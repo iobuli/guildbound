@@ -245,6 +245,49 @@ pub fn terrace_distance(x: f32, z: f32) -> f32 {
     q.max(Vec2::ZERO).length() + q.x.max(q.y).min(0.0)
 }
 
+/// The ruins on the north hill (`ruins`): a raised plateau of radius `RUINS_RADIUS` at
+/// `ruins_level()`, blending into the hills over `RUINS_BLEND`.
+pub const RUINS_CENTER: Vec2 = Vec2::new(0.0, 33.0);
+pub const RUINS_RADIUS: f32 = 9.0;
+const RUINS_BLEND: f32 = 6.0;
+
+/// Signed distance to the ruins plateau (≤ 0 on it).
+pub fn ruins_distance(x: f32, z: f32) -> f32 {
+    Vec2::new(x, z).distance(RUINS_CENTER) - RUINS_RADIUS
+}
+
+/// The plateau's height: the hills at its centre, lifted a little so it reads as a terrace.
+pub fn ruins_level() -> f32 {
+    guildbound_sim::terrain::ground(RUINS_CENTER.x * HILL_SCALE, RUINS_CENTER.y * HILL_SCALE).max(0.4) + 0.5
+}
+
+/// On or by the ruins: no hill rocks, trees or items there.
+pub fn in_ruins(x: f32, z: f32) -> bool {
+    ruins_distance(x, z) < 2.5
+}
+
+/// Worn footpaths (x, z polylines): courtyard to the pond, and up to the ruins.
+const PATHS: [&[[f32; 2]]; 2] = [
+    &[[-15.0, 2.0], [-17.5, 2.5]],
+    &[[0.0, 15.0], [1.5, 19.0], [-0.5, 23.0], [0.0, 24.5]],
+];
+const PATH_WIDTH: f32 = 1.1;
+
+/// Distance (m) from a point to the nearest footpath.
+pub fn path_distance(x: f32, z: f32) -> f32 {
+    let p = Vec2::new(x, z);
+    let mut best = f32::MAX;
+    for path in PATHS {
+        for w in path.windows(2) {
+            let (a, b) = (Vec2::from(w[0]), Vec2::from(w[1]));
+            let ab = b - a;
+            let t = ((p - a).dot(ab) / ab.length_squared().max(1e-6)).clamp(0.0, 1.0);
+            best = best.min(p.distance(a + ab * t));
+        }
+    }
+    best
+}
+
 /// On (or right by) the guild grounds: no hill rocks, trees or items there.
 pub fn in_guild_grounds(x: f32, z: f32) -> bool {
     terrace_distance(x, z) < 3.0
@@ -258,6 +301,8 @@ pub fn ground_height(x: f32, z: f32) -> f32 {
     let hills = guildbound_sim::terrain::ground(x * HILL_SCALE, z * HILL_SCALE)
         * smoothstep(0.0, COURTYARD_BLEND, courtyard_distance(x, z))
         * smoothstep(0.0, TERRACE_BLEND, terrace_distance(x, z));
+    let plateau = smoothstep(0.0, RUINS_BLEND, ruins_distance(x, z));
+    let hills = ruins_level() * (1.0 - plateau) + hills * plateau;
     let edge = x.abs().max(z.abs());
     let rim = smoothstep(TERRAIN_HALF - RIM_WIDTH, TERRAIN_HALF, edge).powi(2) * RIM_HEIGHT;
     let pond = Vec2::new(x, z).distance(POND_CENTER);
@@ -311,13 +356,21 @@ pub fn ground_color(x: f32, z: f32, y: f32, n: Vec3) -> [f32; 4] {
     let mut c = srgb(0.27, 0.43, 0.17).lerp(srgb(0.40, 0.55, 0.22), patch);
     let yard = 1.0 - smoothstep(-1.5, 1.0, courtyard_distance(x, z).min(terrace_distance(x, z) + 2.0));
     c = c.lerp(srgb(0.55, 0.46, 0.33).lerp(srgb(0.62, 0.53, 0.39), fine), yard);
+    // Worn footpaths and the ruins' trodden ground: packed earth with a lighter centre line.
+    let path = smoothstep(PATH_WIDTH, PATH_WIDTH * 0.35, path_distance(x, z) + (fine - 0.5) * 0.5);
+    let ruins = smoothstep(1.5, -1.0, ruins_distance(x, z) + (patch - 0.5) * 2.0);
+    let worn = path.max(ruins * 0.85);
+    c = c.lerp(srgb(0.47, 0.40, 0.30).lerp(srgb(0.56, 0.49, 0.37), fine), worn);
     let pond = Vec2::new(x, z).distance(POND_CENTER);
     c = c.lerp(srgb(0.70, 0.63, 0.46), smoothstep(POND_RADIUS + 2.0, POND_RADIUS, pond));
     c = c.lerp(srgb(0.28, 0.24, 0.18), smoothstep(WATER_LEVEL + 0.05, WATER_LEVEL - 0.6, y));
     let steep = smoothstep(0.9, 0.72, n.y);
     let high = smoothstep(7.0, 12.0, y) * 0.8;
     c = c.lerp(srgb(0.46, 0.44, 0.41).lerp(srgb(0.55, 0.53, 0.50), fine), steep.max(high));
-    Color::srgb(c.x, c.y, c.z).to_linear().to_f32_array()
+    // Alpha carries the worn mask for the ground shader (`ground.wgsl`); the material is opaque.
+    let mut out = Color::srgb(c.x, c.y, c.z).to_linear().to_f32_array();
+    out[3] = worn;
+    out
 }
 
 /// Terrain render mesh + trimesh collider (same vertices).
@@ -580,6 +633,8 @@ fn setup(
 ) {
     let surfaces = Surfaces::build(&mut images);
     let pal = Palette::new(&mut materials, &surfaces);
+    // Stone and wood weather (moss, grime) in `ground`.
+    commands.insert_resource(super::ground::Weathering::new([pal.stone.clone(), pal.rock.clone(), pal.wall.clone(), pal.wood.clone(), pal.dark_wood.clone()]));
     spawn_sky_and_camera(&mut commands);
     // The vertex colours carry the terrain's look; the ground map adds soil grain and pebbles.
     let terrain_material = materials.add(surfaces.ground.material(StandardMaterial {
@@ -601,6 +656,7 @@ fn setup(
     spawn_props(&mut kit);
     spawn_interactables(&mut kit, &assets);
     super::hall::spawn_hall(&mut kit);
+    super::ruins::spawn_ruins(&mut kit);
     spawn_characters(&mut commands);
 }
 
@@ -870,7 +926,7 @@ fn spawn_props(kit: &mut Kit) {
         let a = i as f32 * 2.399_963;
         let r = 21.0 + hash2(i, 1) * 26.0;
         let (x, z) = (a.cos() * r, a.sin() * r);
-        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) {
+        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) || in_ruins(x, z) {
             continue;
         }
         let y = ground_height(x, z);

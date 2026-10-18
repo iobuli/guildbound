@@ -267,6 +267,46 @@
       "status": "new"
     },
     {
+      "file": "play/aim.rs",
+      "role": "aim helpers: ballistic, lead, per-frame velocities; crosshair raycast aim",
+      "status": "new"
+    },
+    {
+      "file": "play/senses.rs",
+      "role": "enemy sight + aura-magnet senses, Awareness gate for AI, Veiled, sneak deeds, vision volumes",
+      "status": "new"
+    },
+    {
+      "file": "play/debug.rs",
+      "role": "F12 debug toggle list (13 views), GB_DEBUG",
+      "status": "new"
+    },
+    {
+      "file": "play/wind_aura.rs",
+      "role": "wind-aura material; ward wind shells; ward grass gust",
+      "status": "new"
+    },
+    {
+      "file": "play/skin.rs",
+      "role": "character skin material: ink look, accent, presence rim + alert blink",
+      "status": "new"
+    },
+    {
+      "file": "play/looks.rs",
+      "role": "per-character proportions, accents and procedural bone pieces with spring tails",
+      "status": "new"
+    },
+    {
+      "file": "play/ground.rs",
+      "role": "terrain ground material and weathered stone/wood",
+      "status": "new"
+    },
+    {
+      "file": "play/ruins.rs",
+      "role": "north-hill ruins set piece and plateau (future boss arena)",
+      "status": "new"
+    },
+    {
       "file": "play/beam.rs",
       "role": "balance beam: inverted-pendulum sway countered by the sideways stick, Posture lean + narrow stance, arms out, wobble and fall; balance / beam deeds; GB_BEAM",
       "status": "new"

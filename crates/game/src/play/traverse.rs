@@ -174,7 +174,8 @@ pub fn holds(root: Vec3, normal: Vec3, travelled: f32) -> ([Vec3; 2], [Vec3; 2])
     let cycle = (travelled / HOLD).rem_euclid(2.0);
     let lead = if cycle < 1.0 { 1.0 } else { -1.0 };
     let step = |base: f32, side: f32, up: bool| {
-        let raise = if (side > 0.0) == (lead > 0.0) {
+        // The left hand (side < 0) leads first.
+        let raise = if (side < 0.0) == (lead > 0.0) {
             0.12
         } else {
             -0.05

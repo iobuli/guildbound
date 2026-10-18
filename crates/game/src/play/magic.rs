@@ -212,7 +212,7 @@ pub static ABILITIES: [Ability; 10] = [
         id: "veil",
         name: "Veil",
         pool: Pool::Battlewill,
-        element: Element::Arcane,
+        element: Element::Aura,
         cost: 20.0,
         track: "ual1/Spell_Simple_Enter",
         start: 0.0,

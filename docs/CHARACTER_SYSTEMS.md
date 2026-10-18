@@ -20,7 +20,7 @@ the answers win.
   `shoot{arrow|bolt|knife}`, `shoot_hit{...}`, `swim` and `climb` per metre, `mantle`,
   `land{Roll|Hard}`, `chop`, `fell`, `gather{item}`.
 - **16 skills:** Swordsmanship, Unarmed, Axemanship, Defence, Archery, Throwing, Aura Arts, Fire /
-  Frost / Lightning / Arcane Manipulation, Swimming, Climbing, Balance, Breakfall, Woodcutting, Gathering.
+  Frost / Lightning / Arcane Manipulation, Swimming, Climbing, Balance, Stealth, Breakfall, Woodcutting, Gathering.
   RuneScape curve (99 = 13 034 431 XP); at most 600 XP per skill per 30 s.
 - **Discovery:** `p = base · a / (a + 4)` per matching deed, certain at `pity`; xorshift RNG seeded
   per character. Arts and spells: once every skill that `unlocks` one has reached its level,
@@ -108,7 +108,7 @@ discover if roll < p, or affinity ≥ pity
 ```
 
 Feedback is diegetic: a short line and a flourish, not a number. Examples:
-`swim{s}` → Swimming · `balance{m}` / `beam{crossed}` → Balance · `fall{≥4 m, survived}` → Breakfall · `fell{tree}` → Woodcutting ·
+`swim{s}` → Swimming · `balance{m}` / `beam{crossed}` → Balance · `sneak{s}` → Stealth (unlocks Veil at 2) · `fall{≥4 m, survived}` → Breakfall · `fell{tree}` → Woodcutting ·
 standing in fire or near flame arts → Flame Manipulation affinity.
 
 ### Hybrids

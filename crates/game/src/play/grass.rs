@@ -264,6 +264,10 @@ fn hash(x: i32, z: i32, salt: u32) -> f32 {
 pub fn grass_cover(x: f32, z: f32, y: f32, n: Vec3) -> f32 {
     // zero on the courtyard and the guild terrace's dirt, full 2.5 m outside them
     let yard = smoothstep(0.0, 2.5, courtyard_distance(x, z).min(crate::play::world::terrace_distance(x, z) + 1.0));
+    // bare in the ruins and on the footpaths
+    let ruins = smoothstep(-2.0, 1.0, crate::play::world::ruins_distance(x, z));
+    let path = smoothstep(0.5, 1.4, crate::play::world::path_distance(x, z));
+    let yard = yard * ruins * path;
     // the pond's sand ring reaches POND_RADIUS + 2 m
     let pond = smoothstep(POND_RADIUS + 1.6, POND_RADIUS + 3.2, Vec2::new(x, z).distance(POND_CENTER));
     let dry = smoothstep(WATER_LEVEL + 0.1, WATER_LEVEL + 0.5, y);
@@ -873,7 +877,8 @@ mod tests {
         assert!(grass_cover(30.0, 20.0, 1.0, up) > 0.99);
         // borders fade instead of cutting off
         // (the north edge: east of the courtyard is the bare guild terrace)
-        let fringe = grass_cover(0.0, COURTYARD_HALF + 1.2, 0.0, up);
+        // (west of the footpath north to the ruins)
+        let fringe = grass_cover(-6.0, COURTYARD_HALF + 1.2, 0.0, up);
         assert!(fringe > 0.05 && fringe < 0.95, "{fringe}");
     }
 
