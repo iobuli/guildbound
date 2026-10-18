@@ -81,10 +81,11 @@ pub fn plugin(app: &mut App) {
     app.register_required_components::<Npc, Brain>()
         .register_required_components::<Autopilot, Brain>()
         .insert_resource(Peaceful(std::env::var("GB_PEACEFUL").is_ok_and(|v| v.trim() == "1")))
-        .add_systems(Update, (peaceful, autopilot, enroll, think).chain().in_set(PlaySet::Think));
+        .add_systems(Update, (peaceful, autopilot, enroll, think).chain().in_set(PlaySet::Think).after(super::senses::SensesSet));
 }
 
 /// Peaceful mode (F10, or `GB_PEACEFUL=1`): no NPC picks the player as a foe, so nothing attacks
+/// (otherwise an NPC with `senses::Awareness` only picks the player once alerted)
 /// you (NPCs still fight each other, and a sparring bout you agreed to, the rank exam, still runs).
 #[derive(Resource, Default)]
 pub struct Peaceful(pub bool);
@@ -513,13 +514,24 @@ fn think(
     peaceful: Res<Peaceful>,
     players: Query<(), With<Player>>,
     mut npcs: Query<
-        (Entity, &mut Intent, &mut Brain, Option<&Difficulty>, Option<&Energy>, Option<&Grimoire>, Has<combat::Sparring>),
+        (
+            Entity,
+            &mut Intent,
+            &mut Brain,
+            Option<&Difficulty>,
+            Option<&Energy>,
+            Option<&Grimoire>,
+            Has<combat::Sparring>,
+            Option<&super::senses::Awareness>,
+        ),
         Or<(With<Npc>, With<Autopilot>)>,
     >,
 ) {
     let dt = time.delta_secs();
-    for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring) in &mut npcs {
-        let spare_player = peaceful.0 && !sparring;
+    for (entity, mut intent, mut brain, difficulty, energy, grimoire, sparring, awareness) in &mut npcs {
+        // The player is a foe only once noticed (`senses`), never in peaceful mode, always in a bout.
+        let noticed = sparring || awareness.is_none_or(|a| a.alerted);
+        let spare_player = !sparring && (peaceful.0 || !noticed);
         let Ok((_, tf, fighter, melee, mover, loadout)) = fighters.get(entity) else {
             continue;
         };

@@ -349,9 +349,9 @@ pub struct Ward {
 
 /// The visible shell of a ward, a child of its owner.
 #[derive(Component)]
-struct WardShell {
-    owner: Entity,
-    age: f32,
+pub(crate) struct WardShell {
+    pub(crate) owner: Entity,
+    pub(crate) age: f32,
 }
 
 /// Bind an ability to its slot (Q for arts, E for spells).

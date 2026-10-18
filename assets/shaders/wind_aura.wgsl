@@ -13,7 +13,7 @@ struct WindAura {
     clock: vec4<f32>, // x = seconds since start, y = edge sharpness
 }
 
-@group(2) @binding(0) var<uniform> aura: WindAura;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> aura: WindAura;
 
 fn hash21(p: vec2<f32>) -> f32 {
     var q = fract(p * vec2<f32>(123.34, 456.21));
