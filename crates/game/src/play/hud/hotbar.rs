@@ -4,10 +4,12 @@
 //! for it; their tooltips give the name, cost and mastery. Clicking Q or E opens the stats page on
 //! its Arts & Magic tab (bind there); the bag button sends `inventory::ToggleBag`.
 //!
-//! Layers inside the Q / E slots, bottom to top: the cast fill (rises while that ability is being
-//! cast, from `magic::Casting::progress`), the glyph (`gbui::icons`, sheet `abilities`; dims with
-//! the slot, full colour once mastered) and the pool gauge (how much of the cost the pool covers:
-//! Battlewill gold, Magicules violet). The weapon slot shows its glyph from the `bag` sheet. A slot
+//! The Q / E slots are image-layer skins (`gbui::layers`, `assets/ui/skins/ability_{bw,mp}`): glass,
+//! ring track, ten pool ticks lit by how much of the cost the pool covers (`cover`), twelve cast
+//! wedges lit by the cast's progress (`progress`, from `magic::Casting::progress`), frame, glow and
+//! the mastered star; this module only sets the states `casting`, `dim`, `mastered` and the two
+//! drives, the skin's JSON decides how each layer looks in each state. The glyph (`gbui::icons`,
+//! sheet `abilities`) sits on top. The weapon slot shows its glyph from the `bag` sheet. A slot
 //! whose glyph is missing falls back to the three-letter code.
 use super::MARGIN;
 use super::stats_page::{StatsTab, ToggleStats};
@@ -27,12 +29,6 @@ const GLYPH: f32 = 34.0;
 /// The glyph layer of a slot.
 #[derive(Component)]
 struct Glyph;
-/// The cast fill of a Q / E slot.
-#[derive(Component)]
-struct CastFill;
-/// The pool gauge of a Q / E slot.
-#[derive(Component)]
-struct Gauge;
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, spawn).add_systems(Update, (update, buttons));
@@ -82,25 +78,10 @@ fn spawn(mut commands: Commands) {
                 ..default()
             })
             .with_children(|bar| {
-                for (kind, key, pool) in [(Kind::Art, "Q", "gauge.bw"), (Kind::Spell, "E", "gauge.mp")] {
-                    bar.spawn((kind, slot("slot", SLOT, key), Tooltip(String::new()), Tweens::default()))
+                for (kind, key, skin) in [(Kind::Art, "Q", "ability_bw"), (Kind::Spell, "E", "ability_mp")] {
+                    bar.spawn((kind, slot("slot.bare", SLOT, key), Skinned::new(skin), Tooltip(String::new()), Tweens::default()))
                         .with_children(|s| {
-                            s.spawn((CastFill, cast_fill(), Styled::new("cast.fill")));
                             s.spawn(glyph("abilities"));
-                            s.spawn((
-                                Gauge,
-                                gbui::widgets::bar(
-                                    pool,
-                                    Node {
-                                        position_type: PositionType::Absolute,
-                                        left: px(4.0),
-                                        right: px(4.0),
-                                        bottom: px(3.0),
-                                        height: px(3.0),
-                                        ..default()
-                                    },
-                                ),
-                            ));
                         });
                 }
                 bar.spawn(Node {
@@ -136,17 +117,6 @@ fn glyph(sheet: &str) -> impl Bundle {
     )
 }
 
-fn cast_fill() -> Node {
-    Node {
-        position_type: PositionType::Absolute,
-        left: px(0.0),
-        right: px(0.0),
-        bottom: px(0.0),
-        height: percent(0.0),
-        ..default()
-    }
-}
-
 /// The `bag` sheet's sprite for a weapon (the axe weapon is the battleaxe; the tool is `axe`).
 fn weapon_glyph(name: &str) -> &str {
     if name == "axe" { "axe_battle" } else { name }
@@ -160,12 +130,10 @@ fn update(
     >,
     open: Res<BagOpen>,
     sheets: Res<IconSheets>,
-    mut slots: Query<(&Kind, &Children, &mut UiFlags, &mut Tooltip, &mut Tweens)>,
+    mut slots: Query<(&Kind, &Children, &mut UiFlags, &mut Tooltip, &mut Tweens, Option<&mut Skinned>)>,
     mut labels: Query<&mut Text, (With<SlotLabel>, Without<SlotCount>)>,
     mut counts: Query<&mut Text, (With<SlotCount>, Without<SlotLabel>)>,
     mut glyphs: Query<&mut Icon, With<Glyph>>,
-    mut gauges: Query<&mut Bar, With<Gauge>>,
-    mut fills: Query<&mut Node, With<CastFill>>,
     mut last: Local<(String, String, String)>,
 ) {
     let Ok((loadout, grimoire, energy, purse, casting)) = player.single() else { return };
@@ -173,7 +141,7 @@ fn update(
     let g = grimoire.cloned().unwrap_or_default();
     let e = energy.cloned().unwrap_or_default();
     let now = (g.art.to_string(), g.spell.to_string(), loadout.equipped().to_string());
-    for (kind, children, mut flags, mut tip, mut tweens) in &mut slots {
+    for (kind, children, mut flags, mut tip, mut tweens, skinned) in &mut slots {
         // Per-slot layer state: (glyph sheet, sprite, tint), pool coverage, cast progress.
         let mut layer: Option<(&str, String, IconTint)> = None;
         let mut cover = None;
@@ -234,6 +202,14 @@ fn update(
         if changed && !last.2.is_empty() {
             tweens.play(Tween::scale(1.14, 1.0, 0.22).ease(Easing::OutBack));
         }
+        if let (Some(mut skin), Some(c)) = (skinned, cover) {
+            let tint = layer.as_ref().map(|l| l.2);
+            skin.set("casting", casting_u > 0.0);
+            skin.set("dim", tint == Some(IconTint::Dim));
+            skin.set("mastered", tint == Some(IconTint::Mastered));
+            skin.drive("progress", casting_u);
+            skin.drive("cover", c);
+        }
         // The code label only stands in while the slot has no glyph to show.
         let drawn = layer.as_ref().is_some_and(|(sheet, name, _)| sheets.cell(sheet, name).is_some());
         let label = if drawn { String::new() } else { label };
@@ -245,17 +221,6 @@ fn update(
                 icon.sheet = sheet.to_string();
                 icon.name = name.clone();
                 icon.tint = *tint;
-            }
-            if let Some(c) = cover
-                && let Ok(mut gauge) = gauges.get_mut(child)
-            {
-                gauge.value = c;
-            }
-            if let Ok(mut node) = fills.get_mut(child) {
-                let h = percent(casting_u * 100.0);
-                if node.height != h {
-                    node.height = h;
-                }
             }
             if let Ok(mut text) = labels.get_mut(child)
                 && text.0 != label
