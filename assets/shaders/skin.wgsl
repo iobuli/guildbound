@@ -63,9 +63,9 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
             let p = in.world_position.xyz;
             let stroke = fract((p.x + p.y * 1.3 - p.z * 0.7) * 22.0);
             let breakup = fract(sin(dot(floor(p * 9.0), vec3(12.9898, 78.233, 37.719))) * 43758.5453);
-            let in_shadow = 1.0 - smoothstep(0.35, 0.6, band);
+            let in_shadow = 1.0 - smoothstep(0.2, 0.45, band);
             let hatch = step(stroke, 0.32) * step(0.25, breakup) * in_shadow;
-            colour *= 1.0 - 0.28 * ink * hatch;
+            colour *= 1.0 - 0.18 * ink * hatch;
         }
     }
     // presence rim and the alert blink
