@@ -44,9 +44,12 @@ const KICK_LIFT: f32 = 0.35;
 const SEPARATION: f32 = 0.4;
 /// Library strikes each unarmed fighter starts with, and the chance a chained attack is one of
 /// its extras instead of the moveset's.
-pub const SEED_PUNCHES: usize = 4;
-pub const SEED_KICKS: usize = 2;
-pub const VARIANT_CHANCE: f32 = 0.35;
+pub const SEED_PUNCHES: usize = 6;
+pub const SEED_KICKS: usize = 3;
+pub const VARIANT_CHANCE: f32 = 0.5;
+/// Takes whose strikes are seeded first: the martial-arts and fight takes (karate kata and
+/// strikes, punch / kick / block sequences, boxing, punch-and-kick combos).
+pub const MARTIAL: [&str; 8] = ["cmu/135_", "cmu/144_", "cmu/141_", "cmu/143_", "cmu/113_", "cmu/111_19", "cmu/02_05", "cmu/13_"];
 /// Blows of the same move it takes to learn it, and the learned copy's clip speed range.
 pub const LEARN_AFTER: u32 = 3;
 pub const LEARN_SPEED: (f32, f32) = (0.88, 1.12);
@@ -300,10 +303,13 @@ fn seed(library: Option<Res<StrikeLibrary>>, mut fighters: Query<(Entity, &mut R
         }
         rep.seeded = true;
         let mut rng = entity.to_bits() as u32 ^ 0x9e37_79b9;
-        for (pool, count, slot) in [(&library.punches, SEED_PUNCHES, Slot::Light), (&library.kicks, SEED_KICKS, Slot::Heavy)] {
+        for (all, count, slot) in [(&library.punches, SEED_PUNCHES, Slot::Light), (&library.kicks, SEED_KICKS, Slot::Heavy)] {
+            // Martial-arts takes first; the rest only if none of those gave a strike.
+            let martial: Vec<&Attack> = all.iter().filter(|a| MARTIAL.iter().any(|m| a.clip.track.starts_with(m))).collect();
+            let pool: Vec<&Attack> = if martial.is_empty() { all.iter().collect() } else { martial };
             for _ in 0..count.min(pool.len()) {
                 let pick = (roll(&mut rng) * pool.len() as f32) as usize % pool.len();
-                let attack = pool[pick].clone();
+                let attack = (*pool[pick]).clone();
                 if !rep.extras.iter().any(|e| e.attack.name == attack.name) {
                     rep.extras.push(Extra { set: "unarmed".into(), slot, attack });
                 }
