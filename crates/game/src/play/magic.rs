@@ -385,9 +385,9 @@ pub struct Bind {
     pub id: &'static str,
 }
 
-/// A cast in progress (with the `Action` it owns).
+/// A cast in progress (with the `Action` it owns). Read from outside through `progress`.
 #[derive(Component, Clone, Debug)]
-struct Casting {
+pub struct Casting {
     ability: &'static Ability,
     t: f32,
     rate: f32,
@@ -401,6 +401,14 @@ struct Casting {
     motes: Option<Entity>,
     /// Flash Step blinked (teleported) instead of dashing.
     blinked: bool,
+}
+
+impl Casting {
+    /// The ability being cast and how far through its clip window (0..1), for the HUD.
+    pub fn progress(&self) -> (&'static str, f32) {
+        let span = (self.ability.end - self.ability.start).max(0.05);
+        (self.ability.id, (self.t / span).clamp(0.0, 1.0))
+    }
 }
 
 /// A flying spell or art.

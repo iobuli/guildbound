@@ -1,0 +1,23 @@
+# Bag sheet, 5 columns x 4 rows, reading order. Names match the game's own tables:
+# items/tools play/items.rs + play/tools.rs, weapons assets/anim/movesets/*.json,
+# armour play/armor.rs. '-' leaves the cell unsliced.
+log
+stick
+stone
+apple
+axe
+unarmed
+katana
+greatsword
+dagger
+knives
+crossbow
+bow
+axe_battle
+bascinet
+cuirass
+pauldrons
+vambraces
+rerebraces
+cuisses
+greaves

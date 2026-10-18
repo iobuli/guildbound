@@ -1,0 +1,15 @@
+fireball_idle
+chain_lightning_idle
+frost_nova_idle
+blink_idle
+healing_light_idle
+fireball_charging
+chain_lightning_charging
+frost_nova_charging
+blink_charging
+healing_light_charging
+fireball_cooldown
+chain_lightning_cooldown
+frost_nova_cooldown
+blink_cooldown
+healing_light_cooldown

@@ -1,0 +1,72 @@
+{
+ "sheet": "bag",
+ "source": "hf_20261018_183320_ded62876-abdf-4ddb-9124-ed9174c67d41.png",
+ "grid": {
+  "cols": 8,
+  "rows": 3,
+  "cell_w": 96,
+  "cell_h": 96
+ },
+ "icons": [
+  {
+   "name": "log"
+  },
+  {
+   "name": "stick"
+  },
+  {
+   "name": "stone"
+  },
+  {
+   "name": "apple"
+  },
+  {
+   "name": "axe"
+  },
+  {
+   "name": "unarmed"
+  },
+  {
+   "name": "katana"
+  },
+  {
+   "name": "greatsword"
+  },
+  {
+   "name": "dagger"
+  },
+  {
+   "name": "knives"
+  },
+  {
+   "name": "crossbow"
+  },
+  {
+   "name": "bow"
+  },
+  {
+   "name": "axe_battle"
+  },
+  {
+   "name": "bascinet"
+  },
+  {
+   "name": "cuirass"
+  },
+  {
+   "name": "pauldrons"
+  },
+  {
+   "name": "vambraces"
+  },
+  {
+   "name": "rerebraces"
+  },
+  {
+   "name": "cuisses"
+  },
+  {
+   "name": "greaves"
+  }
+ ]
+}

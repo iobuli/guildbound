@@ -1,0 +1,52 @@
+# Ability sheet, 6 columns x 8 rows, reading order.
+# Real tables: play/magic.rs ABILITIES (Q = Battlewill arts, E = Magicules spells).
+# State rows per block: idle, casting, dim (cannot afford), mastered.
+# Cost per state: mastered is 0.65x (MASTERED_COST). '-' leaves the cell unsliced.
+crescent_edge_idle
+flash_step_idle
+aura_bullet_idle
+earthbreaker_idle
+aura_ward_idle
+veil_idle
+crescent_edge_casting
+flash_step_casting
+aura_bullet_casting
+earthbreaker_casting
+aura_ward_casting
+veil_casting
+crescent_edge_dim
+flash_step_dim
+aura_bullet_dim
+earthbreaker_dim
+aura_ward_dim
+veil_dim
+crescent_edge_mastered
+flash_step_mastered
+aura_bullet_mastered
+earthbreaker_mastered
+aura_ward_mastered
+veil_mastered
+cinder_bolt_idle
+frost_bloom_idle
+storm_lance_idle
+orbit_motes_idle
+-
+-
+cinder_bolt_casting
+frost_bloom_casting
+storm_lance_casting
+orbit_motes_casting
+-
+-
+cinder_bolt_dim
+frost_bloom_dim
+storm_lance_dim
+orbit_motes_dim
+-
+-
+cinder_bolt_mastered
+frost_bloom_mastered
+storm_lance_mastered
+orbit_motes_mastered
+-
+-

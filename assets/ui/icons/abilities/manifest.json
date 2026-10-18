@@ -1,0 +1,42 @@
+{
+ "sheet": "abilities",
+ "source": "hf_20261018_183320_34c1e710-f184-445b-ba28-14e3fc75399f.png",
+ "grid": {
+  "cols": 8,
+  "rows": 2,
+  "cell_w": 96,
+  "cell_h": 96
+ },
+ "icons": [
+  {
+   "name": "crescent_edge"
+  },
+  {
+   "name": "flash_step"
+  },
+  {
+   "name": "aura_bullet"
+  },
+  {
+   "name": "earthbreaker"
+  },
+  {
+   "name": "aura_ward"
+  },
+  {
+   "name": "veil"
+  },
+  {
+   "name": "cinder_bolt"
+  },
+  {
+   "name": "frost_bloom"
+  },
+  {
+   "name": "storm_lance"
+  },
+  {
+   "name": "orbit_motes"
+  }
+ ]
+}
