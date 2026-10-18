@@ -54,9 +54,10 @@ const KNOB_TURN: f32 = -0.9;
 /// Push door: where the two palms go (along the leaf from the hinge) and their height.
 const PUSH_X: [f32; 2] = [0.42, 0.78];
 const PUSH_Y: f32 = 1.12;
-/// Standing distance back from the contact point (m), and the sideways shift that puts the knob
-/// at the right hand.
-const STAND_BACK: f32 = 0.52;
+/// Standing distance back from the contact point (m) for the knob and the push plates (within arm's
+/// reach from the shoulder), and the sideways shift that puts the knob at the right hand.
+const STAND_BACK: f32 = 0.36;
+const STAND_BACK_PUSH: f32 = 0.42;
 const KNOB_SIDE: f32 = 0.18;
 /// Largest speed (m/s) at which a swinging leaf nudges a character out of its way.
 const NUDGE: f32 = 1.2;
@@ -136,7 +137,8 @@ fn stand_for(leaf: &Transform, c: Vec3, side: f32, knob: bool) -> (Vec3, f32) {
     let at = leaf.transform_point(c);
     let right = facing.cross(Vec3::Y);
     let shift = if knob { -right * KNOB_SIDE } else { Vec3::ZERO };
-    let stand = (at - facing * STAND_BACK + shift).with_y(0.0);
+    let back = if knob { STAND_BACK } else { STAND_BACK_PUSH };
+    let stand = (at - facing * back + shift).with_y(0.0);
     (stand, facing.x.atan2(facing.z))
 }
 
@@ -395,7 +397,7 @@ mod tests {
             let knob = leaf.transform_point(centre).with_y(0.0);
             // On the stander's side of the leaf, ahead of them and to their right.
             assert!(stand.z * side > 0.0, "side {side}: stand {stand}");
-            assert!((knob - stand).dot(facing) > 0.4);
+            assert!((knob - stand).dot(facing) > 0.3);
             assert!((knob - stand).dot(right) > 0.1);
         }
     }

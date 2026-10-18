@@ -5,7 +5,8 @@
 //! Drawing: an attack, a guard, an art, a lock-on or X starts `Drawing`: the weapon hand reaches
 //! for the grip (`HandTargets`), and at `DRAW_SWAP` (before any attack's active frames) the
 //! weapon moves from its mount bone to the hand, where `combat::arm` places it again. Sheathing
-//! (X, `SHEATHE_AFTER` seconds out of the fight, or taking up a tool) runs the other way: the hand
+//! (X, `SHEATHE_AFTER` seconds out of the fight, walking up to use something (`interact::Using`),
+//! or taking up a tool) runs the other way: the hand
 //! carries the weapon back and it is re-parented to the mount at `SHEATHE_SWAP`. A tool in the
 //! hand sheathes at once (no reach), and nothing is drawn while one is held.
 //!
@@ -118,10 +119,10 @@ fn carry_for(def: &WeaponDef, set: &str) -> Option<Carry> {
 fn decide(
     time: Res<Time>,
     movesets: Res<Movesets>,
-    mut fighters: Query<(&mut Sheath, &Intent, &Action, &Loadout, Has<Holding>, Option<&WeaponSlot>)>,
+    mut fighters: Query<(&mut Sheath, &Intent, &Action, &Loadout, Has<Holding>, Option<&WeaponSlot>, Has<super::interact::Using>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
-    for (mut sheath, intent, action, loadout, holding, slot) in &mut fighters {
+    for (mut sheath, intent, action, loadout, holding, slot, using) in &mut fighters {
         let set = loadout.equipped();
         let melee = movesets
             .get(set)
@@ -148,13 +149,13 @@ fn decide(
                 sheath.idle = if wants_fight || !action.is_free() { 0.0 } else { sheath.idle + dt };
                 if holding {
                     sheath.state = State::Sheathed;
-                } else if (intent.sheathe_pressed && action.is_free()) || sheath.idle > SHEATHE_AFTER {
+                } else if (intent.sheathe_pressed && action.is_free()) || sheath.idle > SHEATHE_AFTER || using {
                     sheath.state = State::Sheathing;
                     sheath.t = 0.0;
                 }
             }
             State::Sheathed => {
-                if !holding && (wants_fight || intent.sheathe_pressed) {
+                if !holding && !using && (wants_fight || intent.sheathe_pressed) {
                     sheath.state = State::Drawing;
                     sheath.t = 0.0;
                 }
@@ -168,7 +169,7 @@ fn decide(
             State::Sheathing => {
                 if holding {
                     sheath.state = State::Sheathed;
-                } else if wants_fight && sheath.t < SHEATHE_SWAP {
+                } else if wants_fight && !using && sheath.t < SHEATHE_SWAP {
                     // Changed its mind before the blade went home.
                     sheath.state = State::Drawn;
                     sheath.idle = 0.0;
