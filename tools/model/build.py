@@ -828,6 +828,10 @@ def main():
         hn.save(os.path.join(OUT, "tex", f"hair_{k}_normal.png"), optimize=True)
     for kind in tx.CLOTH_KINDS:
         cb, cn = tx.cloth(kind, seed=sum(map(ord, kind)))
+        # A processed AI swatch (`ai_texture.py`, ART_PROMPTS T-runs) replaces the procedural weave.
+        ai = os.path.join(HERE, "ai_tex", f"{kind}_albedo.png")
+        if os.path.exists(ai):
+            cb, cn = Image.open(ai).convert("RGB"), Image.open(ai.replace("_albedo", "_normal")).convert("RGB")
         cb.save(os.path.join(OUT, "tex", f"cloth_{kind}.png"), optimize=True)
         cn.save(os.path.join(OUT, "tex", f"cloth_{kind}_normal.png"), optimize=True)
 
