@@ -7,7 +7,8 @@
 //! offered to the bag with `ItemCollected`; `inventory` answers `ItemRejected` if it no longer
 //! fits, and the item drops back at the player's feet. Sticks, stones and apples lie at rest on
 //! the hills (`Spot`s, placed static on the slope), each coming back `RESPAWN` seconds after it
-//! is collected.
+//! is collected. A chest with `ChestLoot` spills its contents as items when it is opened (they
+//! pop up out of the lid toward the opener) and fills again `refill` seconds after it is shut.
 use super::fx::{Sfx, SfxKind};
 use super::inventory::Inventory;
 use super::voxel::hash3;
@@ -176,7 +177,68 @@ pub fn plugin(app: &mut App) {
         .add_message::<BagFull>()
         .init_resource::<HillTrees>()
         .add_systems(Startup, load)
-        .add_systems(Update, (scatter, magnet, fly, rejected, settle, respawn).chain());
+        .add_systems(Update, (scatter, magnet, fly, rejected, settle, respawn).chain())
+        .add_systems(Update, (spill, refill).after(super::interact::drive));
+}
+
+/// What a chest holds; it spills on opening and refills `refill` s after it is shut.
+#[derive(Component, Clone, Debug)]
+pub struct ChestLoot {
+    pub items: Vec<ItemKind>,
+    pub full: Vec<ItemKind>,
+    pub refill: f32,
+    timer: f32,
+}
+
+impl ChestLoot {
+    pub fn new(items: Vec<ItemKind>, refill: f32) -> Self {
+        Self { full: items.clone(), items, refill, timer: 0.0 }
+    }
+}
+
+/// Items pop out of an opened chest: up out of the lid, fanned toward the opener.
+fn spill(
+    mut commands: Commands,
+    assets: Option<Res<ItemAssets>>,
+    mut effects: MessageReader<super::interact::UseEffect>,
+    mut chests: Query<(&Transform, &super::interact::PropState, &mut ChestLoot)>,
+    users: Query<&Transform, Without<ChestLoot>>,
+) {
+    let Some(assets) = assets else { return };
+    for e in effects.read() {
+        let Ok((tf, prop, mut loot)) = chests.get_mut(e.target) else { continue };
+        if !prop.on || loot.items.is_empty() {
+            continue;
+        }
+        let toward = users
+            .get(e.user)
+            .map(|u| (u.translation - tf.translation).with_y(0.0).normalize_or(Vec3::NEG_Z))
+            .unwrap_or(Vec3::NEG_Z);
+        let n = loot.items.len();
+        for (i, kind) in loot.items.drain(..).enumerate() {
+            let spread = (i as f32 - (n as f32 - 1.0) * 0.5) * 0.45;
+            let dir = Quat::from_rotation_y(spread) * toward;
+            let at = tf.translation + Vec3::Y * 0.75 + dir * 0.1;
+            let v = dir * 1.6 + Vec3::Y * 2.6;
+            spawn_item(&mut commands, &assets, kind, at, Quat::from_rotation_y(spread * 3.0), v);
+        }
+        loot.timer = loot.refill;
+        info!("[chest] spilled {n} items");
+    }
+}
+
+/// A shut, empty chest fills again once its timer runs out.
+fn refill(time: Res<Time>, mut chests: Query<(&super::interact::PropState, &mut ChestLoot)>) {
+    let dt = time.delta_secs();
+    for (prop, mut loot) in &mut chests {
+        if !loot.items.is_empty() || prop.on {
+            continue;
+        }
+        loot.timer -= dt;
+        if loot.timer <= 0.0 {
+            loot.items = loot.full.clone();
+        }
+    }
 }
 
 /// Bark sides and ringed pale end caps, by normal.

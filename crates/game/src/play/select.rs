@@ -149,6 +149,8 @@ const AIM_CHEST: f32 = 0.45;
 #[derive(Component, Clone, Debug, Default)]
 pub struct HandTargets {
     pub hands: [Option<(Vec3, f32)>; 2],
+    /// Finger grips per hand (`motion::hand`); forwarded as they are into `ContactRequest.grips`.
+    pub grips: [Option<crate::motion::hand::Grip>; 2],
 }
 
 /// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
@@ -1120,6 +1122,7 @@ fn update_character(
         feet,
         stance,
         aim: input.aim,
+        grips: input.hands.map_or([None, None], |h| h.grips),
     };
 }
 
@@ -1675,6 +1678,7 @@ mod tests {
         }
         app.world_mut().entity_mut(e).insert(HandTargets {
             hands: [None, Some((Vec3::new(0.2, 1.2, 0.4), 1.0))],
+            ..default()
         });
         for _ in 0..60 {
             app.update();

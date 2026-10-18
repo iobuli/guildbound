@@ -500,6 +500,7 @@ fn climb(
                 commands.entity(entity).try_insert((
                     HandTargets {
                         hands: [Some((hands[0], 1.0)), Some((hands[1], 1.0))],
+                        ..default()
                     },
                     FootTargets {
                         feet: [Some((feet_holds[0], 0.9)), Some((feet_holds[1], 0.9))],

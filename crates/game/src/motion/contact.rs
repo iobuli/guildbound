@@ -1247,6 +1247,7 @@ pub(crate) mod tests {
             feet: [Some((Vec3::NAN, 1.0)), Some((Vec3::ONE, f32::NAN))],
             stance: f32::NAN,
             aim: Some(Vec3::NAN),
+            grips: [None, None],
         };
         let mut garbage = |_: Vec3| {
             Some(Ground {

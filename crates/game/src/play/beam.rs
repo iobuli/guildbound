@@ -346,7 +346,7 @@ fn sway(
         match hands {
             Some(mut h) => h.hands = targets,
             None => {
-                commands.entity(e).insert(HandTargets { hands: targets });
+                commands.entity(e).insert(HandTargets { hands: targets, ..default() });
             }
         }
     }

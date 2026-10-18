@@ -418,7 +418,7 @@ fn build_terrain() -> (Mesh, Collider) {
     (mesh, collider)
 }
 
-fn world_layers() -> CollisionLayers {
+pub(crate) fn world_layers() -> CollisionLayers {
     CollisionLayers::new(Phys::World, LayerMask::ALL)
 }
 
@@ -655,6 +655,7 @@ fn setup(
     spawn_training_ground(&mut kit);
     spawn_props(&mut kit);
     spawn_interactables(&mut kit, &assets);
+    super::doors::spawn_doors(&mut kit);
     super::hall::spawn_hall(&mut kit);
     super::ruins::spawn_ruins(&mut kit);
     super::waypoint::spawn_shrines(&mut kit);
@@ -994,6 +995,14 @@ fn spawn_interactables(kit: &mut Kit, assets: &AssetServer) {
         reach: None,
     });
     kit.part(chest, "Chest body", Cuboid::new(1.0, 0.5, 0.6), &wood, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(1.0, 0.5, 0.6)));
+    kit.commands.entity(chest).insert(super::items::ChestLoot::new(
+        vec![super::items::ItemKind::Apple, super::items::ItemKind::Stone, super::items::ItemKind::Stick, super::items::ItemKind::Apple],
+        90.0,
+    ));
+    {
+        use super::items::{ChestLoot, ItemKind};
+        kit.commands.entity(chest).insert(ChestLoot::new(vec![ItemKind::Apple, ItemKind::Stone, ItemKind::Stick, ItemKind::Apple], 90.0));
+    }
     let lid = kit.commands.spawn((Name::new("Chest lid"), Transform::from_xyz(0.0, 0.5, 0.3), Visibility::default(), ChildOf(chest))).id();
     kit.part(lid, "Chest lid board", Cuboid::new(1.02, 0.14, 0.62), &dark, Transform::from_xyz(0.0, 0.07, -0.3), None);
 

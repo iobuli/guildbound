@@ -25,6 +25,7 @@ use super::{
     Owner, PlaySet, Player,
 };
 use crate::motion::Mask;
+use crate::motion::hand::{Grip, Shape};
 use crate::motion::bank::PoseBank;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_PI_2;
@@ -215,6 +216,16 @@ pub enum Phase {
     Refuse,
 }
 
+/// Finger grips for an interactable's hand targets (`motion::hand`): one shape per hand, in the
+/// same frame as `Interactable.hands` (its `grip` part when set), and a wrist roll that grows with
+/// the hand weight (a knob turns as the hand closes on it). Written by the module that spawns the
+/// interactable (`doors`).
+#[derive(Component, Clone, Copy, Debug, Default)]
+pub struct Grasp {
+    pub shapes: [Option<Shape>; 2],
+    pub twist: [f32; 2],
+}
+
 /// What an interactable remembers between uses.
 #[derive(Component, Clone, Copy, Debug, Default)]
 pub struct PropState {
@@ -362,6 +373,7 @@ pub(crate) fn drive(
     mut interactables: Query<(&Transform, &mut Interactable, &mut PropState, Option<&Children>), Without<Mover>>,
     parts: Query<(&Name, &Transform), (Without<Interactable>, Without<Mover>)>,
     globals: Query<&GlobalTransform>,
+    grasps: Query<&Grasp>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     for (entity, tf, mut mover, intent, mut action, focus, using, holding) in &mut characters {
@@ -482,7 +494,10 @@ pub(crate) fn drive(
                     })
                     .map_or(*itf, |(_, part)| itf.mul_transform(*part));
                 let hands = it.hands.map(|h| h.map(|p| (grip.transform_point(p), w)));
-                commands.entity(entity).insert(HandTargets { hands });
+                let grips = grasps.get(using.target).map_or([None, None], |g| {
+                    [0, 1].map(|i| g.shapes[i].map(|s| Grip { twist: g.twist[i] * w, ..Grip::new(s.moved(&grip), w) }))
+                });
+                commands.entity(entity).insert(HandTargets { hands, grips });
 
                 if it.looping {
                     let beat = it.beat.filter(|b| b.is_finite());

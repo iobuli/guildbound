@@ -3,6 +3,7 @@
 //! 2. `Springs::step_moving` (secondary motion, arm inertia, impulses, squash),
 //!    then `body::resolve` (limbs out of the body, padded by the root's `BodyPadding`),
 //! 3. `contact::apply` (feet/hands/lean/look) using Avian ray casts against `Phys::World`,
+//!    wrapped by `hand`: grips place the wrist before it and close the fingers after it,
 //! 4. write local rotations (+ pelvis translation) into the bone entities' `Transform`s, and the
 //!    same pose in model space into `RigPose` (for armour plates riding on the body).
 //! Runs in `PostUpdate` / `MotionSet::Compose` (after Bevy animation, before propagation).
@@ -196,10 +197,15 @@ fn compose(
     mut bone_transforms: Query<&mut Transform, With<RigBone>>,
     mut gizmos: Gizmos,
     mut warned: Local<HashSet<String>>,
+    mut hands: Local<Option<(usize, super::hand::HandRig)>>,
 ) {
     let Some(bank) = bank else { return };
     let skeleton = &bank.skeleton;
     let bones = &bank.bones;
+    if hands.as_ref().is_none_or(|h| h.0 != skeleton.len()) {
+        *hands = Some((skeleton.len(), super::hand::HandRig::new(skeleton, bones)));
+    }
+    let hand_rig = &hands.as_ref().unwrap().1;
     let n = skeleton.len();
     let dt = time.delta_secs();
     let filter = SpatialQueryFilter::from_mask(Phys::World);
@@ -245,6 +251,12 @@ fn compose(
                         normal: hit.normal,
                     })
             };
+            let (wrists, plan) = hand_rig.wrist_targets(&pose, skeleton, bones, &model_world, &request.grips);
+            for side in 0..2 {
+                if wrists[side].is_some() {
+                    request.hands[side] = wrists[side];
+                }
+            }
             contact::apply(
                 &mut pose,
                 skeleton,
@@ -284,6 +296,7 @@ fn compose(
                     })
                 })
             });
+            hand_rig.close(&mut pose, skeleton, bones, &model_world, &request.grips, &plan);
         }
         layers.impulses.clear();
         if let Some(mut out) = rig_pose {

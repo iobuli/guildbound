@@ -10,7 +10,7 @@
 //!                 exaggeration), `assets/anim/poses.json` overrides with hot reload.
 //! 5. `compose`  – the ONLY system that writes bone `Transform`s. Evaluates each character's
 //!                 `MotionLayers`, runs `secondary` springs, `body` self-collision and
-//!                 `contact` IK, writes bones.
+//!                 `contact` IK, `hand` grips (finger curl), writes bones.
 //!
 //! Conventions (shared by every module, do not change):
 //! - Canonical skeleton = the joint list of `assets/anim/ual2.glb` skin 0, in that order.
@@ -28,6 +28,7 @@ pub mod compose;
 pub mod contact;
 pub mod donor;
 pub mod extract;
+pub mod hand;
 pub mod retarget;
 pub mod rig;
 pub mod secondary;
@@ -262,6 +263,9 @@ pub struct ContactRequest {
     /// World direction a held ranged weapon aims along: the spine bends so the chest follows the
     /// aim's pitch (the clips shoot level). `None` eases back.
     pub aim: Option<Vec3>,
+    /// Finger grips `[left, right]` (`hand::Grip`): door knobs, levers, weapon handles, flat
+    /// pushes. A world-space grip also places and turns the wrist (it replaces `hands`).
+    pub grips: [Option<hand::Grip>; 2],
 }
 
 impl Default for ContactRequest {
@@ -277,6 +281,7 @@ impl Default for ContactRequest {
             feet: [None, None],
             stance: f32::INFINITY,
             aim: None,
+            grips: [None, None],
         }
     }
 }
