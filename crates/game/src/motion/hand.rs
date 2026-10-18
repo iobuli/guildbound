@@ -54,11 +54,11 @@ impl Shape {
             Shape::Flat { point, normal } => (p - point).dot(normal.normalize_or(Vec3::Y)),
         }
     }
-    /// The same shape moved by `t` (hand-local → world).
+    /// The same shape moved by `t` (hand-local → world; radii scale with `t`'s uniform scale).
     pub fn moved(&self, t: &Transform) -> Shape {
         match *self {
-            Shape::Cylinder { a, b, radius } => Shape::Cylinder { a: t.transform_point(a), b: t.transform_point(b), radius },
-            Shape::Sphere { center, radius } => Shape::Sphere { center: t.transform_point(center), radius },
+            Shape::Cylinder { a, b, radius } => Shape::Cylinder { a: t.transform_point(a), b: t.transform_point(b), radius: radius * t.scale.x.abs() },
+            Shape::Sphere { center, radius } => Shape::Sphere { center: t.transform_point(center), radius: radius * t.scale.x.abs() },
             Shape::Flat { point, normal } => Shape::Flat { point: t.transform_point(point), normal: t.rotation * normal },
         }
     }

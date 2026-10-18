@@ -66,9 +66,13 @@ impl Sheath {
     }
 }
 
+/// `sheath`'s systems (after `combat`); order against this.
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub struct SheathSet;
+
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Fighter, Sheath>()
-        .add_systems(Update, (decide, mount).chain().in_set(PlaySet::Act).after(super::combat::CombatSet));
+        .add_systems(Update, (decide, mount).chain().in_set(PlaySet::Act).in_set(SheathSet).after(super::combat::CombatSet));
 }
 
 /// Default mount for a moveset without `carry`.

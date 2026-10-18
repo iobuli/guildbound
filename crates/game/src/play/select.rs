@@ -153,6 +153,12 @@ pub struct HandTargets {
     pub grips: [Option<crate::motion::hand::Grip>; 2],
 }
 
+/// Fingers closed on what a hand carries (`motion::hand::Grip::held`, shape in the hand bone's
+/// frame): the weapon in hand (`combat::arm`). `select` uses it for a hand whose `HandTargets`
+/// brings no grip of its own.
+#[derive(Component, Clone, Debug, Default)]
+pub struct HeldGrip(pub [Option<crate::motion::hand::Grip>; 2]);
+
 /// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
 /// `select` forwards them into `ContactRequest.feet` with smoothed weights, like `HandTargets`.
 /// Written by `traverse`; remove it to release (the feet fade back to the animation).
@@ -701,7 +707,7 @@ type CharacterQuery<'a> = (
     Option<&'a Action>,
     Option<&'a Intent>,
     Option<&'a Loadout>,
-    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a Mounted>),
+    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a Mounted>, Option<&'a HeldGrip>),
     Option<&'a mut SelectState>,
     Option<&'a StyleScale>,
 );
@@ -727,7 +733,7 @@ fn select(
         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
         bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
     };
-    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, mounted), state, scale) in &mut characters {
+    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, mounted, held), state, scale) in &mut characters {
         let frame = Frame {
             bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
             ..frame
@@ -784,6 +790,13 @@ fn select(
                 let mut state = SelectState::default();
                 update_character(&frame, &input, &mut mover, &mut state, &mut layers, &mut missing);
                 commands.entity(entity).try_insert(state);
+            }
+        }
+        if let Some(held) = held {
+            for (grip, carried) in layers.contact.grips.iter_mut().zip(held.0) {
+                if grip.is_none() {
+                    *grip = carried;
+                }
             }
         }
     }

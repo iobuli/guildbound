@@ -14,7 +14,8 @@
 //!   windup, dives, holds its strike pose down to the ground and lands with a shockwave;
 //! - guard (secondary held, the set's `guard` clip): blows from the front `arc` are blocked for
 //!   stamina (`absorb` of the damage stopped); within `parry_window` of raising the guard they
-//!   are parried, which staggers the attacker; out of stamina the guard breaks;
+//!   are parried, which staggers the attacker; out of stamina the guard breaks; a blocked blow
+//!   drives the guard back a step (`step_length`, walked by root motion while the guard holds);
 //! - dodge (`dodge_pressed`): a roll toward the stick, or a sidestep / backstep while locked on,
 //!   with i-frames, for stamina.
 //!
@@ -58,6 +59,8 @@ use super::{
     Owner, PlaySet, Player, StaminaSpend,
 };
 use crate::motion::bank::PoseBank;
+use crate::motion::hand::{Grip, Shape};
+use super::select::HeldGrip;
 use crate::motion::{Mask, MotionLayers, Rig};
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::query::QueryItem;
@@ -200,8 +203,14 @@ const DEATH_FALL_AT: f32 = 0.95;
 const KNOCKDOWN_FALL_AT: f32 = 0.3;
 /// Sparks where a blow meets an Aura Ward.
 const SPARKS_WARD: u32 = 10;
-/// Blocked blows: knockback cap (m/s).
-const BLOCK_PUSH: f32 = 1.0;
+/// Blocked blows: knockback cap (m/s) of the slide left after the step.
+const BLOCK_PUSH: f32 = 0.35;
+/// A blocked blow drives the guard back a step: base length (m), extra per m/s of knockback, cap,
+/// and how long the step takes (s).
+pub const BLOCK_STEP: f32 = 0.18;
+pub const BLOCK_STEP_PER: f32 = 0.07;
+pub const BLOCK_STEP_MAX: f32 = 0.6;
+pub const BLOCK_STEP_TIME: f32 = 0.3;
 
 /// Hitstop: slowest relative speed, share of the duration held there before easing back, and
 /// multipliers of `Feel.hitstop` per outcome.
@@ -239,7 +248,7 @@ const PLAYER_REVIVE: f32 = 4.0;
 /// thickness, the point's share of the blade and its width there.
 const GRIP_FROM: f32 = -0.11;
 const GUARD_AT: f32 = 0.085;
-const BLADE_FROM: f32 = 0.1;
+pub(crate) const BLADE_FROM: f32 = 0.1;
 const GRIP_RADIUS: f32 = 0.016;
 const POMMEL_RADIUS: f32 = 0.028;
 const GUARD_SPAN: f32 = 4.4;
@@ -327,6 +336,8 @@ pub struct Melee {
     /// Combat set `Mover.face` (lock-on) / `Mover.move_scale` (exhaustion) while free.
     facing: bool,
     slowed: bool,
+    /// A blocked blow's step back: (seconds in, direction, length m).
+    step_back: Option<(f32, Vec3, f32)>,
 }
 
 impl Default for Melee {
@@ -344,6 +355,7 @@ impl Default for Melee {
             exhausted: false,
             facing: false,
             slowed: false,
+            step_back: None,
         }
     }
 }
@@ -904,15 +916,31 @@ fn arm(
                 if sheath.is_some_and(|s| !s.in_hand()) {
                     // On its mount: `sheath` places it, and it stays visible.
                     vis.set_if_neq(Visibility::Inherited);
+                    commands.entity(entity).try_remove::<HeldGrip>();
                     continue;
                 }
                 let scale = globals.get(hand).map_or(1.0, |g| g.compute_transform().scale.abs().max_element());
-                tf.set_if_neq(grip(def, scale));
+                let placed = grip(def, scale);
+                tf.set_if_neq(placed);
                 vis.set_if_neq(if holding { Visibility::Hidden } else { Visibility::Inherited });
+                if holding {
+                    commands.entity(entity).try_remove::<HeldGrip>();
+                    continue;
+                }
+                // The fingers close round the handle (in the hand bone's frame).
+                let side = usize::from(def.hand != "l");
+                let handle = Shape::Cylinder {
+                    a: placed.transform_point(Vec3::Y * GRIP_FROM),
+                    b: placed.transform_point(Vec3::Y * GUARD_AT),
+                    radius: GRIP_RADIUS * placed.scale.x,
+                };
+                let mut grips = [None, None];
+                grips[side] = Some(Grip::held(handle, 1.0));
+                commands.entity(entity).try_insert(HeldGrip(grips));
             }
             (Some(slot), ..) => {
                 commands.entity(slot.weapon).try_despawn();
-                commands.entity(entity).try_remove::<WeaponSlot>();
+                commands.entity(entity).try_remove::<(WeaponSlot, HeldGrip)>();
             }
             (None, Some(def), Some(hand)) => {
                 let weapon = commands
@@ -1315,6 +1343,18 @@ fn owned(state: &State, action: &Action) -> bool {
 }
 
 /// Hand the body back to the player / AI.
+/// Speed (m/s) at `t` s into a block step of `length` m: a smooth bell over `BLOCK_STEP_TIME`
+/// whose integral is `length`.
+pub fn step_speed(t: f32, length: f32) -> f32 {
+    let u = (t / BLOCK_STEP_TIME).clamp(0.0, 1.0);
+    6.0 * u * (1.0 - u) * length / BLOCK_STEP_TIME
+}
+
+/// Length (m) of the step back after blocking a blow with `knockback` (m/s).
+pub fn step_length(knockback: f32) -> f32 {
+    (BLOCK_STEP + BLOCK_STEP_PER * finite(knockback, 0.0).max(0.0)).min(BLOCK_STEP_MAX)
+}
+
 fn release(b: &mut Body) -> State {
     b.action.clear();
     b.mover.move_scale = 1.0;
@@ -1635,7 +1675,18 @@ fn guard(t: f32, cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
     }
     b.action.elapsed = t;
     b.mover.move_scale = GUARD_MOVE;
-    b.mover.root_motion = Vec3::ZERO;
+    b.mover.root_motion = match m.step_back.as_mut() {
+        Some((s, dir, length)) => {
+            *s += cx.dt;
+            let v = step_speed(*s, *length);
+            let dir = *dir;
+            if *s >= BLOCK_STEP_TIME {
+                m.step_back = None;
+            }
+            dir * v
+        }
+        None => Vec3::ZERO,
+    };
     let look = flat(b.intent.look - cx.pos);
     b.mover.face = b
         .intent
@@ -2229,6 +2280,9 @@ fn strike(
         Verdict::Blocked { damage, stamina } => {
             melee.spend(&mut fighter, stamina);
             fighter.hp = (fighter.hp - damage).max(0.0);
+            // The guard gives ground: a real step back (the legs walk it), not a slide.
+            let back = flat(hit.direction).normalize_or(-facing);
+            melee.step_back = Some((0.0, back, step_length(knockback)));
             push(&mut mover, hit.direction, knockback.min(BLOCK_PUSH), 0.0);
             impulses(layers, hit.direction, knockback * 0.4, false);
             fx.strike(involved, HITSTOP_BLOCK, SHAKE_BLOCK, SfxKind::Block, hit.point, 0.9);
