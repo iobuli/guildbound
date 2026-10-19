@@ -1,5 +1,5 @@
 {
-  "_about": "The Guild Hall: what things are worth at the front desk, bounties by victim name, lodging, the rank exam, and what people say. Prices in gold.",
+  "_about": "The Guild Hall: what things are worth at the front desk, bounties by victim name, lodging, the rank exam, and what people say (rumours: talk about the player, words in braces filled from what the guild knows). Prices in gold.",
   "prices": { "Log": 4, "Stone": 3, "Stick": 1, "Apple": 2 },
   "bounties": { "Opponent": 20, "Rival": 40, "Hunter": 40, "Thoral": 250 },
   "bed_cost": 10,
@@ -30,6 +30,14 @@
       "Pass the bread.",
       "If the Hunter's out tonight, I'm staying in.",
       "A bed and a hot meal. That's all I ask."
+    ],
+    "rumours": [
+      "They're calling you {title} in the hall. Suits you.",
+      "Mira says you hold rank {rank} now. Don't let it go to your head.",
+      "{done} contracts signed off, I heard. The desk likes a reliable name.",
+      "Is it true you put the {foe} down {count} times? Varro won't stop talking about it.",
+      "Someone carved {title} into the table by the hearth. Your doing?",
+      "A rank {rank} on the board. The new ones look at you differently now."
     ]
   }
 }

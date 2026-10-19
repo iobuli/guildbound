@@ -287,6 +287,26 @@ impl Sheet {
         self.rng = seed.max(1);
         self.seeded = true;
     }
+    /// Put back a saved sheet's progress (`savegame`): skill XP, abilities (ids `magic` knows;
+    /// others are dropped), lifetime deed counts and titles. Deed kinds are `'static` strings in
+    /// play, so a loaded kind is interned once here (a load is rare and the set is small).
+    pub fn restore(&mut self, xp: &HashMap<String, f64>, abilities: &[String], counts: &HashMap<String, f32>, titles: &[String]) {
+        for (skill, x) in xp {
+            if x.is_finite() && *x >= 0.0 {
+                self.grant(skill, *x);
+            }
+        }
+        let mut known: Vec<&'static str> = abilities.iter().filter_map(|id| super::magic::ability(id).map(|a| a.id)).collect();
+        known.dedup();
+        if !known.is_empty() {
+            self.abilities = known;
+        }
+        for (kind, n) in counts {
+            let key: &'static str = self.counts.keys().find(|k| **k == kind.as_str()).copied().unwrap_or_else(|| Box::leak(kind.clone().into_boxed_str()));
+            self.counts.insert(key, n.max(0.0));
+        }
+        self.titles = titles.to_vec();
+    }
     /// Learn a skill outright at `xp` (presets).
     pub fn grant(&mut self, skill: &str, xp: f64) {
         self.xp.insert(skill.to_string(), xp);

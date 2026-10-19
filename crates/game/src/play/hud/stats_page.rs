@@ -777,9 +777,12 @@ fn refresh_contracts(
     };
     let get = |i: usize| board.open.get(i).and_then(|o| book.0.get(o.index).map(|d| (o, d)));
     for (c, mut t) in &mut texts.p0() {
-        let line = get(c.0).map_or(String::new(), |(_, d)| {
+        let line = get(c.0).map_or(String::new(), |(o, d)| {
             let from = d.issuer.as_ref().map_or(String::new(), |who| format!("   ·   from the {who}"));
-            format!("{}   +{} XP{from}", d.name, d.reward.xp)
+            let advised = d.advised();
+            let advice = if advised > board.rank() { format!("   ·   advised rank {}", contracts::RANKS[advised].0) } else { String::new() };
+            let left = o.days_left.map_or(String::new(), |n| format!("   ·   {n} day{} left", if n == 1 { "" } else { "s" }));
+            format!("{}   +{} XP{from}{advice}{left}", d.name, d.reward.xp)
         });
         set(&mut t, line);
     }

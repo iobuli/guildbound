@@ -43,6 +43,17 @@ impl Default for Inventory {
 }
 
 impl Inventory {
+    /// A bag rebuilt from a save (`savegame`): `(slot, kind, count)`; slots out of range, empty
+    /// stacks and duplicate slots are skipped, counts capped at the stack size.
+    pub fn restored(stacks: &[(usize, ItemKind, u32)]) -> Self {
+        let mut inv = Self::default();
+        for &(slot, kind, count) in stacks {
+            if slot < SLOTS && count > 0 && inv.slots[slot].is_none() {
+                inv.slots[slot] = Some(Stack { kind, count: count.min(kind.stack()) });
+            }
+        }
+        inv
+    }
     /// Put `n` of `kind` in, topping up stacks of that kind before taking empty slots. Returns
     /// how many did not fit.
     pub fn add(&mut self, kind: ItemKind, n: u32) -> u32 {

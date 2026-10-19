@@ -355,6 +355,26 @@ impl Default for Grimoire {
 }
 
 impl Grimoire {
+    /// Put back saved bindings and mastery (`savegame`); unknown ability ids are skipped.
+    pub fn restore(&mut self, art: &str, spell: &str, mastery: &HashMap<String, f32>, debt: f32) {
+        if let Some(a) = ability(art) {
+            self.art = a.id;
+        }
+        if let Some(a) = ability(spell) {
+            self.spell = a.id;
+        }
+        for (id, m) in mastery {
+            if let Some(a) = ability(id) {
+                self.mastery.insert(a.id, m.clamp(0.0, 1.0));
+            }
+        }
+        if debt.is_finite() {
+            self.debt = debt.max(0.0);
+        }
+    }
+}
+
+impl Grimoire {
     pub fn mastery(&self, id: &str) -> f32 {
         self.mastery.get(id).copied().unwrap_or(0.0)
     }

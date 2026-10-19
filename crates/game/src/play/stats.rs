@@ -87,7 +87,7 @@ impl Attr {
 #[derive(Component, Clone, Debug, PartialEq)]
 pub struct Stats {
     pub level: u32,
-    pub(crate) attrs: [u32; 6],
+    attrs: [u32; 6],
     /// Unspent attribute points.
     pub points: u32,
     /// Experience toward the next level.
@@ -124,6 +124,19 @@ impl Stats {
     }
     pub fn get(&self, a: Attr) -> u32 {
         self.attrs[a.index()]
+    }
+    /// The six attributes in `Attr` order (`savegame`).
+    pub fn attrs(&self) -> [u32; 6] {
+        self.attrs
+    }
+    /// Stats rebuilt from a save (`savegame`): attributes clamped to the legal range.
+    pub fn restored(level: u32, attrs: [u32; 6], points: u32, xp: u32) -> Self {
+        Self {
+            level: level.max(1),
+            attrs: attrs.map(|a| a.clamp(BASE.min(MAX_ATTR), MAX_ATTR)),
+            points,
+            xp,
+        }
     }
     /// Spend one point on `a`; false when there are none or it is maxed.
     pub fn spend(&mut self, a: Attr) -> bool {

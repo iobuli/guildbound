@@ -1,14 +1,13 @@
 //! The pause menu: Esc with no other page open stops the game (`Time<Virtual>` paused: physics,
 //! animation and AI all wait) and shows a panel; Esc again, or Resume, carries on.
-//! - **1** Resume · **2** Save now (`save::SaveNow`) · **3 / 4** mouse sensitivity − / + ·
+//! - **1** Resume · **2** Save now (`savegame::SaveNow`) · **3 / 4** mouse sensitivity − / + ·
 //!   **5 / 6** volume − / + · **7** New game (forgets the save and quits; the next launch starts
 //!   fresh) · **8** Save and quit. Every line can be clicked too.
 //! - **Settings** (`Settings`: mouse sensitivity and volume) persist in `saves/settings.json`;
 //!   `camera` scales mouse look by `Settings::mouse`, the volume goes to `GlobalVolume`.
 //!
 //! Ownership: `Paused`, `Settings` (written here only); `camera` reads `Paused` as an open page.
-use super::hud::log::{HudLog, LogKind};
-use super::save::{SaveNow, SaveSlot};
+use super::savegame::{SaveNow, SaveState};
 use bevy::audio::{GlobalVolume, Volume};
 use bevy::prelude::*;
 use gbui::prelude::*;
@@ -194,10 +193,9 @@ fn choose(
     mut time: ResMut<Time<Virtual>>,
     mut settings: ResMut<Settings>,
     mut global: ResMut<GlobalVolume>,
-    mut slot: Option<ResMut<SaveSlot>>,
+    mut slot: Option<ResMut<SaveState>>,
     mut save: MessageWriter<SaveNow>,
     mut exit: MessageWriter<AppExit>,
-    mut log: MessageWriter<HudLog>,
 ) {
     if !paused.0 {
         return;
@@ -210,7 +208,6 @@ fn choose(
         Choice::Resume => set(&mut paused, &mut time, false),
         Choice::Save => {
             save.write(SaveNow);
-            log.write(HudLog::new(LogKind::Info, "Game saved"));
         }
         Choice::MouseDown => settings.mouse -= MOUSE_STEP,
         Choice::MouseUp => settings.mouse += MOUSE_STEP,
@@ -222,8 +219,8 @@ fn choose(
             }
             exit.write(AppExit::Success);
         }
+        // Quitting saves (`savegame` saves on exit).
         Choice::Quit => {
-            save.write(SaveNow);
             exit.write(AppExit::Success);
         }
     }
