@@ -479,7 +479,7 @@ fn dress_rigged(
                 .spawn((Name::new(format!("part {part}")), PartOf(root), WorldAssetRoot(scene), Transform::default()))
                 .observe(on_part_ready)
                 .id();
-            commands.entity(entity).try_insert(ChildOf(rig.model));
+            super::adopt(&mut commands, entity, rig.model);
         }
         commands.entity(root).try_insert(Dressed(rig.model, look.look.clone()));
         info!("[appearance] {root}: dressing as {:?} ({} parts)", look.look, look.parts.len());
@@ -541,12 +541,12 @@ fn attach_parts(
                 && let Ok(joint) = names.get(p.parent())
                 && let Some(b) = bone(joint.as_str())
             {
-                commands.entity(node).try_insert(ChildOf(b));
+                super::adopt(&mut commands, node, b);
                 commands.entity(node).try_insert(Worn);
             }
         }
         for &node in &moved {
-            commands.entity(node).try_insert(ChildOf(rig.model));
+            super::adopt(&mut commands, node, rig.model);
             commands.entity(node).try_insert(Worn);
         }
         styling.apply(&mut commands, &assets, &nodes, look);

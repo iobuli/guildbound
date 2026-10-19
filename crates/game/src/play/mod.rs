@@ -446,6 +446,22 @@ impl Loadout {
     }
 }
 
+/// Parent `child` under `parent` when the queued commands run, if `parent` still exists then;
+/// otherwise despawn `child` (it belonged under something that is gone). A re-dress or a weapon
+/// swap can despawn a model or bone earlier in the same flush, and a `ChildOf` to a missing
+/// entity only logs a warning and leaves the child loose.
+pub fn adopt(commands: &mut Commands, child: Entity, parent: Entity) {
+    commands.queue(move |world: &mut World| {
+        if world.get_entity(parent).is_ok() {
+            if let Ok(mut e) = world.get_entity_mut(child) {
+                e.insert(ChildOf(parent));
+            }
+        } else if let Ok(e) = world.get_entity_mut(child) {
+            e.despawn();
+        }
+    });
+}
+
 /// Damage event. Produced by melee hit tests (`combat`), projectiles (`ranged`, `magic`);
 /// resolved ONLY by `combat` (block/parry, hp/poise, reactions, knockback, ragdoll trigger).
 #[derive(Message, Clone, Debug)]
