@@ -6,7 +6,7 @@
 //!   there. `GB_NEW=1` starts fresh (the file is kept until the next save).
 //! - **Smoke runs never touch it**: with `GB_RECORD`, `GB_SPAWN`, `GB_AUTOQUIT` or `GB_SCREENSHOT`
 //!   set, nothing is loaded or saved, so a recording neither starts from nor overwrites a real
-//!   save.
+//!   save, unless `GB_SAVE` names a file explicitly (headless save/load checks).
 //! - **Where**: `GB_SAVE=<path>`, else `%APPDATA%\Guildbound\save.json` (Windows) or
 //!   `$XDG_DATA_HOME/guildbound/save.json` / `~/.local/share/guildbound/save.json`. Written to a
 //!   temporary file first, then renamed over the old one, so a crash mid-write keeps the last good
@@ -15,12 +15,13 @@
 //! What is kept: where the player stands and faces; level, attributes, unspent points, XP; skill
 //! XP, abilities, deed counts, titles; gold; the bag; art / spell bindings and mastery; honours and
 //! holdings; the guild board (open contracts and their progress, contracts done, ready to turn in,
-//! rank held); the hour. Health, stamina and pools come back full (a load is a fresh morning).
+//! rank held); the bounty targets brought down (rumours); the hour. Health, stamina and pools come back full (a load is a fresh morning).
 //! Every write on load goes through the owning module's restore function (`Stats::restored`,
 //! `Sheet::restore`, `Board::restored`, `Inventory::restored`, `Grimoire::restore`) or its message
-//! (`sky::SetHour`); `Purse`, `Honours` and `Standing` are plain data set once here at start.
+//! (`sky::SetHour`); `Purse`, `Honours`, `Standing` and `Guild.hunted` are plain data set once
+//! here at start.
 use super::contracts::{Board, ContractBook, Honours, Open, Standing};
-use super::guild::{Purse, Rested};
+use super::guild::{Guild, Purse, Rested};
 use super::hud::log::{HudLog, LogKind};
 use super::inventory::Inventory;
 use super::items::ItemKind;
@@ -88,6 +89,9 @@ pub struct GuildSave {
     pub done: u32,
     pub ready: Vec<usize>,
     pub held: usize,
+    /// Bounty targets brought down, by name (rumours).
+    #[serde(default)]
+    pub hunted: BTreeMap<String, u32>,
 }
 
 /// The player's saved pieces, borrowed for `capture`.
@@ -103,8 +107,8 @@ pub struct PlayerParts<'a> {
     pub standing: &'a Standing,
 }
 
-/// Snapshot the player and the guild board.
-pub fn capture(p: &PlayerParts, board: &Board, hour: f32) -> SaveFile {
+/// Snapshot the player and the guild board (and the bounty tally, `hunted`).
+pub fn capture(p: &PlayerParts, board: &Board, hunted: &HashMap<String, u32>, hour: f32) -> SaveFile {
     let t = p.tf.translation;
     SaveFile {
         version: VERSION,
@@ -135,6 +139,7 @@ pub fn capture(p: &PlayerParts, board: &Board, hour: f32) -> SaveFile {
             done: board.done,
             ready: board.ready.clone(),
             held: board.held,
+            hunted: hunted.iter().map(|(k, v)| (k.clone(), *v)).collect(),
         },
     }
 }
@@ -166,6 +171,12 @@ pub fn bag_stacks(bag: &[(usize, String, u32)]) -> Vec<(usize, ItemKind, u32)> {
 pub fn board_from(g: &GuildSave, book: &ContractBook) -> Board {
     let open = g.open.iter().map(|o| Open { index: o.index, progress: o.progress.clone(), days_left: o.days_left }).collect();
     Board::restored(open, g.next, g.done, g.ready.clone(), g.held, book)
+}
+
+/// Where the save lives in this run: an explicit `GB_SAVE` always; otherwise the platform's
+/// per-user data folder, except in a smoke run (nothing).
+pub fn run_path(env: impl Fn(&str) -> Option<String> + Copy) -> Option<PathBuf> {
+    if env("GB_SAVE").is_some_and(|v| !v.trim().is_empty()) || !smoke_run(env) { save_path(env) } else { None }
 }
 
 /// Where the save lives (`GB_SAVE`, else the platform's per-user data folder).
@@ -212,7 +223,7 @@ pub struct SaveState {
 }
 
 pub fn plugin(app: &mut App) {
-    let path = if smoke_run(env) { None } else { save_path(env) };
+    let path = run_path(env);
     match &path {
         Some(p) => info!("[save] file {}", p.display()),
         None => info!("[save] off (smoke run or no home folder)"),
@@ -241,7 +252,7 @@ type PlayerQuery<'w, 's> = Query<
 >;
 
 /// Capture the player now, or why not.
-fn snapshot(player: &PlayerQuery, board: &Board, clock: &Clock) -> Result<SaveFile, &'static str> {
+fn snapshot(player: &PlayerQuery, board: &Board, guild: &Guild, clock: &Clock) -> Result<SaveFile, &'static str> {
     let Ok((tf, mover, stats, sheet, purse, bag, grimoire, honours, standing, fighter)) = player.single() else {
         return Err("no player");
     };
@@ -260,7 +271,7 @@ fn snapshot(player: &PlayerQuery, board: &Board, clock: &Clock) -> Result<SaveFi
         honours: honours.unwrap_or(&empty_h),
         standing: standing.unwrap_or(&empty_s),
     };
-    Ok(capture(&parts, board, clock.hour))
+    Ok(capture(&parts, board, &guild.hunted, clock.hour))
 }
 
 fn write_save(path: &Path, save: &SaveFile) -> Result<(), String> {
@@ -277,6 +288,7 @@ fn save_on_demand(
     player: PlayerQuery,
     me: Query<Entity, With<Player>>,
     board: Option<Res<Board>>,
+    guild: Option<Res<Guild>>,
     clock: Option<Res<Clock>>,
     mut log: MessageWriter<HudLog>,
 ) {
@@ -286,13 +298,13 @@ fn save_on_demand(
     if !(rested || pressed) || !state.loaded {
         return;
     }
-    let (Some(path), Some(board), Some(clock)) = (state.path.as_deref(), board, clock) else {
+    let (Some(path), Some(board), Some(guild), Some(clock)) = (state.path.as_deref(), board, guild, clock) else {
         if pressed {
             log.write(HudLog::new(LogKind::Warn, "Saving is off in this run").key(LOG_KEY));
         }
         return;
     };
-    match snapshot(&player, &board, &clock).map_err(str::to_string).and_then(|s| write_save(path, &s)) {
+    match snapshot(&player, &board, &guild, &clock).map_err(str::to_string).and_then(|s| write_save(path, &s)) {
         Ok(()) => {
             info!("[save] saved ({})", if pressed { "F5" } else { "rested" });
             log.write(HudLog::new(LogKind::System, "Game saved").key(LOG_KEY));
@@ -305,12 +317,19 @@ fn save_on_demand(
 }
 
 /// Closing the game: save.
-fn save_on_exit(mut exits: MessageReader<AppExit>, state: Res<SaveState>, player: PlayerQuery, board: Option<Res<Board>>, clock: Option<Res<Clock>>) {
+fn save_on_exit(
+    mut exits: MessageReader<AppExit>,
+    state: Res<SaveState>,
+    player: PlayerQuery,
+    board: Option<Res<Board>>,
+    guild: Option<Res<Guild>>,
+    clock: Option<Res<Clock>>,
+) {
     if exits.read().next().is_none() || !state.loaded {
         return;
     }
-    let (Some(path), Some(board), Some(clock)) = (state.path.as_deref(), board, clock) else { return };
-    match snapshot(&player, &board, &clock).map_err(str::to_string).and_then(|s| write_save(path, &s)) {
+    let (Some(path), Some(board), Some(guild), Some(clock)) = (state.path.as_deref(), board, guild, clock) else { return };
+    match snapshot(&player, &board, &guild, &clock).map_err(str::to_string).and_then(|s| write_save(path, &s)) {
         Ok(()) => info!("[save] saved on exit"),
         Err(e) => warn!("[save] not saved on exit: {e}"),
     }
@@ -336,6 +355,7 @@ fn load_once(
         ),
         With<Player>,
     >,
+    guild: Option<ResMut<Guild>>,
     mut hours: MessageWriter<SetHour>,
     mut log: MessageWriter<HudLog>,
 ) {
@@ -393,6 +413,9 @@ fn load_once(
         s.holdings = p.holdings.clone();
     }
     *board = board_from(&save.guild, &book);
+    if let Some(mut g) = guild {
+        g.hunted = save.guild.hunted.iter().map(|(k, v)| (k.clone(), *v)).collect();
+    }
     hours.write(SetHour(save.hour));
     info!(
         "[save] loaded: level {}, {} gold, rank {}, {} contracts open, at ({:.1}, {:.1}, {:.1})",
@@ -432,7 +455,8 @@ mod tests {
         board.fill(&book(), &[]);
         board.done = 4;
         board.held = 1;
-        capture(&parts, &board, 15.5)
+        let hunted = HashMap::from([("Rival".to_string(), 2u32)]);
+        capture(&parts, &board, &hunted, 15.5)
     }
 
     #[test]
@@ -444,6 +468,7 @@ mod tests {
         assert_eq!(back.player.level, 7);
         assert_eq!(back.player.skills.get("swordsmanship"), Some(&1234.5));
         assert_eq!(back.guild.held, 1);
+        assert_eq!(back.guild.hunted.get("Rival"), Some(&2));
     }
 
     #[test]
@@ -492,6 +517,9 @@ mod tests {
         assert!(smoke_run(env(&[("GB_SPAWN", "1,2,3")])));
         assert!(!smoke_run(env(&[("GB_SPAWN", " ")])));
         assert!(!smoke_run(env(&[("HOME", "/h")])));
+        // A smoke run saves only to a file it names.
+        assert_eq!(run_path(env(&[("GB_RECORD", "/tmp/r"), ("HOME", "/h")])), None);
+        assert_eq!(run_path(env(&[("GB_RECORD", "/tmp/r"), ("GB_SAVE", "/tmp/s.json")])), Some(PathBuf::from("/tmp/s.json")));
     }
 
     #[test]
