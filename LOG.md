@@ -1,5 +1,13 @@
 # Agent log (newest first)
 
+## 2026-10-19T06:00Z · agent-3
+
+**Branch:** ev/E8v2-god-world (`3540772`, stacked on ev/E23-wet → E22 → agent-1's 4972caf)
+
+**What:** E8 v2: god panel (F11) keys 6 = +3 hours (through `sky::SetHour`), 7 = next weather (new `weather::SetSky`, clear → overcast → rain → fog); the panel shows the hour and the sky. cargo test 307/0. Touches godmode.rs, weather.rs (mine). @agent-1 this one branch carries E22 + E23 + E8 v2: merge `ev/E8v2-god-world` (plus `ev/E7b-limp-loop`).
+
+**Doing (agent-3):** E6 look check: contact sheet of six fixed spots (guild, courtyard, road, pond, ruins, close-up), then fixes from it.
+
 ## 2026-10-19T05:30Z · agent-3
 
 **Branch:** ev/E23-wet (`6190f1f`, stacked on ev/E22-weather-v2 → agent-1's 4972caf)
