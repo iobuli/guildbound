@@ -272,13 +272,14 @@ pub fn strike_attack(s: &Strike, duration: f32) -> Attack {
 }
 
 /// Strike clips the library may cut from: UAL's punches and hooks (not their recoveries or the
-/// sword combos) and any Kevin Iglesias library (`kev*/`). The user's call: these match the
-/// hand-animated look; the mocap takes do not.
+/// sword combos) and Kevin Iglesias' unarmed clips (`kev*/` punches and kicks; his weapon swings
+/// would read as punches to the cutter). The user's call: these match the hand-animated look; the
+/// mocap takes do not.
 pub fn library_track(track: &str) -> bool {
     let Some((lib, clip)) = track.split_once('/') else { return false };
     match lib {
         "ual1" | "ual2" => (clip.contains("Punch") || clip.contains("Melee_Hook") || clip.contains("Kick")) && !clip.ends_with("_Rec"),
-        _ => lib.starts_with("kev"),
+        _ => lib.starts_with("kev") && ["Punch", "Kick", "Unarmed", "Boxing"].iter().any(|k| clip.contains(k)),
     }
 }
 
@@ -383,6 +384,7 @@ mod tests {
     fn the_library_only_cuts_ual_and_kevin_iglesias_strikes() {
         assert!(library_track("ual1/Punch_Jab") && library_track("ual1/Punch_Cross") && library_track("ual2/Melee_Hook"));
         assert!(library_track("kev_melee/Kick_Front") && library_track("kev/Punch_Left"));
+        assert!(!library_track("kev_melee/Attack1H01_R") && !library_track("kev_melee/Run01_Forward"), "weapon swings and runs are not fist strikes");
         assert!(!library_track("ual2/Melee_Hook_Rec"), "recoveries are not strikes");
         assert!(!library_track("ual2/Sword_Regular_Combo") && !library_track("ual1/Walk_Loop"));
         assert!(!library_track("cmu/144_20_punch_sequence") && !library_track("rokoko/Kick_Side") && !library_track("sekiro/Zombie Kick"));

@@ -85,6 +85,63 @@ pub const MIXAMO_MAP: &[(&str, &str)] = &[
     ("RightHandPinky3", "pinky_03_r"),
 ];
 
+/// (Kevin Iglesias `HumanM` bone, canonical UAL name). Kevin's spine is two bones (`B-spine`,
+/// `B-chest`): they drive `spine_01` and `spine_03`, `spine_02` keeps rest. The packs are converted
+/// by `tools/model/kev_pack.py` (Y-up metres, T-pose bind facing +Z, like the other donors).
+pub const KEVIN_MAP: &[(&str, &str)] = &[
+    ("B-hips", "pelvis"),
+    ("B-spine", "spine_01"),
+    ("B-chest", "spine_03"),
+    ("B-neck", "neck_01"),
+    ("B-head", "Head"),
+    ("B-shoulder.L", "clavicle_l"),
+    ("B-upperArm.L", "upperarm_l"),
+    ("B-forearm.L", "lowerarm_l"),
+    ("B-hand.L", "hand_l"),
+    ("B-shoulder.R", "clavicle_r"),
+    ("B-upperArm.R", "upperarm_r"),
+    ("B-forearm.R", "lowerarm_r"),
+    ("B-hand.R", "hand_r"),
+    ("B-thigh.L", "thigh_l"),
+    ("B-shin.L", "calf_l"),
+    ("B-foot.L", "foot_l"),
+    ("B-toe.L", "ball_l"),
+    ("B-thigh.R", "thigh_r"),
+    ("B-shin.R", "calf_r"),
+    ("B-foot.R", "foot_r"),
+    ("B-toe.R", "ball_r"),
+    ("B-thumb01.L", "thumb_01_l"),
+    ("B-thumb02.L", "thumb_02_l"),
+    ("B-thumb03.L", "thumb_03_l"),
+    ("B-indexFinger01.L", "index_01_l"),
+    ("B-indexFinger02.L", "index_02_l"),
+    ("B-indexFinger03.L", "index_03_l"),
+    ("B-middleFinger01.L", "middle_01_l"),
+    ("B-middleFinger02.L", "middle_02_l"),
+    ("B-middleFinger03.L", "middle_03_l"),
+    ("B-ringFinger01.L", "ring_01_l"),
+    ("B-ringFinger02.L", "ring_02_l"),
+    ("B-ringFinger03.L", "ring_03_l"),
+    ("B-pinky01.L", "pinky_01_l"),
+    ("B-pinky02.L", "pinky_02_l"),
+    ("B-pinky03.L", "pinky_03_l"),
+    ("B-thumb01.R", "thumb_01_r"),
+    ("B-thumb02.R", "thumb_02_r"),
+    ("B-thumb03.R", "thumb_03_r"),
+    ("B-indexFinger01.R", "index_01_r"),
+    ("B-indexFinger02.R", "index_02_r"),
+    ("B-indexFinger03.R", "index_03_r"),
+    ("B-middleFinger01.R", "middle_01_r"),
+    ("B-middleFinger02.R", "middle_02_r"),
+    ("B-middleFinger03.R", "middle_03_r"),
+    ("B-ringFinger01.R", "ring_01_r"),
+    ("B-ringFinger02.R", "ring_02_r"),
+    ("B-ringFinger03.R", "ring_03_r"),
+    ("B-pinky01.R", "pinky_01_r"),
+    ("B-pinky02.R", "pinky_02_r"),
+    ("B-pinky03.R", "pinky_03_r"),
+];
+
 /// (CMU BVH joint, canonical UAL name). CMU's spine is LowerBack → Spine → Spine1 and its neck
 /// Neck → Neck1 → Head; fingers are a single base bone, left unmapped (the hand rig poses them).
 pub const CMU_MAP: &[(&str, &str)] = &[
@@ -168,6 +225,8 @@ enum Mode {
     Mixamo,
     /// CMU mocap (BVH): model-space bind-delta with `CMU_MAP`.
     Cmu,
+    /// Kevin Iglesias rig (`B-hips`, ...): model-space bind-delta with `KEVIN_MAP`.
+    Kevin,
 }
 
 /// Precomputed per-library mapping onto the canonical skeleton.
@@ -194,6 +253,8 @@ impl Mapping {
             Mode::Mixamo
         } else if lib.node("LowerBack").is_some() && lib.node("LHipJoint").is_some() {
             Mode::Cmu
+        } else if lib.node("B-hips").is_some() && lib.node("B-chest").is_some() {
+            Mode::Kevin
         } else {
             Mode::ByName
         };
@@ -214,6 +275,13 @@ impl Mapping {
                 for (mixamo, canonical) in MIXAMO_MAP {
                     if let Some(i) = target.find(canonical) {
                         src[i] = node_of.get(format!("{MIXAMO_PREFIX}{mixamo}").as_str()).copied();
+                    }
+                }
+            }
+            Mode::Kevin => {
+                for (kev, canonical) in KEVIN_MAP {
+                    if let Some(i) = target.find(canonical) {
+                        src[i] = node_of.get(kev).copied();
                     }
                 }
             }
@@ -350,7 +418,7 @@ fn retarget_frame(
     let mut rot: Vec<Quat> = target.rest.iter().map(|r| r.rotation).collect();
     let mut world_rot = vec![Quat::IDENTITY; n];
     let src_world = match map.mode {
-        Mode::Mixamo | Mode::Cmu => Some(lib.world_at(clip, t)),
+        Mode::Mixamo | Mode::Cmu | Mode::Kevin => Some(lib.world_at(clip, t)),
         Mode::ByName => None,
     };
     for &i in &map.order {
@@ -361,7 +429,7 @@ fn retarget_frame(
                 .get(&s)
                 .filter(|c| !c.times.is_empty())
                 .map_or(target.rest[i].rotation, |c| c.sample(t)),
-            (Mode::Mixamo | Mode::Cmu, Some(s)) => {
+            (Mode::Mixamo | Mode::Cmu | Mode::Kevin, Some(s)) => {
                 let w = src_world.as_ref().map_or(Quat::IDENTITY, |w| w[s].rotation);
                 parent_world.inverse() * (w * map.bind_delta[i])
             }
@@ -749,6 +817,30 @@ pub(crate) mod tests {
         }
         assert!(f.offset.length() < 1e-4);
         println!("sekiro leg scale {:.3}", map.scale);
+    }
+
+    #[test]
+    fn kevin_idle_stands_arms_down_and_his_swing_moves_the_hand() {
+        let (s, b) = canonical();
+        let idle = clip("kev_melee", "Idle01");
+        let w = s.fk(&idle.frames[0], b.pelvis);
+        for side in 0..2 {
+            let y = w[b.foot[side]].translation.y.min(w[b.ball[side]].translation.y);
+            assert!(y.abs() < 0.12, "foot {side} at {y}");
+            // A T-pose bind mapped right leaves the arms hanging at rest, hands well below the
+            // shoulders (a wrong bind delta would leave them out level or twisted up).
+            let drop = w[b.upperarm[side]].translation.y - w[b.hand[side]].translation.y;
+            assert!(drop > 0.35, "hand {side} only {drop} m below the shoulder");
+        }
+        assert!(w[b.head].translation.y > 1.4, "head at {}", w[b.head].translation.y);
+        let swing = clip("kev_melee", "Attack1H01_R");
+        let hand = |f: &Pose| s.fk(f, b.pelvis)[b.hand[1]].translation;
+        let start = hand(&swing.frames[0]);
+        let reach = swing.frames.iter().map(|f| hand(f).distance(start)).fold(0.0f32, f32::max);
+        assert!(reach > 0.5, "the right hand swings {reach} m");
+        for f in idle.frames.iter().chain(&swing.frames) {
+            assert!(f.rot.iter().all(|q| q.is_finite() && (q.length() - 1.0).abs() < 1e-3));
+        }
     }
 
     #[test]

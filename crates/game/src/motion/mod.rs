@@ -48,12 +48,14 @@ pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
 pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 4] = [
+pub const LIBRARIES: [(&str, &str); 5] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
     // Rokoko free mocap (Mixamo rig), converted from assets/anim/Rokoko_Free_Mocap_FBX_263.
     ("rokoko", "anim/rokoko.glb"),
+    // Kevin Iglesias, Human Melee Animations FREE (male rig), converted by tools/model/kev_pack.py.
+    ("kev_melee", "anim/kev_melee.glb"),
 ];
 
 pub fn plugin(app: &mut App) {
