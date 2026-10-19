@@ -113,12 +113,25 @@ pub struct CameraRig {
     pub eye: Vec3,
 }
 
+/// `GB_ZOOM=<m>`: the boom length at start (smoke stills; down to `SMOKE_MIN_DISTANCE` for a face
+/// close-up, nearer than the wheel can go). Unset: `DEFAULT_DISTANCE`.
+fn start_distance() -> f32 {
+    std::env::var("GB_ZOOM")
+        .ok()
+        .and_then(|s| s.trim().parse::<f32>().ok())
+        .filter(|d| d.is_finite())
+        .map_or(DEFAULT_DISTANCE, |d| d.clamp(SMOKE_MIN_DISTANCE, MAX_DISTANCE))
+}
+
+/// Nearest `GB_ZOOM` boom (m).
+const SMOKE_MIN_DISTANCE: f32 = 0.8;
+
 impl Default for CameraRig {
     fn default() -> Self {
         Self {
             yaw: 0.0,
             pitch: DEFAULT_PITCH,
-            distance: DEFAULT_DISTANCE,
+            distance: start_distance(),
             focus: Vec3::ZERO,
             aim_blend: 0.0,
             lock_blend: 0.0,
