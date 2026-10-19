@@ -10,3 +10,4 @@ tools/model/__pycache__/
 
 # Player save games (play/save.rs)
 saves/
+__pycache__/
