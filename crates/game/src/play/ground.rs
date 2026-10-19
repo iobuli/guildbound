@@ -97,6 +97,7 @@ impl Weathering {
 pub fn plugin(app: &mut App) {
     app.add_plugins((MaterialPlugin::<GroundMaterial>::default(), MaterialPlugin::<WeatherMaterial>::default()))
         .init_resource::<Weathering>()
+        .init_resource::<Wetness>()
         .add_systems(Update, (terrain, weather, layers, soak));
 }
 
@@ -142,9 +143,14 @@ fn weather(
     }
 }
 
+/// How wet surfaces are, 0..1 (written by `soak` only; `guildhouse` wets its own materials by it).
+#[derive(Resource, Clone, Copy, Debug, Default, PartialEq)]
+pub struct Wetness(pub f32);
+
 /// Rain soaks the ground and the weathered props; they dry after. `GB_WEATHER` skies start soaked
 /// (stills show the look at once).
 fn soak(
+    mut wetness: ResMut<Wetness>,
     time: Res<Time>,
     weather: Option<Res<super::weather::Weather>>,
     mut state: Local<Option<(f32, f32)>>,
@@ -161,6 +167,7 @@ fn soak(
         return;
     }
     *sent = *wet;
+    wetness.0 = *wet;
     for (_, g) in grounds.iter_mut() {
         g.extension.ground.look.z = *wet;
     }

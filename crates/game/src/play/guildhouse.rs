@@ -199,7 +199,32 @@ impl Spec {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Startup, spawn);
+    app.add_systems(Startup, spawn).add_systems(Update, wet_outside);
+}
+
+/// The outside surfaces rain reaches (podium, stone walls, plaster, roof slate) with their dry
+/// colour and roughness; `wet_outside` darkens and glosses them by `ground::Wetness`.
+#[derive(Resource)]
+struct Outside(Vec<(Handle<StandardMaterial>, Color, f32)>);
+
+/// How much darker and how glossy a soaked surface gets.
+const WET_DARKEN: f32 = 0.3;
+const WET_ROUGHNESS: f32 = 0.5;
+
+fn wet_outside(wetness: Option<Res<super::ground::Wetness>>, outside: Option<Res<Outside>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    let (Some(wet), Some(outside)) = (wetness, outside) else { return };
+    if !wet.is_changed() {
+        return;
+    }
+    let w = wet.0.clamp(0.0, 1.0);
+    for (handle, dry, rough) in &outside.0 {
+        if let Some(mut m) = materials.get_mut(handle) {
+            let c = dry.to_linear();
+            let k = 1.0 - WET_DARKEN * w;
+            m.base_color = Color::linear_rgba(c.red * k, c.green * k, c.blue * k, c.alpha);
+            m.perceptual_roughness = rough + (WET_ROUGHNESS.min(*rough) - rough) * w;
+        }
+    }
 }
 
 /// The materials, one per slot in `GUILDHOUSE.md` §4, tiled at "one tile covers" metres.
@@ -484,6 +509,11 @@ fn spawn(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<As
         }
     };
     let m = Mats::new(&assets, &mut materials);
+    let outside = [&m.podium, &m.wall, &m.plaster, &m.slate]
+        .into_iter()
+        .filter_map(|h| materials.get(h).map(|mat| (h.clone(), mat.base_color, mat.perceptual_roughness)))
+        .collect();
+    commands.insert_resource(Outside(outside));
     let mut b = Build { commands: &mut commands, meshes: &mut meshes, m };
     let f = Frame::new(&spec);
     podium(&mut b, &spec, &f);
