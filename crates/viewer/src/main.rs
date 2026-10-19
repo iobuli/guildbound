@@ -422,6 +422,8 @@ fn model_buttons(
     camera: Query<&Transform, With<Viewer>>,
     assets: Res<AssetServer>,
     mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let Ok(cam) = camera.single() else { return };
     for (interaction, ListSlot(i)) in &interactions {
@@ -434,7 +436,15 @@ fn model_buttons(
         let at = cam.translation + fwd.normalize_or_zero() * 10.0;
         let ground = Vec3::new(at.x, terrain::ground(at.x, at.z), at.z);
         let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(rel.clone()));
+        info!("placed at {ground:?}");
         commands.spawn((Placed, Name::new(rel.clone()), WorldAssetRoot(scene), Transform::from_translation(ground)));
+        // Marker: a bright 1 m cube at the placement point, so a missing model can be told apart from a missing spawn.
+        commands.spawn((
+            Placed,
+            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
+            MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::srgb(1.0, 0.0, 1.0), unlit: true, ..default() })),
+            Transform::from_translation(ground + Vec3::Y * 0.5),
+        ));
     }
 }
 
