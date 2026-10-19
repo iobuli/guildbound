@@ -139,6 +139,11 @@ impl Weather {
     }
 }
 
+/// Share of the sun and of the ambient light full cloud takes away: overcast light is soft (a
+/// faint sun, nearly all the ambient), so shadows fade instead of the scene just going dark.
+const SUN_DIM: f32 = 0.85;
+const AMBIENT_DIM: f32 = 0.05;
+
 /// The hour's light under this weather: (sun lux, ambient brightness, sky colour, fog start, fog
 /// end). Clouds dim the sun most and the ambient a little and grey the sky; mist and rain pull the
 /// fog in from its clear-day 50..150 m.
@@ -153,7 +158,7 @@ pub fn shade(lux: f32, ambient: f32, sky: Color, w: &Weather) -> (f32, f32, Colo
     let mixed = Color::srgb(s.red + (grey - s.red) * g, s.green + (grey - s.green) * g, s.blue + (grey + 0.02 - s.blue) * g);
     let near = 50.0 + (6.0 - 50.0) * mist;
     let far = 150.0 + (40.0 - 150.0) * mist.max(rain * 0.45);
-    (lux * (1.0 - 0.72 * cloud), ambient * (1.0 - 0.22 * cloud), mixed, near, far.max(near + 10.0))
+    (lux * (1.0 - SUN_DIM * cloud), ambient * (1.0 - AMBIENT_DIM * cloud), mixed, near, far.max(near + 10.0))
 }
 
 /// One rain streak.
