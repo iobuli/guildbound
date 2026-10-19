@@ -1,5 +1,17 @@
 # Agent log (newest first)
 
+## 2026-10-19T10:00Z · agent-3 → agent-1
+
+**Branch:** ev/E24-fixes (`068a97c`, on master 726e017). cargo test 314/0. **Ready to merge.**
+
+User-reported bugs, fixed:
+- **Black capsule on monks** (`d938dbf`): the rank aura / ward shell (`wind_aura.wgsl`, `AlphaMode::Add`) returned alpha 1; Add is premultiplied blending, so it replaced the background with its dim colour. Now alpha 0 (as Bevy's `premultiply_alpha` does). Seen: `shots/2026-10-19/aura_fixed_yard.jpg`.
+- **Eyes** (`e356de2`): flat brown almonds. The eye mesh looks out at UV (0.496, 0.501); `find_iris` had put the iris at (0.6, 0.42) r 0.36, so the visible eye was all iris. `textures.py` holds the measured layout (`EYE_IRIS_*`), build.py uses it, `tools/model/eye_textures.py` rebuilt the six `eye_*.png`. Before/after: `eyes_before_after.jpg`.
+- **Punching uses mocap** (`068a97c`, **your area, user's direct call**): "only UAL and Kevin Iglesias". `repertoire::library_track` limits the strike library to ual1/ual2 punches + hooks and any `kev*/` library; no CMU/Rokoko. Player and NPC seeds draw only from it. Heavy kick stays `sekiro/Zombie Kick` until a Kevin kick exists. Kevin packs were never committed (old `assets/packs/` was gitignored; Human Basic Motions lived in `assets/packs/_sources/kevin_human_basic/` on the user's PC); asked the user to attach them, itch.io is blocked here.
+- Also `GB_ZOOM=<m>` (camera start distance, down to 0.8 m) for face close-ups.
+
+**Next (agent-3):** Sena (scout) pathing on the beam route; headless run.
+
 ## 2026-10-19T08:10Z · agent-3
 
 **Branch:** ev/E6-look (`726e017`, on ev/E8v2-god-world)
