@@ -270,8 +270,8 @@ fn spawn_people(mut commands: Commands) {
     let people = [
         Person { name: "Mira", title: "Guild receptionist", role: Role::Receptionist, job: "receptionist", at: DESK_STAND, yaw: DESK_FACE, weapon: "unarmed", tint: Color::srgb(0.86, 0.66, 0.52) },
         Person { name: "Varro", title: "Guild Martial Captain", role: Role::Captain, job: "captain", at: CAPTAIN_POST, yaw: -std::f32::consts::FRAC_PI_2, weapon: "katana", tint: Color::srgb(0.45, 0.47, 0.52) },
-        Person { name: "Kael", title: "Adventurer, rank D", role: Role::Adventurer, job: "adventurer", at: Vec3::new(26.6, 0.0, -7.4), yaw: 0.0, weapon: "axe", tint: Color::srgb(0.55, 0.36, 0.22) },
-        Person { name: "Sena", title: "Adventurer, rank E", role: Role::Adventurer, job: "scout", at: Vec3::new(28.0, 0.0, -4.6), yaw: std::f32::consts::PI, weapon: "dagger", tint: Color::srgb(0.40, 0.52, 0.60) },
+        Person { name: "Kael", title: "Adventurer, rank D", role: Role::Adventurer, job: "adventurer", at: Vec3::new(26.6, super::hall::FLOOR_Y, -7.4), yaw: 0.0, weapon: "axe", tint: Color::srgb(0.55, 0.36, 0.22) },
+        Person { name: "Sena", title: "Adventurer, rank E", role: Role::Adventurer, job: "scout", at: Vec3::new(28.0, super::hall::FLOOR_Y, -4.6), yaw: std::f32::consts::PI, weapon: "dagger", tint: Color::srgb(0.40, 0.52, 0.60) },
     ];
     for p in people {
         let e = spawn_character(
