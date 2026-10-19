@@ -3,6 +3,7 @@
 //! - **1** Resume · **2** Save now (`savegame::SaveNow`) · **3 / 4** mouse sensitivity − / + ·
 //!   **5 / 6** volume − / + · **7** New game (forgets the save and quits; the next launch starts
 //!   fresh) · **8** Save and quit. Every line can be clicked too.
+//! - The panel also lists the controls (`CONTROLS`).
 //! - **Settings** (`Settings`: mouse sensitivity and volume) persist in `saves/settings.json`;
 //!   `camera` scales mouse look by `Settings::mouse`, the volume goes to `GlobalVolume`.
 //!
@@ -61,6 +62,32 @@ impl Settings {
         }
     }
 }
+
+/// The controls, as the pause panel lists them.
+const CONTROLS: [&str; 22] = [
+    "WASD  move   ·   Shift  sprint   ·   Alt  walk",
+    "Space  jump   ·   Ctrl  dodge   ·   C  crouch",
+    "LMB  attack (hold: heavy)   ·   RMB  guard",
+    "Q  art   ·   E  spell   (hold to aim, let go to cast)",
+    "Mouse 5  next spell   ·   Tab  lock on",
+    "F  use / talk   ·   X  draw / sheathe   ·   G  grab",
+    "I  bag   ·   K  stats and map   ·   R  back to spawn",
+    "F5  quicksave   ·   Esc  this menu",
+    "",
+    "In the air after a throw: A / D to recover",
+    "",
+    "Testing keys",
+    "F1  tuning   ·   F2  pose tweak   ·   F4  monitor",
+    "F6  throw yourself   ·   F7  colliders",
+    "F9  skip an hour   ·   F10  peaceful",
+    "F11  god mode   ·   F12  debug views",
+    "",
+    "Gamepad: left stick move, right stick look,",
+    "D-pad up art, D-pad right spell",
+    "",
+    "Saves go to your user folder and load when",
+    "the game starts.",
+];
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum Choice {
@@ -131,19 +158,26 @@ fn spawn_panel(mut commands: Commands) {
                 "stats",
                 Node {
                     position_type: PositionType::Absolute,
-                    left: percent(36.0),
-                    top: percent(24.0),
-                    width: percent(28.0),
-                    flex_direction: FlexDirection::Column,
+                    left: percent(18.0),
+                    top: percent(16.0),
+                    width: percent(64.0),
+                    flex_direction: FlexDirection::Row,
                     padding: UiRect::all(px(18.0)),
-                    row_gap: px(6.0),
+                    column_gap: px(28.0),
                     display: Display::None,
                     ..default()
                 },
             ),
             GlobalZIndex(80),
         ))
-        .with_children(|p| {
+        .with_children(|root| {
+            root.spawn(Node { flex_direction: FlexDirection::Column, row_gap: px(4.0), ..default() }).with_children(|c| {
+                c.spawn(label("▌CONTROLS", "title"));
+                for line in CONTROLS {
+                    c.spawn(label(line, "text.dim"));
+                }
+            });
+            root.spawn(Node { flex_direction: FlexDirection::Column, row_gap: px(6.0), min_width: px(260.0), ..default() }).with_children(|p| {
             p.spawn(label("▌PAUSED", "title"));
             line(p, Choice::Resume, "1.  Resume");
             line(p, Choice::Save, "2.  Save now");
@@ -158,6 +192,7 @@ fn spawn_panel(mut commands: Commands) {
             p.spawn((Readout, label("", "text.dim")));
             line(p, Choice::NewGame, "7.  New game (forget the save and quit)");
             line(p, Choice::Quit, "8.  Save and quit");
+            });
         });
 }
 
