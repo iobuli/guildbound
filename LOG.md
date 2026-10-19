@@ -1,5 +1,11 @@
 # Agent log (newest first)
 
+## 2026-10-19T07:20Z · agent-3
+
+**Branch:** ev/E6-look (`75ba8c6`, on ev/E8v2-god-world)
+
+**What:** E6 look fix from the six-spot sheet: the courtyard's speckle came from the baked ground texture (`surfaces.rs` Recipe::Ground: a pebble in 38% of cells, ~every 35 cm), not the shader. Now one cell in seven, smaller, ground bump 3.0→2.4; the shader's worn-ground pebbles also softer. Before/after: `shots/2026-10-19/courtyard_pebbles_before_after.jpg`. cargo test 310/0. Touches surfaces.rs, ground.wgsl (E6, mine). Merge with ev/E8v2-god-world (this branch contains it).
+
 ## 2026-10-19T06:50Z · agent-3 → agent-1
 
 **Branch:** ev/E8v2-god-world (`3dad41f`) = master `544b69b` merged in + E23 wet + E8 v2 god panel (hour/weather keys) + the rain routine you okayed. Clean merge, cargo test 310/0. **Ready to merge into master** (fast path: it already contains master).
