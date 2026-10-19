@@ -1,0 +1,2084 @@
+{
+ "summary": {
+  "assets": 85,
+  "cpus": 4,
+  "verdicts": {
+   "usable": 80,
+   "jittery": 5
+  },
+  "bones": {
+   "p5": 71.0,
+   "median": 71.0,
+   "p95": 71.0
+  },
+  "height_m": {
+   "p5": 1.829,
+   "median": 1.829,
+   "p95": 1.829
+  },
+  "jitter_p95_deg": {
+   "p5": 0.174,
+   "median": 1.078,
+   "p95": 3.043
+  },
+  "stability": [
+   {
+    "fraction": 0.25,
+    "items": 21,
+    "median_ari": 0.276
+   },
+   {
+    "fraction": 0.5,
+    "items": 42,
+    "median_ari": 0.372
+   },
+   {
+    "fraction": 0.75,
+    "items": 63,
+    "median_ari": 0.669
+   },
+   {
+    "fraction": 1.0,
+    "items": 85,
+    "median_ari": 1.0
+   }
+  ]
+ },
+ "assets": [
+  {
+   "path": "chest_open.glb",
+   "name": "chest_open",
+   "ext": ".glb",
+   "bytes": 759188,
+   "sha1": "8b652c7718708d4b08cdc488220574b1b3454e9f",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "chest_open",
+     "keys": 42
+    }
+   ],
+   "jitter_p95": 1.515178101184527,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "climbup_1m.glb",
+   "name": "climbup_1m",
+   "ext": ".glb",
+   "bytes": 755212,
+   "sha1": "3cc2e46c73282882e3dc8dd3f364983f8baaa916",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "climbup_1m",
+     "keys": 21
+    }
+   ],
+   "jitter_p95": 1.2864002252351614,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "consume.glb",
+   "name": "consume",
+   "ext": ".glb",
+   "bytes": 759432,
+   "sha1": "791149b5c1ad4d578f23cab10782c335d5aa5366",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "consume",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 0.734650270502474,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "crouch_fwd_loop.glb",
+   "name": "crouch_fwd_loop",
+   "ext": ".glb",
+   "bytes": 754148,
+   "sha1": "06333c81b8253537d9052302f1e3bf317b08a6e1",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "crouch_fwd_loop",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 0.6948870783819419,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "crouch_idle_loop.glb",
+   "name": "crouch_idle_loop",
+   "ext": ".glb",
+   "bytes": 813564,
+   "sha1": "e5996a439d56bcc8a9778e47928064625eb7b572",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "crouch_idle_loop",
+     "keys": 89
+    }
+   ],
+   "jitter_p95": 0.15099753530223084,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "dance_loop.glb",
+   "name": "dance_loop",
+   "ext": ".glb",
+   "bytes": 743772,
+   "sha1": "cd1faf775518b7c2b11fa4ee7f692dbb9e5c39f4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "dance_loop",
+     "keys": 31
+    }
+   ],
+   "jitter_p95": 0.5650155565060206,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "death01.glb",
+   "name": "death01",
+   "ext": ".glb",
+   "bytes": 809076,
+   "sha1": "df56270fd51026a598ac86f7bdb0eaa7ba75777c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "death01",
+     "keys": 73
+    }
+   ],
+   "jitter_p95": 2.5890140352951945,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "driving_loop.glb",
+   "name": "driving_loop",
+   "ext": ".glb",
+   "bytes": 746172,
+   "sha1": "6921f9bc6022a29ed63469a68625cd73fa260969",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "driving_loop",
+     "keys": 51
+    }
+   ],
+   "jitter_p95": 0.35174609753776703,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "farm_harvest.glb",
+   "name": "farm_harvest",
+   "ext": ".glb",
+   "bytes": 781004,
+   "sha1": "854b44862cd3764d39c897e0ed44d290a64b65eb",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "farm_harvest",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.832260487686484,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "farm_plantseed.glb",
+   "name": "farm_plantseed",
+   "ext": ".glb",
+   "bytes": 781452,
+   "sha1": "372ceb4a3c87d0d8b5914f3a8edd20e70798a6b0",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "farm_plantseed",
+     "keys": 84
+    }
+   ],
+   "jitter_p95": 1.0152648335417733,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "farm_watering.glb",
+   "name": "farm_watering",
+   "ext": ".glb",
+   "bytes": 775240,
+   "sha1": "d43b6002fab267a613ff090b6bd664a7ed25a939",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "farm_watering",
+     "keys": 115
+    }
+   ],
+   "jitter_p95": 0.40951138867637216,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "fixing_kneeling.glb",
+   "name": "fixing_kneeling",
+   "ext": ".glb",
+   "bytes": 893068,
+   "sha1": "bb70f62734d84466e02e72f0fa4ab617d50aa2d2",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "fixing_kneeling",
+     "keys": 157
+    }
+   ],
+   "jitter_p95": 1.1233436443164397,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "fps_test.glb",
+   "name": "fps_test",
+   "ext": ".glb",
+   "bytes": 631728,
+   "sha1": "ba8b52492e3c9f1cf177c23e49365a39b857c0a4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 0,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [],
+   "jitter_p95": null,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "hit_chest.glb",
+   "name": "hit_chest",
+   "ext": ".glb",
+   "bytes": 743824,
+   "sha1": "231035af8a15195a64c7d750e1181e71bae1a4d5",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "hit_chest",
+     "keys": 11
+    }
+   ],
+   "jitter_p95": 1.02247573120524,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "hit_head.glb",
+   "name": "hit_head",
+   "ext": ".glb",
+   "bytes": 746344,
+   "sha1": "614bd1d395b225d69690db59723a01ca011f09dc",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "hit_head",
+     "keys": 14
+    }
+   ],
+   "jitter_p95": 1.2179513706308438,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "hit_knockback.glb",
+   "name": "hit_knockback",
+   "ext": ".glb",
+   "bytes": 758628,
+   "sha1": "52f577514bbd63c3757a982064b969c59619b7e1",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "hit_knockback",
+     "keys": 26
+    }
+   ],
+   "jitter_p95": 1.7146331464594173,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_foldarms_loop.glb",
+   "name": "idle_foldarms_loop",
+   "ext": ".glb",
+   "bytes": 754112,
+   "sha1": "0200b7c64f8c66544a60c9f4779704e7f6b81d34",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_foldarms_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.7098668671150505,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_lantern_loop.glb",
+   "name": "idle_lantern_loop",
+   "ext": ".glb",
+   "bytes": 756868,
+   "sha1": "d97b4cedf166f1a5225a4ddf1e54db3eea446f85",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_lantern_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.334086747138491,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_loop.glb",
+   "name": "idle_loop",
+   "ext": ".glb",
+   "bytes": 758696,
+   "sha1": "0255233230ca63d94c475003e80e495be82282ec",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.2793533905772875,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_no_loop.glb",
+   "name": "idle_no_loop",
+   "ext": ".glb",
+   "bytes": 758752,
+   "sha1": "3756074e5817fa9fb6aacf0884e9183ba58688e7",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_no_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.30350217137615704,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_rail_call.glb",
+   "name": "idle_rail_call",
+   "ext": ".glb",
+   "bytes": 775096,
+   "sha1": "0805d2903ea2816bc53d9e82412ccec5e186ac09",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_rail_call",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.38579614243194954,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_rail_loop.glb",
+   "name": "idle_rail_loop",
+   "ext": ".glb",
+   "bytes": 752792,
+   "sha1": "b1cf56542e7ab65570aeacb0ad0e6c37ac56f66d",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_rail_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.17434182583950433,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_shield_break.glb",
+   "name": "idle_shield_break",
+   "ext": ".glb",
+   "bytes": 746772,
+   "sha1": "79156c160a2014ec039fc2f93bd3de5ef1533524",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_shield_break",
+     "keys": 33
+    }
+   ],
+   "jitter_p95": 2.4353763190544067,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_shield_loop.glb",
+   "name": "idle_shield_loop",
+   "ext": ".glb",
+   "bytes": 755588,
+   "sha1": "d40cbd2576636e430023f3c571a2ab93d2567640",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_shield_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.2793457161669453,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_talking_loop.glb",
+   "name": "idle_talking_loop",
+   "ext": ".glb",
+   "bytes": 808140,
+   "sha1": "aecbbb1cd9c1b5622990730d285ad143d506c3ef",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_talking_loop",
+     "keys": 89
+    }
+   ],
+   "jitter_p95": 1.5090001215245665,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_talkingphone_loop.glb",
+   "name": "idle_talkingphone_loop",
+   "ext": ".glb",
+   "bytes": 781956,
+   "sha1": "9e61be65cbe842b33d7430621970710e14cad68f",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_talkingphone_loop",
+     "keys": 89
+    }
+   ],
+   "jitter_p95": 0.8071862201331584,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "idle_torch_loop.glb",
+   "name": "idle_torch_loop",
+   "ext": ".glb",
+   "bytes": 749652,
+   "sha1": "b5bc6594816073f6a1b7537198bd52dff26ca35c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "idle_torch_loop",
+     "keys": 39
+    }
+   ],
+   "jitter_p95": 0.3921336125116942,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "interact.glb",
+   "name": "interact",
+   "ext": ".glb",
+   "bytes": 755592,
+   "sha1": "aceb97f3031d4f4d6bcf1af72a4791a672acf809",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "interact",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 0.5865991765294459,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "jog_fwd_loop.glb",
+   "name": "jog_fwd_loop",
+   "ext": ".glb",
+   "bytes": 746456,
+   "sha1": "edfcb5503c0d4ad4f6963505a8d2e79e5e24a9fa",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "jog_fwd_loop",
+     "keys": 29
+    }
+   ],
+   "jitter_p95": 1.6621079802348764,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "jump_land.glb",
+   "name": "jump_land",
+   "ext": ".glb",
+   "bytes": 772328,
+   "sha1": "e301ed06ec699137bbc978776b38cfc53dcd681c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "jump_land",
+     "keys": 39
+    }
+   ],
+   "jitter_p95": 1.903458605451087,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "jump_loop.glb",
+   "name": "jump_loop",
+   "ext": ".glb",
+   "bytes": 757004,
+   "sha1": "a15f0d576895db04a16e429af6ec9e3388226cf1",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "jump_loop",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 0.13714392218549165,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "jump_start.glb",
+   "name": "jump_start",
+   "ext": ".glb",
+   "bytes": 772664,
+   "sha1": "33d47864cd30ef4f8d5ed844371edd795e5db145",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "jump_start",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 1.6469023372971483,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "laytoidle.glb",
+   "name": "laytoidle",
+   "ext": ".glb",
+   "bytes": 779428,
+   "sha1": "4aaa191e7b848ae441b05a58a3e21232546ff4f4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "laytoidle",
+     "keys": 47
+    }
+   ],
+   "jitter_p95": 0.5230327331844482,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "melee_hook.glb",
+   "name": "melee_hook",
+   "ext": ".glb",
+   "bytes": 741660,
+   "sha1": "e635448992349ddd2ce20a25c6d0edc610ea7d83",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "melee_hook",
+     "keys": 15
+    }
+   ],
+   "jitter_p95": 2.5332353395856595,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "melee_hook_rec.glb",
+   "name": "melee_hook_rec",
+   "ext": ".glb",
+   "bytes": 741236,
+   "sha1": "d629986744ff42931af62bc7f80666bbf6c5466a",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "melee_hook_rec",
+     "keys": 19
+    }
+   ],
+   "jitter_p95": 0.37787882534837736,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "ninjajump_idle_loop.glb",
+   "name": "ninjajump_idle_loop",
+   "ext": ".glb",
+   "bytes": 750412,
+   "sha1": "1a1b49dd05bfdc95af50cfc14ff9781e4734e356",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "ninjajump_idle_loop",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 0.17155431115767814,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "ninjajump_land.glb",
+   "name": "ninjajump_land",
+   "ext": ".glb",
+   "bytes": 761144,
+   "sha1": "c5fb6960e220641f1b3c57a20b4144c2e152330e",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "ninjajump_land",
+     "keys": 39
+    }
+   ],
+   "jitter_p95": 1.0781893831057063,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "ninjajump_start.glb",
+   "name": "ninjajump_start",
+   "ext": ".glb",
+   "bytes": 754888,
+   "sha1": "9f36616f24cb57795955163d808bea4f207923f2",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "ninjajump_start",
+     "keys": 30
+    }
+   ],
+   "jitter_p95": 3.04337173555008,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "jittery"
+  },
+  {
+   "path": "overhandthrow.glb",
+   "name": "overhandthrow",
+   "ext": ".glb",
+   "bytes": 775124,
+   "sha1": "7ecd04701882554fa9a81dd88d1a8e2c29f1af68",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "overhandthrow",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 1.4103080485600712,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pickup_table.glb",
+   "name": "pickup_table",
+   "ext": ".glb",
+   "bytes": 750000,
+   "sha1": "7f320598d6e0631edf1d71c97768f36b89b4b737",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pickup_table",
+     "keys": 26
+    }
+   ],
+   "jitter_p95": 3.2377867430497105,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "jittery"
+  },
+  {
+   "path": "pistol_aim_down.glb",
+   "name": "pistol_aim_down",
+   "ext": ".glb",
+   "bytes": 734716,
+   "sha1": "89486fed95d2d9350849b0cc18b25bd7121f05a4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_aim_down",
+     "keys": 2
+    }
+   ],
+   "jitter_p95": null,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pistol_aim_neutral.glb",
+   "name": "pistol_aim_neutral",
+   "ext": ".glb",
+   "bytes": 735080,
+   "sha1": "379ef9f5ee18d0552a8c9a36b9af286d4fa471da",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_aim_neutral",
+     "keys": 2
+    }
+   ],
+   "jitter_p95": null,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pistol_aim_up.glb",
+   "name": "pistol_aim_up",
+   "ext": ".glb",
+   "bytes": 735228,
+   "sha1": "e704ed8b234313287b3acd92c2148049cb48d1d6",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_aim_up",
+     "keys": 2
+    }
+   ],
+   "jitter_p95": null,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pistol_idle_loop.glb",
+   "name": "pistol_idle_loop",
+   "ext": ".glb",
+   "bytes": 745112,
+   "sha1": "bc4f44da287eb666452304e21bbb74db5efe692c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_idle_loop",
+     "keys": 51
+    }
+   ],
+   "jitter_p95": 0.22012450810693274,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pistol_reload.glb",
+   "name": "pistol_reload",
+   "ext": ".glb",
+   "bytes": 769436,
+   "sha1": "822871c0419406a3a88ca4e1029beceec6d087f8",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_reload",
+     "keys": 51
+    }
+   ],
+   "jitter_p95": 1.8130596435874657,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "pistol_shoot.glb",
+   "name": "pistol_shoot",
+   "ext": ".glb",
+   "bytes": 737992,
+   "sha1": "140459603838c64fdaf825a3331a2b753b0e0ec7",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "pistol_shoot",
+     "keys": 20
+    }
+   ],
+   "jitter_p95": 1.395165221960291,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "punch_cross.glb",
+   "name": "punch_cross",
+   "ext": ".glb",
+   "bytes": 742620,
+   "sha1": "dff2112ffa876855351b50a45a6e6425cef13b7b",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "punch_cross",
+     "keys": 31
+    }
+   ],
+   "jitter_p95": 2.9729846034734515,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "punch_jab.glb",
+   "name": "punch_jab",
+   "ext": ".glb",
+   "bytes": 743428,
+   "sha1": "447932b47074971ea1d6da412da173e3c77d3cb3",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "punch_jab",
+     "keys": 27
+    }
+   ],
+   "jitter_p95": 5.247376131977577,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "jittery"
+  },
+  {
+   "path": "push_loop.glb",
+   "name": "push_loop",
+   "ext": ".glb",
+   "bytes": 766340,
+   "sha1": "94f7b9c4bbeee0e637a02361bbf78bf39e82cc71",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "push_loop",
+     "keys": 81
+    }
+   ],
+   "jitter_p95": 1.0689549565099257,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "roll.glb",
+   "name": "roll",
+   "ext": ".glb",
+   "bytes": 779328,
+   "sha1": "ac5d6e9939d0000f8f26c0caabd6e3d0a3b4c802",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "roll",
+     "keys": 45
+    }
+   ],
+   "jitter_p95": 2.1406400080414363,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "shield_dash.glb",
+   "name": "shield_dash",
+   "ext": ".glb",
+   "bytes": 768620,
+   "sha1": "0a80d85ba13cb4c0d0d6a1293d76f4221e66fcd9",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "shield_dash",
+     "keys": 265
+    }
+   ],
+   "jitter_p95": 1.4955191472086087,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "shield_oneshot.glb",
+   "name": "shield_oneshot",
+   "ext": ".glb",
+   "bytes": 743224,
+   "sha1": "e54a84aedb7642e3fc273e582f8bff8dcda35707",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "shield_oneshot",
+     "keys": 26
+    }
+   ],
+   "jitter_p95": 1.5671109854221361,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sitting_enter.glb",
+   "name": "sitting_enter",
+   "ext": ".glb",
+   "bytes": 772560,
+   "sha1": "cbdddf08129d5f64da63d2c1e8f06632d1d4ffed",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sitting_enter",
+     "keys": 40
+    }
+   ],
+   "jitter_p95": 1.2307210149730319,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sitting_exit.glb",
+   "name": "sitting_exit",
+   "ext": ".glb",
+   "bytes": 764784,
+   "sha1": "ecbdc571226c80dc5770704e253730cba4239818",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sitting_exit",
+     "keys": 32
+    }
+   ],
+   "jitter_p95": 0.9509531224198311,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sitting_idle_loop.glb",
+   "name": "sitting_idle_loop",
+   "ext": ".glb",
+   "bytes": 760652,
+   "sha1": "3c3c3024d77d3140c6a02f6fde99458b52d9188c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sitting_idle_loop",
+     "keys": 51
+    }
+   ],
+   "jitter_p95": 0.36930932298501806,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sitting_talking_loop.glb",
+   "name": "sitting_talking_loop",
+   "ext": ".glb",
+   "bytes": 802676,
+   "sha1": "2051d91cd9f41568bc451c5f981e657e50a10811",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sitting_talking_loop",
+     "keys": 89
+    }
+   ],
+   "jitter_p95": 1.571511617682735,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "slide_exit.glb",
+   "name": "slide_exit",
+   "ext": ".glb",
+   "bytes": 742932,
+   "sha1": "e67aad31c4acfc667568626ff81b8caf18b43ee8",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "slide_exit",
+     "keys": 16
+    }
+   ],
+   "jitter_p95": 0.9763507394410588,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "slide_loop.glb",
+   "name": "slide_loop",
+   "ext": ".glb",
+   "bytes": 772400,
+   "sha1": "45daa594deeaa0d04abdd3fca3de43c9516111c2",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "slide_loop",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 0.8140137248882452,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "slide_start.glb",
+   "name": "slide_start",
+   "ext": ".glb",
+   "bytes": 752652,
+   "sha1": "cabdf729b93745717a9c633feec6f73375ba00d1",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "slide_start",
+     "keys": 26
+    }
+   ],
+   "jitter_p95": 2.7777563788333324,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "spell_simple_enter.glb",
+   "name": "spell_simple_enter",
+   "ext": ".glb",
+   "bytes": 749852,
+   "sha1": "5fe550eb0b0ee81eded98f415e3f8d24a8a7a3ce",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "spell_simple_enter",
+     "keys": 17
+    }
+   ],
+   "jitter_p95": 0.7680042156804693,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "spell_simple_exit.glb",
+   "name": "spell_simple_exit",
+   "ext": ".glb",
+   "bytes": 746988,
+   "sha1": "5096f2baf09f550cb06fd7ba1b95d552a98730c7",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "spell_simple_exit",
+     "keys": 14
+    }
+   ],
+   "jitter_p95": 0.9145738907620296,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "spell_simple_idle_loop.glb",
+   "name": "spell_simple_idle_loop",
+   "ext": ".glb",
+   "bytes": 757316,
+   "sha1": "a8e42f6e5e456af1592ff66015f5ebffc9b0c2e3",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "spell_simple_idle_loop",
+     "keys": 64
+    }
+   ],
+   "jitter_p95": 0.18148331011758936,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "spell_simple_shoot.glb",
+   "name": "spell_simple_shoot",
+   "ext": ".glb",
+   "bytes": 743268,
+   "sha1": "433b370c8a0efcf3b2e9c2923d1a2609a3cd6db9",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "spell_simple_shoot",
+     "keys": 16
+    }
+   ],
+   "jitter_p95": 1.6667087543299004,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sprint_loop.glb",
+   "name": "sprint_loop",
+   "ext": ".glb",
+   "bytes": 743516,
+   "sha1": "2e6bb1eaa99f818e24a2653a4a098fb5062141e4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sprint_loop",
+     "keys": 21
+    }
+   ],
+   "jitter_p95": 1.8749519258953966,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "swim_fwd_loop.glb",
+   "name": "swim_fwd_loop",
+   "ext": ".glb",
+   "bytes": 750540,
+   "sha1": "131b0d850178794efa3bd49bda10af8b510daee1",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "swim_fwd_loop",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 0.6439824070097984,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "swim_idle_loop.glb",
+   "name": "swim_idle_loop",
+   "ext": ".glb",
+   "bytes": 822840,
+   "sha1": "95867a77d64c0897b1d656964d9662a51ffba0f4",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "swim_idle_loop",
+     "keys": 101
+    }
+   ],
+   "jitter_p95": 0.11384850358142312,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_attack.glb",
+   "name": "sword_attack",
+   "ext": ".glb",
+   "bytes": 755444,
+   "sha1": "b9a62aeebb9c0c99345127049466bfabea0ed167",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_attack",
+     "keys": 47
+    }
+   ],
+   "jitter_p95": 2.348879691158468,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_block.glb",
+   "name": "sword_block",
+   "ext": ".glb",
+   "bytes": 779948,
+   "sha1": "cfafc019d079990ec7934696cd0c5b9c3a559823",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_block",
+     "keys": 297
+    }
+   ],
+   "jitter_p95": 3.982029974938967,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "jittery"
+  },
+  {
+   "path": "sword_dash.glb",
+   "name": "sword_dash",
+   "ext": ".glb",
+   "bytes": 792600,
+   "sha1": "cad2fe1cfa1b778abe5e6692d8957fe3b0397006",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_dash",
+     "keys": 377
+    }
+   ],
+   "jitter_p95": 2.408295838068537,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_heavy_combo.glb",
+   "name": "sword_heavy_combo",
+   "ext": ".glb",
+   "bytes": 827076,
+   "sha1": "cad0f4551b309c1a5c7d51c0bbbf19c5b932c120",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_heavy_combo",
+     "keys": 131
+    }
+   ],
+   "jitter_p95": 1.8688927367767212,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_idle.glb",
+   "name": "sword_idle",
+   "ext": ".glb",
+   "bytes": 764248,
+   "sha1": "85306114beb32e1020d58964c50255db5045b2ef",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_idle",
+     "keys": 51
+    }
+   ],
+   "jitter_p95": 0.3729660128606072,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_regular_a.glb",
+   "name": "sword_regular_a",
+   "ext": ".glb",
+   "bytes": 744160,
+   "sha1": "f131904807fa25834973da6c51f68c120d74f73a",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_a",
+     "keys": 14
+    }
+   ],
+   "jitter_p95": 1.864291735002117,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_regular_a_rec.glb",
+   "name": "sword_regular_a_rec",
+   "ext": ".glb",
+   "bytes": 755532,
+   "sha1": "307ba5af9b64169a1f81968551733681a9d232b9",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_a_rec",
+     "keys": 30
+    }
+   ],
+   "jitter_p95": 0.5632655574131937,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_regular_b.glb",
+   "name": "sword_regular_b",
+   "ext": ".glb",
+   "bytes": 746352,
+   "sha1": "5783c0e17e00156ce797db1b07d114a9293c0bf7",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_b",
+     "keys": 17
+    }
+   ],
+   "jitter_p95": 3.3735811473776125,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "jittery"
+  },
+  {
+   "path": "sword_regular_b_rec.glb",
+   "name": "sword_regular_b_rec",
+   "ext": ".glb",
+   "bytes": 757676,
+   "sha1": "56b5f794891fbbbcf96d20d424d10874be99c166",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_b_rec",
+     "keys": 32
+    }
+   ],
+   "jitter_p95": 0.42303319447446813,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_regular_c.glb",
+   "name": "sword_regular_c",
+   "ext": ".glb",
+   "bytes": 775140,
+   "sha1": "cc5ce348d6ff9a596f45db1d233f36e5532c05d5",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_c",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 1.731487860337504,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "sword_regular_combo.glb",
+   "name": "sword_regular_combo",
+   "ext": ".glb",
+   "bytes": 797176,
+   "sha1": "c242591f2684d5292d968fcb8e30d7b7ad1b30e0",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "sword_regular_combo",
+     "keys": 91
+    }
+   ],
+   "jitter_p95": 2.64956078671087,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "treechopping_loop.glb",
+   "name": "treechopping_loop",
+   "ext": ".glb",
+   "bytes": 754392,
+   "sha1": "1d66fefa0f11771f697c57111cd4fc1fc3aa8fc8",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "treechopping_loop",
+     "keys": 30
+    }
+   ],
+   "jitter_p95": 2.087960117517063,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "walk_carry_loop.glb",
+   "name": "walk_carry_loop",
+   "ext": ".glb",
+   "bytes": 752608,
+   "sha1": "b46f08297ba3dd2447a89b735f1da4e7c8243b1e",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "walk_carry_loop",
+     "keys": 61
+    }
+   ],
+   "jitter_p95": 0.588322592160858,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "walk_formal_loop.glb",
+   "name": "walk_formal_loop",
+   "ext": ".glb",
+   "bytes": 751704,
+   "sha1": "1f2313463a0ac1461f305f767cab6fce2a244c00",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "walk_formal_loop",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 0.7905922437338666,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "walk_loop.glb",
+   "name": "walk_loop",
+   "ext": ".glb",
+   "bytes": 752872,
+   "sha1": "d39d6c5d8b0c38c92cdf237c475da03943f4fc0c",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "walk_loop",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 0.7543607490461779,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "yes.glb",
+   "name": "yes",
+   "ext": ".glb",
+   "bytes": 764472,
+   "sha1": "6943daab4c7fb8b8390c5b7fcd0d477a3e055f73",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "yes",
+     "keys": 76
+    }
+   ],
+   "jitter_p95": 1.3238656779151643,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "zombie_idle_loop.glb",
+   "name": "zombie_idle_loop",
+   "ext": ".glb",
+   "bytes": 773820,
+   "sha1": "fd7a79e9986577f53bb679e64c1701e355de6417",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "zombie_idle_loop",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 1.7080804486993557,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "zombie_scratch.glb",
+   "name": "zombie_scratch",
+   "ext": ".glb",
+   "bytes": 784384,
+   "sha1": "55d0d67d36034a9e9181a85df5fa91951e48e3eb",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "zombie_scratch",
+     "keys": 55
+    }
+   ],
+   "jitter_p95": 1.9597495680428858,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  },
+  {
+   "path": "zombie_walk_fwd_loop.glb",
+   "name": "zombie_walk_fwd_loop",
+   "ext": ".glb",
+   "bytes": 753028,
+   "sha1": "ecacd376929116e39f13329274e01237a4e0ac5e",
+   "kind": "model",
+   "bones": 71,
+   "clips": 1,
+   "meshes": 2,
+   "vertices": 8546,
+   "clip_list": [
+    {
+     "name": "zombie_walk_fwd_loop",
+     "keys": 41
+    }
+   ],
+   "jitter_p95": 1.2130977171958133,
+   "triangles": 13744,
+   "height": 1.8287165346555412,
+   "duplicate_of": null,
+   "canon_match": 1.0,
+   "verdict": "usable"
+  }
+ ]
+}

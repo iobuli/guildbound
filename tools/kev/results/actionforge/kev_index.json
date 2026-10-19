@@ -1,0 +1,1487 @@
+{
+  "rule": {
+    "features": [
+      "log_bytes",
+      "log_bones",
+      "log_clips",
+      "log_meshes",
+      "log_vertices"
+    ],
+    "standardised": true,
+    "k": 5,
+    "seed": 1,
+    "kmax": 8
+  },
+  "clusters": [
+    {
+      "id": 0,
+      "name": "loop-idle-rigged-medium",
+      "size": 53
+    },
+    {
+      "id": 1,
+      "name": "loop-idle-rigged-medium-2",
+      "size": 8
+    },
+    {
+      "id": 2,
+      "name": "test-fps-rigged-medium",
+      "size": 1
+    },
+    {
+      "id": 3,
+      "name": "idle-loop-rigged-medium",
+      "size": 22
+    },
+    {
+      "id": 4,
+      "name": "kneeling-fixing-rigged-medium",
+      "size": 1
+    }
+  ],
+  "assets": [
+    {
+      "path": "chest_open.glb",
+      "name": "chest_open",
+      "ext": ".glb",
+      "bytes": 759188,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "chest_open"
+      ],
+      "sha1": "8b652c7718708d4b08cdc488220574b1b3454e9f",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "climbup_1m.glb",
+      "name": "climbup_1m",
+      "ext": ".glb",
+      "bytes": 755212,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "climbup_1m"
+      ],
+      "sha1": "3cc2e46c73282882e3dc8dd3f364983f8baaa916",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "consume.glb",
+      "name": "consume",
+      "ext": ".glb",
+      "bytes": 759432,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "consume"
+      ],
+      "sha1": "791149b5c1ad4d578f23cab10782c335d5aa5366",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "crouch_fwd_loop.glb",
+      "name": "crouch_fwd_loop",
+      "ext": ".glb",
+      "bytes": 754148,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "crouch_fwd_loop"
+      ],
+      "sha1": "06333c81b8253537d9052302f1e3bf317b08a6e1",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "crouch_idle_loop.glb",
+      "name": "crouch_idle_loop",
+      "ext": ".glb",
+      "bytes": 813564,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "crouch_idle_loop"
+      ],
+      "sha1": "e5996a439d56bcc8a9778e47928064625eb7b572",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "dance_loop.glb",
+      "name": "dance_loop",
+      "ext": ".glb",
+      "bytes": 743772,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "dance_loop"
+      ],
+      "sha1": "cd1faf775518b7c2b11fa4ee7f692dbb9e5c39f4",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "death01.glb",
+      "name": "death01",
+      "ext": ".glb",
+      "bytes": 809076,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "death01"
+      ],
+      "sha1": "df56270fd51026a598ac86f7bdb0eaa7ba75777c",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "driving_loop.glb",
+      "name": "driving_loop",
+      "ext": ".glb",
+      "bytes": 746172,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "driving_loop"
+      ],
+      "sha1": "6921f9bc6022a29ed63469a68625cd73fa260969",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "farm_harvest.glb",
+      "name": "farm_harvest",
+      "ext": ".glb",
+      "bytes": 781004,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "farm_harvest"
+      ],
+      "sha1": "854b44862cd3764d39c897e0ed44d290a64b65eb",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "farm_plantseed.glb",
+      "name": "farm_plantseed",
+      "ext": ".glb",
+      "bytes": 781452,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "farm_plantseed"
+      ],
+      "sha1": "372ceb4a3c87d0d8b5914f3a8edd20e70798a6b0",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "farm_watering.glb",
+      "name": "farm_watering",
+      "ext": ".glb",
+      "bytes": 775240,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "farm_watering"
+      ],
+      "sha1": "d43b6002fab267a613ff090b6bd664a7ed25a939",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "fixing_kneeling.glb",
+      "name": "fixing_kneeling",
+      "ext": ".glb",
+      "bytes": 893068,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "fixing_kneeling"
+      ],
+      "sha1": "bb70f62734d84466e02e72f0fa4ab617d50aa2d2",
+      "category": "kneeling-fixing-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "fps_test.glb",
+      "name": "fps_test",
+      "ext": ".glb",
+      "bytes": 631728,
+      "kind": "model",
+      "bones": 71,
+      "clips": 0,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [],
+      "sha1": "ba8b52492e3c9f1cf177c23e49365a39b857c0a4",
+      "category": "test-fps-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "hit_chest.glb",
+      "name": "hit_chest",
+      "ext": ".glb",
+      "bytes": 743824,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "hit_chest"
+      ],
+      "sha1": "231035af8a15195a64c7d750e1181e71bae1a4d5",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "hit_head.glb",
+      "name": "hit_head",
+      "ext": ".glb",
+      "bytes": 746344,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "hit_head"
+      ],
+      "sha1": "614bd1d395b225d69690db59723a01ca011f09dc",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "hit_knockback.glb",
+      "name": "hit_knockback",
+      "ext": ".glb",
+      "bytes": 758628,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "hit_knockback"
+      ],
+      "sha1": "52f577514bbd63c3757a982064b969c59619b7e1",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_foldarms_loop.glb",
+      "name": "idle_foldarms_loop",
+      "ext": ".glb",
+      "bytes": 754112,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_foldarms_loop"
+      ],
+      "sha1": "0200b7c64f8c66544a60c9f4779704e7f6b81d34",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_lantern_loop.glb",
+      "name": "idle_lantern_loop",
+      "ext": ".glb",
+      "bytes": 756868,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_lantern_loop"
+      ],
+      "sha1": "d97b4cedf166f1a5225a4ddf1e54db3eea446f85",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_loop.glb",
+      "name": "idle_loop",
+      "ext": ".glb",
+      "bytes": 758696,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_loop"
+      ],
+      "sha1": "0255233230ca63d94c475003e80e495be82282ec",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_no_loop.glb",
+      "name": "idle_no_loop",
+      "ext": ".glb",
+      "bytes": 758752,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_no_loop"
+      ],
+      "sha1": "3756074e5817fa9fb6aacf0884e9183ba58688e7",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_rail_call.glb",
+      "name": "idle_rail_call",
+      "ext": ".glb",
+      "bytes": 775096,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_rail_call"
+      ],
+      "sha1": "0805d2903ea2816bc53d9e82412ccec5e186ac09",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_rail_loop.glb",
+      "name": "idle_rail_loop",
+      "ext": ".glb",
+      "bytes": 752792,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_rail_loop"
+      ],
+      "sha1": "b1cf56542e7ab65570aeacb0ad0e6c37ac56f66d",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_shield_break.glb",
+      "name": "idle_shield_break",
+      "ext": ".glb",
+      "bytes": 746772,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_shield_break"
+      ],
+      "sha1": "79156c160a2014ec039fc2f93bd3de5ef1533524",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_shield_loop.glb",
+      "name": "idle_shield_loop",
+      "ext": ".glb",
+      "bytes": 755588,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_shield_loop"
+      ],
+      "sha1": "d40cbd2576636e430023f3c571a2ab93d2567640",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_talking_loop.glb",
+      "name": "idle_talking_loop",
+      "ext": ".glb",
+      "bytes": 808140,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_talking_loop"
+      ],
+      "sha1": "aecbbb1cd9c1b5622990730d285ad143d506c3ef",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_talkingphone_loop.glb",
+      "name": "idle_talkingphone_loop",
+      "ext": ".glb",
+      "bytes": 781956,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_talkingphone_loop"
+      ],
+      "sha1": "9e61be65cbe842b33d7430621970710e14cad68f",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "idle_torch_loop.glb",
+      "name": "idle_torch_loop",
+      "ext": ".glb",
+      "bytes": 749652,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "idle_torch_loop"
+      ],
+      "sha1": "b5bc6594816073f6a1b7537198bd52dff26ca35c",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "interact.glb",
+      "name": "interact",
+      "ext": ".glb",
+      "bytes": 755592,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "interact"
+      ],
+      "sha1": "aceb97f3031d4f4d6bcf1af72a4791a672acf809",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "jog_fwd_loop.glb",
+      "name": "jog_fwd_loop",
+      "ext": ".glb",
+      "bytes": 746456,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "jog_fwd_loop"
+      ],
+      "sha1": "edfcb5503c0d4ad4f6963505a8d2e79e5e24a9fa",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "jump_land.glb",
+      "name": "jump_land",
+      "ext": ".glb",
+      "bytes": 772328,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "jump_land"
+      ],
+      "sha1": "e301ed06ec699137bbc978776b38cfc53dcd681c",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "jump_loop.glb",
+      "name": "jump_loop",
+      "ext": ".glb",
+      "bytes": 757004,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "jump_loop"
+      ],
+      "sha1": "a15f0d576895db04a16e429af6ec9e3388226cf1",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "jump_start.glb",
+      "name": "jump_start",
+      "ext": ".glb",
+      "bytes": 772664,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "jump_start"
+      ],
+      "sha1": "33d47864cd30ef4f8d5ed844371edd795e5db145",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "laytoidle.glb",
+      "name": "laytoidle",
+      "ext": ".glb",
+      "bytes": 779428,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "laytoidle"
+      ],
+      "sha1": "4aaa191e7b848ae441b05a58a3e21232546ff4f4",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "melee_hook.glb",
+      "name": "melee_hook",
+      "ext": ".glb",
+      "bytes": 741660,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "melee_hook"
+      ],
+      "sha1": "e635448992349ddd2ce20a25c6d0edc610ea7d83",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "melee_hook_rec.glb",
+      "name": "melee_hook_rec",
+      "ext": ".glb",
+      "bytes": 741236,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "melee_hook_rec"
+      ],
+      "sha1": "d629986744ff42931af62bc7f80666bbf6c5466a",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "ninjajump_idle_loop.glb",
+      "name": "ninjajump_idle_loop",
+      "ext": ".glb",
+      "bytes": 750412,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "ninjajump_idle_loop"
+      ],
+      "sha1": "1a1b49dd05bfdc95af50cfc14ff9781e4734e356",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "ninjajump_land.glb",
+      "name": "ninjajump_land",
+      "ext": ".glb",
+      "bytes": 761144,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "ninjajump_land"
+      ],
+      "sha1": "c5fb6960e220641f1b3c57a20b4144c2e152330e",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "ninjajump_start.glb",
+      "name": "ninjajump_start",
+      "ext": ".glb",
+      "bytes": 754888,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "ninjajump_start"
+      ],
+      "sha1": "9f36616f24cb57795955163d808bea4f207923f2",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "overhandthrow.glb",
+      "name": "overhandthrow",
+      "ext": ".glb",
+      "bytes": 775124,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "overhandthrow"
+      ],
+      "sha1": "7ecd04701882554fa9a81dd88d1a8e2c29f1af68",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pickup_table.glb",
+      "name": "pickup_table",
+      "ext": ".glb",
+      "bytes": 750000,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pickup_table"
+      ],
+      "sha1": "7f320598d6e0631edf1d71c97768f36b89b4b737",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_aim_down.glb",
+      "name": "pistol_aim_down",
+      "ext": ".glb",
+      "bytes": 734716,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_aim_down"
+      ],
+      "sha1": "89486fed95d2d9350849b0cc18b25bd7121f05a4",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_aim_neutral.glb",
+      "name": "pistol_aim_neutral",
+      "ext": ".glb",
+      "bytes": 735080,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_aim_neutral"
+      ],
+      "sha1": "379ef9f5ee18d0552a8c9a36b9af286d4fa471da",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_aim_up.glb",
+      "name": "pistol_aim_up",
+      "ext": ".glb",
+      "bytes": 735228,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_aim_up"
+      ],
+      "sha1": "e704ed8b234313287b3acd92c2148049cb48d1d6",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_idle_loop.glb",
+      "name": "pistol_idle_loop",
+      "ext": ".glb",
+      "bytes": 745112,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_idle_loop"
+      ],
+      "sha1": "bc4f44da287eb666452304e21bbb74db5efe692c",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_reload.glb",
+      "name": "pistol_reload",
+      "ext": ".glb",
+      "bytes": 769436,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_reload"
+      ],
+      "sha1": "822871c0419406a3a88ca4e1029beceec6d087f8",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "pistol_shoot.glb",
+      "name": "pistol_shoot",
+      "ext": ".glb",
+      "bytes": 737992,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "pistol_shoot"
+      ],
+      "sha1": "140459603838c64fdaf825a3331a2b753b0e0ec7",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "punch_cross.glb",
+      "name": "punch_cross",
+      "ext": ".glb",
+      "bytes": 742620,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "punch_cross"
+      ],
+      "sha1": "dff2112ffa876855351b50a45a6e6425cef13b7b",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "punch_jab.glb",
+      "name": "punch_jab",
+      "ext": ".glb",
+      "bytes": 743428,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "punch_jab"
+      ],
+      "sha1": "447932b47074971ea1d6da412da173e3c77d3cb3",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "push_loop.glb",
+      "name": "push_loop",
+      "ext": ".glb",
+      "bytes": 766340,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "push_loop"
+      ],
+      "sha1": "94f7b9c4bbeee0e637a02361bbf78bf39e82cc71",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "roll.glb",
+      "name": "roll",
+      "ext": ".glb",
+      "bytes": 779328,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "roll"
+      ],
+      "sha1": "ac5d6e9939d0000f8f26c0caabd6e3d0a3b4c802",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "shield_dash.glb",
+      "name": "shield_dash",
+      "ext": ".glb",
+      "bytes": 768620,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "shield_dash"
+      ],
+      "sha1": "0a80d85ba13cb4c0d0d6a1293d76f4221e66fcd9",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "shield_oneshot.glb",
+      "name": "shield_oneshot",
+      "ext": ".glb",
+      "bytes": 743224,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "shield_oneshot"
+      ],
+      "sha1": "e54a84aedb7642e3fc273e582f8bff8dcda35707",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sitting_enter.glb",
+      "name": "sitting_enter",
+      "ext": ".glb",
+      "bytes": 772560,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sitting_enter"
+      ],
+      "sha1": "cbdddf08129d5f64da63d2c1e8f06632d1d4ffed",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sitting_exit.glb",
+      "name": "sitting_exit",
+      "ext": ".glb",
+      "bytes": 764784,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sitting_exit"
+      ],
+      "sha1": "ecbdc571226c80dc5770704e253730cba4239818",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sitting_idle_loop.glb",
+      "name": "sitting_idle_loop",
+      "ext": ".glb",
+      "bytes": 760652,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sitting_idle_loop"
+      ],
+      "sha1": "3c3c3024d77d3140c6a02f6fde99458b52d9188c",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sitting_talking_loop.glb",
+      "name": "sitting_talking_loop",
+      "ext": ".glb",
+      "bytes": 802676,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sitting_talking_loop"
+      ],
+      "sha1": "2051d91cd9f41568bc451c5f981e657e50a10811",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "slide_exit.glb",
+      "name": "slide_exit",
+      "ext": ".glb",
+      "bytes": 742932,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "slide_exit"
+      ],
+      "sha1": "e67aad31c4acfc667568626ff81b8caf18b43ee8",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "slide_loop.glb",
+      "name": "slide_loop",
+      "ext": ".glb",
+      "bytes": 772400,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "slide_loop"
+      ],
+      "sha1": "45daa594deeaa0d04abdd3fca3de43c9516111c2",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "slide_start.glb",
+      "name": "slide_start",
+      "ext": ".glb",
+      "bytes": 752652,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "slide_start"
+      ],
+      "sha1": "cabdf729b93745717a9c633feec6f73375ba00d1",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "spell_simple_enter.glb",
+      "name": "spell_simple_enter",
+      "ext": ".glb",
+      "bytes": 749852,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "spell_simple_enter"
+      ],
+      "sha1": "5fe550eb0b0ee81eded98f415e3f8d24a8a7a3ce",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "spell_simple_exit.glb",
+      "name": "spell_simple_exit",
+      "ext": ".glb",
+      "bytes": 746988,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "spell_simple_exit"
+      ],
+      "sha1": "5096f2baf09f550cb06fd7ba1b95d552a98730c7",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "spell_simple_idle_loop.glb",
+      "name": "spell_simple_idle_loop",
+      "ext": ".glb",
+      "bytes": 757316,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "spell_simple_idle_loop"
+      ],
+      "sha1": "a8e42f6e5e456af1592ff66015f5ebffc9b0c2e3",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "spell_simple_shoot.glb",
+      "name": "spell_simple_shoot",
+      "ext": ".glb",
+      "bytes": 743268,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "spell_simple_shoot"
+      ],
+      "sha1": "433b370c8a0efcf3b2e9c2923d1a2609a3cd6db9",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sprint_loop.glb",
+      "name": "sprint_loop",
+      "ext": ".glb",
+      "bytes": 743516,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sprint_loop"
+      ],
+      "sha1": "2e6bb1eaa99f818e24a2653a4a098fb5062141e4",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "swim_fwd_loop.glb",
+      "name": "swim_fwd_loop",
+      "ext": ".glb",
+      "bytes": 750540,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "swim_fwd_loop"
+      ],
+      "sha1": "131b0d850178794efa3bd49bda10af8b510daee1",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "swim_idle_loop.glb",
+      "name": "swim_idle_loop",
+      "ext": ".glb",
+      "bytes": 822840,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "swim_idle_loop"
+      ],
+      "sha1": "95867a77d64c0897b1d656964d9662a51ffba0f4",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_attack.glb",
+      "name": "sword_attack",
+      "ext": ".glb",
+      "bytes": 755444,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_attack"
+      ],
+      "sha1": "b9a62aeebb9c0c99345127049466bfabea0ed167",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_block.glb",
+      "name": "sword_block",
+      "ext": ".glb",
+      "bytes": 779948,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_block"
+      ],
+      "sha1": "cfafc019d079990ec7934696cd0c5b9c3a559823",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_dash.glb",
+      "name": "sword_dash",
+      "ext": ".glb",
+      "bytes": 792600,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_dash"
+      ],
+      "sha1": "cad2fe1cfa1b778abe5e6692d8957fe3b0397006",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_heavy_combo.glb",
+      "name": "sword_heavy_combo",
+      "ext": ".glb",
+      "bytes": 827076,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_heavy_combo"
+      ],
+      "sha1": "cad0f4551b309c1a5c7d51c0bbbf19c5b932c120",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_idle.glb",
+      "name": "sword_idle",
+      "ext": ".glb",
+      "bytes": 764248,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_idle"
+      ],
+      "sha1": "85306114beb32e1020d58964c50255db5045b2ef",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_a.glb",
+      "name": "sword_regular_a",
+      "ext": ".glb",
+      "bytes": 744160,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_a"
+      ],
+      "sha1": "f131904807fa25834973da6c51f68c120d74f73a",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_a_rec.glb",
+      "name": "sword_regular_a_rec",
+      "ext": ".glb",
+      "bytes": 755532,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_a_rec"
+      ],
+      "sha1": "307ba5af9b64169a1f81968551733681a9d232b9",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_b.glb",
+      "name": "sword_regular_b",
+      "ext": ".glb",
+      "bytes": 746352,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_b"
+      ],
+      "sha1": "5783c0e17e00156ce797db1b07d114a9293c0bf7",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_b_rec.glb",
+      "name": "sword_regular_b_rec",
+      "ext": ".glb",
+      "bytes": 757676,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_b_rec"
+      ],
+      "sha1": "56b5f794891fbbbcf96d20d424d10874be99c166",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_c.glb",
+      "name": "sword_regular_c",
+      "ext": ".glb",
+      "bytes": 775140,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_c"
+      ],
+      "sha1": "cc5ce348d6ff9a596f45db1d233f36e5532c05d5",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "sword_regular_combo.glb",
+      "name": "sword_regular_combo",
+      "ext": ".glb",
+      "bytes": 797176,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "sword_regular_combo"
+      ],
+      "sha1": "c242591f2684d5292d968fcb8e30d7b7ad1b30e0",
+      "category": "loop-idle-rigged-medium-2",
+      "duplicate_of": null
+    },
+    {
+      "path": "treechopping_loop.glb",
+      "name": "treechopping_loop",
+      "ext": ".glb",
+      "bytes": 754392,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "treechopping_loop"
+      ],
+      "sha1": "1d66fefa0f11771f697c57111cd4fc1fc3aa8fc8",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "walk_carry_loop.glb",
+      "name": "walk_carry_loop",
+      "ext": ".glb",
+      "bytes": 752608,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "walk_carry_loop"
+      ],
+      "sha1": "b46f08297ba3dd2447a89b735f1da4e7c8243b1e",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "walk_formal_loop.glb",
+      "name": "walk_formal_loop",
+      "ext": ".glb",
+      "bytes": 751704,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "walk_formal_loop"
+      ],
+      "sha1": "1f2313463a0ac1461f305f767cab6fce2a244c00",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "walk_loop.glb",
+      "name": "walk_loop",
+      "ext": ".glb",
+      "bytes": 752872,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "walk_loop"
+      ],
+      "sha1": "d39d6c5d8b0c38c92cdf237c475da03943f4fc0c",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "yes.glb",
+      "name": "yes",
+      "ext": ".glb",
+      "bytes": 764472,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "yes"
+      ],
+      "sha1": "6943daab4c7fb8b8390c5b7fcd0d477a3e055f73",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "zombie_idle_loop.glb",
+      "name": "zombie_idle_loop",
+      "ext": ".glb",
+      "bytes": 773820,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "zombie_idle_loop"
+      ],
+      "sha1": "fd7a79e9986577f53bb679e64c1701e355de6417",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "zombie_scratch.glb",
+      "name": "zombie_scratch",
+      "ext": ".glb",
+      "bytes": 784384,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "zombie_scratch"
+      ],
+      "sha1": "55d0d67d36034a9e9181a85df5fa91951e48e3eb",
+      "category": "idle-loop-rigged-medium",
+      "duplicate_of": null
+    },
+    {
+      "path": "zombie_walk_fwd_loop.glb",
+      "name": "zombie_walk_fwd_loop",
+      "ext": ".glb",
+      "bytes": 753028,
+      "kind": "model",
+      "bones": 71,
+      "clips": 1,
+      "meshes": 2,
+      "vertices": 8546,
+      "clip_names": [
+        "zombie_walk_fwd_loop"
+      ],
+      "sha1": "ecacd376929116e39f13329274e01237a4e0ac5e",
+      "category": "loop-idle-rigged-medium",
+      "duplicate_of": null
+    }
+  ]
+}

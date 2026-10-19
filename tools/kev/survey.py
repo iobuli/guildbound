@@ -30,7 +30,7 @@ import kev  # noqa: E402
 
 CANON_MATCH = 0.8
 HUMAN_HEIGHT = (0.5, 3.0)
-JITTER_P95 = 2.0
+JITTER_RATIO = 3.0
 
 
 def read_glb(path):
@@ -68,18 +68,28 @@ def angle_steps(q):
 
 
 def jitter_p95(js, binary):
-    """p95 of per-key angular acceleration over every rotation track in every clip."""
-    accel = []
+    """Jitter as a ratio: p95 of per-key angular acceleration divided by that track's mean step.
+
+    A fast move has large acceleration in degrees, so the raw number mostly measures speed. Dividing
+    by the track's own mean step makes a sprint and an idle comparable: a smooth curve stays near 1,
+    a curve with spikes or seams goes well above it.
+    """
+    ratios = []
     for anim in js.get("animations", []):
         for ch in anim["channels"]:
             if ch["target"].get("path") != "rotation":
                 continue
             q = floats(js, binary, anim["samplers"][ch["sampler"]]["output"])
-            if len(q) > 3:
-                accel.append(np.abs(np.diff(angle_steps(q))))
-    if not accel:
+            if len(q) < 4:
+                continue
+            steps = angle_steps(q)
+            mean = float(np.mean(steps))
+            if mean < 1e-3:
+                continue
+            ratios.append(np.abs(np.diff(steps)) / mean)
+    if not ratios:
         return None
-    return float(np.percentile(np.concatenate(accel), 95))
+    return float(np.percentile(np.concatenate(ratios), 95))
 
 
 def mesh_facts(js):
@@ -163,7 +173,7 @@ def verdict(a, ref):
         return f"donor-{donor_family(names)}"
     if height is not None and height < HUMAN_HEIGHT[0]:
         return "outfit-piece"
-    if a.get("jitter_p95") is not None and a["jitter_p95"] > JITTER_P95:
+    if a.get("jitter_p95") is not None and a["jitter_p95"] > JITTER_RATIO:
         return "jittery"
     return "usable"
 
