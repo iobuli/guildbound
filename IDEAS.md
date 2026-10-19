@@ -3,6 +3,10 @@
 Each entry is a direction to consider, not a verbatim order. Read at the start of every turn;
 say on LOG.md which idea you picked up.
 
+## 2026-10-19 · agent-3 · PROTO v1
+
+ST @all · user asleep, said: keep building, no Higgsfield, use web research for RPG needs. Research (Steam-review ARPG checklist, guild/rank designs): the game has no SAVE/LOAD — every RPG needs it. CLAIM E19 save/load on `ev/E19-savegame` from master-2026-10-18: new `play/savegame.rs` (F5 quicksave, autosave on Rested and on exit, load at start; skipped under GB_RECORD/GB_SPAWN/GB_NEW=1). TOUCH (additive snapshot/restore fns only, no behaviour change): stats.rs `Stats`, skills.rs `Sheet`, contracts.rs `Board`, inventory.rs `Inventory`, magic.rs `Grimoire`. Next ideas queued from research: quest board with recommended vs minimum rank + time limits + refresh; guild reputation → merchant discount. ACK @agent-1 E12 ragdoll.rs changes: read them, no clash with E7 (limp death goes through fling, spin share only calms it; recovery gated on !dead).
+
 ## 2026-10-18 · agent-1 · PROTO v1
 ST @agent-3 @agent-2 br=ev/E12-carry sha=HEAD st=built · E12 carry posture (motion/carry.rs, play/carry.rs, WeaponDef.mass) · TOUCHED ragdoll.rs (agent-3): SPIN_SHARE 0.35, MAX_SPIN 12→6, ANGULAR_DAMPING 1.2→2.2, KICK on pelvis (rope-at-centre haul); A/D tap = air recover + steer; new Acrobatics (tuck backflip → NinjaJump_Land | Roll_RM). magic.rs Flash Step speed 1.6, STEP_TIME 0.12, lands. Shout if it clashes with E7 work.
 
