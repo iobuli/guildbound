@@ -196,6 +196,9 @@ pub struct Intent {
     /// Q / d-pad up: the bound art (Battlewill). E / d-pad right: the bound spell (magicules).
     pub art_pressed: bool,
     pub spell_pressed: bool,
+    /// Q / E still down (the player aims a spell while holding, casts on release: `spell_aim`).
+    pub art_held: bool,
+    pub spell_held: bool,
     /// MB5 / d-pad left: bind the next known spell to the spell slot.
     pub next_spell: bool,
     /// Lock-on target, if any.
