@@ -216,9 +216,10 @@ fn debug_key(
 #[allow(clippy::type_complexity)]
 fn limp(
     mut commands: Commands,
-    mut bodies: Query<(Entity, &Transform, &mut Mover, &Action, &Fighter), (Without<Ragdolled>, Without<RagdollRequest>, Without<GettingUp>)>,
+    mut deaths: Local<std::collections::HashMap<Entity, u32>>,
+    mut bodies: Query<(Entity, &Transform, &mut Mover, &Action, &Fighter, Option<&Name>), (Without<Ragdolled>, Without<RagdollRequest>, Without<GettingUp>)>,
 ) {
-    for (entity, tf, mut mover, action, fighter) in &mut bodies {
+    for (entity, tf, mut mover, action, fighter, name) in &mut bodies {
         if !fighter.dead || action.kind != ActionKind::Dead || action.elapsed < DEATH_LIMP {
             continue;
         }
@@ -227,7 +228,11 @@ fn limp(
         let v = mover.velocity;
         let flat = Vec3::new(v.x, 0.0, v.z).clamp_length_max(LIMP_DRIFT);
         mover.velocity = if v.is_finite() { Vec3::new(flat.x, v.y.min(0.0), flat.z) } else { Vec3::ZERO };
-        info!("[ragdoll] limp: body velocity {v:.2?} -> {:.2?}", mover.velocity);
+        // Which body, and its how-many-th death (NPCs revive and fight again, so one body dies
+        // many times a session; a count that climbs fast with no revive between is a loop).
+        let n = deaths.entry(entity).or_insert(0);
+        *n += 1;
+        info!("[ragdoll] limp: {} death {}: body velocity {v:.2?} -> {:.2?}", name.map_or("?", |n| n.as_str()), n, mover.velocity);
         commands.entity(entity).try_insert(RagdollRequest {
             velocity: -mover.forward() * DEATH_SLUMP,
             point: tf.translation + Vec3::Y * 0.3,
@@ -670,6 +675,9 @@ fn drive(
         root.translation = Vec3::new(pelvis.translation.x, ground + HALF_HEIGHT, pelvis.translation.z);
         if player {
             info!("[ragdoll] player came to rest at ({:.1}, {:.1})", pelvis.translation.x, pelvis.translation.z);
+        }
+        if revived {
+            info!("[ragdoll] revived: the body gets up at ({:.1}, {:.1})", pelvis.translation.x, pelvis.translation.z);
         }
         root.rotation = Quat::from_rotation_y(yaw);
         mover.yaw = yaw;
