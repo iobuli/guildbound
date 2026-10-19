@@ -1,7 +1,8 @@
 //! A fighter's repertoire: moves beyond its moveset's fixed chains.
 //!
-//! - `StrikeLibrary`: single strikes cut out of the mocap takes (`cmu/*`, see `motion::bvh`, and
-//!   the rokoko kick takes) by
+//! - `StrikeLibrary`: single strikes cut out of the hand-animated libraries the user picked to
+//!   match the look (`library_track`: UAL's punches, and Kevin Iglesias' packs once converted to
+//!   `kev*`): no CMU or Rokoko mocap, which reads stiff next to them. Cut by
 //!   `segment`: forward kinematics on the bank at `SAMPLE_HZ`, the hand / foot speed relative to the
 //!   pelvis (in leg lengths per second), peaks over `PUNCH_SPEED` / `KICK_SPEED` that reach out
 //!   (`REACH`) ahead of the body (`AHEAD`), upright (head over the pelvis), not spinning
@@ -270,6 +271,17 @@ pub fn strike_attack(s: &Strike, duration: f32) -> Attack {
     }
 }
 
+/// Strike clips the library may cut from: UAL's punches and hooks (not their recoveries or the
+/// sword combos) and any Kevin Iglesias library (`kev*/`). The user's call: these match the
+/// hand-animated look; the mocap takes do not.
+pub fn library_track(track: &str) -> bool {
+    let Some((lib, clip)) = track.split_once('/') else { return false };
+    match lib {
+        "ual1" | "ual2" => (clip.contains("Punch") || clip.contains("Melee_Hook") || clip.contains("Kick")) && !clip.ends_with("_Rec"),
+        _ => lib.starts_with("kev"),
+    }
+}
+
 fn build_library(mut commands: Commands, bank: Option<Res<PoseBank>>, library: Option<Res<StrikeLibrary>>) {
     if library.is_some() {
         return;
@@ -277,7 +289,7 @@ fn build_library(mut commands: Commands, bank: Option<Res<PoseBank>>, library: O
     let Some(bank) = bank else { return };
     let started = std::time::Instant::now();
     let mut lib = StrikeLibrary::default();
-    let mut tracks: Vec<&String> = bank.tracks.keys().filter(|k| k.starts_with("cmu/") || k.starts_with("rokoko/") && k.contains("Kick")).collect();
+    let mut tracks: Vec<&String> = bank.tracks.keys().filter(|k| library_track(k)).collect();
     tracks.sort();
     for track in tracks {
         let duration = bank.duration(track);
@@ -289,7 +301,7 @@ fn build_library(mut commands: Commands, bank: Option<Res<PoseBank>>, library: O
             }
         }
     }
-    info!("[repertoire] {} punches, {} kicks from the mocap takes in {:.2}s", lib.punches.len(), lib.kicks.len(), started.elapsed().as_secs_f32());
+    info!("[repertoire] {} punches, {} kicks from the UAL / Kevin Iglesias clips in {:.2}s", lib.punches.len(), lib.kicks.len(), started.elapsed().as_secs_f32());
     commands.insert_resource(lib);
 }
 
@@ -366,6 +378,16 @@ fn learn(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn the_library_only_cuts_ual_and_kevin_iglesias_strikes() {
+        assert!(library_track("ual1/Punch_Jab") && library_track("ual1/Punch_Cross") && library_track("ual2/Melee_Hook"));
+        assert!(library_track("kev_melee/Kick_Front") && library_track("kev/Punch_Left"));
+        assert!(!library_track("ual2/Melee_Hook_Rec"), "recoveries are not strikes");
+        assert!(!library_track("ual2/Sword_Regular_Combo") && !library_track("ual1/Walk_Loop"));
+        assert!(!library_track("cmu/144_20_punch_sequence") && !library_track("rokoko/Kick_Side") && !library_track("sekiro/Zombie Kick"));
+        assert!(!library_track("Punch_Jab"), "a bare clip name has no library");
+    }
     use std::sync::OnceLock;
 
     fn bank() -> &'static PoseBank {
