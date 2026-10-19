@@ -70,6 +70,45 @@ pub struct Lines {
     pub captain_greet: Vec<String>,
     pub adventurer_greet: Vec<String>,
     pub chatter: Vec<String>,
+    /// Talk about the player's own deeds ("What's the news?"): templates with `{title}`,
+    /// `{rank}`, `{done}`, `{foe}` and `{count}`; one is only said when every word it names is
+    /// known (`rumour`).
+    #[serde(default)]
+    pub rumours: Vec<String>,
+}
+
+/// What the guild knows of the player, for rumours.
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Renown {
+    /// The latest title earned.
+    pub title: Option<String>,
+    /// The rank held (index into `RANKS`).
+    pub rank: usize,
+    /// Contracts completed.
+    pub done: u32,
+    /// The bounty target the player has brought down most, and how often.
+    pub foe: Option<(String, u32)>,
+}
+
+/// A rumour from `templates` about `r`, the `pick`-th of those whose words are all known (`{rank}`
+/// only once above F, `{done}` once there is one); None when none fits.
+pub fn rumour(templates: &[String], r: &Renown, pick: usize) -> Option<String> {
+    let known = |t: &str| {
+        (!t.contains("{title}") || r.title.is_some())
+            && (!t.contains("{rank}") || r.rank > 0)
+            && (!t.contains("{done}") || r.done > 0)
+            && (!(t.contains("{foe}") || t.contains("{count}")) || r.foe.is_some())
+    };
+    let fits: Vec<&String> = templates.iter().filter(|t| known(t)).collect();
+    let t = fits.get(pick % fits.len().max(1))?;
+    let (foe, count) = r.foe.clone().unwrap_or_default();
+    Some(
+        t.replace("{title}", r.title.as_deref().unwrap_or(""))
+            .replace("{rank}", RANKS[r.rank.min(RANKS.len() - 1)].0)
+            .replace("{done}", &r.done.to_string())
+            .replace("{foe}", &foe)
+            .replace("{count}", &count.to_string()),
+    )
 }
 
 #[derive(Resource, Clone, Debug, Default, serde::Deserialize)]
@@ -141,6 +180,8 @@ pub struct Duel {
 pub struct Guild {
     /// Kills not yet reported, by victim name.
     pub bounties: HashMap<String, u32>,
+    /// Every bounty kill so far, by victim name (rumours).
+    pub hunted: HashMap<String, u32>,
     pub bed_paid: bool,
     pub exam: Exam,
     /// Game time before which a failed exam can't be retried.
@@ -450,6 +491,7 @@ fn ledger(data: Res<GuildData>, mut guild: ResMut<Guild>, mut deeds: MessageRead
     for d in deeds.read() {
         if Some(d.who) == player && d.kind == "kill" && data.bounties.contains_key(&d.tag) {
             *guild.bounties.entry(d.tag.clone()).or_insert(0) += 1;
+            *guild.hunted.entry(d.tag.clone()).or_insert(0) += 1;
         }
     }
 }
@@ -475,7 +517,7 @@ fn respond(
     mut dialogue: ResMut<Dialogue>,
     mut started: MessageReader<TalkStarted>,
     mut chose: MessageReader<Chose>,
-    mut players: Query<(Entity, &Inventory, &mut Purse), With<Player>>,
+    mut players: Query<(Entity, &Inventory, &mut Purse, Option<&Sheet>), With<Player>>,
     mut captains: Query<&mut Fighter, Without<Player>>,
     mut turn_in: MessageWriter<TurnIn>,
     mut rank_up: MessageWriter<RankUp>,
@@ -484,7 +526,7 @@ fn respond(
     mut log: MessageWriter<HudLog>,
     mut commands: Commands,
 ) {
-    let Ok((player, inv, mut purse)) = players.single_mut() else { return };
+    let Ok((player, inv, mut purse, sheet)) = players.single_mut() else { return };
     let now = time.elapsed_secs();
     let view = |guild: &Guild, purse: &Purse, board_ready: bool, items: bool, bounties: bool| {
         let ready: Vec<&super::contracts::ContractDef> = if board_ready {
@@ -611,7 +653,20 @@ fn respond(
                 String::new()
             }
             "advice" => greet(&mut guild, &data.lines.captain_greet),
-            "news" => greet(&mut guild, &data.lines.adventurer_greet),
+            // Half the time, if the guild has heard of you, it's you they talk about.
+            "news" => {
+                let renown = Renown {
+                    title: sheet.and_then(|s| s.titles.last().cloned()),
+                    rank: board.rank(),
+                    done: board.done,
+                    foe: guild.hunted.iter().max_by_key(|(name, n)| (**n, std::cmp::Reverse((*name).clone()))).map(|(k, v)| (k.clone(), *v)),
+                };
+                let pick = guild.roll(1024);
+                match rumour(&data.lines.rumours, &renown, pick / 2).filter(|_| pick % 2 == 0) {
+                    Some(r) => r,
+                    None => greet(&mut guild, &data.lines.adventurer_greet),
+                }
+            }
             _ => String::new(),
         };
         if close {
@@ -920,6 +975,30 @@ mod tests {
 
     fn data() -> GuildData {
         GuildData::load(&guild_path()).expect("guild.json")
+    }
+
+    #[test]
+    fn rumours_only_say_what_the_guild_knows() {
+        let t: Vec<String> = ["They call you {title} now.", "Rank {rank}, they say.", "{done} contracts signed off.", "You brought down the {foe} {count} times."]
+            .map(String::from)
+            .to_vec();
+        let nobody = Renown::default();
+        assert_eq!(rumour(&t, &nobody, 0), None, "nothing known, nothing said");
+        let r = Renown { title: Some("Slime Bane".into()), rank: 2, done: 5, foe: Some(("Rival".into(), 3)) };
+        let said: Vec<String> = (0..4).filter_map(|i| rumour(&t, &r, i)).collect();
+        assert!(said.contains(&"They call you Slime Bane now.".to_string()));
+        assert!(said.contains(&"Rank D, they say.".to_string()));
+        assert!(said.contains(&"You brought down the Rival 3 times.".to_string()));
+        // Only the facts known are used.
+        let some = Renown { done: 2, ..default() };
+        assert_eq!(rumour(&t, &some, 7), Some("2 contracts signed off.".to_string()));
+        // The shipped templates all fill completely.
+        let d = GuildData::load(&guild_path()).unwrap();
+        assert!(!d.lines.rumours.is_empty());
+        for i in 0..d.lines.rumours.len() {
+            let s = rumour(&d.lines.rumours, &r, i).unwrap();
+            assert!(!s.contains('{') && !s.contains('}'), "{s}");
+        }
     }
 
     #[test]
