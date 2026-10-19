@@ -429,6 +429,7 @@ fn model_buttons(
             continue;
         }
         let Some(rel) = catalog.models.get(page.0 * PAGE + i) else { continue };
+        info!("placing {rel}");
         let fwd = cam.forward().as_vec3() * Vec3::new(1.0, 0.0, 1.0);
         let at = cam.translation + fwd.normalize_or_zero() * 10.0;
         let ground = Vec3::new(at.x, terrain::ground(at.x, at.z), at.z);
