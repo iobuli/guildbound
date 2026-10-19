@@ -215,6 +215,18 @@ def skin(body, joints, size=1024, seed=7):
 # ------------------------------------------------------------------------------------------
 # Eyes
 
+# Where the eye mesh looks out, in the 256 px eye texture: the front of each eyeball is UV
+# (0.496, 0.501) in both hero bodies, and a human iris spans ~30 deg from it, ~0.085 UV on this
+# mesh (both measured from body.glb's `eyes` primitive). Detecting the source texture's dark disc
+# (`find_iris`) gave (0.6, 0.42) with r 0.36: the whole visible eye fell inside the iris and read as
+# a flat brown almond.
+EYE_SIZE = 256
+EYE_IRIS_CENTRE = (0.496 * EYE_SIZE, 0.501 * EYE_SIZE)
+EYE_IRIS_RADIUS = 0.085 * EYE_SIZE
+IRIS_COLOURS = {"brown": (0.36, 0.20, 0.09), "blue": (0.30, 0.48, 0.70), "green": (0.28, 0.48, 0.30), "grey": (0.50, 0.54, 0.58),
+                "hazel": (0.48, 0.38, 0.18), "amber": (0.70, 0.46, 0.12)}
+
+
 def iris(colour, centre, radius, size=256, seed=3):
     """An eye texture with the iris at `centre` (pixels), `radius` px. `colour` is sRGB 0..1."""
     rng = np.random.default_rng(seed)
@@ -229,8 +241,9 @@ def iris(colour, centre, radius, size=256, seed=3):
         a0 = rng.uniform(-np.pi, np.pi)
         wig = rng.uniform(0.04, 0.12)
         line = np.abs(np.angle(np.exp(1j * (ang - a0 - wig * np.sin(r * 6 + rng.uniform(0, 6))))))
-        veins = np.maximum(veins, np.clip(1 - line / 0.012, 0, 1) * np.clip((r - 1.3) / 1.2, 0, 1))
-    img = img * (1 - 0.35 * veins[..., None]) + np.array([0.75, 0.25, 0.25]) * 0.35 * veins[..., None]
+        veins = np.maximum(veins, np.clip(1 - line / 0.012, 0, 1) * np.clip((r - 1.8) / 2.0, 0, 1))
+    # Faint, and only toward the corners of the eye (the white round the iris stays clean).
+    img = img * (1 - 0.18 * veins[..., None]) + np.array([0.75, 0.25, 0.25]) * 0.18 * veins[..., None]
     img *= (1 - 0.12 * np.clip((r - 1.2) / 2.5, 0, 1))[..., None]
     # Iris: radial fibres, darker collarette and limbal ring.
     c = np.asarray(colour, float)

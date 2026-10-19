@@ -611,8 +611,7 @@ def neutral_hair(data: bytes, size=512) -> Image.Image:
 
 
 # Iris colours (sRGB) for our eye textures.
-IRIS_COLOURS = {"brown": (0.36, 0.20, 0.09), "blue": (0.30, 0.48, 0.70), "green": (0.28, 0.48, 0.30), "grey": (0.50, 0.54, 0.58),
-                "hazel": (0.48, 0.38, 0.18), "amber": (0.70, 0.46, 0.12)}
+IRIS_COLOURS = tx.IRIS_COLOURS
 EYE_COLOURS = {"brown": None, "blue": (0.58, 0.55), "green": (0.30, 0.55), "grey": (0.58, 0.08), "hazel": (0.14, 0.55),
                "amber": (0.10, 0.85)}
 
@@ -819,9 +818,13 @@ def main():
         base, normal = tx.skin(b, J)
         base.save(os.path.join(OUT, "tex", f"{s}_skin.png"), optimize=True)
         normal.save(os.path.join(OUT, "tex", f"{s}_skin_normal.png"), optimize=True)
-    centre, radius = tx.find_iris(Image.open(io.BytesIO(bodies["male"].tex_eye)))
+    # The iris goes where the eye mesh looks out (measured, `tx.EYE_IRIS_*`), not where the source
+    # texture's disc is (`tx.find_iris` read it off-centre and far too big). `eye_textures.py`
+    # rebuilds just these.
     for c, srgb in IRIS_COLOURS.items():
-        tx.iris(srgb, centre, radius, seed=sum(map(ord, c))).save(os.path.join(OUT, "tex", f"eye_{c}.png"), optimize=True)
+        tx.iris(srgb, tx.EYE_IRIS_CENTRE, tx.EYE_IRIS_RADIUS, size=tx.EYE_SIZE, seed=sum(map(ord, c))).save(
+            os.path.join(OUT, "tex", f"eye_{c}.png"), optimize=True
+        )
     for k, seed in (("1", 11), ("2", 12)):
         hb, hn = tx.hair(seed=seed)
         hb.save(os.path.join(OUT, "tex", f"hair_{k}_base.png"), optimize=True)
