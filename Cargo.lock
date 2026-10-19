@@ -2904,6 +2904,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "gb_viewer"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "guildbound_sim",
+]
+
+[[package]]
 name = "gbperf"
 version = "0.1.0"
 dependencies = [

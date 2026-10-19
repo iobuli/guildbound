@@ -1,0 +1,13 @@
+[package]
+name = "gb_viewer"
+edition.workspace = true
+version.workspace = true
+publish.workspace = true
+
+# Read-only viewer for the Guildbound asset library and the game's pure logic. It never writes to
+# assets/: scenes load through the asset server, the Kev buttons run the Python tools, and their
+# output goes to staging/viewer/ (gitignored). Same Bevy feature set as the game, so the build
+# cache is shared.
+[dependencies]
+guildbound_sim = { path = "../sim" }
+bevy = { version = "=0.19.1", features = ["wav"] }
