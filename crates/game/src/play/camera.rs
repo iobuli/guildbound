@@ -276,7 +276,7 @@ fn aims_over_shoulder(loadout: Option<&Loadout>, movesets: Option<&Movesets>) ->
 
 /// The only writer of the cursor's grab and visibility.
 #[allow(clippy::too_many_arguments)]
-fn capture_cursor(
+pub(crate) fn capture_cursor(
     keys: Res<ButtonInput<KeyCode>>,
     mouse: Res<ButtonInput<MouseButton>>,
     ui: Query<&Interaction>,
@@ -287,6 +287,7 @@ fn capture_cursor(
     stats: Option<Res<StatsOpen>>,
     tuning: Option<Res<TuningPanel>>,
     talking: Option<Res<super::talk::Talking>>,
+    paused: Option<Res<super::pause::Paused>>,
     mut tweak_page: Local<bool>,
 ) {
     capture.just_captured = false;
@@ -306,6 +307,7 @@ fn capture_cursor(
         || stats.is_some_and(|s| s.0.is_some())
         || tuning.is_some_and(|t| t.open)
         || talking.is_some_and(|t| t.active())
+        || paused.is_some_and(|p| p.0)
         || *tweak_page;
     if capture.ui_mode && !ui_mode {
         capture.wanted = true;
@@ -344,6 +346,7 @@ fn orbit(
     scroll: Res<AccumulatedMouseScroll>,
     capture: Res<CursorCapture>,
     gamepads: Query<&Gamepad>,
+    settings: Option<Res<super::pause::Settings>>,
     mut rig: ResMut<CameraRig>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -352,8 +355,9 @@ fn orbit(
     if capture.captured && !capture.just_captured {
         let d = motion.delta;
         if d.is_finite() {
-            d_yaw -= d.x * MOUSE_SENSITIVITY;
-            d_pitch += d.y * MOUSE_SENSITIVITY;
+            let k = MOUSE_SENSITIVITY * settings.as_ref().map_or(1.0, |s| s.mouse);
+            d_yaw -= d.x * k;
+            d_pitch += d.y * k;
         }
         let notches = match scroll.unit {
             MouseScrollUnit::Line => scroll.delta.y,

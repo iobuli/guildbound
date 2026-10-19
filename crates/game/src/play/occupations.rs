@@ -7,8 +7,8 @@
 //! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one.
 //! While the player talks to a civilian (`talk::Talking`) it stops and looks at them.
 //! Walking: through the hall's doorways when one end is inside (`hall::route`); no progress for
-//! `STALL` s sidesteps for `DODGE` s (alternating sides); a post not reached in `POST_GIVE_UP` s
-//! is skipped.
+//! `STALL` s sidesteps for `DODGE` s (alternating sides); a step is skipped after `GIVE_UP` s
+//! (`POST_GIVE_UP` for a post) without getting closer.
 //! At start-up `check_posts` stands a body-sized capsule on every post and its run-up and warns
 //! about any that sit in a wall or prop, or up on the guildhouse podium outside its walls (only
 //! reachable through the hall), so a moved building shows up in the log, not as NPCs giving up.
@@ -18,11 +18,17 @@ use super::interact::{Using, stand_and_face};
 use super::{Fighter, HALF_HEIGHT, Intent, Interactable, PlaySet};
 use bevy::prelude::*;
 
-/// Walk until this close to the stand point (m); interact again after this long (s) if nothing
-/// started; give a step up after this long (s).
+/// Walk until this close to the stand point (m), or until `NEAR` when something solid (the chair
+/// itself, a bed frame) stops the walk short of it (stalled `NEAR_STALL` s): `interact` walks the
+/// last bit into place. Interact again after `PRESS_EVERY` s if nothing started; give a step up
+/// after `GIVE_UP` s without getting `PROGRESS` m closer (far targets across the courtyard take
+/// as long as they take).
 const ARRIVE: f32 = 0.45;
+const NEAR: f32 = 0.8;
+const NEAR_STALL: f32 = 0.4;
 const PRESS_EVERY: f32 = 1.0;
 const GIVE_UP: f32 = 30.0;
+const PROGRESS: f32 = 0.5;
 /// A neighbour this close (m) while using something gets looked at (company at a table).
 const SITTER_NEAR: f32 = 3.5;
 /// Stuck: under `STALL_MOVE` m of progress for `STALL` s sidesteps for `DODGE` s; a post not
@@ -129,6 +135,8 @@ pub struct Occupation {
     stalled: f32,
     dodge: f32,
     side: f32,
+    /// Closest the walker has come to this step's goal (m).
+    best: f32,
 }
 
 impl Occupation {
@@ -141,6 +149,7 @@ impl Occupation {
             stay: 0.0,
             press_in: 0.0,
             elapsed: 0.0,
+            best: f32::INFINITY,
             run_up: false,
             night: false,
             anchor: Vec3::ZERO,
@@ -179,6 +188,14 @@ impl Occupation {
         self.phase = Phase::Going;
         self.elapsed = 0.0;
         self.press_in = 0.0;
+        self.best = f32::INFINITY;
+    }
+    /// The give-up clock counts time without progress: getting `PROGRESS` m closer restarts it.
+    fn progress(&mut self, dist: f32) {
+        if dist < self.best - PROGRESS {
+            self.best = dist;
+            self.elapsed = 0.0;
+        }
     }
 }
 
@@ -320,6 +337,7 @@ fn work(
             let goal = if job.run_up { post } else { run_up };
             let to = (goal - feet).with_y(0.0);
             let way = (super::hall::route(feet, goal) - feet).with_y(0.0);
+            job.progress(to.length());
             if !job.run_up && to.length() < ARRIVE {
                 job.run_up = true;
             } else if job.run_up && to.length() < POST_ARRIVE {
@@ -357,7 +375,9 @@ fn work(
         };
         intent.look = center;
         let to = (stand - feet).with_y(0.0);
-        if to.length() > ARRIVE {
+        job.progress(to.length());
+        let blocked = to.length() < NEAR && job.stalled > NEAR_STALL;
+        if to.length() > ARRIVE && !blocked {
             let way = (super::hall::route(feet, stand) - feet).with_y(0.0);
             intent.move_dir = job.walk(feet, way, STROLL, dt, balancing);
             intent.walk = true;

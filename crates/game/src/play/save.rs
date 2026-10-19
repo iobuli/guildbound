@@ -7,7 +7,7 @@
 //!   is applied as if picked (`class::ClassChoice`); `LOAD_AFTER` s after its kit is in, the saved
 //!   values overwrite it and the player is moved (`controller::Teleport`).
 //! - **Saving**: every `AUTOSAVE` s of play, after a night in a guild bed (`guild::Rested`), and
-//!   when the window closes or the game quits. Written to a temporary file first, then renamed, so a crash
+//!   when the window closes or the game quits, and on `SaveNow` (the pause menu). Written to a temporary file first, then renamed, so a crash
 //!   mid-write never leaves a broken save.
 //! - **Smoke runs** (any `GB_*` set) neither load nor save, so test runs never touch the player's
 //!   game; `GB_SAVE=<path>` opts one in with its own file. `GB_NEWGAME=1` ignores the save (the
@@ -76,6 +76,10 @@ pub struct SaveFile {
     pub bounties: HashMap<String, u32>,
 }
 
+/// Save right away (the pause menu's Save now, and Save and quit).
+#[derive(Message, Clone, Copy, Debug, Default)]
+pub struct SaveNow;
+
 /// Where this run saves (None: a smoke run that saves nothing), and the load in progress.
 #[derive(Resource, Default)]
 pub struct SaveSlot {
@@ -85,6 +89,20 @@ pub struct SaveSlot {
     /// Seconds since the class kit went on (while `pending`).
     wait: f32,
     since_save: f32,
+}
+
+impl SaveSlot {
+    /// Delete the save and stop saving this run (New game: the next launch starts fresh).
+    pub fn forget(&mut self) {
+        if let Some(path) = self.path.take() {
+            match std::fs::remove_file(&path) {
+                Ok(()) => info!("[save] forgot {}", path.display()),
+                Err(e) if e.kind() == std::io::ErrorKind::NotFound => {}
+                Err(e) => error!("[save] {}: {e}", path.display()),
+            }
+        }
+        self.pending = None;
+    }
 }
 
 pub fn default_path() -> PathBuf {
@@ -110,6 +128,7 @@ pub fn plugin(app: &mut App) {
         }
     }
     app.insert_resource(SaveSlot { path, pending, wait: 0.0, since_save: 0.0 })
+        .add_message::<SaveNow>()
         .add_systems(Update, load.after(super::class::apply))
         // Last, so a quit sent this frame is seen before the app stops.
         .add_systems(Last, autosave);
@@ -328,11 +347,12 @@ fn autosave(
     mut rested: MessageReader<Rested>,
     mut closing: MessageReader<WindowCloseRequested>,
     mut quit: MessageReader<AppExit>,
+    mut now: MessageReader<SaveNow>,
 ) {
     let Some(path) = slot.path.clone() else { return };
     let Ok((me, parts)) = players.single() else { return };
     let slept = rested.read().any(|r| r.who == me);
-    let closed = closing.read().count() + quit.read().count() > 0;
+    let closed = closing.read().count() + quit.read().count() + now.read().count() > 0;
     // Nothing to keep before a class is chosen, or while a save is still being loaded.
     let class = choice.as_ref().and_then(|c| c.picked);
     if slot.pending.is_some() || choice.as_ref().is_some_and(|c| c.open || (c.picked.is_some() && !c.applied)) {
