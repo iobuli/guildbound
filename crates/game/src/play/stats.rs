@@ -87,7 +87,7 @@ impl Attr {
 #[derive(Component, Clone, Debug, PartialEq)]
 pub struct Stats {
     pub level: u32,
-    attrs: [u32; 6],
+    pub(crate) attrs: [u32; 6],
     /// Unspent attribute points.
     pub points: u32,
     /// Experience toward the next level.

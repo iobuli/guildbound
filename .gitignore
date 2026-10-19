@@ -7,3 +7,6 @@
 *.zip
 /assets/anim/Rokoko_Free_Mocap_FBX_263/
 tools/model/__pycache__/
+
+# Player save games (play/save.rs)
+saves/

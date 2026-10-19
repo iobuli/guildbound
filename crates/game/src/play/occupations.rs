@@ -9,6 +9,9 @@
 //! Walking: through the hall's doorways when one end is inside (`hall::route`); no progress for
 //! `STALL` s sidesteps for `DODGE` s (alternating sides); a post not reached in `POST_GIVE_UP` s
 //! is skipped.
+//! At start-up `check_posts` stands a body-sized capsule on every post and its run-up and warns
+//! about any that sit in a wall or prop, or up on the guildhouse podium outside its walls (only
+//! reachable through the hall), so a moved building shows up in the log, not as NPCs giving up.
 //! The courtyard has a Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well,
 //! the noticeboard).
 use super::interact::{Using, stand_and_face};
@@ -184,7 +187,48 @@ pub fn plugin(app: &mut App) {
         error!("[occupations] {e}");
         OccupationBook::default()
     });
-    app.insert_resource(book).add_systems(Update, work.in_set(PlaySet::Think));
+    app.insert_resource(book).add_systems(Update, (work.in_set(PlaySet::Think), check_posts));
+}
+
+/// Seconds after start-up before `check_posts` looks (the world's colliders are in by then).
+const CHECK_AFTER: f32 = 1.5;
+
+/// Warn about posts a civilian can't stand on (see the module docs). Runs once.
+fn check_posts(time: Res<Time>, book: Res<OccupationBook>, spatial: avian3d::prelude::SpatialQuery, names: Query<&Name>, mut done: Local<bool>) {
+    use avian3d::prelude::{Collider, SpatialQueryFilter};
+    if *done || time.elapsed_secs() < CHECK_AFTER {
+        return;
+    }
+    *done = true;
+    let world = SpatialQueryFilter::from_mask(super::Phys::World);
+    let body = Collider::capsule(super::CAPSULE_RADIUS * 0.9, super::CAPSULE_LENGTH);
+    let (mut posts, mut bad) = (0, 0);
+    for def in &book.0 {
+        for (when, steps) in [("day", &def.routine), ("night", &def.night)] {
+            for (k, step) in steps.iter().enumerate() {
+                let (Some(at), true) = (step.at, step.kind == "post") else { continue };
+                posts += 1;
+                let (run_up, post) = post_points(at);
+                for (what, p) in [("run-up", run_up), ("post", post)] {
+                    let top = p.with_y(12.0);
+                    let floor = spatial.cast_ray(top, Dir3::NEG_Y, 20.0, true, &world).map_or(0.0, |h| top.y - h.distance);
+                    let centre = p.with_y(floor + HALF_HEIGHT + 0.05);
+                    let hits: Vec<String> = spatial
+                        .shape_intersections(&body, centre, Quat::IDENTITY, &world)
+                        .into_iter()
+                        .map(|e| names.get(e).map_or_else(|_| format!("{e}"), |n| n.as_str().to_string()))
+                        .collect();
+                    let stranded = floor > 0.5 && !super::hall::inside(p);
+                    if !hits.is_empty() || stranded {
+                        bad += 1;
+                        let why = if hits.is_empty() { "up on the podium outside the hall".to_string() } else { format!("inside {}", hits.join(", ")) };
+                        warn!("[occ] {} {when} step {k}: {what} at ({:.1}, {:.1}) is {why}", def.id, p.x, p.z);
+                    }
+                }
+            }
+        }
+    }
+    info!("[occ] checked {posts} posts: {bad} spots blocked");
 }
 
 #[allow(clippy::type_complexity)]
@@ -283,7 +327,7 @@ fn work(
                 job.stay = step.stay;
                 job.press_in = DRILL_EVERY;
             } else if job.elapsed > POST_GIVE_UP {
-                info!("[occ] {} gave up on post step {}", def.id, job.step);
+                info!("[occ] {} gave up on post step {} at ({:.1}, {:.1}), heading for ({:.1}, {:.1})", def.id, job.step, feet.x, feet.z, goal.x, goal.z);
                 job.advance(len);
             } else {
                 let speed = if job.run_up { 0.3 } else { STROLL };
@@ -293,6 +337,9 @@ fn work(
             continue;
         }
         if job.phase == Phase::Working || job.elapsed > GIVE_UP {
+            if job.phase != Phase::Working {
+                info!("[occ] {} gave up on {} step {} at ({:.1}, {:.1})", def.id, step.kind, job.step, feet.x, feet.z);
+            }
             job.advance(len);
             continue;
         }

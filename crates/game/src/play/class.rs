@@ -109,7 +109,7 @@ impl Class {
 pub struct ClassChoice {
     pub open: bool,
     pub picked: Option<Class>,
-    applied: bool,
+    pub(crate) applied: bool,
 }
 
 pub fn plugin(app: &mut App) {
@@ -170,7 +170,7 @@ fn choose(keys: Res<ButtonInput<KeyCode>>, mut choice: ResMut<ClassChoice>) {
 
 /// Give the player the chosen kit (once).
 #[allow(clippy::type_complexity)]
-fn apply(
+pub(crate) fn apply(
     mut choice: ResMut<ClassChoice>,
     mut players: Query<(Entity, &mut Sheet, &mut Grimoire, &mut Stats, Option<&super::appearance::Appearance>), With<Player>>,
     mut equip: MessageWriter<Equip>,

@@ -201,7 +201,7 @@ pub struct Open {
 pub struct Board {
     pub open: Vec<Open>,
     /// Next template to offer.
-    next: usize,
+    pub(crate) next: usize,
     /// Contracts completed (eligibility for the next rank).
     pub done: u32,
     /// Finished contracts waiting to be turned in at the guild desk.

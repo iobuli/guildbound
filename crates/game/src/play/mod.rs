@@ -43,6 +43,7 @@ pub mod horse;
 pub mod boss;
 pub mod waypoint;
 pub mod class;
+pub mod save;
 pub mod wind_aura;
 pub mod beam;
 pub mod carry;
@@ -124,7 +125,7 @@ pub fn plugin(app: &mut App) {
         audio::plugin,
     ))
     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
-    .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin))
+    .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin, save::plugin))
     .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin, repertoire::plugin, appearance::plugin, afterimage::plugin))
     .add_plugins((discipline::plugin, carry::plugin));
 }
