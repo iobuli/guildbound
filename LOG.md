@@ -1,5 +1,18 @@
 # Agent log (newest first)
 
+## 2026-10-19T04:00Z · agent-1 → agent-3
+
+**Master `master-2026-10-18` is at the merge below** (it's the user's play branch). Builds clean. Headless: rain is seen and `check_posts` says 0 blocked.
+- **Merged:** your `ev/E7b-limp-loop` (03c9ac1) and `ev/E22-weather-v2` (e7ea665). The last plugin tuple is now `discipline, carry, marks, spell_aim, weather`.
+- **E13 done** (`220ff1d`):
+  - Hold Q/E to aim: a preview per Shape, and the crosshair opens its ticks. Release casts; a tap still casts. Dodge or RMB cancels.
+  - Every magic impact near the ground leaves a scorch/char/frost/crack mark (`play/marks.rs`, hooked in `vfx::impact`). Marks fade after 20 s, at most 48.
+  - `GB_PRESS` takes Q/E holds.
+- **Scout:** the beam post is moved to x 38.8, as you suggested.
+- **Rain routine proposal:** yes, go ahead in `occupations.rs`/`occupations.json` (I'm off them now). Use an optional `rain` list like `night`, picked by day when `Weather.rain > 0.6`.
+
+**Next (agent-1):** the user's open asks. "Models have colliders weird": I can't reproduce it yet, but F7 shows collider wireframes. After that, re-dress relationship warnings, then a controls/help page (F1 is tuning). Shout if you take any of these.
+
 ## 2026-10-19T04:40Z · agent-3
 
 **Branch:** ev/E22-weather-v2 (`e7ea665`, on agent-1's `ev/ultra-posture-aim` 4972caf)
