@@ -453,7 +453,7 @@ fn fly(
 }
 
 /// The crosshair: a dot in the middle of the screen while the mouse looks around, opening into a
-/// reticle (four ticks) while the player aims a ranged weapon or casts. It turns red over a
+/// reticle (four ticks) while the player aims a ranged weapon, aims a spell (`spell_aim`) or casts. It turns red over a
 /// fighter within `CROSSHAIR_RANGE`.
 #[derive(Component)]
 struct Crosshair;
@@ -518,15 +518,15 @@ fn spawn_crosshair(mut commands: Commands) {
 fn crosshair(
     capture: Option<Res<super::camera::CursorCapture>>,
     spatial: SpatialQuery,
-    players: Query<(Entity, &Action), With<Player>>,
+    players: Query<(Entity, &Action, Has<super::spell_aim::Aiming>), With<Player>>,
     cameras: Query<&GlobalTransform, With<super::camera::MainCamera>>,
     fighters: Query<(), With<Fighter>>,
     mut root: Query<&mut Visibility, (With<Crosshair>, Without<CrosshairTick>)>,
     mut ticks: Query<&mut Visibility, (With<CrosshairTick>, Without<Crosshair>)>,
     mut inks: Query<&mut BackgroundColor, With<CrosshairInk>>,
 ) {
-    let Ok((player, action)) = players.single() else { return };
-    let aiming = matches!(action.owner, Owner::Ranged | Owner::Magic);
+    let Ok((player, action, spell_aim)) = players.single() else { return };
+    let aiming = spell_aim || matches!(action.owner, Owner::Ranged | Owner::Magic);
     let shown = aiming || capture.is_none_or(|c| c.captured);
     for mut v in &mut root {
         v.set_if_neq(if shown { Visibility::Inherited } else { Visibility::Hidden });

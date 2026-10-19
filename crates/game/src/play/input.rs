@@ -60,7 +60,7 @@ pub fn parse_presses(spec: &str) -> Vec<Press> {
 
 /// Smoke-test hook `GB_PRESS` (see `parse_presses`): after the real input, the player's `Intent`
 /// gets the scripted keys. F interact, X draw / sheathe, G grab, L light attack, H heavy (held),
-/// B block (held), W / S / A / D walk (camera-free: world +Z / −Z / +X / −X). Edge flags fire on
+/// B block (held), Q art / E spell (held: aimed, cast on release), W / S / A / D walk (camera-free: world +Z / −Z / +X / −X). Edge flags fire on
 /// the first frame at or after `at`; holds last `hold` s.
 fn scripted(time: Res<Time>, mut presses: Local<Option<Vec<Press>>>, mut players: Query<&mut Intent, With<Player>>) {
     let list = presses.get_or_insert_with(|| std::env::var("GB_PRESS").map(|s| parse_presses(&s)).unwrap_or_default());
@@ -89,6 +89,14 @@ fn scripted(time: Res<Time>, mut presses: Local<Option<Vec<Press>>>, mut players
                 'B' if held => {
                     intent.secondary_pressed |= edge;
                     intent.secondary_held = true;
+                }
+                'Q' if held => {
+                    intent.art_pressed |= edge;
+                    intent.art_held = true;
+                }
+                'E' if held => {
+                    intent.spell_pressed |= edge;
+                    intent.spell_held = true;
                 }
                 'W' if held => intent.move_dir = Vec3::Z * 0.6,
                 'S' if held => intent.move_dir = Vec3::NEG_Z * 0.6,

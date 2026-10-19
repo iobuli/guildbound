@@ -526,6 +526,8 @@ pub fn impact(
     scale: f32,
 ) {
     burst(commands, vfx.burst(e), at, scale);
+    // A scorch / frost / crack on the ground below, if it is near (`marks`).
+    commands.spawn((super::marks::MarkRequest { element: e, size: scale }, Transform::from_translation(at)));
     let color = e.core();
     commands.spawn((
         Name::new("Impact glow"),
