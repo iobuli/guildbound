@@ -1,5 +1,5 @@
 {
-  "_about": "Occupations: what a civilian does all day, as a routine of interactable kinds used in turn (the nearest free one). stay: seconds a looping use runs (one-shots end with their clip). Civilians use the world through the same interact actions as the player. night: the routine after dark (sky clock), if any. kind \"post\": walk to at [x, z, yaw deg] and stand facing that way for stay s (drill: swing at what is ahead).",
+  "_about": "Occupations: what a civilian does all day, as a routine of interactable kinds used in turn (the nearest free one). stay: seconds a looping use runs (one-shots end with their clip). Civilians use the world through the same interact actions as the player. night: the routine after dark (sky clock), if any. rain: the routine by day in heavy rain (weather), if any. kind \"post\": walk to at [x, z, yaw deg] and stand facing that way for stay s (drill: swing at what is ahead).",
   "occupations": [
     { "id": "smith", "name": "Smith",
       "routine": [ { "kind": "anvil", "stay": 20 },
@@ -8,7 +8,8 @@
                    { "kind": "chair", "stay": 10 },
                    { "kind": "torch", "stay": 6 } ],
       "night": [ { "kind": "chair", "stay": 40 },
-                   { "kind": "torch", "stay": 12 } ] },
+                   { "kind": "torch", "stay": 12 } ],
+      "rain": [ { "kind": "chair", "stay": 30 }, { "kind": "torch", "stay": 10 } ] },
     { "id": "farmer", "name": "Farmer",
       "routine": [ { "kind": "seed", "stay": 0 },
                    { "kind": "watering", "stay": 0 },
@@ -17,7 +18,8 @@
                    { "kind": "board", "stay": 0 } ],
       "night": [ { "kind": "torch", "stay": 15 },
                    { "kind": "well", "stay": 0 },
-                   { "kind": "chair", "stay": 30 } ] },
+                   { "kind": "chair", "stay": 30 } ],
+      "rain": [ { "kind": "torch", "stay": 12 }, { "kind": "chair", "stay": 30 } ] },
     { "id": "receptionist", "name": "Receptionist",
       "routine": [ { "kind": "post", "at": [34.3,  -9.0,  -90], "stay": 40 },
                    { "kind": "post", "at": [34.7,  -10.6,  90], "stay": 6 },
@@ -38,12 +40,14 @@
                    { "kind": "post", "at": [27.3, 12.0, -90], "stay": 2 },
                    { "kind": "board", "stay": 6 } ],
       "night": [ { "kind": "chair", "stay": 90 },
-                   { "kind": "bed", "stay": 60 } ] },
+                   { "kind": "bed", "stay": 60 } ],
+      "rain": [ { "kind": "chair", "stay": 40 } ] },
     { "id": "adventurer", "name": "Adventurer",
       "routine": [ { "kind": "chair", "stay": 45 },
                    { "kind": "post", "at": [28.0,  -14.6,  180], "stay": 8 },
                    { "kind": "chair", "stay": 60 } ],
       "night": [ { "kind": "chair", "stay": 90 },
-                   { "kind": "bed", "stay": 60 } ] }
+                   { "kind": "bed", "stay": 60 } ],
+      "rain": [ { "kind": "chair", "stay": 40 } ] }
   ]
 }

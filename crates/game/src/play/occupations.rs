@@ -4,7 +4,9 @@
 //! kind, press interact (the same `Intent.interact_pressed` as the player: `interact` walks it into
 //! place and plays the clip), stay `stay` s on a looping use (anvil, chair, torch) then press again
 //! to stop, and move on. `work` is the only writer of a civilian's `Intent`.
-//! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one.
+//! After dark (`sky::Clock`) a civilian follows its `night` routine instead, if it has one; by
+//! day in heavy rain (`weather::Weather.rain` above `SHELTER_RAIN`) its `rain` routine, if any
+//! (sheltering by a fire, staying in).
 //! While the player talks to a civilian (`talk::Talking`) it stops and looks at them.
 //! Walking: through the hall's doorways when one end is inside (`hall::route`); no progress for
 //! `STALL` s sidesteps for `DODGE` s (alternating sides); a step is skipped after `GIVE_UP` s
@@ -75,6 +77,33 @@ pub struct OccupationDef {
     /// After dark (`sky::Clock::is_night`), if any.
     #[serde(default)]
     pub night: Vec<Step>,
+    /// By day in heavy rain, if any.
+    #[serde(default)]
+    pub rain: Vec<Step>,
+}
+
+/// Rain amount (0..1) above which civilians with a `rain` routine take shelter.
+pub const SHELTER_RAIN: f32 = 0.6;
+
+/// Which of a civilian's routines runs.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Shift {
+    #[default]
+    Day,
+    Night,
+    Rain,
+}
+
+/// The routine for the hour and the weather: night first, then heavy rain, else the day's (a
+/// routine the civilian lacks falls back to the day's).
+pub fn shift(def: &OccupationDef, night: bool, rain: f32) -> Shift {
+    if night && !def.night.is_empty() {
+        Shift::Night
+    } else if !night && rain > SHELTER_RAIN && !def.rain.is_empty() {
+        Shift::Rain
+    } else {
+        Shift::Day
+    }
 }
 
 #[derive(Clone, Debug, serde::Deserialize)]
@@ -127,8 +156,8 @@ pub struct Occupation {
     elapsed: f32,
     /// Post steps: past the run-up point yet.
     run_up: bool,
-    /// Which routine the step indexes (night or day).
-    night: bool,
+    /// Which routine the step indexes.
+    shift: Shift,
     /// Stuck detection while walking: where the walker last made progress, for how long it has
     /// not, and a sidestep in progress (seconds left, side).
     anchor: Vec3,
@@ -151,7 +180,7 @@ impl Occupation {
             elapsed: 0.0,
             best: f32::INFINITY,
             run_up: false,
-            night: false,
+            shift: Shift::Day,
             anchor: Vec3::ZERO,
             stalled: 0.0,
             dodge: 0.0,
@@ -221,7 +250,7 @@ fn check_posts(time: Res<Time>, book: Res<OccupationBook>, spatial: avian3d::pre
     let body = Collider::capsule(super::CAPSULE_RADIUS * 0.9, super::CAPSULE_LENGTH);
     let (mut posts, mut bad) = (0, 0);
     for def in &book.0 {
-        for (when, steps) in [("day", &def.routine), ("night", &def.night)] {
+        for (when, steps) in [("day", &def.routine), ("night", &def.night), ("rain", &def.rain)] {
             for (k, step) in steps.iter().enumerate() {
                 let (Some(at), true) = (step.at, step.kind == "post") else { continue };
                 posts += 1;
@@ -253,6 +282,7 @@ fn work(
     time: Res<Time>,
     book: Res<OccupationBook>,
     clock: Option<Res<super::sky::Clock>>,
+    weather: Option<Res<super::weather::Weather>>,
     talking: Option<Res<super::talk::Talking>>,
     players: Query<Entity, With<super::Player>>,
     mut workers: Query<
@@ -280,16 +310,22 @@ fn work(
             intent.target = players.iter().next();
             continue;
         }
-        let night = clock.as_deref().is_some_and(|c| c.is_night()) && !def.night.is_empty();
-        if night != job.night {
-            // Dusk or dawn: start the other routine (a looping use winds down first).
-            job.night = night;
+        let night = clock.as_deref().is_some_and(|c| c.is_night());
+        let now = shift(def, night, weather.as_deref().map_or(0.0, |w| w.rain));
+        if now != job.shift {
+            // Dusk, dawn, a downpour or its end: start the other routine (a looping use winds
+            // down first).
+            job.shift = now;
             job.step = 0;
             job.phase = Phase::Going;
             job.stay = 0.0;
             job.elapsed = 0.0;
         }
-        let routine = if night { &def.night } else { &def.routine };
+        let routine = match now {
+            Shift::Night => &def.night,
+            Shift::Rain => &def.rain,
+            Shift::Day => &def.routine,
+        };
         let len = routine.len();
         let step = &routine[job.step % len];
         job.elapsed += dt;
@@ -394,6 +430,21 @@ fn work(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn heavy_rain_by_day_sends_civilians_to_shelter() {
+        let book = OccupationBook::load(&occupations_path()).expect("occupations.json");
+        let smith = book.0.iter().find(|d| d.id == "smith").unwrap();
+        assert!(!smith.rain.is_empty(), "the smith shelters in the rain");
+        assert_eq!(shift(smith, false, 0.0), Shift::Day);
+        assert_eq!(shift(smith, false, 0.9), Shift::Rain);
+        assert_eq!(shift(smith, false, SHELTER_RAIN), Shift::Day, "a drizzle doesn't count");
+        assert_eq!(shift(smith, true, 0.9), Shift::Night, "night wins");
+        // Without a rain routine, rain changes nothing.
+        let receptionist = book.0.iter().find(|d| d.id == "receptionist").unwrap();
+        assert!(receptionist.rain.is_empty());
+        assert_eq!(shift(receptionist, false, 1.0), Shift::Day);
+    }
 
     #[test]
     fn occupations_load_and_name_real_kinds() {
