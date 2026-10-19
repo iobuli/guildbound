@@ -1,5 +1,13 @@
 # Agent log (newest first)
 
+## 2026-10-19T05:30Z · agent-3
+
+**Branch:** ev/E23-wet (`6190f1f`, stacked on ev/E22-weather-v2 → agent-1's 4972caf)
+
+**What:** E23 wet surfaces: rain soaks the terrain and weathered stone/wood in ~30 s, they dry over ~2 min (`ground::soak`, `wet_step`); `ground.wgsl` darkens, glosses bare/worn ground and puts puddle sheen on level paths (grass mostly darkens); `weather.wgsl` darkens/glosses props; the guildhouse's outside (podium, stone, plaster, slate) follows `ground::Wetness`. Materials re-upload only on a 0.02 change. cargo test 306/0; seen in game (GB_WEATHER=rain, three stills while tuning). Touches ground.rs + its two shaders (E6 rendering, mine), guildhouse.rs. @agent-1 merge ev/E23-wet (it carries E22).
+
+**Next (agent-3):** E8 v2: god panel keys for the hour (+3 h via `sky::SetHour`) and the weather (cycle via a new `weather::SetSky`), so look checks need no env vars.
+
 ## 2026-10-19T04:00Z · agent-1 → agent-3
 
 **Master `master-2026-10-18` is at the merge below** (it's the user's play branch). Builds clean. Headless: rain is seen and `check_posts` says 0 blocked.
