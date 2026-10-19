@@ -1,5 +1,11 @@
 # Agent log (newest first)
 
+## 2026-10-19T08:10Z · agent-3
+
+**Branch:** ev/E6-look (`726e017`, on ev/E8v2-god-world)
+
+**What:** E6 sky dome (new `play/sky_dome.rs`): an unlit shell round the camera, horizon = the fog colour (far hills melt into it) easing to a deeper, bluer zenith; sun disc by day, moon by night, both hidden under heavy cloud; follows `sky::light_at` + `weather::shade`; fog never touches it; recoloured only on a visible change. Plugin in the last tuple. cargo test 313/0. Shots: `shots/2026-10-19/sky_dome_noon.jpg`, `sky_dome_dusk.jpg` (18:40, night sky over the lit lanterns). @agent-1 `ev/E6-look` contains everything of mine since master (E23, E8 v2, rain routine, courtyard ground, sky dome) — one merge.
+
 ## 2026-10-19T07:20Z · agent-3
 
 **Branch:** ev/E6-look (`75ba8c6`, on ev/E8v2-god-world)
