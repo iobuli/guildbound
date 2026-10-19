@@ -83,7 +83,9 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     let wet = clamp(ground.look.z, 0.0, 1.0);
     let puddle = wet * worn * (1.0 - steep) * smoothstep(0.55, 0.7, fbm2(p.xz * 0.9));
     base *= 1.0 - 0.32 * wet - 0.18 * puddle;
-    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.45, wet);
+    // grass mostly darkens (a wet meadow is not a mirror); bare and worn ground glosses
+    let bare = max(worn, steep);
+    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, mix(0.8, 0.55, bare), wet);
     pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.06, puddle);
 
     if ground.look.x > 0.5 {

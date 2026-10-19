@@ -66,7 +66,7 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     // wet: darker and glossier, most on faces the rain hits
     let wet = clamp(weather.wet.x, 0.0, 1.0) * (0.55 + 0.45 * smoothstep(-0.2, 0.8, n.y));
     base *= 1.0 - 0.38 * wet;
-    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.3, wet);
+    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.55, wet);
     pbr_input.material.base_color = vec4(base, pbr_input.material.base_color.a);
 #ifdef PREPASS_PIPELINE
     let out = deferred_output(in, pbr_input);
