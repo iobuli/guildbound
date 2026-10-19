@@ -1,0 +1,10 @@
+[
+  {"task": "the hall door opens to the wrong place for the courtyard steps", "files": ["crates/game/src/play/hall.rs"]},
+  {"task": "a fighter should be able to grab an enemy and throw them", "files": ["crates/game/src/play/grab.rs"]},
+  {"task": "the wind streak texture on the shell looks too bright at night", "files": ["assets/shaders/wind_aura.wgsl", "crates/game/src/play/wind_aura.rs"]},
+  {"task": "the zoom at start of the camera is too far", "files": ["crates/game/src/play/camera.rs"]},
+  {"task": "the boss horse charges and knocks the player off", "files": ["crates/game/src/play/boss.rs"]},
+  {"task": "the minimap shows the wrong sky name", "files": ["crates/game/src/play/hud/minimap.rs"]},
+  {"task": "grass blades are placed in chunks across the whole terrain", "files": ["crates/game/src/play/grass.rs"]},
+  {"task": "bake the courtyard pebble texture recipe", "files": ["crates/game/src/play/surfaces.rs"]}
+]

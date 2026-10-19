@@ -1,0 +1,2262 @@
+[
+ {
+  "kind": "module",
+  "name": "`main.rs`",
+  "files": [
+   "main.rs"
+  ],
+  "summary": "App, 120 Hz fixed tick, Avian (8 substeps), plugins"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/donor.rs`",
+  "files": [
+   "motion/donor.rs"
+  ],
+  "summary": "GLB parse (gltf crate): hierarchy, skin joints, curves"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/retarget.rs`",
+  "files": [
+   "motion/retarget.rs"
+  ],
+  "summary": "Donor clips \u2192 canonical UAL2 skeleton (name copy / Mixamo bind-delta)"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/extract.rs`",
+  "files": [
+   "motion/extract.rs"
+  ],
+  "summary": "Dense clip \u2192 tagged extreme keys"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/timing.rs`",
+  "files": [
+   "motion/timing.rs"
+  ],
+  "summary": "Stylized timing: holds, snaps, stepping on twos, exaggeration"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/bank.rs`",
+  "files": [
+   "motion/bank.rs"
+  ],
+  "summary": "`PoseBank`: tracks, masks, `assets/anim/poses.json` overrides (hot reload)"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/rig.rs`",
+  "files": [
+   "motion/rig.rs"
+  ],
+  "summary": "Spawn model on `ModelRequest`, bind bones \u2192 `Rig`"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/secondary.rs`",
+  "files": [
+   "motion/secondary.rs"
+  ],
+  "summary": "Per-bone angular springs, arm world inertia + acceleration trail (`Arm swing` knob), chest/neck/head nod against vertical acceleration, impulses, squash"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/body.rs`",
+  "files": [
+   "motion/body.rs"
+  ],
+  "summary": "Body capsules (+ the root's `BodyPadding` for worn armour); swings arms out of torso/head/opposite thigh and thighs apart (after springs, before contact)"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/contact.rs`",
+  "files": [
+   "motion/contact.rs"
+  ],
+  "summary": "Foot IK (heel + ball), pelvis drop only as far as a planted foot can't reach by straightening its leg (swing feet ignored), step-bounce dip (`ContactRequest.bob`, fades where the feet stand at different heights), COP lean, look-at, hand IK"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/hand.rs`",
+  "files": [
+   "motion/hand.rs"
+  ],
+  "summary": "Hand rig: `Grip` (`Cylinder` handle / lever / weapon, `Sphere` knob, `Flat` palm push; `in_hand` for things carried in the hand) on `ContactRequest.grips`. Before the arm IK it turns the palm onto the shape (plus `twist`, e.g. a knob turn) and replaces that hand's IK target with the wrist that puts the palm on it; after the IK it sets the wrist and closes each finger from open by bisection until it touches (`FINGER_R`), then squeezes. Curl axes, palm centre / normal measured from the rest skeleton"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/bvh.rs`",
+  "files": [
+   "motion/bvh.rs"
+  ],
+  "summary": "BVH donors: `assets/anim/cmu/*.bvh` (67 CMU mocap takes, `tools/cmu/subset.py`) \u2192 one `DonorLib` per take (frame one, the cgspeed T-pose, is the bind), library `cmu`, retargeted by `retarget::Mode::Cmu` (`CMU_MAP`)"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/compose.rs`",
+  "files": [
+   "motion/compose.rs"
+  ],
+  "summary": "**Only bone writer**: layers \u2192 springs \u2192 body \u2192 contact \u2192 bone `Transform`s; also publishes the pose in model space as `RigPose`"
+ },
+ {
+  "kind": "module",
+  "name": "`motion/tweak.rs`",
+  "files": [
+   "motion/tweak.rs"
+  ],
+  "summary": "F2 pose tweak: freeze the player on a track key (PgUp/PgDn track, [ ] key), click or , . a bone, arrows swing (camera axes), wheel twists, Shift fine, Backspace reset, Ctrl+S merges into `poses.json` `edits` (hot-reloaded); player input is ignored while it is on"
+ },
+ {
+  "kind": "module",
+  "name": "`play/mod.rs`",
+  "files": [
+   "play/mod.rs"
+  ],
+  "summary": "Shared types: `Intent Mover Action Fighter Loadout Hit StaminaSpend Interactable Climbable Water Feel`, capsule consts, `spawn_character`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/world.rs`",
+  "files": [
+   "play/world.rs"
+  ],
+  "summary": "Terrain, pond, stairs, mantle boxes, climb walls, props, interactables, characters"
+ },
+ {
+  "kind": "module",
+  "name": "`play/input.rs`",
+  "files": [
+   "play/input.rs"
+  ],
+  "summary": "Keyboard/mouse/gamepad \u2192 `Intent`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/camera.rs`",
+  "files": [
+   "play/camera.rs"
+  ],
+  "summary": "Orbit camera, lock-on framing, `CameraShake`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/controller.rs`",
+  "files": [
+   "play/controller.rs"
+  ],
+  "summary": "Kinematic capsule (MoveAndSlide), floating support probe, steps, jump, knockback"
+ },
+ {
+  "kind": "module",
+  "name": "`play/select.rs`",
+  "files": [
+   "play/select.rs"
+  ],
+  "summary": "**Only writer of `MotionLayers.layers`** + `ContactRequest` (incl. the `Bounce` character: step dip, its acceleration in `accel.y`, squash rhythm, idle breath)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/interact.rs`",
+  "files": [
+   "play/interact.rs"
+  ],
+  "summary": "Focus, `offer` (per held tool; `requires` \u2192 head-shake refusal), radial stands, walk-in, use clips, `beat` (effect / loop landing + hitstop freeze; tool loops land when the blade stops, `Swing`), `reach` IK windows, emits `UseEffect` / `UseBeat`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/tools.rs`",
+  "files": [
+   "play/tools.rs"
+  ],
+  "summary": "`Holding` + `ToolItem`: the axe on the table, left-hand pickup, hand-over to the right hand, carry/chop grips, settle on every re-parent"
+ },
+ {
+  "kind": "module",
+  "name": "`play/voxel.rs`",
+  "files": [
+   "play/voxel.rs"
+  ],
+  "summary": "`VoxelGrid` (carve, split, `mesh`, `smooth_mesh`) and the shared `Lattice` + `surface_nets` mesher for any density field (each quad wound as a whole, split along its flatter diagonal)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/armor.rs`",
+  "files": [
+   "play/armor.rs"
+  ],
+  "summary": "Plate armour (bascinet, one cuirass with arm holes, pauldrons of 3 concentric spherical lames, rerebraces, vambraces, cuisses, greaves: 16 plates) built at startup on the async pool, one thread per plate, from the body mesh: ray-cast profiles \u2192 designed shells (gap and thickness along the normal) \u2192 Surface Nets + UVs (cylindrical with a seam split, band, or azimuthal about the pole) + tangents + Metal049C with mips generated at load; each plate rigid, fitted per frame to the skin under it (Kabsch / M\u00fcller, warm-started; pauldron lames rotate only about the shoulder joint, so they never cut into each other); `BodyPadding` derived from the built plates; armour stand + E, plates leave one by one"
+ },
+ {
+  "kind": "module",
+  "name": "`play/grass.rs` + `assets/shaders/grass.wgsl`",
+  "files": [
+   "play/grass.rs",
+   "assets/shaders/grass.wgsl"
+  ],
+  "summary": "Lush grass: chunked LOD blades, vertex-shader wind (gust fronts, flutter), trampling by `Mover`s, `GrassWind` (incl. a `gust` slot for wind magic)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/items.rs`",
+  "files": [
+   "play/items.rs"
+  ],
+  "summary": "Item entities (log, stick, stone, apple): physics drops on `Phys::Debris`, magnet flight into the bag, hill scatter + respawn spots"
+ },
+ {
+  "kind": "module",
+  "name": "`play/inventory.rs`",
+  "files": [
+   "play/inventory.rs"
+  ],
+  "summary": "`Inventory` (required by `Player`, 20 stacks), I-key bag panel, pickup toasts"
+ },
+ {
+  "kind": "module",
+  "name": "`play/trees.rs`",
+  "files": [
+   "play/trees.rs"
+  ],
+  "summary": "Voxel trees drawn smooth: notch carving on `UseBeat`, chips/shake/recoil/sound, felling into a `Phys::Debris` body, landing, breaking into logs/sticks/apples, regrow; `chop` / `fell` / `drop` log lines"
+ },
+ {
+  "kind": "module",
+  "name": "`play/fx.rs`",
+  "files": [
+   "play/fx.rs"
+  ],
+  "summary": "`Burst` particles (chips, leaves) and `Sfx` one-shot sounds (first audio in the game)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/hud/`",
+  "files": [
+   "`play/hud/`"
+  ],
+  "summary": "Prompt (F), log, minimap with a STATS rim button, vitals (HP ST / BW MP), hotbar (Q art, E spell, weapon in hand, bag), `stats_page` (tabs STATS, ARTS & MAGIC and SKILLS; K; `GB_STATS=<tab>` smoke hook)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/deeds.rs`",
+  "files": [
+   "play/deeds.rs"
+  ],
+  "summary": "`Deed { who, kind, tag, amount }`: the only input to progression. Producers: combat (hit, block, parry, kill), magic (cast, cast_hit), ranged (shoot, shoot_hit), traverse (swim / climb per metre, mantle), parkour (land Roll / Hard), trees (chop, fell); `skills` turns `ItemCollected` into gather"
+ },
+ {
+  "kind": "module",
+  "name": "`play/record.rs`",
+  "files": [
+   "play/record.rs"
+  ],
+  "summary": "`GB_RECORD=<dir>`: frame-locked capture (each frame advances 1/`GB_RECORD_FPS` s of game time; frames `GB_RECORD_FROM`..`GB_RECORD_TO` saved as PNGs, then quit) so slow software rendering still makes normal-speed video (`ffmpeg -framerate 30 -i f_%05d.png`)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/traits.rs` + `assets/data/traits.json`",
+  "files": [
+   "play/traits.rs",
+   "assets/data/traits.json"
+  ],
+  "summary": "The madlib \"a [temper] fighter who walks [walk] and fights [fight]\": NPCs roll one word per slot (seeded by entity); walk \u2192 `motion::compose::StyleScale` (exaggeration, holds, bounce; compose and select apply it per character), temper + fight \u2192 `ai::Difficulty` shifts (clamped); the log introduces each NPC"
+ },
+ {
+  "kind": "module",
+  "name": "`play/doors.rs`",
+  "files": [
+   "play/doors.rs"
+  ],
+  "summary": "Two hinged doors west of the noticeboard (`KNOB_DOOR`, `PUSH_DOOR`): the leaf turns on its hinge post; the knob door is opened with the right hand closing round the knob, turning it and riding it as the leaf swings; the push door with both palms flat on the leaf. Usable from either face (side chosen from the nearest character, frozen within `FREEZE`); the leaf swings away from the opener; a `Door block` collider fills the doorway while shut (`ColliderDisabled` once it moves). `[door]` log lines"
+ },
+ {
+  "kind": "module",
+  "name": "`play/sheath.rs`",
+  "files": [
+   "play/sheath.rs"
+  ],
+  "summary": "Melee weapons ride the body when not in use (`Sheath`, on every `Fighter`): greatsword / axe across the back (`spine_03`), katana left hip, dagger right hip (`WeaponDef.carry` overrides `default_carry`). Attack / guard / art / grab / lock-on / X draws (the hand reaches, the weapon changes hands at `DRAW_SWAP` 0.2 s); X, 8 s out of the fight or a tool in hand sheathes"
+ },
+ {
+  "kind": "module",
+  "name": "`play/block.rs`",
+  "files": [
+   "play/block.rs"
+  ],
+  "summary": "Blocking with the weapon: while guarding, the weapon hand (`HandTargets`) puts the blade across the coming swing (`intercept`: between the fighters, at the attacker's blade height, on its side), ramping in `READY` s before the active frames. The step back on a blocked blow is in `combat` (`step_length`, walked by root motion)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/grab.rs`",
+  "files": [
+   "play/grab.rs"
+  ],
+  "summary": "Command grab (G; NPCs grab a foe that keeps its guard up): reach both hands to the mark's shoulders (sphere grips), catch at 0.3 s if in front and `Melee::grabbable`, hold at arm's length swinging 1.4 rad, throw at 0.75 s on `ual2/OverhandThrow` with an unblockable `HitKind::Grab` hit (7.5 m/s: ragdoll). `[grab]` log lines"
+ },
+ {
+  "kind": "module",
+  "name": "`play/repertoire.rs`",
+  "files": [
+   "play/repertoire.rs"
+  ],
+  "summary": "`StrikeLibrary`: 297 forward strikes (276 punches, 21 kicks) cut from the `cmu` takes by limb-speed peaks (`segment`), each an unarmed `Attack` with its active window on the measured contact. `Repertoire` (every `Fighter`): library strikes seeded per fighter + learned moves; `combat::start_swing` swaps one in 35 % of the time. Learning: `combat::resolve` writes `Witnessed` for each melee blow reaching a fighter; the third of the same move teaches it (own tempo, \u00b112 % clip speed) for that moveset; the player is told in the log"
+ },
+ {
+  "kind": "module",
+  "name": "`play/appearance.rs` (cast)",
+  "files": [
+   "play/appearance.rs"
+  ],
+  "summary": "Modelled looks for everyone: `cast` (name \u2192 look), `classes` (the class choice re-dresses the player, `dress_class`), `areas` (guild / village / ruins / pond styles, every choice seeded by the person's name). A look has `pieces` (`looks` extras: kasa, helm, shield...) and `scale` (Thoral 1.2). Re-dressing despawns the old parts (`Worn`); `looks::undress` takes the old pieces off. `GB_HERO=mannequin` keeps everyone on the mannequin"
+ },
+ {
+  "kind": "module",
+  "name": "`play/hall.rs`",
+  "files": [
+   "play/hall.rs"
+  ],
+  "summary": "The Guild Hall complex on the flat terrace east of the courtyard (`world::TERRACE_*`, `terrace_distance`): a gate and path, a stone hall (west door, north door to the yard, pitched roof, plank floor, sconces) with swinging double doors (`Door`: open for anyone near, no collider), the front desk and ledger shelves, an indoor bounty board, the lodging (3 `bed`s, a table, 2 chairs), and the fenced training ground with the duel ring, dummies and a weapon rack"
+ },
+ {
+  "kind": "module",
+  "name": "`play/beam.rs`",
+  "files": [
+   "play/beam.rs"
+  ],
+  "summary": "Balance beams: a grounded player standing on a `Beam` balances (`Balancing`): the stick walks along it (slowly) and its sideways part counters an inverted-pendulum sway (drift grows with speed, shrinks with the Balance skill); `select::Posture` leans the torso and narrows the stance, both arms reach out through `HandTargets`; past the wobble line the arms windmill, past the fall line you topple off. Deeds `balance` (per m), `beam` crossed / fell. `GB_BEAM=steady"
+ },
+ {
+  "kind": "module",
+  "name": "`play/aim.rs`",
+  "files": [
+   "play/aim.rs"
+  ],
+  "summary": "Aiming helpers: `ballistic` (launch direction that lands a shot under gravity), `lead` (aim where a moving target will be), `Velocities` (every mover's velocity per frame). Used by `ranged` and `magic`; the player's aim point is a crosshair raycast (`input`)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/senses.rs`",
+  "files": [
+   "play/senses.rs"
+  ],
+  "summary": "Enemy detection: sight (cone, world blocks rays) and the player's aura as a magnet (`AuraPresence.power` pulls the enemy's fan of sense rays; captured only at `CAPTURE` pull, still blocked by objects); `Awareness` rises/decays/forgets; `ai` picks the player only once alerted. `Veiled` hushes the aura; `sneak` deeds. Vision volumes = procedural cone meshes with the wind-aura shader"
+ },
+ {
+  "kind": "module",
+  "name": "`play/debug.rs`",
+  "files": [
+   "play/debug.rs"
+  ],
+  "summary": "Debug toggles: F12 list, 1\u20130 / Shift+1\u20133 flip 13 views (vision volumes, sense rays, aura radius, awareness, AI intent, IK targets, grass, balance tilt, projectile trails, wind shell, alt skin shader, ground layers, hide model pieces); `GB_DEBUG=1,2,4`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/wind_aura.rs` + `assets/shaders/wind_aura.wgsl`",
+  "files": [
+   "play/wind_aura.rs",
+   "assets/shaders/wind_aura.wgsl"
+  ],
+  "summary": "Wind-aura material (fresnel shell with wind-combed streaks); every Aura Ward gets a wind shell and bends the grass outward (`GrassWind.gust`)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/skin.rs` + `assets/shaders/skin.wgsl`",
+  "files": [
+   "play/skin.rs",
+   "assets/shaders/skin.wgsl"
+  ],
+  "summary": "Every character's skinned body gets its own extended material: ink look (toon bands, ink silhouette, shadow hatching), per-character shadow accent, and for enemies a presence rim warming with awareness plus a white blink + eye glint when alerted"
+ },
+ {
+  "kind": "module",
+  "name": "`play/looks.rs`",
+  "files": [
+   "play/looks.rs"
+  ],
+  "summary": "Character looks by name: model height/breadth, accent, bone-attached procedural pieces (kasa, hood, topknot, headband, scarf, sash, pauldrons, pouch) with spring tails"
+ },
+ {
+  "kind": "module",
+  "name": "`play/ground.rs` + `assets/shaders/ground.wgsl`, `weather.wgsl`",
+  "files": [
+   "play/ground.rs",
+   "assets/shaders/ground.wgsl",
+   "weather.wgsl"
+  ],
+  "summary": "Terrain material (macro drifts, triplanar rock strata, grass breakup, worn paths from vertex alpha); stone/wood props weathered (moss, grime streaks, wear specks)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/ruins.rs`",
+  "files": [
+   "play/ruins.rs"
+  ],
+  "summary": "The ruins on the north hill (raised plateau `world::RUINS_*`): torii, pillar ring, arches, broken wall, flagstones, arena ring, dais (future boss), stone lanterns, banners, rubble; footpath from the courtyard"
+ },
+ {
+  "kind": "module",
+  "name": "`play/horse.rs`",
+  "files": [
+   "play/horse.rs"
+  ],
+  "summary": "Procedural horse under a rider (child of the rider root): barrel, neck, head, mane, tail, two-part legs with hooves, saddle and barding; trot gait by distance travelled; `select::Mounted` seats the rider (seated clip on the lower body, no foot IK) and `seat` lifts the model until the pelvis sits on the saddle"
+ },
+ {
+  "kind": "module",
+  "name": "`play/boss.rs`",
+  "files": [
+   "play/boss.rs"
+  ],
+  "summary": "Thoral, the Iron Rider: first boss on the ruins dais (huge, mounted, shield + helm from `looks`, sword); senses gate him; charge + trample (`Hit` \u2192 block/parry or be flung); boss bar; bounty 250 (`guild.json`); returns 120 s after a defeat; `GB_THORAL=1` smoke"
+ },
+ {
+  "kind": "module",
+  "name": "`play/waypoint.rs`",
+  "files": [
+   "play/waypoint.rs"
+  ],
+  "summary": "Compass strip at the top (cardinals + a marker to the goal: the ruins while Thoral stands, the guild desk while his bounty waits) and shrines (courtyard, below the torii): F to rest (whole again) and make it your return point (`Revive.home`). `GB_REST=1` smoke"
+ },
+ {
+  "kind": "module",
+  "name": "`play/class.rs`",
+  "files": [
+   "play/class.rs"
+  ],
+  "summary": "Class choice on a new game (keys 1\u20133): Blade (katana, Flash Step), Arcanist (dagger, Frost Bloom + Storm Lance), Hunter (bow, Veil); sets weapon, skills, abilities and bindings, three attribute points. Input held and nobody attacks while choosing. Smoke runs skip it; `GB_CLASS=\u2026` picks, `GB_CLASS_MENU=1` shows it"
+ },
+ {
+  "kind": "module",
+  "name": "`play/talk.rs`",
+  "files": [
+   "play/talk.rs"
+  ],
+  "summary": "Talking to `Talkable` NPCs: F (as `Intent.talk_pressed` when one is in focus) \u2192 `Talking`; the camera eases into the player's eyes and frames the NPC's face (first person, body hidden, 42\u00b0 lens); a dialogue panel with numbered options (keys 1\u20137 / click); `Dialogue` written by `guild`; `GB_TALK=<name>`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/guild.rs` + `assets/data/guild.json`",
+  "files": [
+   "play/guild.rs",
+   "assets/data/guild.json"
+  ],
+  "summary": "The guild's people (Mira the receptionist, Captain Varro, adventurers Kael and Sena: `Civilian`s with routines, chatter you overhear), `Purse` gold, Mira's desk (turn in contracts for gold + XP, the Guild Card appraisal, selling items, bounties by victim name, rank applications, beds that sleep you to dawn), and the rank exam: a sparring duel with Varro in the ring (yield at 15 % hp or a ring-out); `GB_GOLD`, `GB_CARD`, `GB_EXAM`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/sky.rs`",
+  "files": [
+   "play/sky.rs"
+  ],
+  "summary": "Day/night: `Clock` (a day per 24 game minutes, start 09:00, `GB_HOUR`, F9 +1 h) moves the sun (east 06:00 \u2192 west 18:00) and a fainter, cooler moon at night; light colour warms at dawn / dusk; sky, fog and ambient follow; the minimap readout shows the time"
+ },
+ {
+  "kind": "module",
+  "name": "`play/occupations.rs` + `assets/data/occupations.json`",
+  "files": [
+   "play/occupations.rs",
+   "assets/data/occupations.json"
+  ],
+  "summary": "Civilians at work: a `Civilian` (no brain fights it, it fights no one) with an `Occupation` routine of interactable kinds: walk to the nearest free one, press interact like the player (`interact` walks it in and plays the clip), stay on looping uses, move on. A Smith (anvil, well, chair, torch) and a Farmer (seed, water, harvest, well, noticeboard)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/contracts.rs` + `assets/data/contracts.json`",
+  "files": [
+   "play/contracts.rs",
+   "assets/data/contracts.json"
+  ],
+  "summary": "12 contract templates; objectives are deed patterns \u00d7 count (kills are tagged with the victim's name, so \"Defeat the Rival\" works); 3 open on the `Board`; finished \u2192 `stats::GrantXp`, log, next template; stats page WORK tab"
+ },
+ {
+  "kind": "module",
+  "name": "`play/insignia.rs`",
+  "files": [
+   "play/insignia.rs"
+  ],
+  "summary": "Title badge: a small glowing diamond on the left breast of anyone with a title, coloured by the newest title (hue from its id), placed each frame from the chest bone (`spine[2]`) and the body's facing"
+ },
+ {
+  "kind": "module",
+  "name": "`assets/data/titles.json`",
+  "files": [
+   "assets/data/titles.json"
+  ],
+  "summary": "12 titles (Blade Adept, Duelist, Slayer, Bulwark, Aura Master, Pyromancer, Frostweaver, Stormcaller, Spellblade, Wallrunner, Tidewalker, Woodsman): `requires {skills: level, deeds: lifetime count}`, flat `bonus`; earned in `skills::earn`, shown on the SKILLS tab"
+ },
+ {
+  "kind": "module",
+  "name": "`play/skills.rs` + `assets/data/skills.json`",
+  "files": [
+   "play/skills.rs",
+   "assets/data/skills.json"
+  ],
+  "summary": "Use-based skills (lane C): 16 rows (`SkillBook`), RuneScape curve 1\u201399, XP capped per skill per 30 s window; undiscovered skills build affinity and roll `base\u00b7a/(a+4)` with a pity floor (per-character seeded); arts and spells are discovered once their skills reach the `unlocks` levels; `Sheet` (required by `Fighter`) for player and NPCs; skill levels \u2192 `stats::SkillBonus`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/stats.rs`",
+  "files": [
+   "play/stats.rs"
+  ],
+  "summary": "Universal `Stats` on every `Fighter` (level, Vigor Endurance Strength Dexterity Intelligence Faith, points, xp) \u2192 `Derived` (max hp / stamina / poise / magicules / Battlewill, might, spell, regen, cast speed); kills give the player xp, levels give points (`SpendPoint`)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/armory.rs`",
+  "files": [
+   "play/armory.rs"
+  ],
+  "summary": "Weapon chest: opening the courtyard chest shows the weapon rack; a click sends `combat::Equip`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/vfx.rs`",
+  "files": [
+   "play/vfx.rs"
+  ],
+  "summary": "`bevy_hanabi` effects per element (trail, burst, cast motes, shock debris) with procedural sprites and per-particle motion algorithms (ABC flow fire, Vogel phyllotaxis frost, vortex arcane), plus CPU meshes (fractal midpoint-displacement lightning with branches, aura crescent, shock ring), impacts with glow and light flash; `GB_VFX_TEST` rig"
+ },
+ {
+  "kind": "module",
+  "name": "`play/surfaces.rs`",
+  "files": [
+   "play/surfaces.rs"
+  ],
+  "summary": "CPU-generated tileable detail + normal maps (ground, stone, rock, wood, metal, cloth, sand) with mip chains; `world_uvs` box-projects world-scale UVs (`PROP_TILE` 1.5 m) and generates tangents; terrain UVs are (x, z) / `TERRAIN_TILE` (3 m)"
+ },
+ {
+  "kind": "module",
+  "name": "`play/tuning.rs`",
+  "files": [
+   "play/tuning.rs"
+  ],
+  "summary": "F1 live tuning panel (Exaggeration 0.9\u20131.4, Arm swing 0\u20132, Bounce 0\u20132), F5 saves `profiles/feel.json`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/monitor.rs`",
+  "files": [
+   "play/monitor.rs"
+  ],
+  "summary": "F4 joint-relation monitor + `staging/relations.log`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/parkour.rs`",
+  "files": [
+   "play/parkour.rs"
+  ],
+  "summary": "Graded landings: soft / momentum roll / hard land (`Owner::Move`); logs `land_*` lines"
+ },
+ {
+  "kind": "module",
+  "name": "`play/moveset.rs`",
+  "files": [
+   "play/moveset.rs"
+  ],
+  "summary": "Moveset JSON schema + loader (`assets/anim/movesets/*.json`); `WeaponDef.mesh_rotation_deg` / `mesh_offset` orient glTF weapon meshes so the blade runs along the root's +Y"
+ },
+ {
+  "kind": "module",
+  "name": "`play/combat.rs`",
+  "files": [
+   "play/combat.rs"
+  ],
+  "summary": "Melee FSM (light chains, charged heavy, sprint attack, air plunge, guard / parry, roll / sidestep, stamina, poise), swept hit tests, **only `Hit` resolver**, hitstop, reactions, death / revive, weapon in the hand"
+ },
+ {
+  "kind": "module",
+  "name": "`play/ai.rs`",
+  "files": [
+   "play/ai.rs"
+  ],
+  "summary": "Rule-based NPC brain \u2192 `Intent` (no network, no language model): spacing to `combat::reach`, circle-strafe, attacks in reach, reads the foe's `Melee::tell` to guard, parry late or dodge, retreats when hurt, walks home; `Difficulty` knob; `enroll` inserts `DamageScale` + `Revive`"
+ },
+ {
+  "kind": "module",
+  "name": "`play/ragdoll.rs`",
+  "files": [
+   "play/ragdoll.rs"
+  ],
+  "summary": "Impact ragdoll (F6 on the player): on `RagdollRequest` (combat above `Feel.ragdoll_threshold`, or F6 on the player) 11 jointed `Phys::Ragdoll` capsules spawn at the bones, limits centred on the pose at the hit; read back into a raw full-body `Source::Pose`, the root follows the pelvis; settled \u2192 stand on the ground facing the feet, `ual2/LayToIdle` get-up (`Owner::Ragdoll`); corpses stay ragdolled until combat revives them; a new request kicks the segments again"
+ },
+ {
+  "kind": "module",
+  "name": "`play/ranged.rs`",
+  "files": [
+   "play/ranged.rs"
+  ],
+  "summary": "Movesets of kind `ranged` (`bow`, `crossbow`, `knives`, from the chest): RMB aims (upper-body aim clip, half speed, crosshair), LMB fires; the bow draws (hold, power grows with the draw), the crossbow reloads, knives throw in fans of 3. Shots arc under gravity, sweep body capsules, emit `Hit` (`HitKind::Projectile`, \u00d7 might); arrows and bolts stick in the world; `GB_SHOOT` hook"
+ },
+ {
+  "kind": "module",
+  "name": "`play/magic.rs`",
+  "files": [
+   "play/magic.rs"
+  ],
+  "summary": "Arts (Q, **Battlewill**: built by landing / taking melee blows, trickles back) and spells (E, **magicules**: regen after a pause; MB5 cycles the bound spell). `ABILITIES` table: 5 arts (Crescent Edge, Flash Step, Aura Bullet, Earthbreaker, Aura Ward) and 4 spells (Cinder Bolt, Frost Bloom, Storm Lance, Orbit Motes), cast windows from measured clip peaks; shapes Bolt / Crescent / Quake / Lance (chains) / Orbs (Lissajous, homing) / Step / Ward (a shell that turns aside 60 % of damage and poise for 5 s; spinning gyroscope bands); mastery per landed blow \u2192 **Mastered** (cheaper, faster, stronger, bigger effects) at a permanent magicule cost; known = discovered (`skills::Sheet::abilities`); `GB_CAST` demo hook"
+ },
+ {
+  "kind": "module",
+  "name": "`play/traverse.rs`",
+  "files": [
+   "play/traverse.rs"
+  ],
+  "summary": "Swim (chest under the surface, bob, sprint costs stamina, wade out; **dive** with C toward the floor while 12 s of breath last, Space surfaces; `dive` deeds train Swimming; `GB_DIVE` hook), wall climb (jump at a tall `Climbable` face; stick climbs / shimmies; hand and foot holds on a grid; jump kicks off, dodge lets go, stamina runs out \u2192 fall), **ledge hang** at the top (hands on the edge, sideways edges along it, down drops back, jump or 0.5 s of pushing up pulls over), mantle over the top, vault onto waist-high blocks (`ActionKind::Mantle`, scripted rise-then-over path); `GB_CLIMB` smoke hook"
+ },
+ {
+  "kind": "owner",
+  "name": "`Intent`",
+  "files": [
+   "crates/game/src/play/input.rs",
+   "crates/game/src/play/ai.rs",
+   "crates/game/src/play/select.rs",
+   "crates/game/src/play/controller.rs"
+  ],
+  "summary": "`input` (player), `ai` (NPC) everything in Act, `select`, `controller`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.velocity/grounded/mode(Ground,Air)/accel/landing/air_time/yaw`",
+  "files": [
+   "crates/game/src/play/controller.rs",
+   "crates/game/src/play/select.rs",
+   "crates/game/src/play/interact.rs"
+  ],
+  "summary": "`controller` `select`, `interact`, monitor"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.mode` Swim/Climb/Ledge",
+  "files": [
+   "crates/game/src/play/traverse.rs"
+  ],
+  "summary": "`traverse` controller skips those modes"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.mode` Ragdoll",
+  "files": [
+   "crates/game/src/play/ragdoll.rs"
+  ],
+  "summary": "`ragdoll` controller, select skip"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.phase`",
+  "files": [
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "`select` `select`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.impact`, `Mover.takeoff_speed`",
+  "files": [
+   "crates/game/src/play/controller.rs",
+   "crates/game/src/play/parkour.rs",
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "`controller` `parkour` (grade), `select` (leap poses)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.step_ease`",
+  "files": [
+   "crates/game/src/play/controller.rs",
+   "crates/game/src/play/select.rs",
+   "crates/game/src/motion/contact.rs"
+  ],
+  "summary": "`controller` (running total of drawn-root step easing) `select` \u2192 `ContactRequest.root_ease` \u2192 `contact`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.root_motion / move_scale / face`",
+  "files": [
+   "crates/game/src/play/controller.rs"
+  ],
+  "summary": "the current `Action` owner `controller` (root_motion cleared after the frame's last tick)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Mover.external` (knockback)",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/play/controller.rs"
+  ],
+  "summary": "`combat` `controller` decays it"
+ },
+ {
+  "kind": "owner",
+  "name": "`Fighter` (hp, poise, stamina, dead)",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/play/traverse.rs",
+   "crates/game/src/play/ai.rs"
+  ],
+  "summary": "`combat` only; others spend stamina through the `StaminaSpend` message (`traverse`: climbing, fast swimming) `traverse` (out of stamina), `ai`, `hud`"
+ },
+ {
+  "kind": "owner",
+  "name": "`RagdollRequest`",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/play/ragdoll.rs"
+  ],
+  "summary": "`combat` inserts it (knockback above `Feel.ragdoll_threshold`) `ragdoll` consumes it, then owns the body, `Mover.mode` Ragdoll, `MotionLayers.raw` and the get-up `Action` (`Owner::Ragdoll`)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Action`",
+  "files": [
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "its `owner`; starting one needs `is_free()`; `Owner::Hit` may interrupt anything `select` (layers), owners"
+ },
+ {
+  "kind": "owner",
+  "name": "`MotionLayers.layers`, `.contact`",
+  "files": [
+   "crates/game/src/play/select.rs",
+   "crates/game/src/play/armor.rs",
+   "crates/game/src/motion/compose.rs"
+  ],
+  "summary": "`select` (characters with `Mover`); `armor` for armour-stand mannequins `compose`"
+ },
+ {
+  "kind": "owner",
+  "name": "`RigPose`",
+  "files": [
+   "crates/game/src/motion/compose.rs",
+   "crates/game/src/play/armor.rs"
+  ],
+  "summary": "`compose` `armor` (plate fits)"
+ },
+ {
+  "kind": "owner",
+  "name": "`BodyPadding`",
+  "files": [
+   "crates/game/src/play/armor.rs",
+   "crates/game/src/motion/compose.rs"
+  ],
+  "summary": "`armor` (inserted on whoever wears the set) `compose` (`body::resolve`), monitor"
+ },
+ {
+  "kind": "owner",
+  "name": "Armour plates, `ArmorSet`, stand `PropState.on` (worn)",
+  "files": [
+   "crates/game/src/play/armor.rs",
+   "crates/game/src/play/interact.rs"
+  ],
+  "summary": "`armor` `interact` (`offer`)"
+ },
+ {
+  "kind": "owner",
+  "name": "Grass chunks, `GrassWind` (`gust` for wind magic)",
+  "files": [
+   "crates/game/src/play/grass.rs"
+  ],
+  "summary": "`grass` "
+ },
+ {
+  "kind": "owner",
+  "name": "`MotionLayers.impulses`",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/motion/compose.rs"
+  ],
+  "summary": "`combat` and other play systems (append) `compose` drains"
+ },
+ {
+  "kind": "owner",
+  "name": "`MotionLayers.raw`",
+  "files": [
+   "crates/game/src/play/ragdoll.rs",
+   "crates/game/src/motion/compose.rs"
+  ],
+  "summary": "`ragdoll` `compose`"
+ },
+ {
+  "kind": "owner",
+  "name": "`HandTargets.grips`, `interact::Grasp`",
+  "files": [
+   "crates/game/src/play/interact.rs",
+   "crates/game/src/play/doors.rs",
+   "crates/game/src/play/select.rs",
+   "crates/game/src/motion/compose.rs",
+   "crates/game/src/motion/hand.rs"
+  ],
+  "summary": "`interact` (from the target's `Grasp`); `Grasp` and the door kinds' stand / face / hands / prompt / `PropState.on` by `doors` `select` \u2192 `ContactRequest.grips` \u2192 `compose` (`hand`)"
+ },
+ {
+  "kind": "owner",
+  "name": "`ChestLoot` (chest contents, refill timer)",
+  "files": [
+   "crates/game/src/play/items.rs"
+  ],
+  "summary": "`items` (spills as `Item`s on the chest's `UseEffect`, refills 90 s after it is shut) "
+ },
+ {
+  "kind": "owner",
+  "name": "`Sheath`, a sheathed weapon's parent / transform",
+  "files": [
+   "crates/game/src/play/sheath.rs"
+  ],
+  "summary": "`sheath` (`combat::arm` while the weapon is in hand) combat (`arm`), block"
+ },
+ {
+  "kind": "owner",
+  "name": "`HeldGrip` (fingers on the weapon in hand)",
+  "files": [
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "`combat::arm` `select` \u2192 `ContactRequest.grips` (when `HandTargets` brings none)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Melee.step_back` (blocked-blow step)",
+  "files": [
+   "crates/game/src/play/combat.rs"
+  ],
+  "summary": "`combat` "
+ },
+ {
+  "kind": "owner",
+  "name": "`Grabbing` / `Grabbed`; both bodies' `Action` / root motion / face during a grab",
+  "files": [
+   "crates/game/src/play/grab.rs",
+   "crates/game/src/play/combat.rs"
+  ],
+  "summary": "`grab` `combat` (`owned` drops to Free), select"
+ },
+ {
+  "kind": "owner",
+  "name": "`Repertoire`, `StrikeLibrary`",
+  "files": [
+   "crates/game/src/play/repertoire.rs"
+  ],
+  "summary": "`repertoire` (`Witnessed` from `combat::resolve`) `combat::start_swing`"
+ },
+ {
+  "kind": "owner",
+  "name": "`HandTargets`",
+  "files": [
+   "crates/game/src/play/interact.rs",
+   "crates/game/src/play/ranged.rs",
+   "crates/game/src/play/traverse.rs",
+   "crates/game/src/play/tools.rs",
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "the action owner (`interact` now; `ranged`, `traverse` later); `tools` adds the right hand during the pickup hand-over `select` fades \u2192 `ContactRequest.hands`"
+ },
+ {
+  "kind": "owner",
+  "name": "`ContactRequest.bob`, `accel.y`",
+  "files": [
+   "crates/game/src/play/select.rs",
+   "crates/game/src/motion/contact.rs",
+   "crates/game/src/motion/secondary.rs"
+  ],
+  "summary": "`select` (scaled by `MotionFeel.bounce`) `contact` (pelvis dip), `secondary` (nod)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Holding`, `ToolItem`, tool parent/transform, table `PropState.on`",
+  "files": [
+   "crates/game/src/play/tools.rs",
+   "crates/game/src/play/interact.rs",
+   "crates/game/src/play/trees.rs"
+  ],
+  "summary": "`tools` `interact` (`offer`), `trees` (blade point)"
+ },
+ {
+  "kind": "owner",
+  "name": "Tree voxels, `Tree`, felled bodies, standing-tree part transforms (trunk, collider, canopy incl. the chop shake), tree `PropState.regrow` / `.shake` (set)",
+  "files": [
+   "crates/game/src/play/trees.rs",
+   "crates/game/src/play/interact.rs"
+  ],
+  "summary": "`trees` `interact` (availability, shake decay)"
+ },
+ {
+  "kind": "owner",
+  "name": "Cursor grab / visibility",
+  "files": [],
+  "summary": "`camera::capture_cursor` only; `ui_mode` is derived each frame from the open pages (`BagOpen`, `TuningPanel.open`, F2) after the `PageToggles` set input, monitor"
+ },
+ {
+  "kind": "owner",
+  "name": "`UseEffect` / `UseBeat` messages",
+  "files": [
+   "crates/game/src/play/interact.rs",
+   "crates/game/src/play/tools.rs",
+   "crates/game/src/play/trees.rs"
+  ],
+  "summary": "`interact` emits `tools`, `trees`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Particle`s, `Sfx` audio entities",
+  "files": [
+   "crates/game/src/play/fx.rs"
+  ],
+  "summary": "`fx` (from `Burst` / `Sfx` messages) "
+ },
+ {
+  "kind": "owner",
+  "name": "`Item` entities, flying stand-ins, hill `Spot`s",
+  "files": [
+   "crates/game/src/play/items.rs",
+   "crates/game/src/play/trees.rs",
+   "crates/game/src/play/inventory.rs"
+  ],
+  "summary": "`items` (spawned by `items`, `trees` via `items::spawn_item`) `inventory` (via messages)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Inventory` contents",
+  "files": [
+   "crates/game/src/play/inventory.rs",
+   "crates/game/src/play/items.rs"
+  ],
+  "summary": "`inventory` only (applies `ItemCollected`, answers `ItemRejected`) `items` (room check before the magnet)"
+ },
+ {
+  "kind": "owner",
+  "name": "Bone `Transform`s",
+  "files": [
+   "crates/game/src/motion/compose.rs",
+   "crates/game/src/motion/tweak.rs"
+  ],
+  "summary": "`compose` only (and `tweak` while active) rendering, monitor"
+ },
+ {
+  "kind": "owner",
+  "name": "Visible pelvis height",
+  "files": [
+   "crates/game/src/motion/contact.rs"
+  ],
+  "summary": "`contact` only (it cancels the controller's step easing) "
+ },
+ {
+  "kind": "owner",
+  "name": "Limb\u2013body separation",
+  "files": [],
+  "summary": "`body::resolve` only monitor"
+ },
+ {
+  "kind": "owner",
+  "name": "`Hit` message",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/play/ranged.rs",
+   "crates/game/src/play/magic.rs"
+  ],
+  "summary": "`combat`, `ranged`, `magic` emit **`combat` alone resolves**"
+ },
+ {
+  "kind": "owner",
+  "name": "`InteractPrompt`",
+  "files": [
+   "crates/game/src/play/interact.rs"
+  ],
+  "summary": "`interact` `hud`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Feel`, `MotionFeel`",
+  "files": [
+   "crates/game/src/play/tuning.rs"
+  ],
+  "summary": "`tuning` controller, compose"
+ },
+ {
+  "kind": "owner",
+  "name": "`Stats`, `Derived`, `DamageScale`",
+  "files": [
+   "crates/game/src/play/stats.rs"
+  ],
+  "summary": "`stats` combat (maxima, regen, might), magic (pools, spell power), HUD"
+ },
+ {
+  "kind": "owner",
+  "name": "`Deed` message",
+  "files": [
+   "crates/game/src/play/skills.rs",
+   "crates/game/src/play/contracts.rs"
+  ],
+  "summary": "combat, magic, ranged, traverse, parkour, trees, skills (survive) emit `skills`, `contracts`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Board` (open, `ready`, `held` rank)",
+  "files": [
+   "crates/game/src/play/contracts.rs"
+  ],
+  "summary": "`contracts` (`TurnIn` \u2192 `Paid`, `RankUp`) HUD, guild"
+ },
+ {
+  "kind": "owner",
+  "name": "`Purse`, `Guild` (bounty ledger, bed, exam, bout), `Dialogue`",
+  "files": [
+   "crates/game/src/play/guild.rs"
+  ],
+  "summary": "`guild` HUD, talk"
+ },
+ {
+  "kind": "owner",
+  "name": "`Talking`, `TalkFocus`, the camera during a talk",
+  "files": [
+   "crates/game/src/play/talk.rs"
+  ],
+  "summary": "`talk` input, occupations, camera (`ui_mode`)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Sparring` (guild) / `Yielded` (combat); Varro's `Fighter.team` during a bout",
+  "files": [
+   "crates/game/src/play/guild.rs"
+  ],
+  "summary": "`guild` combat"
+ },
+ {
+  "kind": "owner",
+  "name": "`Honours`, `Standing` (holdings; NPCs seeded by `world`)",
+  "files": [
+   "crates/game/src/play/world.rs",
+   "crates/game/src/play/contracts.rs"
+  ],
+  "summary": "`contracts` (`honour`) skills (bonus), insignia (gold), contracts (issuers), HUD"
+ },
+ {
+  "kind": "owner",
+  "name": "`Clock`, the sun's light and transform, `ClearColor`, `GlobalAmbientLight`, camera fog colour",
+  "files": [
+   "crates/game/src/play/sky.rs"
+  ],
+  "summary": "`sky` occupations, minimap"
+ },
+ {
+  "kind": "owner",
+  "name": "Civilians' `Intent`, `Occupation`",
+  "files": [
+   "crates/game/src/play/occupations.rs"
+  ],
+  "summary": "`occupations` (`work`) interact, controller"
+ },
+ {
+  "kind": "owner",
+  "name": "`Sheet` (skill XP, affinities, discovered abilities), `SkillBonus`",
+  "files": [
+   "crates/game/src/play/skills.rs",
+   "crates/game/src/play/world.rs"
+  ],
+  "summary": "`skills` (presets at spawn in `world`; the `GB_CAST` demo marks abilities discovered) magic (`known`, casting), stats (`derive_with`), HUD"
+ },
+ {
+  "kind": "owner",
+  "name": "`Traits`, `StyleScale`",
+  "files": [
+   "crates/game/src/play/traits.rs"
+  ],
+  "summary": "`traits` (on a new NPC) compose, select (per-character style)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Difficulty`",
+  "files": [
+   "crates/game/src/play/traits.rs",
+   "crates/game/src/play/ai.rs"
+  ],
+  "summary": "`traits` (rolled shifts), else `ai::enroll` (default) `ai`"
+ },
+ {
+  "kind": "owner",
+  "name": "`SkillBook.1` (holders of unique skills)",
+  "files": [
+   "crates/game/src/play/skills.rs"
+  ],
+  "summary": "`skills` `skills::apply`"
+ },
+ {
+  "kind": "owner",
+  "name": "`Ward` (Aura Ward: time left, share)",
+  "files": [
+   "crates/game/src/play/magic.rs",
+   "crates/game/src/play/combat.rs"
+  ],
+  "summary": "`magic` `combat` (scales damage and poise)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Energy` (Battlewill, magicules), `Grimoire` (bindings, mastery, mastery debt)",
+  "files": [
+   "crates/game/src/play/magic.rs"
+  ],
+  "summary": "`magic` (the stats page binds through `magic::Bind`) HUD"
+ },
+ {
+  "kind": "owner",
+  "name": "`Loadout.current`",
+  "files": [
+   "crates/game/src/play/combat.rs",
+   "crates/game/src/play/armory.rs"
+  ],
+  "summary": "`combat` (`Equip` messages from `armory`) select, HUD"
+ },
+ {
+  "kind": "owner",
+  "name": "`ArmoryOpen`, `StatsOpen`",
+  "files": [
+   "crates/game/src/play/armory.rs",
+   "crates/game/src/play/camera.rs"
+  ],
+  "summary": "`armory`, `hud::stats_page` `camera` (cursor)"
+ },
+ {
+  "kind": "owner",
+  "name": "`Surfaces` (generated maps)",
+  "files": [
+   "crates/game/src/play/world.rs"
+  ],
+  "summary": "`world` (setup) `world` palette and terrain"
+ },
+ {
+  "kind": "data",
+  "name": "- `assets/anim/{ual1,ual2,sekiro}.glb`: donor libraries. `ua",
+  "files": [
+   "assets/anim/{ual1,ual2,sekiro}.glb",
+   "ual2.glb"
+  ],
+  "summary": "- `assets/anim/{ual1,ual2,sekiro}.glb`: donor libraries. `ual2.glb` is the model and the canonical skeleton."
+ },
+ {
+  "kind": "data",
+  "name": "- `assets/anim/poses.json` (optional): style plus per-key ov",
+  "files": [
+   "assets/anim/poses.json"
+  ],
+  "summary": "- `assets/anim/poses.json` (optional): style plus per-key overrides. Hot-reloaded."
+ },
+ {
+  "kind": "data",
+  "name": "- `assets/anim/movesets/*.json`: one `Moveset` per file (sch",
+  "files": [
+   "assets/anim/movesets/*.json",
+   "play/moveset.rs"
+  ],
+  "summary": "- `assets/anim/movesets/*.json`: one `Moveset` per file (schema in `play/moveset.rs`: `name, kind(unarmed|melee|ranged|magic|tool), weapon{glb path, hand, offset}, offhand, stance, light[], heavy[], sprint_attack, air_attack, guard{clip, parry}, aim{clip, draw, release, reload}, projectile, cooldown`). Every `track` is a bank name `\"{lib}/{clip}\"`. Shipped: `unarmed`, `katana`, `greatsword`, `dagger`, `axe` (melee). The player's loadout also names `bow crossbow knives fire frost`; they wait for the ranged / magic lanes."
+ },
+ {
+  "kind": "data",
+  "name": "- `assets/packs/weapons/*.glb`: longsword, shortsword, great",
+  "files": [
+   "assets/packs/weapons/*.glb"
+  ],
+  "summary": "- `assets/packs/weapons/*.glb`: longsword, shortsword, greatsword, claymore, knight_sword, battleaxe, mace, warhammer, spear, glaive, battle_staff, elder_staff."
+ },
+ {
+  "kind": "data",
+  "name": "- `assets/audio/kenney/impactWood_*`, `impactPlank_*`: Kenne",
+  "files": [],
+  "summary": "- `assets/audio/kenney/impactWood_*`, `impactPlank_*`: Kenney Impact Sounds (CC0), chop / fall / pick-up sounds."
+ },
+ {
+  "kind": "data",
+  "name": "- `profiles/feel.json`: written by F5.",
+  "files": [
+   "profiles/feel.json"
+  ],
+  "summary": "- `profiles/feel.json`: written by F5."
+ },
+ {
+  "kind": "data",
+  "name": "- `staging/relations.log` (gitignored): monitor output, rewr",
+  "files": [],
+  "summary": "- `staging/relations.log` (gitignored): monitor output, rewritten each run."
+ },
+ {
+  "kind": "invariant",
+  "name": "`knee_backward` / `elbow_inward`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`knee_backward` / `elbow_inward` flex \u2265 10\u00b0 and the bend side points against natural (body front / out-down-back) with cos < \u22120.3"
+ },
+ {
+  "kind": "invariant",
+  "name": "`knee_pop` / `elbow_pop`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`knee_pop` / `elbow_pop` the bend side turns by cos < \u22120.5 in one frame"
+ },
+ {
+  "kind": "invariant",
+  "name": "`foot_sink`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`foot_sink` heel or ball more than 3 cm below the ground"
+ },
+ {
+  "kind": "invariant",
+  "name": "`foot_float`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`foot_float` grounded, body and foot still, lowest of heel/ball more than 5 cm above the ground"
+ },
+ {
+  "kind": "invariant",
+  "name": "`foot_slide`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`foot_slide` grounded, foot down (< 2 cm), foot moving > max(0.6, speed / 2) m/s"
+ },
+ {
+  "kind": "invariant",
+  "name": "`toe_inside` / `knee_inside` / `hand_inside`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`toe_inside` / `knee_inside` / `hand_inside` the joint lies inside `Phys::World` geometry"
+ },
+ {
+  "kind": "invariant",
+  "name": "`hand_miss`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`hand_miss` `HandTargets` weight \u2265 0.95 and hand more than 5 cm from the target"
+ },
+ {
+  "kind": "invariant",
+  "name": "`arm_in_body` / `legs_crossed`",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "`arm_in_body` / `legs_crossed` `motion::body` capsules overlap by more than 1 cm"
+ },
+ {
+  "kind": "frame",
+  "name": "1. `Update / PlaySet::Input`: `input` writes the player's `I",
+  "files": [
+   "crates/game/src/play/input.rs"
+  ],
+  "summary": "1. `Update / PlaySet::Input`: `input` writes the player's `Intent`."
+ },
+ {
+  "kind": "frame",
+  "name": "2. `Update / PlaySet::Think`: `ai` writes NPC `Intent`.",
+  "files": [
+   "crates/game/src/play/ai.rs"
+  ],
+  "summary": "2. `Update / PlaySet::Think`: `ai` writes NPC `Intent`."
+ },
+ {
+  "kind": "frame",
+  "name": "3. `Update / PlaySet::Act`: action owners (`combat ranged ma",
+  "files": [
+   "crates/game/src/play/tools.rs"
+  ],
+  "summary": "3. `Update / PlaySet::Act`: action owners (`combat ranged magic interact traverse`) run on `Action`, emit `Hit`, and request `Mover.root_motion`. `interact::animate_props` runs before `interact::drive`; `tools` (take/return, hand-over, grip, place) and `trees::chop` run after `drive` and react to its `UseEffect` / `UseBeat`."
+ },
+ {
+  "kind": "frame",
+  "name": "4. `Update / PlaySet::Select`: `select` \u2192 `MotionLayers`.",
+  "files": [
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "4. `Update / PlaySet::Select`: `select` \u2192 `MotionLayers`."
+ },
+ {
+  "kind": "frame",
+  "name": "5. `FixedUpdate / PlaySet::Move`: `controller` moves capsule",
+  "files": [
+   "crates/game/src/play/controller.rs"
+  ],
+  "summary": "5. `FixedUpdate / PlaySet::Move`: `controller` moves capsules."
+ },
+ {
+  "kind": "frame",
+  "name": "6. `PostUpdate / MotionSet::Compose`: `compose` writes bones",
+  "files": [
+   "crates/game/src/motion/compose.rs",
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "6. `PostUpdate / MotionSet::Compose`: `compose` writes bones. After `TransformSystems::Propagate`, `monitor` measures."
+ },
+ {
+  "kind": "rule",
+  "name": "rules",
+  "files": [],
+  "summary": "Rules: keep the module header docs in step with the code. Use the monitor log to back motion claims. Stop for a playtest at each milestone."
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/main.rs",
+  "files": [
+   "crates/game/src/main.rs"
+  ],
+  "summary": "Guildbound: stylized synthesized motion + physics combat. `motion/` turns donor clips (UAL1, UAL2, Sekiro proto) into stylized extremes and composes the final skeleton pose. `play/` owns the world, characters, combat and everything that decides which motion layers are active. `gbui` (crates/gbui) draws the HUD, themed by `assets/ui/theme.json`. `gbperf` (F3) profiles frames and logs a baseline to `staging/perf.log` every run. TICK_HZ ASSETS main"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/afterimage.rs",
+  "files": [
+   "crates/game/src/play/afterimage.rs"
+  ],
+  "summary": "Quick strikes read as quick, not fast-forwarded: when a swing's attack speed is above `combat::ANTICIPATE_FROM`, its strike frames leave fading copies of the weapon (or of the fist, bare-handed) along the blow's path, and the body carries through past the contact with a spring kick on the spine and the striking arm. `combat` shortens the wind-up and holds the gathered pose a beat (`phase_speed`, `Swing.anticipate`); this module adds what the eye reads.  LIFE EVERY SHADES OVERSHOOT FIST Afterimage StrikeFx Ghosts plugin alpha shade setup trail fade afterimages_fade_out_and_go"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/ai.rs",
+  "files": [
+   "crates/game/src/play/ai.rs"
+  ],
+  "summary": "NPC brain writing `Intent` (`Update / PlaySet::Think`), the only writer of NPC `Intent`. Plain rules, no network or language model: every frame `think` reads the world (nearest living enemy, its attack `Tell`, own hp / stamina) and `decide` turns that into stick, button and lock-on orders, so `combat` drives NPC bodies exactly as it drives the player's: - spacing: close to the moveset's `combat::reach`, back off when crowded, circle-strafe in between, switching side now and then; sprint when far; CAST_FIRST CAST_LOOK CAST_PAUSE SPELL_FROM SPELL_TO ART_REACH SHOOT_NEAR SHOOT_FAR SHOT_FIRST SHOT_PAUSE OVERDRAW AGGRO SPRINT_FROM SPACING CROWDED ATTACK_SLACK THREAT_SLACK TAP_GAP HEAVY_HOLD ATTACK_STAMINA DODGE_STAMINA GUARD_LINGER PARRY_LEAD HESITATE_CHANCE HESITATE RETREAT_HP RETREAT_UNTIL STRAFE_MIN STRAFE_SPAN REVIVE_AFTER HOME_RADIUS GRAB_AFTER GRAB_CLOSE GRAB_CHANCE plugin Peaceful peaceful Autopilot autopilot Difficulty default Brain default roll Defence View Awe Foe Orders decide flat ArcherView archer CastView cast enroll think outranked_humans_run_and_wary_ones_stop_first view tell closes_distance_when_far archer_keeps_range_draws_and_releases crossbows_press cast_view casts_spells_from_range_and_arts_up_close casts_are_spaced attacks_in_reach_when_aggressive closes_in_and_grabs_a_foe_that_keeps_its_guard_up guards_a_noticed_swing parry_waits_for_the_blow retreats_when_hurt_and_winded walks_home_without_an_enemy"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/aim.rs",
+  "files": [
+   "crates/game/src/play/aim.rs"
+  ],
+  "summary": "Aiming helpers shared by `ranged` (arrows, bolts) and `magic` (spells, arts). - `ballistic`: the launch direction that lands a projectile of `speed` under `gravity` on a point (the low arc; out of range \u2192 the 45\u00b0 throw that gets closest). - `lead`: aim at where a moving target will be when the shot arrives (a few fixed-point iterations of flight time, capped at `MAX_LEAD` s), arc included. - `Velocities`: every mover's velocity this frame (written here only, `PlaySet::Think`), so MAX_LEAD Velocities of plugin record ballistic lead miss ballistic_lands_on_the_point lead_hits_a_runner"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/appearance.rs",
+  "files": [
+   "crates/game/src/play/appearance.rs"
+  ],
+  "summary": "Character appearance: a look (`assets/data/appearance.json`, `Wardrobe`) is a base body (male | female) plus slot choices: hair, brows, beard, eye colour, skin tone, hair colour, body-shape morph weights and outfit pieces with their colours. `appearance` owns the dressing of a character root that carries `Appearance`: the parts, their materials, the body groups hidden under clothes and the morph weights.  STYLED_GLB plugin wardrobe_path Paint Shape Look one Area LEATHER brown Wardrobe load colour appearance for_character generate resolve Appearance body_path part_path eye_texture hides material_colour dress dress_player Dressed Worn cast dress_class PartOf PartReady on_part_ready dress_rigged attach_parts Styling apply wardrobe every_look_resolves_and_its_parts_exist the_cast_classes_and_areas_resolve_to_parts_that_exist hide_groups_follow_the_outfit hero_glbs_use_the_canonical_joints"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/armor.rs",
+  "files": [
+   "crates/game/src/play/armor.rs"
+  ],
+  "summary": "Plate armour: an adventurer's harness (open bascinet, cuirass, three-lame pauldrons, rerebraces, vambraces, cuisses, greaves: steel from shoulder to wrist and hip to ankle) built at startup from the character's own body and worn as rigid steel. `armor` owns every plate entity, `ArmorSet`, the armour stand (its pose and availability) and the wearer's `BodyPadding` (only with `GB_ARMOR_PADDING=1`: by default armour never changes the body's motion; the plates follow the skin, not the other way round). CELL THICK TEX STEEL RIVET_R FIT_SAMPLES FIT_ITERATIONS FLY_TIME FLY_STAGGER FLY_ARC JOLT LOCK_SHAKE STAND_CLIP STAND_POSE_T FAULD_TOP FAULD_SPLIT FAULD_LOW REREBRACE_TOP PAD_MARGIN TEXTURES plugin smoothstep01 wrap angle_dist ray_triangle Frame cylinder sphere basis coords direction ray_origin point s_scale theta_scale Profile build s_max radius max_over Plate Shape Eval new radii eval rivet_at bounds nest_radii BodyMesh load weight region Sample Fit Part PlateDef Built BuiltSet Marks at named design samples_for skin_under mesh_plate segment_distance derive_padding set_padding build_set extract_rotation rigid_fit Texel srgb_to_linear linear_to_srgb add_mips ArmorBuild PendingMaterial PlateAsset ArmorAssets"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/armory.rs",
+  "files": [
+   "crates/game/src/play/armory.rs"
+  ],
+  "summary": "The weapon chest. Weapons are not on the hotbar: opening the courtyard chest (F) shows the weapon rack, a `gbui` panel with one slot per unarmed / melee / ranged moveset (`moveset::Movesets`). Clicking a slot asks `combat` to wield it (`combat::Equip`, applied once the player is free); the wielded one shows checked, and the footer types the hovered weapon's light / heavy damage. The rack closes with Esc, when the chest is closed again, or when the player walks off. TILE GAP COLUMNS RACK REACH FOOTER_RATE plugin ArmoryOpen RackRoot RackSlot RackFooter weapons code spawn_ui open_on_chest close refresh pick describe hover"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/audio.rs",
+  "files": [
+   "crates/game/src/play/audio.rs"
+  ],
+  "summary": "Footsteps, landings and ambience.  Footsteps come from the drawn feet, not a clock: after transform propagation each character's heel and ball are measured against the ground under them (a short ray down against `Phys::World`). A foot that rose past `LIFT_UP` and comes back under `PLANT` plants: one `Sfx` step, its kind from the surface (terrain: grass, the courtyard's bare earth, the pond's PLANT LIFT_UP STEP_GAP STEP_SPEED RAY_UP RAY_DOWN STEP_BASE STEP_PER_SPEED STEP_MAX LAND_MIN LAND_PER_SPEED WIND_VOLUME BIRD_GAP BIRD_VOLUME plugin Surface sfx terrain_surface Foot Walker Feet footsteps Ambience rand start_ambience birds every_sound_decodes"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/beam.rs",
+  "files": [
+   "crates/game/src/play/beam.rs"
+  ],
+  "summary": "Balance beams (`Update`): walking a narrow `Beam` is a balancing act. - Mounting: a grounded character (player or NPC) whose soles stand on a beam's top (within `CATCH` of its line) starts `Balancing`; leaving it (stepping off an end, jumping, falling) ends it. Landing on a beam from a jump kicks the sway by the landing impact. - Steering (`steer`, after `PlaySet::Input`): the stick's component along the beam walks (at most `WALK_SCALE` of a walk, never a sprint); its sideways component is the balance Beam dir side length locate CATCH HEIGHT_CATCH WALK_SCALE CENTRE TIP COUNTER DAMP DRIFT DRIFT_SPEED DRIFT_ACCEL DRIFT_HOLD LANDING_KICK WOBBLE FALL FALL_PUSH LEAN STANCE SHOULDER ARM_OUT ARM_WEIGHT ASSIST_PER_LEVEL MAX_ASSIST NPC_GAIN NPC_DAMP SUBSTEP CROSSED Balancing Toppled REMOUNT plugin smoke_mode steer on_beam mount next sway ROPE_HALF ROPE_UP ROPE_SWAY spawn_tightrope beam locate_measures_along_side_and_height the_sway_falls_alone_and_holds_with_a_counter"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/block.rs",
+  "files": [
+   "crates/game/src/play/block.rs"
+  ],
+  "summary": "Blocking with the weapon itself: while a fighter guards, its weapon hand puts the blade in the path of the blow that is coming.  For every guarding fighter (`Melee::guarding`) holding a drawn weapon, `place` finds the most pressing enemy swing in reach (`Melee::tell`, the soonest to land within `THREAT_RANGE`) and the attacker's blade (its `WeaponSlot`). The interception point lies `GUARD_AHEAD` in front of THREAT_RANGE READY GUARD_AHEAD HEIGHT SIDE_MAX CROSS_AT CHEST EASE BlockHands plugin intercept place the_blade_meets_the_blow_between_the_fighters_on_its_side a_block_step_walks_exactly_its_length"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/boss.rs",
+  "files": [
+   "crates/game/src/play/boss.rs"
+  ],
+  "summary": "Thoral, the Iron Rider: the first boss, waiting on the dais of the north-hill ruins (`ruins`). A huge man on a small horse (`horse`), round shield on his arm (`looks`), sword in hand; the NPC brain fights with him, `senses` decides when he notices you. - Charge (`charge`): noticed and between `CHARGE_NEAR` and `CHARGE_FAR` m away, he spurs the horse straight at you for up to `CHARGE_TIME` s (homing a little). Reaching you is a trampling blow (`Hit`, through `combat`: block or parry it, or be flung \u2014 and recover in NAME TITLE HP TEAM CHARGE_NEAR CHARGE_FAR CHARGE_TIME CHARGE_COOLDOWN TRAMPLE_REACH TRAMPLE_DAMAGE TRAMPLE_KNOCKBACK LEASH HOME_NEAR RETURN BAR_NEAR Boss home MUSIC MUSIC_VOLUME MUSIC_FADE Engaged Theme plugin spawn trample_direction wants_charge charge Trophy TROPHY_REACH fallen Bar BarFill spawn_bar bar spawn_theme theme trophy smoke he_charges_only_when_ready_noticed_and_in_range he_waits_on_the_dais a_trample_throws_mostly_aside"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/camera.rs",
+  "files": [
+   "crates/game/src/play/camera.rs"
+  ],
+  "summary": "Third-person orbit camera (`CameraRig` resource: yaw, pitch, distance, smoothed focus). Mouse/right-stick orbit, wheel zoom, follows the player's INTERPOLATED Transform, lock-on framing between player and target, over-shoulder offset while aiming, small shake on hits (`CameraShake` resource other modules can add trauma to). Runs in PostUpdate after TransformSystems::Propagate is NOT needed: read root `Transform` directly.  MIN_DISTANCE MAX_DISTANCE DEFAULT_DISTANCE PITCH_MIN PITCH_MAX DEFAULT_PITCH CHEST_ABOVE_ROOT MOUSE_SENSITIVITY STICK_YAW_SPEED STICK_PITCH_SPEED STICK_DEADZONE ZOOM_STEP FOLLOW_TIME_H FOLLOW_TIME_V SNAP_JUMP FOV_DEG AIM_FOV_DEG AIM_SHOULDER_RIGHT AIM_SHOULDER_UP AIM_DISTANCE AIM_RATE LOCK_RATE LOCK_YAW_RATE LOCK_MAX_SHIFT LOCK_EXTRA_DISTANCE LOCK_MAX_EXTRA LOCK_MAX_RANGE PROBE_RADIUS BOOM_RECOVER_RATE BOOM_MIN SHAKE_DECAY SHAKE_YAW SHAKE_PITCH SHAKE_ROLL SHAKE_OFFSET plugin MainCamera CameraRig start_distance SMOKE_MIN_DISTANCE default forward flat_forward flat_right CameraShake add PageToggles CursorCapture from_env FollowState view_forward wrap_angle smooth_damp blend stick_deadzone wobble aims_over_shoulder capture_cursor orbit follow view_conventions_match_mover wrap_angle_stays_in_range smooth_damp_converges_without_overshoot stick_deadzone_rescales shake_add_clamps_and_ignores_garbage ranged_loadouts_aim_over_shoulder"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/carry.rs",
+  "files": [
+   "crates/game/src/play/carry.rs"
+  ],
+  "summary": "What each character carries, in kilograms, for the carry posture (`motion::carry`): the equipped weapon in its hand (`WeaponDef.mass`, `hand`), or 30 % of it on the body once sheathed (`sheath`); a held tool (`tools::Holding`) in its hand. Writes `motion::carry::Load`, eased toward the new value so drawing or swapping a weapon settles instead of snapping. SHEATHED EASE tool_mass plugin carry"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/class.rs",
+  "files": [
+   "crates/game/src/play/class.rs"
+  ],
+  "summary": "Choosing a path: on a new game a panel offers three classes (keys 1\u20133). The choice sets the starting weapon (`combat::Equip`), skills (`skills::Sheet::grant`), known arts and spells and which are bound (`magic::Grimoire`), and three attribute points (`stats::Stats`). - Blade: katana; Swordsmanship 5, Aura Arts 3; Flash Step bound to Q; Strength, Dexterity, Vigor. - Arcanist: dagger; Frost 5, Lightning 3; Frost Bloom and Storm Lance, Frost Bloom on E; Intelligence \u00d72, Faith. Class Kit ALL kit path from_name ClassChoice plugin Panel spawn_panel choose apply show every_class_has_a_real_kit"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/combat.rs",
+  "files": [
+   "crates/game/src/play/combat.rs"
+  ],
+  "summary": "Melee combat (`Update / PlaySet::Act`, `CombatSet`): the melee state machine of every character with `Fighter` + `Loadout` + `Action` + `Intent`, the ONLY `Hit` resolver, the only writer of `Fighter` (hp, poise, stamina, death) and the weapon held in the hand.  Moves come from the equipped `Moveset` (kinds `unarmed` / `melee`): - light chain: a primary tap starts the next light attack. From free, a press waits until FLINCH_BODY FLINCH_HEAD STAGGER KNOCKDOWN GET_UP DEATH ROLL STEP_LEFT STEP_RIGHT STEP_BACK ALL BUFFER HEAVY_HOLD SPRINT_ATTACK_SPEED AIR_ATTACK_AFTER GUARD_MOVE RECOVER_MOVE RECOVER_BREAK ASSIST_RANGE ASSIST_CONE LUNGE_STOP ARM_REACH FIST_REACH PLUNGE_HOP PLUNGE_SPEED PLUNGE_HOLD STRIKE_SHARE RECOVER_SHARE RANK_SPEED MAX_ATTACK_SPEED ANTICIPATE_FROM ANTICIPATE PLUNGE_RADIUS PLUNGE_TIMEOUT ROLL_WINDOW ROLL_RATE ROLL_TRAVEL ROLL_IFRAMES DODGE_CANCEL STEP_TIME STEP_RATE STEP_DISTANCE STEP_IFRAMES STEP_SIDE REGEN_DELAY REGEN_RATE EXHAUSTED_REGEN SPRINT_COST CHARGE_COST ROLL_COST STEP_COST BLOCK_COST BLOCK_COST_PER_DAMAGE EXHAUSTED_MOVE POISE_DELAY POISE_RATE BODY_LOW BODY_HIGH BODY_RADIUS DUMMY_HALF DUMMY_RADIUS BLADE_RADIUS FIST_RADIUS SUBSTEP MAX_SUBSTEPS MIN_HIT_SPEED SPEED_SLOW SPEED_FAST SPEED_FACTOR HEAD_HEIGHT FLINCH_TIME FLINCH_PUSH FLINCH_MOVE STAGGER_RATE PARRIED_RATE STAGGER_PUSH KNOCKDOWN_SPEED KNOCKDOWN_POISE_KB KNOCKDOWN_LIFT FINISHER_MULT"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/contracts.rs",
+  "files": [
+   "crates/game/src/play/contracts.rs"
+  ],
+  "summary": "Contracts: posted work for the player (`assets/data/contracts.json`, `ContractBook`). Three are open at a time (`Board`, written here only); each objective is a deed pattern \u00d7 count, so progress comes from the player's `deeds::Deed`s like everything else. A finished contract waits in `Board.ready` until it is turned in at the guild desk (`TurnIn` \u2192 experience through `stats::GrantXp`, gold through `Paid`), and the next template in turn takes its place (never one already open). **Guild rank** (F, E, D, C, B, A, S): contracts completed make you OPEN RANKS rank_for rank_index rank_f Objective matches Reward ContractDef advised HonourRequires HonourGrants HonourDef HonoursFile HonourBook load get qualifies Honours honours_path Standing ContractsFile ContractBook load Open Board rank next_offer restored eligible turn_in fill dawn record contracts_path plugin TurnIn Paid RankUp settle progress honour yields expire read_board book board_opens_three_distinct deeds_finish_contracts_and_new_ones_open timed_contracts_run_out_at_dawn_and_the_board_refills advised_rank_never_falls_below_the_minimum rank_gates_postings honours_load_and_follow_rank_titles_and_each_other issuer_work_needs_its_issuer finished_work_waits_for_the_desk_and_rank_waits_for_the_exam kill_contracts_need_the_named_victim"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/controller.rs",
+  "files": [
+   "crates/game/src/play/controller.rs"
+  ],
+  "summary": "Kinematic capsule controller in `FixedUpdate / PlaySet::Move` using Avian `MoveAndSlide`: ground/air modes, snappy accel/brake (Feel), turn rate, coyote time, variable jump, gravity, slope limit, `Mover.external` knockback decay, `root_motion`, `move_scale`, `face`. Computes `Mover.accel` (smoothed), `landing`, `grounded`, `air_time`.  Support: the capsule floats `STEP_CLEARANCE` above the soles and only meets walls. A sphere JUMP_BUFFER JUMP_CUT SLOPE_LIMIT_DEG STEP_HEIGHT STEP_DOWN LAND_TOLERANCE SUPPORT_RADIUS STEP_JUMP_MIN STEP_SMOOTH_TIME MAX_STEP_OFFSET EXTERNAL_HALF_LIFE_GROUND EXTERNAL_HALF_LIFE_AIR ACCEL_SMOOTHING MAX_ACCEL LANDING_FULL_SPEED LANDING_DECAY CROUCH_SPEED_SCALE WALK_TILT AIR_TURN_SCALE MAX_FALL_SPEED JUMP_MIN_MOVE_SCALE plugin Teleport ControllerState Gait wrap_angle yaw_of turn_toward approach_velocity decay_half_life target_speed landing_impact walkable step_residual ease_to_zero Support find_support latch_jump Step movement_filter slide move_characters draw_unbound_capsules approach_is_frame_rate_independent_and_exact turning_wraps_the_short_way half_life_halves gait_tiers landing_and_slopes slopes_are_not_steps step_offset_eases_out_smoothly"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/debug.rs",
+  "files": [
+   "crates/game/src/play/debug.rs"
+  ],
+  "summary": "Debug toggles: one registry of views (`DebugToggles`, written here only). F12 shows the list (top right); while it is open, 1\u20139 and 0 flip toggles 1\u201310 and Shift+1\u20133 flip 11\u201313. `GB_DEBUG=1,2,4` turns toggles on at start (smoke runs and screenshots). Views that belong to a system live with it and read the flag (`senses`: vision volumes, sense rays, aura radius, awareness; `wind_aura`: the test shell). The general ones are drawn here with gizmos, each only while its flag is on: AI intent, IK targets, grass pushers and gusts, View ALL label key DIGITS key_label DebugToggles get flip from_env shown plugin keys List ListText spawn_list list_text show_list ai_intent ik_targets grass balance projectiles every_view_has_its_own_key env_spec_turns_views_on"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/deeds.rs",
+  "files": [
+   "crates/game/src/play/deeds.rs"
+  ],
+  "summary": "Deeds: anything a character does or suffers, as a tagged record, the only input to progression (`skills`) and to contract progress (`contracts`). Producers write `Deed` and nothing else about progression: `combat` (hit: a melee blow that landed, tagged with the wielded moveset; block, parry, kill: tagged with the victim's name; struck: the victim took a blow, tagged Melee / Projectile / Spell; ward: an Aura Ward turned one), `magic` (cast, cast_hit: tagged with the ability id), `ranged` (shoot, shoot_hit: tagged with the projectile kind), `traverse` (swim, dive and climb per metre, mantle), `parkour` (land: tagged Deed new plugin"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/discipline.rs",
+  "files": [
+   "crates/game/src/play/discipline.rs"
+  ],
+  "summary": "Discipline: what a fighter has mastered and how far, and what that does in a fight. - `Mastery { path, rank }` on every fighter. The player's path is the class picked (`class::ClassChoice`) and its rank the guild rank (`contracts::Board`, F..S = 0..6); an NPC's path is Monk for the order (`looks::is_monk` names), else follows its weapon (blades \u2192 Blade, bow \u2192 Hunter, magic \u2192 Arcanist, bare hands \u2192 none) and is recomputed when the weapon changes; its rank follows its level (`stats::Stats`, every `LEVELS_PER_RANK` levels). MAX_RANK LEVELS_PER_RANK STUN FLEE_GAP AURA_FROM Path of_npc colour Mastery Species Broken Outcome Disarm DeflectReach SEIZE_GAP BROKEN DISARM_RECOVER perfect_outcome Flare Counter Countered weapon_scale variety guard_bonus counter flees rank_of_level HandFlash Absorb add plugin fighting_hands hands absorb assign player_rank tick_broken DroppedWeapon disarm recover_weapons ReachOwned deflect_reach finisher_prompt FlareShell flare flare_fade RankAura rank_aura m monk_fists_beat_his_weapons counters_are_monk_or_max_rank variety_rises_with_rank_and_monks_most monk_guard_is_a_defensive_state hands_follow_the_fight only_the_order_are_monks perfect_defence_disarms_close_ranks_and_seizes_far_lower humans_run_from_rank_and_demons_dont"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/doors.rs",
+  "files": [
+   "crates/game/src/play/doors.rs"
+  ],
+  "summary": "Hinged doors you open by hand: one with a knob (the hand closes round the knob, turns it, and rides it as the leaf swings) and one without (both palms flat on the leaf, pushing).  Each door is an `Interactable` root with a frame (two posts and a lintel, solid) and a leaf hung on a hinge: the `Door leaf` child sits at the hinge post and turns about its vertical axis; the planks (and knobs, on both faces) are its children. A thin `Door block` collider KNOB_DOOR PUSH_DOOR W H T OPEN RATE KNOB_X KNOB_Y KNOB_OUT KNOB_R KNOB_TURN PUSH_X PUSH_Y STAND_BACK STAND_BACK_PUSH KNOB_SIDE NUDGE TRACK REACH BEAT HingedDoor Leaf Knob Block plugin face_of leaf_hits contact stand_for aim toggle turn_knobs swing spawn_doors door knob_sits_at_the_right_hand_on_both_faces push_palms_are_left_and_right_of_the_body the_leaf_swings_away_from_its_user_not_the_nearest_body a_body_in_the_arc_stops_the_leaf_and_one_behind_the_hinge_does_not an_open_leaf_is_served_from_its_new_face"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/fx.rs",
+  "files": [
+   "crates/game/src/play/fx.rs"
+  ],
+  "summary": "Small effects: particle bursts (wood chips, leaves, sparks) and one-shot sounds. Other systems ask for them with `Burst` and `Sfx` messages; `fx` owns every `Particle` and the audio entities it spawns. Particles are plain integrated cubes (no physics): gravity, drag, a bounce on the analytic terrain, then they shrink away. plugin BurstKind Burst SfxKind Sfx Particle FxAssets FxRng default next range unit pick HEAR_NEAR HEAR_FAR load spawn_bursts step_particles play_sounds"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/godmode.rs",
+  "files": [
+   "crates/game/src/play/godmode.rs"
+  ],
+  "summary": "Debug god mode (E8, v1): F11 opens a panel to play with the systems. Every write goes through the system that owns the value, never around it: - target readout: hp / poise / stamina, path and rank of the lock-on target (`Intent.target`), else the nearest living foe; - 1 god (self): toggles `Invulnerable` on the player (hits pass through it, like a dodge); - 2 tireless (self): toggles `Tireless` (stamina stays full); Invulnerable Tireless GodState KILL_KNOCK LOOK HOURS_ON plugin SHIELD hold Panel PanelText spawn_panel env_secs smoke_start keys kill pick_target apply_markers smoke_kill panel_text show panel_text_lists_the_toggles_and_the_target"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/grab.rs",
+  "files": [
+   "crates/game/src/play/grab.rs"
+  ],
+  "summary": "Command grab (G): seize the enemy in front, swing them round, throw them.  A free, grounded fighter presses `Intent.grab_pressed`; the nearest enemy within `RANGE` inside the front cone is the mark. The grab is an `Owner::Grab` / `ActionKind::Grab` action: - reach (0..`CATCH`): both hands go to the mark's shoulders (`HandTargets`, with sphere grips so the fingers close on them) and the grabber closes to `HOLD_DIST`; RANGE CONE HOLD_DIST CATCH THROW END WHIFF_END SWING DAMAGE POISE KNOCKBACK STAMINA THROW_TRACK THROW_RELEASE HELD_TRACK SHOULDER Grabbing Grabbed plugin forward pick hold_point start run release_mark picks_the_nearest_enemy_in_front_within_reach the_mark_is_held_at_arms_length_and_swung_round"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/grass.rs",
+  "files": [
+   "crates/game/src/play/grass.rs"
+  ],
+  "summary": "Grass: a knee-high, wind-swept meadow over the hills (BotW-style), trampled by characters.  Owns the grass chunks, their material (`GrassMaterial` = `StandardMaterial` + `GrassExtension` with the vertex shader `assets/shaders/grass.wgsl`) and the `GrassWind` resource.  How it works: GRASS_SHADER CHUNK_SIZE CHUNKS CELLS_PER_CHUNK GROUND_GRID BLADE_HEIGHT_MIN BLADE_HEIGHT_MAX BLADE_WIDTH_MIN BLADE_WIDTH_MAX SEGMENTS_NEAR SEGMENTS_FAR CLUMP_SIZE ROOT_SINK EDGE_ROUNDNESS LOD1_KEEP LOD1_WIDEN LOD0_END LOD_BLEND FADE_START FADE_END MAX_BEND NORMAL_UP_BIAS FLUTTER GUST_WAVELENGTH TRAMPLE_RADIUS TRAMPLE_BEND MAX_PUSHERS SWAY_MARGIN EXCLUSION_MARGIN EXCLUSION_FEATHER EXCLUSION_MIN_SIZE EXCLUSION_MAX_SIZE FLUTTER_WRAP SCROLL_WRAP plugin GrassWind default GrassGust GrassExtension vertex_shader enable_prepass enable_shadows GrassWindData GrassChunk GrassBuffers WindClock advance smoothstep wind_direction hash grass_cover patchiness GroundGrid sample locate corners height_at cover_at Exclusion clearance overlaps Palette new Blade colour cell_size nearest_clump plan_blade BladeMesh is_empty push_blade push_vertex aabb into_mesh ChunkGrass build_chunk build_chunks exclusion_from_aabb spawn_grass nearest_pushers"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/ground.rs",
+  "files": [
+   "crates/game/src/play/ground.rs"
+  ],
+  "summary": "Ground and weathering materials (`assets/shaders/ground.wgsl`, `weather.wgsl`). - The terrain's standard material is swapped for `GroundMaterial` once it appears: the painted vertex colours get procedural macro drifts, triplanar rock strata on steep faces, grass tone breakup and mottled, pebbled worn ground (footpaths, the ruins: the vertex alpha). Debug view 12 (\"ground layers\") shows the masks instead. - Stone and wood (`Weathering`, the palette materials `world` lists) are swapped for GroundParams GroundExt fragment_shader WeatherParams WeatherExt fragment_shader STONE WOOD DETAIL SOAK DRY WET_STEP wet_step Weathering new plugin terrain weather Wetness soak layers rain_soaks_fast_and_dries_slow"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/guild.rs",
+  "files": [
+   "crates/game/src/play/guild.rs"
+  ],
+  "summary": "The Guild: its people and the front desk (`assets/data/guild.json`, `GuildData`). The hall itself is `hall`; talking is `talk`. - **People** (non-combat `occupations::Civilian`s, `talk::Talkable`): Mira the receptionist (behind the desk), Captain Varro (the training ground, drilling at the dummies), and two adventurers, Kael and Sena, who sit at the lodging table, chat (log lines you hear when near), read the bounties and sleep in the beds at night. DUEL_TEAM RING_SLACK OUT_TIME SLEEP_AFTER CHATTER_EVERY CHATTER_PAIR HEAR ExamDef retry_default Lines Renown rumour GuildData load price RANK_RATE guild_path Purse Rested Exam Duel Guild roll DeskView choice desk_menu captain_menu adventurer_menu rank_rate sale_price bag_value bounty_value plugin spawn_people Person smoke IDS sleep_smoke ledger paid respond start_duel duel sleep chatter Card CardText spawn_card card_text card data rumours_only_say_what_the_guild_knows data_loads_and_prices_items the_desk_offers_what_applies rolls_vary the_captain_only_tests_a_booked_exam"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/guildhouse.rs",
+  "files": [
+   "crates/game/src/play/guildhouse.rs"
+  ],
+  "summary": "The guildhouse: the two-storey guild headquarters on the east terrace, built at startup from `assets/data/guildhouse.json` (sizes read off the Higgsfield views G2/G3/G4/I1/I9, see `assets/art/guildhouse/` and `GUILDHOUSE.md` on the `agent-log` branch) with the Higgsfield textures in `assets/textures/guildhouse/`.  It stands where the old hall stood (`hall::HALL_MIN..HALL_MAX` is its main block) and faces UPPER_T SILL HEAD UPPER_SILL UPPER_HEAD YARD_DOOR_W YARD_STEPS_W SLAB STAIR_STEPS STAIR_W STAIR_X BACK_STRIP_X ROOMS_Z PARTITION_T HEARTH_X Spec Podium Aprons Steps Block Storey Roof Tower Chimney DoorSpec Porch Banners Lanterns Windows spec_path load check plugin Outside WET_DARKEN WET_ROUGHNESS wet_outside Mats new tiled_material Hole Build mesh block span picture wall slab_with_hole window light Frame new tower spawn podium ground_floor inward_of extend split stairs_and_upper_floor upper_storey roof tower chimney_and_hearths porch_banners_lanterns furniture shelf spec the_spec_loads_and_fits_the_hall_footprint heights_stack_up_and_the_tower_tops_the_ridge the_stair_climbs_in_walkable_steps_and_misses_the_tower_and_yard_door rooms_upstairs_hold_their_furniture holes_split_a_wall_into_the_right_pieces"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hall.rs",
+  "files": [
+   "crates/game/src/play/hall.rs"
+  ],
+  "summary": "The Guild Hall complex on the terrace east of the courtyard (`world::TERRACE_MIN..MAX`), built once at startup with `world::Kit`: - a timber **gate** at the courtyard's east edge and a packed path to the foot of the steps; - the **hall**: the ground floor of the `guildhouse` (which builds the building itself: podium, walls, upper floor, roof, tower), its floor `FLOOR_Y` up on the podium, a west door and a +z door to the yard, wall sconces. Inside: the **front desk** (counter, bell, ledgers behind; HALL_MIN HALL_MAX WALL_T FLOOR_Y DOOR_Z DOOR_W DOOR_H YARD_DOOR_X STEPS_FOOT_X YARD_STEPS_FOOT_Z DESK_STAND DESK_FACE DESK_X YARD_X0 RING_CENTER RING_RADIUS BEAM_START BEAM_END BEAM_WIDTH CAPTAIN_POST GATE DOOR_REACH DOOR_OPEN DOOR_RATE Door inside route plugin walk swing doors spawn_hall spawn_gate_and_path spawn_desk spawn_board spawn_lodging spawn_training_ground spawn_lights the_complex_sits_on_the_terrace walkers_leave_the_hall_by_a_door"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/horse.rs",
+  "files": [
+   "crates/game/src/play/horse.rs"
+  ],
+  "summary": "Horses: a small procedural mount under a rider, built from primitives as a child of the rider's root (so it goes and turns with the rider; the rider's controller drives both). - Body: barrel, neck, head with ears and a blaze, mane, tail, four two-part legs with hooves, a saddle and barding that falls over the rider's legs. - Gait (`gait`): the legs swing in a trot (diagonal pairs) with the knees folding on the forward swing, by a phase that advances with the distance the rider covers (`STRIDE`); the STRIDE SADDLE SEAT_TRACK SEAT_TIME SEAT_RATE Horse Ridden plugin leg_angles spawn_horse gait seat a_trot_pairs_the_diagonal_legs_and_rests_still"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/input.rs",
+  "files": [
+   "crates/game/src/play/input.rs"
+  ],
+  "summary": "Player input \u2192 `Intent` (keyboard + mouse + gamepad). Move direction is relative to the camera yaw (`camera::CameraRig`). Controls: WASD move, Alt walk, Shift sprint, C crouch, Space jump/climb, Ctrl dodge, LMB primary (tap/hold), RMB secondary (block/aim), F interact, Q art (Battlewill), E spell (magicules), MB5 (mouse forward) next spell, Tab lock-on nearest enemy, R reset player. Weapons come from the chest (`armory`), not from number keys.  LOOK_DISTANCE AIM_RANGE LOOK_MIN LOCK_RANGE LOCK_CONE_DEG LOCK_BREAK_RANGE TRIGGER_THRESHOLD plugin Press parse_presses scripted Latches camera_relative pick_lock_target player_input parses_scripted_presses move_dir_follows_camera_yaw lock_on_prefers_close_targets_in_front"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/insignia.rs",
+  "files": [
+   "crates/game/src/play/insignia.rs"
+  ],
+  "summary": "Title insignia: anyone holding a title (`skills::Sheet::titles`) wears a small glowing badge on the left breast, coloured by their newest title (a hue from its id), so standing shows on the body; an honoured one (`contracts::Honours`) wears it in gold. The badge is a free entity placed each frame from the chest bone and the body's facing. SIZE FORWARD LEFT UP plugin Badge GOLD hue wear place hues_are_stable_and_differ"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/interact.rs",
+  "files": [
+   "crates/game/src/play/interact.rs"
+  ],
+  "summary": "World interaction. Every character keeps a `Focus`: the best `Interactable` in reach, scored by distance and facing (the player's facing is the camera's). For the player it also sets `InteractPrompt`, and `draw_markers` rings every usable thing nearby, so you can see what E does and where you'd stand.  E starts an `ActionKind::Interact` action owned by `interact`: the character walks into APPROACH_SPEED APPROACH_SLOW IN_PLACE IN_PLACE_YAW APPROACH_TIMEOUT CLOSE_ENOUGH PIVOT_STOP PIVOT_GO HOLD_TIME HOLD_SPEED MOVE_RELEASED MOVE_CANCEL EFFECT_AT REGROW_TIME MARKER_RANGE REFUSE_TRACK REFUSE_TIME REACH_RAMP STRIKE_FAST STRIKE_STOP STRIKE_LATE plugin UseEffect UseBeat Offer prompt offer stand_and_face Focus Using Swing step Phase Grasp PropState available focus_score hand_weight face_yaw focus release drive crossed_beat apply_use animate_props draw_markers focus_prefers_close_and_in_front hands_fade_in_and_out chest harvest_and_toggle offers_follow_the_held_tool radial_stand_faces_the_root_from_the_user_side tool_strikes_when_the_blade_stops_once_per_cycle beats_fire_once_per_cycle"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/inventory.rs",
+  "files": [
+   "crates/game/src/play/inventory.rs"
+  ],
+  "summary": "The bag: `Inventory` on the player (required by `Player`), `SLOTS` stacks. `inventory` alone changes it: it applies `items::ItemCollected` and `SpendItems` (the guild buying), answers `items::ItemRejected` with whatever doesn't fit, and reports every change in the HUD log (\"+3 Log\", one line per kind that counts up while pickups keep coming; \"Bag full\", also when `items::BagFull` says something in reach has no room). I, or a `ToggleBag` message (the hotbar's bag button), opens the bag: a `gbui` panel at the bottom right with a 5 \u00d7 4 grid of slots (item codes in the item's colour, counts) SLOTS COLUMNS TILE GAP MERGE FOOTER_RATE FULL_KEY Stack Inventory default restored add fits count remove plugin SpendItems spend BagOpen ToggleBag BagRoot BagSlot BagUsed BagFooter code spawn_ui Recent note collect toggle refresh item_text_color hover add_tops_up_then_fills_and_reports_overflow remove_takes_from_the_back_and_clears_empty_slots"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/items.rs",
+  "files": [
+   "crates/game/src/play/items.rs"
+  ],
+  "summary": "World items: logs, sticks, stones, apples. `items` owns every `Item` entity.  Drops pop out as small physics bodies on `Phys::Debris` (characters and ground probes ignore them) and freeze in place (`Resting`, static) once they settle, so nothing rolls down a hill forever. After `PICKUP_DELAY`, an item within `MAGNET_RADIUS` of the player is swapped for a visual stand-in that flies to the chest (when the bag has room; otherwise `BagFull`) and is ItemKind ALL name description stack color index Item Flying Spot Resting ItemCollected ItemRejected BagFull HillTrees ItemAssets LOG_RADIUS LOG_LENGTH STICK_RADIUS STICK_LENGTH STONE_RADIUS APPLE_RADIUS PICKUP_DELAY MAGNET_RADIUS FLY_TIME FLY_ARC CHEST RESPAWN SETTLE_MIN SETTLE_SPEED SETTLE_SPIN SETTLE_MAX KILL_DEPTH FULL_NOTICE STICKS STONES SCATTER_MIN SCATTER_MAX MIN_FLATNESS plugin ChestLoot new spill refill log_mesh load collider spawn_item rest_height placed spawn_placed scatter_points scatter chest magnet fly rejected settle respawn hill_scatter_avoids_pond_and_courtyard kinds_are_described"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/looks.rs",
+  "files": [
+   "crates/game/src/play/looks.rs"
+  ],
+  "summary": "Character looks: the UAL mannequin made into distinct people, all in code (no new assets). Once a character is bound and has its skin (`skin::Skin`) and its pose has settled for `SETTLE` s, `dress` gives it the `Look` for its name (`look_for`): - Proportions: the model scales about the feet by `height` and `breadth` (modest, so IK and the capsule still fit). - Accent: the colour the skin's shadow bands lean toward (`Skin.accent`). SETTLE TAIL_SWING TAIL_ACCEL TAIL_STIFF TAIL_DAMP TAIL_MAX Piece from_name Look look_for is_monk monk_look ROBES SASHES Dressing Dressed PieceMesh KasaMesh WearHelm Flap plugin undress dress wear_helm tail_target flaps show_pieces monks_vary_but_keep_the_order_marks every_named_character_has_a_distinct_look tails_trail_the_motion"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/magic.rs",
+  "files": [
+   "crates/game/src/play/magic.rs"
+  ],
+  "summary": "Arts and spells (`Update / PlaySet::Act`, after combat). Two pools, as in the setting this takes its inspiration from: - **Battlewill** (aura of the body) fuels **arts** on Q: no chant, little or no wind-up, physical techniques that look like magic. It builds up in a fight (landing melee blows, taking them) and trickles back at rest. - **Magicules** fuel **spells** on E: a short cast (the chant), then the effect. They MASTERY_PER_HIT MASTERED_COST MASTERED_SPEED MASTERED_POWER MASTERED_FLAIR MASTERED_DEBT OVER_CAP OVER_DECAY BW_ON_HIT BW_ON_HURT BW_REST MP_REGEN MP_DELAY BODY_LOW BODY_HIGH BODY_RADIUS DUMMY_HALF DUMMY_RADIUS CAST_MOVE ORBIT_TIME HOMING LANCE_CONE CHAIN_RANGE STEP_TIME Pool Shape Ability is_art ability known Energy default Grimoire default restore mastery is_mastered Ward WardShell Bind Casting progress Projectile plugin pools bind hand start_cast World Target gather foe drive_cast finish BLINK_RANGE BLINK_GAP DROP_PROBE DROP_MIN blink_spot Superhero blink superhero_land gain spell_hit release WARD_RADIUS WARD_LIFT WARD_TILTS WARD_SPIN WardBand ward_mastery ward lissajous fly demo table_is_consistent every_cast_clip_is_in_the_bank mastery_happens_once_and_costs_magicules ward_is_an_art_that_never_strikes known_follows_discovery"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/marks.rs",
+  "files": [
+   "crates/game/src/play/marks.rs"
+  ],
+  "summary": "Spell marks: scorches, frost and cracks left on the ground where magic lands. - `vfx::impact` spawns a `MarkRequest` (element, size) at every magic impact; `place` turns it into a flat decal on the surface below (a ray down at most `MAX_DROP` m, so blows that land on a body leave nothing), lying along the surface normal, turned at random, then despawns the request. - Which mark: fire \u2192 scorch, lightning and arcane \u2192 char, frost \u2192 frost, aura (Quake, a ward MAX_DROP HOLD FADE MAX_MARKS SIZE_PER_SCALE SIZE_RANGE LIFT DEPTH_BIAS MarkRequest Mark MarkAssets plugin load lay place fade a_mark_lies_along_the_ground"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/mod.rs",
+  "files": [
+   "crates/game/src/play/mod.rs"
+  ],
+  "summary": "Gameplay: world, characters, movement, combat, ranged, magic, traversal, interaction, AI.  Data flow per frame: - `Update / PlaySet::Input`  \u2013 `input` (player) writes `Intent`. - `Update / PlaySet::Think`  \u2013 `ai` (NPCs) writes `Intent`. - `Update / PlaySet::Act`    \u2013 `combat`, `ranged`, `magic`, `interact`, `traverse` run their plugin PlaySet Phys CAPSULE_RADIUS STEP_CLEARANCE CAPSULE_LENGTH HALF_HEIGHT Player Npc Intent MoveMode Mover default forward Fighter new ActionKind Owner ActionLayer new Action is_free start clear Loadout equipped adopt Hit StaminaSpend HitKind Interactable Climbable Water InteractPrompt Feel default spawn_character"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/monitor.rs",
+  "files": [
+   "crates/game/src/play/monitor.rs"
+  ],
+  "summary": "Joint-relation monitor. Every frame, after `compose` and transform propagation, it measures how each character's knees, feet, elbows and hands relate to each other and to the world, and logs every broken relation to `staging/relations.log` (rate-limited per character, relation and side), so any playtest leaves a record. F4 shows it: limbs drawn green when sound and red when broken, hand targets, and a panel for the player.  MIN_FLEX AGAINST POP SINK FLOAT PLANTED SLIDE DOWN HAND_MISS SELF_CLIP HAND_FULL LOG_EVERY RECENT ELBOW_OUT HITCH LOG_PATH plugin publish_pipelines WindowWatch window_events Monitor write Memory Bend bend bend_fault Panel spawn_panel toggle measure bend_reads_flexion_side_and_folds"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/moveset.rs",
+  "files": [
+   "crates/game/src/play/moveset.rs"
+  ],
+  "summary": "Data-driven movesets: `assets/anim/movesets/*.json`, one file per weapon / school / tool. Loaded once at startup into `Movesets`. Every `track` must be a `PoseBank` track name (`\"{lib}/{clip}\"` or `\"authored/...\"`); `validate` warns about unknown tracks. Weapon meshes are attached to the hand bone of the equipped moveset (see `attach_weapons`). Kind one ClipRef Hitbox Attack Guard Aim ProjectileDef one_u32 lifetime right Primitive WeaponDef Carry Stance Moveset Movesets get load tracks movesets_dir plugin shipped_movesets_are_valid"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/occupations.rs",
+  "files": [
+   "crates/game/src/play/occupations.rs"
+  ],
+  "summary": "Occupations: civilians at work (`assets/data/occupations.json`, `OccupationBook`). A `Civilian` is a character no brain fights with (`ai` skips it as a foe) and that fights no one; its `Occupation` runs a routine of interactable kinds in turn: walk to the nearest free one of the kind, press interact (the same `Intent.interact_pressed` as the player: `interact` walks it into place and plays the clip), stay `stay` s on a looping use (anvil, chair, torch) then press again to stop, and move on. `work` is the only writer of a civilian's `Intent`. ARRIVE NEAR NEAR_STALL PRESS_EVERY GIVE_UP PROGRESS SITTER_NEAR STALL_MOVE STALL DODGE POST_GIVE_UP STROLL POST_RUNUP POST_ARRIVE DRILL_EVERY Step post_points OccupationDef SHELTER_RAIN Shift shift OccupationsFile OccupationBook load index occupations_path Civilian Phase Occupation new walk advance progress plugin CHECK_AFTER check_posts work heavy_rain_by_day_sends_civilians_to_shelter occupations_load_and_name_real_kinds posts_are_walked_into_facing_their_yaw routines_wrap"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/parkour.rs",
+  "files": [
+   "crates/game/src/play/parkour.rs"
+  ],
+  "summary": "Parkour landings (`Update / PlaySet::Act`, actions owned by `Owner::Move`). Every touchdown is graded by the downward speed (`Mover.impact`) and the horizontal speed: - soft: nothing here; `select` plays the Jump_Land overlay weighted by `Mover.landing`; - roll: hard enough while moving fast \u2192 `ActionKind::Roll`: the roll clip from its tuck, root motion carrying the landing speed along the travel direction and easing toward run speed; input is locked until the get-up, where jump / dodge / attack cancel and the stick ROLL HARD ROLL_IMPACT ROLL_SPEED HARD_IMPACT ROLL_OFFSET ROLL_RATE ROLL_GET_UP ROLL_EXIT HARD_OFFSET HARD_RATE HARD_LOCK HARD_LOCK_PER HARD_LOCK_MAX HARD_CANCEL LOG_IMPACT plugin Grade superhero grade Landing smooth01 release ours land grades"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/pause.rs",
+  "files": [
+   "crates/game/src/play/pause.rs"
+  ],
+  "summary": "The pause menu: Esc with no other page open stops the game (`Time<Virtual>` paused: physics, animation and AI all wait) and shows a panel; Esc again, or Resume, carries on. - **1** Resume \u00b7 **2** Save now (`savegame::SaveNow`) \u00b7 **3 / 4** mouse sensitivity \u2212 / + \u00b7 **5 / 6** volume \u2212 / + \u00b7 **7** New game (forgets the save and quits; the next launch starts fresh) \u00b7 **8** Save and quit. Every line can be clicked too. - The panel also lists the controls (`CONTROLS`). MOUSE_STEP MOUSE_RANGE VOLUME_STEP VOLUME_RANGE Paused Settings default settings_path load clamped CONTROLS Choice KEYS Panel Line Readout plugin apply_volume spawn_panel toggle set choose show"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/ragdoll.rs",
+  "files": [
+   "crates/game/src/play/ragdoll.rs"
+  ],
+  "summary": "Impact ragdoll (`Update / PlaySet::Act`, after `CombatSet`). On a `RagdollRequest` (from combat: knockback above `Feel.ragdoll_threshold`; or F6 on the player, for testing) the body goes to physics: - `take_over` spawns 11 dynamic segments (pelvis, chest, head, upper / lower arms, thighs, calves) at the bones' current world transforms, linked by `SphericalJoint`s whose swing and twist limits are centred on the pose at the moment of the hit (so limbs bend a plausible RagdollRequest KICK MAX_FLING MAX_SPIN SPIN_SHARE RECOVER_AFTER RECOVER_HEIGHT RECOVER_COST RECOVER_KEEP BOUNCE BOUNCE_UP BOUNCE_LOOK RECOVER_STEER fling SETTLE_SPEED SETTLE_TIME MIN_TIME MAX_TIME GET_UP GET_UP_RATE LINEAR_DAMPING SEGMENT_FRICTION ANGULAR_DAMPING LIMIT_COMPLIANCE DEATH_LIMP DEATH_SLUMP LIMP_DRIFT SUNK MAX_SINK DEBUG_PUSH Seg SEGS HEAD HEAD_REACH plugin Ragdolled GettingUp debug_key limp fling_smoke bone_world take_over start_lift spawn_segments RagdollSegment point_segment pose_from_segments drive AirRecovered bounce FLIP_CLIP LAND_CLIP ROLL_CLIP FLIP_TIME FLIP_PIVOT ROLL_SPEED LAND_RATE Stage Acrobatics flip land flip_angle acrobat release bank segments_at_the_bones_reproduce_the_pose a_turned_segment_turns_its_bone_only segment_table_is_well_formed ragdoll_falls_settles_and_holds_together ragdoll_on_a_trimesh_slope_stays_above_ground a_limp_death_pose_falls_instead_of_launching the_backflip_turns_once_backwards_and_settles a_blow_through_the_centre_throws_and_one_off_centre_spins"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/ranged.rs",
+  "files": [
+   "crates/game/src/play/ranged.rs"
+  ],
+  "summary": "Ranged weapons (`Update / PlaySet::Act`, after combat): the movesets of kind `ranged` (`assets/anim/movesets/{bow,crossbow,knives}.json`, wielded from the chest like any weapon). - Secondary held aims: the set's `aim` clip on the upper body (held at its `hold` time), the body turned to the camera's look point (or the lock-on target), half speed, a crosshair. - Primary fires. With `aim.draw_time > 0` (bow) holding primary draws (an `aim.draw` clip on the aim track is scrubbed from its start to `hold` with the pull): release shoots, the DRAW_MIN AIM_MOVE STUCK_TIME BODY_LOW BODY_HIGH BODY_RADIUS DUMMY_HALF DUMMY_RADIUS MUZZLE_UP MUZZLE_FORWARD plugin demo Shooting Shot ranged_set shoot BOW_CANT hold_bow spawn_shot fly Crosshair CrosshairTick CrosshairInk CROSSHAIR_RANGE CROSSHAIR_COLOR CROSSHAIR_FOE spawn_crosshair C crosshair ranged_movesets_parse_and_aim"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/record.rs",
+  "files": [
+   "crates/game/src/play/record.rs"
+  ],
+  "summary": "Smoke-test recorder: `GB_RECORD=<dir>` makes every frame advance game time by exactly 1 / `GB_RECORD_FPS` s (default 30) and saves each frame from `GB_RECORD_FROM` to `GB_RECORD_TO` game seconds (defaults 3 and 15) as `<dir>/f_00000.png`..., then quits once the last one is written. However slowly the machine renders, the frames play back at normal speed (`ffmpeg -framerate 30 -i <dir>/f_%05d.png`). Nothing here runs without `GB_RECORD`. Recording env_f32 plugin record"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/repertoire.rs",
+  "files": [
+   "crates/game/src/play/repertoire.rs"
+  ],
+  "summary": "A fighter's repertoire: moves beyond its moveset's fixed chains.  - `StrikeLibrary`: single strikes cut out of the hand-animated libraries the user picked to match the look (`library_track`: UAL's punches, and Kevin Iglesias' packs once converted to `kev*`): no CMU or Rokoko mocap, which reads stiff next to them. Cut by `segment`: forward kinematics on the bank at `SAMPLE_HZ`, the hand / foot speed relative to the PUNCH_SPEED KICK_SPEED REACH BAND MAX_WINDUP MAX_RECOVER MAX_TURN AHEAD KICK_LIFT SEPARATION SEED_PUNCHES SEED_KICKS VARIANT_CHANCE LEARN_AFTER LEARN_SPEED Slot Kind Strike StrikeLibrary Extra Repertoire for_slot Witnessed plugin roll yaw_of_pelvis segment strike_attack library_track build_library seed learned_copy learn the_library_only_cuts_ual_and_kevin_iglesias_strikes bank finds_strikes_in_the_martial_arts_takes aim the_library_is_large_and_every_strike_goes_forward three_blows_of_the_same_move_teach_it_once Told a_strike_attack_lands_on_the_measured_contact a_learned_move_keeps_its_windows_and_gets_its_own_tempo"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/ruins.rs",
+  "files": [
+   "crates/game/src/play/ruins.rs"
+  ],
+  "summary": "The ruins on the north hill (`world::RUINS_CENTER`, a raised plateau `world::ground_height` blends in): the place to build towards \u2014 a broken shrine whose cracked dais will hold the first boss. Reached by the footpath north out of the courtyard, under a red torii. - A ring of pillars (some whole with capitals, most snapped at odd heights, one fallen), two arches (one with a cracked, sagging lintel) and a broken back wall. - A floor of flagstones with gaps, a low ring of arena stones and the dais at the centre. ARENA_RADIUS PILLAR_RING PILLARS hash spawn_ruins the_ruins_stand_on_a_flat_plateau hashes_are_in_unit_range"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/savegame.rs",
+  "files": [
+   "crates/game/src/play/savegame.rs"
+  ],
+  "summary": "Save and load (E19): the player's progress in one JSON file.  - **Saves** on F5 (quicksave), when the player wakes rested (a guild bed: `guild::Rested`) and when the game closes (`AppExit`). Not while dead. - **Loads** once at start, as soon as the player and the guild board exist, if the file is there. `GB_NEW=1` starts fresh (the file is kept until the next save). VERSION LOG_KEY SaveFile PlayerSave OpenSave GuildSave PlayerParts order_name order_from SaveNow capture to_json from_json bag_stacks board_from run_path save_path smoke_run env write_atomic SaveState forget plugin snapshot write_save save_on_demand save_on_exit load_once book sample a_save_round_trips_through_json restoring_rebuilds_what_was_saved bad_saves_are_refused_and_stale_parts_dropped where_it_saves_and_when_it_stays_off writes_replace_the_file_whole"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/select.rs",
+  "files": [
+   "crates/game/src/play/select.rs"
+  ],
+  "summary": "The motion selector (`Update / PlaySet::Select`): the ONLY writer of `MotionLayers.layers`. Builds per character: locomotion base (idle / walk / jog / run / sprint / crouch / strafe / back / turn, phase-synced by `Mover.phase` and blended by speed; air start/loop/fall/land; swim; climb), the equipped moveset's `Stance` overlay, then `Action.layer` and `Action.overlay`. Fills `ContactRequest` (foot IK off in air/swim/ragdoll, accel, squash from landing/jump, look_at from Intent.target, and the `MotionFeel.bounce` character: a pelvis dip plugin IDLE WALK JOG RUN SPRINT CROUCH_IDLE CROUCH_MOVE WALK_BACK JOG_BACK WALK_LEFT WALK_RIGHT JOG_LEFT JOG_RIGHT TURN_LEFT TURN_RIGHT JUMP_START JUMP_LOOP JUMP_LAND FALL LEAP_START LEAP_AIR SWIM_IDLE SWIM_FWD CLIMB BLEND_TIME ACTION_IN ACTION_OUT FOOT_IK_IN FOOT_IK_OUT HAND_TIME MAX_DT WEIGHT_EPS CLOCK_WRAP JOG_FRACTION MIN_ANCHOR_GAP MIN_STRIDE CROUCH_FULL_FRACTION STRAFE_MIN_SPEED JUMP_UP_SPEED JUMP_START_WINDOW JUMP_START_OFFSET JUMP_START_RATE FALL_SPEED FALL_AFTER LEAP_SPEED LEAP_START_WINDOW LEAP_START_OFFSET LEAP_START_RATE LEAP_FALL_AFTER LAND_WINDOW LAND_OFFSET LAND_RATE LAND_SQUASH JUMP_STRETCH STRETCH_WINDOW BOB BOB_LAG CROUCH_BOB STEP_SQUASH STEP_STRETCH BREATH BREATH_PERIOD TURN_RATE_MIN TURN_RATE_RAMP TURN_WEIGHT TURN_IDLE_SPEED SWIM_FULL_SPEED CLIMB_STEP CLIMB_SPAN LOOK_HEIGHT AIM_CHEST HandTargets HeldGrip HandForm FootTargets Posture Mounted STRADDLE_SPREAD STRADDLE_DROP"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/senses.rs",
+  "files": [
+   "crates/game/src/play/senses.rs"
+  ],
+  "summary": "Enemy senses (`Update / PlaySet::Think`, before `ai`): detection, not combat. Rays are code only (no visuals unless a debug view is on) and cheap: each enemy senses at `RATE` Hz, staggered. - Sight: the player inside an enemy's cone (`Senses.range`, `half_angle`; shorter at night) is seen if one ray from its eyes to the player's chest meets no world geometry. - Aura as a magnet: the player's `AuraPresence.power` pulls the enemy's fan of `RAYS` sense rays like gravity. A ray passing `d` metres from the chest feels `power / (d + 0.5)\u00b2`; only a RATE RAYS EYE CHEST RANGE HALF_ANGLE NIGHT_RANGE CAPTURE NOTICE_RATE DECAY FORGET TOUCH CROUCH SPRINT WARDED VEILED Senses default Awareness alert AuraPresence capture_radius Veiled Contact strength fan sense integrate aura_power SensesSet plugin enroll presence tick SNEAK_NEAR SNEAK_UNAWARE sneak vision_cone_mesh Volume volumes rays aura_radius meters EYE_AT run sight_sees_in_the_cone_and_walls_block_it the_aura_pulls_rays_only_when_strong awareness_rises_alerts_decays_and_forgets aura_power_follows_what_the_player_does the_cone_mesh_has_its_apex_at_the_origin"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/sheath.rs",
+  "files": [
+   "crates/game/src/play/sheath.rs"
+  ],
+  "summary": "Weapons ride on the body when they are not in use: a greatsword or an axe across the back (grip over the right shoulder), a katana at the left hip, a dagger at the right hip. Every melee fighter gets a `Sheath`.  Drawing: an attack, a guard, an art, a lock-on or X starts `Drawing`: the weapon hand reaches for the grip (`HandTargets`), and at `DRAW_SWAP` (before any attack's active frames) the SHEATHE_AFTER DRAW_TIME DRAW_SWAP SHEATHE_TIME SHEATHE_SWAP State Sheath in_hand SheathSet plugin default_carry carry_transform under_bone carry_for decide mount bump default_mounts_point_the_blade_where_it_belongs a_mount_under_a_bone_lands_back_on_the_model_transform the_weapon_changes_hands_at_the_swap"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/skills.rs",
+  "files": [
+   "crates/game/src/play/skills.rs"
+  ],
+  "summary": "Skills: use-based aptitudes on top of the six stats (`stats`), discovered and levelled by deeds, never picked from a menu, never lost. Data: `assets/data/skills.json` (`SkillBook`).  `progress` turns every `deeds::Deed` (and item pickups, `items::ItemCollected`) into: - **XP** for known skills whose `sources` match (kind + tag), on the RuneScape curve (1\u201399, level 99 at 13 034 431 XP), capped at `WINDOW_CAP` per skill per `WINDOW` s so a fight can't WINDOW WINDOW_CAP K ART_BASE ART_K ART_PITY STARTING SourceDef matches Discovery UnlockDef SkillDef SkillsFile SkillBook load validate get taken requires TitleRequires TitleDef TitlesFile TitleBook load get titles_path earn skills_path xp_for_level level_for_xp Sheet default knows level has_ability seed restore grant roll Outcome apply bonus plugin RELOAD_EVERY reload seed progress CLOSE_CALL SURVIVE close_calls entitle publish book runescape_curve data_loads_and_every_ability_is_reachable sources_match_kind_and_tag deeds_discover_then_level_and_the_same_seed_replays xp_is_capped_per_window arts_are_discovered_once_requirements_hold bonuses_scale_with_level unique_skills_have_one_holder titles_load_and_are_earned_once"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/skin.rs",
+  "files": [
+   "crates/game/src/play/skin.rs"
+  ],
+  "summary": "Character skin (`assets/shaders/skin.wgsl`): once a character's model is bound (`motion::Rig`), its skinned body meshes swap their `StandardMaterial` for a `SkinMaterial` (the same standard material extended), one copy per character, so each can be shaded on its own: - Look: ink (toon bands, an ink silhouette line and shadow hatching) by default; debug view \"alt skin shader\" (`debug::View::ShaderMode`) switches every character to plain lighting. - Accent: the shadow bands lean toward `Skin.accent` (per-character palette; `looks` sets it). SHADER FLASH EYES SkinParams SkinExt fragment_shader Skin plugin dress rim presence the_rim_warms_with_awareness"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/sky.rs",
+  "files": [
+   "crates/game/src/play/sky.rs"
+  ],
+  "summary": "The day: a `Clock` (game hours, a full day every `DAY_MINUTES` of game time; `GB_HOUR` sets the starting hour, F9 skips an hour) drives the sun, which rises in the east at 6:00 and sets in the west at 18:00, and a moon that lights the night more faintly. Light colour warms at dawn and dusk; the sky (`ClearColor`), the camera's fog and the ambient light follow the same curve, so torches matter at night. `occupations` switches civilians to their night routine and the minimap readout shows the time. `weather` shades it all (`weather::shade`: clouds dim and DAY_MINUTES START_HOUR DUSK DAWN SUN_LUX MOON_LUX AMBIENT_DAY AMBIENT_NIGHT Clock is_night label Light elevation light_at Sun plugin SetHour tick shine noon_is_bright_midnight_is_moonlit the_sun_rises_east_and_sets_west night_and_labels"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/sky_dome.rs",
+  "files": [
+   "crates/game/src/play/sky_dome.rs"
+  ],
+  "summary": "The sky dome (E6): a large unlit shell round the camera, its colour running from the horizon (the fog colour, so far hills melt into it) up to a deeper zenith, with a sun disc by day and a moon by night. It follows `sky::light_at` and the weather (`weather::shade`): clouds grey the whole dome and hide the discs. Fog never touches it (`fog_enabled: false`); it casts and takes no shadow. The vertex colours are rewritten only when the colours move by `RECOLOUR` (the dome is a few hundred vertices). RADIUS RINGS SEGMENTS BELOW SUN_SIZE MOON_SIZE DISC_AT RECOLOUR Dome SunDisc MoonDisc plugin gradient colour_at dome_mesh Elevations spawn follow colour_distance the_zenith_is_deeper_than_the_horizon colour_runs_from_horizon_to_zenith the_dome_is_closed_and_faces_in"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/spell_aim.rs",
+  "files": [
+   "crates/game/src/play/spell_aim.rs"
+  ],
+  "summary": "Spell aiming (E13): hold Q (the art) or E (the spell) to aim, let go to cast. - A quick tap still casts: the press goes through at once when the key is already up. - Held: the cast waits (`Aiming`), and after `PREVIEW_AFTER` s `preview` draws where it will go, by the ability's `magic::Shape`: a bolt's flight arc and its landing (a frost bloom's reach), a crescent's path, a quake's ring round the caster, a lance's reach, a step's landing, the orbs' and wards' circles. The crosshair opens its ticks (`ranged::crosshair`). PREVIEW_AFTER FLIGHT_STEP FLIGHT_MAX HAND_LIFT CRESCENT_SHOW SPOT Which Aiming plugin held press hold ground_ring ground preview a_tap_casts_at_once_and_a_hold_waits_for_the_release"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/stats.rs",
+  "files": [
+   "crates/game/src/play/stats.rs"
+  ],
+  "summary": "Stats: the universal base of every fighter (player and NPCs alike). `Stats` (required by `Fighter`) holds a level, six attributes, unspent points and experience; `derive` turns them into `Derived`, which the rest of the game reads: - `combat` sets `Fighter` max hp / stamina / poise from it (keeping the current shares) and regenerates stamina at `regen`; melee blows scale by `might` (`combat::DamageScale`, written here only); BASE MAX_ATTR XP_PER_KILL POINTS_PER_LEVEL Attr ALL name code description index Stats default preset get attrs restored spend xp_to_next gain Derived derive SkillBonus add derive_with SpendPoint GrantXp LevelUp plugin spend award_xp grant publish all_tens_is_the_baseline attributes_raise_what_they_say levels_grant_points_and_presets_spend_them skill_bonus_adds_on_top"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/surfaces.rs",
+  "files": [
+   "crates/game/src/play/surfaces.rs"
+  ],
+  "summary": "World surface detail: tileable albedo-detail and normal maps generated on the CPU at startup (no image files), and world-scale UVs + tangents for the meshes that wear them.  Each `Surface` is a pair of `SIZE`\u00b2 RGBA8 images with full mip chains (`armor::add_mips`) and a repeating anisotropic sampler: - `detail` (sRGB): near-white variation (\u22480.75\u20131.0) that multiplies the material's SIZE PROP_TILE TERRAIN_TILE Surface material Surfaces build Recipe bump sample bake normals_from_height image world_uvs box_uv hash smooth step value fbm worley ALL heights_tile bakes_mipped_maps_in_range box_uvs_scale_with_size"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/talk.rs",
+  "files": [
+   "crates/game/src/play/talk.rs"
+  ],
+  "summary": "Talking to non-combat NPCs. A `Talkable` (name, role) in reach and in front of the player is the `TalkFocus` (the prompt says \"Talk to Mira\"); F then talks instead of using an interactable (`input` turns it into `Intent.talk_pressed`). While `Talking`: - the camera moves into the player's eyes and frames the NPC's face across the gap (`view`, `PostUpdate` after `camera::follow`, eased by `Talking.blend`, a narrower lens and a little breathing sway); the player's body is hidden, so it reads first-person; REACH IN_FRONT BLEND_RATE TALK_FOV EYE_FORWARD OPTIONS PANEL_W LINE_RATE Role Talkable KeepInTalk TalkFocus Talking active Choice Dialogue TalkStarted Chose EndTalk plugin focus smoke start choose DIGITS end Panel Speaker Line OptionRow OptionText Prompt spawn_ui show_panel declutter prompt head view say"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/tools.rs",
+  "files": [
+   "crates/game/src/play/tools.rs"
+  ],
+  "summary": "Hand tools (the axe). Owns `Holding` on characters, `ToolItem` on the tool and where the tool sits: on its home interactable (the table) or under a hand bone.  Picking up (`interact::UseEffect` on the table, at the clip's reach): `ual1/PickUp_Table` reaches with the LEFT hand while the right shoulder pulls back out of range, so the left hand takes the axe by the middle of the haft, the clip brings it across to the right side of the Tool name Holding ToolItem new Settle AXE_SCALE AXE_GRIP AXE_GRIP_LEFT AXE_EDGE FIST CHOP_TILT GRIP_TIME SETTLE_TIME HANDOVER HANDOVER_RAMP HANDOVER_AT plugin carry_rotation chop_rotation grip_transform blade hand_bone kept reparent take_and_return window hand_over hold place_items grips_hold_the_haft_in_the_fist kept_transform_leaves_the_item_in_place handover_window"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/traits.rs",
+  "files": [
+   "crates/game/src/play/traits.rs"
+  ],
+  "summary": "Traits (NPCs and civilians): the creator madlib, \"I'm a [temper] fighter who walks [walk] and fights [fight].\" (`assets/data/traits.json`, `TraitBook`). Every NPC rolls one word per slot when it first appears (seeded by its entity, so a run replays the same) and the words shape it: - walk \u2192 `motion::compose::StyleScale` (pose exaggeration, holds, step bounce): a heavy walker bounces and lingers, a light one barely touches the ground; - fight and temper \u2192 its `ai::Difficulty` (aggression, guard, parry, dodge, reaction, TemperWord one WalkWord FightWord TraitBook load roll sentence style difficulty Slot SetTrait word step Traits traits_path plugin assign set_trait book stepping_cycles_each_slot rolls_are_seeded_and_cover_the_words words_shape_behaviour_within_range"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/traverse.rs",
+  "files": [
+   "crates/game/src/play/traverse.rs"
+  ],
+  "summary": "Traversal (`Update / PlaySet::Act`): owns a character's movement while its `Mover.mode` is Swim, Climb or Ledge (the controller skips those modes and resumes on the way out). - Water: a body whose ground lies deeper than `SWIM_DEPTH` under a `Water` surface swims: chest held `CHEST_BELOW` under the surface with a slow bob, the stick steers at `SWIM_SPEED` (sprint `SWIM_SPRINT`, spending stamina through `StaminaSpend`), and it wades out where the bottom comes up again. Diving: the crouch toggle (C) takes the body down toward the SWIM_DEPTH SWIM_HYST CHEST_BELOW CHEST_HEIGHT SWIM_SPEED SWIM_SPRINT SWIM_SPRINT_COST DIVE_FLOOR DIVE_RATE HEAD_ABOVE_CHEST BREATH BREATH_REGAIN BOB BOB_RATE CLIMB_SPEED CLIMB_HANG_COST CLIMB_MOVE_COST WALL_GAP PROBE HOLD KICK_OUT KICK_UP CLIMB_MIN MANTLE_LOW MANTLE_HIGH TOP_REACH HANDS_ABOVE_CHEST HANG_REACH LEDGE_SPEED PULL_HOLD hang_y ledge_hands MANTLE_BASE MANTLE_PER_M MANTLE_IN CLIMB_TRACK plugin demo Traverse Climbing Mantle mantle_path holds swim_height water face_ahead climb ledge_probe start_mantle mantle hanging_hands_sit_on_the_edge diving_goes_down_but_not_into_the_floor mantle_rises_before_it_crosses_and_lands_on_target holds_sit_on_the_face_and_alternate climb_holds_are_on_the_matching_side"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/trees.rs",
+  "files": [
+   "crates/game/src/play/trees.rs"
+  ],
+  "summary": "Voxel trees you can chop down (\"tree\" interactables, spawned by `world` with `spawn_tree`).  The trunk is 8 cm voxels (a bark shell around pale ringed wood), the canopy 20 cm voxels in a few noisy blobs; both are drawn as smooth surfaces through the voxels (`smooth_mesh`: the trunk smooth-shaded, the canopy faceted like the low-poly rocks), so they match the world while staying destructible. Every `interact::UseBeat` (the axe landing) cuts a V-notch deeper into TreeSpec TRUNK_CELL CANOPY_CELL TAPER FLARE FLARE_HEIGHT SINK BARK_DEPTH RING_SPACING BARK BARK_DARK WOOD RING TRUNK_PALETTE LEAF LEAF_LIGHT LEAF_DARK CANOPY_PALETTE CHOP_TRACK CHOP_DURATION CHOP_BEAT STAND CHOP_DEPTH NOTCH_MIN NOTCH_SLOPE NOTCH_LOW NOTCH_HIGH NOTCH_DEFAULT FELL_DEPTH RECOIL CHOP_SHAKE TIP_SPEED LANDED_TILT LAND_SHAKE SHAKE_RANGE LAND_TIMEOUT BREAK_AFTER LOG_SPACING REGROW GROW_TIME GROW_FROM plugin radius_at canopy_center Notch in_notch build_trunk build_canopy Tree Felled interactable spawn_canopy trunk_collider spawn_tree chop fell settle_felled ease_out_back regrow spec trunk_has_bark_outside_and_wood_inside notch_deepens_from_the_user_side_and_fells"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/tuning.rs",
+  "files": [
+   "crates/game/src/play/tuning.rs"
+  ],
+  "summary": "Live tuning page (F1 toggles): edits `Feel` and `motion::compose::MotionFeel` (13 knobs: run speed, accel, turn rate, jump, exaggeration, hold, stepped fps on/off, spring hz, spring damping, arm swing, lean, bounce, hitstop, ragdoll threshold). F5 saves `profiles/feel.json`, loaded at startup if present.  The panel sits on the right edge: drag a bar to set a value, buttons toggle 12 fps stepping plugin PROFILE_LABEL STEPPED_FPS profile_path TuningPanel Knob fraction label EXAGGERATION BOUNCE KNOBS Profile default MotionProfile SpringProfile ContactProfile from apply read_profile parse_profile merge sanitize write_profile save PanelRoot Slider Fill PanelButton PanelText PANEL_BG TRACK TRACK_HOVER FILL BUTTON BUTTON_HOVER BUTTON_ON PRESSED TITLE LABEL NOTE text spawn_panel hotkeys drag_sliders press_buttons button_label paint knob_ranges_contain_defaults knobs_set_what_they_get profile_round_trip panel_toggles_and_slider_drag_sets_feel partial_and_bad_profiles_fall_back_to_defaults"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/vfx.rs",
+  "files": [
+   "crates/game/src/play/vfx.rs"
+  ],
+  "summary": "Spell and art visuals: GPU particles (`bevy_hanabi`) plus a few procedural meshes, one look per `Element`. `magic` asks for them through `Vfx` (a resource of effect assets) and the spawn helpers below; this module owns nothing gameplay reads.  The particle motion is built from small algorithms evaluated per particle on the GPU: - Fire rides an ABC (Arnold\u2013Beltrami\u2013Childress) flow, the divergence-free chaotic field FLICKER BOLT_LIFE GOLDEN Element ALL core tail index Vfx bundle trail burst cast shock plugin build test_rig finish gradient sizes field trail_effect burst_effect cast_effect shock_debris SPRITE sprite_alpha vnoise sprite_image Expire burst impact expire Flash glow flash rnd lightning_path ribbons Bolt flicker spawn_bolt crescent ring lightning_reaches_both_ends_and_stays_near_the_line sprites_are_bounded_and_shaped meshes_are_well_formed"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/voxel.rs",
+  "files": [
+   "crates/game/src/play/voxel.rs"
+  ],
+  "summary": "Voxels and smooth surfaces through them. `VoxelGrid` is a dense box of cells (0 = empty, else a 1-based palette index) that `trees` builds, carves and splits; it meshes either as exposed cube faces (`mesh`) or as a smooth surface (`smooth_mesh`). `Lattice` + `surface_nets` mesh any sampled density field (> 0 inside) the same way; `armor` builds its plates with them. Pure data, no ECS. VoxelGrid FACES JITTER hash3 new index get set center layer_of count filled fill carve split_above mesh density smooth_mesh DENSITY_BIAS CORNERS EDGES Lattice sample at position Nets split_quad surface_nets faces meshes_only_exposed_faces_facing_out surface_nets_of_an_analytic_sphere ball smooth_mesh_wraps_a_ball_facing_out carve_and_split_conserve_cells"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/waypoint.rs",
+  "files": [
+   "crates/game/src/play/waypoint.rs"
+  ],
+  "summary": "Finding your way, and a place to come back to. - Compass: a strip across the top of the screen with the cardinal points sliding as the camera turns, and a marker toward the current goal (`goal`): the ruins while Thoral stands, the guild desk while a Thoral bounty waits to be paid, else none. The marker shows the goal's name and distance; past the strip's edge it pins to the edge with an arrow. - Shrines: small stone shrines (courtyard, below the ruins' torii). Within `SHRINE_REACH` m, F STRIP ARC SHRINE_REACH Shrine Goal goal strip_x plugin spawn_shrines rest prompt Strip Cardinal Marker spawn_compass compass the_strip_places_directions_like_the_view the_goal_follows_the_boss_and_the_bounty"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/weather.rs",
+  "files": [
+   "crates/game/src/play/weather.rs"
+  ],
+  "summary": "Weather (E22): clear, overcast, rain and fog, changing on their own through the day.  - `Weather` (written here only) holds the current sky and three smoothed amounts, `cloud`, `rain` and `mist` (0..1), easing toward the sky's targets over `EASE` s so a change rolls in rather than snapping. Each sky lasts `HOLD` game seconds (a random span), then the next is drawn from what usually follows it (`next`): clear skies cloud over, overcast turns to rain EASE HOLD DROPS BOX FALL SLANT Sky ALL targets word parse followers next Weather default held roll set cycled step SUN_DIM AMBIENT_DIM shade SetSky Drop plugin step spread spawn_drops fall skies_follow_their_usual_successors amounts_ease_toward_the_sky_and_a_held_sky_never_changes clouds_dim_and_mist_pulls_the_fog_in setting_a_sky_switches_now_and_cycles_round rain_spread_fills_the_box"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/wind_aura.rs",
+  "files": [
+   "crates/game/src/play/wind_aura.rs"
+  ],
+  "summary": "Wind aura (assets/shaders/wind_aura.wgsl): a shell that shows at its silhouette, with light streaks combed along a wind direction. Debug view 10 (`debug::View::WindShell`, F12 list) shows a test shell at the origin. The Aura Ward is wind: every new `magic::WardShell` gets a slightly larger wind shell as a child (it scales, breathes and fades with the ward), tinted by the owner's side, streaking along `GrassWind.direction`; and while a ward is up it pushes the meadow away from its owner through `GrassWind.gust` (blades bend outward, one ward at a time: the nearest to the camera). WindAuraParams WindAura fragment_shader alpha_mode TestShell plugin spawn_test toggle advance_clock SHELL_SCALE AURA_TINT GUST_RADIUS GUST_BEND dress_wards ward_gust"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/world.rs",
+  "files": [
+   "crates/game/src/play/world.rs"
+  ],
+  "summary": "World setup: camera entity, sun + ambient, a ~120x120 m heightfield terrain (hills from `guildbound_sim::terrain::ground`, flat training courtyard at the centre), a pond with a `Water` volume, climbable walls/cliffs/ledges (`Climbable`), stairs and boxes for mantling, interactables (`Interactable`: chest, crop plot, tree, well, table, chair, anvil, lever, torch), training dummies / an opponent, and the player via `spawn_character`. Exposes `pub fn ground_height(x, z) -> f32` for the analytic terrain. COURTYARD_HALF TERRAIN_HALF GRID COURTYARD_BLEND HILL_SCALE RIM_HEIGHT RIM_WIDTH POND_CENTER POND_RADIUS POND_DEPTH WATER_LEVEL SPAWN_FEET SPAWN_YAW SCREENSHOT_AT plugin Guest ALL key env name post guests spawn_guest PlayerSpawn Terrain TrainingDummy smoothstep courtyard_distance TERRACE_MIN TERRACE_MAX TERRACE_BLEND terrace_distance RUINS_CENTER RUINS_RADIUS RUINS_BLEND ruins_distance ruins_level in_ruins PATHS PATH_WIDTH path_distance in_guild_grounds ground_height ground_normal stone_shape hash2 value_noise ground_color build_terrain world_layers face_toward Palette new Kit solid part root UseSpec component setup spawn_sky_and_camera spawn_terrain spawn_pond spawn_traversal spawn_training_ground spawn_dummy spawn_props place spawn_interactables spawn_characters Smoke from_env smoke_test the_guild_terrace_is_flat courtyard_is_flat_and_hills_rise_outside terrain_is_continuous_and_rim_is_high pond_holds_water interactables_face_their_object"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/hotbar.rs",
+  "files": [
+   "crates/game/src/play/hud/hotbar.rs"
+  ],
+  "summary": "The hotbar: the player's bound art (Q) and spell (E) from `magic::Grimoire`, the weapon in hand (weapons come from the chest, `armory`), and the bag button at the far right. Ability slots show a three-letter code, `\u2605` once the ability is mastered, and dim while its pool can't pay for it; their tooltips give the name, cost and mastery. Clicking Q or E opens the stats page on its Arts & Magic tab (bind there); the bag button sends `inventory::ToggleBag`.  SLOT GAP BREAK GLYPH Glyph plugin Kind code spawn glyph glyph_color weapon_glyph update buttons"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/log.rs",
+  "files": [
+   "crates/game/src/play/hud/log.rs"
+  ],
+  "summary": "The message log: a terminal column above the map. Anything can write a `HudLog` message; this module alone turns them into `gbui` log lines (class per `LogKind`, typed or decoded). Lines live `LIFE` seconds and fade, like a single-player chat. A `key` makes a message rewrite its live line instead of adding one (pickup counts). Speech carries what the speaker `said` (gibberish), which decodes into the text. WIDTH BOTTOM MAX_LINES LIFE FADE TYPE_RATE SPEECH_HOLD SPEECH_DECODE plugin LogKind HudLog new key said HudLogColumn spawn greet forward"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/minimap.rs",
+  "files": [
+   "crates/game/src/play/hud/minimap.rs"
+  ],
+  "summary": "The round map, bottom left, RuneScape style: turned so the camera looks up, centred on the player, `RANGE` metres to the rim. The terrain is baked once at startup from `world`'s analytic ground (`ground_height`) into a data texture (R contour lines every 0.5 m, heavier every 2.5 m, and the courtyard edge; G hill shade; B water; A land) that `gbui`'s ring material colours from the theme, so theme edits recolour it live. Over it: dots (NPCs, items, trees, other things to use), the player's arrow (its facing relative to the camera), an N on the rim, SIZE RANGE MAP_MIN MAP_SPAN RES CONTOUR CONTOUR_MAJOR DOTS DOT DOT_INSET NORTH_INSET READOUT plugin MapMaterial MapDot PlayerArrow NorthMark Readout to_uv bake spawn heading POINTS update heading_names_the_camera_direction bake_marks_water_land_and_contours"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/mod.rs",
+  "files": [
+   "crates/game/src/play/hud/mod.rs"
+  ],
+  "summary": "HUD: the terminal-style overlay, built from `gbui` widgets and styled by `assets/ui/theme.json` (edit it while the game runs; it reloads). Single-player layout: - bottom left: the round map (`minimap`), the message log above it (`log`); - bottom centre: HP / ST / BW / MP bars (`vitals`) over the hotbar (`hotbar`: the Q art, the E spell, the weapon in hand and the bag button); - the STATS button on the minimap's rim opens the stats page (`stats_page`, tabs STATS and MARGIN PROMPT_RATE plugin PromptBox PromptText spawn_prompt show_prompt"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/stats_page.rs",
+  "files": [
+   "crates/game/src/play/hud/stats_page.rs"
+  ],
+  "summary": "The stats page: a `gbui` panel with four tabs, opened by the STATS button on the minimap's rim (a dot lights on it while attribute points wait), K, or the hotbar's Q / E slots. - STATS: level, experience, unspent points; the six attributes with a + button each (sends `stats::SpendPoint`); the derived values (`stats::Derived`). - ARTS & MAGIC: every art (Q, Battlewill) and spell (E, magicules) with its cost and mastery; discovered ones bind to their key on click (`magic::Bind`), mastered ones are tagged, WIDTH ROW SKILL_ROW SPARE_ROWS HINTS FOOTER_RATE BUTTON BUTTON_ANGLE StatsTab StatsOpen ToggleStats plugin Root MapButton MapDot Tab Page Close Header AttrRow AttrValue Plus DerivedText AbilityRow AbilityText AbilityTag SkillRow SkillText SkillTag SkillHint ContractName ContractInfo ContractsDone MadlibWord MadlibText Footer button spawn smoke toggle clicks refresh requirement short describe refresh_skills refresh_contracts refresh_madlib hover level_up"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/play/hud/vitals.rs",
+  "files": [
+   "crates/game/src/play/hud/vitals.rs"
+  ],
+  "summary": "Vitals above the hotbar, each a `gbui` bar with a damage trail: HP and stamina (the player's `Fighter`, written by `combat`) on the top row, Battlewill and magicules (`magic::Energy`) under them. A bar is \"checked\" (themed as a warning) when its value falls under `LOW`. LOW BAR_HEIGHT WIDTH ROW_GAP plugin Vital VitalValue spawn update"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/bank.rs",
+  "files": [
+   "crates/game/src/motion/bank.rs"
+  ],
+  "summary": "`PoseBank`: every donor track, stylized sampling, masks and the `poses.json` override file.  `assets/anim/poses.json` (optional, hot-reloaded every ~0.5 s by mtime): ```json { \"style\": { \"exaggeration\": 1.15, \"hold\": 0.45, \"bias\": 0.55, \"stepped_fps\": null, \"speed\": 1.0 }, PoseBank poses_path build build_with has duration sample sample_raw travel mask save_overrides save_overrides_to sorted load_overrides modified warn_unknown sample_keys sanitize_style quat_from build_masks Overrides AuthoredTrack AuthoredKey PosesFile new apply apply_edits resolve_base build_authored hot_reload plugin floor_height FOOT_SOLE FLOOR_SLACK place_on_floor bank assert_valid builds_every_library punch_samples_are_finite_and_normalized unknown_track_is_rest looping_sample_wraps masks_cover_expected_bones overrides_round_trip overrides_apply_and_undo real_hands_pass_the_fit_checker floor_of floor_report clip_probe"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/body.rs",
+  "files": [
+   "crates/game/src/motion/body.rs"
+  ],
+  "summary": "Body self-collision on the pose. A few capsules sized to the UAL2 mannequin (torso, head, arm and leg segments) stand in for the body. `resolve` runs after the springs (so after exaggeration and overlap) and before contact IK: it swings each upper arm out of the torso, head or opposite thigh, and the thighs apart where the legs cross, each by the smallest rotation that clears the overlap. Poses whose capsules don't touch are left unchanged. Pure pose maths in model space; `play::monitor` measures the same capsules in the world. TORSO_R HEAD_R ARM_R THIGH_R CALF_R HEAD_LIFT HAND_LENGTH MARGIN PASSES MAX_SWING BodyPadding Capsule Overlap closest_segments EPS overlap Body new arm_overlap leg_overlap swing_away rotate resolve retract wall_spheres body_out clear_world closest_points_of_crossing_and_parallel_segments arm_folded_into_the_torso_is_pushed_out_and_clear_poses_are_untouched an_arm_reaching_into_a_wall_is_pulled_out_unless_held"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/bvh.rs",
+  "files": [
+   "crates/game/src/motion/bvh.rs"
+  ],
+  "summary": "BVH donors: motion-capture takes (the CMU database, `assets/anim/cmu/*.bvh`, written by `tools/cmu/subset.py`) parsed into the same `DonorLib` the GLB donors produce, so `retarget` maps them onto the canonical skeleton like any other library (`retarget::Mode::Cmu`, a bind-delta retarget with the CMU name table).  One file = one take = one `DonorLib` (every CMU subject has its own bone offsets) holding one Joint parse load_dir TINY parses_hierarchy_bind_and_curves rejects_truncated_motion every_shipped_take_parses_with_a_t_pose_bind canonical retargeted_takes_keep_the_body_together"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/carry.rs",
+  "files": [
+   "crates/game/src/motion/carry.rs"
+  ],
+  "summary": "Carry posture: what a character holds bends its body a little (`compose` applies it after `body::resolve`, before contact, so foot IK keeps the feet planted). - the holding shoulder drops with the weight in that hand; - the torso leans away from the heavier hand, to balance it; - a load on the back, or a heavy weapon held at all, pitches the chest forward.  DROP_PER_KG DROP_MAX LEAN_PER_KG LEAN_MAX PITCH_BACK_PER_KG HEAVY PITCH_HELD_PER_KG PITCH_MAX Load Angles kg angles apply empty_hands_change_nothing the_torso_leans_away_from_the_heavy_hand more_weight_bends_more_but_never_far"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/compose.rs",
+  "files": [
+   "crates/game/src/motion/compose.rs"
+  ],
+  "summary": "The single bone writer. For every character with a `Rig`: 1. evaluate `MotionLayers` bottom\u2192top with `PoseBank::sample` + masks, 2. `Springs::step_moving` (secondary motion, arm inertia, impulses, squash), then `body::resolve` (limbs out of the body, padded by the root's `BodyPadding`), 3. `contact::apply` (feet/hands/lean/look) using Avian ray casts against `Phys::World`, wrapped by `hand`: grips place the wrist before it and close the fingers after it, MotionFeel default StyleScale default apply GROUND_PROBE ARM_CLEARANCE BODY_SLACK plugin adopt_bank_style evaluate layer_name compose draw_skeleton angle bank turned layer close evaluates_layers_bottom_to_top_with_masks"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/contact.rs",
+  "files": [
+   "crates/game/src/motion/contact.rs"
+  ],
+  "summary": "Contact layer, applied after springs: foot IK onto the ground (optionally in a narrow stance, feet drawn toward the body's mid-plane), pelvis drop (only as far as a planted foot cannot reach lower ground by straightening its leg; feet in the air don't count), step bounce, foot IK onto world targets (climb holds), COP lean (Kwon 2020: torso over COP + h\u00b7a/g), squash, look-at, hand IK. Pure pose maths; the ground is queried through a callback so this stays testable. Ground ContactParams default ContactState GRAVITY LEAN_RATE LOOK_RATE MAX_LOOK_YAW MAX_LOOK_PITCH NECK_SHARE LEAN_SHARE AIM_SHARE MAX_AIM_PITCH AIM_RATE CURL_SHARE SQUASH_DROP SQUASH_CURL SQUASH_ARCH FOOT_ALIGN ALIGN_FADE REACH_FADE MIN_GROUND_NORMAL_Y MAX_DROP MAX_RAISE MAX_BOB UNEVEN LEG_REACH PLANT_LIFT MAX_EXTENSION KNEE_BIAS ELBOW_BIAS KNEE_SPLAY ELBOW_OUT two_bone solve bend_pole Frame world parent set_world rotate limb unit_weight smoothing FootPlan default stance_shift smoothstep01 reach_drop apply head_forward JOINTS ANKLE_HEIGHT skeleton world flat nothing run run_from assert_finite two_bone_hits_reachable_targets_and_clamps_unreachable_ones foot_ik_keeps_ankles_on_flat_ground foot_ik_lifts_a_foot_onto_raised_ground pelvis_drops_smoothly_to_the_lower_foot crouched right_leg_raised bent_legs_straighten_before_the_pelvis_drops a_foot_in_the_air_does_not_pull_the_pelvis_down bounce_is_full_on_flat_ground_and_fades_on_a_step foot_ik_off_or_out_of_reach_leaves_the_pose look_at_is_clamped_relative_to_the_body aim_bends_the_spine_to_the_aims_pitch_and_eases_back lean_tips_the_chest_into_acceleration_and_clamps squash_drops_and_curls_with_feet_planted hand_ik_reaches_weighted_targets garbage_inputs_stay_finite"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/donor.rs",
+  "files": [
+   "crates/game/src/motion/donor.rs"
+  ],
+  "summary": "Donor GLB parsing with the `gltf` crate (no Bevy assets): node hierarchy, rest transforms, skin-0 joint list and every animation's rotation/translation curves. Based on the loader that lived in `motion_library.rs` (`load` + `sample`). Curve locate sample sample safe_normalize DonorNode DonorClip DonorLib node rest_world world_at compose_world load finite_vec finite finite finite make_curve skeleton libs lib loads_all_libraries canonical_skeleton curve_sampling"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/extract.rs",
+  "files": [
+   "crates/game/src/motion/extract.rs"
+  ],
+  "summary": "Extreme extraction: reduce a dense `Clip` to the few poses that carry the action. A frame is a candidate extreme when the weighted angular speed of the major bones is a local minimum (motion reverses / holds), or at a foot/hand contact flip (lowest foot switches, fastest hand peaks then stops). First and last frames are always keys. Candidates closer than ~0.08 s merge. Loops get at least 4 keys (both foot contacts + both passing poses). Tag Key Track MERGE_TIME MAX_ERROR STRIKE_SPEED STRIKE_STOP APEX_RISE TRAVEL_STRIDE major_bones Pick Analysis new pos bone_speed error worst speed_minima Gait longest_run analyze_gait strike extract merge_picks insert_pick retag tracks track walk_loop_has_contacts_and_stride keys_are_well_formed strikes_get_impact_keys tags report"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/hand.rs",
+  "files": [
+   "crates/game/src/motion/hand.rs"
+  ],
+  "summary": "Hand rig: fingers that close on what the hand holds.  A `Grip` (on `ContactRequest.grips`) names a world-space shape: a `Cylinder` (weapon grip, lever, bar, door handle), a `Sphere` (door knob) or a `Flat` surface (pushing a door with an open hand). `compose` calls this module twice around `contact::apply`: 1. `wrist_targets` (before the arm IK): turns the palm toward the shape (fingers wrap around a FINGER_R PALM SQUEEZE EMPTY FINGERS FINGER_MAX THUMB_MAX BISECT Form curls Shape distance moved finite Grip new held Finger Side HandRig Plan new ready wrist_targets close form HandFit fit segment_gap reach world_pose basis measure skeleton solve forms_pass_the_fit_checker measures_both_hands_with_five_fingers fingers_wrap_a_bar_under_the_palm_without_entering_it flat_push_keeps_fingers_straight_and_palm_on_the_plane wrist_target_puts_the_palm_on_a_knob held_grip_closes_fingers_and_leaves_the_wrist no_grip_changes_nothing"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/mod.rs",
+  "files": [
+   "crates/game/src/motion/mod.rs"
+  ],
+  "summary": "Stylized motion synthesis.  Pipeline (all pure data until `compose`): 1. `donor`    \u2013 parse a GLB (gltf crate) into a source skeleton + dense rotation/translation tracks. 2. `retarget` \u2013 map donor clips onto the canonical UAL2 skeleton (`Skeleton`), sampled at `SAMPLE_HZ` into `Clip`s of `Pose`s. UAL1/UAL2 map by name; Sekiro (Mixamo) SAMPLE_HZ MODEL_GLB CMU_DIR LIBRARIES plugin MotionSet Skeleton len find rest_pose fk Pose lerp blend_masked Bones new Mask Source Layer MotionLayers ContactRequest default Rig RigBone RigPose ModelRequest"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/posture.rs",
+  "files": [
+   "crates/game/src/motion/posture.rs"
+  ],
+  "summary": "Running posture: the jog and sprint clips hunch (measured over the clips, angles forward of upright in the body's plane: walk pelvis\u2192spine_03 10\u00b0, spine_03\u2192neck 16\u00b0, neck\u2192head 20\u00b0; jog 19\u00b0 / 41\u00b0 / 35\u00b0; sprint 34\u00b0 / 50\u00b0 / 48\u00b0), so a running character looked bent over with its head thrust out. `apply` (from `compose`, after the carry posture) straightens each segment that leans past its cap, in order from the hips up, so the run keeps a forward lean but the chest opens and the head comes up over the shoulders. LOWER_MAX UPPER_MAX HEAD_MAX running run_share lean apply track only_the_running_share_is_corrected a_jog_pose_comes_up_to_the_caps"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/retarget.rs",
+  "files": [
+   "crates/game/src/motion/retarget.rs"
+  ],
+  "summary": "Donor clip \u2192 canonical skeleton. - Same-skeleton libraries (`ual1`, `ual2`): copy local rotations by bone name. - Mixamo (`sekiro`, `rokoko`) and CMU mocap (`cmu`, BVH via `bvh`): name map (`MIXAMO_MAP` / `CMU_MAP`), then per mapped bone in model space `W_dst(t) = W_src(t) \u00b7 W_src_bind\u207b\u00b9 \u00b7 W_dst_bind`, converted back to local through the destination parent chain. Both binds are T-pose, +Z forward, so this removes axis-convention Clip MIXAMO_MAP KEVIN_MAP CMU_MAP SKIPPED LOOP_WORDS LOOP_ANGLE LOOP_HEIGHT LOOP_EXCURSION MIXAMO_PREFIX frame_count frame_time clip_time Mode Mapping new parent_first node_world_translation RawFrame retarget_frame max_angle body_bones idle_named is_loop trim_frozen_start retarget_clip retarget sample_looping sample travel_at travel canonical clip sekiro_bind_matches_canonical_bind sekiro_tpose_clip_retargets_near_rest sekiro_bind_retargets_to_rest kevin_idle_stands_arms_down_and_his_swing_moves_the_hand sekiro_idle_stands_on_ground root_motion_becomes_travel sampling_wraps_and_clamps frame_counts diag_loops diag_bind"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/rig.rs",
+  "files": [
+   "crates/game/src/motion/rig.rs"
+  ],
+  "summary": "Model spawning and bone binding. When a `ModelRequest` is added to a character root: spawn the glTF scene (`GltfAssetLabel::Scene(0)`, `WorldAssetRoot`) as a child with `request.offset`; on `WorldInstanceReady` map descendant `Name`s to canonical skeleton indices, mark them `RigBone`, REMOVE every `AnimationPlayer`/`AnimationGraphHandle` in the scene (clips are data only), then insert `Rig`, `Springs`, `ContactState` and `MotionLayers` on the root. ModelOf ModelSlot PendingBind plugin spawn_models on_ready dropped_requests lost_models bind_models luminance tint_materials bank scene binds_named_descendants_strips_animation_and_tints tint_leaves_hero_materials_alone existing_motion_layers_are_kept waits_for_the_bank_and_drops_superseded_models lost_model_unbinds_the_root"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/secondary.rs",
+  "files": [
+   "crates/game/src/motion/secondary.rs"
+  ],
+  "summary": "Secondary motion: one angular spring per bone chasing the composed target pose, giving overlap / follow-through, plus impulse injection for hits and spine squash/stretch. Springs act on LOCAL rotations in parent space; impulses arrive in world space and are converted using the model rotation and FK.  Arms also carry inertia in the WORLD: when the torso or the whole body turns, upper arms and SpringParams default Springs MAX_DT RESET_DT MAX_SUBSTEP MAX_OMEGA_H MAX_HZ MAX_ERROR MAX_SPEED MAX_SQUASH ARM_INERTIA ARM_TRAIL MAX_TRAIL NOD NOD_SHARE MAX_NOD_G GRAVITY Group groups hz swing zeta clean_quat rotation_vector reset follow step step_moving nod swing_arms DT angle target_pose assert_same assert_healthy springs_lag_then_converge_within_a_second pass_through_bones_copy_the_target impulses_turn_bones_about_their_world_axis upward_acceleration_nods_the_head_forward huge_dt_impulses_and_garbage_stay_finite resets_on_length_mismatch_and_long_frames"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/timing.rs",
+  "files": [
+   "crates/game/src/motion/timing.rs"
+  ],
+  "summary": "Stylized timing between extremes: hold near each key, snap through the in-between, optional stepped \"on twos\" pacing, and exaggeration away from rest. Style default HOLD_POWER MAX_EXAGGERATED_ANGLE ease quantize exaggerate styles ease_endpoints_and_monotonic ease_hold_zero_is_identity_and_bias_shifts_snap quantize_steps exaggerate_identity_and_scaling"
+ },
+ {
+  "kind": "code",
+  "name": "crates/game/src/motion/tweak.rs",
+  "files": [
+   "crates/game/src/motion/tweak.rs"
+  ],
+  "summary": "F2 pose tweak mode: freeze the player on one key of a bank track and hand-edit bones. - PageUp / PageDown choose the track (the player's current action / locomotion tracks first, then every bank track by name), [ / ] choose the key. - Click a bone (the nearest bone joint to the cursor ray) or step through the major bones with , and . ; the picked joint is marked with a gizmo. - Arrow keys swing the bone about the camera's right / up axes, the mouse wheel twists it STEP FINE PICK MAJOR plugin Tweak pose unsaved track_names toggle choose pick rotate save freeze Panel PanelText spawn_panel show_panel edits_override_the_key_pose_and_major_bones_exist"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/ai_tex_procedural.py",
+  "files": [
+   "tools/model/ai_tex_procedural.py"
+  ],
+  "summary": "ai_tex_procedural.py - write the ai_tex triple for a kind from the procedural weave.\n\nUsed when a kind has no painted swatch to process (or when a generator refuses a flat material\nswatch): `cloth(kind)` already builds a tileable weave with its own normal, so the shipped triple\nis albedo from cloth(), with height and normal through the same pipeline the painted kinds use.\n\n    ../venv/bin/python tools/model/ai_tex_procedural.py --kind twill --size 512 --out tools/model/ai_tex"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/ai_texture.py",
+  "files": [
+   "tools/model/ai_texture.py"
+  ],
+  "summary": "ai_texture.py - turn one generated swatch into game-ready tiles (ART_PROMPTS section 1).\n\n    python3 tools/model/ai_texture.py <swatch.png> <kind> [--n 61] [--colour DBCCA8] [--size 1024]\n\nPipeline, all of it from `textures.py` so every T-run shares one normal style:\n\n    even_lighting      remove the generator's baked light gradient\n    lattice            measure the thread vectors (pitch + skew) from the 2-D FFT\n    straighten         warp so a whole number of threads fills the tile, skew removed\n    seam_fade          cosine cross-fade over the wrap seams\n    height_from_albedo the height "
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/analyse.py",
+  "files": [
+   "tools/model/analyse.py"
+  ],
+  "summary": "Measure a skinned character mesh: counts, materials, skin weights, and the body split into\nparts by dominant joint, with the radius of each part about its bone (for `motion/body.rs`\ncapsules) and the finger / palm sizes (for `motion/hand.rs`).\n\n    python -I tools/model/analyse.py <model.glb|.gltf> [...]   (prints JSON)\n\nThe numbers in docs/MODEL_PARTS.md come from this script."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/build.py",
+  "files": [
+   "tools/model/build.py"
+  ],
+  "summary": "Build the hero character kit from the Quaternius base characters, on ual2's skeleton.\n\n    python -I tools/model/build.py            # writes assets/characters/hero/** and assets/anim/hero_styled.glb\n\nInputs (never modified): assets/anim/ual2.glb (skeleton, inverse bind matrices),\nassets/characters/base/*.gltf (CC0 Quaternius base characters, hair, eyebrows, textures).\n\nOutputs:\n  assets/characters/hero/{male,female}/body.glb   skeleton + body split into `body` and\n      `body_hide_<garments>` nodes (hidden by the game when one of those garments is worn) + eyes;\n      morph targets `bulk heavy"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/calibrate_guildhouse.py",
+  "files": [
+   "tools/model/calibrate_guildhouse.py"
+  ],
+  "summary": "calibrate_guildhouse.py - measure the guildhouse views against their LABELLED marks, not the grid.\n\nThe grids are not a reliable metre (they are uneven, and in G4/I1 a floor tile is about 0.64 m, not\n1 m), so the ruler used here is the drawing's own called-out dimension: the 16 m podium width on the\nfront elevation and the plan, and the podium depth plus steps on the side elevation. That gives\npx-per-metre from the drawing itself, and the grid pitch is then reported as a *derived* cell size so\nthe \"how many metres is one cell\" question is answered rather than assumed.\n\n    ../venv/bin/python t"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/check_ai_tex.py",
+  "files": [
+   "tools/model/check_ai_tex.py"
+  ],
+  "summary": "check_ai_tex.py - the H2 checker: seam, exposure against the procedural weave, normal sanity.\n\n    ../venv/bin/python tools/model/check_ai_tex.py tools/model/ai_tex twill leather\n\nPer kind: the three files exist, are 512 px RGBA with straight alpha; the albedo's per-axis seam\nratio is <= 1.2; the albedo's mean brightness is within 0.03 of the procedural cloth(kind) mean;\nand the normal map's z mean is >= 0.95 (a sane tangent-space normal, not a flat or reversed one)."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/drape.py",
+  "files": [
+   "tools/model/drape.py"
+  ],
+  "summary": "Hanging cloth: skirts, robe skirts, kilts, aprons, cloaks and tabard panels.\n\nBody-surface shells (`surface.shell`) cannot bridge the gap between the legs or hang below the\nbody, so these garments are built as a ring grid around the body's vertical axis instead:\n\n- For each ring height, the radius along each direction is where a ray from the axis leaves the\n  2D convex hull of the body's cross-section in a thin band around that height (arms excluded),\n  plus a clearance. Below the widest ring the cloth falls straight (a ring is never narrower than\n  the one above, less `taper`), and `flare` wi"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/eye_textures.py",
+  "files": [
+   "tools/model/eye_textures.py"
+  ],
+  "summary": "Rebuild only the hero eye textures (`assets/characters/hero/tex/eye_<colour>.png`).\n\nThe iris is painted where the eye mesh looks out (`textures.EYE_IRIS_CENTRE` / `EYE_IRIS_RADIUS`,\nmeasured from body.glb), the same call `build.py` makes, without rebuilding the bodies.\n\n    python3 tools/model/eye_textures.py"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/floorplan_glb.py",
+  "files": [
+   "tools/model/floorplan_glb.py"
+  ],
+  "summary": "floorplan_glb.py - turn guildhouse_layout.json into real 3D floor-plan GLBs.\n\nEvery object in the layout becomes a box at its own x, y, z, coloured by kind, and each floor is a\nseparate node so it can be toggled or moved in any viewer. Two scenes are written:\n\n  guildhouse_3d_all.glb       floors stacked where they really are - a 3D section of the building\n  guildhouse_3d_exploded.glb  the same floors lifted 6 m apart, so each plan reads on its own\n  guildhouse_3d_<floor>.glb   one file per floor, in place\n\nFront faces are wound outward by construction: each triangle's normal is checked agains"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/gbmesh.py",
+  "files": [
+   "tools/model/gbmesh.py"
+  ],
+  "summary": "Shared glTF I/O, skeleton and skinning helpers for the model tools (`tools/model/`).\n\nReads .glb and .gltf (external .bin / images), gives numpy arrays per accessor, the node\nhierarchy with rest TRS, forward kinematics, linear blend skinning and animation sampling.\nWrites GLBs with embedded buffers and images.  numpy + pygltflib only."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/guild_cutouts.py",
+  "files": [
+   "tools/model/guild_cutouts.py"
+  ],
+  "summary": "Crop the guildhouse banner and rug to their cloth for in-game use.\n\nThe Higgsfield banner (`banner_cloth.png`) and rug (`rug.png`) are drawn on a pale background with a\nhanging rod / fringe. The game shows them as flat quads, so we keep only the coloured cloth: the\nbounding box of saturated pixels, scaled to at most\n1024 px on the long side.\n\n    python3 tools/model/guild_cutouts.py <src_dir> assets/textures/guildhouse"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/guild_tex.py",
+  "files": [
+   "tools/model/guild_tex.py"
+  ],
+  "summary": "guild_tex.py - turn the guildhouse texture runs into tileable albedo, height and normal maps.\n\nThe prompts asked for two images: the tileable colour and a greyscale height map. Some runs\nanswered with both panels on one sheet (colour left, greyscale right), which this splits; the rest\ncame back with colour only, so the height is derived from the albedo through the same pipeline\nthat T1 linen uses (height_from_albedo), which also guarantees the height matches the pattern.\n\nEvery model-supplied height panel is checked against the derived one before it is trusted: if the\ntwo do not correlate, the"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/guild_tex_fix.py",
+  "files": [
+   "tools/model/guild_tex_fix.py"
+  ],
+  "summary": "Repair the guildhouse textures that came back wrong from Higgsfield, in place.\n\nSeen in the first in-game render (2026-10-18):\n- thin bright seam lines across some tiles (timber, plaster, roof slate) - in the albedo and in\n  the normal map derived from it;\n- `wall_stone` drawn as multicoloured bricks (the palette read as stone colours), `timber` green;\n- `floor_planks` and `ceiling_boards` greyscale (a height panel taken for the colour);\n- `interior_plaster` with its \"smoke near the top\" band repeating every tile.\n\nFixes: seam rows / columns are replaced by interpolating their neighbours; off-"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/kev_pack.py",
+  "files": [
+   "tools/model/kev_pack.py"
+  ],
+  "summary": "Convert a Kevin Iglesias animation pack (FBX, `HumanM@<Clip>.fbx`) into one GLB library.\n\nEach FBX is exported to glTF by assimp (`assimp export in.fbx out.glb -fglb2`), then the clips are\nmerged into a single GLB on the pack's rigged model (`Models/HumanM_Model.fbx`: the game's loader\nreads the skeleton from the skin): every clip's animation (named after the clip, `HumanM@`\ndropped), its channels re-pointed at the model's bones by name (`B-hips`, `B-spine`, ...). Tracks\nfor bones the model lacks (`B-spineProxy`, a Unity-side helper for the pack's SpineProxy script)\nare dropped and listed. The"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/measure_guildhouse.py",
+  "files": [
+   "tools/model/measure_guildhouse.py"
+  ],
+  "summary": "measure_guildhouse.py - read the 1 m grids in the guildhouse art and draft guildhouse.json.\n\nNo vision model involved: the grid is a regular ruler, so it is found by autocorrelating the\nline-response profile, and the building is found by masking what differs from the flat background.\nEverything is reported with its confidence, and each measurement is drawn back onto the image as\nan overlay so a human can confirm it in one glance.\n\n    ../venv/bin/python tools/model/measure_guildhouse.py --art ../../guild_raw --out ../../guild_measure\n\nViews measured: G2 front, G3 side, G4 ground plan, I1 upper"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/preview.py",
+  "files": [
+   "tools/model/preview.py"
+  ],
+  "summary": "Offline previews of exported hero GLBs (CPU rasteriser, not the game renderer).\n\n    python -I tools/model/preview.py <out.png> <sex> <part,part,...> [clip lib/name@t ...]\n\nLoads assets/characters/hero/<sex>/body.glb plus the named parts, hides the body groups the\nworn garments cover (as the game does), poses them with ual2 rest + clip rotations (by joint\nname, pelvis translation copied: the game's convention for UAL clips) and renders front, three-\nquarter and back views per pose."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/rebind.py",
+  "files": [
+   "tools/model/rebind.py"
+  ],
+  "summary": "Rebind a mesh skinned to a UAL-named skeleton with a different rest pose onto ual2's skeleton.\n\nual2's skeleton is never changed: the game writes ual2 rest translations and clip rotations into\nthe bones, so a mesh must sit on ual2's joints in ual2's rest pose and use ual2's inverse bind\nmatrices. The Quaternius base characters share the joint names, order and axis conventions\n(each bone's frame differs from ual2's only by the small turn between their bone directions) but\nnot the proportions (joint positions differ by up to 15 cm at the fingertips).\n\nEach vertex moves by the weighted sum over i"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/render.py",
+  "files": [
+   "tools/model/render.py"
+  ],
+  "summary": "Tiny CPU rasteriser for inspecting the models (NOT the game renderer).\n\nDraws textured, vertex-coloured triangles with a z-buffer and a banded toon ramp similar to\n`assets/shaders/toon.wgsl` (half-Lambert lift, 4 bands, rim). Used by `build.py --preview` and\n`verify.py` to look at rest and posed meshes. Pure numpy + Pillow."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/spell_marks.py",
+  "files": [
+   "tools/model/spell_marks.py"
+  ],
+  "summary": "spell_marks.py - H3: the E13 spell world marks (decals), drawn as vectors, no generator involved.\n\nFour tileable-by-nature alpha decals, white in alpha so the game tints them per element:\n\n  crack.png   radial ground cracks, for Earthbreaker\n  scorch.png  a burnt ring, for Cinder Bolt\n  frost.png   a rime bloom, for Frost Bloom\n  char.png    a lightning scorch fork, for Storm Lance\n  crack_n.png a normal map for the crack, derived from its own alpha (the crack is a groove)\n\nFormat: 512x512, centred, alpha falling to zero well inside the edge (nothing in the outer 16 px),\nRGB white wherever alp"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/surface.py",
+  "files": [
+   "tools/model/surface.py"
+  ],
+  "summary": "Mesh surgery on a welded, skinned body surface: iso-line cuts with interpolated attributes,\nsmoothing, boundary loops, and shells with thickness (outer + inner + rim).\n\nEvery vertex carries one dense attribute row: position (3), normal (3), dense skin weights\n(one column per ual2 joint) and morph deltas (3 per target).  A cut inserts vertices on the\nedges it crosses with all attributes linearly interpolated, so new vertices get weights\ninterpolated from the original surface (renormalised to the 4 strongest when exported)."
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/textures.py",
+  "files": [
+   "tools/model/textures.py"
+  ],
+  "summary": "Our own textures for the hero kit, generated from the meshes (numpy + Pillow, seeded, so every\nrun gives the same images). Nothing here copies pixels from the Quaternius textures; only the\nmeshes' UV layouts and geometry are used.\n\n- `skin(body)`: base colour and normal map in the body's UV layout, baked from the mesh:\n  * cavity / occlusion (how much nearby surface stands above a point's tangent plane) darkens and\n    cools creases; convex points (curvature) catch light;\n  * flushed zones near the cheeks, nose, ears, lips, knuckles, elbows and knees;\n  * low-frequency mottling and fine pores;"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/validate_glb.py",
+  "files": [
+   "tools/model/validate_glb.py"
+  ],
+  "summary": "validate_glb.py - structural validation for every GLB in the repo.\n\nChecks what actually breaks a Bevy load or a garment swap, rather than just \"does it parse\":\n  * parses as GLB2, reports generator/version\n  * nodes, meshes, primitives, materials, textures, images, skins, animations\n  * every primitive's attributes: POSITION always, NORMAL and TEXCOORD_0 flagged when missing\n  * skinned meshes: JOINTS_0 + WEIGHTS_0 present, joint count, and whether all garments in a folder\n    share one joint count (the rig consistency `build.py` depends on)\n  * external image URIs resolve relative to the fil"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/model/verify.py",
+  "files": [
+   "tools/model/verify.py"
+  ],
+  "summary": "Verify the hero kit.\n\n    python -I tools/model/verify.py [--frames N] [--libs ual1,ual2,sekiro] [--quick]\n\n1. Every exported GLB (assets/characters/hero/**.glb, assets/anim/hero_styled.glb): joint\n   names and order, inverse bind matrices and skeleton node TRS identical to ual2.glb; weights\n   normalised; joint indices in range; morph target counts.\n2. Penetration under real clips: ual1 / ual2 clips copy local rotations by name (the game's\n   convention for UAL libraries, pelvis translation copied); sekiro (Mixamo) goes through the\n   same world-space bind-delta retarget as `motion/retarget.r"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/anim/carry_predict.py",
+  "files": [
+   "tools/anim/carry_predict.py"
+  ],
+  "summary": "carry_predict.py - section 3: the predicted E12 carry pose, drawn from the code.\n\nA port of `crates/game/src/motion/carry.rs` `angles()` and `apply()` (branch ev/E12-carry). The\nmodel-space `turn` helper is reproduced exactly as written: a bone's world rotation is rotated in\nmodel space, then converted back to local through its parent, and every affected bone is computed\nagainst the ORIGINAL forward kinematics before the pose is re-FK'd.\n\nWeapon masses come from the branch's `assets/anim/movesets/*.json` (`weapon.mass`, `weapon.hand`);\nthe sheathed greatsword is the back load at 30 %.\n\n    ../"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/anim/clip_fk.py",
+  "files": [
+   "tools/anim/clip_fk.py"
+  ],
+  "summary": "clip_fk.py - forward kinematics over the UAL clips, plus the audit metrics.\n\nReads a GLB's skins/animations directly: local TRS per node per frame (linear on translation and\nscale, slerp on rotation), FK down the node hierarchy, then the per-frame numbers section 1 asks\nfor. Nothing here guesses a coordinate convention: the rig's own axes are detected from the clips\n(which way the toes point, which clavicle holds +X, that the head sits above the pelvis) and then\nmapped onto the engine's model space (+X = the body's LEFT, +Y up, +Z forward), which is what the\nnumbers in the JSON are expressed i"
+ },
+ {
+  "kind": "tool",
+  "name": "tools/anim/posture_audit.py",
+  "files": [
+   "tools/anim/posture_audit.py"
+  ],
+  "summary": "posture_audit.py - section 1: what the clip library's posture already does.\n\nEvery clip in ual1.glb and ual2.glb (and sekiro.glb where its bones map) is FK'd on its own skeleton\nat 30 fps, and per frame the numbers in docs/HIGGS_REQUEST_ANIMATION.md section 1 are computed in\nengine model space (+X the body's left, +Y up, +Z forward):\n\n  lean, pitch          chest line (pelvis -> spine_03) off vertical, signed as asked\n  shoulder_diff        left minus right shoulder height (m)\n  com_offset           the pelvis/spine/head mean against the foot midpoint (lateral, forward)\n  feet                 "
+ }
+]

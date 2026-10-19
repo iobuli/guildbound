@@ -1,0 +1,16 @@
+[
+  {"task": "monks have a black capsule around them, the aura looks wrong", "files": ["crates/game/src/play/wind_aura.rs", "assets/shaders/wind_aura.wgsl"]},
+  {"task": "save the game and load it back on start", "files": ["crates/game/src/play/savegame.rs"]},
+  {"task": "rain and fog should darken the sky and pull in the fog distance", "files": ["crates/game/src/play/weather.rs", "crates/game/src/play/sky.rs"]},
+  {"task": "contract board: a posted job should expire after its days", "files": ["crates/game/src/play/contracts.rs"]},
+  {"task": "puddles and wet ground after rain, soak over time", "files": ["crates/game/src/play/ground.rs", "assets/shaders/ground.wgsl"]},
+  {"task": "the enemy AI keeps its spacing and decides when to attack or guard", "files": ["crates/game/src/play/ai.rs"]},
+  {"task": "the iris and eye texture is misplaced in the head texture", "files": ["tools/model/eye_textures.py", "tools/model/textures.py"]},
+  {"task": "animation bones are not matching when retargeting a donor clip", "files": ["crates/game/src/motion/retarget.rs"]},
+  {"task": "guild rank pay rate and what the bag sells for", "files": ["crates/game/src/play/guild.rs"]},
+  {"task": "the sky gradient from horizon to zenith is wrong", "files": ["crates/game/src/play/sky_dome.rs"]},
+  {"task": "only some melee clips should be cut as punches from the library", "files": ["crates/game/src/play/repertoire.rs"]},
+  {"task": "knees and elbows bend the wrong way, the joint monitor reports it", "files": ["crates/game/src/play/monitor.rs"]},
+  {"task": "villagers go inside when a heavy rain starts", "files": ["crates/game/src/play/occupations.rs"]},
+  {"task": "which system is allowed to write the player's intent", "files": ["crates/game/src/play/input.rs"]}
+]
