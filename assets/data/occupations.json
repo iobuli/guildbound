@@ -33,7 +33,7 @@
     { "id": "scout", "name": "Scout",
       "routine": [ { "kind": "chair", "stay": 40 },
                    { "kind": "post", "at": [27.3, 12.0,  90], "stay": 2 },
-                   { "kind": "post", "at": [38.3, 12.0,  90], "stay": 2 },
+                   { "kind": "post", "at": [38.8, 12.0,  90], "stay": 2 },
                    { "kind": "post", "at": [38.3, 12.0, -90], "stay": 1 },
                    { "kind": "post", "at": [27.3, 12.0, -90], "stay": 2 },
                    { "kind": "board", "stay": 6 } ],

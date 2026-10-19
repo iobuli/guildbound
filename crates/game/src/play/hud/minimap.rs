@@ -189,6 +189,7 @@ fn update(
     mut north: Query<&mut UiTransform, (With<NorthMark>, Without<MapDot>, Without<PlayerArrow>)>,
     mut readout: Query<&mut Text, With<Readout>>,
     clock: Option<Res<crate::play::sky::Clock>>,
+    weather: Option<Res<crate::play::weather::Weather>>,
     mut marks: Local<Vec<(u8, f32, Vec2, &'static str)>>,
 ) {
     let Ok((transform, mover)) = player.single() else { return };
@@ -253,7 +254,8 @@ fn update(
         let r = SIZE * 0.5 - NORTH_INSET;
         ui.translation = Val2::px(yaw.sin() * r, -yaw.cos() * r);
     }
-    let time = clock.map_or(String::new(), |c| format!("   {}", c.label()));
+    let sky = weather.map_or(String::new(), |w| format!("  {}", w.sky.word()));
+    let time = clock.map_or(String::new(), |c| format!("   {}{sky}", c.label()));
     let line = format!("{:>6.1} {:>6.1}   {:<2}{time}", here.x, here.y, heading(yaw));
     for mut text in &mut readout {
         if text.0 != line {

@@ -3,8 +3,9 @@
 //! the west at 18:00, and a moon that lights the night more faintly. Light colour warms at dawn
 //! and dusk; the sky (`ClearColor`), the camera's fog and the ambient light follow the same
 //! curve, so torches matter at night. `occupations` switches civilians to their night routine and
-//! the minimap readout shows the time. Written here only: `Clock`, the sun's light and transform,
-//! `ClearColor`, `GlobalAmbientLight`, the camera's `DistanceFog` colour.
+//! the minimap readout shows the time. `weather` shades it all (`weather::shade`: clouds dim and
+//! grey, mist and rain pull the fog in). Written here only: `Clock`, the sun's light and transform,
+//! `ClearColor`, `GlobalAmbientLight`, the camera's `DistanceFog` colour and distances.
 use super::camera::MainCamera;
 use bevy::prelude::*;
 
@@ -125,12 +126,19 @@ fn tick(time: Res<Time>, keys: Res<ButtonInput<KeyCode>>, mut sets: MessageReade
 
 fn shine(
     clock: Res<Clock>,
+    weather: Option<Res<super::weather::Weather>>,
     mut sun: Query<(&mut DirectionalLight, &mut Transform), With<Sun>>,
     mut sky: ResMut<ClearColor>,
     mut ambient: ResMut<GlobalAmbientLight>,
     mut fog: Query<&mut DistanceFog, With<MainCamera>>,
 ) {
-    let l = light_at(clock.hour);
+    let mut l = light_at(clock.hour);
+    let mut fog_range = (50.0, 150.0);
+    if let Some(w) = weather {
+        let (lux, ambient, sky, near, far) = super::weather::shade(l.lux, l.ambient, l.sky, &w);
+        (l.lux, l.ambient, l.sky) = (lux, ambient, sky);
+        fog_range = (near, far);
+    }
     for (mut light, mut tf) in &mut sun {
         light.illuminance = l.lux;
         light.color = l.color;
@@ -140,6 +148,7 @@ fn shine(
     ambient.brightness = l.ambient;
     for mut f in &mut fog {
         f.color = l.sky;
+        f.falloff = FogFalloff::Linear { start: fog_range.0, end: fog_range.1 };
     }
 }
 
