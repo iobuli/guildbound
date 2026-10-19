@@ -80,6 +80,20 @@ pub struct ContractDef {
     /// Who posts it (a character's name); `None` = the guild.
     #[serde(default)]
     pub issuer: Option<String>,
+    /// The rank the guild advises for it (shown beside the minimum `rank`; never gates it).
+    #[serde(default)]
+    pub recommended: Option<String>,
+    /// Time limit in days (dawns) once posted; `None` = open-ended.
+    #[serde(default)]
+    pub days: Option<u32>,
+}
+
+impl ContractDef {
+    /// The advised rank (index into `RANKS`), never below the minimum.
+    pub fn advised(&self) -> usize {
+        let min = rank_index(&self.rank).unwrap_or(0);
+        self.recommended.as_deref().and_then(rank_index).map_or(min, |r| r.max(min))
+    }
 }
 
 #[derive(Clone, Debug, Default, serde::Deserialize)]
@@ -184,16 +198,23 @@ impl ContractBook {
             if rank_index(&c.rank).is_none() {
                 return Err(format!("contract '{}': unknown rank '{}'", c.id, c.rank));
             }
+            if let Some(r) = c.recommended.as_deref().filter(|r| rank_index(r).is_none()) {
+                return Err(format!("contract '{}': unknown recommended rank '{r}'", c.id));
+            }
+            if c.days == Some(0) {
+                return Err(format!("contract '{}': days must be at least 1", c.id));
+            }
         }
         Ok(Self(file.contracts))
     }
 }
 
-/// One open contract: its template and progress per objective.
+/// One open contract: its template, progress per objective and dawns left (timed ones).
 #[derive(Clone, Debug, PartialEq)]
 pub struct Open {
     pub index: usize,
     pub progress: Vec<f32>,
+    pub days_left: Option<u32>,
 }
 
 /// The player's open contracts and how many are done (written by `contracts` only).
@@ -263,9 +284,25 @@ impl Board {
                 self.open.push(Open {
                     index: i,
                     progress: vec![0.0; book.0[i].objectives.len()],
+                    days_left: def.days,
                 });
             }
         }
+    }
+    /// A dawn: timed contracts lose a day; those out of time leave the board unfinished.
+    /// Returns the templates that expired.
+    pub fn dawn(&mut self) -> Vec<usize> {
+        let mut expired = Vec::new();
+        for o in &mut self.open {
+            if let Some(d) = o.days_left.as_mut() {
+                *d = d.saturating_sub(1);
+                if *d == 0 {
+                    expired.push(o.index);
+                }
+            }
+        }
+        self.open.retain(|o| !expired.contains(&o.index));
+        expired
     }
     /// Count a deed; returns the templates it finished (removed from the board).
     pub fn record(&mut self, book: &ContractBook, d: &Deed) -> Vec<usize> {
@@ -309,7 +346,7 @@ pub fn plugin(app: &mut App) {
         .add_message::<TurnIn>()
         .add_message::<Paid>()
         .add_message::<RankUp>()
-        .add_systems(Update, (progress, settle, honour, yields, read_board).chain());
+        .add_systems(Update, (progress, settle, honour, yields, expire, read_board).chain());
 }
 
 /// Turn in every ready contract (the guild desk).
@@ -468,6 +505,36 @@ fn yields(
     }
 }
 
+/// Each dawn: timed contracts count down; expired ones leave the board (a log line) and the board
+/// refills.
+fn expire(
+    clock: Option<Res<super::sky::Clock>>,
+    book: Res<ContractBook>,
+    mut board: ResMut<Board>,
+    issuers: Query<(&Name, &Standing)>,
+    mut log: MessageWriter<HudLog>,
+    mut was_night: Local<Option<bool>>,
+) {
+    let Some(clock) = clock else { return };
+    let night = clock.is_night();
+    let dawn = *was_night == Some(true) && !night;
+    *was_night = Some(night);
+    if !dawn {
+        return;
+    }
+    let expired = board.dawn();
+    for i in &expired {
+        if let Some(def) = book.0.get(*i) {
+            info!("[contracts] expired {}", def.id);
+            log.write(HudLog::new(LogKind::Warn, format!("Contract expired: {}", def.name)));
+        }
+    }
+    if !expired.is_empty() {
+        let present: Vec<String> = issuers.iter().filter(|(_, s)| !s.holdings.is_empty()).map(|(n, _)| n.to_string()).collect();
+        board.fill(&book, &present);
+    }
+}
+
 /// Reading the noticeboard opens the WORK tab.
 fn read_board(
     mut effects: MessageReader<UseEffect>,
@@ -525,6 +592,44 @@ mod tests {
         board.fill(&b, &[]);
         assert_eq!(board.open.len(), OPEN);
         assert!(board.open.iter().all(|o| o.index != first) || b.0.len() <= OPEN);
+    }
+
+    #[test]
+    fn timed_contracts_run_out_at_dawn_and_the_board_refills() {
+        let b = book();
+        let timed = b.0.iter().position(|d| d.days.is_some()).expect("a timed contract in contracts.json");
+        let days = b.0[timed].days.unwrap();
+        let mut board = Board { held: RANKS.len() - 1, ..default() };
+        board.open.push(Open { index: timed, progress: vec![0.0; b.0[timed].objectives.len()], days_left: Some(days) });
+        for _ in 1..days {
+            assert!(board.dawn().is_empty());
+        }
+        assert_eq!(board.dawn(), vec![timed], "gone on the last dawn");
+        assert!(board.open.iter().all(|o| o.index != timed));
+        assert_eq!(board.done, 0, "an expired contract is not done");
+        board.fill(&b, &[]);
+        assert_eq!(board.open.len(), OPEN.min(b.0.len()));
+        // Open-ended ones never expire.
+        let mut board = Board::default();
+        board.fill(&b, &[]);
+        for o in &mut board.open {
+            o.days_left = None;
+        }
+        for _ in 0..30 {
+            assert!(board.dawn().is_empty());
+        }
+    }
+
+    #[test]
+    fn advised_rank_never_falls_below_the_minimum() {
+        let mut d = book().0[0].clone();
+        d.rank = "D".into();
+        d.recommended = None;
+        assert_eq!(d.advised(), 2);
+        d.recommended = Some("B".into());
+        assert_eq!(d.advised(), 4);
+        d.recommended = Some("F".into());
+        assert_eq!(d.advised(), 2);
     }
 
     #[test]
@@ -590,7 +695,7 @@ mod tests {
         let e = Entity::PLACEHOLDER;
         let rival = b.0.iter().position(|c| c.id == "rival").expect("rival");
         let mut board = Board {
-            open: vec![Open { index: rival, progress: vec![0.0] }],
+            open: vec![Open { index: rival, progress: vec![0.0], days_left: None }],
             ..default()
         };
         board.record(&b, &Deed::new(e, "kill", "Rival", 1.0));
@@ -608,7 +713,7 @@ mod tests {
         let b = book();
         let rival = b.0.iter().position(|c| c.id == "rival").expect("rival contract");
         let mut board = Board {
-            open: vec![Open { index: rival, progress: vec![0.0] }],
+            open: vec![Open { index: rival, progress: vec![0.0], days_left: None }],
             ..default()
         };
         let e = Entity::PLACEHOLDER;

@@ -71,10 +71,19 @@ pub struct PlayerSave {
     pub holdings: Vec<String>,
 }
 
+/// One open contract: template index, progress per objective, dawns left (timed ones).
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
+pub struct OpenSave {
+    pub index: usize,
+    pub progress: Vec<f32>,
+    #[serde(default)]
+    pub days_left: Option<u32>,
+}
+
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default)]
 pub struct GuildSave {
-    /// Open contracts: (template index, progress per objective).
-    pub open: Vec<(usize, Vec<f32>)>,
+    /// Open contracts.
+    pub open: Vec<OpenSave>,
     pub next: usize,
     pub done: u32,
     pub ready: Vec<usize>,
@@ -121,7 +130,7 @@ pub fn capture(p: &PlayerParts, board: &Board, hour: f32) -> SaveFile {
             holdings: p.standing.holdings.clone(),
         },
         guild: GuildSave {
-            open: board.open.iter().map(|o| (o.index, o.progress.clone())).collect(),
+            open: board.open.iter().map(|o| OpenSave { index: o.index, progress: o.progress.clone(), days_left: o.days_left }).collect(),
             next: board.next_offer(),
             done: board.done,
             ready: board.ready.clone(),
@@ -155,7 +164,7 @@ pub fn bag_stacks(bag: &[(usize, String, u32)]) -> Vec<(usize, ItemKind, u32)> {
 
 /// The guild board a save describes, checked against today's contract book.
 pub fn board_from(g: &GuildSave, book: &ContractBook) -> Board {
-    let open = g.open.iter().map(|(index, progress)| Open { index: *index, progress: progress.clone() }).collect();
+    let open = g.open.iter().map(|o| Open { index: o.index, progress: o.progress.clone(), days_left: o.days_left }).collect();
     Board::restored(open, g.next, g.done, g.ready.clone(), g.held, book)
 }
 
@@ -463,7 +472,7 @@ mod tests {
         assert!(from_json("{ not json").is_err());
         // A contract whose template no longer exists, an unknown item kind, a slot out of range.
         let mut s = sample();
-        s.guild.open.push((10_000, vec![0.0]));
+        s.guild.open.push(OpenSave { index: 10_000, progress: vec![0.0], days_left: Some(1) });
         s.player.bag.push((0, "Dragon".into(), 1));
         s.player.bag.push((9_999, "Apple".into(), 1));
         let board = board_from(&s.guild, &book());
