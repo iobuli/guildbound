@@ -33,6 +33,8 @@ const CELL: f32 = 2.0;
 const SNAP: f32 = 20.0;
 /// Asset list: entries per page, and how many lines of tool output the panel keeps.
 const PAGE: usize = 12;
+/// Ground distance (m) in front of the camera where a clicked asset is placed.
+const PLACE_DISTANCE: f32 = 18.0;
 const LOG_LINES: usize = 28;
 /// Kev queries offered as buttons: each is a question for the context index.
 const QUERIES: [(&str, &str); 3] = [
@@ -432,8 +434,10 @@ fn model_buttons(
         }
         let Some(rel) = catalog.models.get(page.0 * PAGE + i) else { continue };
         info!("placing {rel}");
+        // Place on the ground 18 m ahead, measured across the flat view direction. Closer than this,
+        // the ground point drops below the bottom of the frame when the camera looks down.
         let fwd = cam.forward().as_vec3() * Vec3::new(1.0, 0.0, 1.0);
-        let at = cam.translation + fwd.normalize_or_zero() * 10.0;
+        let at = cam.translation + fwd.normalize_or_zero() * PLACE_DISTANCE;
         let ground = Vec3::new(at.x, terrain::ground(at.x, at.z), at.z);
         let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(rel.clone()));
         info!("placed at {ground:?}");
