@@ -35,10 +35,10 @@ const SNAP: f32 = 20.0;
 const PAGE: usize = 12;
 const LOG_LINES: usize = 28;
 /// Kev queries offered as buttons: each is a question for the context index.
-const QUERIES: [&str; 3] = [
-    "villagers go inside when a heavy rain starts",
-    "monks have a black capsule around them, the aura looks wrong",
-    "save the game and load it back on start",
+const QUERIES: [(&str, &str); 3] = [
+    ("Context: rain shelter", "villagers go inside when a heavy rain starts"),
+    ("Context: monk aura", "monks have a black capsule around them, the aura looks wrong"),
+    ("Context: save and load", "save the game and load it back on start"),
 ];
 
 fn main() {
@@ -175,8 +175,8 @@ fn spawn_panel(commands: &mut Commands) {
             button(panel, "Survey assets (usability)", Kev::Survey);
             button(panel, "Survey animations", Kev::SurveyAnim);
             button(panel, "Categorise assets (Kev)", Kev::Categorise);
-            for (i, q) in QUERIES.iter().enumerate() {
-                button(panel, &format!("Context: {}", short(q)), Kev::Ask(i));
+            for (i, (label, _)) in QUERIES.iter().enumerate() {
+                button(panel, label, Kev::Ask(i));
             }
             panel.spawn((
                 Node { width: Val::Percent(100.0), height: px(260), overflow: Overflow::clip(), padding: UiRect::all(px(6)), ..default() },
@@ -203,10 +203,6 @@ fn spawn_panel(commands: &mut Commands) {
                 row_button(row, "clear placed", Clear);
             });
         });
-}
-
-fn short(s: &str) -> String {
-    s.chars().take(34).collect::<String>() + "…"
 }
 
 fn button(parent: &mut ChildSpawnerCommands, label: &str, action: Kev) {
@@ -341,8 +337,8 @@ fn kev_buttons(interactions: Query<(&Interaction, &Kev), Changed<Interaction>>, 
             Kev::SurveyAnim => ("survey animations".into(), vec!["tools/kev/survey.py".into(), "assets/anim".into(), format!("{OUT}/survey-anim"), "--jobs".into(), "4".into()]),
             Kev::Categorise => ("categorise assets".into(), vec!["tools/kev/kev.py".into(), "assets".into(), format!("{OUT}/kev")]),
             Kev::Ask(i) => (
-                format!("context: {}", QUERIES[*i]),
-                vec!["tools/kev/context/build.py".into(), "ask".into(), QUERIES[*i].into(), "--k".into(), "5".into()],
+                format!("context: {}", QUERIES[*i].0),
+                vec!["tools/kev/context/build.py".into(), "ask".into(), QUERIES[*i].1.into(), "--k".into(), "5".into()],
             ),
         };
         start_job(&mut output, &label, args);
@@ -354,7 +350,7 @@ fn kev_buttons(interactions: Query<(&Interaction, &Kev), Changed<Interaction>>, 
 fn start_job(output: &mut Output, label: &str, args: Vec<String>) {
     let (tx, rx) = mpsc::channel();
     *output.rx.get_mut().unwrap() = Some(rx);
-    output.text = format!("running {label}…");
+    output.text = format!("running {label}...");
     let label = label.to_string();
     std::thread::spawn(move || {
         let text = match Command::new("python3").arg("-I").args(&args).current_dir(REPO).output() {
@@ -415,7 +411,7 @@ fn refresh_list(
 }
 
 fn short_model(m: &str) -> String {
-    if m.len() > 42 { format!("…{}", &m[m.len() - 41..]) } else { m.to_string() }
+    if m.len() > 42 { format!("...{}", &m[m.len() - 39..]) } else { m.to_string() }
 }
 
 /// A list slot click places that model in front of the camera. Loads go through the asset server.
