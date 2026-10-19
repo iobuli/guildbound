@@ -44,6 +44,17 @@ fn main() {
                 }),
         )
         .add_plugins(PhysicsPlugins::default().set(PhysicsInterpolationPlugin::interpolate_all()))
+        // F7 (or GB_COLLIDERS=1) shows every collider as wireframe.
+        .add_plugins(PhysicsDebugPlugin)
+        .add_systems(Startup, |mut store: ResMut<GizmoConfigStore>| {
+            store.config_mut::<PhysicsGizmos>().0.enabled = std::env::var_os("GB_COLLIDERS").is_some();
+        })
+        .add_systems(Update, |keys: Res<ButtonInput<KeyCode>>, mut store: ResMut<GizmoConfigStore>| {
+            if keys.just_pressed(KeyCode::F7) {
+                let c = &mut store.config_mut::<PhysicsGizmos>().0;
+                c.enabled = !c.enabled;
+            }
+        })
         .insert_resource(SubstepCount(8))
         .add_plugins(gbui::GbuiPlugin {
             theme: concat!(env!("CARGO_MANIFEST_DIR"), "/../../assets/ui/theme.json").into(),

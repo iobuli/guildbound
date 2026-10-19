@@ -452,10 +452,43 @@ fn fly(
     }
 }
 
+/// The crosshair: a dot in the middle of the screen while the mouse looks around, opening into a
+/// reticle (four ticks) while the player aims a ranged weapon or casts. It turns red over a
+/// fighter within `CROSSHAIR_RANGE`.
 #[derive(Component)]
 struct Crosshair;
 
+/// The four ticks, shown only while aiming.
+#[derive(Component)]
+struct CrosshairTick;
+
+/// The dot and ticks, tinted by what they cover.
+#[derive(Component)]
+struct CrosshairInk;
+
+const CROSSHAIR_RANGE: f32 = 40.0;
+const CROSSHAIR_COLOR: Color = Color::srgba(1.0, 0.97, 0.88, 0.9);
+const CROSSHAIR_FOE: Color = Color::srgba(1.0, 0.32, 0.25, 0.95);
+
 fn spawn_crosshair(mut commands: Commands) {
+    let ink = |w: f32, h: f32, left: f32, top: f32| {
+        (
+            CrosshairInk,
+            Node {
+                position_type: PositionType::Absolute,
+                width: Val::Px(w),
+                height: Val::Px(h),
+                left: Val::Px(left),
+                top: Val::Px(top),
+                ..default()
+            },
+            BackgroundColor(CROSSHAIR_COLOR),
+            Outline::new(Val::Px(1.0), Val::ZERO, Color::srgba(0.0, 0.0, 0.0, 0.55)),
+            Pickable::IGNORE,
+        )
+    };
+    // A 32 px box centred on the screen; children are placed inside it.
+    const C: f32 = 16.0;
     commands
         .spawn((
             Crosshair,
@@ -470,14 +503,50 @@ fn spawn_crosshair(mut commands: Commands) {
             Visibility::Hidden,
             Pickable::IGNORE,
         ))
-        .with_child((gbui::prelude::label("·  +  ·", "title"), Pickable::IGNORE));
+        .with_children(|root| {
+            root.spawn((Node { width: Val::Px(2.0 * C), height: Val::Px(2.0 * C), ..default() }, Pickable::IGNORE)).with_children(|b| {
+                b.spawn(ink(3.0, 3.0, C - 1.5, C - 1.5));
+                for (w, h, left, top) in [(2.0, 7.0, C - 1.0, 1.0), (2.0, 7.0, C - 1.0, 2.0 * C - 8.0), (7.0, 2.0, 1.0, C - 1.0), (7.0, 2.0, 2.0 * C - 8.0, C - 1.0)] {
+                    b.spawn((ink(w, h, left, top), CrosshairTick, Visibility::Hidden));
+                }
+            });
+        });
 }
 
-/// The crosshair shows while the player aims a ranged weapon.
-fn crosshair(players: Query<&Action, With<Player>>, mut q: Query<&mut Visibility, With<Crosshair>>) {
-    let aiming = players.iter().any(|a| a.owner == Owner::Ranged);
-    for mut v in &mut q {
+/// Show the dot while the mouse is captured, the ticks while aiming or casting, red over a foe.
+#[allow(clippy::type_complexity)]
+fn crosshair(
+    capture: Option<Res<super::camera::CursorCapture>>,
+    spatial: SpatialQuery,
+    players: Query<(Entity, &Action), With<Player>>,
+    cameras: Query<&GlobalTransform, With<super::camera::MainCamera>>,
+    fighters: Query<(), With<Fighter>>,
+    mut root: Query<&mut Visibility, (With<Crosshair>, Without<CrosshairTick>)>,
+    mut ticks: Query<&mut Visibility, (With<CrosshairTick>, Without<Crosshair>)>,
+    mut inks: Query<&mut BackgroundColor, With<CrosshairInk>>,
+) {
+    let Ok((player, action)) = players.single() else { return };
+    let aiming = matches!(action.owner, Owner::Ranged | Owner::Magic);
+    let shown = aiming || capture.is_none_or(|c| c.captured);
+    for mut v in &mut root {
+        v.set_if_neq(if shown { Visibility::Inherited } else { Visibility::Hidden });
+    }
+    for mut v in &mut ticks {
         v.set_if_neq(if aiming { Visibility::Inherited } else { Visibility::Hidden });
+    }
+    if !shown {
+        return;
+    }
+    let filter = SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([player]);
+    let foe = cameras.single().ok().is_some_and(|cam| {
+        let Ok(dir) = Dir3::new(cam.forward().as_vec3()) else { return false };
+        spatial.cast_ray(cam.translation(), dir, CROSSHAIR_RANGE, true, &filter).is_some_and(|hit| fighters.contains(hit.entity))
+    });
+    let color = if foe { CROSSHAIR_FOE } else { CROSSHAIR_COLOR };
+    for mut c in &mut inks {
+        if c.0 != color {
+            c.0 = color;
+        }
     }
 }
 

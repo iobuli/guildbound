@@ -1,6 +1,7 @@
 //! A fighter's repertoire: moves beyond its moveset's fixed chains.
 //!
-//! - `StrikeLibrary`: single strikes cut out of the mocap takes (`cmu/*`, see `motion::bvh`) by
+//! - `StrikeLibrary`: single strikes cut out of the mocap takes (`cmu/*`, see `motion::bvh`, and
+//!   the rokoko kick takes) by
 //!   `segment`: forward kinematics on the bank at `SAMPLE_HZ`, the hand / foot speed relative to the
 //!   pelvis (in leg lengths per second), peaks over `PUNCH_SPEED` / `KICK_SPEED` that reach out
 //!   (`REACH`) ahead of the body (`AHEAD`), upright (head over the pelvis), not spinning
@@ -8,7 +9,8 @@
 //!   recovery that fit a fight (`MAX_WINDUP`, `MAX_RECOVER`). Each becomes an unarmed `Attack`
 //!   whose windows come from the measured contact (`strike_attack`). Built once the bank is ready.
 //! - `Repertoire` (every `Fighter`): extra attacks per moveset and slot. An unarmed fighter starts
-//!   with a few library strikes (`SEED_PUNCHES`, `SEED_KICKS`, seeded by entity), so its chains vary
+//!   with a few library strikes (`SEED_PUNCHES`, `SEED_KICKS`, seeded by entity), the player with
+//!   all of them, so its chains vary
 //!   (`combat::start_swing` swaps one in with `VARIANT_CHANCE`).
 //! - Learning: `combat::resolve` reports every melee blow that reaches a fighter as `Witnessed`
 //!   (the attacker's moveset and attack). After `LEARN_AFTER` such blows of the same move, the
@@ -275,7 +277,7 @@ fn build_library(mut commands: Commands, bank: Option<Res<PoseBank>>, library: O
     let Some(bank) = bank else { return };
     let started = std::time::Instant::now();
     let mut lib = StrikeLibrary::default();
-    let mut tracks: Vec<&String> = bank.tracks.keys().filter(|k| k.starts_with("cmu/")).collect();
+    let mut tracks: Vec<&String> = bank.tracks.keys().filter(|k| k.starts_with("cmu/") || k.starts_with("rokoko/") && k.contains("Kick")).collect();
     tracks.sort();
     for track in tracks {
         let duration = bank.duration(track);
@@ -291,14 +293,24 @@ fn build_library(mut commands: Commands, bank: Option<Res<PoseBank>>, library: O
     commands.insert_resource(lib);
 }
 
-/// Each fighter starts with a few library strikes for its fists.
-fn seed(library: Option<Res<StrikeLibrary>>, mut fighters: Query<(Entity, &mut Repertoire)>) {
+/// Each fighter starts with a few library strikes for its fists; the player gets all of them.
+fn seed(library: Option<Res<StrikeLibrary>>, mut fighters: Query<(Entity, &mut Repertoire, Has<Player>)>) {
     let Some(library) = library else { return };
-    for (entity, mut rep) in &mut fighters {
+    for (entity, mut rep, player) in &mut fighters {
         if rep.seeded {
             continue;
         }
         rep.seeded = true;
+        if player {
+            for (pool, slot) in [(&library.punches, Slot::Light), (&library.kicks, Slot::Heavy)] {
+                for attack in pool.iter() {
+                    if !rep.extras.iter().any(|e| e.attack.name == attack.name) {
+                        rep.extras.push(Extra { set: "unarmed".into(), slot, attack: attack.clone() });
+                    }
+                }
+            }
+            continue;
+        }
         let mut rng = entity.to_bits() as u32 ^ 0x9e37_79b9;
         for (pool, count, slot) in [(&library.punches, SEED_PUNCHES, Slot::Light), (&library.kicks, SEED_KICKS, Slot::Heavy)] {
             for _ in 0..count.min(pool.len()) {
