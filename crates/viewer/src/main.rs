@@ -33,8 +33,9 @@ const CELL: f32 = 2.0;
 const SNAP: f32 = 20.0;
 /// Asset list: entries per page, and how many lines of tool output the panel keeps.
 const PAGE: usize = 12;
-/// Ground distance (m) in front of the camera where a clicked asset is placed.
-const PLACE_DISTANCE: f32 = 18.0;
+/// Closest and furthest ground distance (m) at which a clicked asset is placed.
+const PLACE_NEAR: f32 = 8.0;
+const PLACE_FAR: f32 = 20.0;
 const LOG_LINES: usize = 28;
 /// Kev queries offered as buttons: each is a question for the context index.
 const QUERIES: [(&str, &str); 3] = [
@@ -140,8 +141,8 @@ struct PatchCentre(Vec2);
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 14.0, 42.0).looking_at(Vec3::new(0.0, 0.0, 0.0), Vec3::Y),
-        Viewer { yaw: 0.0, pitch: -0.25, speed: 12.0 },
+        Transform::from_xyz(0.0, 6.0, 26.0).looking_at(Vec3::new(0.0, 1.0, 8.0), Vec3::Y),
+        Viewer { yaw: 0.0, pitch: -0.2, speed: 12.0 },
     ));
     commands.spawn((DirectionalLight { illuminance: 9000.0, ..default() }, Transform::from_xyz(30.0, 60.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y)));
     commands.insert_resource(GlobalAmbientLight { color: Color::WHITE, brightness: 350.0, ..default() });
@@ -424,8 +425,6 @@ fn model_buttons(
     camera: Query<&Transform, With<Viewer>>,
     assets: Res<AssetServer>,
     mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     let Ok(cam) = camera.single() else { return };
     for (interaction, ListSlot(i)) in &interactions {
@@ -434,21 +433,17 @@ fn model_buttons(
         }
         let Some(rel) = catalog.models.get(page.0 * PAGE + i) else { continue };
         info!("placing {rel}");
-        // Place on the ground 18 m ahead, measured across the flat view direction. Closer than this,
-        // the ground point drops below the bottom of the frame when the camera looks down.
+        // Put the asset where the centre of the view meets the ground, so it lands mid-frame: the
+        // horizontal distance to that point is camera height over the downward tilt, kept between
+        // PLACE_NEAR and PLACE_FAR so a flat or steep view still gives a readable placement.
         let fwd = cam.forward().as_vec3() * Vec3::new(1.0, 0.0, 1.0);
-        let at = cam.translation + fwd.normalize_or_zero() * PLACE_DISTANCE;
+        let drop = (cam.translation.y - terrain::ground(cam.translation.x, cam.translation.z)).max(0.5);
+        let tilt = (-cam.forward().as_vec3().y).max(0.05);
+        let reach = (drop / tilt).clamp(PLACE_NEAR, PLACE_FAR);
+        let at = cam.translation + fwd.normalize_or_zero() * reach;
         let ground = Vec3::new(at.x, terrain::ground(at.x, at.z), at.z);
         let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(rel.clone()));
-        info!("placed at {ground:?}");
         commands.spawn((Placed, Name::new(rel.clone()), WorldAssetRoot(scene), Transform::from_translation(ground)));
-        // Marker: a bright 1 m cube at the placement point, so a missing model can be told apart from a missing spawn.
-        commands.spawn((
-            Placed,
-            Mesh3d(meshes.add(Cuboid::new(1.0, 1.0, 1.0))),
-            MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::srgb(1.0, 0.0, 1.0), unlit: true, ..default() })),
-            Transform::from_translation(ground + Vec3::Y * 0.5),
-        ));
     }
 }
 
