@@ -7,7 +7,9 @@
 //! - 3 kill target: an unblockable `Hit` (`HitKind::Grab`) worth more than its hp (an ordinary
 //!   knock unless `GB_GOD_KNOCK` says otherwise), so `combat` resolves the death itself;
 //! - 4 revive target: `combat::Revive { after: 0 }`, so combat's own revive runs;
-//! - 5 peaceful: flips `ai::Peaceful` (the same as F10).
+//! - 5 peaceful: flips `ai::Peaceful` (the same as F10);
+//! - 6 three hours on: `sky::SetHour` (the clock's own message);
+//! - 7 next weather: `weather::SetSky` with the next sky in turn (clear, overcast, rain, fog).
 //!
 //! The digit keys only act while this panel is open and the F12 list is closed. `GB_GOD=1` turns
 //! god mode and tireless on for the player at start (smoke runs, recordings); `GB_GOD_KILL=<s>`
@@ -22,6 +24,8 @@ use super::ai::Peaceful;
 use super::combat::{CombatSet, Melee, Revive};
 use super::debug::DebugToggles;
 use super::discipline::Mastery;
+use super::sky::{Clock, SetHour};
+use super::weather::{SetSky, Weather};
 use super::{Fighter, Hit, HitKind, Intent, Player};
 use bevy::prelude::*;
 use gbui::prelude::*;
@@ -50,6 +54,8 @@ pub struct GodState {
 const KILL_KNOCK: f32 = 1.5;
 /// Nearest-foe search radius when nothing is locked on (m).
 const LOOK: f32 = 30.0;
+/// Hours key 6 moves the clock on.
+const HOURS_ON: f32 = 3.0;
 
 pub fn plugin(app: &mut App) {
     app.init_resource::<GodState>()
@@ -127,6 +133,10 @@ fn keys(
     player: Query<(Entity, &Transform), With<Player>>,
     fighters: Query<(&Transform, &Fighter)>,
     mut hits: MessageWriter<Hit>,
+    clock: Option<Res<Clock>>,
+    weather: Option<Res<Weather>>,
+    mut hours: MessageWriter<SetHour>,
+    mut skies: MessageWriter<SetSky>,
 ) {
     let Some(keys) = keys else { return };
     if keys.just_pressed(KeyCode::F11) {
@@ -160,6 +170,19 @@ fn keys(
     {
         p.0 = !p.0;
         info!("[god] peaceful {}", if p.0 { "on" } else { "off" });
+    }
+    if keys.just_pressed(KeyCode::Digit6)
+        && let Some(c) = clock.as_deref()
+    {
+        hours.write(SetHour((c.hour + HOURS_ON).rem_euclid(24.0)));
+        info!("[god] +{HOURS_ON} h");
+    }
+    if keys.just_pressed(KeyCode::Digit7)
+        && let Some(w) = weather.as_deref()
+    {
+        let next = Weather::cycled(w.sky);
+        skies.write(SetSky(next));
+        info!("[god] weather {}", next.word());
     }
 }
 
@@ -288,10 +311,10 @@ fn smoke_kill(
 }
 
 /// The panel text: the toggles and the target's numbers.
-pub fn panel_text(god: &GodState, target: Option<(&str, &Fighter, Option<&Mastery>)>, peaceful: bool) -> String {
+pub fn panel_text(god: &GodState, target: Option<(&str, &Fighter, Option<&Mastery>)>, peaceful: bool, hour: &str, sky: &str) -> String {
     let on = |b: bool| if b { "■" } else { "□" };
     let mut s = format!(
-        " 1  {} god (hits pass through)\n 2  {} tireless\n 3  kill target\n 4  revive target\n 5  {} peaceful\n",
+        " 1  {} god (hits pass through)\n 2  {} tireless\n 3  kill target\n 4  revive target\n 5  {} peaceful\n 6  +{HOURS_ON} h  ({hour})\n 7  weather: {sky}\n",
         on(god.god),
         on(god.tireless),
         on(peaceful),
@@ -317,9 +340,12 @@ pub fn panel_text(god: &GodState, target: Option<(&str, &Fighter, Option<&Master
     s
 }
 
+#[allow(clippy::too_many_arguments)]
 fn show(
     god: Res<GodState>,
     peaceful: Option<Res<Peaceful>>,
+    clock: Option<Res<Clock>>,
+    weather: Option<Res<Weather>>,
     fighters: Query<(&Fighter, Option<&Name>, Option<&Mastery>)>,
     mut root: Query<&mut Node, With<Panel>>,
     mut text: Query<&mut Text, With<PanelText>>,
@@ -334,7 +360,9 @@ fn show(
         return;
     }
     let target = god.target.and_then(|t| fighters.get(t).ok()).map(|(f, n, m)| (n.map_or("?", |n| n.as_str()), f, m));
-    let s = panel_text(&god, target, peaceful.is_some_and(|p| p.0));
+    let hour = clock.map_or(String::from("--:--"), |c| c.label());
+    let sky = weather.map_or("?", |w| w.sky.word());
+    let s = panel_text(&god, target, peaceful.is_some_and(|p| p.0), &hour, sky);
     for mut tx in &mut text {
         if tx.0 != s {
             tx.0 = s.clone();
@@ -351,13 +379,14 @@ mod tests {
         let god = GodState { open: true, god: true, ..default() };
         let mut f = Fighter::new(1, 80.0);
         f.hp = 30.0;
-        let s = panel_text(&god, Some(("Goblin", &f, None)), true);
+        let s = panel_text(&god, Some(("Goblin", &f, None)), true, "09:00", "rain");
         assert!(s.contains("■ god"));
         assert!(s.contains("□ tireless"));
         assert!(s.contains("■ peaceful"));
         assert!(s.contains("target  Goblin"));
         assert!(s.contains("hp 30/80"));
-        let none = panel_text(&god, None, false);
+        assert!(s.contains("(09:00)") && s.contains("weather: rain"));
+        let none = panel_text(&god, None, false, "09:00", "clear");
         assert!(none.contains("none (lock on"));
     }
 }

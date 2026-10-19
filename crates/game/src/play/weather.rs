@@ -10,7 +10,8 @@
 //! - Rain falls around the camera: `DROPS` thin streaks in a box that follows it, as many shown as
 //!   the rain amount calls for, wrapping round when they fall out of the box.
 //! - `GB_WEATHER=clear|overcast|rain|fog` holds that sky from the start at full strength (stills,
-//!   recordings). The minimap readout names the sky after the time.
+//!   recordings). `SetSky` (the god panel) switches the sky now; the amounts then ease toward it.
+//!   The minimap readout names the sky after the time.
 use super::camera::MainCamera;
 use bevy::light::NotShadowCaster;
 use bevy::prelude::*;
@@ -120,6 +121,21 @@ impl Weather {
         (x >> 8) as f32 / (1u32 << 24) as f32
     }
 
+    /// Switch to `sky` at game time `now`: a held sky stays held, otherwise it lasts `HOLD.1`.
+    pub fn set(&mut self, sky: Sky, now: f32) {
+        self.sky = sky;
+        if self.until.is_some() {
+            self.until = Some(now + HOLD.1);
+        }
+        info!("[weather] set to {}", sky.word());
+    }
+
+    /// The sky after this one in `Sky::ALL` (the god panel's cycle).
+    pub fn cycled(sky: Sky) -> Sky {
+        let i = Sky::ALL.iter().position(|s| *s == sky).unwrap_or(0);
+        Sky::ALL[(i + 1) % Sky::ALL.len()]
+    }
+
     /// Advance by `dt` at game time `now`: maybe change sky, ease the amounts.
     pub fn step(&mut self, now: f32, dt: f32) {
         if let Some(until) = self.until
@@ -161,6 +177,10 @@ pub fn shade(lux: f32, ambient: f32, sky: Color, w: &Weather) -> (f32, f32, Colo
     (lux * (1.0 - SUN_DIM * cloud), ambient * (1.0 - AMBIENT_DIM * cloud), mixed, near, far.max(near + 10.0))
 }
 
+/// Switch to this sky now (a held sky stays held; otherwise it lasts the longest hold).
+#[derive(Message, Clone, Copy, Debug)]
+pub struct SetSky(pub Sky);
+
 /// One rain streak.
 #[derive(Component)]
 struct Drop(usize);
@@ -173,12 +193,19 @@ pub fn plugin(app: &mut App) {
         }
         None => Weather::default(),
     };
-    app.insert_resource(weather).add_systems(Startup, spawn_drops).add_systems(Update, (step, fall).chain());
+    app.insert_resource(weather)
+        .add_message::<SetSky>()
+        .add_systems(Startup, spawn_drops)
+        .add_systems(Update, (step, fall).chain());
 }
 
-fn step(time: Res<Time>, mut w: ResMut<Weather>) {
+fn step(time: Res<Time>, mut sets: MessageReader<SetSky>, mut w: ResMut<Weather>) {
+    let now = time.elapsed_secs();
+    if let Some(SetSky(sky)) = sets.read().last().copied() {
+        w.set(sky, now);
+    }
     let dt = time.delta_secs().clamp(0.0, 0.1);
-    w.step(time.elapsed_secs(), dt);
+    w.step(now, dt);
 }
 
 /// A repeatable spread in -1..1 for drop `i`, axis `k`.
@@ -287,6 +314,26 @@ mod tests {
         let (.., near, far) = shade(8000.0, 400.0, sky, &Weather::held(Sky::Fog));
         assert!(near < 10.0 && far < 50.0);
         assert_eq!(Sky::parse(" Rain "), Some(Sky::Rain));
+    }
+
+    #[test]
+    fn setting_a_sky_switches_now_and_cycles_round() {
+        let mut w = Weather::default();
+        w.set(Sky::Fog, 10.0);
+        assert_eq!(w.sky, Sky::Fog);
+        w.step(11.0, 1.0);
+        assert_eq!(w.sky, Sky::Fog, "not drawn again before its hold ends");
+        let mut held = Weather::held(Sky::Rain);
+        held.set(Sky::Clear, 0.0);
+        for t in 0..1000 {
+            held.step(t as f32, 1.0);
+        }
+        assert_eq!(held.sky, Sky::Clear, "a held sky stays held");
+        let mut s = Sky::Clear;
+        for _ in 0..Sky::ALL.len() {
+            s = Weather::cycled(s);
+        }
+        assert_eq!(s, Sky::Clear);
     }
 
     #[test]
