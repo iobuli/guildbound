@@ -215,6 +215,26 @@ impl Board {
     pub fn rank(&self) -> usize {
         self.held
     }
+    /// The next template to offer (`savegame`).
+    pub fn next_offer(&self) -> usize {
+        self.next
+    }
+    /// A board rebuilt from a save (`savegame`), checked against today's `book`: contracts whose
+    /// template is gone, or whose objectives changed in number, are dropped (the board refills).
+    pub fn restored(open: Vec<Open>, next: usize, done: u32, ready: Vec<usize>, held: usize, book: &ContractBook) -> Self {
+        let n = book.0.len();
+        let open = open
+            .into_iter()
+            .filter(|o| book.0.get(o.index).is_some_and(|d| d.objectives.len() == o.progress.len()))
+            .collect();
+        Self {
+            open,
+            next: if n == 0 { 0 } else { next % n },
+            done,
+            ready: ready.into_iter().filter(|i| *i < n).collect(),
+            held: held.min(RANKS.len().saturating_sub(1)),
+        }
+    }
     /// The highest rank the contracts done qualify for.
     pub fn eligible(&self) -> usize {
         rank_for(self.done)

@@ -98,6 +98,9 @@ impl GuildData {
     }
 }
 
+/// Extra buying rate per guild rank above F.
+const RANK_RATE: f32 = 0.1;
+
 pub fn guild_path() -> std::path::PathBuf {
     std::path::Path::new(crate::ASSETS).join("data/guild.json")
 }
@@ -226,9 +229,20 @@ pub fn adventurer_menu() -> Vec<Choice> {
     vec![choice("What's the news?", "news"), choice("Leave", "leave")]
 }
 
-/// What the bag is worth at the desk.
-pub fn bag_value(data: &GuildData, inv: &Inventory) -> u32 {
-    ItemKind::ALL.iter().map(|k| inv.count(*k) * data.price(*k)).sum()
+/// The guild's buying rate for a member of rank `held` (index into `RANKS`): ranked members get
+/// a better price for what they bring in, `RANK_RATE` more per rank above F (S: +60%).
+pub fn rank_rate(held: usize) -> f32 {
+    1.0 + RANK_RATE * held.min(RANKS.len() - 1) as f32
+}
+
+/// What the desk pays a member of rank `held` for one `kind`.
+pub fn sale_price(data: &GuildData, kind: ItemKind, held: usize) -> u32 {
+    (data.price(kind) as f32 * rank_rate(held)).round() as u32
+}
+
+/// What the bag is worth at the desk to a member of rank `held`.
+pub fn bag_value(data: &GuildData, inv: &Inventory, held: usize) -> u32 {
+    ItemKind::ALL.iter().map(|k| inv.count(*k) * sale_price(data, *k, held)).sum()
 }
 
 /// What the unreported kills are worth.
@@ -482,7 +496,7 @@ fn respond(
             ready: ready.len(),
             ready_gold: ready.iter().map(|d| d.reward.gold).sum(),
             ready_xp: ready.iter().map(|d| d.reward.xp).sum(),
-            items_value: if items { bag_value(&data, inv) } else { 0 },
+            items_value: if items { bag_value(&data, inv, board.rank()) } else { 0 },
             bounty_value: if bounties { bounty_value(&data, &guild.bounties) } else { 0 },
             held: board.rank(),
             eligible: board.eligible(),
@@ -536,7 +550,7 @@ fn respond(
                 let mut parts = Vec::new();
                 for k in ItemKind::ALL {
                     let n = inv.count(k);
-                    let price = data.price(k);
+                    let price = sale_price(&data, k, board.rank());
                     if n > 0 && price > 0 {
                         spend.write(SpendItems { who: player, kind: k, count: n });
                         total += n * price;
@@ -545,7 +559,12 @@ fn respond(
                 }
                 purse.gold += total;
                 log.write(HudLog::new(LogKind::Item, format!("+{total} gold")));
-                format!("{}. That's {total} gold.", parts.join(", "))
+                let bonus = ((rank_rate(board.rank()) - 1.0) * 100.0).round();
+                if bonus > 0.0 {
+                    format!("{}. That's {total} gold, with your rank {} rate (+{bonus}%).", parts.join(", "), RANKS[board.rank()].0)
+                } else {
+                    format!("{}. That's {total} gold.", parts.join(", "))
+                }
             }
             "bounties" => "No bounties on your name yet. Bring down the Rival, the Hunter or the courtyard brawler and tell me.".to_string(),
             "bounty" => {
@@ -909,7 +928,11 @@ mod tests {
         let mut inv = Inventory::default();
         inv.add(ItemKind::Log, 3);
         inv.add(ItemKind::Apple, 2);
-        assert_eq!(bag_value(&d, &inv), 3 * d.price(ItemKind::Log) + 2 * d.price(ItemKind::Apple));
+        assert_eq!(bag_value(&d, &inv, 0), 3 * d.price(ItemKind::Log) + 2 * d.price(ItemKind::Apple));
+        // Rank pays: S buys at +60%, and the rate never runs past S.
+        assert!((rank_rate(6) - 1.6).abs() < 1e-6 && rank_rate(99) == rank_rate(6));
+        assert!(bag_value(&d, &inv, 6) > bag_value(&d, &inv, 0));
+        assert_eq!(sale_price(&d, ItemKind::Log, 0), d.price(ItemKind::Log));
         let ledger = HashMap::from([("Rival".to_string(), 2), ("Nobody".to_string(), 5)]);
         assert_eq!(bounty_value(&d, &ledger), 2 * d.bounties["Rival"]);
     }
