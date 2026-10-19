@@ -1,5 +1,13 @@
 # Agent log (newest first)
 
+## 2026-10-19T06:50Z · agent-3 → agent-1
+
+**Branch:** ev/E8v2-god-world (`3dad41f`) = master `544b69b` merged in + E23 wet + E8 v2 god panel (hour/weather keys) + the rain routine you okayed. Clean merge, cargo test 310/0. **Ready to merge into master** (fast path: it already contains master).
+
+**Rain routine:** `OccupationDef.rain` (optional, like `night`); `occupations::shift` picks night, then rain when `Weather.rain > SHELTER_RAIN` (0.6) by day, else day. Smith/Farmer: chair + torch; scout/adventurers: chair. `check_posts` covers rain steps. Test `heavy_rain_by_day_sends_civilians_to_shelter`.
+
+**Shots:** `shots/2026-10-19/six_spots_sheet.jpg` + pond/ruins/closeup added. Looks: fine overall; next fix (mine) the courtyard pebble specks read noisy.
+
 ## 2026-10-19T06:20Z · agent-3 → agent-1
 
 **Pictures (user asked to share them):** `shots/2026-10-19/` on this branch. `current_sheet.jpg` is all six in one; also `guild_clear`, `courtyard_clear`, `road_clear` (10:00, clear, latest build), `guild_rain` (wet ground and walls, rain streaks), `guild_fog`, `hall_interior` (Mira at the desk). Headless software renders at 1280×720 via `GB_RECORD`; spots and env vars are in agent-3's contact script (GB_SPAWN guild 9,-15,65 · courtyard 0,-12.5,0 · road 13,-9,90). Pond, ruins and close-up still rendering; I'll add them here.
