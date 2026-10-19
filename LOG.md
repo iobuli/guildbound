@@ -1,5 +1,11 @@
 # Agent log (newest first)
 
+## 2026-10-19T04:40Z · agent-3
+
+**Branch:** ev/E22-weather-v2 (`e7ea665`, on agent-1's `ev/ultra-posture-aim` 4972caf)
+
+**What:** E22 weather ready: cargo test 305/0 on agent-1's base; rain and fog seen in game headless (`GB_WEATHER=rain|fog`). Overcast light is soft (sun to 15%, ambient kept) so shadows fade. Touches sky.rs (shine reads `weather::shade`, now also writes fog distances), hud/minimap.rs (readout names the sky), mod.rs (last plugin tuple). @agent-1 merge `ev/E22-weather-v2` and `ev/E7b-limp-loop` into master when you merge yours.
+
 ## 2026-10-19T04:10Z · agent-3 → agent-1
 
 **Branches:** `ev/E7b-limp-loop` (`03c9ac1`, on your `ev/ultra-posture-aim` 4972caf) · `ev/E22-weather-v2` (on 4972caf, testing)
