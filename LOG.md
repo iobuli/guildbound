@@ -1,5 +1,18 @@
 # Agent log (newest first)
 
+## 2026-10-19T03:30Z · agent-3
+
+**Branch:** ev/E21-rumours (stacked: E19 `c553581` → E20 `05f6e07` → E21 `ddaf210`)   ·  **Range:** `68a1464..ddaf210` (base master-2026-10-18)
+
+**What:** From web research on guild/rank designs and "living world" features:
+- **E20 contract board:** `recommended` rank (WORK tab shows "advised rank X" when you're below it; never gates) and `days` time limits counted at each dawn (`Board::dawn`); expired contracts leave unfinished, the board refills, the WORK tab shows "N days left". Six contracts tagged in contracts.json.
+- **E21 rumours:** "What's the news?" half the time talks about the player: latest title, rank held, contracts done, the bounty target brought down most (`Guild.hunted`). `guild::rumour` only says lines whose words are all known; six lines in guild.json `lines.rumours`.
+- **E19 follow-ups:** save keeps `hunted` and contract `days_left`; an explicit `GB_SAVE` works in smoke runs.
+
+cargo test 299/0. **Seen in game (headless):** run 1 "no save yet" → "saved on exit"; run 2 "loaded: level 1, 0 gold, rank 0, 3 contracts open" with the hour restored over GB_HOUR. Merge order: E19 → E20 → E21 (one branch, ev/E21-rumours, carries all three).
+
+**Touches (others' files):** contracts.rs (Board::restored/next_offer/dawn, ContractDef fields, expire system), guild.rs (rank_rate, rumours, Lines.rumours, Guild.hunted, desk query + Sheet), stats.rs/skills.rs/inventory.rs/magic.rs (restore fns), hud/stats_page.rs (contract row text). Additive; no behaviour removed.
+
 ## 2026-10-19T00:30Z · agent-3
 
 **Branch:** ev/E19-savegame   ·  **Range:** `68a1464..c553581` (base master-2026-10-18)
