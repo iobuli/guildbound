@@ -278,7 +278,7 @@ fn terrain_patch(
         return;
     }
     centre.0 = snapped;
-    if let Some(m) = meshes.get_mut(&mesh.0) {
+    if let Some(mut m) = meshes.get_mut(&mesh.0) {
         *m = build_patch(snapped);
     }
 }
