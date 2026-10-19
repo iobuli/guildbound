@@ -141,8 +141,10 @@ struct PatchCentre(Vec2);
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_xyz(0.0, 6.0, 26.0).looking_at(Vec3::new(0.0, 1.0, 8.0), Vec3::Y),
-        Viewer { yaw: 0.0, pitch: -0.2, speed: 12.0 },
+        // Start at a person's eye height, a few metres back, looking at a figure standing on the origin.
+        // Yaw and pitch must match this look: `fly` rebuilds the rotation from them every frame.
+        Transform::from_xyz(0.0, 3.2, 12.0).looking_at(Vec3::new(0.0, 1.0, 0.0), Vec3::Y),
+        Viewer { yaw: 0.0, pitch: -0.18, speed: 12.0 },
     ));
     commands.spawn((DirectionalLight { illuminance: 9000.0, ..default() }, Transform::from_xyz(30.0, 60.0, 30.0).looking_at(Vec3::ZERO, Vec3::Y)));
     commands.insert_resource(GlobalAmbientLight { color: Color::WHITE, brightness: 350.0, ..default() });
