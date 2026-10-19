@@ -97,7 +97,7 @@ impl Recipe {
     /// Normal strength (height units per texel → slope).
     fn bump(self) -> f32 {
         match self {
-            Recipe::Ground => 3.0,
+            Recipe::Ground => 2.4,
             Recipe::Stone => 5.0,
             Recipe::Rock => 6.0,
             Recipe::Wood => 2.5,
@@ -113,7 +113,8 @@ impl Recipe {
             Recipe::Ground => {
                 let soil = fbm(u, v, 8, 5, 0.5, 11);
                 let (f1, _, cell) = worley(u, v, 14, 23);
-                let pebble = (1.0 - (f1 / 0.35).min(1.0)).powi(2) * step(0.62, cell);
+                // A pebble in one cell in seven, small: denser read as speckle noise from eye height.
+                let pebble = (1.0 - (f1 / 0.28).min(1.0)).powi(2) * step(0.86, cell);
                 let h = soil * 0.7 + pebble * 0.6;
                 (h, 0.8 + 0.2 * soil - 0.08 * pebble)
             }
