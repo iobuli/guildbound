@@ -44,6 +44,8 @@ pub mod boss;
 pub mod waypoint;
 pub mod weather;
 pub mod class;
+pub mod marks;
+pub mod spell_aim;
 pub mod pause;
 pub mod wind_aura;
 pub mod beam;
@@ -129,7 +131,7 @@ pub fn plugin(app: &mut App) {
     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, savegame::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin, pause::plugin))
     .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin, repertoire::plugin, appearance::plugin, afterimage::plugin))
-    .add_plugins((discipline::plugin, carry::plugin, weather::plugin));
+    .add_plugins((discipline::plugin, carry::plugin, marks::plugin, spell_aim::plugin, weather::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
@@ -442,6 +444,22 @@ impl Loadout {
     pub fn equipped(&self) -> &str {
         self.slots.get(self.current).map_or("unarmed", String::as_str)
     }
+}
+
+/// Parent `child` under `parent` when the queued commands run, if `parent` still exists then;
+/// otherwise despawn `child` (it belonged under something that is gone). A re-dress or a weapon
+/// swap can despawn a model or bone earlier in the same flush, and a `ChildOf` to a missing
+/// entity only logs a warning and leaves the child loose.
+pub fn adopt(commands: &mut Commands, child: Entity, parent: Entity) {
+    commands.queue(move |world: &mut World| {
+        if world.get_entity(parent).is_ok() {
+            if let Ok(mut e) = world.get_entity_mut(child) {
+                e.insert(ChildOf(parent));
+            }
+        } else if let Ok(e) = world.get_entity_mut(child) {
+            e.despawn();
+        }
+    });
 }
 
 /// Damage event. Produced by melee hit tests (`combat`), projectiles (`ranged`, `magic`);
