@@ -65,5 +65,8 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let glow = edge * (0.25 + streaks * 1.4);
     let colour = aura.color.rgb * glow * aura.color.a;
-    return vec4<f32>(colour, 1.0);
+    // `AlphaMode::Add` blends as premultiplied alpha (result = src + (1 - src.a) * dst), so the
+    // alpha must be 0 for a pure add (Bevy's own `premultiply_alpha` does the same). An alpha of 1
+    // replaced what was behind with this dim colour: the aura drew as a black capsule.
+    return vec4<f32>(colour, 0.0);
 }
