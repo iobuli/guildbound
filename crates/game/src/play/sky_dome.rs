@@ -150,7 +150,7 @@ fn follow(
     for (mut tf, mesh, elevations) in &mut dome {
         tf.translation = c;
         let moved = last.is_none_or(|(h, z)| colour_distance(h, horizon) > RECOLOUR || colour_distance(z, zenith) > RECOLOUR);
-        if moved && let Some(m) = meshes.get_mut(&mesh.0) {
+        if moved && let Some(mut m) = meshes.get_mut(&mesh.0) {
             let colours: Vec<[f32; 4]> = elevations.0.iter().map(|el| colour_at(horizon, zenith, *el).to_linear().to_f32_array()).collect();
             m.insert_attribute(Mesh::ATTRIBUTE_COLOR, VertexAttributeValues::Float32x4(colours));
             *last = Some((horizon, zenith));
