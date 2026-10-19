@@ -23,7 +23,7 @@
 #endif
 
 struct Ground {
-    look: vec4<f32>, // x: show masks, y: detail strength
+    look: vec4<f32>, // x: show masks, y: detail strength, z: wetness (rain)
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> ground: Ground;
@@ -78,6 +78,13 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     let pebble = step(0.84, noise2(p.xz * 9.0));
     base *= 1.0 - k * worn * 0.14 * fbm2(p.xz * 4.0);
     base = mix(base, base * 1.3 + vec3(0.03), k * worn * pebble * 0.6);
+
+    // wet: darker and glossier; puddles shine on level worn ground (paths, the ruins)
+    let wet = clamp(ground.look.z, 0.0, 1.0);
+    let puddle = wet * worn * (1.0 - steep) * smoothstep(0.55, 0.7, fbm2(p.xz * 0.9));
+    base *= 1.0 - 0.32 * wet - 0.18 * puddle;
+    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.45, wet);
+    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.06, puddle);
 
     if ground.look.x > 0.5 {
         base = vec3(steep, worn, clamp(p.y / 12.0, 0.0, 1.0));

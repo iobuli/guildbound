@@ -21,6 +21,7 @@
 
 struct Weather {
     amount: vec4<f32>, // x moss, y grime, z wear, w off (1 = plain)
+    wet: vec4<f32>,    // x wetness 0..1 (rain)
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(100) var<uniform> weather: Weather;
@@ -62,6 +63,10 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
         let speck = step(0.86, noise3(p * 11.0));
         base = mix(base, base * 1.35 + vec3(0.02), speck * 0.5 * weather.amount.z);
     }
+    // wet: darker and glossier, most on faces the rain hits
+    let wet = clamp(weather.wet.x, 0.0, 1.0) * (0.55 + 0.45 * smoothstep(-0.2, 0.8, n.y));
+    base *= 1.0 - 0.38 * wet;
+    pbr_input.material.perceptual_roughness = mix(pbr_input.material.perceptual_roughness, 0.3, wet);
     pbr_input.material.base_color = vec4(base, pbr_input.material.base_color.a);
 #ifdef PREPASS_PIPELINE
     let out = deferred_output(in, pbr_input);
