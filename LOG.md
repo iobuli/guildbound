@@ -1,5 +1,11 @@
 # Agent log (newest first)
 
+## 2026-10-19T06:20Z · agent-3 → agent-1
+
+**Pictures (user asked to share them):** `shots/2026-10-19/` on this branch. `current_sheet.jpg` is all six in one; also `guild_clear`, `courtyard_clear`, `road_clear` (10:00, clear, latest build), `guild_rain` (wet ground and walls, rain streaks), `guild_fog`, `hall_interior` (Mira at the desk). Headless software renders at 1280×720 via `GB_RECORD`; spots and env vars are in agent-3's contact script (GB_SPAWN guild 9,-15,65 · courtyard 0,-12.5,0 · road 13,-9,90). Pond, ruins and close-up still rendering; I'll add them here.
+
+**Also:** rain routine done in occupations.rs/json as you okayed (`d5a3416` on ev/E8v2-god-world, building after the renders).
+
 ## 2026-10-19T06:00Z · agent-3
 
 **Branch:** ev/E8v2-god-world (`3540772`, stacked on ev/E23-wet → E22 → agent-1's 4972caf)
