@@ -16,6 +16,7 @@ Stdlib plus numpy only.
 """
 import argparse
 import collections
+import hashlib
 import json
 import math
 import os
@@ -63,10 +64,20 @@ def assimp_counts(path):
     except (subprocess.TimeoutExpired, OSError):
         return None
     found = {}
-    for key, pattern in (("bones", r"Bones?\s*:?\s*(\d+)"), ("clips", r"Animations?\s*:?\s*(\d+)"), ("meshes", r"Meshes?\s*:?\s*(\d+)")):
-        m = re.search(pattern, out, re.IGNORECASE)
+    for key, pattern in (("bones", r"^Bones:\s*(\d+)"), ("clips", r"^Animations:\s*(\d+)"), ("meshes", r"^Meshes:\s*(\d+)")):
+        m = re.search(pattern, out, re.MULTILINE)
         found[key] = int(m.group(1)) if m else 0
+    # An animation-only export reports no bones even when its hierarchy has them, so 0 means unknown.
+    found["bones"] = found["bones"] or None
     return found
+
+
+def file_sha1(path):
+    h = hashlib.sha1()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
 
 
 def describe(path, rel):
@@ -94,6 +105,7 @@ def describe(path, rel):
         info.update(kind="model" if ext in MODEL_EXT else "other", bones=None, clips=None, meshes=None)
         if counts:
             info.update(bones=counts["bones"], clips=counts["clips"], meshes=counts["meshes"])
+    info["sha1"] = file_sha1(path)
     info["features"] = features_of(info)
     return info
 
@@ -168,6 +180,8 @@ def choose_clusters(x, kmax, seed):
 
 
 def bone_band(bones):
+    if bones is None:
+        return "rig-unknown"
     if not bones:
         return "unrigged"
     if bones < 30:
@@ -229,6 +243,10 @@ def run(root, out, kmax, seed):
     shutil.rmtree(os.path.join(out, "categories"), ignore_errors=True)
     shutil.rmtree(os.path.join(out, "notes"), ignore_errors=True)
     os.makedirs(os.path.join(out, "notes"), exist_ok=True)
+    first_by_hash = {}
+    for e in entries:
+        e["duplicate_of"] = first_by_hash.get(e["sha1"])
+        first_by_hash.setdefault(e["sha1"], e["path"])
     for e in entries:
         folder = os.path.join(out, "categories", e["category"])
         os.makedirs(folder, exist_ok=True)
@@ -242,6 +260,8 @@ def run(root, out, kmax, seed):
             f.write(f"clips: {e.get('clips') if e.get('clips') is not None else 'unknown'}\n")
             f.write(f"meshes: {e.get('meshes') if e.get('meshes') is not None else 'unknown'}\n")
             f.write(f"bytes: {e['bytes']}\n")
+            if e["duplicate_of"]:
+                f.write(f"same content as: {e['duplicate_of']}\n")
             for clip in e.get("clip_names", []):
                 f.write(f"clip: {clip}\n")
 
