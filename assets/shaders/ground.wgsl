@@ -74,10 +74,11 @@ fn fragment(in: VertexOutput, @builtin(front_facing) is_front: bool) -> Fragment
     let level = (1.0 - steep) * (1.0 - worn);
     base *= 1.0 + k * level * (0.24 * fbm2(p.xz * 2.2) - 0.12);
 
-    // worn ground: mottled packed earth and pale pebbles
-    let pebble = step(0.84, noise2(p.xz * 9.0));
+    // worn ground: mottled packed earth and pale pebbles (sparse and soft: a speck on every
+    // sixth texel read as noise across the courtyard)
+    let pebble = smoothstep(0.9, 0.95, noise2(p.xz * 12.0));
     base *= 1.0 - k * worn * 0.14 * fbm2(p.xz * 4.0);
-    base = mix(base, base * 1.3 + vec3(0.03), k * worn * pebble * 0.6);
+    base = mix(base, base * 1.18 + vec3(0.02), k * worn * pebble * 0.45);
 
     // wet: darker and glossier; puddles shine on level worn ground (paths, the ruins)
     let wet = clamp(ground.look.z, 0.0, 1.0);
