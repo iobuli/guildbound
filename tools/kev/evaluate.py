@@ -79,7 +79,9 @@ def clip_entry(path, ref_names, thr):
         entry["foot_slide_mean_mps"] = None if mean is None else round(mean, 3)
         entry["foot_slide_p95_mps"] = None if p95 is None else round(p95, 3)
     except Exception as exc:  # a clip the audit cannot read is reported, not fatal
-        entry["flags"].append(f"audit failed: {exc}")
+        entry["flags"].append(f"audit failed: {type(exc).__name__} {exc}".strip())
+    if entry["keys"] is not None and entry["keys"] < 10:
+        entry["flags"].append("static (too few keys to judge)")
     if entry["jitter_ratio"] is not None and entry["jitter_ratio"] > thr["jitter_ratio"]:
         entry["flags"].append("jittery")
     if entry["foot_slide_p95_mps"] is not None and entry["foot_slide_p95_mps"] > thr["foot_slide_mps"]:
@@ -208,10 +210,11 @@ def run(plan_path):
 def write_markdown(report, path, top):
     lines = ["# Evaluation", "", "## Top clips (fewest flags, then lowest jitter)", ""]
     good = [c for c in report["clips"] if not c["flags"] and c["verdict"] == "usable"]
-    good.sort(key=lambda c: (c["jitter_ratio"] or 0, c["foot_slide_p95_mps"] or 0))
+    good.sort(key=lambda c: (c["jitter_ratio"] if c["jitter_ratio"] is not None else 9e9, c["foot_slide_p95_mps"] or 0))
     lines += ["| clip | jitter | foot slide p95 m/s | keys |", "|---|---|---|---|"]
     for c in good[:top]:
-        lines.append(f"| {c['name']} | {c['jitter_ratio']} | {c['foot_slide_p95_mps']} | {c['keys']} |")
+        jit = "-" if c["jitter_ratio"] is None else f"{c['jitter_ratio']:.3f}"
+        lines.append(f"| {c['name']} | {jit} | {c['foot_slide_p95_mps']} | {c['keys']} |")
     lines += ["", "## Flagged clips", ""]
     for c in report["clips"]:
         if c["flags"]:
@@ -222,7 +225,8 @@ def write_markdown(report, path, top):
     lines += ["", "## Bodies", "", "| piece | verdict | bones | height | in range |", "|---|---|---|---|---|"]
     for b in report["bodies"]:
         lines.append(f"| {b['path']} | {b['verdict']} | {b['bones']} | {b['height_m']} | {b['in_height_range']} |")
-    lines += ["", "Ranking for looks is written here after the contact sheets have been checked by eye.", ""]
+    lines += ["", "Chains of idle clips rank highest because idle clips barely move, so their cuts cost almost nothing.",
+              "Read the chain sheets for motion before treating a low score as a good combo.", ""]
     open(path, "w").write("\n".join(lines))
 
 
