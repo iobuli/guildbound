@@ -255,6 +255,8 @@ fn compose(
             if let Some(load) = load {
                 super::carry::apply(&bank, &mut pose, load);
             }
+            // Running clips hunch: open the chest and lift the head (`posture`).
+            super::posture::apply(&bank, &mut pose, super::posture::run_share(&layers.layers));
             let mut ground = |origin: Vec3| {
                 spatial
                     .cast_ray(origin, Dir3::NEG_Y, GROUND_PROBE, true, &filter)

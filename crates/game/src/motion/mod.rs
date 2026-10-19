@@ -26,6 +26,7 @@ pub mod bank;
 pub mod body;
 pub mod bvh;
 pub mod carry;
+pub mod posture;
 pub mod compose;
 pub mod contact;
 pub mod donor;
