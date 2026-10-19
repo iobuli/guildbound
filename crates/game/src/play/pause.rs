@@ -6,6 +6,9 @@
 //! - **Settings** (`Settings`: mouse sensitivity and volume) persist in `saves/settings.json`;
 //!   `camera` scales mouse look by `Settings::mouse`, the volume goes to `GlobalVolume`.
 //!
+//! `GB_PAUSE=<seconds>` (smoke runs) opens the menu once that much game time has passed (with
+//! `GB_SCREENSHOT_AT` at the same value the shot shows it).
+//!
 //! Ownership: `Paused`, `Settings` (written here only); `camera` reads `Paused` as an open page.
 use super::savegame::{SaveNow, SaveState};
 use bevy::audio::{GlobalVolume, Volume};
@@ -164,7 +167,16 @@ fn toggle(
     capture: Option<Res<super::camera::CursorCapture>>,
     mut paused: ResMut<Paused>,
     mut time: ResMut<Time<Virtual>>,
+    mut smoke: Local<Option<Option<f32>>>,
 ) {
+    let at = *smoke.get_or_insert_with(|| std::env::var("GB_PAUSE").ok().and_then(|s| s.trim().parse().ok()));
+    if let Some(at) = at
+        && time.elapsed_secs() >= at
+    {
+        *smoke = Some(None);
+        set(&mut paused, &mut time, true);
+        return;
+    }
     if !keys.just_pressed(KeyCode::Escape) {
         return;
     }
