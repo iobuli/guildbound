@@ -901,11 +901,12 @@ pub(crate) mod tests {
 
     #[test]
     fn frame_counts() {
+        let hz = SAMPLE_HZ as usize;
         assert_eq!(frame_count(0.0), 1);
-        assert_eq!(frame_count(1.0), 31);
-        assert_eq!(frame_count(31.0 / 30.0), 32);
-        assert_eq!(frame_count(1.01), 32);
-        assert!((frame_time(31, 1.01) - 1.01).abs() < 1e-6);
+        assert_eq!(frame_count(1.0), hz + 1);
+        assert_eq!(frame_count((hz + 1) as f32 / SAMPLE_HZ), hz + 2);
+        assert_eq!(frame_count(1.0 + 0.5 / SAMPLE_HZ), hz + 2);
+        assert!((frame_time(hz + 1, 1.01) - 1.01).abs() < 1e-6);
     }
 }
 

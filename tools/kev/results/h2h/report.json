@@ -2,97 +2,97 @@
  "timing": {
   "ual1/Punch_Jab": {
    "hand": "l",
-   "windup": 0.219,
-   "active": 0.444,
-   "cancel": 0.594,
+   "windup": 0.2,
+   "active": 0.44,
+   "cancel": 0.59,
    "peak_mps": 10.69,
-   "end_speed_mps": 2.138,
-   "end_radial_mps": -1.251,
+   "end_speed_mps": 1.749,
+   "end_radial_mps": -1.35,
    "yaw_start": -102.7,
-   "yaw_end": -105.1,
+   "yaw_end": -106.2,
    "window": [
     0.0,
-    0.533
+    0.5
    ],
    "source": "game cutter",
    "duration": 0.867,
-   "windup_s": 0.117,
+   "windup_s": 0.1,
    "mid_swing": false
   },
   "ual1/Punch_Cross": {
    "hand": "r",
-   "windup": 0.247,
-   "active": 0.464,
-   "cancel": 0.614,
+   "windup": 0.193,
+   "active": 0.416,
+   "cancel": 0.566,
    "peak_mps": 8.8,
    "end_speed_mps": 0.893,
    "end_radial_mps": -0.771,
    "yaw_start": -102.7,
    "yaw_end": -86.0,
    "window": [
-    0.013,
+    0.03,
     0.567
    ],
    "source": "game cutter",
    "duration": 1.0,
-   "windup_s": 0.137,
+   "windup_s": 0.104,
    "mid_swing": false
   },
   "ual2/Melee_Hook": {
    "hand": "r",
-   "windup": 0.393,
-   "active": 0.65,
-   "cancel": 0.8,
+   "windup": 0.412,
+   "active": 0.676,
+   "cancel": 0.826,
    "peak_mps": 38.87,
    "end_speed_mps": 1.877,
    "end_radial_mps": -1.656,
    "yaw_start": -90.6,
    "yaw_end": -100.6,
    "window": [
-    0.0,
+    0.013,
     0.467
    ],
    "source": "game cutter",
    "duration": 0.467,
-   "windup_s": 0.184,
+   "windup_s": 0.187,
    "mid_swing": false
   },
   "ual2/OverhandThrow": {
    "hand": "r",
-   "windup": 0.413,
-   "active": 0.57,
-   "cancel": 0.72,
+   "windup": 0.337,
+   "active": 0.536,
+   "cancel": 0.686,
    "peak_mps": 21.23,
-   "end_speed_mps": 0.968,
-   "end_radial_mps": -0.295,
+   "end_speed_mps": 0.694,
+   "end_radial_mps": -0.23,
    "yaw_start": -103.3,
-   "yaw_end": -53.6,
+   "yaw_end": -51.3,
    "window": [
-    0.0,
-    0.767
+    0.13,
+    0.733
    ],
    "source": "game cutter",
    "duration": 1.333,
-   "windup_s": 0.317,
+   "windup_s": 0.203,
    "mid_swing": false
   },
   "ual2/Zombie_Scratch": {
    "hand": "r",
-   "windup": 0.26,
-   "active": 0.444,
-   "cancel": 0.594,
+   "windup": 0.247,
+   "active": 0.441,
+   "cancel": 0.591,
    "peak_mps": 22.03,
    "end_speed_mps": 1.603,
    "end_radial_mps": 0.009,
    "yaw_start": -81.1,
    "yaw_end": -52.9,
    "window": [
-    0.347,
-    1.0
+    0.363,
+    0.983
    ],
    "source": "game cutter",
    "duration": 1.8,
-   "windup_s": 0.17,
+   "windup_s": 0.153,
    "mid_swing": true
   },
   "ual2/Shield_OneShot": {
@@ -140,7 +140,7 @@
     "jab",
     "cross"
    ],
-   "cost": -12.8,
+   "cost": -12.25,
    "lands": [
     "head",
     "head"
@@ -166,7 +166,7 @@
       "head",
       "head"
      ],
-     "cost": -12.8
+     "cost": -12.25
     },
     "elf": {
      "chain": [
@@ -177,7 +177,7 @@
       "torso",
       "torso"
      ],
-     "cost": -6.8
+     "cost": -6.25
     },
     "knight": {
      "chain": [
@@ -188,7 +188,7 @@
       "torso",
       "torso"
      ],
-     "cost": -6.8
+     "cost": -6.25
     },
     "mage": {
      "chain": [
@@ -199,7 +199,7 @@
       "torso",
       "torso"
      ],
-     "cost": -6.8
+     "cost": -6.25
     },
     "dragon": {
      "chain": [
@@ -210,7 +210,7 @@
       "torso",
       "torso"
      ],
-     "cost": -6.8
+     "cost": -6.25
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -221,7 +221,7 @@
       "leg",
       "leg"
      ],
-     "cost": -2.3,
+     "cost": -1.75,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }
@@ -237,16 +237,16 @@
     "ranged": true
    },
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
-   "cost": -17.65,
+   "cost": -15.27,
    "lands": [
-    "torso",
     "head",
-    "torso",
+    "leg",
+    "head",
     "head"
    ],
    "heavy": "charge",
@@ -263,18 +263,18 @@
    "on_rigs": {
     "body": {
      "chain": [
-      "hook",
       "jab",
       "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
-      "torso",
       "head",
-      "torso",
+      "leg",
+      "head",
       "head"
      ],
-     "cost": -17.65
+     "cost": -15.27
     },
     "elf": {
      "chain": [
@@ -284,12 +284,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "knight": {
      "chain": [
@@ -299,12 +299,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "mage": {
      "chain": [
@@ -314,12 +314,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "dragon": {
      "chain": [
@@ -334,7 +334,7 @@
       "torso",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -14.1
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -349,7 +349,7 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15,
+     "cost": -9.6,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }
@@ -365,16 +365,16 @@
     "ranged": true
    },
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
-   "cost": -17.65,
+   "cost": -15.27,
    "lands": [
-    "torso",
     "head",
-    "torso",
+    "leg",
+    "head",
     "head"
    ],
    "heavy": "charge",
@@ -391,18 +391,18 @@
    "on_rigs": {
     "body": {
      "chain": [
-      "hook",
       "jab",
       "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
-      "torso",
       "head",
-      "torso",
+      "leg",
+      "head",
       "head"
      ],
-     "cost": -17.65
+     "cost": -15.27
     },
     "elf": {
      "chain": [
@@ -412,12 +412,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "knight": {
      "chain": [
@@ -427,12 +427,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "mage": {
      "chain": [
@@ -442,12 +442,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "dragon": {
      "chain": [
@@ -462,7 +462,7 @@
       "torso",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -14.1
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -477,7 +477,7 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15,
+     "cost": -9.6,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }
@@ -496,7 +496,7 @@
     "jab",
     "cross"
    ],
-   "cost": -12.8,
+   "cost": -12.25,
    "lands": [
     "head",
     "head"
@@ -522,40 +522,40 @@
       "head",
       "head"
      ],
-     "cost": -12.8
+     "cost": -12.25
     },
     "elf": {
      "chain": [
-      "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
       "torso",
       "torso"
      ],
-     "cost": -7.35
+     "cost": -6.25
     },
     "knight": {
      "chain": [
-      "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
       "torso",
       "torso"
      ],
-     "cost": -7.35
+     "cost": -6.25
     },
     "mage": {
      "chain": [
-      "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
       "torso",
       "torso"
      ],
-     "cost": -7.35
+     "cost": -6.25
     },
     "dragon": {
      "chain": [
@@ -593,16 +593,16 @@
     "ranged": false
    },
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
-   "cost": -17.65,
+   "cost": -15.27,
    "lands": [
-    "torso",
     "head",
-    "torso",
+    "leg",
+    "head",
     "head"
    ],
    "heavy": "shoulder bash",
@@ -619,18 +619,18 @@
    "on_rigs": {
     "body": {
      "chain": [
-      "hook",
       "jab",
       "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
-      "torso",
       "head",
-      "torso",
+      "leg",
+      "head",
       "head"
      ],
-     "cost": -17.65
+     "cost": -15.27
     },
     "elf": {
      "chain": [
@@ -640,12 +640,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "knight": {
      "chain": [
@@ -655,12 +655,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "mage": {
      "chain": [
@@ -670,12 +670,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "dragon": {
      "chain": [
@@ -690,7 +690,7 @@
       "torso",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -14.1
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -705,7 +705,7 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15,
+     "cost": -9.6,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }
@@ -725,9 +725,9 @@
     "jab",
     "cross"
    ],
-   "cost": -10.15,
+   "cost": -8.1,
    "lands": [
-    "torso",
+    "leg",
     "head",
     "head"
    ],
@@ -750,11 +750,11 @@
       "cross"
      ],
      "lands": [
-      "torso",
+      "leg",
       "head",
       "head"
      ],
-     "cost": -10.15
+     "cost": -8.1
     },
     "elf": {
      "chain": [
@@ -763,11 +763,11 @@
       "cross"
      ],
      "lands": [
-      "torso",
+      "leg",
       "torso",
       "torso"
      ],
-     "cost": -6.15
+     "cost": -4.1
     },
     "knight": {
      "chain": [
@@ -776,11 +776,11 @@
       "cross"
      ],
      "lands": [
-      "torso",
+      "leg",
       "torso",
       "torso"
      ],
-     "cost": -6.15
+     "cost": -4.1
     },
     "mage": {
      "chain": [
@@ -789,11 +789,11 @@
       "cross"
      ],
      "lands": [
-      "torso",
+      "leg",
       "torso",
       "torso"
      ],
-     "cost": -6.15
+     "cost": -4.1
     },
     "dragon": {
      "chain": [
@@ -806,7 +806,7 @@
       "torso",
       "torso"
      ],
-     "cost": -6.15
+     "cost": -5.6
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -819,7 +819,7 @@
       "leg",
       "leg"
      ],
-     "cost": -1.65,
+     "cost": -1.1,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }
@@ -835,16 +835,16 @@
     "ranged": true
    },
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
-   "cost": -17.65,
+   "cost": -15.27,
    "lands": [
-    "torso",
     "head",
-    "torso",
+    "leg",
+    "head",
     "head"
    ],
    "heavy": "charge",
@@ -861,18 +861,18 @@
    "on_rigs": {
     "body": {
      "chain": [
-      "hook",
       "jab",
       "hook",
-      "jab"
+      "jab",
+      "cross"
      ],
      "lands": [
-      "torso",
       "head",
-      "torso",
+      "leg",
+      "head",
       "head"
      ],
-     "cost": -17.65
+     "cost": -15.27
     },
     "elf": {
      "chain": [
@@ -882,12 +882,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "knight": {
      "chain": [
@@ -897,12 +897,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "mage": {
      "chain": [
@@ -912,12 +912,12 @@
       "jab"
      ],
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -11.85
     },
     "dragon": {
      "chain": [
@@ -932,7 +932,7 @@
       "torso",
       "torso"
      ],
-     "cost": -14.65
+     "cost": -14.1
     },
     "Mech_Char_Mesh": {
      "chain": [
@@ -947,7 +947,7 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15,
+     "cost": -9.6,
      "heavy": "kick",
      "note": "legs only: no allowed punch reaches higher"
     }

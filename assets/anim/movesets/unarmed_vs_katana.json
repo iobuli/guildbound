@@ -6,12 +6,12 @@
       "name": "hook",
       "clip": {
         "track": "ual2/Melee_Hook",
-        "start": 0.0,
+        "start": 0.013,
         "end": 0.467
       },
-      "windup": 0.393,
-      "active": 0.65,
-      "cancel": 0.8,
+      "windup": 0.412,
+      "active": 0.676,
+      "cancel": 0.826,
       "damage": 11,
       "poise": 16,
       "knockback": 1.6,
@@ -30,11 +30,11 @@
       "clip": {
         "track": "ual1/Punch_Jab",
         "start": 0.0,
-        "end": 0.533
+        "end": 0.5
       },
-      "windup": 0.219,
-      "active": 0.444,
-      "cancel": 0.594,
+      "windup": 0.2,
+      "active": 0.44,
+      "cancel": 0.59,
       "damage": 6,
       "poise": 8,
       "knockback": 0.8,
@@ -49,12 +49,12 @@
       "name": "cross",
       "clip": {
         "track": "ual1/Punch_Cross",
-        "start": 0.013,
+        "start": 0.03,
         "end": 0.567
       },
-      "windup": 0.247,
-      "active": 0.464,
-      "cancel": 0.614,
+      "windup": 0.193,
+      "active": 0.416,
+      "cancel": 0.566,
       "damage": 9,
       "poise": 12,
       "knockback": 1.2,

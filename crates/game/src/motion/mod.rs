@@ -41,8 +41,9 @@ pub mod tweak;
 use bevy::prelude::*;
 use std::collections::HashMap;
 
-/// Dense sampling rate for retargeted clips.
-pub const SAMPLE_HZ: f32 = 30.0;
+/// Dense sampling rate for retargeted clips: 60 Hz, twice the authored 30 fps, so fast strikes and
+/// snaps get a key between each pair of source keys (slerped) and read smoother at high frame rates.
+pub const SAMPLE_HZ: f32 = 60.0;
 /// The character model and canonical skeleton.
 pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
