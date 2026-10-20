@@ -288,16 +288,16 @@
   {
    "enemy": "dagger",
    "chain": [
-    "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
    "rigs": {
     "body": {
      "lands": [
-      "torso",
+      "head",
       "head"
      ],
-     "score": 1.5
+     "score": 2.0
     },
     "elf": {
      "lands": [

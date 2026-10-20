@@ -116,7 +116,9 @@
     "impact_weight_slow": 1.5,
     "impact_weight_fast": 0.2,
     "crossfade_hides_deg": 15.0,
-    "facing_weight": 0.5
+    "facing_weight": 0.5,
+    "target_weight": 6.0,
+    "_target_doc": "target_weight: cost removed per unit of mean landing score (head 2, torso 1, leg 0.25, over 0; targets.py) on target_rig, the body the game's enemies wear. other_rigs are planned for the report only."
   },
   "timing": {
     "fast_fraction": 0.6,
@@ -126,5 +128,13 @@
   },
   "_doc_tempo": "Windup weight applies only to the part of a strike's windup longer than the enemy's windup (seconds).",
   "_doc_crossfade": "crossfade_hides_deg: pose+motion mismatch (degrees) that the chained-attack crossfade is assumed to hide. An assumption: lower it if cuts look visible in game.",
-  "_doc_chain": "A strike whose window ends with the striking hand faster than mid_swing_mps and not drawing back (radial speed >= -retract_mps) is mid-swing: it only closes a chain, its recovery plays after. A hand drawing back to the guard is a recovery and may be cut. facing_weight: cost per degree the hips turn across a cut."
+  "_doc_chain": "A strike whose window ends with the striking hand faster than mid_swing_mps and not drawing back (radial speed >= -retract_mps) is mid-swing: it only closes a chain, its recovery plays after. A hand drawing back to the guard is a recovery and may be cut. facing_weight: cost per degree the hips turn across a cut.",
+  "target_rig": "assets/characters/hero/male/body.glb",
+  "other_rigs": [
+    "assets/packs/company_characters/glb/elf.glb",
+    "assets/packs/company_characters/glb/knight.glb",
+    "assets/packs/company_characters/glb/mage.glb",
+    "assets/packs/company_characters/glb/dragon.glb",
+    "assets/packs/mech_00/glb/Mech_Char_Mesh.glb"
+  ]
 }

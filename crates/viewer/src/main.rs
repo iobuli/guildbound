@@ -649,7 +649,7 @@ fn drive_combo(time: Res<Time>, mut q: Query<(&mut AnimationPlayer, &mut Animati
         if active.seek_time() < end {
             continue;
         }
-        debug!("[combo] step {} done at {:.2} s", pb.step, active.seek_time());
+        info!("[combo] step {} done at {:.2} s", pb.step, active.seek_time());
         if pb.step + 1 < pb.nodes.len() {
             pb.step += 1;
             let (next, start, _) = pb.nodes[pb.step];

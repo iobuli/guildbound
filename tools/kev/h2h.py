@@ -37,6 +37,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(REPO, "tools", "anim"))
 
 import combos  # noqa: E402
+import nodes  # noqa: E402
 import survey  # noqa: E402
 
 _DURATIONS = {}
@@ -203,8 +204,11 @@ def enemy_profiles(movesets_dir, base, prefix, arm_reach):
     return out
 
 
-def chain_cost(seq, ends, timing, by_track, rules, weight, impact, enemy_windup):
-    """Transition cost + same-hand penalty + tempo penalty - impact (poise) reward.
+def chain_cost(seq, ends, timing, by_track, rules, weight, impact, enemy_windup, target=None):
+    """Transition cost + same-hand penalty + tempo penalty - impact (poise) reward - target reward.
+
+    Target: `target` maps a track to where its fist lands on the enemy's body (targets.SCORE: head 2,
+    torso 1, leg 0.25, over 0); the mean over the chain, times `target_weight`, comes off the cost.
 
     Tempo: a strike only costs for the time its windup runs past the enemy's own windup, the window in
     which the enemy's swing lands first. Against a slow weapon a slow, heavy strike is free; against a
@@ -222,10 +226,12 @@ def chain_cost(seq, ends, timing, by_track, rules, weight, impact, enemy_windup)
             cost += rules["same_hand_penalty"]
     cost += weight * sum(max(0.0, timing[s]["windup_s"] - enemy_windup) for s in seq)
     cost -= impact * sum(by_track[s]["poise"] for s in seq) / len(seq)
+    if target:
+        cost -= rules.get("target_weight", 0.0) * sum(target.get(s, 0.0) for s in seq) / len(seq)
     return cost
 
 
-def best_chain(light, ends, timing, by_track, rules, enemy):
+def best_chain(light, ends, timing, by_track, rules, enemy, target=None):
     windup = enemy["windup_s"] if enemy["windup_s"] is not None else 0.6
     n = next(n for limit, n in rules["chain_length_by_windup"] if windup <= limit)
     fast = windup <= rules["fast_enemy_windup"]
@@ -235,7 +241,7 @@ def best_chain(light, ends, timing, by_track, rules, enemy):
     for seq in itertools.product(light, repeat=n):
         if any(a == b for a, b in zip(seq, seq[1:])):
             continue
-        c = chain_cost(seq, ends, timing, by_track, rules, weight, impact, windup)
+        c = chain_cost(seq, ends, timing, by_track, rules, weight, impact, windup, target)
         if c is None:
             continue
         if best is None or c < best[0]:
@@ -272,9 +278,11 @@ def build(plan, strikes=None):
     by_track = {e["track"]: e for e in pool}
     light = [e["track"] for e in pool if e["kind"] == "light"]
     enemies = enemy_profiles(movesets_dir, plan["base"], plan["out_prefix"], rules["arm_reach_m"])
+    lands = landing(plan, pool, timing, strikes)
+    target = lands.get(rig_name(plan.get("target_rig", "")), {}).get("score")
     sets, report = {}, []
     for enemy in enemies:
-        cost, seq = best_chain(light, ends, timing, by_track, rules, enemy)
+        cost, seq = best_chain(light, ends, timing, by_track, rules, enemy, target)
         first_travel = min(rules["travel_max"], rules["travel_base"] + rules["travel_per_m_reach"] * max(0.0, enemy["reach_m"] - 1.0))
         m = copy.deepcopy(base)
         m["name"] = plan["out_prefix"] + enemy["name"]
@@ -293,9 +301,43 @@ def build(plan, strikes=None):
         g["absorb"] = rules["absorb_vs_ranged"] if enemy["ranged"] else rules["absorb_vs_heavy"] if heavy_weapon else rules["absorb_default"]
         g["arc"] = rules["arc_vs_ranged"] if enemy["ranged"] else rules["arc_default"]
         sets[m["name"]] = m
+        # The same enemy weapon on every other body: what the planner would pick there (report only).
+        on = {}
+        for r, l in lands.items():
+            c2, s2 = best_chain(light, ends, timing, by_track, rules, enemy, l["score"])
+            on[r] = {"chain": [by_track[t]["name"] for t in s2], "lands": [l["region"].get(t, "?") for t in s2], "cost": c2}
         report.append({"enemy": enemy, "chain": [by_track[t]["name"] for t in seq], "cost": cost,
-                       "heavy": m["heavy"][0]["name"] if m["heavy"] else None, "guard": g})
+                       "lands": [lands.get(rig_name(plan.get("target_rig", "")), {}).get("region", {}).get(t, "?") for t in seq],
+                       "heavy": m["heavy"][0]["name"] if m["heavy"] else None, "guard": g, "on_rigs": on})
     return sets, report, timing
+
+
+def rig_name(path):
+    return os.path.splitext(os.path.basename(path))[0]
+
+
+def landing(plan, pool, timing, strikes):
+    """rig -> {"region": track -> region, "score": track -> score} for the target rig and the other rigs
+    present (targets.py: fist height at the strike's peak against each body's region spans)."""
+    import targets
+
+    rigs = [plan.get("target_rig")] + plan.get("other_rigs", [])
+    rigs = [r for r in rigs if r and os.path.exists(os.path.join(REPO, r))]
+    if not rigs:
+        return {}
+    rules = nodes.load_rules()
+    hero = nodes.parse(os.path.join(REPO, targets.HERO), rules)
+    hero_m = hero["height"] * targets.units(hero)
+    heights = targets.strike_heights(pool, timing, load_strike_table(strikes))
+    track_of = {e["name"]: e["track"] for e in pool}
+    out = {}
+    for r in rigs:
+        rep = nodes.parse(os.path.join(REPO, r), rules)
+        if rep.get("error"):
+            continue
+        region = {track_of[n]: targets.land(h * hero_m, rep) for n, (_, h) in heights.items()}
+        out[rig_name(r)] = {"region": region, "score": {t: targets.SCORE[x] for t, x in region.items()}}
+    return out
 
 
 def write(sets, report, timing, plan):
@@ -319,6 +361,15 @@ def write(sets, report, timing, plan):
     for r in report:
         e, g = r["enemy"], r["guard"]
         lines.append(f"| {e['name']} | {e['reach_m']} | {e['windup_s']} | {e['ranged']} | {' > '.join(r['chain'])} | {r['cost']} | {r['heavy']} | {g['parry_window']} | {g['absorb']} | {g['arc']} |")
+    rigs = list(report[0].get("on_rigs", {})) if report else []
+    if rigs:
+        lines += ["", "## Where the chain lands, and the chain picked for each body", "",
+                  "The game's enemies wear the target rig; the chain above is planned on it. The other bodies show what the",
+                  "planner would pick against the same weapon on a body of that size (targets.py).", "",
+                  "| enemy | " + " | ".join(rigs) + " |", "|---|" + "---|" * len(rigs)]
+        for r in report:
+            cells = [f"{' > '.join(r['on_rigs'][g]['chain'])} ({', '.join(r['on_rigs'][g]['lands'])})" for g in rigs]
+            lines.append(f"| {r['enemy']['name']} | " + " | ".join(cells) + " |")
     with open(os.path.join(out, "report.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
 

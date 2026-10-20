@@ -19,10 +19,25 @@
 
 | enemy | reach m | windup s | ranged | chain | cost | heavy | parry s | absorb | arc |
 |---|---|---|---|---|---|---|---|---|---|
-| axe | 1.57 | 0.149 | False | jab > cross | -0.8 | kick | 0.11 | 0.6 | 120 |
-| bow | 0.7 | None | True | hook > jab > hook > jab | -8.65 | charge | 0.2 | 0.75 | 160 |
-| crossbow | 0.7 | None | True | hook > jab > hook > jab | -8.65 | charge | 0.2 | 0.75 | 160 |
-| dagger | 1.0 | 0.247 | False | hook > jab | -1.35 | kick | 0.129 | 0.6 | 120 |
-| greatsword | 1.85 | 0.529 | False | hook > jab > hook > jab | -8.65 | shoulder bash | 0.186 | 0.4 | 120 |
-| katana | 1.45 | 0.313 | False | hook > jab > cross | -0.15 | kick | 0.143 | 0.6 | 120 |
-| knives | 0.86 | None | True | hook > jab > hook > jab | -8.65 | charge | 0.2 | 0.75 | 160 |
+| axe | 1.57 | 0.149 | False | jab > cross | -12.8 | kick | 0.11 | 0.6 | 120 |
+| bow | 0.7 | None | True | hook > jab > hook > jab | -17.65 | charge | 0.2 | 0.75 | 160 |
+| crossbow | 0.7 | None | True | hook > jab > hook > jab | -17.65 | charge | 0.2 | 0.75 | 160 |
+| dagger | 1.0 | 0.247 | False | jab > cross | -12.8 | kick | 0.129 | 0.6 | 120 |
+| greatsword | 1.85 | 0.529 | False | hook > jab > hook > jab | -17.65 | shoulder bash | 0.186 | 0.4 | 120 |
+| katana | 1.45 | 0.313 | False | hook > jab > cross | -10.15 | kick | 0.143 | 0.6 | 120 |
+| knives | 0.86 | None | True | hook > jab > hook > jab | -17.65 | charge | 0.2 | 0.75 | 160 |
+
+## Where the chain lands, and the chain picked for each body
+
+The game's enemies wear the target rig; the chain above is planned on it. The other bodies show what the
+planner would pick against the same weapon on a body of that size (targets.py).
+
+| enemy | body | elf | knight | mage | dragon | Mech_Char_Mesh |
+|---|---|---|---|---|---|---|
+| axe | jab > cross (head, head) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (leg, leg) |
+| bow | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) |
+| crossbow | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) |
+| dagger | jab > cross (head, head) | hook > jab (torso, torso) | hook > jab (torso, torso) | hook > jab (torso, torso) | hook > jab (torso, torso) | hook > jab (leg, leg) |
+| greatsword | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) |
+| katana | hook > jab > cross (torso, head, head) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (leg, leg, leg) |
+| knives | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) |

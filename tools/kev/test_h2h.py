@@ -80,6 +80,16 @@ class PlannerTests(unittest.TestCase):
         self.assertAlmostEqual(vs_slow, 0.0)
         self.assertAlmostEqual(vs_fast, 60.0 * 0.3 * 2)
 
+    def test_strikes_that_land_higher_on_the_body_win(self):
+        timing = {"jab": self.timing("l", 0.1), "cross": self.timing("r", 0.1), "hook": self.timing("r", 0.1)}
+        rules = dict(self.RULES, target_weight=6.0, impact_weight_fast=0.0, impact_weight_slow=0.0)
+        head_cross = {"jab": 2.0, "cross": 2.0, "hook": 1.0}
+        head_hook = {"jab": 2.0, "cross": 1.0, "hook": 2.0}
+        _, a = h2h.best_chain(["jab", "cross", "hook"], self.ends, timing, self.by_track, rules, {"windup_s": 0.2}, head_cross)
+        _, b = h2h.best_chain(["jab", "cross", "hook"], self.ends, timing, self.by_track, rules, {"windup_s": 0.2}, head_hook)
+        self.assertEqual(sorted(a), ["cross", "jab"])
+        self.assertIn("hook", b)
+
 
 if __name__ == "__main__":
     unittest.main()

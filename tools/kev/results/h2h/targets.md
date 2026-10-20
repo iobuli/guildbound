@@ -19,7 +19,7 @@ Attacker: hero body, 1.56 m. Fist height at the strike's peak, against each rig 
 | axe | jab > cross | 2.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | bow | hook > jab > hook > jab | 1.5 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | crossbow | hook > jab > hook > jab | 1.5 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
-| dagger | hook > jab | 1.5 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
+| dagger | jab > cross | 2.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | greatsword | hook > jab > hook > jab | 1.5 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | katana | hook > jab > cross | 1.67 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | knives | hook > jab > hook > jab | 1.5 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
