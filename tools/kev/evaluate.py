@@ -9,9 +9,10 @@ One run does four things, in order, and writes everything under the plan's `out`
            pelvis so a treadmill clip's travel is not counted), duration, keyframes.
   combos   every clip-to-clip transition scored by combos.py; the best next clips and the cheapest
            chains of `combo_length` clips.
-  bodies   every hero model (body and outfit pieces): bone match, height, verdict (survey.py).
-  sheets   contact sheets: each top chain played on the hero body, two frames per clip, and each body
-           piece on the idle pose. Look at them before trusting the ranking in report.md.
+  bodies   the base body of each sex (body.glb only, listed in plan.json `body_files`): bone match,
+           height, verdict (survey.py). Clothing, hair and brows are not evaluated here.
+  sheets   contact sheets: each top chain played on the hero body, two frames per clip, and each base
+           body on the top chain's poses. Look at them before trusting the ranking in report.md.
 
 Nothing under assets/ is written. Stdlib, numpy, pygltflib, scipy and Pillow (through the model tools).
 """
@@ -89,6 +90,11 @@ def clip_entry(path, ref_names, thr):
     return entry
 
 
+def body_files(plan):
+    """The base bodies only: the files named in plan["body_files"], never the clothing beside them."""
+    return [os.path.join(repo(plan["bodies"]), rel) for rel in plan["body_files"]]
+
+
 def body_entry(path, ref_names, thr):
     rel = os.path.relpath(path, REPO)
     facts = survey.analyse((path, rel))
@@ -124,30 +130,22 @@ def chain_sheet(chain, donors, plan, out_png):
 
 
 def body_sheets(plan, donors, out_dir):
-    """Each hero body piece worn on the body, idle pose, one front view per piece: one grid per gender."""
+    """Each base body (body.glb per sex, no clothing) across the first top chain's clips: one grid per sex."""
     import preview
     import render
 
-    idle_stem = plan["sheets"]["pose_clip"]
-    if idle_stem not in donors:
-        import gbmesh as gm
-        doc = gm.Doc(os.path.join(repo(plan["clips"]), idle_stem + ".glb"))
-        donors[idle_stem] = (doc, gm.clips(doc), {n.name: i for i, n in enumerate(doc.g.nodes)})
-    idle_key = next(iter(donors[idle_stem][1]))
-    for sex in ("male", "female"):
-        folder = os.path.join(repo(plan["bodies"]), sex)
-        if not os.path.isdir(folder):
-            continue
-        body_path = os.path.join(folder, "body.glb")
-        pieces = sorted(f for f in os.listdir(folder) if f.endswith(".glb") and f != "body.glb")
+    body_files = plan["body_files"]
+    poses = [(stem, next(iter(donors[stem][1]))) for stem in plan["_top_chain"]]
+    for rel in body_files:
+        sex = os.path.dirname(rel)
+        path = os.path.join(repo(plan["bodies"]), rel)
+        body = preview.Part(path)
         ims = []
-        for piece in pieces:
-            parts = [preview.Part(body_path), preview.Part(os.path.join(folder, piece))]
-            hid = preview.hidden_nodes(parts[0], [os.path.splitext(piece)[0]])
-            mats = preview.pose_mats(parts[0].skin, f"{idle_stem}/{idle_key}", 0.0, donors)
-            ims.append(render.render(preview.surfaces(parts, mats, hidden=hid), (0, 1.0, 4.4), (0, 0.92, 0), size=(180, 320)))
-        if ims:
-            render.sheet(ims, cols=8).save(os.path.join(out_dir, f"bodies_{sex}.png"))
+        for stem, key in poses:
+            dur = donors[stem][1][key][0]
+            mats = preview.pose_mats(body.skin, f"{stem}/{key}", dur * 0.5, donors)
+            ims.append(render.render(preview.surfaces([body], mats), (0, 1.0, 4.4), (0, 0.92, 0), size=(180, 320)))
+        render.sheet(ims, cols=len(ims)).save(os.path.join(out_dir, f"bodies_{sex}.png"))
 
 
 def run(plan_path):
@@ -177,7 +175,7 @@ def run(plan_path):
     print(f"combos: {len(score)} transitions, best chain {top_chains[0]['total_degrees']} deg")
 
     # bodies
-    body_paths = sorted(glob.glob(os.path.join(repo(plan["bodies"]), "**", "*.glb"), recursive=True))
+    body_paths = body_files(plan)
     body_rows = [body_entry(p, ref_names, thr) for p in body_paths]
     print(f"bodies: {len(body_rows)} scored")
 
@@ -191,6 +189,7 @@ def run(plan_path):
                 donors[stem] = (doc, gm.clips(doc), {n.name: i for i, n in enumerate(doc.g.nodes)})
     for i, chain in enumerate(top_chains):
         chain_sheet(chain["clips"], donors, plan, os.path.join(sheets_dir, f"chain{i + 1}.png"))
+    plan["_top_chain"] = top_chains[0]["clips"]
     body_sheets(plan, donors, sheets_dir)
     print(f"sheets: {len(top_chains)} chains and the body pieces in {sheets_dir}")
 
