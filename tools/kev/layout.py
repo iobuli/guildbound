@@ -187,7 +187,8 @@ def foundry(L):
             L.put(wall, x, z, yaw=90.0 if along_x == long_z else 0.0, region="foundry")
     for i, ledge in enumerate(["Ledge_0.glb", "Ledge_0_2.glb", "Ledge_0_4.glb", "Ledge_OuterEdge.glb"]):
         L.put("packs/mech_00/glb/" + ledge, cx - edge * 0.55 + i * 5.0, cz + edge * 0.55, yaw=180.0, region="foundry")
-    L.put("packs/mech_00/glb/Mech_statue.glb", cx, cz - edge * 0.45, yaw=0.0, region="foundry")
+    # The mech itself is a parts kit (its pieces lie side by side, assembled by the pack's Unity body
+    # swapper), so it is not placed; its weapons and attachments lie about as scrap.
     scrap = ["Core_Sword", "Core_Hammer", "Attach_Gun_00", "Attach_Gun_01", "Attach_Gun_02", "Attach_Back_Missiles_00",
              "Attach_Back_Missiles_01", "Attach_Back_JetPack_00", "Attach_Module_00", "Attach_Module_01", "Attach_Module_02",
              "Attach_Armour_00", "Attach_Armour_01", "Attach_Armour_02", "Attach_Back_1Gun", "Attach_Back_2Gun", "Attach_Back_WeaponAttacher"]

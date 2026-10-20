@@ -1310,26 +1310,6 @@
   },
   {
    "region": "foundry",
-   "path": "packs/mech_00/glb/Mech_statue.glb",
-   "at": [
-    80.896,
-    -66.721
-   ],
-   "yaw": 0.0,
-   "scale": 0.01792,
-   "lift": -3.877,
-   "half": [
-    5.927,
-    1.85,
-    1.563
-   ],
-   "offset": [
-    -0.896,
-    0.421
-   ]
-  },
-  {
-   "region": "foundry",
    "path": "packs/mech_00/glb/Core_Sword.glb",
    "at": [
     84.894,

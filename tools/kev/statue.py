@@ -2,8 +2,9 @@
 
     python3 tools/kev/statue.py <in.glb> <out.glb> [--drop PREFIX ...]
 
-At the bind pose every skinned vertex lands at joint world x inverse bind x v, the same matrix for every joint
-of a skin, so each skinned mesh's POSITION is multiplied by that matrix (NORMAL and TANGENT by its rotation part)
+Each skinned vertex is moved by linear blend skinning at the skeleton's rest pose (the sum over its JOINTS_0 /
+WEIGHTS_0 of weight x joint world x inverse bind), so the statue stands in the rest pose even where that differs
+from the bind pose; NORMAL and TANGENT turn with the same blended matrices
 and the JOINTS_* / WEIGHTS_* attributes (and COLOR_* unless --keep-colors: these exports carry dark
 authoring channels there that engines multiply into the base colour), the skins and the skeleton nodes' influence are dropped. Every mesh node
 is moved to the scene root with its baked world transform. `--drop` removes mesh nodes whose name starts with a
@@ -79,6 +80,19 @@ def accessor_view(js, blob, i):
     return arr, acc
 
 
+def int_accessor(js, blob, i):
+    """An integer accessor (JOINTS_*: unsigned byte or short) as an int array (count, comps)."""
+    acc = js["accessors"][i]
+    view = js["bufferViews"][acc["bufferView"]]
+    comps = COMPONENTS[acc["type"]]
+    dtype = {5121: "<u1", 5123: "<u2", 5125: "<u4"}[acc["componentType"]]
+    size = np.dtype(dtype).itemsize
+    off = view.get("byteOffset", 0) + acc.get("byteOffset", 0)
+    stride = view.get("byteStride", 0) or comps * size
+    raw = np.frombuffer(blob, np.uint8, acc["count"] * stride, off).reshape(acc["count"], stride)
+    return raw[:, : comps * size].copy().view(dtype).reshape(acc["count"], comps).astype(np.int64)
+
+
 def bake(js, blob, drop=(), keep_colors=False):
     scene = js["scenes"][js.get("scene", 0)]
     world = {}
@@ -96,10 +110,15 @@ def bake(js, blob, drop=(), keep_colors=False):
             continue
         if any(node.get("name", "").startswith(p) for p in drop):
             continue
+        joints = None
         if "skin" in node:
+            # Linear blend skinning at the skeleton's rest pose: each vertex moves by its own weighted
+            # joint matrices (joint world x inverse bind), so a skeleton whose rest pose differs from the
+            # bind pose (the mech) still lands every part in place.
             skin = js["skins"][node["skin"]]
             ibm, _ = accessor_view(js, blob, skin["inverseBindMatrices"])
-            m = world.get(skin["joints"][0], np.eye(4)) @ ibm[0].reshape(4, 4).T.astype(float)
+            joints = np.array([world.get(j, np.eye(4)) @ ibm[k].reshape(4, 4).T.astype(float) for k, j in enumerate(skin["joints"])])
+            m = joints[0]
         else:
             m = world[i]
         rot = m[:3, :3]
@@ -110,7 +129,16 @@ def bake(js, blob, drop=(), keep_colors=False):
             for prim in mesh["primitives"]:
                 attrs = prim["attributes"]
                 pos, acc = accessor_view(js, blob, attrs["POSITION"])
-                out = pos @ rot.T + m[:3, 3]
+                if joints is not None and "JOINTS_0" in attrs and "WEIGHTS_0" in attrs:
+                    idx = int_accessor(js, blob, attrs["JOINTS_0"])
+                    w, _ = accessor_view(js, blob, attrs["WEIGHTS_0"])
+                    w = w / np.maximum(w.sum(axis=1, keepdims=True), 1e-9)
+                    per = np.einsum("vk,vkij->vij", w.astype(float), joints[idx])  # (V, 4, 4)
+                    out = np.einsum("vij,vj->vi", per[:, :3, :3], pos.astype(float)) + per[:, :3, 3]
+                    rots = per[:, :3, :3]
+                else:
+                    out = pos @ rot.T + m[:3, 3]
+                    rots = None
                 pos[:] = out.astype(np.float32)
                 acc["min"] = out.min(axis=0).tolist()
                 acc["max"] = out.max(axis=0).tolist()
@@ -118,7 +146,7 @@ def bake(js, blob, drop=(), keep_colors=False):
                     if key in attrs:
                         v, _ = accessor_view(js, blob, attrs[key])
                         if v is not None:
-                            d = v[:, :3] @ nrm.T
+                            d = np.einsum("vij,vj->vi", rots, v[:, :3].astype(float)) if rots is not None else v[:, :3] @ nrm.T
                             d /= np.maximum(np.linalg.norm(d, axis=1, keepdims=True), 1e-9)
                             v[:, :3] = d.astype(np.float32)
                 # Vertex colours from these exports are authoring channels (COLOR_0 averages 0.11 on the
