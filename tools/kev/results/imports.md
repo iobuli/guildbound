@@ -20,8 +20,23 @@ PropsLite came with no licence file, so treat them as local-only until a licence
   - elf / knight / mage: about 1.8 m tall, arms 0.33-0.36 of height, legs 0.53-0.59, A-pose (arm about 142 deg from up)
   - mech: 3.72 m (cm units), arms 0.63 of height (a gorilla build), legs 0.61
 - `motion.py` now finds bones by role, not by UE name, so it runs on the mech's own clips
-  (`results/motion/mech_00.json`). All six Attack clips land in strike clusters. Stability is 0.64 at 25 % and
-  0.83 at 50 %. Two weaknesses carry over from the UAL run:
-  - deaths and landings also fall in a strike cluster (strike-3)
-  - the walk clips read as "gesture", because the mech's root motion is on `c_traj`, not the hips
-- The 84 UAL / ActionForge clips give identical features to before (largest difference 0.0).
+  (`results/motion/mech_00.json`, next to `results/motion/actionforge.json`).
+- Categories are now rules on each clip's own features, not k-means centroid names, so a label does not move
+  when the set of clips changes. Two features were added:
+  - `extend`: how far the arm opens over the clip
+  - `level`: how far the hips rise or fall
+- The rules, with the measured values behind them:
+  - a **swing** is fast hands, at least 14 arm lengths / s, without a level change or running feet
+  - a **thrust** is the arm opening at least 0.5 of its length (jab 0.53, cross 0.57)
+  - a **fall-or-rise** is the hips moving more than 0.3 leg lengths vertically
+- Strikes found:
+  - ActionForge: the 14 real hits (jab, cross, hook, overhand throw, shield bash, zombie scratch, sword attacks,
+    tree chopping). No deaths, landings or sits.
+  - Mech: exactly its six Attack clips. Die is fall-or-rise, Run is jump-or-kick, Shoot is gesture.
+- Still imperfect:
+  - in-place walk loops read as gesture, since in-place clips have no travel; their `_Root` versions are
+    locomotion
+  - Mech_GetHit reads as locomotion, because it is pushed back 2.3 leg lengths / s
+  - the k-means clusters alongside are less stable now (0.25 at 25 % on ActionForge) because k drops to 3.
+    They are kept only for comparison; the categories themselves are deterministic.
+- The 84 UAL / ActionForge clips' original five features are unchanged.

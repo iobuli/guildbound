@@ -14,11 +14,17 @@ the left thigh. Five features, all scale-free:
   travel       pelvis ground speed over the clip, in leg lengths per second (a treadmill clip's root
                motion counts; an in-place loop reads near 0)
   foot_lift    highest foot above the clip's lowest foot point, in leg lengths (jumps, kicks)
+  extend       range of the shoulder-to-hand distance over the clip, in arm lengths: a punch or swing opens
+               the arm from guard to straight, a stance, a walk or a fall barely does
+  level        pelvis height change from first to last frame, in leg lengths (signed: a fall or a sit is
+               negative, a get-up positive); falls, sits and get-ups move the hips a long way vertically, strikes do not
   returns      1 when the last pose matches the first (mean joint angle under 3 deg), else 0: a loop,
                or a one-shot that comes back to its stance
 
-The clips are clustered with Kev's k-means on the standardised features, and each cluster is named
-from its centroid (idle / locomotion / strike / kick / jump / gesture). Stability is checked the same way
+Each clip's `category` comes from rules on its own features (`name_cluster`: strike, fall-or-rise,
+jump-or-kick, locomotion, transition, idle, gesture), so a label does not move when other clips are added.
+The clips are also clustered with Kev's k-means on the standardised features (`cluster`, named from its
+centroid by the same rules) to show which groups the data itself forms. Stability is checked the same way
 survey.py does, so the result can be compared with the file-level clustering.
 """
 import argparse
@@ -37,7 +43,22 @@ import kev  # noqa: E402
 import nodes  # noqa: E402
 import survey  # noqa: E402
 
-FEATURES = ["hand_speed", "reach", "travel", "foot_lift", "returns"]
+FEATURES = ["hand_speed", "reach", "extend", "travel", "foot_lift", "level", "returns"]
+# Strike rules, read off the 84 ActionForge clips (tools/kev/results/motion/report.md):
+# - a swing moves the hands fast with the arm already long: hook 44, sword swings 23-47, overhand 36,
+#   shield bash 14 arm lengths / s; deaths, sits and recoveries stay at 2-11 (a knockback reaches 18 but
+#   drops the hips, which LEVEL catches)
+# - a thrust opens the arm a long way at modest speed: jab 0.53 and cross 0.57 arm lengths of extension
+#   at 6-9 / s; idles and gestures open it 0.15-0.37, the mech's gun recoil 0.45
+# - a run pumps the arms as fast as a swing (mech run 17.5) but lifts the feet 0.9 leg lengths; the
+#   sword combos that hop stay under 0.6
+SWING_SPEED = 14.0
+SWING_FOOT_LIFT = 0.8
+THRUST_EXTEND = 0.5
+# Pelvis rise or fall (leg lengths) that marks a level change: a fall, a sit or a get-up. A lunge dips
+# the hips up to about 0.4 and still counts as a strike.
+LEVEL = 0.3
+STRIKE_LEVEL = 0.4
 LOOP_DEG = 3.0
 
 
@@ -83,6 +104,7 @@ def features(path, name=None, gltf=None):
     leg = (np.linalg.norm(P(w0, "thigh_l") - P(w0, "calf_l")) + np.linalg.norm(P(w0, "calf_l") - P(w0, "foot_l"))) or 1.0
     hands = {s: [] for s in "lr"}
     shoulder_reach, pelvis, feet = [], [], []
+    reach_by_side = {s: [] for s in "lr"}
     for f in range(c.frames):
         w = c.world(f)
         pv = P(w, "pelvis")
@@ -91,6 +113,7 @@ def features(path, name=None, gltf=None):
             h = P(w, f"hand_{s}")
             hands[s].append(h - pv)
             shoulder_reach.append(np.linalg.norm(h - P(w, f"upperarm_{s}")))
+            reach_by_side[s].append(shoulder_reach[-1])
         feet.append(min(P(w, "foot_l")[1], P(w, "foot_r")[1]))
     speed = max(float(np.percentile(np.linalg.norm(np.diff(np.array(hands[s]), axis=0), axis=1), 95)) * fps if c.frames > 1 else 0.0 for s in "lr")
     pelvis = np.array(pelvis)
@@ -106,8 +129,10 @@ def features(path, name=None, gltf=None):
         "duration_s": round(duration, 3),
         "hand_speed": round(speed / arm, 3),
         "reach": round(float(max(shoulder_reach)) / arm, 3),
+        "extend": round(max(max(v) - min(v) for v in reach_by_side.values()) / arm, 3),
         "travel": round(path_len / duration / leg, 3),
         "foot_lift": round(float(high - feet.min()) / leg, 3),
+        "level": round(float(pelvis[-1][1] - pelvis[0][1]) / leg, 3),
         "returns": 1.0 if loop else 0.0,
     }
 
@@ -124,14 +149,21 @@ def mean_rotation_angle(a, b):
 
 
 def name_cluster(c):
-    """A readable name from a cluster centroid (raw feature units). Order matters: a lunging strike
-    travels too, so striking speed and reach are tested before travel."""
+    """A readable label from features (one clip's, or a cluster centroid's, in raw units). Strikes are
+    tested first: a lunge travels and dips, but its hands give it away."""
+    level = abs(c.get("level", 0.0))
+    swing = c["hand_speed"] >= SWING_SPEED and level <= STRIKE_LEVEL and c["foot_lift"] < SWING_FOOT_LIFT
+    thrust = c.get("extend", 0.0) >= THRUST_EXTEND and level < LEVEL and c["foot_lift"] < 0.3
+    if swing or thrust:
+        return "strike"
+    if level > LEVEL:
+        return "fall-or-rise"
     if c["foot_lift"] > 0.5:
         return "jump-or-kick"
-    if c["hand_speed"] > 4.0 and c["reach"] > 0.9:
-        return "strike"
     if c["travel"] > 1.0:
         return "locomotion"
+    if c["returns"] < 0.5:
+        return "transition"
     if c["hand_speed"] < 1.0:
         return "idle"
     return "gesture"
@@ -149,7 +181,8 @@ def cluster(rows, kmax, seed=1):
         n = sum(1 for v in names.values() if v.split("-")[0] == base.split("-")[0])
         names[lab] = base if n == 0 else f"{base}-{n + 1}"
     for r, lab in zip(rows, labels):
-        r["category"] = names[lab]
+        r["cluster"] = names[lab]
+        r["category"] = name_cluster(r)
     stab = survey.stability(z, seed) if len(rows) >= 6 else None
     return k, names, stab
 
