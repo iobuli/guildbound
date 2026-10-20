@@ -48,6 +48,8 @@ fn clip_smoke(time: Res<Time>, bank: Option<Res<PoseBank>>, mut players: Query<&
         layers.layers = vec![Layer { source: Source::Track { name: name.clone(), time: t, looping: true }, weight: 1.0, mask: Mask::Full, style: None }];
         // The clip owns the feet: ground foot IK would drag a kicking foot down.
         layers.contact.foot_ik = 0.0;
+        // The clip owns the feet: ground foot IK would drag a kicking foot down.
+        layers.contact.foot_ik = 0.0;
     }
 }
 
