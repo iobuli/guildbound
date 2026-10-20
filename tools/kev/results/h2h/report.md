@@ -32,12 +32,12 @@
 The game's enemies wear the target rig; the chain above is planned on it. The other bodies show what the
 planner would pick against the same weapon on a body of that size (targets.py).
 
-| enemy | body | elf | knight | mage | dragon | Mech_Char_Mesh |
-|---|---|---|---|---|---|---|
-| axe | jab > cross (head, head) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (torso, torso) | jab > cross (leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| bow | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (leg, torso, leg, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| crossbow | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (leg, torso, leg, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| dagger | jab > cross (head, head) | jab > cross (torso, torso) | hook > jab (torso, torso) | hook > jab (torso, torso) | hook > jab (torso, torso) | hook > jab (leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| greatsword | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (leg, torso, leg, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| katana | hook > jab > cross (torso, head, head) | hook > jab > cross (leg, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (torso, torso, torso) | hook > jab > cross (leg, leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
-| knives | hook > jab > hook > jab (torso, head, torso, head) | hook > jab > hook > jab (leg, torso, leg, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (torso, torso, torso, torso) | hook > jab > hook > jab (leg, leg, leg, leg) - legs only: no allowed punch reaches higher, heavy kick |
+| enemy | body |
+|---|---|
+| axe | jab > cross (head, head) |
+| bow | hook > jab > hook > jab (torso, head, torso, head) |
+| crossbow | jab > hook > jab > cross (head, torso, head, head) |
+| dagger | hook > jab (torso, head) |
+| greatsword | hook > jab > cross > jab (torso, head, head, head) |
+| katana | hook > jab > cross (torso, head, head) |
+| knives | jab > cross > jab > cross (head, head, head, head) |
