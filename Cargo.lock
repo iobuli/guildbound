@@ -2909,6 +2909,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "guildbound_sim",
+ "serde_json",
 ]
 
 [[package]]

@@ -4,6 +4,10 @@
 //!   function the game's terrain uses, in a patch that follows the camera.
 //! - The asset list: every GLB under `assets/`. Clicking one places a copy of it in front of the camera.
 //!   Loading goes through the asset server; nothing is written back.
+//! - The combo list: each `unarmed_vs_<weapon>` moveset Kev generated (`tools/kev/h2h.py`). Clicking one
+//!   puts the UAL mannequin on the origin and plays that chain's light attacks in order, each over its
+//!   moveset clip window, crossfading between them (`AnimationTransitions`), then loops after a pause.
+//!   `GB_VIEWER_COMBO=<n>` starts combo n at launch (headless checks).
 //! - The Kev buttons run the Python tools (`tools/kev/*`) and show their output. Their outputs go to
 //!   `staging/viewer/` (gitignored), never to `assets/`.
 //!
@@ -18,6 +22,7 @@ use bevy::prelude::*;
 use bevy::world_serialization::WorldAssetRoot;
 use guildbound_sim::terrain;
 use std::path::Path;
+use std::time::Duration;
 use std::process::Command;
 use std::sync::Mutex;
 use std::sync::mpsc::{self, Receiver};
@@ -37,6 +42,12 @@ const PAGE: usize = 12;
 const PLACE_NEAR: f32 = 8.0;
 const PLACE_FAR: f32 = 20.0;
 const LOG_LINES: usize = 28;
+/// Combo playback: the crossfade between strikes and the pause before the chain starts again (s).
+const COMBO_FADE: Duration = Duration::from_millis(120);
+const COMBO_PAUSE: f32 = 0.8;
+/// The mannequin the combos play on, and the libraries their clips come from (UAL1 and UAL2 share a rig).
+const COMBO_MODEL: &str = "anim/ual1.glb";
+const COMBO_LIBS: [(&str, &str); 2] = [("ual1", "anim/ual1.glb"), ("ual2", "anim/ual2.glb")];
 /// Kev queries offered as buttons: each is a question for the context index.
 const QUERIES: [(&str, &str); 3] = [
     ("Context: rain shelter", "villagers go inside when a heavy rain starts"),
@@ -49,13 +60,15 @@ fn main() {
         .insert_resource(ClearColor(Color::srgb(0.55, 0.68, 0.82)))
         .insert_resource(Catalog::scan())
         .insert_resource(Page(0))
+        .insert_resource(Combos::scan())
         .insert_resource(Output { text: "Pick a tool on the left.".into(), rx: Mutex::new(None) })
         .add_plugins(DefaultPlugins.set(AssetPlugin { file_path: ASSETS.into(), ..default() }).set(WindowPlugin {
             primary_window: Some(Window { title: "Guildbound viewer".into(), resolution: (1400, 860).into(), ..default() }),
             ..default()
         }))
-        .add_systems(Startup, setup)
+        .add_systems(Startup, (setup, load_combo_libs))
         .add_systems(Update, (fly, terrain_patch, grid, kev_buttons, model_buttons, page_buttons, refresh_list, poll_output, clear_button))
+        .add_systems(Update, (combo_buttons, attach_combo, drive_combo, combo_from_env))
         .run();
 }
 
@@ -138,7 +151,7 @@ enum Kev {
 #[derive(Component)]
 struct PatchCentre(Vec2);
 
-fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>, combos: Res<Combos>) {
     commands.spawn((
         Camera3d::default(),
         // Start at a person's eye height, a few metres back, looking at a figure standing on the origin.
@@ -155,10 +168,10 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
         MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::WHITE, perceptual_roughness: 0.9, ..default() })),
         Transform::default(),
     ));
-    spawn_panel(&mut commands);
+    spawn_panel(&mut commands, &combos);
 }
 
-fn spawn_panel(commands: &mut Commands) {
+fn spawn_panel(commands: &mut Commands, combos: &Combos) {
     commands
         .spawn((
             Node {
@@ -190,6 +203,17 @@ fn spawn_panel(commands: &mut Commands) {
             .with_children(|p| {
                 p.spawn((OutputText, Text::new(""), TextFont::from_font_size(12.0), TextColor(Color::srgb(0.85, 0.9, 0.85))));
             });
+            panel.spawn((Text::new("Combos vs enemy weapon (click to play)"), TextFont::from_font_size(15.0), TextColor(Color::WHITE)));
+            for (i, combo) in combos.list.iter().enumerate() {
+                panel
+                    .spawn((
+                        Button,
+                        ComboButton(i),
+                        Node { width: Val::Percent(100.0), height: px(20), padding: UiRect::horizontal(px(6)), align_items: AlignItems::Center, ..default() },
+                        BackgroundColor(Color::srgba(0.26, 0.2, 0.16, 0.92)),
+                    ))
+                    .with_child((Text::new(combo.label.clone()), TextFont::from_font_size(11.0), TextColor(Color::WHITE)));
+            }
             panel.spawn((Text::new("Assets (click to place in front of you)"), TextFont::from_font_size(15.0), TextColor(Color::WHITE)));
             for slot in 0..PAGE {
                 panel
@@ -453,6 +477,216 @@ fn clear_button(interactions: Query<&Interaction, (Changed<Interaction>, With<Cl
     if interactions.iter().any(|i| *i == Interaction::Pressed) {
         for e in &placed {
             commands.entity(e).despawn();
+        }
+    }
+}
+
+/// One strike of a combo: a track (`lib/clip`) and its moveset clip window (s).
+#[derive(Clone, Debug, PartialEq)]
+struct Step {
+    track: String,
+    start: f32,
+    end: f32,
+}
+
+#[derive(Clone, Debug)]
+struct Combo {
+    label: String,
+    steps: Vec<Step>,
+}
+
+/// The `unarmed_vs_*` movesets, read once at start-up (read only).
+#[derive(Resource, Default)]
+struct Combos {
+    list: Vec<Combo>,
+}
+
+impl Combos {
+    fn scan() -> Self {
+        let dir = Path::new(ASSETS).join("anim/movesets");
+        let mut files: Vec<_> = std::fs::read_dir(&dir).into_iter().flatten().flatten().map(|e| e.path()).collect();
+        files.sort();
+        let list = files
+            .iter()
+            .filter(|p| p.file_name().is_some_and(|n| n.to_string_lossy().starts_with("unarmed_vs_")))
+            .filter_map(|p| std::fs::read_to_string(p).ok())
+            .filter_map(|text| parse_combo(&text))
+            .collect();
+        Self { list }
+    }
+}
+
+/// A combo from a moveset's JSON: its light chain, with each attack's clip window.
+fn parse_combo(text: &str) -> Option<Combo> {
+    let v: serde_json::Value = serde_json::from_str(text).ok()?;
+    let name = v["name"].as_str()?;
+    let steps: Vec<Step> = v["light"]
+        .as_array()?
+        .iter()
+        .filter_map(|a| {
+            let c = &a["clip"];
+            Some(Step { track: c["track"].as_str()?.to_string(), start: c["start"].as_f64().unwrap_or(0.0) as f32, end: c["end"].as_f64()? as f32 })
+        })
+        .collect();
+    let names: Vec<&str> = v["light"].as_array()?.iter().filter_map(|a| a["name"].as_str()).collect();
+    let vs = name.trim_start_matches("unarmed_vs_");
+    (!steps.is_empty()).then(|| Combo { label: format!("vs {vs}: {}", names.join(" > ")), steps })
+}
+
+#[derive(Component)]
+struct ComboButton(usize);
+
+/// The UAL libraries, loaded as glTF so clips can be looked up by name.
+#[derive(Resource)]
+struct ComboLibs(Vec<(&'static str, Handle<Gltf>)>);
+
+/// The mannequin playing a combo, and which combo.
+#[derive(Component)]
+struct Puppet(usize);
+
+/// Playback state on the puppet's `AnimationPlayer` entity: one graph node per step.
+#[derive(Component)]
+struct ComboPlayback {
+    nodes: Vec<(AnimationNodeIndex, f32, f32)>,
+    step: usize,
+    /// Seconds left in the pause before the chain restarts (> 0 while pausing).
+    pause: f32,
+}
+
+fn load_combo_libs(mut commands: Commands, assets: Res<AssetServer>) {
+    commands.insert_resource(ComboLibs(COMBO_LIBS.iter().map(|&(lib, path)| (lib, assets.load(path))).collect()));
+}
+
+/// `GB_VIEWER_COMBO=<n>`: press combo button n once, on the first frame.
+fn combo_from_env(mut done: Local<bool>, mut buttons: Query<(&ComboButton, &mut Interaction)>) {
+    if *done {
+        return;
+    }
+    *done = true;
+    let Some(n) = std::env::var("GB_VIEWER_COMBO").ok().and_then(|v| v.trim().parse::<usize>().ok()) else { return };
+    for (ComboButton(i), mut interaction) in &mut buttons {
+        if *i == n {
+            *interaction = Interaction::Pressed;
+        }
+    }
+}
+
+fn combo_buttons(
+    interactions: Query<(&Interaction, &ComboButton), Changed<Interaction>>,
+    puppets: Query<Entity, With<Puppet>>,
+    combos: Res<Combos>,
+    assets: Res<AssetServer>,
+    mut commands: Commands,
+    mut output: ResMut<Output>,
+) {
+    for (interaction, ComboButton(i)) in &interactions {
+        if *interaction != Interaction::Pressed {
+            continue;
+        }
+        for e in &puppets {
+            commands.entity(e).despawn();
+        }
+        let combo = &combos.list[*i];
+        output.text = format!("playing {}\n{}", combo.label, combo.steps.iter().map(|s| format!("  {} [{:.2}-{:.2} s]", s.track, s.start, s.end)).collect::<Vec<_>>().join("\n"));
+        let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(COMBO_MODEL));
+        let ground = terrain::ground(0.0, 0.0);
+        commands.spawn((Puppet(*i), Placed, Name::new("combo puppet"), WorldAssetRoot(scene), Transform::from_xyz(0.0, ground, 0.0)));
+    }
+}
+
+/// Once the puppet's scene has spawned its `AnimationPlayer` and the libraries are loaded, give it a graph
+/// with one node per step and start the first.
+fn attach_combo(
+    mut commands: Commands,
+    players: Query<(Entity, &mut AnimationPlayer), Without<ComboPlayback>>,
+    parents: Query<&ChildOf>,
+    puppets: Query<&Puppet>,
+    combos: Res<Combos>,
+    libs: Option<Res<ComboLibs>>,
+    gltfs: Res<Assets<Gltf>>,
+    mut graphs: ResMut<Assets<AnimationGraph>>,
+    mut output: ResMut<Output>,
+) {
+    let Some(libs) = libs else { return };
+    for (entity, mut player) in players {
+        let Some(Puppet(i)) = parents.iter_ancestors(entity).find_map(|a| puppets.get(a).ok()) else { continue };
+        let combo = &combos.list[*i];
+        let mut graph = AnimationGraph::new();
+        let mut nodes = Vec::new();
+        for step in &combo.steps {
+            let Some((lib, clip)) = step.track.split_once('/') else { continue };
+            let Some(gltf) = libs.0.iter().find(|(l, _)| *l == lib).and_then(|(_, h)| gltfs.get(h)) else { return };
+            let Some(handle) = gltf.named_animations.get(clip) else {
+                output.text = format!("{}: no clip {} in {lib}", combo.label, clip);
+                continue;
+            };
+            nodes.push((graph.add_clip(handle.clone(), 1.0, graph.root), step.start, step.end));
+        }
+        if nodes.is_empty() {
+            continue;
+        }
+        let mut transitions = AnimationTransitions::new();
+        transitions.play(&mut player, nodes[0].0, Duration::ZERO).seek_to(nodes[0].1);
+        commands.entity(entity).insert((AnimationGraphHandle(graphs.add(graph)), transitions, ComboPlayback { nodes, step: 0, pause: 0.0 }));
+    }
+}
+
+/// Advance a playing combo: when a strike reaches its window end, crossfade to the next one at its window
+/// start; after the last, hold, pause, and start again.
+fn drive_combo(time: Res<Time>, mut q: Query<(&mut AnimationPlayer, &mut AnimationTransitions, &mut ComboPlayback)>) {
+    for (mut player, mut transitions, mut pb) in &mut q {
+        if pb.pause > 0.0 {
+            pb.pause -= time.delta_secs();
+            if pb.pause <= 0.0 {
+                pb.step = 0;
+                let (node, start, _) = pb.nodes[0];
+                transitions.play(&mut player, node, COMBO_FADE).seek_to(start).resume();
+            }
+            continue;
+        }
+        let (node, _, end) = pb.nodes[pb.step];
+        let Some(active) = player.animation(node) else { continue };
+        if active.seek_time() < end {
+            continue;
+        }
+        debug!("[combo] step {} done at {:.2} s", pb.step, active.seek_time());
+        if pb.step + 1 < pb.nodes.len() {
+            pb.step += 1;
+            let (next, start, _) = pb.nodes[pb.step];
+            // `start` keeps a paused animation paused (the last strike is paused between loops), so resume.
+            transitions.play(&mut player, next, COMBO_FADE).seek_to(start).resume();
+        } else {
+            if let Some(a) = player.animation_mut(node) {
+                a.pause();
+            }
+            pb.pause = COMBO_PAUSE;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_versus_moveset_becomes_a_combo_of_clip_windows() {
+        let text = r#"{"name": "unarmed_vs_dagger", "light": [
+            {"name": "hook", "clip": {"track": "ual2/Melee_Hook", "start": 0.0, "end": 0.467}},
+            {"name": "jab", "clip": {"track": "ual1/Punch_Jab", "end": 0.533}}]}"#;
+        let c = parse_combo(text).unwrap();
+        assert_eq!(c.label, "vs dagger: hook > jab");
+        assert_eq!(c.steps[1], Step { track: "ual1/Punch_Jab".into(), start: 0.0, end: 0.533 });
+    }
+
+    #[test]
+    fn every_generated_versus_moveset_parses() {
+        let combos = Combos::scan();
+        assert!(combos.list.len() >= 7, "{} combos", combos.list.len());
+        for c in &combos.list {
+            for s in &c.steps {
+                assert!(COMBO_LIBS.iter().any(|(l, _)| s.track.starts_with(&format!("{l}/"))), "{}: {} is not a UAL track", c.label, s.track);
+                assert!(s.end > s.start, "{}: empty window", c.label);
+            }
         }
     }
 }
