@@ -322,6 +322,8 @@ def build(plan, strikes=None):
     # Every weapon gets its own chain: the cheapest one no other weapon uses yet, within `variety_slack` of
     # its best (two weapons that score alike would otherwise fight the same way).
     used = set()
+    # Per body, the same variety rule, so the target body's row is the chain the game ships.
+    used_on = {r: set() for r in lands}
     for enemy in enemies:
         ranked = ranked_chains(light, ends, timing, by_track, rules, enemy, target)
         cost, seq = distinct(ranked, used, rules.get("variety_slack", 0.0))
@@ -359,10 +361,13 @@ def build(plan, strikes=None):
             g["absorb"] = rules["absorb_vs_heavy"] if heavy_weapon else rules["absorb_default"]
             g["arc"] = rules["arc_default"]
         sets[m["name"]] = m
-        # The same enemy weapon on every other body: what the planner would pick there (report only).
+        # The same enemy weapon on every other body: what the planner would pick there (report only),
+        # under the same "no two weapons fight alike" rule as the shipped sets.
         on = {}
         for r, l in lands.items():
-            c2, s2 = best_chain(light, ends, timing, by_track, rules, enemy, l["score"])
+            ranked_r = ranked_chains(light, ends, timing, by_track, rules, enemy, l["score"])
+            c2, s2 = distinct(ranked_r, used_on[r], rules.get("variety_slack", 0.0))
+            used_on[r].add(tuple(s2))
             on[r] = {"chain": [by_track[t]["name"] for t in s2], "lands": [l["region"].get(t, "?") for t in s2], "cost": c2}
             if all(l["region"].get(t) == "leg" for t in light):
                 # No allowed punch reaches above this body's legs (a giant): open with the kick instead.
