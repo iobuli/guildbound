@@ -530,6 +530,8 @@ def main():
             print("KARATE DONE (keys only)")
             return
         sc.frame_start, sc.frame_end = 1, int(test.frame_range[1])
+        sc.render.film_transparent = opt.get("--transparent", "0") == "1"
+        sc.render.image_settings.color_mode = "RGBA"
         sc.render.filepath = f"{out}/f_"
         sc.render.image_settings.file_format = "PNG"
         bpy.ops.render.render(animation=True)
