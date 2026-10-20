@@ -1,0 +1,107 @@
+ual1.glb: 65 joints, height 1.5555 m, arm 0.3517/0.3517 leg 0.5334/0.5334 (x height, L/R), arm angle 90.0/90.0 deg, asym arm 0.0 leg 0.0
+  arm_l: 3 j, at 0.8923 h axis 88.4 deg elong 5.18
+  arm_r: 3 j, at 0.8923 h axis 88.4 deg elong 5.18
+  foot_l: 2 j, at 0.0 h
+  foot_r: 2 j, at -0.0 h
+  hand_l: 16 j, at 0.8837 h axis 80.3 deg elong 1.79
+  hand_r: 16 j, at 0.8837 h axis 80.3 deg elong 1.79
+  head: 2 j, at 0.9445 h
+  leg_l: 2 j, at 0.4328 h
+  leg_r: 2 j, at 0.4328 h
+  other: 13 j, at 0.6679 h axis 90.0 deg elong 1.38
+  torso: 4 j, at 0.6785 h axis 7.8 deg elong 14.97
+sekiro.glb: 66 joints, height 1.5666 m, arm 0.3503/0.3503 leg 0.5265/0.5265 (x height, L/R), arm angle 90.0/90.0 deg, asym arm 0.0 leg 0.0
+  arm_l: 3 j, at 0.8722 h axis 89.8 deg elong 20.33
+  arm_r: 3 j, at 0.8722 h axis 89.8 deg elong 20.33
+  foot_l: 2 j, at -0.0 h
+  foot_r: 2 j, at 0.0 h
+  hand_l: 21 j, at 0.865 h axis 79.8 deg elong 1.61
+  hand_r: 21 j, at 0.8649 h axis 79.8 deg elong 1.61
+  head: 2 j, at 0.9432 h
+  leg_l: 2 j, at 0.4206 h
+  leg_r: 2 j, at 0.4206 h
+  other: 4 j, at 0.2486 h axis 0.7 deg elong 8.74
+  torso: 4 j, at 0.6981 h axis 5.2 deg elong 2413.34
+rokoko.glb: 52 joints, height 1.6072 m, arm 0.3443/0.3447 leg 0.5382/0.5382 (x height, L/R), arm angle 90.0/90.0 deg, asym arm 0.0012 leg 0.0
+  arm_l: 3 j, at 0.861 h axis 90.0 deg elong 1396384.54
+  arm_r: 3 j, at 0.861 h axis 90.0 deg elong 2786724.5
+  foot_l: 2 j, at 0.0 h
+  foot_r: 2 j, at -0.0 h
+  hand_l: 16 j, at 0.8603 h axis 89.8 deg elong 1.8
+  hand_r: 16 j, at 0.8603 h axis 89.8 deg elong 1.8
+  head: 2 j, at 0.9442 h
+  leg_l: 2 j, at 0.4246 h
+  leg_r: 2 j, at 0.4246 h
+  torso: 4 j, at 0.6785 h axis 2.4 deg elong 53775548.29
+kev_melee.glb: 52 joints, height 157.927 cm, arm 0.2723/0.2723 leg 0.5068/0.5068 (x height, L/R), arm angle 94.1/94.1 deg, asym arm 0.0 leg 0.0
+  arm_l: 3 j, at 0.8677 h axis 87.8 deg elong 22.56
+  arm_r: 3 j, at 0.8677 h axis 87.8 deg elong 22.61
+  foot_l: 2 j, at 0.0 h
+  foot_r: 2 j, at -0.0 h
+  hand_l: 16 j, at 0.8467 h axis 86.0 deg elong 1.65
+  hand_r: 16 j, at 0.8467 h axis 86.0 deg elong 1.65
+  head: 2 j, at 0.9445 h
+  leg_l: 2 j, at 0.4061 h
+  leg_r: 2 j, at 0.4061 h
+  other: 1 j, at 0.9677 h
+  torso: 3 j, at 0.648 h axis 3.1 deg elong 60.86
+body.glb: 65 joints, height 1.5555 m, arm 0.3517/0.3517 leg 0.5334/0.5334 (x height, L/R), arm angle 90.0/90.0 deg, asym arm 0.0 leg 0.0
+  arm_l: 3 j, at 0.8923 h axis 88.4 deg elong 5.18
+  arm_r: 3 j, at 0.8923 h axis 88.4 deg elong 5.18
+  foot_l: 2 j, at 0.0 h
+  foot_r: 2 j, at -0.0 h
+  hand_l: 16 j, at 0.8837 h axis 80.3 deg elong 1.79
+  hand_r: 16 j, at 0.8837 h axis 80.3 deg elong 1.79
+  head: 2 j, at 0.9445 h
+  leg_l: 2 j, at 0.4328 h
+  leg_r: 2 j, at 0.4328 h
+  other: 13 j, at 0.6679 h axis 90.0 deg elong 1.38
+  torso: 4 j, at 0.6785 h axis 7.8 deg elong 14.97
+dragon.glb: 143 joints, height 4.5597 m, arm 0.4993/0.4993 leg 0.517/0.517 (x height, L/R), arm angle 94.9/94.9 deg, asym arm 0.0 leg 0.0
+  arm_l: 5 j, at 0.8212 h axis 81.4 deg elong 3.57
+  arm_r: 5 j, at 0.8212 h axis 81.4 deg elong 3.57
+  foot_l: 3 j, at 0.0 h axis 70.2 deg elong 6247738.97
+  foot_r: 3 j, at -0.0 h axis 70.2 deg elong 28104468.18
+  hand_l: 25 j, at 0.6021 h axis 19.1 deg elong 7.27
+  hand_r: 25 j, at 0.6021 h axis 19.1 deg elong 7.27
+  head: 6 j, at 0.9552 h axis 5.4 deg elong 9.7
+  leg_l: 4 j, at 0.1778 h axis 67.4 deg elong 2.01
+  leg_r: 4 j, at 0.1778 h axis 67.4 deg elong 2.01
+  other: 57 j, at 1.0797 h axis 27.6 deg elong 2.21
+  torso: 6 j, at 0.2537 h axis 42.5 deg elong 4.34
+elf.glb: 216 joints, height 1.8016 m, arm 0.3288/0.3288 leg 0.5928/0.5928 (x height, L/R), arm angle 141.2/141.2 deg, asym arm 0.0 leg 0.0
+  arm_l: 5 j, at 0.8053 h axis 46.2 deg elong 5.94
+  arm_r: 5 j, at 0.8053 h axis 46.2 deg elong 5.94
+  foot_l: 2 j, at -0.0 h
+  foot_r: 2 j, at 0.0 h
+  hand_l: 20 j, at 0.5755 h axis 19.5 deg elong 1.79
+  hand_r: 20 j, at 0.5755 h axis 19.5 deg elong 1.79
+  head: 3 j, at 0.938 h axis 15.8 deg elong 11.12
+  leg_l: 4 j, at 0.4052 h axis 0.2 deg elong 25.44
+  leg_r: 4 j, at 0.4052 h axis 0.2 deg elong 25.44
+  other: 145 j, at 0.9037 h axis 31.6 deg elong 1.63
+  torso: 6 j, at 0.6755 h axis 8.9 deg elong 17.6
+knight.glb: 176 joints, height 1.8278 m, arm 0.3509/0.3509 leg 0.5447/0.5447 (x height, L/R), arm angle 141.9/141.9 deg, asym arm 0.0 leg 0.0
+  arm_l: 5 j, at 0.7993 h axis 46.9 deg elong 4.33
+  arm_r: 5 j, at 0.7993 h axis 46.9 deg elong 4.33
+  foot_l: 2 j, at 0.0 h
+  foot_r: 2 j, at -0.0 h
+  hand_l: 20 j, at 0.5667 h axis 22.2 deg elong 1.97
+  hand_r: 20 j, at 0.5667 h axis 22.2 deg elong 1.97
+  head: 3 j, at 0.9438 h axis 22.2 deg elong 16.1
+  leg_l: 4 j, at 0.352 h axis 2.1 deg elong 19.86
+  leg_r: 4 j, at 0.352 h axis 2.1 deg elong 19.86
+  other: 105 j, at 0.988 h axis 32.3 deg elong 1.4
+  torso: 6 j, at 0.6213 h axis 9.3 deg elong 16.77
+mage.glb: 191 joints, height 1.7606 m, arm 0.359/0.359 leg 0.5319/0.5319 (x height, L/R), arm angle 144.5/144.5 deg, asym arm 0.0 leg 0.0
+  arm_l: 5 j, at 0.8107 h axis 50.5 deg elong 3.32
+  arm_r: 5 j, at 0.8107 h axis 50.5 deg elong 3.32
+  foot_l: 2 j, at -0.0 h
+  foot_r: 2 j, at 0.0 h
+  hand_l: 21 j, at 0.5772 h axis 36.5 deg elong 1.31
+  hand_r: 21 j, at 0.5772 h axis 36.5 deg elong 1.31
+  head: 3 j, at 0.9438 h axis 28.2 deg elong 21.64
+  leg_l: 4 j, at 0.3472 h axis 0.2 deg elong 24.85
+  leg_r: 4 j, at 0.3472 h axis 0.2 deg elong 24.85
+  other: 118 j, at 0.9454 h axis 29.3 deg elong 1.7
+  torso: 6 j, at 0.626 h axis 8.3 deg elong 18.26

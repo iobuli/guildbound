@@ -1,35 +1,112 @@
 {
-  "_doc": "Kev node rules. A joint name is lower-cased, its prefix (strip) and side marker removed, then matched against `roles` in order: the first regex that matches gives the role. `regions` maps a role to a body region; a side suffix (_l / _r) is added for sided roles. Add a rig family by adding its prefix to `strip` or a pattern to `roles`; no code change is needed.",
-  "strip": ["mixamorig:", "b-", "def-", "bip01 ", "bip001 "],
+  "_doc": "Kev node rules. A joint name is lower-cased, its prefix (strip) and side marker removed, then matched against `roles` in order: the first regex that matches gives the role. `regions` maps a role to a body region; a side suffix (_l / _r) is added for sided roles. Add a rig family by adding its prefix to `strip` or a pattern to `roles`; no code change is needed. `suffix` regexes are removed before the side is read (Rigify segment numbers like .001).",
+  "strip": [
+    "mixamorig:",
+    "b-",
+    "def-",
+    "bip01 ",
+    "bip001 "
+  ],
+  "suffix": [
+    "(?<=\\.[lr])\\.\\d{3}$"
+  ],
   "side": {
-    "l": ["_l$", "\\.l$", "^left", "_left$", " l$"],
-    "r": ["_r$", "\\.r$", "^right", "_right$", " r$"]
+    "l": [
+      "_l$",
+      "\\.l$",
+      "^left",
+      "_left$",
+      " l$"
+    ],
+    "r": [
+      "_r$",
+      "\\.r$",
+      "^right",
+      "_right$",
+      " r$"
+    ]
   },
   "roles": [
-    ["helper", "^ik_|socket|_end$|end$|proxy|weapon|^prop|_leaf"],
-    ["root", "^root$|^armature$"],
-    ["twist", "twist|roll"],
-    ["finger", "thumb|index|middle|ring|pinky|finger"],
-    ["hand", "hand|wrist"],
-    ["forearm", "forearm|lowerarm|elbow"],
-    ["upperarm", "upperarm|^arm$|^arm[0-9]*$"],
-    ["clavicle", "clavicle|shoulder"],
-    ["toe", "toe|ball"],
-    ["foot", "foot|ankle"],
-    ["shin", "calf|shin|knee|lowerleg|^leg$"],
-    ["thigh", "thigh|upleg|upperleg"],
-    ["pelvis", "pelvis|hips?$"],
-    ["neck", "neck"],
-    ["head", "^head"],
-    ["spine", "spine|chest|torso|abdomen"]
+    [
+      "helper",
+      "^ik_|socket|_end$|end$|proxy|weapon|^prop|_leaf"
+    ],
+    [
+      "root",
+      "^root$|^armature$"
+    ],
+    [
+      "twist",
+      "twist|roll"
+    ],
+    [
+      "finger",
+      "thumb|index|middle|ring|pinky|finger|palm"
+    ],
+    [
+      "hand",
+      "hand|wrist"
+    ],
+    [
+      "forearm",
+      "forearm|lowerarm|elbow"
+    ],
+    [
+      "upperarm",
+      "upperarm|^arm$|^arm[0-9]*$|upper_arm"
+    ],
+    [
+      "clavicle",
+      "clavicle|shoulder"
+    ],
+    [
+      "toe",
+      "toe|ball"
+    ],
+    [
+      "foot",
+      "foot|ankle"
+    ],
+    [
+      "shin",
+      "calf|shin|knee|lowerleg|^leg$"
+    ],
+    [
+      "thigh",
+      "thigh|upleg|upperleg"
+    ],
+    [
+      "pelvis",
+      "pelvis|hips?$"
+    ],
+    [
+      "neck",
+      "neck|^spine\\.00[45]$"
+    ],
+    [
+      "head",
+      "^head|^spine\\.006$"
+    ],
+    [
+      "spine",
+      "spine|chest|torso|abdomen"
+    ]
   ],
   "regions": {
-    "pelvis": "torso", "spine": "torso",
-    "neck": "head", "head": "head",
-    "clavicle": "arm", "upperarm": "arm", "forearm": "arm",
-    "hand": "hand", "finger": "hand",
-    "thigh": "leg", "shin": "leg",
-    "foot": "foot", "toe": "foot",
-    "root": "other", "helper": "other"
+    "pelvis": "torso",
+    "spine": "torso",
+    "neck": "head",
+    "head": "head",
+    "clavicle": "arm",
+    "upperarm": "arm",
+    "forearm": "arm",
+    "hand": "hand",
+    "finger": "hand",
+    "thigh": "leg",
+    "shin": "leg",
+    "foot": "foot",
+    "toe": "foot",
+    "root": "other",
+    "helper": "other"
   }
 }

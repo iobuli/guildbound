@@ -18,7 +18,13 @@ RIGS = [
     "assets/characters/hero/male/body.glb",
     "assets/characters/hero/female/body.glb",
     "assets/packs/actionforge/clips/idle_loop.glb",
+    # Rigify characters from the uploaded company pack (local only, gitignored).
+    "assets/packs/company_characters/glb/elf.glb",
+    "assets/packs/company_characters/glb/knight.glb",
+    "assets/packs/company_characters/glb/mage.glb",
 ]
+# Not human-proportioned: checked for limbs and symmetry, not human ranges.
+CREATURES = ["assets/packs/company_characters/glb/dragon.glb"]
 REQUIRED = {"head", "torso", "arm_l", "arm_r", "hand_l", "hand_r", "leg_l", "leg_r", "foot_l", "foot_r"}
 
 
@@ -48,6 +54,16 @@ class NamingTests(unittest.TestCase):
         self.check("B-shoulder.L", "clavicle", "l")
         self.check("B-toe.R", "toe", "r")
 
+    def test_rigify_names(self):
+        self.check("DEF-upper_arm.L.001", "upperarm", "l")
+        self.check("DEF-forearm.R.001", "forearm", "r")
+        self.check("DEF-thigh.L", "thigh", "l")
+        self.check("DEF-palm.03.L", "finger", "l")
+        # Unsided segment numbers stay: spine.004-.006 are the neck and head.
+        self.check("DEF-spine.005", "neck", "")
+        self.check("DEF-spine.006", "head", "")
+        self.check("DEF-spine.002", "spine", "")
+
 
 class EveryRigTests(unittest.TestCase):
     """One body checklist, run on each rig that is present."""
@@ -73,6 +89,21 @@ class EveryRigTests(unittest.TestCase):
                     self.assertNotEqual(k, parent)
                 checked += 1
         self.assertGreaterEqual(checked, 3, "fewer than three rigs found to check")
+
+    def test_creature_rigs_have_symmetric_limbs(self):
+        rules = nodes.load_rules()
+        found = [os.path.join(REPO, r) for r in CREATURES if os.path.exists(os.path.join(REPO, r))]
+        if not found:
+            self.skipTest("no creature rigs present")
+        for path in found:
+            with self.subTest(rig=path):
+                rep = nodes.parse(path, rules)
+                self.assertNotIn("error", rep)
+                for side in ("l", "r"):
+                    self.assertIsNotNone(rep["limbs"][side]["arm"])
+                    self.assertIsNotNone(rep["limbs"][side]["leg"])
+                self.assertLess(rep["asymmetry"]["arm"], 0.02)
+                self.assertLess(rep["asymmetry"]["leg"], 0.02)
 
     def test_parse_is_fast(self):
         path = os.path.join(REPO, "assets/characters/hero/male/body.glb")

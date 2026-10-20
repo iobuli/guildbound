@@ -38,6 +38,7 @@ def load_rules(path=RULES_PATH):
         rules = json.load(f)
     rules["_roles"] = [(role, re.compile(pat)) for role, pat in rules["roles"]]
     rules["_side"] = {s: [re.compile(p) for p in pats] for s, pats in rules["side"].items()}
+    rules["_suffix"] = [re.compile(p) for p in rules.get("suffix", [])]
     return rules
 
 
@@ -68,6 +69,9 @@ def classify(name, rules):
     for prefix in rules["strip"]:
         if core.startswith(prefix):
             core = core[len(prefix):]
+    # Segment numbers after the side (Rigify "upper_arm.L.001") go first, so the side marker ends the name.
+    for p in rules.get("_suffix", []):
+        core = p.sub("", core)
     side = ""
     for s, pats in rules["_side"].items():
         for p in pats:
