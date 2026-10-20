@@ -88,17 +88,17 @@
   ],
   "heavy": [
     {
-      "name": "charge",
+      "name": "shoulder bash",
       "clip": {
-        "track": "ual2/Shield_Dash"
+        "track": "ual2/Shield_OneShot"
       },
-      "windup": 0.061,
-      "active": 0.121,
-      "cancel": 0.121,
-      "damage": 12,
-      "poise": 28,
-      "knockback": 3.5,
-      "stamina": 24,
+      "windup": 0.08,
+      "active": 0.2,
+      "cancel": 0.24,
+      "damage": 14,
+      "poise": 30,
+      "knockback": 3.0,
+      "stamina": 20,
       "travel": 0.9,
       "hitbox": {
         "bone": "upperarm_l",
@@ -113,7 +113,7 @@
     },
     "hold": 0.3,
     "parry_window": 0.2,
-    "absorb": 0.75,
-    "arc": 160
+    "absorb": 0.55,
+    "arc": 150
   }
 }

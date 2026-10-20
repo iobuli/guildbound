@@ -85,21 +85,24 @@
   ],
   "heavy": [
     {
-      "name": "charge",
+      "name": "kick",
       "clip": {
-        "track": "ual2/Shield_Dash"
+        "track": "sekiro/Zombie Kick",
+        "start": 0.2,
+        "end": 1.6
       },
-      "windup": 0.061,
-      "active": 0.121,
-      "cancel": 0.121,
-      "damage": 12,
-      "poise": 28,
-      "knockback": 3.5,
-      "stamina": 24,
-      "travel": 0.9,
+      "windup": 0.21,
+      "active": 0.54,
+      "cancel": 0.7,
+      "damage": 16,
+      "poise": 35,
+      "knockback": 4.0,
+      "stamina": 22,
+      "travel": 0.4,
+      "charge": 0.6,
       "hitbox": {
-        "bone": "upperarm_l",
-        "radius": 0.18
+        "bone": "foot_r",
+        "radius": 0.12
       }
     }
   ],
@@ -109,8 +112,8 @@
       "mask": "upper"
     },
     "hold": 0.3,
-    "parry_window": 0.2,
-    "absorb": 0.75,
-    "arc": 160
+    "parry_window": 0.18,
+    "absorb": 0.82,
+    "arc": 171
   }
 }

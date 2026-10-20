@@ -134,7 +134,8 @@
     "reach_m": 1.57,
     "mass": 2.2,
     "windup_s": 0.149,
-    "ranged": false
+    "ranged": false,
+    "shot_s": null
    },
    "chain": [
     "jab",
@@ -234,7 +235,8 @@
     "reach_m": 0.7,
     "mass": 1.0,
     "windup_s": null,
-    "ranged": true
+    "ranged": true,
+    "shot_s": 1.7
    },
    "chain": [
     "hook",
@@ -362,7 +364,8 @@
     "reach_m": 0.7,
     "mass": 3.0,
     "windup_s": null,
-    "ranged": true
+    "ranged": true,
+    "shot_s": 1.667
    },
    "chain": [
     "jab",
@@ -377,7 +380,7 @@
     "head",
     "head"
    ],
-   "heavy": "charge",
+   "heavy": "shoulder bash",
    "guard": {
     "clip": {
      "track": "ual2/Sword_Block",
@@ -385,8 +388,8 @@
     },
     "hold": 0.3,
     "parry_window": 0.2,
-    "absorb": 0.75,
-    "arc": 160
+    "absorb": 0.55,
+    "arc": 150
    },
    "on_rigs": {
     "body": {
@@ -490,7 +493,8 @@
     "reach_m": 1.0,
     "mass": 0.4,
     "windup_s": 0.247,
-    "ranged": false
+    "ranged": false,
+    "shot_s": null
    },
    "chain": [
     "hook",
@@ -590,7 +594,8 @@
     "reach_m": 1.85,
     "mass": 3.0,
     "windup_s": 0.529,
-    "ranged": false
+    "ranged": false,
+    "shot_s": null
    },
    "chain": [
     "hook",
@@ -718,7 +723,8 @@
     "reach_m": 1.45,
     "mass": 1.1,
     "windup_s": 0.313,
-    "ranged": false
+    "ranged": false,
+    "shot_s": null
    },
    "chain": [
     "hook",
@@ -832,7 +838,8 @@
     "reach_m": 0.86,
     "mass": 0.3,
     "windup_s": null,
-    "ranged": true
+    "ranged": true,
+    "shot_s": 1.0
    },
    "chain": [
     "jab",
@@ -847,16 +854,16 @@
     "head",
     "head"
    ],
-   "heavy": "charge",
+   "heavy": "kick",
    "guard": {
     "clip": {
      "track": "ual2/Sword_Block",
      "mask": "upper"
     },
     "hold": 0.3,
-    "parry_window": 0.2,
-    "absorb": 0.75,
-    "arc": 160
+    "parry_window": 0.18,
+    "absorb": 0.82,
+    "arc": 171
    },
    "on_rigs": {
     "body": {

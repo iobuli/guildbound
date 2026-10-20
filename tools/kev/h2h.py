@@ -193,13 +193,22 @@ def enemy_profiles(movesets_dir, base, prefix, arm_reach):
             clip = a["clip"]
             window = (clip.get("end") or track_duration(clip["track"]) or 1.0) - (clip.get("start") or 0.0)
             windups.append(a["windup"] * window)
+        aim = m.get("aim") or {}
+        # Seconds between shots: the draw, plus the reload clip, plus the throw / release clip after its start.
+        shot = float(aim.get("draw_time", 0.0))
+        for key, cap in (("reload", 9.0), ("release", 1.0)):
+            c = aim.get(key)
+            if c:
+                # A release clip may run on into a long take (the bow's archery mocap): count its first second.
+                shot += min(cap, max(0.0, (c.get("end") or track_duration(c["track"]) or 0.0) - (c.get("start") or 0.0)))
         out.append({
             "name": m["name"],
             "kind": m.get("kind"),
             "reach_m": round(float(weapon.get("length", 0.0)) + arm_reach, 3),
             "mass": float(weapon.get("mass", 1.0)),
             "windup_s": round(float(np.mean(windups)), 3) if windups else None,
-            "ranged": bool(m.get("aim")),
+            "ranged": bool(aim),
+            "shot_s": round(shot, 3) if aim else None,
         })
     return out
 
@@ -322,18 +331,33 @@ def build(plan, strikes=None):
         m["name"] = plan["out_prefix"] + enemy["name"]
         m["light"] = [attack(by_track[t], timing[t], first_travel if i == 0 else rules["travel_base"]) for i, t in enumerate(seq)]
         heavy_weapon = enemy["mass"] >= rules["heavy_weapon_mass"]
+        kind = lambda k: next(e for e in pool if e["kind"] == k)  # noqa: E731
         if enemy["ranged"]:
-            heavy = next(e for e in pool if e["kind"] == "charge")
-            m["heavy"] = [attack(heavy, timing[heavy["track"]], rules["travel_max"])]
+            # Against a heavy launcher, bash through its slow reload; against rapid light throws, stay quick
+            # with the kick; against a bow, close the distance with the charge.
+            if heavy_weapon:
+                heavy = kind("heavy")
+                m["heavy"] = [attack(heavy, timing[heavy["track"]], rules["travel_max"])]
+            elif (enemy["shot_s"] or 9.0) <= rules["fast_shot_s"]:
+                pass  # the base set's kick stays
+            else:
+                heavy = kind("charge")
+                m["heavy"] = [attack(heavy, timing[heavy["track"]], rules["travel_max"])]
         elif heavy_weapon:
-            heavy = next(e for e in pool if e["kind"] == "heavy")
+            heavy = kind("heavy")
             m["heavy"] = [attack(heavy, timing[heavy["track"]], first_travel)]
-        windup = enemy["windup_s"] if enemy["windup_s"] is not None else 0.6
+        # Defence follows the weapon's own numbers: the parry window from its wind-up (or the time between
+        # shots), the share a block absorbs from its mass, the guard arc wider for light scattered throws.
+        windup = enemy["windup_s"] if enemy["windup_s"] is not None else min(0.6, (enemy["shot_s"] or 0.6) * 0.5)
         g = m["guard"]
         lo, hi = rules["parry_range"]
         g["parry_window"] = round(min(hi, max(lo, rules["parry_base"] + rules["parry_per_s_windup"] * windup)), 3)
-        g["absorb"] = rules["absorb_vs_ranged"] if enemy["ranged"] else rules["absorb_vs_heavy"] if heavy_weapon else rules["absorb_default"]
-        g["arc"] = rules["arc_vs_ranged"] if enemy["ranged"] else rules["arc_default"]
+        if enemy["ranged"]:
+            g["absorb"] = round(min(0.9, max(0.4, rules["absorb_vs_ranged"] + 0.1 - 0.1 * enemy["mass"])), 3)
+            g["arc"] = round(rules["arc_vs_ranged"] - 20 + 40 / (1 + enemy["mass"]))
+        else:
+            g["absorb"] = rules["absorb_vs_heavy"] if heavy_weapon else rules["absorb_default"]
+            g["arc"] = rules["arc_default"]
         sets[m["name"]] = m
         # The same enemy weapon on every other body: what the planner would pick there (report only).
         on = {}
