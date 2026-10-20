@@ -172,7 +172,7 @@ pub fn ring_glow(s: f32) -> f32 {
     if !(0.0..=1.0).contains(&s) {
         return 0.0;
     }
-    (std::f32::consts::PI * s).sin().powf(0.7)
+    (std::f32::consts::PI * s).sin().max(0.0).powf(0.7)
 }
 
 #[derive(Component)]
