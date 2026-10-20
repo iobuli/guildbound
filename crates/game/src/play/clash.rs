@@ -10,6 +10,11 @@
 //!   where margin is the winning share over an even split, with knockdown poise and knockback.
 //!   A tie knocks both back. Sparks fly between them through the exchange.
 //!
+//! Visual flair (anime): glowing speed streaks burst outward from between the two through the
+//! exchange, and an impact frame marks the finishing blow and any knockdown-weight hit (`IMPACT_POISE`): a
+//! white screen flash for `FLASH_WHITE` real seconds, then a dark beat (`FLASH_DARK`), timed in real
+//! time so the hitstop's slowed clock does not stretch it.
+//!
 //! `GB_CLASH=<seconds>` starts a clash between the player and the nearest foe at that time (smoke
 //! tests and recordings). Monitor log lines: `[clash] start`, `[clash] end`.
 use super::ai::Autopilot;
@@ -35,6 +40,15 @@ const KNOCKBACK: f32 = 9.0;
 /// Seconds between spark bursts, and the camera shake each adds while the player is in it.
 const SPARK_EVERY: f32 = 0.18;
 const SHAKE: f32 = 0.08;
+/// Speed streaks: seconds between bursts, streaks per burst, speed (m/s), life (s).
+const STREAK_EVERY: f32 = 0.05;
+const STREAKS: usize = 3;
+const STREAK_SPEED: f32 = 22.0;
+const STREAK_LIFE: f32 = 0.22;
+/// Impact frame: real seconds of white, then of dark; hits with at least this poise get one.
+pub const FLASH_WHITE: f32 = 0.05;
+pub const FLASH_DARK: f32 = 0.07;
+pub const IMPACT_POISE: f32 = 60.0;
 
 /// A fighter locked in a clash with `foe`; `speed` multiplies its attack speed.
 #[derive(Component, Clone, Copy, Debug)]
@@ -110,13 +124,48 @@ pub fn ai_rate(entity: Entity) -> f32 {
     AI_RATE * (0.85 + 0.3 * h)
 }
 
+/// Real seconds into the current impact frame (None: none showing).
+#[derive(Resource, Default)]
+pub struct ImpactFrame(pub Option<f32>);
+
+impl ImpactFrame {
+    pub fn trigger(&mut self) {
+        self.0 = Some(0.0);
+    }
+}
+
+/// Overlay colour `t` real seconds into an impact frame (None when it has ended).
+pub fn flash_colour(t: f32) -> Option<Color> {
+    if !(t >= 0.0) {
+        return None;
+    }
+    if t < FLASH_WHITE {
+        Some(Color::srgba(1.0, 1.0, 1.0, 0.85))
+    } else if t < FLASH_WHITE + FLASH_DARK {
+        Some(Color::srgba(0.0, 0.0, 0.0, 0.55))
+    } else {
+        None
+    }
+}
+
+#[derive(Component)]
+struct FlashOverlay;
+
+#[derive(Component)]
+struct Streak {
+    velocity: Vec3,
+    life: f32,
+}
+
 #[derive(Component)]
 struct ClashBar;
 #[derive(Component)]
 struct ClashFill;
 
 pub fn plugin(app: &mut App) {
-    app.init_resource::<Clashes>().add_systems(Update, (detect, smoke, tick, bar).chain().after(CombatSet));
+    app.init_resource::<Clashes>()
+        .init_resource::<ImpactFrame>()
+        .add_systems(Update, (detect, smoke, tick, bar, streaks, impacts, flash).chain().after(CombatSet));
 }
 
 fn begin(commands: &mut Commands, clashes: &mut Clashes, log: &mut MessageWriter<HudLog>, a: Entity, b: Entity, names: [&str; 2]) {
@@ -329,10 +378,100 @@ mod tests {
     }
 
     #[test]
+    fn an_impact_frame_is_white_then_dark_then_gone() {
+        let rgba = |t| flash_colour(t).map(|c| c.to_srgba());
+        assert!(rgba(0.0).is_some_and(|c| c.red > 0.9 && c.alpha > 0.5));
+        assert!(rgba(FLASH_WHITE + 0.01).is_some_and(|c| c.red < 0.1));
+        assert!(rgba(FLASH_WHITE + FLASH_DARK + 0.01).is_none());
+        assert!(rgba(f32::NAN).is_none());
+    }
+
+    #[test]
     fn npc_tempo_stays_near_the_base_rate() {
         for i in 1..50 {
             let r = ai_rate(e(i));
             assert!((AI_RATE * 0.85..=AI_RATE * 1.15).contains(&r), "{r}");
         }
+    }
+}
+
+
+/// Speed streaks out of every running clash, and their flight.
+#[allow(clippy::too_many_arguments)]
+fn streaks(
+    time: Res<Time>,
+    mut commands: Commands,
+    clashes: Res<Clashes>,
+    places: Query<&Transform, Without<Streak>>,
+    mut flying: Query<(Entity, &mut Transform, &mut Streak)>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut kit: Local<Option<(Handle<Mesh>, Handle<StandardMaterial>)>>,
+    mut clock: Local<f32>,
+) {
+    let dt = time.delta_secs().clamp(0.0, 0.1);
+    for (e, mut tf, mut s) in &mut flying {
+        s.life -= dt;
+        if s.life <= 0.0 {
+            commands.entity(e).try_despawn();
+            continue;
+        }
+        tf.translation += s.velocity * dt;
+        tf.scale = Vec3::new(1.0, 1.0, (s.life / STREAK_LIFE).max(0.05));
+    }
+    if clashes.0.is_empty() {
+        return;
+    }
+    *clock -= dt;
+    if *clock > 0.0 {
+        return;
+    }
+    *clock = STREAK_EVERY;
+    let (mesh, mat) = kit
+        .get_or_insert_with(|| (meshes.add(Cuboid::new(0.025, 0.025, 1.4)), super::vfx::glow(&mut materials, LinearRgba::rgb(3.0, 2.6, 1.6))))
+        .clone();
+    let seed = (time.elapsed_secs() * 1000.0) as u32;
+    for (n, c) in clashes.0.iter().enumerate() {
+        let (Ok(a), Ok(b)) = (places.get(c.sides[0]), places.get(c.sides[1])) else { continue };
+        let mid = (a.translation + b.translation) * 0.5 + Vec3::Y * 1.1;
+        for k in 0..STREAKS {
+            let h = |i: u32| ((seed ^ (n as u32 * 7919) ^ (k as u32 * 104_729) ^ i).wrapping_mul(2_654_435_761) >> 8) as f32 / (1u32 << 24) as f32;
+            let dir = Vec3::new(h(1) - 0.5, (h(2) - 0.5) * 0.6, h(3) - 0.5).normalize_or(Vec3::X);
+            commands.spawn((
+                Name::new("Clash streak"),
+                Streak { velocity: dir * STREAK_SPEED, life: STREAK_LIFE },
+                Mesh3d(mesh.clone()),
+                MeshMaterial3d(mat.clone()),
+                Transform::from_translation(mid + dir * 0.4).looking_to(dir, Vec3::Y),
+                bevy::light::NotShadowCaster,
+            ));
+        }
+    }
+}
+
+/// Knockdown-weight hits (and the clash's finishing blow) get an impact frame.
+fn impacts(mut hits: MessageReader<Hit>, mut frame: ResMut<ImpactFrame>) {
+    if hits.read().any(|h| h.poise >= IMPACT_POISE && h.damage > 0.0) {
+        frame.trigger();
+    }
+}
+
+/// The impact-frame overlay, in real time.
+fn flash(real: Res<Time<Real>>, mut commands: Commands, mut frame: ResMut<ImpactFrame>, mut overlay: Query<(Entity, &mut BackgroundColor), With<FlashOverlay>>) {
+    let Some(t) = frame.0 else { return };
+    let colour = flash_colour(t);
+    frame.0 = colour.map(|_| t + real.delta_secs().clamp(0.0, 0.05));
+    match (colour, overlay.single_mut()) {
+        (Some(c), Ok((_, mut bg))) => bg.0 = c,
+        (Some(c), Err(_)) => {
+            commands.spawn((
+                FlashOverlay,
+                Node { position_type: PositionType::Absolute, width: Val::Percent(100.0), height: Val::Percent(100.0), ..default() },
+                BackgroundColor(c),
+                GlobalZIndex(50),
+            ));
+        }
+        (None, Ok((e, _))) => commands.entity(e).despawn(),
+        (None, Err(_)) => {}
     }
 }

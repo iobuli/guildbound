@@ -57,7 +57,7 @@ const GRASS_SHADER: &str = "shaders/grass.wgsl";
 /// Chunk edge (m); one entity per chunk and LOD.
 pub const CHUNK_SIZE: f32 = 8.0;
 /// Chunks per terrain side (`CHUNKS × CHUNK_SIZE = 2 × TERRAIN_HALF`).
-const CHUNKS: usize = 15;
+const CHUNKS: usize = (2.0 * TERRAIN_HALF / CHUNK_SIZE) as usize;
 /// Placement cells per chunk side: 0.16 m cells, ≈ 39 candidate blades per m².
 const CELLS_PER_CHUNK: usize = 50;
 /// Terrain vertex spacing (m), shared with `world` so roots sit on the mesh.

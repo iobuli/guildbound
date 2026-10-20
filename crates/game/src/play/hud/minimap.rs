@@ -22,8 +22,8 @@ pub const SIZE: f32 = 184.0;
 /// Metres from the centre to the rim.
 const RANGE: f32 = 34.0;
 /// Baked area: a square from `MAP_MIN` spanning `MAP_SPAN` metres, `RES` texels a side.
-const MAP_MIN: f32 = -64.0;
-const MAP_SPAN: f32 = 128.0;
+const MAP_MIN: f32 = -(TERRAIN_HALF + 4.0);
+const MAP_SPAN: f32 = 2.0 * (TERRAIN_HALF + 4.0);
 const RES: usize = 512;
 /// Contour interval and heavy-line interval (m).
 const CONTOUR: f32 = 0.5;
@@ -291,7 +291,7 @@ mod tests {
         assert!(texel(pond.x, pond.y)[2] > 150, "pond centre is water");
         assert_eq!(texel(0.0, 0.0)[2], 0, "courtyard is dry");
         assert_eq!(texel(0.0, 0.0)[3], 255, "inside the map is land");
-        assert_eq!(texel(63.5, 63.5)[3], 0, "past the rim is not");
+        assert_eq!(texel(TERRAIN_HALF + 3.5, TERRAIN_HALF + 3.5)[3], 0, "past the rim is not");
         let contours = data.chunks(4).filter(|t| t[0] > 0).count();
         assert!(contours > RES * 4, "the hills draw contour lines ({contours})");
     }

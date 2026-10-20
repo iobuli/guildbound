@@ -52,7 +52,7 @@ use std::f32::consts::{FRAC_PI_2, PI};
 /// Half size of the flat training courtyard (y = 0 inside).
 pub const COURTYARD_HALF: f32 = 15.0;
 /// Half size of the terrain mesh (m).
-pub const TERRAIN_HALF: f32 = 60.0;
+pub const TERRAIN_HALF: f32 = 120.0;
 /// Terrain vertex spacing (m).
 pub const GRID: f32 = 0.5;
 /// Hills fade in over this distance outside the courtyard.
@@ -294,10 +294,34 @@ pub fn in_guild_grounds(x: f32, z: f32) -> bool {
 }
 
 /// Analytic terrain height (m). Exactly 0 inside the courtyard and on the guild terrace.
+/// Flat pads for the outer regions placed from `assets/data/regions.json` (`regions`; centres and
+/// radii in step with tools/kev/layout.py PADS): the foundry, the market, the plaza.
+pub const PADS: [(Vec2, f32); 3] = [(Vec2::new(80.0, -60.0), 24.0), (Vec2::new(-80.0, 40.0), 20.0), (Vec2::new(40.0, 85.0), 16.0)];
+/// Width (m) over which a pad blends back into the hills.
+const PAD_BLEND: f32 = 20.0;
+
+/// Within `margin` m of a region pad.
+pub fn in_pad(x: f32, z: f32, margin: f32) -> bool {
+    PADS.iter().any(|&(c, r)| Vec2::new(x, z).distance(c) < r + margin)
+}
+
+/// Terrain height: the hills, levelled to each pad's centre height inside its radius.
 pub fn ground_height(x: f32, z: f32) -> f32 {
     if !(x.is_finite() && z.is_finite()) {
         return 0.0;
     }
+    let p = Vec2::new(x, z);
+    PADS.iter().fold(base_height(x, z), |h, &(c, r)| {
+        let d = p.distance(c);
+        if d >= r + PAD_BLEND {
+            return h;
+        }
+        let w = smoothstep(r, r + PAD_BLEND, d);
+        base_height(c.x, c.y) * (1.0 - w) + h * w
+    })
+}
+
+fn base_height(x: f32, z: f32) -> f32 {
     let hills = guildbound_sim::terrain::ground(x * HILL_SCALE, z * HILL_SCALE)
         * smoothstep(0.0, COURTYARD_BLEND, courtyard_distance(x, z))
         * smoothstep(0.0, TERRACE_BLEND, terrace_distance(x, z));
@@ -924,11 +948,12 @@ fn spawn_props(kit: &mut Kit) {
     }
     // Rocks and trees on the hills (deterministic scatter, away from the pond).
     let mut hill_trees = Vec::new();
-    for i in 0..26 {
+    for i in 0..70 {
         let a = i as f32 * 2.399_963;
-        let r = 21.0 + hash2(i, 1) * 26.0;
+        // The first 26 ring the guild grounds; the rest scatter over the wider land out to the rim.
+        let r = if i < 26 { 21.0 + hash2(i, 1) * 26.0 } else { 55.0 + hash2(i, 1) * (TERRAIN_HALF - RIM_WIDTH - 60.0) };
         let (x, z) = (a.cos() * r, a.sin() * r);
-        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) || in_ruins(x, z) {
+        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) || in_ruins(x, z) || in_pad(x, z, 6.0) {
             continue;
         }
         let y = ground_height(x, z);
@@ -1492,21 +1517,22 @@ mod tests {
 
     #[test]
     fn terrain_is_continuous_and_rim_is_high() {
-        let mut worst = 0.0f32;
+        let (mut worst, mut at) = (0.0f32, (0.0, 0.0));
         let mut x = -TERRAIN_HALF;
         while x < TERRAIN_HALF {
             let mut z = -TERRAIN_HALF;
             while z < TERRAIN_HALF {
                 let h = ground_height(x, z);
                 assert!(h.is_finite());
-                worst = worst
-                    .max((ground_height(x + 0.1, z) - h).abs())
-                    .max((ground_height(x, z + 0.1) - h).abs());
+                let step = (ground_height(x + 0.1, z) - h).abs().max((ground_height(x, z + 0.1) - h).abs());
+                if step > worst {
+                    (worst, at) = (step, (x, z));
+                }
                 z += 0.7;
             }
             x += 0.7;
         }
-        assert!(worst < 0.3, "terrain jumps {worst} m over 10 cm");
+        assert!(worst < 0.3, "terrain jumps {worst} m over 10 cm at {at:?}");
         assert!(ground_height(0.0, TERRAIN_HALF - 0.5) > 5.0, "rim missing");
     }
 

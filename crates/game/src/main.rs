@@ -37,7 +37,8 @@ fn main() {
                 .set(WindowPlugin {
                     primary_window: Some(Window {
                         title: "Guildbound".into(),
-                        resolution: (1280, 720).into(),
+                        // GB_RES=WxH (e.g. 1920x1080) for recordings and screenshots at a higher resolution.
+                        resolution: window_resolution().into(),
                         ..default()
                     }),
                     ..default()
@@ -74,4 +75,16 @@ fn main() {
         .perf_span(PostUpdate, "ui anim", gbui::GbuiSet::Animate)
         .perf_span(PostUpdate, "ui style", gbui::GbuiSet::Style)
         .run();
+}
+
+/// Window size: `GB_RES=WxH` when set and sane, else 1280x720.
+fn window_resolution() -> (u32, u32) {
+    std::env::var("GB_RES")
+        .ok()
+        .and_then(|v| {
+            let (w, h) = v.trim().split_once(['x', 'X'])?;
+            Some((w.parse::<u32>().ok()?, h.parse::<u32>().ok()?))
+        })
+        .filter(|&(w, h)| (320..=7680).contains(&w) && (240..=4320).contains(&h))
+        .unwrap_or((1280, 720))
 }
