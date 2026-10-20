@@ -154,6 +154,27 @@
       "outputs": [
         "staging/kev/motion/motion.json"
       ]
+    },
+    "targets": {
+      "cmd": [
+        "tools/kev/targets.py",
+        "--strikes",
+        "staging/kev/strikes.json"
+      ],
+      "inputs": [
+        "tools/kev/targets.py",
+        "tools/kev/nodes.py",
+        "tools/kev/roles.json",
+        "assets/characters/hero/male/body.glb",
+        "assets/packs/company_characters/glb/*.glb",
+        "assets/packs/mech_00/glb/Mech_Char_Mesh.glb"
+      ],
+      "after": [
+        "h2h"
+      ],
+      "outputs": [
+        "tools/kev/results/h2h/targets.json"
+      ]
     }
   }
 }

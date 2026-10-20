@@ -190,7 +190,8 @@ def measure(pos, names, roles, sides, regions):
     for reg in sorted(set(regions)):
         ks = [k for k, g in enumerate(regions) if g == reg]
         pts = pos[ks]
-        entry = {"joints": len(ks), "centroid_h": rnd(float(((pts.mean(axis=0) - foot_mid) @ up) / height))}
+        hs = ((pts - foot_mid) @ up) / height
+        entry = {"joints": len(ks), "centroid_h": rnd(float(hs.mean())), "span_h": [rnd(float(hs.min())), rnd(float(hs.max()))]}
         if len(ks) >= 3:
             centred = pts - pts.mean(axis=0)
             _, sv, vt = np.linalg.svd(centred, full_matrices=False)

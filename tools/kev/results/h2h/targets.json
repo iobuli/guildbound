@@ -1,0 +1,528 @@
+{
+ "attacker_height_m": 1.556,
+ "rig_height_m": {
+  "body": 1.556,
+  "elf": 1.802,
+  "knight": 1.828,
+  "mage": 1.761,
+  "dragon": 4.56,
+  "Mech_Char_Mesh": 3.719
+ },
+ "fist_height": {
+  "jab": {
+   "track": "ual1/Punch_Jab",
+   "share_of_attacker": 0.927,
+   "metres": 1.442
+  },
+  "cross": {
+   "track": "ual1/Punch_Cross",
+   "share_of_attacker": 0.902,
+   "metres": 1.403
+  },
+  "hook": {
+   "track": "ual2/Melee_Hook",
+   "share_of_attacker": 0.86,
+   "metres": 1.338
+  },
+  "hammer fist": {
+   "track": "ual2/OverhandThrow",
+   "share_of_attacker": 0.804,
+   "metres": 1.251
+  },
+  "palm swipe": {
+   "track": "ual2/Zombie_Scratch",
+   "share_of_attacker": 1.192,
+   "metres": 1.854
+  },
+  "shoulder bash": {
+   "track": "ual2/Shield_OneShot",
+   "share_of_attacker": 0.683,
+   "metres": 1.062
+  },
+  "charge": {
+   "track": "ual2/Shield_Dash",
+   "share_of_attacker": 1.128,
+   "metres": 1.755
+  }
+ },
+ "lands": {
+  "jab": {
+   "body": "head",
+   "elf": "torso",
+   "knight": "torso",
+   "mage": "torso",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "cross": {
+   "body": "head",
+   "elf": "torso",
+   "knight": "torso",
+   "mage": "torso",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "hook": {
+   "body": "torso",
+   "elf": "torso",
+   "knight": "torso",
+   "mage": "torso",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "hammer fist": {
+   "body": "torso",
+   "elf": "torso",
+   "knight": "torso",
+   "mage": "torso",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "palm swipe": {
+   "body": "over",
+   "elf": "head",
+   "knight": "head",
+   "mage": "head",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "shoulder bash": {
+   "body": "torso",
+   "elf": "leg",
+   "knight": "torso",
+   "mage": "torso",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  },
+  "charge": {
+   "body": "over",
+   "elf": "head",
+   "knight": "head",
+   "mage": "head",
+   "dragon": "torso",
+   "Mech_Char_Mesh": "leg"
+  }
+ },
+ "plans": [
+  {
+   "enemy": "axe",
+   "chain": [
+    "jab",
+    "cross"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "head",
+      "head"
+     ],
+     "score": 2.0
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "bow",
+   "chain": [
+    "hook",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head",
+      "torso",
+      "head"
+     ],
+     "score": 1.5
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg",
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "crossbow",
+   "chain": [
+    "hook",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head",
+      "torso",
+      "head"
+     ],
+     "score": 1.5
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg",
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "dagger",
+   "chain": [
+    "hook",
+    "jab"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head"
+     ],
+     "score": 1.5
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "greatsword",
+   "chain": [
+    "hook",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head",
+      "torso",
+      "head"
+     ],
+     "score": 1.5
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg",
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "katana",
+   "chain": [
+    "hook",
+    "jab",
+    "cross"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head",
+      "head"
+     ],
+     "score": 1.67
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  },
+  {
+   "enemy": "knives",
+   "chain": [
+    "hook",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "rigs": {
+    "body": {
+     "lands": [
+      "torso",
+      "head",
+      "torso",
+      "head"
+     ],
+     "score": 1.5
+    },
+    "elf": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "knight": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "mage": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "dragon": {
+     "lands": [
+      "torso",
+      "torso",
+      "torso",
+      "torso"
+     ],
+     "score": 1.0
+    },
+    "Mech_Char_Mesh": {
+     "lands": [
+      "leg",
+      "leg",
+      "leg",
+      "leg"
+     ],
+     "score": 0.25
+    }
+   }
+  }
+ ]
+}
