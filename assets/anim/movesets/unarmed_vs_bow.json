@@ -3,32 +3,36 @@
   "kind": "unarmed",
   "light": [
     {
-      "name": "hammer fist",
+      "name": "hook",
       "clip": {
-        "track": "ual2/OverhandThrow"
+        "track": "ual2/Melee_Hook"
       },
-      "windup": 0.275,
-      "active": 0.325,
-      "cancel": 0.35,
-      "damage": 12,
-      "poise": 18,
-      "knockback": 1.4,
-      "stamina": 13,
+      "windup": 0.571,
+      "active": 0.643,
+      "cancel": 0.643,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
       "travel": 0.25,
       "hitbox": {
         "bone": "hand_r",
         "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
       }
     },
     {
       "name": "jab",
       "clip": {
         "track": "ual1/Punch_Jab",
-        "end": 0.6
+        "start": 0.0,
+        "end": 0.533
       },
-      "windup": 0.278,
-      "active": 0.333,
-      "cancel": 0.389,
+      "windup": 0.219,
+      "active": 0.444,
+      "cancel": 0.594,
       "damage": 6,
       "poise": 8,
       "knockback": 0.8,
@@ -40,32 +44,36 @@
       }
     },
     {
-      "name": "hammer fist",
+      "name": "hook",
       "clip": {
-        "track": "ual2/OverhandThrow"
+        "track": "ual2/Melee_Hook"
       },
-      "windup": 0.275,
-      "active": 0.325,
-      "cancel": 0.35,
-      "damage": 12,
-      "poise": 18,
-      "knockback": 1.4,
-      "stamina": 13,
+      "windup": 0.571,
+      "active": 0.643,
+      "cancel": 0.643,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
       "travel": 0.25,
       "hitbox": {
         "bone": "hand_r",
         "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
       }
     },
     {
       "name": "jab",
       "clip": {
         "track": "ual1/Punch_Jab",
-        "end": 0.6
+        "start": 0.0,
+        "end": 0.533
       },
-      "windup": 0.278,
-      "active": 0.333,
-      "cancel": 0.389,
+      "windup": 0.219,
+      "active": 0.444,
+      "cancel": 0.594,
       "damage": 6,
       "poise": 8,
       "knockback": 0.8,

@@ -121,10 +121,27 @@ def time_strike(clip, fast, recover, end=None):
     }
 
 
-def measure_pool(pool, timing):
-    """Timing per pool entry, loading each library once (pygltflib parses slowly)."""
+def load_strike_table(path):
+    """{track: strongest strike} from the game's own cutter (repertoire::segment + strike_attack),
+    exported by `cargo test -p guildbound export_strike_table -- --ignored`. Empty when missing."""
+    if not path or not os.path.exists(path):
+        return {}
+    with open(path) as f:
+        table = json.load(f)
+    best = {}
+    for s in table.get("strikes", []):
+        if s["track"] not in best or s["speed"] > best[s["track"]]["speed"]:
+            best[s["track"]] = s
+    return best
+
+
+def measure_pool(pool, timing, table=None):
+    """Timing per pool entry. Where the game's cutter found a strike (`table`), its window and
+    windup / active / cancel are used as they are, so Kev and the game agree; otherwise Kev measures
+    the clip itself. Each entry records its `source`. Libraries are loaded once."""
     from clip_fk import Clip, GLTF2
 
+    table = table or {}
     loaded = {}
     out = {}
     for e in pool:
@@ -132,8 +149,18 @@ def measure_pool(pool, timing):
         if lib not in loaded:
             loaded[lib] = GLTF2().load(lib_path(lib))
         clip = Clip(lib_path(lib), name, gltf=loaded[lib])
-        side, t = time_strike(clip, timing["fast_fraction"], timing["recover_fraction"], e.get("end"))
-        window = e.get("end") or clip.duration
+        game = table.get(e["track"])
+        end = game["attack"]["end"] if game else e.get("end")
+        side, t = time_strike(clip, timing["fast_fraction"], timing["recover_fraction"], end)
+        if game:
+            a = game["attack"]
+            t.update(windup=round(a["windup"], 3), active=round(a["active"], 3), cancel=round(a["cancel"], 3))
+            side = game["bone"].rsplit("_", 1)[-1] if game["bone"].startswith("hand_") else side
+            t["window"] = [round(a["start"], 3), round(a["end"], 3)]
+            t["source"] = "game cutter"
+        else:
+            t["source"] = "kev fk"
+        window = (t["window"][1] - t["window"][0]) if game else (e.get("end") or clip.duration)
         # Mid-swing: still moving fast at the window end and not drawing back. A hand returning to the
         # guard (the jab and cross windows end on the way back) is a recovery and may be cut.
         mid = t["end_speed_mps"] > timing["mid_swing_mps"] and t["end_radial_mps"] > -timing["retract_mps"]
@@ -217,9 +244,13 @@ def best_chain(light, ends, timing, by_track, rules, enemy):
 
 
 def attack(entry, t, travel):
+    if "window" in t:
+        clip = {"track": entry["track"], "start": t["window"][0], "end": t["window"][1]}
+    else:
+        clip = {"track": entry["track"], **({"end": entry["end"]} if entry.get("end") else {})}
     a = {
         "name": entry["name"],
-        "clip": {"track": entry["track"], **({"end": entry["end"]} if entry.get("end") else {})},
+        "clip": clip,
         "windup": t["windup"], "active": t["active"], "cancel": t["cancel"],
         "damage": entry["damage"], "poise": entry["poise"], "knockback": entry["knockback"],
         "stamina": entry["stamina"], "travel": round(travel, 2),
@@ -230,13 +261,13 @@ def attack(entry, t, travel):
     return a
 
 
-def build(plan):
+def build(plan, strikes=None):
     rules, pool = plan["rules"], plan["pool"]
     check_punch_rule(pool, plan["hand_strike_libs"])
     movesets_dir = os.path.join(REPO, plan["movesets"])
     with open(os.path.join(movesets_dir, plan["base"] + ".json")) as f:
         base = json.load(f)
-    timing = measure_pool(pool, plan["timing"])
+    timing = measure_pool(pool, plan["timing"], load_strike_table(strikes))
     ends = ends_for(pool)
     by_track = {e["track"]: e for e in pool}
     light = [e["track"] for e in pool if e["kind"] == "light"]
@@ -278,9 +309,11 @@ def write(sets, report, timing, plan):
     with open(os.path.join(out, "report.json"), "w") as f:
         json.dump({"timing": timing, "plans": report}, f, indent=1)
     lines = ["# Hand-to-hand plans by enemy weapon", "", "## Strike timing (fractions of the clip window)", "",
-             "| track | hand | windup | active | cancel | peak m/s |", "|---|---|---|---|---|---|"]
+             "`game cutter`: taken from the game's own strike table (repertoire::segment), so Kev and the game agree.",
+             "`kev fk`: the game's cutter found no strike in this clip; Kev measured it from its motion.", "",
+             "| track | source | hand | windup | active | cancel | peak m/s | mid-swing end |", "|---|---|---|---|---|---|---|---|"]
     for t, v in timing.items():
-        lines.append(f"| {t} | {v['hand']} | {v['windup']} | {v['active']} | {v['cancel']} | {v['peak_mps']} |")
+        lines.append(f"| {t} | {v['source']} | {v['hand']} | {v['windup']} | {v['active']} | {v['cancel']} | {v['peak_mps']} | {v['mid_swing']} |")
     lines += ["", "## Plans", "", "| enemy | reach m | windup s | ranged | chain | cost | heavy | parry s | absorb | arc |",
               "|---|---|---|---|---|---|---|---|---|---|"]
     for r in report:
@@ -294,12 +327,14 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("plan", nargs="?", default=os.path.join(HERE, "h2h.json"))
     ap.add_argument("--write", action="store_true")
+    ap.add_argument("--strikes", default=os.path.join(REPO, "staging", "kev", "strikes.json"),
+                    help="the game's strike table (cargo test -p guildbound export_strike_table -- --ignored)")
     args = ap.parse_args()
     with open(args.plan) as f:
         plan = json.load(f)
-    sets, report, timing = build(plan)
+    sets, report, timing = build(plan, args.strikes)
     for t, v in timing.items():
-        print(f"{t:<22} hand {v['hand']}  windup {v['windup']:.3f} active {v['active']:.3f} cancel {v['cancel']:.3f}  peak {v['peak_mps']} m/s")
+        print(f"{t:<22} {v['source']:<12} hand {v['hand']}  windup {v['windup']:.3f} active {v['active']:.3f} cancel {v['cancel']:.3f}  mid {v['mid_swing']}")
     for r in report:
         print(f"vs {r['enemy']['name']:<10} {' > '.join(r['chain']):<40} cost {r['cost']:<7} heavy {r['heavy']}  parry {r['guard']['parry_window']} absorb {r['guard']['absorb']}")
     if args.write:

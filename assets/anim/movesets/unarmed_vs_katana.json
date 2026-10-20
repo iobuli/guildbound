@@ -27,11 +27,12 @@
       "name": "jab",
       "clip": {
         "track": "ual1/Punch_Jab",
-        "end": 0.6
+        "start": 0.0,
+        "end": 0.533
       },
-      "windup": 0.278,
-      "active": 0.333,
-      "cancel": 0.389,
+      "windup": 0.219,
+      "active": 0.444,
+      "cancel": 0.594,
       "damage": 6,
       "poise": 8,
       "knockback": 0.8,
@@ -46,11 +47,12 @@
       "name": "cross",
       "clip": {
         "track": "ual1/Punch_Cross",
-        "end": 0.7
+        "start": 0.013,
+        "end": 0.567
       },
-      "windup": 0.286,
-      "active": 0.381,
-      "cancel": 0.429,
+      "windup": 0.247,
+      "active": 0.464,
+      "cancel": 0.614,
       "damage": 9,
       "poise": 12,
       "knockback": 1.2,

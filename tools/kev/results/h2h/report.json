@@ -2,30 +2,40 @@
  "timing": {
   "ual1/Punch_Jab": {
    "hand": "l",
-   "windup": 0.278,
-   "active": 0.333,
-   "cancel": 0.389,
+   "windup": 0.219,
+   "active": 0.444,
+   "cancel": 0.594,
    "peak_mps": 10.69,
-   "end_speed_mps": 1.421,
-   "end_radial_mps": -0.471,
+   "end_speed_mps": 2.138,
+   "end_radial_mps": -1.251,
    "yaw_start": -102.7,
-   "yaw_end": -103.7,
+   "yaw_end": -105.1,
+   "window": [
+    0.0,
+    0.533
+   ],
+   "source": "game cutter",
    "duration": 0.867,
-   "windup_s": 0.167,
+   "windup_s": 0.117,
    "mid_swing": false
   },
   "ual1/Punch_Cross": {
    "hand": "r",
-   "windup": 0.286,
-   "active": 0.381,
-   "cancel": 0.429,
+   "windup": 0.247,
+   "active": 0.464,
+   "cancel": 0.614,
    "peak_mps": 8.8,
-   "end_speed_mps": 1.631,
-   "end_radial_mps": -1.009,
+   "end_speed_mps": 0.893,
+   "end_radial_mps": -0.771,
    "yaw_start": -102.7,
-   "yaw_end": -90.2,
+   "yaw_end": -86.0,
+   "window": [
+    0.013,
+    0.567
+   ],
+   "source": "game cutter",
    "duration": 1.0,
-   "windup_s": 0.2,
+   "windup_s": 0.137,
    "mid_swing": false
   },
   "ual2/Melee_Hook": {
@@ -38,22 +48,28 @@
    "end_radial_mps": -1.656,
    "yaw_start": -90.6,
    "yaw_end": -100.6,
+   "source": "kev fk",
    "duration": 0.467,
    "windup_s": 0.266,
    "mid_swing": false
   },
   "ual2/OverhandThrow": {
    "hand": "r",
-   "windup": 0.275,
-   "active": 0.325,
-   "cancel": 0.35,
+   "windup": 0.413,
+   "active": 0.57,
+   "cancel": 0.72,
    "peak_mps": 21.23,
-   "end_speed_mps": 0.095,
-   "end_radial_mps": -0.088,
+   "end_speed_mps": 0.968,
+   "end_radial_mps": -0.295,
    "yaw_start": -103.3,
-   "yaw_end": -103.3,
+   "yaw_end": -53.6,
+   "window": [
+    0.0,
+    0.767
+   ],
+   "source": "game cutter",
    "duration": 1.333,
-   "windup_s": 0.367,
+   "windup_s": 0.317,
    "mid_swing": false
   },
   "ual2/Zombie_Scratch": {
@@ -66,6 +82,7 @@
    "end_radial_mps": -0.051,
    "yaw_start": -81.1,
    "yaw_end": -81.2,
+   "source": "kev fk",
    "duration": 1.8,
    "windup_s": 0.567,
    "mid_swing": false
@@ -80,6 +97,7 @@
    "end_radial_mps": -0.175,
    "yaw_start": -103.3,
    "yaw_end": -103.2,
+   "source": "kev fk",
    "duration": 0.833,
    "windup_s": 0.067,
    "mid_swing": false
@@ -94,6 +112,7 @@
    "end_radial_mps": 0.0,
    "yaw_start": -169.6,
    "yaw_end": -103.3,
+   "source": "kev fk",
    "duration": 1.1,
    "windup_s": 0.067,
    "mid_swing": false
@@ -113,7 +132,7 @@
     "jab",
     "cross"
    ],
-   "cost": 2.64,
+   "cost": -0.8,
    "heavy": "kick",
    "guard": {
     "clip": {
@@ -136,12 +155,12 @@
     "ranged": true
    },
    "chain": [
-    "hammer fist",
+    "hook",
     "jab",
-    "hammer fist",
+    "hook",
     "jab"
    ],
-   "cost": -16.18,
+   "cost": -8.65,
    "heavy": "charge",
    "guard": {
     "clip": {
@@ -164,12 +183,12 @@
     "ranged": true
    },
    "chain": [
-    "hammer fist",
+    "hook",
     "jab",
-    "hammer fist",
+    "hook",
     "jab"
    ],
-   "cost": -16.18,
+   "cost": -8.65,
    "heavy": "charge",
    "guard": {
     "clip": {
@@ -195,7 +214,7 @@
     "jab",
     "cross"
    ],
-   "cost": -1.5,
+   "cost": -0.8,
    "heavy": "kick",
    "guard": {
     "clip": {
@@ -218,12 +237,12 @@
     "ranged": false
    },
    "chain": [
-    "hammer fist",
+    "hook",
     "jab",
-    "hammer fist",
+    "hook",
     "jab"
    ],
-   "cost": -16.18,
+   "cost": -8.65,
    "heavy": "shoulder bash",
    "guard": {
     "clip": {
@@ -250,7 +269,7 @@
     "jab",
     "cross"
    ],
-   "cost": -0.85,
+   "cost": -0.15,
    "heavy": "kick",
    "guard": {
     "clip": {
@@ -273,12 +292,12 @@
     "ranged": true
    },
    "chain": [
-    "hammer fist",
+    "hook",
     "jab",
-    "hammer fist",
+    "hook",
     "jab"
    ],
-   "cost": -16.18,
+   "cost": -8.65,
    "heavy": "charge",
    "guard": {
     "clip": {

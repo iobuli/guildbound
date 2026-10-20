@@ -412,6 +412,47 @@ mod tests {
         assert!(segment(bank, "ual1/Idle_Loop").is_empty());
     }
 
+    /// The strike table Kev reads (tools/kev/h2h.py), so the analysis and the game use one cutter:
+    /// every library track plus the tracks in Kev's hand-to-hand pool, run through `segment` and
+    /// `strike_attack` exactly as the game does. Writes `$KEV_STRIKES` (default
+    /// staging/kev/strikes.json). Run: `cargo test -p guildbound export_strike_table -- --ignored`.
+    #[test]
+    #[ignore = "writes a file for Kev; run on demand"]
+    fn export_strike_table() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
+        let pool: serde_json::Value =
+            serde_json::from_str(&std::fs::read_to_string(root.join("tools/kev/h2h.json")).expect("h2h.json")).expect("h2h.json parses");
+        let bank = bank();
+        let mut tracks: Vec<String> = bank.tracks.keys().filter(|k| library_track(k)).cloned().collect();
+        for e in pool["pool"].as_array().into_iter().flatten() {
+            if let Some(t) = e["track"].as_str() {
+                tracks.push(t.to_string());
+            }
+        }
+        tracks.sort();
+        tracks.dedup();
+        let mut rows = Vec::new();
+        for track in &tracks {
+            if !bank.tracks.contains_key(track) {
+                continue;
+            }
+            let duration = bank.duration(track);
+            for s in segment(bank, track) {
+                let a = strike_attack(&s, duration);
+                rows.push(serde_json::json!({
+                    "track": s.track, "kind": format!("{:?}", s.kind), "bone": s.bone,
+                    "start": s.start, "peak": s.peak, "end": s.end, "speed": s.speed, "duration": duration,
+                    "attack": {"start": a.clip.start, "end": a.clip.end, "windup": a.windup, "active": a.active, "cancel": a.cancel},
+                }));
+            }
+        }
+        let out = std::env::var("KEV_STRIKES").map(std::path::PathBuf::from).unwrap_or_else(|_| root.join("staging/kev/strikes.json"));
+        std::fs::create_dir_all(out.parent().unwrap()).unwrap();
+        let body = serde_json::json!({"tracks": tracks, "strikes": rows});
+        std::fs::write(&out, serde_json::to_string_pretty(&body).unwrap()).unwrap();
+        assert!(!rows.is_empty(), "no strikes cut from {} tracks", tracks.len());
+    }
+
     /// Direction of a strike at its peak relative to the body's facing (cos): +1 straight ahead.
     fn aim(bank: &PoseBank, s: &Strike) -> f32 {
         let (sk, b) = (&bank.skeleton, &bank.bones);
