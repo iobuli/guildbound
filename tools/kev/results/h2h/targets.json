@@ -11,23 +11,23 @@
  "fist_height": {
   "jab": {
    "track": "ual1/Punch_Jab",
-   "share_of_attacker": 0.927,
-   "metres": 1.442
+   "share_of_attacker": 0.953,
+   "metres": 1.482
   },
   "cross": {
    "track": "ual1/Punch_Cross",
-   "share_of_attacker": 0.902,
-   "metres": 1.403
+   "share_of_attacker": 0.901,
+   "metres": 1.402
   },
   "hook": {
    "track": "ual2/Melee_Hook",
-   "share_of_attacker": 0.86,
-   "metres": 1.338
+   "share_of_attacker": 0.662,
+   "metres": 1.03
   },
   "hammer fist": {
    "track": "ual2/OverhandThrow",
-   "share_of_attacker": 0.804,
-   "metres": 1.251
+   "share_of_attacker": 0.584,
+   "metres": 0.908
   },
   "palm swipe": {
    "track": "ual2/Zombie_Scratch",
@@ -64,7 +64,7 @@
   },
   "hook": {
    "body": "torso",
-   "elf": "torso",
+   "elf": "leg",
    "knight": "torso",
    "mage": "torso",
    "dragon": "torso",
@@ -72,9 +72,9 @@
   },
   "hammer fist": {
    "body": "torso",
-   "elf": "torso",
-   "knight": "torso",
-   "mage": "torso",
+   "elf": "leg",
+   "knight": "leg",
+   "mage": "leg",
    "dragon": "torso",
    "Mech_Char_Mesh": "leg"
   },
@@ -175,12 +175,12 @@
     },
     "elf": {
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.62
     },
     "knight": {
      "lands": [
@@ -240,12 +240,12 @@
     },
     "elf": {
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.62
     },
     "knight": {
      "lands": [
@@ -356,12 +356,12 @@
     },
     "elf": {
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.62
     },
     "knight": {
      "lands": [
@@ -419,11 +419,11 @@
     },
     "elf": {
      "lands": [
-      "torso",
+      "leg",
       "torso",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.75
     },
     "knight": {
      "lands": [
@@ -479,12 +479,12 @@
     },
     "elf": {
      "lands": [
+      "leg",
       "torso",
-      "torso",
-      "torso",
+      "leg",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.62
     },
     "knight": {
      "lands": [

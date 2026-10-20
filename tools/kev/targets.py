@@ -3,8 +3,8 @@
     python3 tools/kev/targets.py [--report tools/kev/results/h2h/report.json] [--strikes staging/kev/strikes.json]
                                  [--rigs RIG.glb ...] [--out tools/kev/results/h2h]
 
-The attacker is the game's hero body. For each strike in the h2h pool, the fist's height at the strike's peak (the
-game cutter's peak when the strike table has one, else the hand's fastest frame) is measured with clip_fk as a share
+The attacker is the game's hero body. For each strike in the h2h pool, the fist's height at the strike's speed peak (the
+game cutter's peak when the strike table has one, else the hand's fastest frame), interpolated between keys is measured with clip_fk as a share
 of the attacker's height, then turned into metres with the hero body's height from nodes.py. Each enemy rig is
 parsed by nodes.py at its own size. The fist lands in the body region whose vertical span (`span_h`, its joints'
 lowest to highest point) holds that height, checked head first, then torso, then leg, or the nearest one when the
@@ -74,14 +74,20 @@ def land(fist_m, rep):
     return min(spans, key=lambda sp: min(abs(x - sp[1]), abs(x - sp[2])))[0]
 
 
-def fist_height(clip, side, peak_s):
-    """Fist height above the lowest foot at `peak_s`, as a share of the head's height at frame 0."""
+def fist_height(clip, side, peak_s, end_s=None):
+    """Fist height above the lowest foot at the strike's speed peak (impact lands at full speed: a hook's
+    fist is still sweeping down through it), linearly interpolated between the two keys around it, as a
+    share of the head's height at frame 0. `end_s` is unused, kept for callers."""
     clip.precompute()
-    f = min(clip.frames - 1, int(round(peak_s * clip.fps)))
-    w0, w = clip.world(0), clip.world(f)
+    last = clip.frames - 1
+    x = min(max(peak_s * clip.fps, 0.0), float(last))
+    f0 = int(np.floor(x))
+    f1, u = min(f0 + 1, last), x - f0
+    w0 = clip.world(0)
     floor = min(clip.pos(w0, "foot_l")[1], clip.pos(w0, "foot_r")[1])
     head = clip.pos(w0, "head")[1] - floor
-    return float((clip.pos(w, f"hand_{side}")[1] - floor) / head)
+    y = (1 - u) * clip.pos(clip.world(f0), f"hand_{side}")[1] + u * clip.pos(clip.world(f1), f"hand_{side}")[1]
+    return float((y - floor) / head)
 
 
 def fastest_frame(clip, side):
@@ -107,7 +113,8 @@ def strike_heights(pool, timing, table):
         side = t["hand"]
         game = table.get(e["track"])
         peak = game["peak"] if game else fastest_frame(clip, side)
-        out[e["name"]] = (e["track"], round(fist_height(clip, side, peak), 3))
+        end = game["end"] if game else None
+        out[e["name"]] = (e["track"], round(fist_height(clip, side, peak, end), 3))
     return out
 
 
