@@ -6,21 +6,22 @@
 //! - Full rage: the player presses V (`Intent::berserk_pressed`), an NPC goes berserk by itself. `Berserk` lasts
 //!   `DURATION` s: attack speed ×`SPEED`, damage dealt ×`MIGHT`, damage taken ×`FRAGILE` (`combat` reads the
 //!   `Berserkers` set), with a roar burst (aura + fire, a slow-motion beat, a camera kick). Rage empties.
-//! - The flame (`Flame`): `LAYERS` camera-facing quads up a spine of `NODES` spring-driven points rising from the
-//!   fighter, each showing a frame of the pixel flame sheet (`assets/vfx/pixel_flame`, CC0) at its own offset,
-//!   so the stacked frames shimmer as one shape. Width follows `taper` (widest a little below the middle, a
-//!   point at the tip). Each spine point springs toward straight-up minus the fighter's ground velocity ×
+//! - The aura (`Flame`): a pool of `RINGS` glowing rings rising fast up a spine of `NODES` spring-driven points
+//!   (each takes `RISE` s from base to tip, then is reborn at the base with new looks). Every ring has its own
+//!   size jitter, oval squash, tilt and spin, so they read as an irregular rush of circles; their radius follows
+//!   `taper` (widest a little below the middle, a point at the tip) and they fade in off the base and out at the
+//!   tip (`ring_glow`). Most are dim (a low colour on an additive material reads as low alpha); `HIGHLIGHT` of
+//!   them are bright gold-white highlights. Short lightning arcs crackle through it every `ARC_EVERY` s. Each spine point springs toward straight-up minus the fighter's ground velocity ×
 //!   `LAG` × s², so moving forward bends the tip back and stopping lets it swing up and settle. Additive,
 //!   unlit, no depth write, no shadow, no collider: see-through and not solid. It grows in on the trigger,
 //!   breathes while berserk and shrinks out at the end.
 //! - HUD: a rage bar above the hotbar while the player has rage; it pulses when full.
 //! - `GB_BERSERK=<seconds>` fills the player's rage and triggers berserk at that time (smoke runs).
 use super::combat::Hitstop;
-use super::camera::{CameraShake, MainCamera};
+use super::camera::CameraShake;
 use super::hud::log::{HudLog, LogKind};
 use super::vfx::{self, Element, Vfx};
 use super::{Fighter, Hit, Intent, Mover, Npc, Player};
-use bevy::image::{ImageLoaderSettings, ImageSampler};
 use bevy::prelude::*;
 use std::collections::HashSet;
 
@@ -33,22 +34,24 @@ pub const DURATION: f32 = 8.0;
 pub const SPEED: f32 = 1.35;
 pub const MIGHT: f32 = 1.3;
 pub const FRAGILE: f32 = 1.2;
-/// Flame: spine points, quads, height and widest width (m), lag (s), spring stiffness and damping.
+/// Aura spine points.
 const NODES: usize = 10;
-const LAYERS: usize = 28;
+/// Spine: height and widest width (m), lag (s), spring stiffness and damping; grow-in and fade-out times (s).
 const HEIGHT: f32 = 2.6;
 const WIDTH: f32 = 1.3;
 const LAG: f32 = 0.22;
 const STIFF: f32 = 90.0;
 const DAMP: f32 = 12.0;
-/// Grow-in and fade-out times (s).
 const GROW: f32 = 0.3;
 const FADE: f32 = 0.5;
-const SHEET: &str = "vfx/pixel_flame/flame.png";
-/// The flame sheet's looping frames (`frames.json` loop 1..4 of 7 equal cells) and their rate.
-const SHEET_CELLS: usize = 7;
-const LOOP: [usize; 4] = [1, 2, 3, 4];
-const FPS: f32 = 12.0;
+/// Aura rings: pool per fighter, rise time range (s), share of bright highlight rings, brightness levels.
+const RINGS: usize = 48;
+const RISE: (f32, f32) = (0.3, 0.55);
+const HIGHLIGHT: f32 = 0.14;
+const LEVELS: usize = 6;
+/// Electricity: seconds between arcs, and their length (m).
+const ARC_EVERY: f32 = 0.12;
+const ARC_LEN: f32 = 0.7;
 
 /// Width share of the flame at height share `s` (0 base, 1 tip): widest a little below the middle,
 /// a point at the tip, a rounded base.
@@ -100,7 +103,22 @@ pub struct Berserk {
 #[derive(Resource, Default)]
 pub struct Berserkers(pub HashSet<Entity>);
 
-/// The flame on a fighter: its spine (positions and velocities), age, and the quads.
+/// One rising ring of the aura: where it is up the taper (0 base .. 1 tip), how fast it rises, its own size
+/// jitter, oval squash, tilt and spin, thickness and whether it is a bright highlight.
+#[derive(Clone, Copy, Debug)]
+struct Ring {
+    entity: Entity,
+    s: f32,
+    rate: f32,
+    size: f32,
+    squash: Vec2,
+    tilt: Quat,
+    spin: f32,
+    mesh: usize,
+    bright: bool,
+}
+
+/// The aura on a fighter: its spine (positions and velocities), age, its rings and the arc clock.
 #[derive(Component)]
 struct Flame {
     owner: Entity,
@@ -109,13 +127,52 @@ struct Flame {
     age: f32,
     /// Seconds since the berserk ended (fading out), if it has.
     ending: Option<f32>,
-    quads: Vec<Entity>,
+    rings: Vec<Ring>,
+    arc: f32,
+    seed: u32,
 }
 
 #[derive(Resource)]
 struct FlameKit {
-    mesh: Handle<Mesh>,
-    frames: Vec<Handle<StandardMaterial>>,
+    /// Ring meshes: medium, thin, hairline.
+    meshes: [Handle<Mesh>; 3],
+    /// Brightness levels (dim to full) for the aura colour, and for the highlight colour.
+    dim: Vec<Handle<StandardMaterial>>,
+    bright: Vec<Handle<StandardMaterial>>,
+}
+
+/// xorshift32 → 0..1.
+fn rand01(state: &mut u32) -> f32 {
+    let mut x = (*state).max(1);
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    *state = x;
+    (x >> 8) as f32 / (1u32 << 24) as f32
+}
+
+fn new_ring(entity: Entity, seed: &mut u32, s: f32) -> Ring {
+    let mut r = || rand01(seed);
+    let bright = r() < HIGHLIGHT;
+    Ring {
+        entity,
+        s,
+        rate: 1.0 / (RISE.0 + (RISE.1 - RISE.0) * r()),
+        size: 0.55 + 0.8 * r(),
+        squash: Vec2::new(0.75 + 0.5 * r(), 0.75 + 0.5 * r()),
+        tilt: Quat::from_euler(EulerRot::XZY, (r() - 0.5) * 0.7, (r() - 0.5) * 0.7, 0.0),
+        spin: (r() - 0.5) * 9.0,
+        mesh: if bright { 2 } else { (r() * 2.0) as usize },
+        bright,
+    }
+}
+
+/// Brightness of a ring at height share `s`: fades in off the base and out toward the tip.
+pub fn ring_glow(s: f32) -> f32 {
+    if !(0.0..=1.0).contains(&s) {
+        return 0.0;
+    }
+    (std::f32::consts::PI * s).sin().powf(0.7)
 }
 
 #[derive(Component)]
@@ -130,25 +187,21 @@ pub fn plugin(app: &mut App) {
         .add_systems(Update, (fill, smoke, trigger, tick_berserk, flame, bar).chain());
 }
 
-fn load_kit(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
-    // Pixel art: sampled nearest so the frames keep their pixels.
-    let sheet: Handle<Image> = assets.load_with_settings(SHEET, |s: &mut ImageLoaderSettings| s.sampler = ImageSampler::nearest());
-    let cell = 1.0 / SHEET_CELLS as f32;
-    let frames = LOOP
-        .iter()
-        .map(|&i| {
-            materials.add(StandardMaterial {
-                base_color: Color::LinearRgba(LinearRgba::rgb(2.2, 1.3, 0.8)),
-                base_color_texture: Some(sheet.clone()),
-                uv_transform: bevy::math::Affine2::from_scale_angle_translation(Vec2::new(cell, 1.0), 0.0, Vec2::new(i as f32 * cell, 0.0)),
-                unlit: true,
-                alpha_mode: AlphaMode::Add,
-                cull_mode: None,
-                ..default()
-            })
-        })
-        .collect();
-    commands.insert_resource(FlameKit { mesh: meshes.add(Rectangle::new(1.0, 1.0)), frames });
+fn load_kit(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    // Additive and dim: a ring adds its glow over the scene, so a low colour reads as a low alpha.
+    let level = |materials: &mut Assets<StandardMaterial>, c: LinearRgba, k: usize| {
+        let a = (k + 1) as f32 / LEVELS as f32;
+        vfx::glow(materials, LinearRgba::rgb(c.red * a, c.green * a, c.blue * a))
+    };
+    let aura = LinearRgba::rgb(0.55, 0.16, 0.05);
+    let hot = LinearRgba::rgb(2.4, 1.9, 1.2);
+    let dim = (0..LEVELS).map(|k| level(&mut materials, aura, k)).collect();
+    let bright = (0..LEVELS).map(|k| level(&mut materials, hot, k)).collect();
+    commands.insert_resource(FlameKit {
+        meshes: [meshes.add(vfx::ring(0.86, 1.0)), meshes.add(vfx::ring(0.93, 1.0)), meshes.add(vfx::ring(0.975, 1.0))],
+        dim,
+        bright,
+    });
 }
 
 /// Landed hits fill their attacker's rage; idle rage drains.
@@ -234,65 +287,66 @@ fn tick_berserk(time: Res<Time>, mut commands: Commands, mut set: ResMut<Berserk
     }
 }
 
-/// Spawn, drive and retire the flame on every berserk fighter.
+/// Spawn, drive and retire the ring aura on every berserk fighter.
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
 fn flame(
     time: Res<Time>,
     mut commands: Commands,
     kit: Option<Res<FlameKit>>,
     owners: Query<(Entity, &Transform, &Mover, Has<Berserk>), Without<Flame>>,
-    camera: Query<&GlobalTransform, With<MainCamera>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut flames: Query<(Entity, &mut Flame)>,
-    mut quads: Query<(&mut Transform, &mut MeshMaterial3d<StandardMaterial>, &mut Visibility), (Without<Flame>, Without<Mover>)>,
+    mut rings: Query<(&mut Transform, &mut Mesh3d, &mut MeshMaterial3d<StandardMaterial>, &mut Visibility), (Without<Flame>, Without<Mover>)>,
 ) {
     let Some(kit) = kit else { return };
     let dt = time.delta_secs().clamp(0.0, 0.05);
     let t = time.elapsed_secs();
-    let eye = camera.single().map(|g| g.translation()).unwrap_or(Vec3::new(0.0, 3.0, 10.0));
-    // New flames.
+    // New auras: a pool of rings spread up the taper so it starts full.
     let lit: HashSet<Entity> = flames.iter().map(|(_, f)| f.owner).collect();
     for (e, tf, _, berserk) in &owners {
         if berserk && !lit.contains(&e) {
             let base = tf.translation - Vec3::Y * 0.8;
             let points = std::array::from_fn(|i| base + rest_offset(i as f32 / (NODES - 1) as f32, Vec3::ZERO));
-            let quads = (0..LAYERS)
+            let mut seed = (e.to_bits() as u32) | 1;
+            let rings = (0..RINGS)
                 .map(|k| {
-                    commands
+                    let id = commands
                         .spawn((
-                            Name::new("Flame layer"),
-                            Mesh3d(kit.mesh.clone()),
-                            MeshMaterial3d(kit.frames[k % kit.frames.len()].clone()),
+                            Name::new("Aura ring"),
+                            Mesh3d(kit.meshes[0].clone()),
+                            MeshMaterial3d(kit.dim[0].clone()),
                             Transform::from_translation(base),
                             Visibility::Hidden,
                             bevy::light::NotShadowCaster,
                         ))
-                        .id()
+                        .id();
+                    new_ring(id, &mut seed, k as f32 / RINGS as f32)
                 })
                 .collect();
-            commands.spawn((Name::new("Berserk flame"), Flame { owner: e, points, vel: [Vec3::ZERO; NODES], age: 0.0, ending: None, quads }));
+            commands.spawn((Name::new("Berserk aura"), Flame { owner: e, points, vel: [Vec3::ZERO; NODES], age: 0.0, ending: None, rings, arc: 0.0, seed }));
         }
     }
     for (fe, mut f) in &mut flames {
         let Ok((_, tf, mover, berserk)) = owners.get(f.owner) else {
-            for q in f.quads.drain(..) {
-                commands.entity(q).try_despawn();
+            for r in f.rings.drain(..) {
+                commands.entity(r.entity).try_despawn();
             }
             commands.entity(fe).despawn();
             continue;
         };
         f.age += dt;
         if !berserk {
-            let e = f.ending.get_or_insert(0.0);
-            *e += dt;
+            *f.ending.get_or_insert(0.0) += dt;
         }
-        let size = (f.age / GROW).min(1.0) * f.ending.map_or(1.0, |e| (1.0 - e / FADE).max(0.0)) * (1.0 + 0.06 * (t * 7.0).sin());
         if f.ending.is_some_and(|e| e >= FADE) {
-            for q in f.quads.drain(..) {
-                commands.entity(q).try_despawn();
+            for r in f.rings.drain(..) {
+                commands.entity(r.entity).try_despawn();
             }
             commands.entity(fe).despawn();
             continue;
         }
+        let size = (f.age / GROW).min(1.0) * f.ending.map_or(1.0, |e| (1.0 - e / FADE).max(0.0)) * (1.0 + 0.05 * (t * 7.0).sin());
         // Spine: the base rides the fighter; every other point springs toward its rest, bent back by motion.
         let base = tf.translation - Vec3::Y * 0.8;
         let v = mover.velocity;
@@ -302,34 +356,53 @@ fn flame(
             f.points[0] = base;
             for i in 1..NODES {
                 let s = i as f32 / (NODES - 1) as f32;
-                let want = base + rest_offset(s, v) * size.max(0.05) + Vec3::new((t * 3.1 + s * 4.0).sin(), 0.0, (t * 2.3 + s * 3.0).cos()) * 0.04 * s;
+                let want = base + rest_offset(s, v) * size.max(0.05);
                 let pull = STIFF * (want - f.points[i]) - DAMP * f.vel[i];
                 f.vel[i] += pull * h;
                 let step = f.vel[i] * h;
                 f.points[i] += step;
             }
         }
-        // Quads: frames advance at FPS, each layer offset, sized by the taper, facing the camera about the spine.
-        let frame = (t * FPS) as usize;
-        for (k, &q) in f.quads.iter().enumerate() {
-            let Ok((mut qt, mut mat, mut vis)) = quads.get_mut(q) else { continue };
-            let s = (k as f32 + 0.5) / LAYERS as f32;
-            let x = s * (NODES - 1) as f32;
+        let points = f.points;
+        let along = |s: f32| -> (Vec3, Vec3) {
+            let x = s.clamp(0.0, 1.0) * (NODES - 1) as f32;
             let i = (x.floor() as usize).min(NODES - 2);
             let u = x - i as f32;
-            let at = f.points[i].lerp(f.points[i + 1], u);
-            let up = (f.points[i + 1] - f.points[i]).normalize_or(Vec3::Y);
-            let to_eye = (eye - at).normalize_or(Vec3::Z);
-            let side = up.cross(to_eye).normalize_or(Vec3::X);
-            let face = side.cross(up);
-            let w = WIDTH * taper(s) * size;
-            let layer_h = HEIGHT * size * 2.4 / LAYERS as f32 * 2.0;
-            *qt = Transform::from_translation(at + face * 0.01 * k as f32)
-                .with_rotation(Quat::from_mat3(&Mat3::from_cols(side, up, face)))
-                .with_scale(Vec3::new(w.max(0.001), layer_h * (0.6 + 0.8 * taper(s)), 1.0));
-            mat.0 = kit.frames[(frame + k * 3) % kit.frames.len()].clone();
-            *vis = if w > 0.01 { Visibility::Visible } else { Visibility::Hidden };
+            (points[i].lerp(points[i + 1], u), (points[i + 1] - points[i]).normalize_or(Vec3::Y))
+        };
+        // Rings rise fast up the taper; a ring past the tip is reborn at the base with new looks.
+        let mut seed = f.seed;
+        for r in f.rings.iter_mut() {
+            r.s += r.rate * dt;
+            if r.s >= 1.0 {
+                let id = r.entity;
+                *r = new_ring(id, &mut seed, r.s - 1.0);
+            }
+            let Ok((mut rt, mut mesh, mut mat, mut vis)) = rings.get_mut(r.entity) else { continue };
+            let (at, up) = along(r.s);
+            let radius = 0.5 * WIDTH * taper(r.s) * r.size * size;
+            let glow = ring_glow(r.s) * size.min(1.0);
+            let level = ((glow * LEVELS as f32) as usize).min(LEVELS - 1);
+            let flat = Quat::from_rotation_arc(Vec3::Y, up);
+            *rt = Transform::from_translation(at)
+                .with_rotation(flat * r.tilt * Quat::from_rotation_y(t * r.spin))
+                .with_scale(Vec3::new(radius * r.squash.x, 1.0, radius * r.squash.y));
+            mesh.0 = kit.meshes[r.mesh].clone();
+            mat.0 = if r.bright { kit.bright[level].clone() } else { kit.dim[level].clone() };
+            *vis = if radius > 0.01 && glow > 0.05 { Visibility::Visible } else { Visibility::Hidden };
         }
+        // Electricity: short arcs crackle through the aura.
+        f.arc -= dt;
+        if f.arc <= 0.0 && size > 0.3 {
+            f.arc = ARC_EVERY;
+            let s0 = 0.15 + 0.6 * rand01(&mut seed);
+            let (a, _) = along(s0);
+            let ang = rand01(&mut seed) * std::f32::consts::TAU;
+            let out = Vec3::new(ang.cos(), 0.0, ang.sin()) * 0.5 * WIDTH * taper(s0) * size;
+            let b = a + out + Vec3::new(rand01(&mut seed) - 0.5, rand01(&mut seed) * 0.8, rand01(&mut seed) - 0.5).normalize_or(Vec3::Y) * ARC_LEN;
+            vfx::spawn_bolt(&mut commands, &mut meshes, &mut materials, a + out * 0.5, b, seed);
+        }
+        f.seed = seed;
     }
 }
 
@@ -395,6 +468,20 @@ mod tests {
         assert!(run.x < -0.5, "tip trails behind: {run}");
         // The base barely moves; the bend grows toward the tip.
         assert!(rest_offset(0.2, Vec3::new(6.0, 0.0, 0.0)).x.abs() < run.x.abs() * 0.1);
+    }
+
+    #[test]
+    fn rings_fade_in_off_the_base_and_out_at_the_tip() {
+        assert!(ring_glow(0.0) < 1e-3 && ring_glow(1.0) < 1e-3);
+        assert!(ring_glow(0.5) > 0.99);
+        assert_eq!(ring_glow(1.5), 0.0);
+        // Ring looks vary: sizes, squash and rise rates differ ring to ring.
+        let mut seed = 7;
+        let rings: Vec<Ring> = (0..40).map(|k| new_ring(Entity::PLACEHOLDER, &mut seed, k as f32 / 40.0)).collect();
+        let sizes: Vec<f32> = rings.iter().map(|r| r.size).collect();
+        assert!(sizes.iter().cloned().fold(0.0, f32::max) - sizes.iter().cloned().fold(9.0, f32::min) > 0.5);
+        assert!(rings.iter().any(|r| r.bright) && rings.iter().any(|r| !r.bright));
+        assert!(rings.iter().all(|r| (1.0 / RISE.1..=1.0 / RISE.0).contains(&r.rate)));
     }
 
     #[test]
