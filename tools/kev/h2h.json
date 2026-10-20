@@ -118,7 +118,9 @@
     "crossfade_hides_deg": 15.0,
     "facing_weight": 0.5,
     "target_weight": 6.0,
-    "_target_doc": "target_weight: cost removed per unit of mean landing score (head 2, torso 1, leg 0.25, over 0; targets.py) on target_rig, the body the game's enemies wear. other_rigs are planned for the report only."
+    "_target_doc": "target_weight: cost removed per unit of mean landing score (head 2, torso 1, leg 0.25, over 0; targets.py) on target_rig, the body the game's enemies wear. other_rigs are planned for the report only.",
+    "variety_slack": 6.0,
+    "_variety_doc": "variety_slack: a weapon takes the cheapest chain no earlier weapon uses, if it costs at most this much over its best."
   },
   "timing": {
     "fast_fraction": 0.6,

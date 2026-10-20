@@ -223,29 +223,29 @@
   {
    "enemy": "crossbow",
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
    "rigs": {
     "body": {
      "lands": [
-      "torso",
       "head",
       "torso",
+      "head",
       "head"
      ],
-     "score": 1.5
+     "score": 1.75
     },
     "elf": {
      "lands": [
-      "leg",
       "torso",
       "leg",
+      "torso",
       "torso"
      ],
-     "score": 0.62
+     "score": 0.81
     },
     "knight": {
      "lands": [
@@ -288,23 +288,23 @@
   {
    "enemy": "dagger",
    "chain": [
-    "jab",
-    "cross"
+    "hook",
+    "jab"
    ],
    "rigs": {
     "body": {
      "lands": [
-      "head",
+      "torso",
       "head"
      ],
-     "score": 2.0
+     "score": 1.5
     },
     "elf": {
      "lands": [
-      "torso",
+      "leg",
       "torso"
      ],
-     "score": 1.0
+     "score": 0.62
     },
     "knight": {
      "lands": [
@@ -341,7 +341,7 @@
    "chain": [
     "hook",
     "jab",
-    "hook",
+    "cross",
     "jab"
    ],
    "rigs": {
@@ -349,19 +349,19 @@
      "lands": [
       "torso",
       "head",
-      "torso",
+      "head",
       "head"
      ],
-     "score": 1.5
+     "score": 1.75
     },
     "elf": {
      "lands": [
       "leg",
       "torso",
-      "leg",
+      "torso",
       "torso"
      ],
-     "score": 0.62
+     "score": 0.81
     },
     "knight": {
      "lands": [
@@ -462,29 +462,29 @@
   {
    "enemy": "knives",
    "chain": [
-    "hook",
     "jab",
-    "hook",
-    "jab"
+    "cross",
+    "jab",
+    "cross"
    ],
    "rigs": {
     "body": {
      "lands": [
-      "torso",
       "head",
-      "torso",
+      "head",
+      "head",
       "head"
      ],
-     "score": 1.5
+     "score": 2.0
     },
     "elf": {
      "lands": [
-      "leg",
       "torso",
-      "leg",
+      "torso",
+      "torso",
       "torso"
      ],
-     "score": 0.62
+     "score": 1.0
     },
     "knight": {
      "lands": [

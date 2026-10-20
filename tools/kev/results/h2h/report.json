@@ -365,16 +365,16 @@
     "ranged": true
    },
    "chain": [
-    "hook",
     "jab",
     "hook",
-    "jab"
+    "jab",
+    "cross"
    ],
-   "cost": -17.1,
+   "cost": -16.4,
    "lands": [
-    "torso",
     "head",
     "torso",
+    "head",
     "head"
    ],
    "heavy": "charge",
@@ -493,12 +493,12 @@
     "ranged": false
    },
    "chain": [
-    "jab",
-    "cross"
+    "hook",
+    "jab"
    ],
-   "cost": -12.25,
+   "cost": -10.35,
    "lands": [
-    "head",
+    "torso",
     "head"
    ],
    "heavy": "kick",
@@ -595,14 +595,14 @@
    "chain": [
     "hook",
     "jab",
-    "hook",
+    "cross",
     "jab"
    ],
-   "cost": -17.1,
+   "cost": -15.85,
    "lands": [
     "torso",
     "head",
-    "torso",
+    "head",
     "head"
    ],
    "heavy": "shoulder bash",
@@ -835,16 +835,16 @@
     "ranged": true
    },
    "chain": [
-    "hook",
     "jab",
-    "hook",
-    "jab"
+    "cross",
+    "jab",
+    "cross"
    ],
-   "cost": -17.1,
+   "cost": -15.15,
    "lands": [
-    "torso",
     "head",
-    "torso",
+    "head",
+    "head",
     "head"
    ],
    "heavy": "charge",

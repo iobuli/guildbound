@@ -231,6 +231,35 @@ def chain_cost(seq, ends, timing, by_track, rules, weight, impact, enemy_windup,
     return cost
 
 
+def ranked_chains(light, ends, timing, by_track, rules, enemy, target=None):
+    """Every valid chain for `enemy`, cheapest first: [(cost, seq)]."""
+    windup = enemy["windup_s"] if enemy["windup_s"] is not None else 0.6
+    n = next(n for limit, n in rules["chain_length_by_windup"] if windup <= limit)
+    fast = windup <= rules["fast_enemy_windup"]
+    weight = rules["windup_weight_fast_enemy"] if fast else rules["windup_weight_slow_enemy"]
+    impact = rules["impact_weight_fast"] if fast else rules["impact_weight_slow"]
+    out = []
+    for seq in itertools.product(light, repeat=n):
+        if any(a == b for a, b in zip(seq, seq[1:])):
+            continue
+        c = chain_cost(seq, ends, timing, by_track, rules, weight, impact, windup, target)
+        if c is not None:
+            out.append((round(c, 2), list(seq)))
+    out.sort(key=lambda x: x[0])
+    return out
+
+
+def distinct(ranked, used, slack):
+    """The cheapest chain not in `used` costing at most `slack` over the best, else the best."""
+    best = ranked[0][0]
+    for c, seq in ranked:
+        if c > best + slack:
+            break
+        if tuple(seq) not in used:
+            return c, seq
+    return ranked[0]
+
+
 def best_chain(light, ends, timing, by_track, rules, enemy, target=None):
     windup = enemy["windup_s"] if enemy["windup_s"] is not None else 0.6
     n = next(n for limit, n in rules["chain_length_by_windup"] if windup <= limit)
@@ -281,8 +310,13 @@ def build(plan, strikes=None):
     lands = landing(plan, pool, timing, strikes)
     target = lands.get(rig_name(plan.get("target_rig", "")), {}).get("score")
     sets, report = {}, []
+    # Every weapon gets its own chain: the cheapest one no other weapon uses yet, within `variety_slack` of
+    # its best (two weapons that score alike would otherwise fight the same way).
+    used = set()
     for enemy in enemies:
-        cost, seq = best_chain(light, ends, timing, by_track, rules, enemy, target)
+        ranked = ranked_chains(light, ends, timing, by_track, rules, enemy, target)
+        cost, seq = distinct(ranked, used, rules.get("variety_slack", 0.0))
+        used.add(tuple(seq))
         first_travel = min(rules["travel_max"], rules["travel_base"] + rules["travel_per_m_reach"] * max(0.0, enemy["reach_m"] - 1.0))
         m = copy.deepcopy(base)
         m["name"] = plan["out_prefix"] + enemy["name"]

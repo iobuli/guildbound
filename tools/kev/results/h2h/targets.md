@@ -32,8 +32,8 @@ The jump on the legs and the punch on the upper body, both UAL clips. Not yet in
 |---|---|---|---|---|---|---|---|
 | axe | jab > cross | 2.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
 | bow | hook > jab > hook > jab | 1.5 | 0.62 | 1.0 | 1.0 | 1.0 | 0.25 |
-| crossbow | hook > jab > hook > jab | 1.5 | 0.62 | 1.0 | 1.0 | 1.0 | 0.25 |
-| dagger | jab > cross | 2.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |
-| greatsword | hook > jab > hook > jab | 1.5 | 0.62 | 1.0 | 1.0 | 1.0 | 0.25 |
+| crossbow | jab > hook > jab > cross | 1.75 | 0.81 | 1.0 | 1.0 | 1.0 | 0.25 |
+| dagger | hook > jab | 1.5 | 0.62 | 1.0 | 1.0 | 1.0 | 0.25 |
+| greatsword | hook > jab > cross > jab | 1.75 | 0.81 | 1.0 | 1.0 | 1.0 | 0.25 |
 | katana | hook > jab > cross | 1.67 | 0.75 | 1.0 | 1.0 | 1.0 | 0.25 |
-| knives | hook > jab > hook > jab | 1.5 | 0.62 | 1.0 | 1.0 | 1.0 | 0.25 |
+| knives | jab > cross > jab > cross | 2.0 | 1.0 | 1.0 | 1.0 | 1.0 | 0.25 |

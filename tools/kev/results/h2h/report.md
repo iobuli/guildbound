@@ -21,11 +21,11 @@
 |---|---|---|---|---|---|---|---|---|---|
 | axe | 1.57 | 0.149 | False | jab > cross | -12.25 | kick | 0.11 | 0.6 | 120 |
 | bow | 0.7 | None | True | hook > jab > hook > jab | -17.1 | charge | 0.2 | 0.75 | 160 |
-| crossbow | 0.7 | None | True | hook > jab > hook > jab | -17.1 | charge | 0.2 | 0.75 | 160 |
-| dagger | 1.0 | 0.247 | False | jab > cross | -12.25 | kick | 0.129 | 0.6 | 120 |
-| greatsword | 1.85 | 0.529 | False | hook > jab > hook > jab | -17.1 | shoulder bash | 0.186 | 0.4 | 120 |
+| crossbow | 0.7 | None | True | jab > hook > jab > cross | -16.4 | charge | 0.2 | 0.75 | 160 |
+| dagger | 1.0 | 0.247 | False | hook > jab | -10.35 | kick | 0.129 | 0.6 | 120 |
+| greatsword | 1.85 | 0.529 | False | hook > jab > cross > jab | -15.85 | shoulder bash | 0.186 | 0.4 | 120 |
 | katana | 1.45 | 0.313 | False | hook > jab > cross | -9.6 | kick | 0.143 | 0.6 | 120 |
-| knives | 0.86 | None | True | hook > jab > hook > jab | -17.1 | charge | 0.2 | 0.75 | 160 |
+| knives | 0.86 | None | True | jab > cross > jab > cross | -15.15 | charge | 0.2 | 0.75 | 160 |
 
 ## Where the chain lands, and the chain picked for each body
 

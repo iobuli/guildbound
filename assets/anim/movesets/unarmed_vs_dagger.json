@@ -3,6 +3,29 @@
   "kind": "unarmed",
   "light": [
     {
+      "name": "hook",
+      "clip": {
+        "track": "ual2/Melee_Hook",
+        "start": 0.013,
+        "end": 0.467
+      },
+      "windup": 0.412,
+      "active": 0.676,
+      "cancel": 0.826,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
+      }
+    },
+    {
       "name": "jab",
       "clip": {
         "track": "ual1/Punch_Jab",
@@ -19,26 +42,6 @@
       "travel": 0.25,
       "hitbox": {
         "bone": "hand_l",
-        "radius": 0.1
-      }
-    },
-    {
-      "name": "cross",
-      "clip": {
-        "track": "ual1/Punch_Cross",
-        "start": 0.03,
-        "end": 0.567
-      },
-      "windup": 0.193,
-      "active": 0.416,
-      "cancel": 0.566,
-      "damage": 9,
-      "poise": 12,
-      "knockback": 1.2,
-      "stamina": 10,
-      "travel": 0.25,
-      "hitbox": {
-        "bone": "hand_r",
         "radius": 0.1
       }
     }
