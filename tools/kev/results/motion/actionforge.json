@@ -6,24 +6,26 @@
   "travel",
   "foot_lift",
   "level",
+  "gait",
+  "burst",
   "returns"
  ],
- "k": 3,
+ "k": 2,
  "stability": [
   {
    "fraction": 0.25,
    "items": 21,
-   "median_ari": 0.248
+   "median_ari": 0.199
   },
   {
    "fraction": 0.5,
    "items": 42,
-   "median_ari": 0.876
+   "median_ari": 0.904
   },
   {
    "fraction": 0.75,
    "items": 63,
-   "median_ari": 0.843
+   "median_ari": 0.814
   },
   {
    "fraction": 1.0,
@@ -42,6 +44,8 @@
    "travel": 0.099,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.551,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -56,8 +60,10 @@
    "travel": 3.044,
    "foot_lift": 1.693,
    "level": 1.205,
+   "gait": 0.807,
+   "burst": 1.325,
    "returns": 1.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -70,6 +76,8 @@
    "travel": 0.004,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.732,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -84,9 +92,11 @@
    "travel": 0.906,
    "foot_lift": 0.13,
    "level": -0.0,
+   "gait": -0.844,
+   "burst": 1.016,
    "returns": 1.0,
    "cluster": "gesture",
-   "category": "idle"
+   "category": "locomotion"
   },
   {
    "file": "crouch_idle_loop.glb",
@@ -98,6 +108,8 @@
    "travel": 0.005,
    "foot_lift": 0.103,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.493,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -112,6 +124,8 @@
    "travel": 0.384,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.543,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -126,6 +140,8 @@
    "travel": 0.585,
    "foot_lift": 0.423,
    "level": -0.982,
+   "gait": 0.794,
+   "burst": 5.34,
    "returns": 0.0,
    "cluster": "strike",
    "category": "fall-or-rise"
@@ -140,6 +156,8 @@
    "travel": 0.0,
    "foot_lift": 0.0,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -154,6 +172,8 @@
    "travel": 0.153,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.537,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -168,6 +188,8 @@
    "travel": 0.05,
    "foot_lift": 0.14,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 3.205,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -182,6 +204,8 @@
    "travel": 0.048,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.827,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -196,6 +220,8 @@
    "travel": 0.09,
    "foot_lift": 0.248,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 5.292,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -210,6 +236,8 @@
    "travel": 0.098,
    "foot_lift": 0.001,
    "level": 0.025,
+   "gait": 0.0,
+   "burst": 1.481,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -224,6 +252,8 @@
    "travel": 0.143,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 2.263,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -238,6 +268,8 @@
    "travel": 4.408,
    "foot_lift": 1.231,
    "level": -0.667,
+   "gait": 0.923,
+   "burst": 1.748,
    "returns": 0.0,
    "cluster": "strike",
    "category": "fall-or-rise"
@@ -252,6 +284,8 @@
    "travel": 0.009,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.554,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -266,6 +300,8 @@
    "travel": 0.004,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.711,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -280,6 +316,8 @@
    "travel": 0.009,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.554,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -294,6 +332,8 @@
    "travel": 0.009,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.554,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -308,6 +348,8 @@
    "travel": 0.01,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.501,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -322,6 +364,8 @@
    "travel": 0.001,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.499,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -336,6 +380,8 @@
    "travel": 0.282,
    "foot_lift": 0.038,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 3.394,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -350,6 +396,8 @@
    "travel": 0.009,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.554,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -364,6 +412,8 @@
    "travel": 0.005,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 2.985,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -378,6 +428,8 @@
    "travel": 0.005,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 2.985,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -392,6 +444,8 @@
    "travel": 0.004,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.728,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -406,6 +460,8 @@
    "travel": 0.011,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.531,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -420,8 +476,10 @@
    "travel": 6.457,
    "foot_lift": 0.476,
    "level": 0.0,
+   "gait": -0.581,
+   "burst": 1.0,
    "returns": 1.0,
-   "cluster": "strike",
+   "cluster": "gesture",
    "category": "locomotion"
   },
   {
@@ -434,6 +492,8 @@
    "travel": 0.173,
    "foot_lift": 0.075,
    "level": -0.06,
+   "gait": 0.0,
+   "burst": 4.258,
    "returns": 0.0,
    "cluster": "gesture",
    "category": "transition"
@@ -448,6 +508,8 @@
    "travel": 0.022,
    "foot_lift": 0.429,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.508,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -462,8 +524,10 @@
    "travel": 0.167,
    "foot_lift": 0.689,
    "level": 0.417,
+   "gait": 0.783,
+   "burst": 3.618,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -476,8 +540,10 @@
    "travel": 0.164,
    "foot_lift": 0.137,
    "level": 1.0,
+   "gait": 0.0,
+   "burst": 2.484,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -490,6 +556,8 @@
    "travel": 1.704,
    "foot_lift": 0.14,
    "level": -0.244,
+   "gait": 0.087,
+   "burst": 2.2,
    "returns": 0.0,
    "cluster": "strike",
    "category": "strike"
@@ -504,9 +572,11 @@
    "travel": 0.67,
    "foot_lift": 0.121,
    "level": 0.328,
+   "gait": 0.0,
+   "burst": 1.491,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
-   "category": "fall-or-rise"
+   "cluster": "strike",
+   "category": "transition"
   },
   {
    "file": "ninjajump_idle_loop.glb",
@@ -518,6 +588,8 @@
    "travel": 0.021,
    "foot_lift": 0.096,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.519,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -532,8 +604,10 @@
    "travel": 0.221,
    "foot_lift": 0.828,
    "level": -0.001,
+   "gait": 1.0,
+   "burst": 5.31,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "jump-or-kick"
   },
   {
@@ -546,8 +620,10 @@
    "travel": 0.189,
    "foot_lift": 0.847,
    "level": 0.428,
+   "gait": 0.978,
+   "burst": 4.097,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -560,6 +636,8 @@
    "travel": 0.622,
    "foot_lift": 0.081,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 2.476,
    "returns": 0.0,
    "cluster": "strike",
    "category": "strike"
@@ -574,6 +652,8 @@
    "travel": 0.075,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.589,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -588,6 +668,8 @@
    "travel": 0.0,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -602,6 +684,8 @@
    "travel": 0.0,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -616,6 +700,8 @@
    "travel": 0.0,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -630,6 +716,8 @@
    "travel": 0.0,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -644,6 +732,8 @@
    "travel": 0.001,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.796,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -658,6 +748,8 @@
    "travel": 0.0,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -672,8 +764,10 @@
    "travel": 0.068,
    "foot_lift": 0.091,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 4.526,
    "returns": 1.0,
-   "cluster": "gesture",
+   "cluster": "strike",
    "category": "strike"
   },
   {
@@ -686,6 +780,8 @@
    "travel": 0.234,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.498,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "strike"
@@ -700,9 +796,11 @@
    "travel": 0.363,
    "foot_lift": 0.131,
    "level": 0.0,
+   "gait": -0.53,
+   "burst": 1.069,
    "returns": 1.0,
    "cluster": "gesture",
-   "category": "idle"
+   "category": "locomotion"
   },
   {
    "file": "roll.glb",
@@ -714,8 +812,10 @@
    "travel": 4.268,
    "foot_lift": 1.087,
    "level": 0.443,
+   "gait": 0.996,
+   "burst": 1.968,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -728,8 +828,10 @@
    "travel": 1.945,
    "foot_lift": 0.112,
    "level": 0.471,
+   "gait": 0.0,
+   "burst": 5.514,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -742,6 +844,8 @@
    "travel": 0.127,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 3.766,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "strike"
@@ -756,6 +860,8 @@
    "travel": 0.238,
    "foot_lift": 0.081,
    "level": -0.405,
+   "gait": 0.0,
+   "burst": 3.406,
    "returns": 0.0,
    "cluster": "gesture",
    "category": "fall-or-rise"
@@ -770,8 +876,10 @@
    "travel": 0.329,
    "foot_lift": 0.084,
    "level": 0.405,
+   "gait": 0.0,
+   "burst": 2.883,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -784,6 +892,8 @@
    "travel": 0.0,
    "foot_lift": 0.0,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -798,6 +908,8 @@
    "travel": 0.0,
    "foot_lift": 0.0,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 0.0,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -812,8 +924,10 @@
    "travel": 4.658,
    "foot_lift": 0.524,
    "level": 0.94,
+   "gait": 0.322,
+   "burst": 1.669,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "fall-or-rise"
   },
   {
@@ -826,6 +940,8 @@
    "travel": 5.423,
    "foot_lift": 0.013,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.012,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "locomotion"
@@ -840,6 +956,8 @@
    "travel": 5.682,
    "foot_lift": 0.527,
    "level": -0.94,
+   "gait": 0.0,
+   "burst": 1.652,
    "returns": 0.0,
    "cluster": "strike",
    "category": "fall-or-rise"
@@ -854,6 +972,8 @@
    "travel": 0.057,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.813,
    "returns": 0.0,
    "cluster": "gesture",
    "category": "transition"
@@ -868,6 +988,8 @@
    "travel": 0.07,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.926,
    "returns": 0.0,
    "cluster": "gesture",
    "category": "transition"
@@ -882,6 +1004,8 @@
    "travel": 0.005,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 1.477,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -896,6 +1020,8 @@
    "travel": 0.094,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.578,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -910,9 +1036,11 @@
    "travel": 9.943,
    "foot_lift": 0.506,
    "level": -0.0,
+   "gait": -0.815,
+   "burst": 1.0,
    "returns": 1.0,
-   "cluster": "strike",
-   "category": "jump-or-kick"
+   "cluster": "gesture",
+   "category": "locomotion"
   },
   {
    "file": "swim_fwd_loop.glb",
@@ -924,8 +1052,10 @@
    "travel": 2.621,
    "foot_lift": 0.106,
    "level": -0.0,
+   "gait": 0.97,
+   "burst": 1.339,
    "returns": 1.0,
-   "cluster": "gesture",
+   "cluster": "strike",
    "category": "locomotion"
   },
   {
@@ -938,6 +1068,8 @@
    "travel": 0.007,
    "foot_lift": 0.182,
    "level": -0.0,
+   "gait": 0.619,
+   "burst": 1.503,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -952,6 +1084,8 @@
    "travel": 1.286,
    "foot_lift": 0.261,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 6.24,
    "returns": 1.0,
    "cluster": "strike",
    "category": "strike"
@@ -966,6 +1100,8 @@
    "travel": 0.21,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 3.422,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -980,6 +1116,8 @@
    "travel": 3.055,
    "foot_lift": 0.165,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 7.127,
    "returns": 1.0,
    "cluster": "strike",
    "category": "strike"
@@ -994,6 +1132,8 @@
    "travel": 1.904,
    "foot_lift": 0.553,
    "level": -0.001,
+   "gait": 0.042,
+   "burst": 3.667,
    "returns": 1.0,
    "cluster": "strike",
    "category": "strike"
@@ -1008,6 +1148,8 @@
    "travel": 0.083,
    "foot_lift": 0.001,
    "level": 0.001,
+   "gait": 0.0,
+   "burst": 1.462,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -1022,6 +1164,8 @@
    "travel": 2.396,
    "foot_lift": 0.066,
    "level": -0.361,
+   "gait": 0.0,
+   "burst": 1.953,
    "returns": 0.0,
    "cluster": "strike",
    "category": "strike"
@@ -1036,9 +1180,11 @@
    "travel": 0.47,
    "foot_lift": 0.183,
    "level": 0.367,
+   "gait": 0.0,
+   "burst": 1.56,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
-   "category": "fall-or-rise"
+   "cluster": "strike",
+   "category": "transition"
   },
   {
    "file": "sword_regular_b.glb",
@@ -1050,6 +1196,8 @@
    "travel": 0.565,
    "foot_lift": 0.083,
    "level": -0.032,
+   "gait": 0.0,
+   "burst": 2.086,
    "returns": 0.0,
    "cluster": "strike",
    "category": "strike"
@@ -1064,8 +1212,10 @@
    "travel": 0.573,
    "foot_lift": 0.159,
    "level": 0.401,
+   "gait": 0.0,
+   "burst": 1.956,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "gesture",
    "category": "fall-or-rise"
   },
   {
@@ -1078,8 +1228,10 @@
    "travel": 1.094,
    "foot_lift": 0.57,
    "level": 0.374,
+   "gait": 0.167,
+   "burst": 3.909,
    "returns": 0.0,
-   "cluster": "fall-or-rise",
+   "cluster": "strike",
    "category": "strike"
   },
   {
@@ -1092,6 +1244,8 @@
    "travel": 1.191,
    "foot_lift": 0.546,
    "level": 0.006,
+   "gait": 0.319,
+   "burst": 3.829,
    "returns": 1.0,
    "cluster": "strike",
    "category": "strike"
@@ -1106,6 +1260,8 @@
    "travel": 0.17,
    "foot_lift": 0.001,
    "level": -0.0,
+   "gait": 0.0,
+   "burst": 3.329,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "strike"
@@ -1120,9 +1276,11 @@
    "travel": 0.789,
    "foot_lift": 0.24,
    "level": 0.0,
+   "gait": -0.605,
+   "burst": 1.004,
    "returns": 1.0,
    "cluster": "gesture",
-   "category": "idle"
+   "category": "locomotion"
   },
   {
    "file": "walk_formal_loop.glb",
@@ -1134,6 +1292,8 @@
    "travel": 1.178,
    "foot_lift": 0.291,
    "level": 0.0,
+   "gait": -0.553,
+   "burst": 1.001,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "locomotion"
@@ -1148,6 +1308,8 @@
    "travel": 1.183,
    "foot_lift": 0.291,
    "level": -0.0,
+   "gait": -0.552,
+   "burst": 1.005,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "locomotion"
@@ -1162,6 +1324,8 @@
    "travel": 0.017,
    "foot_lift": 0.014,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 3.151,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "gesture"
@@ -1176,6 +1340,8 @@
    "travel": 0.034,
    "foot_lift": 0.001,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.56,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "idle"
@@ -1190,6 +1356,8 @@
    "travel": 0.453,
    "foot_lift": 0.042,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 2.504,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "strike"
@@ -1204,6 +1372,8 @@
    "travel": 1.277,
    "foot_lift": 0.173,
    "level": 0.0,
+   "gait": 0.0,
+   "burst": 1.278,
    "returns": 1.0,
    "cluster": "gesture",
    "category": "locomotion"

@@ -18,6 +18,10 @@ the left thigh. Five features, all scale-free:
                the arm from guard to straight, a stance, a walk or a fall barely does
   level        pelvis height change from first to last frame, in leg lengths (signed: a fall or a sit is
                negative, a get-up positive); falls, sits and get-ups move the hips a long way vertically, strikes do not
+  gait         correlation of the left and right foot heights over the clip, when both feet move more than
+               GAIT_MOVE leg lengths (else 0): a walk or run alternates its feet (near -1), even in place
+  burst        95th-percentile over mean pelvis ground speed: steady travel (a walk, a slide) near 1-2, a
+               push-back or a lunge much higher
   returns      1 when the last pose matches the first (mean joint angle under 3 deg), else 0: a loop,
                or a one-shot that comes back to its stance
 
@@ -43,7 +47,7 @@ import kev  # noqa: E402
 import nodes  # noqa: E402
 import survey  # noqa: E402
 
-FEATURES = ["hand_speed", "reach", "extend", "travel", "foot_lift", "level", "returns"]
+FEATURES = ["hand_speed", "reach", "extend", "travel", "foot_lift", "level", "gait", "burst", "returns"]
 # Strike rules, read off the 84 ActionForge clips (tools/kev/results/motion/report.md):
 # - a swing moves the hands fast with the arm already long: hook 44, sword swings 23-47, overhand 36,
 #   shield bash 14 arm lengths / s; deaths, sits and recoveries stay at 2-11 (a knockback reaches 18 but
@@ -55,9 +59,16 @@ FEATURES = ["hand_speed", "reach", "extend", "travel", "foot_lift", "level", "re
 SWING_SPEED = 14.0
 SWING_FOOT_LIFT = 0.8
 THRUST_EXTEND = 0.5
-# Pelvis rise or fall (leg lengths) that marks a level change: a fall, a sit or a get-up. A lunge dips
-# the hips up to about 0.4 and still counts as a strike.
-LEVEL = 0.3
+# Pelvis rise or fall (leg lengths) that marks a level change: a fall, a sit or a get-up. Measured gap:
+# lunge recoveries rise 0.33-0.37 (a transition), sits, jump starts, rolls, deaths and get-ups 0.405-1.2;
+# sword_regular_b_rec at 0.401 sits on the line. A lunge dips the hips up to about 0.4 and still strikes.
+LEVEL = 0.4
+# Gait: both feet must move this much (leg lengths, std of height), and alternate below GAIT_CORR.
+GAIT_MOVE = 0.03
+GAIT_CORR = -0.4
+# Steady travel: walks, runs, swims and slide loops measure 1.0-1.47; Mech_GetHit's push-back 1.79 and the
+# slide start / exit about 1.65.
+STEADY_BURST = 1.6
 STRIKE_LEVEL = 0.4
 LOOP_DEG = 3.0
 
@@ -89,7 +100,7 @@ def bone_map(node_names, parent, rules=None):
 
 
 def features(path, name=None, gltf=None):
-    """The five motion features of one clip (`name` defaults to the file's first animation)."""
+    """The motion features of one clip (`name` defaults to the file's first animation)."""
     from clip_fk import Clip, GLTF2
 
     g = gltf or GLTF2().load(path)
@@ -105,6 +116,7 @@ def features(path, name=None, gltf=None):
     hands = {s: [] for s in "lr"}
     shoulder_reach, pelvis, feet = [], [], []
     reach_by_side = {s: [] for s in "lr"}
+    foot_y = {s: [] for s in "lr"}
     for f in range(c.frames):
         w = c.world(f)
         pv = P(w, "pelvis")
@@ -115,13 +127,19 @@ def features(path, name=None, gltf=None):
             shoulder_reach.append(np.linalg.norm(h - P(w, f"upperarm_{s}")))
             reach_by_side[s].append(shoulder_reach[-1])
         feet.append(min(P(w, "foot_l")[1], P(w, "foot_r")[1]))
+        foot_y["l"].append(P(w, "foot_l")[1])
+        foot_y["r"].append(P(w, "foot_r")[1])
     speed = max(float(np.percentile(np.linalg.norm(np.diff(np.array(hands[s]), axis=0), axis=1), 95)) * fps if c.frames > 1 else 0.0 for s in "lr")
     pelvis = np.array(pelvis)
-    path_len = float(np.sum(np.linalg.norm(np.diff(pelvis[:, [0, 2]], axis=0), axis=1))) if c.frames > 1 else 0.0
+    steps = np.linalg.norm(np.diff(pelvis[:, [0, 2]], axis=0), axis=1) if c.frames > 1 else np.zeros(1)
+    path_len = float(np.sum(steps))
+    burst = float(np.percentile(steps, 95) / max(steps.mean(), 1e-9)) if steps.mean() > 1e-6 else 0.0
     duration = max(c.duration, 1e-3)
     feet = np.array(feet)
     high = max(P(c.world(f), "foot_l")[1] for f in range(c.frames))
     high = max(high, max(P(c.world(f), "foot_r")[1] for f in range(c.frames)))
+    yl, yr = np.array(foot_y["l"]), np.array(foot_y["r"])
+    gait = float(np.corrcoef(yl, yr)[0, 1]) if min(yl.std(), yr.std()) > GAIT_MOVE * leg else 0.0
     first, last = c.local(0), c.local(c.frames - 1)
     loop = mean_rotation_angle(first, last) < LOOP_DEG
     return {
@@ -133,6 +151,8 @@ def features(path, name=None, gltf=None):
         "travel": round(path_len / duration / leg, 3),
         "foot_lift": round(float(high - feet.min()) / leg, 3),
         "level": round(float(pelvis[-1][1] - pelvis[0][1]) / leg, 3),
+        "gait": round(gait, 3),
+        "burst": round(burst, 3),
         "returns": 1.0 if loop else 0.0,
     }
 
@@ -158,11 +178,17 @@ def name_cluster(c):
         return "strike"
     if level > LEVEL:
         return "fall-or-rise"
+    cycle = c["returns"] >= 0.5
+    # Alternating feet in a loop is a gait even when the feet lift high (a sprint); a jump moves both
+    # feet together (gait above 0).
+    if c.get("gait", 0.0) < GAIT_CORR and cycle:
+        return "locomotion"
     if c["foot_lift"] > 0.5:
         return "jump-or-kick"
     if c["travel"] > 1.0:
-        return "locomotion"
-    if c["returns"] < 0.5:
+        # Travel without a steady cycle (a get-hit push-back, a landing slide) is a transition.
+        return "locomotion" if cycle and c.get("burst", 1.0) < STEADY_BURST else "transition"
+    if not cycle:
         return "transition"
     if c["hand_speed"] < 1.0:
         return "idle"

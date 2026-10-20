@@ -49,9 +49,9 @@ class BoneMapTests(unittest.TestCase):
 
 
 
-def row(hand_speed, extend, level, foot_lift, travel, returns, reach=1.0):
+def row(hand_speed, extend, level, foot_lift, travel, returns, reach=1.0, gait=0.0, burst=1.0):
     return {"hand_speed": hand_speed, "extend": extend, "level": level, "foot_lift": foot_lift,
-            "travel": travel, "returns": returns, "reach": reach}
+            "travel": travel, "returns": returns, "reach": reach, "gait": gait, "burst": burst}
 
 
 class LabelTests(unittest.TestCase):
@@ -68,8 +68,16 @@ class LabelTests(unittest.TestCase):
         self.assertEqual(motion.name_cluster(row(6.34, 0.501, 1.0, 0.137, 0.164, 0)), "fall-or-rise")      # laytoidle
         self.assertEqual(motion.name_cluster(row(15.55, 0.279, -0.666, 0.36, 5.452, 0)), "fall-or-rise")   # Mech_Die
         self.assertEqual(motion.name_cluster(row(4.58, 0.0, -0.06, 0.075, 0.173, 0)), "transition")        # jump_land
-        self.assertEqual(motion.name_cluster(row(17.5, 0.407, 0.055, 0.908, 0.711, 1)), "jump-or-kick")    # Mech_Run
+        self.assertEqual(motion.name_cluster(row(17.5, 0.407, 0.055, 0.908, 0.711, 1, gait=0.779)), "jump-or-kick")  # Mech_Run (bounds)
         self.assertEqual(motion.name_cluster(row(8.28, 0.453, 0.0, 0.002, 0.212, 1)), "gesture")           # Mech_Shoot
+
+    def test_walks_in_place_and_push_backs(self):
+        self.assertEqual(motion.name_cluster(row(1.75, 0.174, 0.002, 0.223, 0.144, 1, gait=-0.772)), "locomotion")  # Mech_Walk
+        self.assertEqual(motion.name_cluster(row(9.0, 0.3, 0.0, 0.9, 9.9, 1, gait=-0.815)), "locomotion")          # sprint_loop
+        self.assertEqual(motion.name_cluster(row(12.18, 0.237, 0.0, 0.222, 2.305, 1, burst=1.785)), "transition")  # Mech_GetHit
+        self.assertEqual(motion.name_cluster(row(6.32, 0.404, 0.328, 0.121, 0.67, 0)), "transition")             # melee_hook_rec
+        self.assertEqual(motion.name_cluster(row(2.29, 0.205, -0.405, 0.081, 0.238, 0)), "fall-or-rise")         # sitting_enter
+        self.assertEqual(motion.name_cluster(row(0.3, 0.05, 0.0, 0.001, 0.009, 1)), "idle")                      # idle_loop
 
 
 if __name__ == "__main__":

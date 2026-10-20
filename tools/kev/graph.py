@@ -10,6 +10,8 @@ change to roles.json reruns `nodes` and everything after it, and nothing else.
 
 Stages run in topological order (Kahn's algorithm); a cycle or an unknown `after` name stops the run before
 anything starts. `--only` runs the named stages and the stages they come after.
+
+How this fits the rest of Kev, and how to extend it: tools/kev/ARCHITECTURE.md.
 """
 import argparse
 import glob

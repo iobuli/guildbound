@@ -17,6 +17,8 @@ centimetres and one in metres compare directly:
                its angle from up, and elongation = largest / second singular value)
 
 `--llm` prints one short line per model and region: the form meant for a language model's context.
+
+How this fits the rest of Kev, and how to extend it: tools/kev/ARCHITECTURE.md.
 """
 import argparse
 import json

@@ -33,10 +33,16 @@ PropsLite came with no licence file, so treat them as local-only until a licence
   - ActionForge: the 14 real hits (jab, cross, hook, overhand throw, shield bash, zombie scratch, sword attacks,
     tree chopping). No deaths, landings or sits.
   - Mech: exactly its six Attack clips. Die is fall-or-rise, Run is jump-or-kick, Shoot is gesture.
-- Still imperfect:
-  - in-place walk loops read as gesture, since in-place clips have no travel; their `_Root` versions are
-    locomotion
-  - Mech_GetHit reads as locomotion, because it is pushed back 2.3 leg lengths / s
-  - the k-means clusters alongside are less stable now (0.25 at 25 % on ActionForge) because k drops to 3.
-    They are kept only for comparison; the categories themselves are deterministic.
+- Two more features fixed the remaining labels:
+  - `gait`: the correlation of the left and right foot heights
+  - `burst`: peak over mean ground speed
+- With them:
+  - in-place walk loops (Mech_Walk, CrouchWalk) and the sprint read as locomotion
+  - Mech_GetHit and the landings read as transition
+  - lunge recoveries read as transition, after the level threshold moved to 0.4 from the measured gap
+- Known limits:
+  - `sword_regular_b_rec` (+0.401) sits on the level line and reads fall-or-rise
+  - Mech_Run bounds (both feet together, gait +0.78), so it reads as jump-or-kick
+  - the k-means clusters alongside are not stable at 25 % subsamples (0.20); the categories themselves are
+    deterministic
 - The 84 UAL / ActionForge clips' original five features are unchanged.
