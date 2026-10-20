@@ -79,3 +79,11 @@ Order of every kick: shift weight, chamber, strike (snap ease), lock, pull back,
 - Mae geri, by hand: about 12 check-and-fix rounds per pose.
 - Yoko and ushiro geri, with `posefit.py`: 1 to 3 fits of about 7 s each per pose, plus a seed or a reference fix
   where the chart was ambiguous (the back-kick foot follows the technique, toes down).
+
+## Blind variations (`variants.py`)
+- **What it does:** re-aims a perfected kick at a new target with no reference picture. The cost is: striking
+  surface to the target, the centre of mass over the support foot, the technique's facings, and staying near the
+  perfected pose.
+- **Results:** 7 targets (low, high, wide and head height) all hit within 2 mm, in about 1 minute total.
+- **Lesson:** let a parameter keep stepping while the cost falls. With halving steps alone, each parameter can
+  only travel about 20° in total, and a low target needs more.
