@@ -2,8 +2,10 @@
 
     python3 tools/kev/motion.py <clip dir> [--out staging/kev/motion] [--kmax 8]
 
-Each single-clip GLB in the folder is sampled with clip_fk at 30 fps (UE / UAL bone names: pelvis,
-upperarm_l/r, hand_l/r, foot_l/r). Five features, all scale-free:
+Each GLB in the folder is sampled with clip_fk at 30 fps; a file with several animations gives one row
+per animation. Bones are found by Kev's role rules (roles.json via nodes.classify), not by name, so any
+rig nodes.py can parse works: UE / UAL, Mixamo, Kevin, Rigify, Auto-Rig Pro. The pelvis is the parent of
+the left thigh. Five features, all scale-free:
 
   hand_speed   95th-percentile speed of either hand relative to the pelvis, in arm lengths per second
                (a percentile, not the peak: one bad frame should not decide what a clip is)
@@ -32,10 +34,37 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(REPO, "tools", "anim"))
 
 import kev  # noqa: E402
+import nodes  # noqa: E402
 import survey  # noqa: E402
 
 FEATURES = ["hand_speed", "reach", "travel", "foot_lift", "returns"]
 LOOP_DEG = 3.0
+
+
+# Canonical key -> (role, side) in nodes.py terms.
+CANON = {
+    "upperarm_l": ("upperarm", "l"), "lowerarm_l": ("forearm", "l"), "hand_l": ("hand", "l"),
+    "upperarm_r": ("upperarm", "r"), "lowerarm_r": ("forearm", "r"), "hand_r": ("hand", "r"),
+    "thigh_l": ("thigh", "l"), "calf_l": ("shin", "l"), "foot_l": ("foot", "l"),
+    "thigh_r": ("thigh", "r"), "calf_r": ("shin", "r"), "foot_r": ("foot", "r"),
+}
+
+
+def bone_map(node_names, parent, rules=None):
+    """Canonical key -> node index: the first node of each role and side, in file order (the first
+    segment of a split limb). Raises KeyError naming what is missing."""
+    rules = rules or nodes.load_rules()
+    found = {}
+    for i, name in enumerate(node_names):
+        role_side = nodes.classify(name or "", rules)
+        for key, want in CANON.items():
+            if key not in found and role_side == want:
+                found[key] = i
+    missing = sorted(set(CANON) - set(found))
+    if missing:
+        raise KeyError(f"no bone for {missing}")
+    found["pelvis"] = parent.get(found["thigh_l"], found["thigh_l"])
+    return found
 
 
 def features(path, name=None, gltf=None):
@@ -47,7 +76,8 @@ def features(path, name=None, gltf=None):
     c = Clip(path, name, gltf=g)
     c.precompute()
     fps = c.fps
-    P = lambda w, b: np.asarray(c.pos(w, b), float)  # noqa: E731
+    bones = bone_map(c.node_names, c.parent)
+    P = lambda w, b: np.asarray(w[bones[b]][:3, 3], float)  # noqa: E731
     w0 = c.world(0)
     arm = (np.linalg.norm(P(w0, "upperarm_l") - P(w0, "lowerarm_l")) + np.linalg.norm(P(w0, "lowerarm_l") - P(w0, "hand_l"))) or 1.0
     leg = (np.linalg.norm(P(w0, "thigh_l") - P(w0, "calf_l")) + np.linalg.norm(P(w0, "calf_l") - P(w0, "foot_l"))) or 1.0
@@ -131,12 +161,18 @@ def main():
     ap.add_argument("--kmax", type=int, default=8)
     args = ap.parse_args()
     rows = []
+    from clip_fk import GLTF2
+
     for f in sorted(os.listdir(args.clips)):
-        if f.endswith(".glb"):
+        if not f.endswith(".glb"):
+            continue
+        path = os.path.join(args.clips, f)
+        g = GLTF2().load(path)
+        for anim in g.animations:
             try:
-                rows.append({"file": f, **features(os.path.join(args.clips, f))})
+                rows.append({"file": f, **features(path, anim.name, g)})
             except Exception as exc:  # a clip without the canonical bones is reported, not fatal
-                print(f"skip {f}: {type(exc).__name__} {exc}")
+                print(f"skip {f}:{anim.name}: {type(exc).__name__} {exc}")
     k, names, stab = cluster(rows, args.kmax)
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "motion.json"), "w") as fh:

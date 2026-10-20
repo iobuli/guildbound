@@ -1,5 +1,5 @@
 {
-  "_doc": "Kev node rules. A joint name is lower-cased, its prefix (strip) and side marker removed, then matched against `roles` in order: the first regex that matches gives the role. `regions` maps a role to a body region; a side suffix (_l / _r) is added for sided roles. Add a rig family by adding its prefix to `strip` or a pattern to `roles`; no code change is needed. `suffix` regexes are removed before the side is read (Rigify segment numbers like .001).",
+  "_doc": "Kev node rules. A joint name is lower-cased, its prefix (strip) and side marker removed, then matched against `roles` in order: the first regex that matches gives the role. `regions` maps a role to a body region; a side suffix (_l / _r) is added for sided roles. Add a rig family by adding its prefix to `strip` or a pattern to `roles`; no code change is needed. `suffix` regexes are removed before the side is read (Rigify segment numbers like .001, Auto-Rig Pro's .x centre marker).",
   "strip": [
     "mixamorig:",
     "b-",
@@ -8,7 +8,8 @@
     "bip001 "
   ],
   "suffix": [
-    "(?<=\\.[lr])\\.\\d{3}$"
+    "(?<=\\.[lr])\\.\\d{3}$",
+    "\\.x$"
   ],
   "side": {
     "l": [
@@ -29,7 +30,7 @@
   "roles": [
     [
       "helper",
-      "^ik_|socket|_end$|end$|proxy|weapon|^prop|_leaf"
+      "^ik_|socket|_end$|end$|proxy|weapon|^prop|_leaf|attachment|^c_traj$"
     ],
     [
       "root",
@@ -53,7 +54,7 @@
     ],
     [
       "upperarm",
-      "upperarm|^arm$|^arm[0-9]*$|upper_arm"
+      "upperarm|^arm$|^arm[0-9]*$|upper_arm|^arm_stretch$"
     ],
     [
       "clavicle",
@@ -69,11 +70,11 @@
     ],
     [
       "shin",
-      "calf|shin|knee|lowerleg|^leg$"
+      "calf|shin|knee|lowerleg|^leg$|^leg_stretch$"
     ],
     [
       "thigh",
-      "thigh|upleg|upperleg"
+      "thigh|upleg|upperleg|^thigh_stretch$"
     ],
     [
       "pelvis",

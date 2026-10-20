@@ -24,7 +24,10 @@ RIGS = [
     "assets/packs/company_characters/glb/mage.glb",
 ]
 # Not human-proportioned: checked for limbs and symmetry, not human ranges.
-CREATURES = ["assets/packs/company_characters/glb/dragon.glb"]
+CREATURES = [
+    "assets/packs/company_characters/glb/dragon.glb",
+    "assets/packs/mech_00/glb/Mech_Char_Mesh.glb",
+]
 REQUIRED = {"head", "torso", "arm_l", "arm_r", "hand_l", "hand_r", "leg_l", "leg_r", "foot_l", "foot_r"}
 
 
@@ -63,6 +66,13 @@ class NamingTests(unittest.TestCase):
         self.check("DEF-spine.005", "neck", "")
         self.check("DEF-spine.006", "head", "")
         self.check("DEF-spine.002", "spine", "")
+
+    def test_auto_rig_pro_names(self):
+        self.check("arm_stretch.r", "upperarm", "r")
+        self.check("forearm_twist.l", "twist", "l")
+        self.check("leg_stretch.l", "shin", "l")
+        self.check("head.x", "head", "")
+        self.check("Shoulder_S_Attachment.R", "helper", "r")
 
 
 class EveryRigTests(unittest.TestCase):

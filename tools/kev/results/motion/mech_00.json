@@ -1,0 +1,375 @@
+{
+ "features": [
+  "hand_speed",
+  "reach",
+  "travel",
+  "foot_lift",
+  "returns"
+ ],
+ "k": 8,
+ "stability": [
+  {
+   "fraction": 0.25,
+   "items": 7,
+   "median_ari": 0.644
+  },
+  {
+   "fraction": 0.5,
+   "items": 15,
+   "median_ari": 0.825
+  },
+  {
+   "fraction": 0.75,
+   "items": 23,
+   "median_ari": 0.678
+  },
+  {
+   "fraction": 1.0,
+   "items": 31,
+   "median_ari": 1.0
+  }
+ ],
+ "clips": [
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack1.L",
+   "duration_s": 1.5,
+   "hand_speed": 20.791,
+   "reach": 1.0,
+   "travel": 1.866,
+   "foot_lift": 0.197,
+   "returns": 1.0,
+   "category": "strike-4"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack1.R",
+   "duration_s": 1.5,
+   "hand_speed": 20.791,
+   "reach": 1.0,
+   "travel": 1.866,
+   "foot_lift": 0.197,
+   "returns": 1.0,
+   "category": "strike-4"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack2.L",
+   "duration_s": 1.5,
+   "hand_speed": 29.62,
+   "reach": 1.0,
+   "travel": 0.693,
+   "foot_lift": 0.159,
+   "returns": 1.0,
+   "category": "strike"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack2.R",
+   "duration_s": 1.5,
+   "hand_speed": 29.62,
+   "reach": 1.0,
+   "travel": 0.693,
+   "foot_lift": 0.159,
+   "returns": 1.0,
+   "category": "strike"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack3.L",
+   "duration_s": 1.5,
+   "hand_speed": 14.381,
+   "reach": 0.984,
+   "travel": 1.05,
+   "foot_lift": 0.077,
+   "returns": 1.0,
+   "category": "strike-4"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Attack3.R",
+   "duration_s": 1.5,
+   "hand_speed": 14.381,
+   "reach": 0.984,
+   "travel": 1.05,
+   "foot_lift": 0.077,
+   "returns": 1.0,
+   "category": "strike-4"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Crouch",
+   "duration_s": 0.917,
+   "hand_speed": 2.592,
+   "reach": 0.927,
+   "travel": 0.323,
+   "foot_lift": 0.106,
+   "returns": 0.0,
+   "category": "strike-3"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_CrouchWalk",
+   "duration_s": 1.167,
+   "hand_speed": 1.65,
+   "reach": 0.902,
+   "travel": 0.452,
+   "foot_lift": 0.099,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_CrouchWalk_Root",
+   "duration_s": 1.167,
+   "hand_speed": 1.65,
+   "reach": 0.902,
+   "travel": 1.148,
+   "foot_lift": 0.099,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Die",
+   "duration_s": 0.917,
+   "hand_speed": 15.55,
+   "reach": 1.0,
+   "travel": 5.452,
+   "foot_lift": 0.36,
+   "returns": 0.0,
+   "category": "strike-3"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_GetHit",
+   "duration_s": 0.5,
+   "hand_speed": 12.176,
+   "reach": 1.0,
+   "travel": 2.305,
+   "foot_lift": 0.222,
+   "returns": 1.0,
+   "category": "strike-4"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Idle",
+   "duration_s": 1.333,
+   "hand_speed": 0.137,
+   "reach": 0.844,
+   "travel": 0.07,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "gesture-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Jump",
+   "duration_s": 1.417,
+   "hand_speed": 10.133,
+   "reach": 0.955,
+   "travel": 0.863,
+   "foot_lift": 1.473,
+   "returns": 1.0,
+   "category": "jump-or-kick"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Jump_Land",
+   "duration_s": 0.533,
+   "hand_speed": 8.026,
+   "reach": 0.942,
+   "travel": 1.052,
+   "foot_lift": 0.315,
+   "returns": 0.0,
+   "category": "strike-3"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Jump_Mid",
+   "duration_s": 0.467,
+   "hand_speed": 2.579,
+   "reach": 0.954,
+   "travel": 0.078,
+   "foot_lift": 0.367,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Jump_Start",
+   "duration_s": 0.417,
+   "hand_speed": 13.752,
+   "reach": 0.95,
+   "travel": 1.505,
+   "foot_lift": 0.53,
+   "returns": 0.0,
+   "category": "strike-3"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Run",
+   "duration_s": 0.75,
+   "hand_speed": 17.502,
+   "reach": 1.0,
+   "travel": 0.711,
+   "foot_lift": 0.908,
+   "returns": 1.0,
+   "category": "jump-or-kick"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Run_Root",
+   "duration_s": 0.75,
+   "hand_speed": 17.502,
+   "reach": 1.0,
+   "travel": 6.865,
+   "foot_lift": 0.908,
+   "returns": 1.0,
+   "category": "jump-or-kick-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Shoot.L",
+   "duration_s": 1.5,
+   "hand_speed": 8.275,
+   "reach": 0.985,
+   "travel": 0.212,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "strike-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Shoot.R",
+   "duration_s": 1.5,
+   "hand_speed": 8.275,
+   "reach": 0.985,
+   "travel": 0.212,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "strike-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Shoot2.L",
+   "duration_s": 1.5,
+   "hand_speed": 6.966,
+   "reach": 0.985,
+   "travel": 0.232,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "strike-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Shoot2.R",
+   "duration_s": 1.5,
+   "hand_speed": 6.966,
+   "reach": 0.985,
+   "travel": 0.232,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "strike-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_ShoulderShoot1",
+   "duration_s": 1.0,
+   "hand_speed": 1.823,
+   "reach": 0.827,
+   "travel": 0.386,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "gesture-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_ShoulderShoot2",
+   "duration_s": 1.0,
+   "hand_speed": 2.965,
+   "reach": 0.827,
+   "travel": 0.386,
+   "foot_lift": 0.002,
+   "returns": 1.0,
+   "category": "gesture-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Tpose",
+   "duration_s": 0.017,
+   "hand_speed": 0.0,
+   "reach": 0.997,
+   "travel": 0.0,
+   "foot_lift": 0.0,
+   "returns": 1.0,
+   "category": "strike-2"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Walk",
+   "duration_s": 1.167,
+   "hand_speed": 1.753,
+   "reach": 0.934,
+   "travel": 0.144,
+   "foot_lift": 0.223,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_Walk_Root",
+   "duration_s": 1.167,
+   "hand_speed": 1.753,
+   "reach": 0.934,
+   "travel": 1.315,
+   "foot_lift": 0.223,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_WalkLeft",
+   "duration_s": 1.167,
+   "hand_speed": 1.827,
+   "reach": 0.943,
+   "travel": 0.356,
+   "foot_lift": 0.143,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_WalkLeft_Root",
+   "duration_s": 1.167,
+   "hand_speed": 1.827,
+   "reach": 0.943,
+   "travel": 1.122,
+   "foot_lift": 0.143,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_WalkRight",
+   "duration_s": 1.167,
+   "hand_speed": 1.112,
+   "reach": 0.962,
+   "travel": 0.291,
+   "foot_lift": 0.141,
+   "returns": 1.0,
+   "category": "gesture"
+  },
+  {
+   "file": "Mech_00_Anim.glb",
+   "clip": "Mech_WalkRight_Root",
+   "duration_s": 1.167,
+   "hand_speed": 1.112,
+   "reach": 0.962,
+   "travel": 1.145,
+   "foot_lift": 0.141,
+   "returns": 1.0,
+   "category": "gesture"
+  }
+ ]
+}

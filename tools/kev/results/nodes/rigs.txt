@@ -105,3 +105,15 @@ mage.glb: 191 joints, height 1.7606 m, arm 0.359/0.359 leg 0.5319/0.5319 (x heig
   leg_r: 4 j, at 0.3472 h axis 0.2 deg elong 24.85
   other: 118 j, at 0.9454 h axis 29.3 deg elong 1.7
   torso: 6 j, at 0.626 h axis 8.3 deg elong 18.26
+Mech_Char_Mesh.glb: 87 joints, height 371.9106 cm, arm 0.6339/0.6339 leg 0.6093/0.6093 (x height, L/R), arm angle 92.5/92.5 deg, asym arm 0.0 leg 0.0
+  arm_l: 5 j, at 0.8859 h axis 87.8 deg elong 43.38
+  arm_r: 5 j, at 0.8859 h axis 87.8 deg elong 43.38
+  foot_l: 2 j, at -0.0 h
+  foot_r: 2 j, at 0.0 h
+  hand_l: 12 j, at 0.8825 h axis 88.0 deg elong 2.11
+  hand_r: 12 j, at 0.8825 h axis 88.0 deg elong 2.11
+  head: 2 j, at 0.9704 h
+  leg_l: 4 j, at 0.4288 h axis 4.3 deg elong 19.24
+  leg_r: 4 j, at 0.4288 h axis 4.3 deg elong 19.24
+  other: 38 j, at 0.7099 h axis 90.0 deg elong 1.82
+  torso: 1 j, at 0.7358 h
