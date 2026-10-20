@@ -28,7 +28,27 @@ use std::collections::HashSet;
 use std::f32::consts::{FRAC_PI_2, TAU};
 
 pub fn plugin(app: &mut App) {
-    app.add_systems(Update, select.in_set(PlaySet::Select));
+    app.add_systems(Update, (select, clip_smoke).chain().in_set(PlaySet::Select));
+}
+
+/// `GB_CLIP=<track>` (smoke runs, recordings): from `GB_CLIP_AT` s (default 2) the player plays that bank track
+/// on its own, looping, in place of whatever `select` chose (e.g. `GB_CLIP=karate/Karate_Test`).
+fn clip_smoke(time: Res<Time>, bank: Option<Res<PoseBank>>, mut players: Query<&mut MotionLayers, With<super::Player>>, mut said: Local<bool>) {
+    let Ok(name) = std::env::var("GB_CLIP") else { return };
+    let at: f32 = std::env::var("GB_CLIP_AT").ok().and_then(|v| v.parse().ok()).unwrap_or(2.0);
+    let t = time.elapsed_secs() - at;
+    if t < 0.0 || !bank.is_some_and(|b| b.has(&name)) {
+        return;
+    }
+    if !*said {
+        *said = true;
+        info!("[clip] player plays {name}");
+    }
+    for mut layers in &mut players {
+        layers.layers = vec![Layer { source: Source::Track { name: name.clone(), time: t, looping: true }, weight: 1.0, mask: Mask::Full, style: None }];
+        // The clip owns the feet: ground foot IK would drag a kicking foot down.
+        layers.contact.foot_ik = 0.0;
+    }
 }
 
 /// Bank names of the locomotion tracks.

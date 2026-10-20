@@ -1,0 +1,218 @@
+{
+  "source": "Karate kick chart (user upload, not committed): mae / yoko / ushiro geri, three panels each, side view. Keypoints read off tools/blender/refgrid.py crops, in the chart's own pixels.",
+  "view": {
+    "forward": [
+      0,
+      0,
+      1
+    ]
+  },
+  "sets": {
+    "Mae_Geri": {
+      "forward": "left",
+      "anchor": "ankle_s",
+      "landmarks": {
+        "crown": "crown",
+        "nose": "nose",
+        "neck": "neck",
+        "shoulder": "shoulder_l",
+        "elbow": "elbow_l",
+        "fist": "knuckle_l",
+        "hip_k": "hip_r",
+        "knee_k": "knee_r",
+        "ankle_k": "ankle_r",
+        "heel_k": "heel_r",
+        "ball_k": "ball_r",
+        "toe_k": "toe_tip_r",
+        "hip_s": "hip_l",
+        "knee_s": "knee_l",
+        "ankle_s": "ankle_l",
+        "heel_s": "heel_l",
+        "toe_s": "toe_tip_l"
+      },
+      "phases": {
+        "chamber": {
+          "crop": [
+            110,
+            5,
+            150,
+            222
+          ],
+          "top": 23.75,
+          "floor": 219.5,
+          "points": {
+            "crown": [
+              182.5,
+              23.75
+            ],
+            "nose": [
+              168.0,
+              42.5
+            ],
+            "neck": [
+              187.5,
+              51.25
+            ],
+            "shoulder": [
+              190.0,
+              61.25
+            ],
+            "elbow": [
+              185.0,
+              105.0
+            ],
+            "fist": [
+              174.5,
+              125.0
+            ],
+            "hip_k": [
+              175.0,
+              108.0
+            ],
+            "knee_k": [
+              132.5,
+              101.25
+            ],
+            "ankle_k": [
+              161.25,
+              135.0
+            ],
+            "heel_k": [
+              166.25,
+              138.75
+            ],
+            "ball_k": [
+              147.5,
+              146.25
+            ],
+            "toe_k": [
+              142.5,
+              148.0
+            ],
+            "hip_s": [
+              175.0,
+              108.0
+            ],
+            "knee_s": [
+              171.25,
+              165.0
+            ],
+            "ankle_s": [
+              178.75,
+              208.75
+            ],
+            "heel_s": [
+              183.75,
+              216.25
+            ],
+            "toe_s": [
+              161.25,
+              213.75
+            ]
+          },
+          "facing": {
+            "chest": "forward",
+            "face": "forward",
+            "pelvis": "forward",
+            "kneecap_r": "forward",
+            "toes_r": "forward",
+            "sole_l": "down",
+            "toes_l": "forward"
+          },
+          "notes": "Knee up a little above the hip, shin hanging back ~40 deg under it, foot relaxed with toes curled up. Support leg near straight. Upright, slight lean back. Near arm: elbow at the side, fist in front of the belt."
+        },
+        "kick": {
+          "crop": [
+            215,
+            5,
+            180,
+            222
+          ],
+          "top": 18.75,
+          "floor": 218.75,
+          "points": {
+            "crown": [
+              343.75,
+              18.75
+            ],
+            "nose": [
+              330.5,
+              37.5
+            ],
+            "neck": [
+              350.0,
+              47.5
+            ],
+            "shoulder": [
+              358.75,
+              58.75
+            ],
+            "elbow": [
+              351.25,
+              105.0
+            ],
+            "fist": [
+              338.75,
+              120.0
+            ],
+            "hip_k": [
+              330.0,
+              106.0
+            ],
+            "knee_k": [
+              294.0,
+              95.25
+            ],
+            "ankle_k": [
+              256.25,
+              91.25
+            ],
+            "heel_k": [
+              245.0,
+              93.75
+            ],
+            "ball_k": [
+              230.0,
+              82.5
+            ],
+            "toe_k": [
+              225.5,
+              75.0
+            ],
+            "hip_s": [
+              330.0,
+              106.0
+            ],
+            "knee_s": [
+              326.25,
+              157.5
+            ],
+            "ankle_s": [
+              332.5,
+              206.25
+            ],
+            "heel_s": [
+              342.5,
+              215.0
+            ],
+            "toe_s": [
+              316.25,
+              212.5
+            ]
+          },
+          "facing": {
+            "chest": "forward",
+            "face": "forward",
+            "pelvis": "forward",
+            "kneecap_r": "up",
+            "toes_r": "forward",
+            "sole_r": "down",
+            "sole_l": "down",
+            "toes_l": "forward"
+          },
+          "notes": "Leg straight, rising ~7 deg, striking with the ball of the foot (toes pulled back, sole forward). Hips pushed into the kick, shoulders back over the support foot to balance. Support leg straight."
+        }
+      }
+    }
+  }
+}

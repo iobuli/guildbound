@@ -49,7 +49,7 @@ pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
 pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 5] = [
+pub const LIBRARIES: [(&str, &str); 6] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
@@ -57,6 +57,8 @@ pub const LIBRARIES: [(&str, &str); 5] = [
     ("rokoko", "anim/rokoko.glb"),
     // Kevin Iglesias, Human Melee Animations FREE (male rig), converted by tools/model/kev_pack.py.
     ("kev_melee", "anim/kev_melee.glb"),
+    // Karate kicks (mae, yoko, ushiro geri) posed on the UAL mannequin by tools/blender/karate.py.
+    ("karate", "anim/karate.glb"),
 ];
 
 pub fn plugin(app: &mut App) {
