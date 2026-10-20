@@ -210,7 +210,207 @@
             "sole_l": "down",
             "toes_l": "forward"
           },
-          "notes": "Leg straight, rising ~7 deg, striking with the ball of the foot (toes pulled back, sole forward). Hips pushed into the kick, shoulders back over the support foot to balance. Support leg straight."
+          "notes": "Leg straight, rising ~7 deg, striking with the ball of the foot (toes pulled back, sole forward). Hips pushed into the kick, shoulders back over the support foot to balance. Support leg straight.",
+          "in_plane": [
+            "knee_k",
+            "ankle_k"
+          ]
+        }
+      }
+    },
+    "Yoko_Geri": {
+      "forward": "left",
+      "anchor": "ankle_s",
+      "height_px": 160,
+      "landmarks": {
+        "crown": "crown",
+        "nose": "nose",
+        "neck": "neck",
+        "shoulder": "shoulder_l",
+        "elbow": "elbow_l",
+        "fist": "knuckle_l",
+        "lead_fist": "knuckle_r",
+        "hip_k": "hip_r",
+        "knee_k": "knee_r",
+        "ankle_k": "ankle_r",
+        "heel_k": "heel_r",
+        "toe_k": "toe_tip_r",
+        "hip_s": "hip_l",
+        "knee_s": "knee_l",
+        "ankle_s": "ankle_l",
+        "toe_s": "toe_tip_l"
+      },
+      "phases": {
+        "chamber": {
+          "crop": [
+            0,
+            240,
+            110,
+            172
+          ],
+          "top": 249.0,
+          "floor": 405.6,
+          "points": {
+            "crown": [
+              66,
+              249
+            ],
+            "nose": [
+              55,
+              266
+            ],
+            "neck": [
+              66,
+              275
+            ],
+            "shoulder": [
+              90,
+              282
+            ],
+            "elbow": [
+              94,
+              304
+            ],
+            "fist": [
+              79,
+              310
+            ],
+            "lead_fist": [
+              9,
+              302
+            ],
+            "hip_k": [
+              60,
+              316
+            ],
+            "knee_k": [
+              45,
+              300
+            ],
+            "ankle_k": [
+              51,
+              345
+            ],
+            "heel_k": [
+              54,
+              348
+            ],
+            "toe_k": [
+              48,
+              346
+            ],
+            "hip_s": [
+              62,
+              318
+            ],
+            "knee_s": [
+              70,
+              360
+            ],
+            "ankle_s": [
+              66,
+              394
+            ],
+            "toe_s": [
+              79,
+              403
+            ]
+          },
+          "facing": {
+            "chest": "left",
+            "face": "forward",
+            "kneecap_r": "left",
+            "sole_r": "down",
+            "sole_l": "down",
+            "toes_l": "back"
+          },
+          "notes": "Body turned to the camera, head to the target. Knee lifted high in front and a little toward the target, shin hanging, foot by the support knee. Support foot already turned (toes away from the target). Lead fist punching at the target, near fist pulled to the hip."
+        },
+        "kick": {
+          "crop": [
+            75,
+            238,
+            200,
+            172
+          ],
+          "top": 246.25,
+          "floor": 407.0,
+          "points": {
+            "crown": [
+              238.75,
+              246.25
+            ],
+            "nose": [
+              228.75,
+              263.75
+            ],
+            "neck": [
+              238.75,
+              276.25
+            ],
+            "shoulder": [
+              251.25,
+              280
+            ],
+            "elbow": [
+              258.75,
+              302.5
+            ],
+            "fist": [
+              238.75,
+              310
+            ],
+            "hip_k": [
+              205,
+              301.25
+            ],
+            "knee_k": [
+              165,
+              286.25
+            ],
+            "ankle_k": [
+              137.5,
+              276.25
+            ],
+            "heel_k": [
+              133.75,
+              280
+            ],
+            "toe_k": [
+              112.5,
+              272.5
+            ],
+            "hip_s": [
+              210,
+              312.5
+            ],
+            "knee_s": [
+              205,
+              347.5
+            ],
+            "ankle_s": [
+              207.5,
+              395
+            ],
+            "toe_s": [
+              216.25,
+              405
+            ]
+          },
+          "facing": {
+            "chest": "left",
+            "face": "forward",
+            "kneecap_r": "left",
+            "sole_r": "forward",
+            "sole_l": "down",
+            "toes_l": "back"
+          },
+          "notes": "Leg straight out at the target, rising ~14 deg, heel and blade leading, sole at the target. Torso leaning ~35 deg away, head level looking at the target. Support foot turned so its heel points at the target. Near fist at the hip.",
+          "in_plane": [
+            "knee_k",
+            "ankle_k",
+            "toe_k"
+          ]
         }
       }
     }

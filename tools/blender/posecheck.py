@@ -49,7 +49,8 @@ def main():
     g = data["landmarks"][lm]
     px = view["centre"][0] + (-g[2]) * view["ppm"]
     py = view["centre"][1] - (g[1] - view["view_z"]) * view["ppm"]
-    s = (k["floor"] - k["top"]) / (H * view["ppm"]) * ZOOM
+    hpx = k.get("height_px", ref["sets"][set_name].get("height_px", k["floor"] - k["top"]))
+    s = hpx / (H * view["ppm"]) * ZOOM
     ox, oy = (ax - x0) * ZOOM - px * s, (ay - y0) * ZOOM - py * s
     W, Hh = view_size = (int(700 * s), int(820 * s))
     sheet = f"{out}/{tag}_check.png"

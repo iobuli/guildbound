@@ -23,6 +23,7 @@ import bpy
 from mathutils import Matrix, Quaternion, Vector
 
 UAL = "/home/user/gb_e7/assets/anim/ual2.glb"
+FITS = "/home/user/gb_e7/tools/blender/refs/fit.json"
 FPS = 60
 
 # Rest-pose landmarks (world): spine_03 head (chest frame origin) and pelvis head, from ual2.glb.
@@ -109,8 +110,8 @@ def pose(rig, p, origin):
     q_chest = q_pel @ rot((0, 0, 1), ct) @ rot((1, 0, 0), cp) @ rot((0, 1, 0), cr)
     for i, n in enumerate(("spine_01", "spine_02", "spine_03")):
         rig.set(n, q_pel.slerp(q_chest, (i + 1) / 3))
-    hp, hy = p.get("head", (0.0, 0.0))
-    q_head = q_chest @ rot((0, 0, 1), hy) @ rot((1, 0, 0), hp)
+    hp, hy, *hr = p.get("head", (0.0, 0.0))
+    q_head = q_chest @ rot((0, 0, 1), hy) @ rot((1, 0, 0), hp) @ rot((0, 1, 0), hr[0] if hr else 0.0)
     rig.set("neck_01", q_chest.slerp(q_head, 0.5))
     rig.set("Head", q_head)
     # Legs. A planted (or `ankle`) leg: two-bone IK onto an ankle target in the body frame. A lifted leg with
@@ -246,10 +247,19 @@ POSES = {
                   hl={"shoulder": (-19, 8, 0), "elbow": 31}, hr={"shoulder": (-19, 8, 0), "elbow": 31}),
     },
     "Yoko_Geri": {
-        "chamber": P(yaw=80, pel=(0.04, 0.0, -0.05), tilt=(0, 8), chest=(0, 6, -10), head=(0, -70),
-                     r={"ankle": (0.02, -0.18, 0.78), "pole": (-0.2, -1, 0.6), "foot": -15, "twist": -70}),
-        "kick": P(yaw=90, pel=(0.10, 0.0, -0.02), tilt=(0, 30), chest=(0, 12, -15), head=(0, -75),
-                  r={"ankle": (-0.85, 0.0, 1.45), "pole": (0, -1, 0.2), "foot": -10, "twist": -80}),
+        # Body turned to the camera, head to the target; knee lifted high in front and a little toward the
+        # target, foot by the support knee; support foot already turning; lead fist at the target, near fist at
+        # the hip.
+        "chamber": P(yaw=75, pel=(0.06, -0.02, -0.03), tilt=(0, 6), chest=(0, 4, 0), head=(5, -70, -8),
+                     l={"ankle": SUPPORT, "planted": True, "pole": (0.05, -1, 0), "turn": 1.8},
+                     r={"thigh": (100, 12, -20), "knee": 125, "foot": -15, "toe": -20},
+                     hl={"shoulder": (-30, 10, 0), "elbow": 100}, hr={"shoulder": (10, 80, 0), "elbow": 15}),
+        # Leg straight out at the target with the heel and blade leading, torso leaning ~35 deg away, head level
+        # on the target; support heel turned to the target.
+        "kick": P(yaw=90, pel=(0.09, 0.0, -0.03), tilt=(0, 24), chest=(0, 12, 0), head=(5, -75, -30),
+                  l={"ankle": SUPPORT, "planted": True, "pole": (0.05, -1, 0), "turn": 2.0},
+                  r={"thigh": (12, 80, -20), "knee": 3, "foot": -10, "toe": -20},
+                  hl={"shoulder": (-30, 10, 0), "elbow": 100}, hr={"shoulder": (40, 30, 0), "elbow": 100}),
     },
     "Ushiro_Geri": {
         "chamber": P(yaw=180, pel=(0.04, 0.03, -0.01), tilt=(14, 0), chest=(14, 0, 0), head=(-15, 75),
@@ -289,7 +299,7 @@ def origin_for(p):
     return Vector(SUPPORT) - B @ Vector(SUPPORT)
 
 
-DEFAULTS = {"yaw": 0.0, "pel": (0.0, 0.0, 0.0), "tilt": (0.0, 0.0), "chest": (0.0, 0.0, 0.0), "head": (0.0, 0.0)}
+DEFAULTS = {"yaw": 0.0, "pel": (0.0, 0.0, 0.0), "tilt": (0.0, 0.0), "chest": (0.0, 0.0, 0.0), "head": (0.0, 0.0, 0.0)}
 LIMB = {"pole": (0.0, -1.0, 0.0), "foot": 0.0, "toe": 0.0, "twist": 0.0, "turn": 1.0, "planted": False, "fist": 80.0, "roll": 0.0,
         "shoulder": (0.0, 0.0, 0.0), "elbow": 0.0, "wrist": 0.0,
         "thigh": (0.0, 0.0, 0.0), "knee": 0.0, "plant": 0.0, "ik": False, "ankle": (0.0, 0.0, 0.104)}
@@ -514,4 +524,49 @@ def main():
     print("KARATE DONE", [(n, t, f) for n, t, f in marks])
 
 
-main()
+
+def apply_fits(path=FITS):
+    """Kev's fitted values (`posefit.py`) over the hand-written poses: {"Set.phase": {"r.thigh.0": 101.5, ...}}."""
+    try:
+        with open(path) as f:
+            fits = json.load(f)
+    except (OSError, ValueError):
+        return
+    for key, vals in fits.items():
+        set_name, _, phase = key.partition(".")
+        if set_name in POSES and phase in POSES[set_name]:
+            for k, v in vals.items():
+                set_param(POSES[set_name][phase], k, v)
+
+
+def get_param(p, path):
+    keys = path.split(".")
+    node = full(p)
+    for k in keys[:-1]:
+        node = node[k]
+    return node[int(keys[-1])] if keys[-1].isdigit() else node[keys[-1]]
+
+
+def set_param(p, path, v):
+    """Set `yaw`, `pel.1`, `r.knee` or `r.thigh.0` in a pose dict (missing parts start from the defaults)."""
+    keys = path.split(".")
+    full_p = full(p)
+    if keys[0] in ("l", "r", "hl", "hr"):
+        limb = p.setdefault(keys[0], {})
+        if keys[-1].isdigit():
+            cur = list(limb.get(keys[1], full_p[keys[0]][keys[1]]))
+            cur[int(keys[-1])] = v
+            limb[keys[1]] = tuple(cur)
+        else:
+            limb[keys[1]] = v
+    elif keys[-1].isdigit():
+        cur = list(p.get(keys[0], full_p[keys[0]]))
+        cur[int(keys[-1])] = v
+        p[keys[0]] = tuple(cur)
+    else:
+        p[keys[0]] = v
+
+
+apply_fits()
+if __name__ == "__main__":
+    main()

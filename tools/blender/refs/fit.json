@@ -1,0 +1,40 @@
+{
+ "Yoko_Geri.chamber": {
+  "r.thigh.0": 113.25,
+  "r.thigh.1": 7.25,
+  "r.thigh.2": 5.5,
+  "r.knee": 132.0,
+  "r.foot": -28.0,
+  "pel.0": 0.0637,
+  "pel.1": 0.085,
+  "tilt.1": 6.0,
+  "chest.1": 7.0,
+  "hl.shoulder.0": -26.0,
+  "hl.elbow": 105.0,
+  "hr.shoulder.1": 79.25,
+  "pel.2": 0.0094,
+  "yaw": 73.5,
+  "head.0": 16.5,
+  "head.2": -8.25,
+  "hr.shoulder.0": -5.75,
+  "hr.shoulder.2": -15.75,
+  "hr.elbow": 30.75
+ },
+ "Yoko_Geri.kick": {
+  "yaw": 90.0,
+  "pel.0": 0.0934,
+  "pel.1": 0.032,
+  "pel.2": 0.0094,
+  "tilt.1": 40.8437,
+  "chest.1": -22.5937,
+  "head.0": 16.5,
+  "head.2": -6.9063,
+  "r.thigh.0": -11.0313,
+  "r.thigh.1": 74.7813,
+  "r.thigh.2": -24.5,
+  "r.knee": -1.4062,
+  "r.foot": 37.5,
+  "hl.shoulder.0": -18.6563,
+  "hl.elbow": 105.25
+ }
+}

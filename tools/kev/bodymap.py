@@ -410,7 +410,8 @@ def compare(bm, L, F, ref, set_name, phase):
     floor = bm["body"]["floor"]
     # Reference keypoints in heights: x along the figure's forward, y up from the floor.
     top, bottom = k.get("top", r.get("top")), k.get("floor", r.get("floor"))
-    hpx = bottom - top
+    # A leaning or crouching figure is shorter than it stands: `height_px` gives its standing height.
+    hpx = k.get("height_px", r.get("height_px", bottom - top))
     sgn = -1 if r.get("forward", "left") == "left" else 1
     pts = {n: np.array([sgn * (p[0]) / hpx, (bottom - p[1]) / hpx]) for n, p in k["points"].items()}
     names = {n: v for n, v in r["landmarks"].items()}  # ref keypoint -> our landmark
