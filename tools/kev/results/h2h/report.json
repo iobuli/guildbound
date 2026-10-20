@@ -40,17 +40,21 @@
   },
   "ual2/Melee_Hook": {
    "hand": "r",
-   "windup": 0.571,
-   "active": 0.643,
-   "cancel": 0.643,
+   "windup": 0.393,
+   "active": 0.65,
+   "cancel": 0.8,
    "peak_mps": 38.87,
    "end_speed_mps": 1.877,
    "end_radial_mps": -1.656,
    "yaw_start": -90.6,
    "yaw_end": -100.6,
-   "source": "kev fk",
+   "window": [
+    0.0,
+    0.467
+   ],
+   "source": "game cutter",
    "duration": 0.467,
-   "windup_s": 0.266,
+   "windup_s": 0.184,
    "mid_swing": false
   },
   "ual2/OverhandThrow": {
@@ -74,18 +78,22 @@
   },
   "ual2/Zombie_Scratch": {
    "hand": "r",
-   "windup": 0.315,
-   "active": 0.37,
-   "cancel": 0.389,
+   "windup": 0.26,
+   "active": 0.444,
+   "cancel": 0.594,
    "peak_mps": 22.03,
-   "end_speed_mps": 0.085,
-   "end_radial_mps": -0.051,
+   "end_speed_mps": 1.603,
+   "end_radial_mps": 0.009,
    "yaw_start": -81.1,
-   "yaw_end": -81.2,
-   "source": "kev fk",
+   "yaw_end": -52.9,
+   "window": [
+    0.347,
+    1.0
+   ],
+   "source": "game cutter",
    "duration": 1.8,
-   "windup_s": 0.567,
-   "mid_swing": false
+   "windup_s": 0.17,
+   "mid_swing": true
   },
   "ual2/Shield_OneShot": {
    "hand": "l",
@@ -211,10 +219,10 @@
     "ranged": false
    },
    "chain": [
-    "jab",
-    "cross"
+    "hook",
+    "jab"
    ],
-   "cost": -0.8,
+   "cost": -1.35,
    "heavy": "kick",
    "guard": {
     "clip": {

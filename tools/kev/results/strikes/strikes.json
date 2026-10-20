@@ -1,0 +1,189 @@
+{
+  "rejected": [
+    {
+      "bone": "hand_r",
+      "kind": "Punch",
+      "peak": 0.1666666716337204,
+      "reason": "short of reach",
+      "speed": 4.70699405670166,
+      "track": "ual1/Punch_Jab"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.20000001788139343,
+      "reason": "short of reach",
+      "speed": 13.004654884338379,
+      "track": "ual2/Melee_Hook"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.30000001192092896,
+      "reason": "not ahead of the body",
+      "speed": 18.183034896850586,
+      "track": "ual2/OverhandThrow"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.06666667014360428,
+      "reason": "short of reach",
+      "speed": 6.652635097503662,
+      "track": "ual2/Shield_Dash"
+    },
+    {
+      "bone": "hand_r",
+      "kind": "Punch",
+      "peak": 0.06666667014360428,
+      "reason": "starts before the clip",
+      "speed": 10.76595687866211,
+      "track": "ual2/Shield_Dash"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.6000000238418579,
+      "reason": "short of reach",
+      "speed": 4.934033393859863,
+      "track": "ual2/Shield_Dash"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.06666667014360428,
+      "reason": "starts before the clip",
+      "speed": 9.756340026855469,
+      "track": "ual2/Shield_OneShot"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.7000000476837158,
+      "reason": "runs past the clip end",
+      "speed": 4.509452819824219,
+      "track": "ual2/Shield_OneShot"
+    },
+    {
+      "bone": "hand_l",
+      "kind": "Punch",
+      "peak": 0.5666667222976685,
+      "reason": "not ahead of the body",
+      "speed": 9.974517822265625,
+      "track": "ual2/Zombie_Scratch"
+    }
+  ],
+  "strikes": [
+    {
+      "attack": {
+        "active": 0.4638553559780121,
+        "cancel": 0.6138553619384766,
+        "end": 0.5666667222976685,
+        "start": 0.013333342969417572,
+        "windup": 0.2469879537820816
+      },
+      "bone": "hand_r",
+      "duration": 1.0,
+      "end": 0.2666666805744171,
+      "kind": "Punch",
+      "peak": 0.20000001788139343,
+      "speed": 9.302253723144531,
+      "start": 0.13333334028720856,
+      "track": "ual1/Punch_Cross"
+    },
+    {
+      "attack": {
+        "active": 0.4437499940395355,
+        "cancel": 0.59375,
+        "end": 0.5333333611488342,
+        "start": 0.0,
+        "windup": 0.21875
+      },
+      "bone": "hand_l",
+      "duration": 0.8666666746139526,
+      "end": 0.23333334922790527,
+      "kind": "Punch",
+      "peak": 0.1666666716337204,
+      "speed": 8.29275131225586,
+      "start": 0.10000000894069672,
+      "track": "ual1/Punch_Jab"
+    },
+    {
+      "attack": {
+        "active": 0.6500000357627869,
+        "cancel": 0.8000000715255737,
+        "end": 0.46666666865348816,
+        "start": 0.0,
+        "windup": 0.3928571939468384
+      },
+      "bone": "hand_r",
+      "duration": 0.46666666865348816,
+      "end": 0.30000001192092896,
+      "kind": "Punch",
+      "peak": 0.23333334922790527,
+      "speed": 29.58973503112793,
+      "start": 0.0,
+      "track": "ual2/Melee_Hook"
+    },
+    {
+      "attack": {
+        "active": 0.5695651769638062,
+        "cancel": 0.7195651531219482,
+        "end": 0.7666667103767395,
+        "start": 0.0,
+        "windup": 0.41304343938827515
+      },
+      "bone": "hand_r",
+      "duration": 1.3333333730697632,
+      "end": 0.46666669845581055,
+      "kind": "Punch",
+      "peak": 0.36666667461395264,
+      "speed": 22.131940841674805,
+      "start": 0.06666667014360428,
+      "track": "ual2/OverhandThrow"
+    },
+    {
+      "attack": {
+        "active": 0.49537038803100586,
+        "cancel": 0.645370364189148,
+        "end": 1.3333333730697632,
+        "start": 0.6133333444595337,
+        "windup": 0.32870370149612427
+      },
+      "bone": "hand_r",
+      "duration": 1.3333333730697632,
+      "end": 1.2333333492279053,
+      "kind": "Punch",
+      "peak": 0.9000000357627869,
+      "speed": 5.305805683135986,
+      "start": 0.7333333492279053,
+      "track": "ual2/OverhandThrow"
+    },
+    {
+      "attack": {
+        "active": 0.44387760758399963,
+        "cancel": 0.5938776135444641,
+        "end": 1.0,
+        "start": 0.34666669368743896,
+        "windup": 0.26020410656929016
+      },
+      "bone": "hand_r",
+      "duration": 1.7999999523162842,
+      "end": 0.7000000476837158,
+      "kind": "Punch",
+      "peak": 0.5666667222976685,
+      "speed": 24.055038452148438,
+      "start": 0.46666669845581055,
+      "track": "ual2/Zombie_Scratch"
+    }
+  ],
+  "tracks": [
+    "ual1/Punch_Cross",
+    "ual1/Punch_Jab",
+    "ual2/Melee_Hook",
+    "ual2/OverhandThrow",
+    "ual2/Shield_Dash",
+    "ual2/Shield_OneShot",
+    "ual2/Zombie_Scratch"
+  ]
+}

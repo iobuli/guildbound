@@ -7,7 +7,10 @@
 //!   pelvis (in leg lengths per second), peaks over `PUNCH_SPEED` / `KICK_SPEED` that reach out
 //!   (`REACH`) ahead of the body (`AHEAD`), upright (head over the pelvis), not spinning
 //!   (`MAX_TURN`), with a wind-up and a
-//!   recovery that fit a fight (`MAX_WINDUP`, `MAX_RECOVER`). Each becomes an unarmed `Attack`
+//!   recovery that fit a fight (`MAX_WINDUP`, `MAX_RECOVER`); the arc must pass in front of the body
+//!   between the peak and the band's end (a hook is fastest out to the side), and a band may run into the
+//!   end of a clip that continues in `<track>_Rec` (UAL's Melee_Hook), or begin at frame 0 of a library clip
+//!   (authored to start on its own wind-up). Each becomes an unarmed `Attack`
 //!   whose windows come from the measured contact (`strike_attack`). Built once the bank is ready.
 //! - `Repertoire` (every `Fighter`): extra attacks per moveset and slot. An unarmed fighter starts
 //!   with a few library strikes (`SEED_PUNCHES`, `SEED_KICKS`, seeded by entity), the player with
@@ -140,14 +143,37 @@ fn yaw_of_pelvis(world: &[Transform], bones: &Bones) -> f32 {
     across.z.atan2(across.x)
 }
 
+/// Direction of `limb` from the pelvis against the body's facing (cos, flat on the ground): +1 straight ahead.
+pub fn aim_at(world: &[Transform], bones: &Bones, limb: usize) -> f32 {
+    let left = (world[bones.thigh[0]].translation - world[bones.thigh[1]].translation).with_y(0.0).normalize_or(Vec3::X);
+    let dir = (world[limb].translation - world[bones.pelvis].translation).with_y(0.0).normalize_or_zero();
+    dir.dot(left.cross(Vec3::Y))
+}
+
+/// A speed peak `segment` turned down, and the gate that turned it down.
+#[derive(Clone, Debug, PartialEq)]
+pub struct Rejected {
+    pub bone: String,
+    pub kind: Kind,
+    pub peak: f32,
+    pub speed: f32,
+    pub reason: &'static str,
+}
+
 /// Every strike in `track` (see the module docs).
 pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
+    segment_explained(bank, track).0
+}
+
+/// `segment`, plus every peak over the speed threshold that a later gate turned down (Kev reads these
+/// to say why a clip gave no strike).
+pub fn segment_explained(bank: &PoseBank, track: &str) -> (Vec<Strike>, Vec<Rejected>) {
     let (skeleton, bones): (&Skeleton, &Bones) = (&bank.skeleton, &bank.bones);
     let duration = bank.duration(track);
     let dt = 1.0 / SAMPLE_HZ;
     let n = (duration / dt) as usize + 1;
     if n < 8 {
-        return Vec::new();
+        return (Vec::new(), Vec::new());
     }
     let frames: Vec<Vec<Transform>> = (0..n).map(|i| skeleton.fk(&bank.sample_raw(track, i as f32 * dt, false), bones.pelvis)).collect();
     let rest = skeleton.fk(&skeleton.rest_pose(), bones.pelvis);
@@ -155,7 +181,7 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
     let leg = len(bones.thigh[0], bones.calf[0]) + len(bones.calf[0], bones.foot[0]);
     let arm = len(bones.upperarm[0], bones.lowerarm[0]) + len(bones.lowerarm[0], bones.hand[0]);
     if !(leg > 1e-3 && arm > 1e-3) {
-        return Vec::new();
+        return (Vec::new(), Vec::new());
     }
     let yaw: Vec<f32> = {
         let raw: Vec<f32> = frames.iter().map(|w| yaw_of_pelvis(w, bones)).collect();
@@ -172,8 +198,15 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
         }
         out
     };
+    // UAL splits some strikes in two (Melee_Hook, then Melee_Hook_Rec): the swing runs into the end of
+    // the first clip and finishes in the second, so a band reaching the end is whole.
+    let continues = bank.tracks.contains_key(&format!("{track}_Rec"));
+    // A library clip is authored as one strike from its own wind-up (UAL's Melee_Hook is already moving at
+    // frame 0), so a band reaching the start is its wind-up; a long mocap take cut there is mid-motion.
+    let authored = library_track(track);
     let floor = frames.iter().flat_map(|w| [w[bones.foot[0]].translation.y, w[bones.foot[1]].translation.y]).fold(f32::INFINITY, f32::min);
     let mut out = Vec::new();
+    let mut rejected = Vec::new();
     let names = |b: usize| skeleton.names[b].clone();
     for side in 0..2 {
         for (kind, limb, root, full, threshold) in [
@@ -197,6 +230,13 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
                 if t - last_peak < SEPARATION {
                     continue;
                 }
+                // Peaks closer than SEPARATION are one strike: the fastest stands for it (a hook's hand
+                // twitches at 0.07 s, then whips at 0.23 s).
+                let ahead_n = (SEPARATION / dt) as usize;
+                if speed[i + 1..(i + ahead_n).min(n - 1) + 1].iter().any(|&x| x > v) {
+                    continue;
+                }
+                let mut reject = |reason| rejected.push(Rejected { bone: names(limb), kind, peak: t, speed: v, reason });
                 let w = &frames[i];
                 // Furthest reach within two frames of the peak.
                 let reach = (0..5)
@@ -204,17 +244,15 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
                     .map(|j| frames[j][limb].translation.distance(frames[j][root].translation))
                     .fold(0.0, f32::max);
                 if reach < REACH * full {
+                    reject("short of reach");
                     continue;
                 }
                 if kind == Kind::Kick && (w[limb].translation.y - floor) < KICK_LIFT * leg {
+                    reject("kick too low");
                     continue;
                 }
                 if w[bones.head].translation.y < w[bones.pelvis].translation.y + 0.25 * leg {
-                    continue;
-                }
-                let left = (w[bones.thigh[0]].translation - w[bones.thigh[1]].translation).with_y(0.0).normalize_or(Vec3::X);
-                let reach_dir = (w[limb].translation - w[bones.pelvis].translation).with_y(0.0).normalize_or_zero();
-                if reach_dir.dot(left.cross(Vec3::Y)) < AHEAD {
+                    reject("not upright");
                     continue;
                 }
                 let (mut lo, mut hi) = (i, i);
@@ -224,11 +262,31 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
                 while hi < n - 1 && speed[hi] > BAND * v {
                     hi += 1;
                 }
-                if lo == 0 || hi == n - 1 {
+                if lo == 0 && !authored {
+                    reject("starts before the clip");
+                    continue;
+                }
+                if hi == n - 1 && !continues {
+                    reject("runs past the clip end");
+                    continue;
+                }
+                // The arc must pass in front of the body between the peak and the band's end: a jab is
+                // ahead at its peak, a hook is fastest out to the side and comes around in front after.
+                if (i..=hi).map(|j| aim_at(&frames[j], bones, limb)).fold(f32::NEG_INFINITY, f32::max) < AHEAD {
+                    reject("not ahead of the body");
                     continue;
                 }
                 let (windup, recover) = ((i - lo) as f32 * dt, (hi - i) as f32 * dt);
-                if windup > MAX_WINDUP || recover > MAX_RECOVER || (yaw[hi] - yaw[lo]).abs() > MAX_TURN {
+                if windup > MAX_WINDUP {
+                    reject("wind-up too long");
+                    continue;
+                }
+                if recover > MAX_RECOVER {
+                    reject("recovery too long");
+                    continue;
+                }
+                if (yaw[hi] - yaw[lo]).abs() > MAX_TURN {
+                    reject("turns too far");
                     continue;
                 }
                 last_peak = t;
@@ -237,7 +295,8 @@ pub fn segment(bank: &PoseBank, track: &str) -> Vec<Strike> {
         }
     }
     out.sort_by(|a, b| a.peak.total_cmp(&b.peak));
-    out
+    rejected.sort_by(|a, b| a.peak.total_cmp(&b.peak));
+    (out, rejected)
 }
 
 /// An unarmed attack playing `s`: the clip window around it, active frames on the measured contact.
@@ -432,12 +491,19 @@ mod tests {
         tracks.sort();
         tracks.dedup();
         let mut rows = Vec::new();
+        let mut rejected = Vec::new();
         for track in &tracks {
             if !bank.tracks.contains_key(track) {
                 continue;
             }
             let duration = bank.duration(track);
-            for s in segment(bank, track) {
+            let (strikes, turned_down) = segment_explained(bank, track);
+            for r in turned_down {
+                rejected.push(serde_json::json!({
+                    "track": track, "kind": format!("{:?}", r.kind), "bone": r.bone, "peak": r.peak, "speed": r.speed, "reason": r.reason,
+                }));
+            }
+            for s in strikes {
                 let a = strike_attack(&s, duration);
                 rows.push(serde_json::json!({
                     "track": s.track, "kind": format!("{:?}", s.kind), "bone": s.bone,
@@ -448,19 +514,22 @@ mod tests {
         }
         let out = std::env::var("KEV_STRIKES").map(std::path::PathBuf::from).unwrap_or_else(|_| root.join("staging/kev/strikes.json"));
         std::fs::create_dir_all(out.parent().unwrap()).unwrap();
-        let body = serde_json::json!({"tracks": tracks, "strikes": rows});
+        let body = serde_json::json!({"tracks": tracks, "strikes": rows, "rejected": rejected});
         std::fs::write(&out, serde_json::to_string_pretty(&body).unwrap()).unwrap();
         assert!(!rows.is_empty(), "no strikes cut from {} tracks", tracks.len());
     }
 
-    /// Direction of a strike at its peak relative to the body's facing (cos): +1 straight ahead.
+    /// Best direction of a strike against the body's facing (cos) from its peak to its end: +1 straight ahead.
     fn aim(bank: &PoseBank, s: &Strike) -> f32 {
         let (sk, b) = (&bank.skeleton, &bank.bones);
-        let w = sk.fk(&bank.sample_raw(&s.track, s.peak, false), b.pelvis);
-        let left = (w[b.thigh[0]].translation - w[b.thigh[1]].translation).with_y(0.0).normalize_or(Vec3::X);
-        let facing = left.cross(Vec3::Y);
-        let limb = w[sk.find(&s.bone).unwrap()].translation - w[b.pelvis].translation;
-        limb.with_y(0.0).normalize_or_zero().dot(facing)
+        let limb = sk.find(&s.bone).unwrap();
+        let steps = ((s.end - s.peak) * SAMPLE_HZ).round() as usize;
+        (0..=steps)
+            .map(|k| {
+                let w = sk.fk(&bank.sample_raw(&s.track, s.peak + k as f32 / SAMPLE_HZ, false), b.pelvis);
+                aim_at(&w, b, limb)
+            })
+            .fold(f32::NEG_INFINITY, f32::max)
     }
 
     #[test]

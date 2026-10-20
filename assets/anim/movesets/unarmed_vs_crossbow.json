@@ -5,11 +5,13 @@
     {
       "name": "hook",
       "clip": {
-        "track": "ual2/Melee_Hook"
+        "track": "ual2/Melee_Hook",
+        "start": 0.0,
+        "end": 0.467
       },
-      "windup": 0.571,
-      "active": 0.643,
-      "cancel": 0.643,
+      "windup": 0.393,
+      "active": 0.65,
+      "cancel": 0.8,
       "damage": 11,
       "poise": 16,
       "knockback": 1.6,
@@ -46,11 +48,13 @@
     {
       "name": "hook",
       "clip": {
-        "track": "ual2/Melee_Hook"
+        "track": "ual2/Melee_Hook",
+        "start": 0.0,
+        "end": 0.467
       },
-      "windup": 0.571,
-      "active": 0.643,
-      "cancel": 0.643,
+      "windup": 0.393,
+      "active": 0.65,
+      "cancel": 0.8,
       "damage": 11,
       "poise": 16,
       "knockback": 1.6,
