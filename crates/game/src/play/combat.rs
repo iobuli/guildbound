@@ -370,6 +370,8 @@ pub struct Melee {
     step_back: Option<(f32, Vec3, f32)>,
     /// xorshift state for picking repertoire variants (seeded from the entity).
     rng: u32,
+    /// In a charge clash (`clash::Clashing`): untouchable, auto-chaining light attacks.
+    clash: bool,
 }
 
 impl Default for Melee {
@@ -389,6 +391,7 @@ impl Default for Melee {
             slowed: false,
             step_back: None,
             rng: 0,
+            clash: false,
         }
     }
 }
@@ -423,6 +426,14 @@ impl Melee {
         match &self.state {
             State::Swing(sw) if sw.recover.is_none() => Some((sw.speed, sw.elapsed, sw.active())),
             _ => None,
+        }
+    }
+    /// Seconds since a heavy held to full charge started its strike (infinite otherwise). Read by
+    /// `clash`: two foes both full-charging into each other within a moment clash.
+    pub fn since_primed(&self) -> f32 {
+        match &self.state {
+            State::Swing(sw) if sw.heavy() && sw.primed && sw.recover.is_none() => sw.elapsed - sw.primed_at,
+            _ => f32::INFINITY,
         }
     }
     /// Out of stamina until it refills.
@@ -597,8 +608,9 @@ struct Swing {
     prev: Option<[Vec3; 2]>,
     plunge: Plunge,
     whoosh: bool,
-    /// The full-charge cue has played (heavy).
+    /// The full-charge cue has played (heavy), and `elapsed` when it did.
     primed: bool,
+    primed_at: f32,
     /// Attack speed for this swing (`phase_speed`), and seconds of wind-up hold left (`None`
     /// until the wind-up ends; a quick swing pauses there for `ANTICIPATE`).
     speed: f32,
@@ -1350,6 +1362,7 @@ fn drive(
         Option<&Repertoire>,
         Option<&Mastery>,
         Option<&super::stats::Derived>,
+        Option<&super::clash::Clashing>,
     )>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
 ) {
@@ -1370,7 +1383,7 @@ fn drive(
             team: Some(fighter.team),
             velocity: mover.velocity,
             alive: !fighter.dead,
-            immune: melee.iframes > 0.0 || melee.down(),
+            immune: melee.iframes > 0.0 || melee.down() || melee.clash,
         })
         .collect();
     targets.extend(dummies.iter().map(|(entity, tf)| Target {
@@ -1385,7 +1398,7 @@ fn drive(
     }));
     let now = time.elapsed_secs();
 
-    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery, derived) in
+    for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery, derived, clash) in
         &mut fighters
     {
         let target_set = intent.target.and_then(|t| equipped.get(&t)).map(String::as_str);
@@ -1401,7 +1414,7 @@ fn drive(
             repertoire,
             set_name: loadout.equipped(),
             variety: mastery.map_or(VARIANT_CHANCE, |m| variety(*m)),
-            attack_speed: attack_speed(derived.map_or(1.0, |d| d.attack_speed), mastery.map_or(0, |m| m.rank)),
+            attack_speed: attack_speed(derived.map_or(1.0, |d| d.attack_speed), mastery.map_or(0, |m| m.rank)) * clash.map_or(1.0, |c| c.speed),
         };
         if melee.rng == 0 {
             melee.rng = (entity.to_bits() as u32) | 1;
@@ -1419,6 +1432,10 @@ fn drive(
         }
         if b.fighter.dead && !matches!(melee.state, State::Dead { .. }) {
             melee.state = die(&mut b);
+        }
+        melee.clash = clash.is_some() && !b.fighter.dead;
+        if melee.clash {
+            clash_step(clash.map(|c| c.foe), &cx, &mut b, melee);
         }
         let state = std::mem::take(&mut melee.state);
         melee.state = match state {
@@ -1440,6 +1457,31 @@ fn drive(
             let who = name.map_or("?", |n| n.as_str());
             monitor.write(&format!("{now:.2} {who} revive - {:.3} {:?} GetUp 0.00", b.fighter.hp, b.mover.mode));
         }
+    }
+}
+
+/// A charge clash: the full-charged heavy gives way to light attacks chained as fast as they go,
+/// facing the foe; `clash` keeps the score and ends it.
+fn clash_step(foe: Option<Entity>, cx: &Ctx, b: &mut Body, m: &mut Melee) {
+    if let State::Swing(sw) = &m.state
+        && sw.heavy()
+    {
+        m.state = release(b);
+    }
+    // Every light chains into the next as soon as it may.
+    m.primary = Some(0.0);
+    m.held = 0.0;
+    m.dodge = None;
+    if let Some(yaw) = foe.and_then(|f| cx.targets.iter().find(|t| t.entity == f)).and_then(|t| yaw_of(t.center - cx.pos)) {
+        b.mover.yaw = yaw;
+        b.mover.face = Some(yaw);
+    }
+    if matches!(m.state, State::Free)
+        && cx.can_act(b)
+        && let Some(set) = cx.set
+        && !set.light.is_empty()
+    {
+        m.state = start_swing(SwingKind::Light(m.chain % set.light.len()), cx, b, m).unwrap_or_default();
     }
 }
 
@@ -1619,6 +1661,7 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         plunge,
         whoosh: false,
         primed: false,
+        primed_at: 0.0,
         speed: cx.attack_speed,
         anticipate: None,
     })))
@@ -2121,7 +2164,7 @@ fn hit_test(
             team: Some(fighter.team),
             velocity: mover.velocity,
             alive: !fighter.dead,
-            immune: melee.iframes > 0.0 || melee.down(),
+            immune: melee.iframes > 0.0 || melee.down() || melee.clash,
         })
         .collect();
     targets.extend(dummies.iter().map(|(entity, tf)| Target {
@@ -2139,6 +2182,7 @@ fn hit_test(
         // A heavy held to full charge strikes by itself; a ring and a kick say it is coming.
         if sw.heavy() && !sw.primed && sw.attack.charge > 0.0 && sw.charged >= sw.attack.charge {
             sw.primed = true;
+            sw.primed_at = sw.elapsed;
             sfx.write(Sfx {
                 kind: SfxKind::Clank,
                 at: tf.translation + Vec3::Y * 0.4,
