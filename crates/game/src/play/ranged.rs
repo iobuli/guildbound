@@ -373,7 +373,7 @@ fn fly(
     mut hits: MessageWriter<Hit>,
     mut deeds: MessageWriter<Deed>,
     mut shots: Query<(Entity, &mut Shot, &mut Transform)>,
-    fighters: Query<(Entity, &Transform, &Fighter), Without<Shot>>,
+    fighters: Query<(Entity, &Transform, &Fighter, Option<&super::hurtbox::Hurtboxes>), Without<Shot>>,
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Shot>)>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -392,14 +392,23 @@ fn fly(
         let next = prev + s.velocity * dt;
         // Bodies first (fighters of other teams, dummies).
         let mut struck = None;
-        for (e, t, f) in &fighters {
+        let mut scale = 1.0;
+        for (e, t, f, boxes) in &fighters {
             if e == s.owner || f.dead || f.team == s.team {
                 continue;
             }
             let feet = t.translation - Vec3::Y * HALF_HEIGHT;
             let (d, u, _) = segment_distance(prev, next, feet + Vec3::Y * BODY_LOW, feet + Vec3::Y * BODY_HIGH);
             if d <= s.def.radius + BODY_RADIUS {
-                struck = Some((e, prev.lerp(next, u)));
+                // The limb the arrow crosses (a headshot hurts most), or it flies between them.
+                match boxes.filter(|b| !b.0.is_empty()) {
+                    Some(b) => {
+                        let Some((_, at, region)) = super::hurtbox::refine([prev, prev], [next, next], s.def.radius, &b.0) else { continue };
+                        struck = Some((e, at));
+                        scale = region.damage();
+                    }
+                    None => struck = Some((e, prev.lerp(next, u))),
+                }
                 break;
             }
         }
@@ -419,7 +428,7 @@ fn fly(
                 target,
                 point,
                 direction: dir,
-                damage: s.def.damage * s.power,
+                damage: s.def.damage * s.power * scale,
                 poise: s.def.poise * s.power,
                 knockback: s.def.knockback,
                 speed: s.velocity.length(),

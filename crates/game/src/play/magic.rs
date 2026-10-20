@@ -72,6 +72,8 @@ const ORBIT_TIME: f32 = 0.7;
 const HOMING: f32 = 5.0;
 /// Lance: half-angle of the aim cone (cos), chain range (m).
 const LANCE_CONE: f32 = 0.93;
+/// A player's lance only jumps to a foe within ~8 degrees of the crosshair.
+const SKILL_LANCE_CONE: f32 = 0.99;
 const CHAIN_RANGE: f32 = 5.5;
 /// Dash length (s).
 const STEP_TIME: f32 = 0.12;
@@ -421,6 +423,9 @@ pub struct Casting {
     motes: Option<Entity>,
     /// Flash Step blinked (teleported) instead of dashing.
     blinked: bool,
+    /// The player's cast: a skill shot, aimed where the crosshair points at the release, never led
+    /// or homed onto a target.
+    skill: bool,
 }
 
 impl Casting {
@@ -446,6 +451,8 @@ pub struct Projectile {
     /// Orbiting its owner (orbs) until this many seconds have passed: (age, phase).
     orbit: Option<(f32, f32)>,
     homing: Option<Entity>,
+    /// Where a skill-shot orb launches after its orbit (the crosshair point at the release).
+    aim: Option<Vec3>,
 }
 
 pub fn plugin(app: &mut App) {
@@ -613,7 +620,8 @@ fn start_cast(
         let cast_speed = if a.is_art() { 1.0 } else { d.map_or(1.0, |d| d.cast_speed) };
         let rate = a.speed * cast_speed * if mastered { MASTERED_SPEED } else { 1.0 };
         let origin = hand(rig, &bank, &globals, tf);
-        let target = intent.target;
+        // The player aims by hand (the crosshair's point); NPCs aim at their target.
+        let target = if player { None } else { intent.target };
         let aim_point = target
             .and_then(|t| globals.get(t).ok())
             .map(|g| g.translation() + Vec3::Y * 0.2)
@@ -646,6 +654,7 @@ fn start_cast(
             target,
             motes,
             blinked: false,
+            skill: player,
         });
         if a.id != "veil" {
             commands.entity(entity).try_remove::<super::senses::Veiled>();
@@ -659,9 +668,11 @@ struct World<'a> {
     vfx: &'a Vfx,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Target {
     entity: Entity,
+    /// Per-limb hurtboxes (`hurtbox`); empty for dummies.
+    parts: Vec<super::hurtbox::Part>,
     center: Vec3,
     axis: [Vec3; 2],
     radius: f32,
@@ -670,15 +681,16 @@ struct Target {
 }
 
 fn gather<F: bevy::ecs::query::QueryFilter>(
-    fighters: &Query<(Entity, &Transform, &Fighter), Without<Projectile>>,
+    fighters: &Query<(Entity, &Transform, &Fighter, Option<&super::hurtbox::Hurtboxes>), Without<Projectile>>,
     dummies: &Query<(Entity, &Transform), F>,
 ) -> Vec<Target> {
     let mut v: Vec<Target> = fighters
         .iter()
-        .map(|(e, tf, f)| {
+        .map(|(e, tf, f, boxes)| {
             let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
             Target {
                 entity: e,
+                parts: boxes.map(|b| b.0.clone()).unwrap_or_default(),
                 center: tf.translation,
                 axis: [feet + Vec3::Y * BODY_LOW, feet + Vec3::Y * BODY_HIGH],
                 radius: BODY_RADIUS,
@@ -689,6 +701,7 @@ fn gather<F: bevy::ecs::query::QueryFilter>(
         .collect();
     v.extend(dummies.iter().map(|(e, tf)| Target {
         entity: e,
+        parts: Vec::new(),
         center: tf.translation,
         axis: [tf.translation - Vec3::Y * DUMMY_HALF, tf.translation + Vec3::Y * DUMMY_HALF],
         radius: DUMMY_RADIUS,
@@ -724,8 +737,9 @@ fn drive_cast(
         &mut Grimoire,
         Option<&Rig>,
         Has<Player>,
+        Option<&Intent>,
     )>,
-    fighters: Query<(Entity, &Transform, &Fighter), Without<Projectile>>,
+    fighters: Query<(Entity, &Transform, &Fighter, Option<&super::hurtbox::Hurtboxes>), Without<Projectile>>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
     globals: Query<&GlobalTransform>,
     mut motes: Query<&mut Transform, (Without<Fighter>, Without<Projectile>, Without<TrainingDummy>)>,
@@ -737,7 +751,7 @@ fn drive_cast(
         targets: gather(&fighters, &dummies),
         vfx: &vfx,
     };
-    for (entity, tf, mut action, mut mover, mut c, fighter, mut grimoire, rig, player) in &mut casters {
+    for (entity, tf, mut action, mut mover, mut c, fighter, mut grimoire, rig, player, intent) in &mut casters {
         // Interrupted (a hit reaction took the body) or dead: drop the cast.
         if action.owner != Owner::Magic || action.kind != ActionKind::Cast || fighter.dead {
             if let Some(m) = c.motes {
@@ -786,6 +800,13 @@ fn drive_cast(
             c.released = true;
             if let Some(m) = c.motes.take() {
                 commands.entity(m).try_despawn();
+            }
+            // A skill shot goes where the crosshair points now, not where it pointed at the start.
+            if c.skill
+                && let Some(i) = intent
+                && i.look.is_finite()
+            {
+                c.aim_point = i.look;
             }
             // Re-aim at the release from the hand: lead a target, lift for the drop.
             let (speed, gravity) = match a.shape {
@@ -1039,6 +1060,7 @@ fn release(
                     struck: Vec::new(),
                     orbit: None,
                     homing: None,
+                    aim: None,
                 },
                 Transform::from_translation(from).with_rotation(Quat::from_rotation_arc(Vec3::Z, c.aim)),
                 Visibility::default(),
@@ -1109,17 +1131,17 @@ fn release(
             let mut dir = c.aim;
             let mut struck: Vec<Entity> = Vec::new();
             let locked = c.target.and_then(|t| world.targets.iter().find(|x| x.entity == t && x.alive));
-            let mut next = locked.copied().or_else(|| {
+            let mut next = locked.cloned().or_else(|| {
                 world
                     .targets
                     .iter()
                     .filter(|t| foe(t, owner, team))
                     .filter(|t| {
                         let to = t.center - from;
-                        to.length() < range && to.normalize_or_zero().dot(dir) > LANCE_CONE
+                        to.length() < range && to.normalize_or_zero().dot(dir) > if c.skill { SKILL_LANCE_CONE } else { LANCE_CONE }
                     })
                     .min_by(|x, y| (x.center - from).length().total_cmp(&(y.center - from).length()))
-                    .copied()
+                    .cloned()
             });
             let mut seed = owner.to_bits() as u32 ^ (c.t.to_bits());
             for jump in 0..=chains {
@@ -1148,7 +1170,7 @@ fn release(
                     .filter(|x| foe(x, owner, team) && !struck.contains(&x.entity))
                     .filter(|x| x.center.distance(from) < CHAIN_RANGE)
                     .min_by(|x, y| x.center.distance(from).total_cmp(&y.center.distance(from)))
-                    .copied();
+                    .cloned();
             }
         }
         Shape::Orbs { count, .. } => {
@@ -1168,6 +1190,7 @@ fn release(
                         struck: Vec::new(),
                         orbit: Some((0.0, phase)),
                         homing: c.target,
+                        aim: c.skill.then_some(c.aim_point),
                     },
                     Transform::from_translation(origin),
                     Visibility::default(),
@@ -1306,7 +1329,7 @@ fn fly(
     spatial: SpatialQuery,
     mut hits: MessageWriter<Hit>,
     mut projectiles: Query<(Entity, &mut Projectile, &mut Transform)>,
-    fighters: Query<(Entity, &Transform, &Fighter), Without<Projectile>>,
+    fighters: Query<(Entity, &Transform, &Fighter, Option<&super::hurtbox::Hurtboxes>), Without<Projectile>>,
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Projectile>)>,
     mut grimoires: Query<&mut Grimoire>,
     mut monitor: ResMut<Monitor>,
@@ -1340,6 +1363,7 @@ fn fly(
                 .homing
                 .and_then(|h| targets.iter().find(|t| t.entity == h))
                 .map(|t| t.center)
+                .or(p.aim)
                 .or_else(|| {
                     targets
                         .iter()
@@ -1381,8 +1405,17 @@ fn fly(
             }
             let (d, s, _) = segment_distance(prev, next, t.axis[0], t.axis[1]);
             if d <= radius + t.radius {
-                let point = prev.lerp(next, s);
-                hits.write(spell_hit(p.owner, a, p.power, t.entity, point, p.velocity, p.velocity.length()));
+                let mut point = prev.lerp(next, s);
+                // The limb it actually crosses, or it flies past between them.
+                let mut scale = 1.0;
+                if !t.parts.is_empty() {
+                    let Some((_, at, region)) = super::hurtbox::refine([prev, prev], [next, next], radius, &t.parts) else { continue };
+                    point = at;
+                    scale = region.damage();
+                }
+                let mut hit = spell_hit(p.owner, a, p.power, t.entity, point, p.velocity, p.velocity.length());
+                hit.damage *= scale;
+                hits.write(hit);
                 p.struck.push(t.entity);
                 p.hits_left -= 1;
                 landed += 1;
