@@ -8,6 +8,10 @@
 //!   puts the UAL mannequin on the origin and plays that chain's light attacks in order, each over its
 //!   moveset clip window, crossfading between them (`AnimationTransitions`), then loops after a pause.
 //!   `GB_VIEWER_COMBO=<n>` starts combo n at launch (headless checks).
+//! - Turntable (`GB_VIEWER_TURNTABLE=<glb>,<glb>,...`, paths under `assets/`): each model in turn on the
+//!   origin, scaled so its largest side is `TURN_SIZE` m and stood on the ground once its bounds are known,
+//!   spinning for `GB_VIEWER_SPIN_SECS` (default 6) s with its name on screen; the tool panel is hidden so the
+//!   frame is clean for recordings.
 //! - The Kev buttons run the Python tools (`tools/kev/*`) and show their output. Their outputs go to
 //!   `staging/viewer/` (gitignored), never to `assets/`.
 //!
@@ -63,12 +67,13 @@ fn main() {
         .insert_resource(Combos::scan())
         .insert_resource(Output { text: "Pick a tool on the left.".into(), rx: Mutex::new(None) })
         .add_plugins(DefaultPlugins.set(AssetPlugin { file_path: ASSETS.into(), ..default() }).set(WindowPlugin {
-            primary_window: Some(Window { title: "Guildbound viewer".into(), resolution: (1400, 860).into(), ..default() }),
+            primary_window: Some(Window { title: "Guildbound viewer".into(), resolution: window_resolution().into(), ..default() }),
             ..default()
         }))
         .add_systems(Startup, (setup, load_combo_libs))
         .add_systems(Update, (fly, terrain_patch, grid, kev_buttons, model_buttons, page_buttons, refresh_list, poll_output, clear_button))
         .add_systems(Update, (combo_buttons, attach_combo, drive_combo, combo_from_env))
+        .add_systems(Update, turntable)
         .run();
 }
 
@@ -689,4 +694,129 @@ mod tests {
             }
         }
     }
+}
+
+
+/// Largest side (m) a turntable model is scaled to, and its spin (rad/s).
+const TURN_SIZE: f32 = 2.6;
+const TURN_SPIN: f32 = 0.9;
+
+/// Turntable state: the list, which model, seconds on it, its entity, its fitted scale.
+#[derive(Default)]
+struct Turn {
+    list: Vec<String>,
+    index: usize,
+    t: f32,
+    model: Option<Entity>,
+    fitted: bool,
+    started: bool,
+}
+
+#[derive(Component)]
+struct TurnLabel;
+
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn turntable(
+    time: Res<Time>,
+    mut commands: Commands,
+    assets: Res<AssetServer>,
+    mut st: Local<Turn>,
+    mut models: Query<&mut Transform, (Without<Viewer>, Without<Patch>)>,
+    mut camera: Query<(&mut Transform, &mut Viewer)>,
+    children: Query<&Children>,
+    boxes: Query<(&bevy::camera::primitives::Aabb, &GlobalTransform)>,
+    mut panels: Query<&mut Visibility, (With<Node>, Without<TurnLabel>, Without<ChildOf>)>,
+    mut label: Query<&mut Text, With<TurnLabel>>,
+) {
+    if !st.started {
+        st.started = true;
+        st.list = std::env::var("GB_VIEWER_TURNTABLE").map(|v| v.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect()).unwrap_or_default();
+        if st.list.is_empty() {
+            return;
+        }
+        for mut v in &mut panels {
+            *v = Visibility::Hidden;
+        }
+        commands.spawn((
+            TurnLabel,
+            Text::new(""),
+            TextFont::from_font_size(30.0),
+            TextColor(Color::WHITE),
+            Node { position_type: PositionType::Absolute, left: px(24), top: px(18), ..default() },
+        ));
+        if let Ok((mut tf, mut v)) = camera.single_mut() {
+            *tf = Transform::from_xyz(0.0, 2.2, 5.2).looking_at(Vec3::new(0.0, 1.1, 0.0), Vec3::Y);
+            let (yaw, pitch, _) = tf.rotation.to_euler(EulerRot::YXZ);
+            v.yaw = yaw;
+            v.pitch = pitch;
+        }
+    }
+    if st.list.is_empty() || st.index >= st.list.len() {
+        return;
+    }
+    let secs: f32 = std::env::var("GB_VIEWER_SPIN_SECS").ok().and_then(|v| v.parse().ok()).unwrap_or(6.0);
+    let ground = terrain::ground(0.0, 0.0);
+    if st.model.is_none() {
+        let rel = st.list[st.index].clone();
+        let scene = assets.load(GltfAssetLabel::Scene(0).from_asset(rel.clone()));
+        st.model = Some(commands.spawn((Placed, Name::new(rel.clone()), WorldAssetRoot(scene), Transform::from_xyz(0.0, ground, 0.0))).id());
+        st.fitted = false;
+        st.t = 0.0;
+        let name = rel.rsplit('/').next().unwrap_or(&rel).trim_end_matches(".glb").to_string();
+        for mut t in &mut label {
+            **t = format!("{}  ({}/{})", name, st.index + 1, st.list.len());
+        }
+        return;
+    }
+    let Some(e) = st.model else { return };
+    st.t += time.delta_secs();
+    if !st.fitted {
+        // World bounds of everything under the model, once its meshes are in.
+        let (mut lo, mut hi) = (Vec3::splat(f32::INFINITY), Vec3::splat(f32::NEG_INFINITY));
+        for d in children.iter_descendants(e) {
+            if let Ok((aabb, g)) = boxes.get(d) {
+                let (c, h) = (Vec3::from(aabb.center), Vec3::from(aabb.half_extents));
+                for sx in [-1.0, 1.0] {
+                    for sy in [-1.0, 1.0] {
+                        for sz in [-1.0, 1.0] {
+                            let p = g.transform_point(c + h * Vec3::new(sx, sy, sz));
+                            lo = lo.min(p);
+                            hi = hi.max(p);
+                        }
+                    }
+                }
+            }
+        }
+        if lo.is_finite() && hi.is_finite() && st.t > 0.3 {
+            if let Ok(mut tf) = models.get_mut(e) {
+                let k = TURN_SIZE / (hi - lo).max_element().max(1e-4);
+                tf.scale = Vec3::splat(k);
+                // Stand it on the ground, centred on the axis.
+                let centre = (lo + hi) * 0.5;
+                tf.translation = Vec3::new(-centre.x * k, 0.0, -centre.z * k);
+                tf.translation.y = ground - (lo.y - ground) * k;
+            }
+            st.fitted = true;
+        }
+    }
+    if let Ok(mut tf) = models.get_mut(e) {
+        tf.rotation = Quat::from_rotation_y(st.t * TURN_SPIN);
+    }
+    if st.t >= secs {
+        commands.entity(e).despawn();
+        st.model = None;
+        st.index += 1;
+    }
+}
+
+/// Window size: `GB_RES=WxH` when set and sane, else 1400x860.
+fn window_resolution() -> (u32, u32) {
+    std::env::var("GB_RES")
+        .ok()
+        .and_then(|v| {
+            let (w, h) = v.trim().split_once(['x', 'X'])?;
+            Some((w.parse::<u32>().ok()?, h.parse::<u32>().ok()?))
+        })
+        .filter(|&(w, h)| (320..=7680).contains(&w) && (240..=4320).contains(&h))
+        .unwrap_or((1400, 860))
 }

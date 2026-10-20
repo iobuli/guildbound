@@ -4,7 +4,8 @@
 
 At the bind pose every skinned vertex lands at joint world x inverse bind x v, the same matrix for every joint
 of a skin, so each skinned mesh's POSITION is multiplied by that matrix (NORMAL and TANGENT by its rotation part)
-and the JOINTS_* / WEIGHTS_* attributes, the skins and the skeleton nodes' influence are dropped. Every mesh node
+and the JOINTS_* / WEIGHTS_* attributes (and COLOR_* unless --keep-colors: these exports carry dark
+authoring channels there that engines multiply into the base colour), the skins and the skeleton nodes' influence are dropped. Every mesh node
 is moved to the scene root with its baked world transform. `--drop` removes mesh nodes whose name starts with a
 prefix (the mech's spare body sets Base_S_ / Base_L_). Materials and textures are kept as they are.
 
@@ -78,7 +79,7 @@ def accessor_view(js, blob, i):
     return arr, acc
 
 
-def bake(js, blob, drop=()):
+def bake(js, blob, drop=(), keep_colors=False):
     scene = js["scenes"][js.get("scene", 0)]
     world = {}
 
@@ -120,7 +121,10 @@ def bake(js, blob, drop=()):
                             d = v[:, :3] @ nrm.T
                             d /= np.maximum(np.linalg.norm(d, axis=1, keepdims=True), 1e-9)
                             v[:, :3] = d.astype(np.float32)
-                for key in [k for k in attrs if k.startswith(("JOINTS_", "WEIGHTS_"))]:
+                # Vertex colours from these exports are authoring channels (COLOR_0 averages 0.11 on the
+                # Rigify characters): engines multiply them into the base colour and draw the statue black.
+                drop_keys = ("JOINTS_", "WEIGHTS_") + (() if keep_colors else ("COLOR_",))
+                for key in [k for k in attrs if k.startswith(drop_keys)]:
                     del attrs[key]
         keep.append({"name": node.get("name", f"mesh{i}"), "mesh": node["mesh"]})
     js["nodes"] = keep
@@ -136,9 +140,10 @@ def main():
     ap.add_argument("src")
     ap.add_argument("dst")
     ap.add_argument("--drop", nargs="*", default=[])
+    ap.add_argument("--keep-colors", action="store_true", help="keep COLOR_* vertex attributes")
     args = ap.parse_args()
     js, blob = read_glb(args.src)
-    js = bake(js, blob, tuple(args.drop))
+    js = bake(js, blob, tuple(args.drop), args.keep_colors)
     write_glb(args.dst, js, blob)
     print(f"{args.dst}: {len(js['nodes'])} static mesh nodes")
 

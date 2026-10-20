@@ -15,11 +15,18 @@
 //! white screen flash for `FLASH_WHITE` real seconds, then a dark beat (`FLASH_DARK`), timed in real
 //! time so the hitstop's slowed clock does not stretch it.
 //!
+//! Clash effects (`clash_fx`): at the lock-in a shockwave, an aura burst on both fighters, a slow-motion beat
+//! (`combat::Hitstop`) and a camera kick, and a glowing ring on the ground that follows the pair and pulses;
+//! through the exchange fire and lightning bursts alternate between them and lightning arcs from chest to
+//! chest; at the finish a fire impact, a wider shockwave and a second slow-motion beat over the impact frame.
+//!
 //! `GB_CLASH=<seconds>` starts a clash between the player and the nearest foe at that time (smoke
 //! tests and recordings). Monitor log lines: `[clash] start`, `[clash] end`.
 use super::ai::Autopilot;
 use super::camera::CameraShake;
-use super::combat::{CombatSet, Melee};
+use super::combat::{CombatSet, Hitstop, Melee};
+use super::vfx::{self, Element, Vfx};
+use std::collections::HashMap;
 use super::fx::{Burst, BurstKind};
 use super::hud::log::{HudLog, LogKind};
 use super::{Fighter, Hit, HitKind, Intent, Player};
@@ -49,6 +56,11 @@ const STREAK_LIFE: f32 = 0.22;
 pub const FLASH_WHITE: f32 = 0.05;
 pub const FLASH_DARK: f32 = 0.07;
 pub const IMPACT_POISE: f32 = 60.0;
+/// Clash effects: seconds between element bursts and between lightning arcs; slow-motion beats (s).
+const BURST_EVERY: f32 = 0.22;
+const ARC_EVERY: f32 = 0.45;
+const SLOWMO_START: f32 = 0.3;
+const SLOWMO_END: f32 = 0.35;
 
 /// A fighter locked in a clash with `foe`; `speed` multiplies its attack speed.
 #[derive(Component, Clone, Copy, Debug)]
@@ -165,7 +177,7 @@ struct ClashFill;
 pub fn plugin(app: &mut App) {
     app.init_resource::<Clashes>()
         .init_resource::<ImpactFrame>()
-        .add_systems(Update, (detect, smoke, tick, bar, streaks, impacts, flash).chain().after(CombatSet));
+        .add_systems(Update, (detect, smoke, tick, bar, streaks, clash_fx, impacts, flash).chain().after(CombatSet));
 }
 
 fn begin(commands: &mut Commands, clashes: &mut Clashes, log: &mut MessageWriter<HudLog>, a: Entity, b: Entity, names: [&str; 2]) {
@@ -473,5 +485,99 @@ fn flash(real: Res<Time<Real>>, mut commands: Commands, mut frame: ResMut<Impact
         }
         (None, Ok((e, _))) => commands.entity(e).despawn(),
         (None, Err(_)) => {}
+    }
+}
+
+
+/// The ring under a clash, and the clash it marks.
+#[derive(Component)]
+struct ClashRing(Entity, Entity);
+
+/// Per running clash: its last midpoint and the effect clocks (burst, arc), plus a counter.
+#[derive(Default)]
+struct FxState {
+    mid: Vec3,
+    burst: f32,
+    arc: f32,
+    n: u32,
+}
+
+#[allow(clippy::too_many_arguments, clippy::type_complexity)]
+fn clash_fx(
+    time: Res<Time>,
+    mut commands: Commands,
+    clashes: Res<Clashes>,
+    vfx: Option<Res<Vfx>>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut hitstop: ResMut<Hitstop>,
+    mut shake: ResMut<CameraShake>,
+    places: Query<&Transform, (Without<ClashRing>, Without<Streak>)>,
+    mut rings: Query<(Entity, &ClashRing, &mut Transform)>,
+    mut state: Local<HashMap<(Entity, Entity), FxState>>,
+) {
+    let Some(vfx) = vfx else { return };
+    let dt = time.delta_secs().clamp(0.0, 0.1);
+    let mut live = Vec::new();
+    for c in &clashes.0 {
+        let key = (c.sides[0], c.sides[1]);
+        live.push(key);
+        let (Ok(a), Ok(b)) = (places.get(c.sides[0]), places.get(c.sides[1])) else { continue };
+        let (pa, pb) = (a.translation, b.translation);
+        let mid = (pa + pb) * 0.5;
+        let fresh = !state.contains_key(&key);
+        let st = state.entry(key).or_default();
+        st.mid = mid;
+        if fresh {
+            // Lock-in: shockwave, aura on both, a slow-motion beat, the ring.
+            vfx::burst(&mut commands, vfx.shock(), mid, 2.5);
+            vfx::burst(&mut commands, vfx.burst(Element::Aura), pa + Vec3::Y, 1.5);
+            vfx::burst(&mut commands, vfx.burst(Element::Aura), pb + Vec3::Y, 1.5);
+            hitstop.trigger(SLOWMO_START);
+            shake.add(0.5);
+            commands.spawn((
+                Name::new("Clash ring"),
+                ClashRing(key.0, key.1),
+                Mesh3d(meshes.add(vfx::ring(1.7, 2.0))),
+                MeshMaterial3d(vfx::glow(&mut materials, Element::Aura.core() * 0.8)),
+                Transform::from_translation(mid - Vec3::Y * 0.85),
+                bevy::light::NotShadowCaster,
+            ));
+        }
+        st.burst -= dt;
+        if st.burst <= 0.0 {
+            st.burst = BURST_EVERY;
+            st.n += 1;
+            // Alternate sides and elements: fire off one fist, lightning off the other.
+            let (from, to, e) = if st.n % 2 == 0 { (pa, pb, Element::Fire) } else { (pb, pa, Element::Lightning) };
+            let at = from.lerp(to, 0.4) + Vec3::Y * 1.2;
+            vfx::burst(&mut commands, vfx.burst(e), at, 0.9);
+        }
+        st.arc -= dt;
+        if st.arc <= 0.0 {
+            st.arc = ARC_EVERY;
+            vfx::spawn_bolt(&mut commands, &mut meshes, &mut materials, pa + Vec3::Y * 1.2, pb + Vec3::Y * 1.2, st.n.wrapping_mul(2_654_435_761));
+        }
+    }
+    // The ring follows its pair and pulses; a finished clash loses its ring and gets its finale.
+    let t = time.elapsed_secs();
+    for (e, ring, mut tf) in &mut rings {
+        match state.get(&(ring.0, ring.1)) {
+            Some(st) if live.contains(&(ring.0, ring.1)) => {
+                tf.translation = st.mid - Vec3::Y * 0.85;
+                tf.rotation = Quat::from_rotation_y(t * 2.5);
+                tf.scale = Vec3::splat(1.0 + 0.12 * (t * 14.0).sin());
+            }
+            _ => commands.entity(e).despawn(),
+        }
+    }
+    let ended: Vec<(Entity, Entity)> = state.keys().filter(|k| !live.contains(k)).copied().collect();
+    for k in ended {
+        if let Some(st) = state.remove(&k) {
+            vfx::impact(&mut commands, &mut meshes, &mut materials, &vfx, Element::Fire, st.mid + Vec3::Y, 2.2);
+            vfx::burst(&mut commands, vfx.shock(), st.mid, 3.5);
+            hitstop.trigger(SLOWMO_END);
+            shake.add(0.7);
+        }
     }
 }
