@@ -57,7 +57,7 @@ pub const FLASH_WHITE: f32 = 0.05;
 pub const FLASH_DARK: f32 = 0.07;
 pub const IMPACT_POISE: f32 = 60.0;
 /// Clash effects: seconds between element bursts and between lightning arcs; slow-motion beats (s).
-const BURST_EVERY: f32 = 0.22;
+const BURST_EVERY: f32 = 0.34;
 const ARC_EVERY: f32 = 0.45;
 const SLOWMO_START: f32 = 0.3;
 const SLOWMO_END: f32 = 0.35;
@@ -552,7 +552,7 @@ fn clash_fx(
             // Alternate sides and elements: fire off one fist, lightning off the other.
             let (from, to, e) = if st.n % 2 == 0 { (pa, pb, Element::Fire) } else { (pb, pa, Element::Lightning) };
             let at = from.lerp(to, 0.4) + Vec3::Y * 1.2;
-            vfx::burst(&mut commands, vfx.burst(e), at, 0.9);
+            vfx::burst(&mut commands, vfx.burst(e), at, 0.45);
         }
         st.arc -= dt;
         if st.arc <= 0.0 {
