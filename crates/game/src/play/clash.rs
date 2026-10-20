@@ -213,7 +213,7 @@ fn smoke(
     mut clashes: ResMut<Clashes>,
     mut log: MessageWriter<HudLog>,
     players: Query<(Entity, &Transform, &Fighter), (With<Player>, Without<Clashing>)>,
-    others: Query<(Entity, &Transform, &Fighter, Option<&Name>), (Without<Player>, Without<Clashing>)>,
+    others: Query<(Entity, &Transform, &Fighter, Option<&Name>, &Melee), (Without<Player>, Without<Clashing>)>,
 ) {
     if *done {
         return;
@@ -228,9 +228,10 @@ fn smoke(
     let Ok((me, tf, f)) = players.single() else { return };
     let foe = others
         .iter()
-        .filter(|(_, _, o, _)| !o.dead && o.team != f.team)
+        // Never a fighter that is down (knocked down, getting up or dead).
+        .filter(|(_, _, o, _, m)| !o.dead && o.team != f.team && !m.down())
         .min_by(|a, b| a.1.translation.distance(tf.translation).total_cmp(&b.1.translation.distance(tf.translation)));
-    if let Some((e, _, _, name)) = foe {
+    if let Some((e, _, _, name, _)) = foe {
         *done = true;
         let n = name.map_or("?".to_string(), |n| n.to_string());
         begin(&mut commands, &mut clashes, &mut log, me, e, ["Player", &n]);

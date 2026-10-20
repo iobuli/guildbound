@@ -710,6 +710,8 @@ struct Turn {
     model: Option<Entity>,
     fitted: bool,
     started: bool,
+    /// Seconds on this model when it was fitted: its spin and its time on screen count from there.
+    spin_from: f32,
 }
 
 #[derive(Component)]
@@ -771,6 +773,9 @@ fn turntable(
     let Some(e) = st.model else { return };
     st.t += time.delta_secs();
     if !st.fitted {
+        st.spin_from = st.t;
+    }
+    if !st.fitted {
         // World bounds of everything under the model, once its meshes are in.
         let (mut lo, mut hi) = (Vec3::splat(f32::INFINITY), Vec3::splat(f32::NEG_INFINITY));
         for d in children.iter_descendants(e) {
@@ -797,12 +802,13 @@ fn turntable(
                 tf.translation.y = ground - (lo.y - ground) * k;
             }
             st.fitted = true;
+            info!("[turntable] fitted {} ({}/{})", st.list[st.index], st.index + 1, st.list.len());
         }
     }
     if let Ok(mut tf) = models.get_mut(e) {
-        tf.rotation = Quat::from_rotation_y(st.t * TURN_SPIN);
+        tf.rotation = Quat::from_rotation_y((st.t - st.spin_from) * TURN_SPIN);
     }
-    if st.t >= secs {
+    if st.fitted && st.t - st.spin_from >= secs {
         commands.entity(e).despawn();
         st.model = None;
         st.index += 1;
