@@ -1,0 +1,159 @@
+{
+  "_doc": "Kev stage graph. Each stage is one Kev tool: `cmd` runs from the repo root with python3 -I, `inputs` are files or globs it reads, `after` are stages whose outputs it needs, `outputs` are what it writes. graph.py runs the stages in dependency order and skips a stage whose inputs, command and upstream outputs hash the same as last time. Add a stage or change a command here to change how Kev is used; no tool code changes.",
+  "cache": "staging/kev/cache.json",
+  "stages": {
+    "nodes": {
+      "cmd": [
+        "tools/kev/nodes.py",
+        "assets/anim/ual2.glb",
+        "assets/anim/ual1.glb",
+        "assets/anim/sekiro.glb",
+        "assets/anim/rokoko.glb",
+        "assets/anim/kev_melee.glb",
+        "assets/characters/hero/male/body.glb",
+        "assets/characters/hero/female/body.glb",
+        "--json",
+        "staging/kev/nodes.json"
+      ],
+      "inputs": [
+        "assets/anim/*.glb",
+        "assets/characters/hero/*/body.glb",
+        "tools/kev/nodes.py",
+        "tools/kev/roles.json"
+      ],
+      "outputs": [
+        "staging/kev/nodes.json"
+      ]
+    },
+    "survey": {
+      "cmd": [
+        "tools/kev/survey.py",
+        "assets",
+        "staging/kev/survey",
+        "--jobs",
+        "4"
+      ],
+      "inputs": [
+        "assets/**/*.glb",
+        "tools/kev/survey.py",
+        "tools/kev/kev.py"
+      ],
+      "outputs": [
+        "staging/kev/survey/survey.json"
+      ]
+    },
+    "categorise": {
+      "cmd": [
+        "tools/kev/kev.py",
+        "assets",
+        "staging/kev/categories"
+      ],
+      "inputs": [
+        "assets/**/*.glb",
+        "tools/kev/kev.py"
+      ],
+      "outputs": [
+        "staging/kev/categories/kev_index.json"
+      ]
+    },
+    "combos": {
+      "cmd": [
+        "tools/kev/combos.py",
+        "assets/packs/actionforge/clips",
+        "staging/kev/combos"
+      ],
+      "inputs": [
+        "assets/packs/actionforge/clips/*.glb",
+        "tools/kev/combos.py"
+      ],
+      "outputs": [
+        "staging/kev/combos/combos.json"
+      ]
+    },
+    "h2h": {
+      "cmd": [
+        "tools/kev/h2h.py",
+        "tools/kev/h2h.json",
+        "--write",
+        "--strikes",
+        "staging/kev/strikes.json"
+      ],
+      "inputs": [
+        "tools/kev/h2h.json",
+        "tools/kev/h2h.py",
+        "tools/kev/combos.py",
+        "assets/anim/ual1.glb",
+        "assets/anim/ual2.glb",
+        "assets/anim/movesets/axe.json",
+        "assets/anim/movesets/bow.json",
+        "assets/anim/movesets/crossbow.json",
+        "assets/anim/movesets/dagger.json",
+        "assets/anim/movesets/greatsword.json",
+        "assets/anim/movesets/katana.json",
+        "assets/anim/movesets/knives.json",
+        "assets/anim/movesets/unarmed.json"
+      ],
+      "after": [
+        "nodes",
+        "strikes"
+      ],
+      "outputs": [
+        "tools/kev/results/h2h/report.json"
+      ]
+    },
+    "evaluate": {
+      "cmd": [
+        "tools/kev/evaluate.py",
+        "tools/kev/plan.json"
+      ],
+      "inputs": [
+        "tools/kev/plan.json",
+        "tools/kev/evaluate.py",
+        "assets/packs/actionforge/clips/*.glb",
+        "assets/characters/hero/*/body.glb"
+      ],
+      "after": [
+        "combos"
+      ],
+      "outputs": [
+        "staging/evaluate/report.json"
+      ]
+    },
+    "strikes": {
+      "exec": [
+        "cargo",
+        "test",
+        "-p",
+        "guildbound",
+        "export_strike_table",
+        "--",
+        "--ignored"
+      ],
+      "inputs": [
+        "crates/game/src/play/repertoire.rs",
+        "tools/kev/h2h.json",
+        "assets/anim/ual1.glb",
+        "assets/anim/ual2.glb",
+        "assets/anim/kev_melee.glb"
+      ],
+      "outputs": [
+        "staging/kev/strikes.json"
+      ]
+    },
+    "motion": {
+      "cmd": [
+        "tools/kev/motion.py",
+        "assets/packs/actionforge/clips",
+        "--out",
+        "staging/kev/motion"
+      ],
+      "inputs": [
+        "assets/packs/actionforge/clips/*.glb",
+        "tools/kev/motion.py"
+      ],
+      "outputs": [
+        "staging/kev/motion/motion.json"
+      ]
+    }
+  }
+}
