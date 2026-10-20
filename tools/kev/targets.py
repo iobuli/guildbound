@@ -111,6 +111,24 @@ def strike_heights(pool, timing, table):
     return out
 
 
+# Jump clips in the allowed libraries: a punch thrown at the top of one rides the jump's lift (the jump on the
+# legs, the punch on the upper body, as two layered UAL clips).
+JUMPS = ["ual2/NinjaJump_Start", "ual1/Jump_Start"]
+
+
+def jump_lift(track):
+    """Highest the lower foot leaves the floor in `track`, as a share of the head's height at frame 0."""
+    from clip_fk import Clip, GLTF2
+
+    lib, name = track.split("/", 1)
+    c = Clip(h2h.lib_path(lib), name, gltf=GLTF2().load(h2h.lib_path(lib)))
+    c.precompute()
+    w0 = c.world(0)
+    floor = min(c.pos(w0, "foot_l")[1], c.pos(w0, "foot_r")[1])
+    head = c.pos(w0, "head")[1] - floor
+    return float(max(min(c.pos(c.world(f), "foot_l")[1], c.pos(c.world(f), "foot_r")[1]) - floor for f in range(c.frames)) / head)
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--report", default=os.path.join(HERE, "results", "h2h", "report.json"))
@@ -134,6 +152,9 @@ def main():
             if not rep.get("error"):
                 rigs[os.path.splitext(os.path.basename(rel))[0]] = rep
     lands = {s: {r: land(h * hero_m, rep) for r, rep in rigs.items()} for s, (_, h) in heights.items()}
+    lifts = {j: jump_lift(j) for j in JUMPS}
+    jump, lift = max(lifts.items(), key=lambda kv: kv[1])
+    jump_lands = {s: {r: land((h + lift) * hero_m, rep) for r, rep in rigs.items()} for s, (_, h) in heights.items()}
     plans = []
     for p in report["plans"]:
         row = {"enemy": p["enemy"]["name"], "chain": p["chain"], "rigs": {}}
@@ -147,6 +168,7 @@ def main():
         "rig_height_m": {r: round(rep["height"] * units(rep), 3) for r, rep in rigs.items()},
         "fist_height": {s: {"track": t, "share_of_attacker": h, "metres": round(h * hero_m, 3)} for s, (t, h) in heights.items()},
         "lands": lands, "plans": plans,
+        "jump": {"track": jump, "lift_m": round(lift * hero_m, 3), "lifts_m": {j: round(v * hero_m, 3) for j, v in lifts.items()}, "lands": jump_lands},
     }
     with open(os.path.join(args.out, "targets.json"), "w") as f:
         json.dump(body, f, indent=1)
@@ -157,6 +179,11 @@ def main():
              "|---|---|" + "---|" * len(names)]
     for s, (t, h) in heights.items():
         lines.append(f"| {s} | {h * hero_m:.2f} | " + " | ".join(lands[s][r] for r in names) + " |")
+    lines += ["", f"## Thrown at the top of a jump ({jump}, feet {lift * hero_m:.2f} m off the floor)", "",
+              "The jump on the legs and the punch on the upper body, both UAL clips. Not yet in the game: it needs a layered attack.", "",
+              "| strike | fist (m) | " + " | ".join(names) + " |", "|---|---|" + "---|" * len(names)]
+    for s_, (t, h) in heights.items():
+        lines.append(f"| {s_} | {(h + lift) * hero_m:.2f} | " + " | ".join(jump_lands[s_][r] for r in names) + " |")
     lines += ["", "## Plans (score per strike: head 2, torso 1, leg 0.25, over 0)", "",
               "| vs | chain | " + " | ".join(names) + " |", "|---|---|" + "---|" * len(names)]
     for p in plans:

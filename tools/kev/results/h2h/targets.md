@@ -12,6 +12,20 @@ Attacker: hero body, 1.56 m. Fist height at the strike's peak, against each rig 
 | shoulder bash | 1.06 | torso | leg | torso | torso | torso | leg |
 | charge | 1.75 | over | head | head | head | torso | leg |
 
+## Thrown at the top of a jump (ual2/NinjaJump_Start, feet 1.11 m off the floor)
+
+The jump on the legs and the punch on the upper body, both UAL clips. Not yet in the game: it needs a layered attack.
+
+| strike | fist (m) | body | elf | knight | mage | dragon | Mech_Char_Mesh |
+|---|---|---|---|---|---|---|---|
+| jab | 2.55 | over | over | over | over | head | torso |
+| cross | 2.51 | over | over | over | over | head | torso |
+| hook | 2.44 | over | over | over | over | torso | leg |
+| hammer fist | 2.36 | over | over | over | over | torso | leg |
+| palm swipe | 2.96 | over | over | over | over | head | torso |
+| shoulder bash | 2.17 | over | over | over | over | torso | leg |
+| charge | 2.86 | over | over | over | over | head | torso |
+
 ## Plans (score per strike: head 2, torso 1, leg 0.25, over 0)
 
 | vs | chain | body | elf | knight | mage | dragon | Mech_Char_Mesh |

@@ -524,5 +524,71 @@
     }
    }
   }
- ]
+ ],
+ "jump": {
+  "track": "ual2/NinjaJump_Start",
+  "lift_m": 1.105,
+  "lifts_m": {
+   "ual2/NinjaJump_Start": 1.105,
+   "ual1/Jump_Start": 0.725
+  },
+  "lands": {
+   "jab": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "head",
+    "Mech_Char_Mesh": "torso"
+   },
+   "cross": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "head",
+    "Mech_Char_Mesh": "torso"
+   },
+   "hook": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "torso",
+    "Mech_Char_Mesh": "leg"
+   },
+   "hammer fist": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "torso",
+    "Mech_Char_Mesh": "leg"
+   },
+   "palm swipe": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "head",
+    "Mech_Char_Mesh": "torso"
+   },
+   "shoulder bash": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "torso",
+    "Mech_Char_Mesh": "leg"
+   },
+   "charge": {
+    "body": "over",
+    "elf": "over",
+    "knight": "over",
+    "mage": "over",
+    "dragon": "head",
+    "Mech_Char_Mesh": "torso"
+   }
+  }
+ }
 }

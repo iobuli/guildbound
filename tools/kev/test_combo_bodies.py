@@ -56,6 +56,20 @@ class ComboOnBodiesTests(unittest.TestCase):
                 with self.subTest(enemy=p["enemy"]["name"]):
                     self.assertEqual(set(p["on_rigs"][GIANT]["lands"]), {"leg"})
 
+    def test_a_jump_punch_reaches_the_giant_and_overshoots_humans(self):
+        """targets.py: a punch at the top of UAL's NinjaJump_Start (both allowed clips, layered)."""
+        path = os.path.join(HERE, "results", "h2h", "targets.json")
+        with open(path) as f:
+            jump = json.load(f).get("jump")
+        if not jump:
+            self.skipTest("targets.json has no jump section")
+        lands = jump["lands"]
+        if GIANT in lands["jab"]:
+            self.assertIn(lands["jab"][GIANT], {"torso", "head"})
+        for rig in HUMAN:
+            if rig in lands["jab"]:
+                self.assertEqual(lands["jab"][rig], "over", rig)
+
 
 if __name__ == "__main__":
     unittest.main()
