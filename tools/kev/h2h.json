@@ -1,0 +1,126 @@
+{
+  "_doc": "Kev hand-to-hand plan. h2h.py reads every weapon moveset as an enemy profile (reach from the weapon length, speed from its light windups, ranged from `aim`), times each strike below from its own motion (hand speed against the pelvis), then picks a chain per enemy by minimising transition cost plus the rule weights. Hand strikes must come from UAL or Kevin libraries (`hand_strike_libs`), the user's rule.",
+  "movesets": "assets/anim/movesets",
+  "base": "unarmed",
+  "out_prefix": "unarmed_vs_",
+  "hand_strike_libs": [
+    "ual1",
+    "ual2",
+    "kev"
+  ],
+  "pool": [
+    {
+      "track": "ual1/Punch_Jab",
+      "kind": "light",
+      "name": "jab",
+      "damage": 6,
+      "poise": 8,
+      "knockback": 0.8,
+      "stamina": 8,
+      "end": 0.6
+    },
+    {
+      "track": "ual1/Punch_Cross",
+      "kind": "light",
+      "name": "cross",
+      "damage": 9,
+      "poise": 12,
+      "knockback": 1.2,
+      "stamina": 10,
+      "end": 0.7
+    },
+    {
+      "track": "ual2/Melee_Hook",
+      "kind": "light",
+      "name": "hook",
+      "recover": "ual2/Melee_Hook_Rec",
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12
+    },
+    {
+      "track": "ual2/OverhandThrow",
+      "kind": "light",
+      "name": "hammer fist",
+      "damage": 12,
+      "poise": 18,
+      "knockback": 1.4,
+      "stamina": 13
+    },
+    {
+      "track": "ual2/Zombie_Scratch",
+      "kind": "light",
+      "name": "palm swipe",
+      "damage": 7,
+      "poise": 10,
+      "knockback": 1.0,
+      "stamina": 9
+    },
+    {
+      "track": "ual2/Shield_OneShot",
+      "kind": "heavy",
+      "name": "shoulder bash",
+      "bone": "upperarm_l",
+      "damage": 14,
+      "poise": 30,
+      "knockback": 3.0,
+      "stamina": 20
+    },
+    {
+      "track": "ual2/Shield_Dash",
+      "kind": "charge",
+      "name": "charge",
+      "bone": "upperarm_l",
+      "damage": 12,
+      "poise": 28,
+      "knockback": 3.5,
+      "stamina": 24
+    }
+  ],
+  "rules": {
+    "chain_length_by_windup": [
+      [
+        0.3,
+        2
+      ],
+      [
+        0.42,
+        3
+      ],
+      [
+        9.0,
+        4
+      ]
+    ],
+    "same_hand_penalty": 20.0,
+    "windup_weight_fast_enemy": 60.0,
+    "windup_weight_slow_enemy": 60.0,
+    "fast_enemy_windup": 0.35,
+    "travel_base": 0.25,
+    "travel_per_m_reach": 0.5,
+    "travel_max": 0.9,
+    "parry_base": 0.08,
+    "parry_per_s_windup": 0.2,
+    "parry_range": [
+      0.1,
+      0.22
+    ],
+    "heavy_weapon_mass": 2.5,
+    "absorb_default": 0.6,
+    "absorb_vs_heavy": 0.4,
+    "absorb_vs_ranged": 0.75,
+    "arc_default": 120,
+    "arc_vs_ranged": 160,
+    "arm_reach_m": 0.7,
+    "impact_weight_slow": 1.5,
+    "impact_weight_fast": 0.2,
+    "crossfade_hides_deg": 15.0
+  },
+  "timing": {
+    "fast_fraction": 0.6,
+    "recover_fraction": 0.2
+  },
+  "_doc_tempo": "Windup weight applies only to the part of a strike's windup longer than the enemy's windup (seconds).",
+  "_doc_crossfade": "crossfade_hides_deg: pose+motion mismatch (degrees) that the chained-attack crossfade is assumed to hide. An assumption: lower it if cuts look visible in game."
+}

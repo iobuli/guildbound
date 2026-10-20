@@ -1,0 +1,113 @@
+{
+  "name": "unarmed_vs_knives",
+  "kind": "unarmed",
+  "light": [
+    {
+      "name": "hammer fist",
+      "clip": {
+        "track": "ual2/OverhandThrow"
+      },
+      "windup": 0.275,
+      "active": 0.325,
+      "cancel": 0.35,
+      "damage": 12,
+      "poise": 18,
+      "knockback": 1.4,
+      "stamina": 13,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.1
+      }
+    },
+    {
+      "name": "jab",
+      "clip": {
+        "track": "ual1/Punch_Jab",
+        "end": 0.6
+      },
+      "windup": 0.278,
+      "active": 0.333,
+      "cancel": 0.389,
+      "damage": 6,
+      "poise": 8,
+      "knockback": 0.8,
+      "stamina": 8,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_l",
+        "radius": 0.1
+      }
+    },
+    {
+      "name": "hook",
+      "clip": {
+        "track": "ual2/Melee_Hook"
+      },
+      "windup": 0.571,
+      "active": 0.643,
+      "cancel": 0.643,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
+      }
+    },
+    {
+      "name": "jab",
+      "clip": {
+        "track": "ual1/Punch_Jab",
+        "end": 0.6
+      },
+      "windup": 0.278,
+      "active": 0.333,
+      "cancel": 0.389,
+      "damage": 6,
+      "poise": 8,
+      "knockback": 0.8,
+      "stamina": 8,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_l",
+        "radius": 0.1
+      }
+    }
+  ],
+  "heavy": [
+    {
+      "name": "charge",
+      "clip": {
+        "track": "ual2/Shield_Dash"
+      },
+      "windup": 0.061,
+      "active": 0.121,
+      "cancel": 0.121,
+      "damage": 12,
+      "poise": 28,
+      "knockback": 3.5,
+      "stamina": 24,
+      "travel": 0.9,
+      "hitbox": {
+        "bone": "upperarm_l",
+        "radius": 0.18
+      }
+    }
+  ],
+  "guard": {
+    "clip": {
+      "track": "ual2/Sword_Block",
+      "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.2,
+    "absorb": 0.75,
+    "arc": 160
+  }
+}

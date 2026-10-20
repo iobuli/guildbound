@@ -1,0 +1,260 @@
+{
+ "timing": {
+  "ual1/Punch_Jab": {
+   "hand": "l",
+   "windup": 0.278,
+   "active": 0.333,
+   "cancel": 0.389,
+   "peak_mps": 10.69,
+   "duration": 0.867,
+   "windup_s": 0.167
+  },
+  "ual1/Punch_Cross": {
+   "hand": "r",
+   "windup": 0.286,
+   "active": 0.381,
+   "cancel": 0.429,
+   "peak_mps": 8.8,
+   "duration": 1.0,
+   "windup_s": 0.2
+  },
+  "ual2/Melee_Hook": {
+   "hand": "r",
+   "windup": 0.571,
+   "active": 0.643,
+   "cancel": 0.643,
+   "peak_mps": 38.87,
+   "duration": 0.467,
+   "windup_s": 0.266
+  },
+  "ual2/OverhandThrow": {
+   "hand": "r",
+   "windup": 0.275,
+   "active": 0.325,
+   "cancel": 0.35,
+   "peak_mps": 21.23,
+   "duration": 1.333,
+   "windup_s": 0.367
+  },
+  "ual2/Zombie_Scratch": {
+   "hand": "r",
+   "windup": 0.315,
+   "active": 0.37,
+   "cancel": 0.389,
+   "peak_mps": 22.03,
+   "duration": 1.8,
+   "windup_s": 0.567
+  },
+  "ual2/Shield_OneShot": {
+   "hand": "l",
+   "windup": 0.08,
+   "active": 0.2,
+   "cancel": 0.24,
+   "peak_mps": 8.69,
+   "duration": 0.833,
+   "windup_s": 0.067
+  },
+  "ual2/Shield_Dash": {
+   "hand": "r",
+   "windup": 0.061,
+   "active": 0.121,
+   "cancel": 0.121,
+   "peak_mps": 11.31,
+   "duration": 1.1,
+   "windup_s": 0.067
+  }
+ },
+ "plans": [
+  {
+   "enemy": {
+    "name": "axe",
+    "kind": "melee",
+    "reach_m": 1.57,
+    "mass": 2.2,
+    "windup_s": 0.149,
+    "ranged": false
+   },
+   "chain": [
+    "jab",
+    "cross"
+   ],
+   "cost": 2.14,
+   "heavy": "kick",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.11,
+    "absorb": 0.6,
+    "arc": 120
+   }
+  },
+  {
+   "enemy": {
+    "name": "bow",
+    "kind": "ranged",
+    "reach_m": 0.7,
+    "mass": 1.0,
+    "windup_s": null,
+    "ranged": true
+   },
+   "chain": [
+    "hammer fist",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "cost": -18.75,
+   "heavy": "charge",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.2,
+    "absorb": 0.75,
+    "arc": 160
+   }
+  },
+  {
+   "enemy": {
+    "name": "crossbow",
+    "kind": "ranged",
+    "reach_m": 0.7,
+    "mass": 3.0,
+    "windup_s": null,
+    "ranged": true
+   },
+   "chain": [
+    "hammer fist",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "cost": -18.75,
+   "heavy": "charge",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.2,
+    "absorb": 0.75,
+    "arc": 160
+   }
+  },
+  {
+   "enemy": {
+    "name": "dagger",
+    "kind": "melee",
+    "reach_m": 1.0,
+    "mass": 0.4,
+    "windup_s": 0.247,
+    "ranged": false
+   },
+   "chain": [
+    "jab",
+    "cross"
+   ],
+   "cost": -2.0,
+   "heavy": "kick",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.129,
+    "absorb": 0.6,
+    "arc": 120
+   }
+  },
+  {
+   "enemy": {
+    "name": "greatsword",
+    "kind": "melee",
+    "reach_m": 1.85,
+    "mass": 3.0,
+    "windup_s": 0.529,
+    "ranged": false
+   },
+   "chain": [
+    "hammer fist",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "cost": -18.75,
+   "heavy": "shoulder bash",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.186,
+    "absorb": 0.4,
+    "arc": 120
+   }
+  },
+  {
+   "enemy": {
+    "name": "katana",
+    "kind": "melee",
+    "reach_m": 1.45,
+    "mass": 1.1,
+    "windup_s": 0.313,
+    "ranged": false
+   },
+   "chain": [
+    "hook",
+    "jab",
+    "hook"
+   ],
+   "cost": -2.67,
+   "heavy": "kick",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.143,
+    "absorb": 0.6,
+    "arc": 120
+   }
+  },
+  {
+   "enemy": {
+    "name": "knives",
+    "kind": "ranged",
+    "reach_m": 0.86,
+    "mass": 0.3,
+    "windup_s": null,
+    "ranged": true
+   },
+   "chain": [
+    "hammer fist",
+    "jab",
+    "hook",
+    "jab"
+   ],
+   "cost": -18.75,
+   "heavy": "charge",
+   "guard": {
+    "clip": {
+     "track": "ual2/Sword_Block",
+     "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.2,
+    "absorb": 0.75,
+    "arc": 160
+   }
+  }
+ ]
+}

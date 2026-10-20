@@ -50,22 +50,35 @@ def rotvec(q_from, q_to):
     return rel[:3] / s * (2 * math.acos(w))
 
 
-def pose_ends(path):
-    """(first, last): per joint, (pose quaternion, motion vector in rad per key) at each end of the clip."""
+def anim_ends(js, binary, anim, names):
+    """(first, last) of one animation: per joint, (pose quaternion, motion vector in rad per key)."""
+    first, last = {}, {}
+    for ch in anim["channels"]:
+        if ch["target"].get("path") != "rotation":
+            continue
+        sampler = anim["samplers"][ch["sampler"]]
+        q = floats(js, binary, sampler["output"])
+        if len(q) < 2:
+            continue
+        joint = names[ch["target"]["node"]]
+        first[joint] = (unit(q[0]), rotvec(q[0], q[1]))
+        last[joint] = (unit(q[-1]), rotvec(q[-2], q[-1]))
+    return first, last
+
+
+def clip_ends(path):
+    """{animation name: (first, last)} for every animation in a GLB (a library holds many clips)."""
     js, binary = read_glb(path)
     names = [n.get("name", f"node{i}") for i, n in enumerate(js["nodes"])]
+    return {a.get("name", f"anim{i}"): anim_ends(js, binary, a, names) for i, a in enumerate(js.get("animations", []))}
+
+
+def pose_ends(path):
+    """(first, last) of a one-clip GLB; with several clips, later clips overwrite earlier joints."""
     first, last = {}, {}
-    for anim in js.get("animations", []):
-        for ch in anim["channels"]:
-            if ch["target"].get("path") != "rotation":
-                continue
-            sampler = anim["samplers"][ch["sampler"]]
-            q = floats(js, binary, sampler["output"])
-            if len(q) < 2:
-                continue
-            joint = names[ch["target"]["node"]]
-            first[joint] = (unit(q[0]), rotvec(q[0], q[1]))
-            last[joint] = (unit(q[-1]), rotvec(q[-2], q[-1]))
+    for f, l in clip_ends(path).values():
+        first.update(f)
+        last.update(l)
     return first, last
 
 

@@ -1,0 +1,100 @@
+{
+  "name": "unarmed_vs_katana",
+  "kind": "unarmed",
+  "light": [
+    {
+      "name": "hook",
+      "clip": {
+        "track": "ual2/Melee_Hook"
+      },
+      "windup": 0.571,
+      "active": 0.643,
+      "cancel": 0.643,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
+      "travel": 0.47,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
+      }
+    },
+    {
+      "name": "jab",
+      "clip": {
+        "track": "ual1/Punch_Jab",
+        "end": 0.6
+      },
+      "windup": 0.278,
+      "active": 0.333,
+      "cancel": 0.389,
+      "damage": 6,
+      "poise": 8,
+      "knockback": 0.8,
+      "stamina": 8,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_l",
+        "radius": 0.1
+      }
+    },
+    {
+      "name": "hook",
+      "clip": {
+        "track": "ual2/Melee_Hook"
+      },
+      "windup": 0.571,
+      "active": 0.643,
+      "cancel": 0.643,
+      "damage": 11,
+      "poise": 16,
+      "knockback": 1.6,
+      "stamina": 12,
+      "travel": 0.25,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.1
+      },
+      "recover": {
+        "track": "ual2/Melee_Hook_Rec"
+      }
+    }
+  ],
+  "heavy": [
+    {
+      "name": "kick",
+      "clip": {
+        "track": "sekiro/Zombie Kick",
+        "start": 0.2,
+        "end": 1.6
+      },
+      "windup": 0.21,
+      "active": 0.54,
+      "cancel": 0.7,
+      "damage": 16,
+      "poise": 35,
+      "knockback": 4.0,
+      "stamina": 22,
+      "travel": 0.4,
+      "charge": 0.6,
+      "hitbox": {
+        "bone": "foot_r",
+        "radius": 0.12
+      }
+    }
+  ],
+  "guard": {
+    "clip": {
+      "track": "ual2/Sword_Block",
+      "mask": "upper"
+    },
+    "hold": 0.3,
+    "parry_window": 0.143,
+    "absorb": 0.6,
+    "arc": 120
+  }
+}

@@ -1,0 +1,155 @@
+"""Kev motion features: what a clip does, measured from its forward kinematics, for clustering.
+
+    python3 tools/kev/motion.py <clip dir> [--out staging/kev/motion] [--kmax 8]
+
+Each single-clip GLB in the folder is sampled with clip_fk at 30 fps (UE / UAL bone names: pelvis,
+upperarm_l/r, hand_l/r, foot_l/r). Five features, all scale-free:
+
+  hand_speed   95th-percentile speed of either hand relative to the pelvis, in arm lengths per second
+               (a percentile, not the peak: one bad frame should not decide what a clip is)
+  reach        largest shoulder-to-hand distance, in arm lengths (shoulder > elbow > wrist chain at
+               the first frame; 1.0 = arm straight)
+  travel       pelvis ground speed over the clip, in leg lengths per second (a treadmill clip's root
+               motion counts; an in-place loop reads near 0)
+  foot_lift    highest foot above the clip's lowest foot point, in leg lengths (jumps, kicks)
+  returns      1 when the last pose matches the first (mean joint angle under 3 deg), else 0: a loop,
+               or a one-shot that comes back to its stance
+
+The clips are clustered with Kev's k-means on the standardised features, and each cluster is named
+from its centroid (idle / locomotion / strike / kick / jump / gesture). Stability is checked the same way
+survey.py does, so the result can be compared with the file-level clustering.
+"""
+import argparse
+import json
+import os
+import sys
+
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+REPO = os.path.abspath(os.path.join(HERE, "..", ".."))
+sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(REPO, "tools", "anim"))
+
+import kev  # noqa: E402
+import survey  # noqa: E402
+
+FEATURES = ["hand_speed", "reach", "travel", "foot_lift", "returns"]
+LOOP_DEG = 3.0
+
+
+def features(path, name=None, gltf=None):
+    """The five motion features of one clip (`name` defaults to the file's first animation)."""
+    from clip_fk import Clip, GLTF2
+
+    g = gltf or GLTF2().load(path)
+    name = name or g.animations[0].name
+    c = Clip(path, name, gltf=g)
+    c.precompute()
+    fps = c.fps
+    P = lambda w, b: np.asarray(c.pos(w, b), float)  # noqa: E731
+    w0 = c.world(0)
+    arm = (np.linalg.norm(P(w0, "upperarm_l") - P(w0, "lowerarm_l")) + np.linalg.norm(P(w0, "lowerarm_l") - P(w0, "hand_l"))) or 1.0
+    leg = (np.linalg.norm(P(w0, "thigh_l") - P(w0, "calf_l")) + np.linalg.norm(P(w0, "calf_l") - P(w0, "foot_l"))) or 1.0
+    hands = {s: [] for s in "lr"}
+    shoulder_reach, pelvis, feet = [], [], []
+    for f in range(c.frames):
+        w = c.world(f)
+        pv = P(w, "pelvis")
+        pelvis.append(pv)
+        for s in "lr":
+            h = P(w, f"hand_{s}")
+            hands[s].append(h - pv)
+            shoulder_reach.append(np.linalg.norm(h - P(w, f"upperarm_{s}")))
+        feet.append(min(P(w, "foot_l")[1], P(w, "foot_r")[1]))
+    speed = max(float(np.percentile(np.linalg.norm(np.diff(np.array(hands[s]), axis=0), axis=1), 95)) * fps if c.frames > 1 else 0.0 for s in "lr")
+    pelvis = np.array(pelvis)
+    path_len = float(np.sum(np.linalg.norm(np.diff(pelvis[:, [0, 2]], axis=0), axis=1))) if c.frames > 1 else 0.0
+    duration = max(c.duration, 1e-3)
+    feet = np.array(feet)
+    high = max(P(c.world(f), "foot_l")[1] for f in range(c.frames))
+    high = max(high, max(P(c.world(f), "foot_r")[1] for f in range(c.frames)))
+    first, last = c.local(0), c.local(c.frames - 1)
+    loop = mean_rotation_angle(first, last) < LOOP_DEG
+    return {
+        "clip": name,
+        "duration_s": round(duration, 3),
+        "hand_speed": round(speed / arm, 3),
+        "reach": round(float(max(shoulder_reach)) / arm, 3),
+        "travel": round(path_len / duration / leg, 3),
+        "foot_lift": round(float(high - feet.min()) / leg, 3),
+        "returns": 1.0 if loop else 0.0,
+    }
+
+
+def mean_rotation_angle(a, b):
+    """Mean angle (deg) between two lists of local transforms' rotations (matrices or Transform-likes)."""
+    angles = []
+    for ma, mb in zip(a, b):
+        ra, rb = np.asarray(ma)[:3, :3], np.asarray(mb)[:3, :3]
+        r = ra.T @ rb
+        cosv = (np.trace(r) - 1.0) / 2.0
+        angles.append(np.degrees(np.arccos(np.clip(cosv, -1.0, 1.0))))
+    return float(np.mean(angles)) if angles else 0.0
+
+
+def name_cluster(c):
+    """A readable name from a cluster centroid (raw feature units). Order matters: a lunging strike
+    travels too, so striking speed and reach are tested before travel."""
+    if c["foot_lift"] > 0.5:
+        return "jump-or-kick"
+    if c["hand_speed"] > 4.0 and c["reach"] > 0.9:
+        return "strike"
+    if c["travel"] > 1.0:
+        return "locomotion"
+    if c["hand_speed"] < 1.0:
+        return "idle"
+    return "gesture"
+
+
+def cluster(rows, kmax, seed=1):
+    x = np.array([[r[f] for f in FEATURES] for r in rows], float)
+    z = kev.standardise(x)
+    labels, k = kev.choose_clusters(z, kmax, seed)
+    names = {}
+    for lab in sorted(set(labels)):
+        members = x[labels == lab]
+        centroid = dict(zip(FEATURES, members.mean(axis=0)))
+        base = name_cluster(centroid)
+        n = sum(1 for v in names.values() if v.split("-")[0] == base.split("-")[0])
+        names[lab] = base if n == 0 else f"{base}-{n + 1}"
+    for r, lab in zip(rows, labels):
+        r["category"] = names[lab]
+    stab = survey.stability(z, seed) if len(rows) >= 6 else None
+    return k, names, stab
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("clips")
+    ap.add_argument("--out", default=os.path.join(REPO, "staging", "kev", "motion"))
+    ap.add_argument("--kmax", type=int, default=8)
+    args = ap.parse_args()
+    rows = []
+    for f in sorted(os.listdir(args.clips)):
+        if f.endswith(".glb"):
+            try:
+                rows.append({"file": f, **features(os.path.join(args.clips, f))})
+            except Exception as exc:  # a clip without the canonical bones is reported, not fatal
+                print(f"skip {f}: {type(exc).__name__} {exc}")
+    k, names, stab = cluster(rows, args.kmax)
+    os.makedirs(args.out, exist_ok=True)
+    with open(os.path.join(args.out, "motion.json"), "w") as fh:
+        json.dump({"features": FEATURES, "k": int(k), "stability": stab, "clips": rows}, fh, indent=1)
+    counts = {}
+    for r in rows:
+        counts.setdefault(r["category"], []).append(r["clip"])
+    print(f"{len(rows)} clips, k={k}")
+    for cat, clips in sorted(counts.items()):
+        print(f"  {cat:<16} {len(clips):>3}  e.g. {', '.join(clips[:5])}")
+    if stab:
+        print("stability (median adjusted Rand vs full run): " + ", ".join(f"{int(s['fraction'] * 100)}%={s['median_ari']}" for s in stab))
+
+
+if __name__ == "__main__":
+    main()

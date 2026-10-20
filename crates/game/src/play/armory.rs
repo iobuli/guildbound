@@ -8,7 +8,7 @@
 use super::camera::PageToggles;
 use super::combat::Equip;
 use super::interact::{PropState, UseEffect};
-use super::moveset::{Kind, Moveset, Movesets};
+use super::moveset::{Kind, Moveset, Movesets, VERSUS_PREFIX};
 use super::{Interactable, Loadout, Player};
 use bevy::prelude::*;
 use gbui::prelude::*;
@@ -44,7 +44,11 @@ struct RackFooter;
 
 /// Weapon movesets in rack order: unarmed first, then by name.
 pub fn weapons(sets: &Movesets) -> Vec<&Moveset> {
-    let mut v: Vec<&Moveset> = sets.0.values().filter(|m| matches!(m.kind, Kind::Unarmed | Kind::Melee | Kind::Ranged)).collect();
+    let mut v: Vec<&Moveset> = sets
+        .0
+        .values()
+        .filter(|m| matches!(m.kind, Kind::Unarmed | Kind::Melee | Kind::Ranged) && !m.name.starts_with(VERSUS_PREFIX))
+        .collect();
     v.sort_by(|a, b| (a.kind != Kind::Unarmed, &a.name).cmp(&(b.kind != Kind::Unarmed, &b.name)));
     v.truncate(RACK);
     v

@@ -68,6 +68,7 @@ use crate::motion::bank::PoseBank;
 use crate::motion::hand::{Grip, Shape};
 use super::select::HeldGrip;
 use crate::motion::{Mask, MotionLayers, Rig};
+use std::collections::HashMap;
 use bevy::asset::RenderAssetUsages;
 use bevy::ecs::query::QueryItem;
 use bevy::mesh::PrimitiveTopology;
@@ -393,6 +394,22 @@ impl Default for Melee {
 }
 
 impl Melee {
+    /// A fist strike in progress: the striking side (0 = left, 1 = right) and whether its blow is
+    /// landing now. Only attacks whose hitbox rides a hand bone count. Read by `goop`.
+    pub fn fist(&self) -> Option<(usize, bool)> {
+        match &self.state {
+            State::Swing(sw) => {
+                let bone = sw.attack.hitbox.as_ref()?.bone.as_str();
+                let side = match bone {
+                    "hand_l" => 0,
+                    "hand_r" => 1,
+                    _ => return None,
+                };
+                Some((side, sw.active()))
+            }
+            _ => None,
+        }
+    }
     /// The attack in progress, as an opponent sees it coming.
     pub fn tell(&self) -> Option<Tell> {
         match &self.state {
@@ -1338,6 +1355,11 @@ fn drive(
 ) {
     let Some(bank) = bank else { return };
     let dt = time.delta_secs().clamp(0.0, 0.1);
+    // What each fighter holds, so an unarmed fighter can fight with the set made for its target's weapon.
+    let equipped: HashMap<Entity, String> = fighters
+        .iter()
+        .map(|(entity, _, _, _, _, _, _, loadout, ..)| (entity, loadout.equipped().to_string()))
+        .collect();
     let mut targets: Vec<Target> = fighters
         .iter()
         .map(|(entity, tf, mover, _, _, fighter, melee, ..)| Target {
@@ -1366,10 +1388,11 @@ fn drive(
     for (entity, tf, mut mover, intent, mut action, mut fighter, mut melee, loadout, holding, revive, name, repertoire, mastery, derived) in
         &mut fighters
     {
+        let target_set = intent.target.and_then(|t| equipped.get(&t)).map(String::as_str);
         let cx = Ctx {
             dt,
             bank: &bank,
-            set: movesets.get(loadout.equipped()),
+            set: movesets.get(movesets.versus(loadout.equipped(), target_set)),
             targets: &targets,
             me: entity,
             team: fighter.team,
