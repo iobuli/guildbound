@@ -17,12 +17,13 @@ plus the nine key poses (`key_<kick>_<chamber|kick|rechamber>.png`).
 """
 import json
 import math
+import os
 import sys
 
 import bpy
 from mathutils import Matrix, Quaternion, Vector
 
-UAL = "/home/user/gb_e7/assets/anim/ual2.glb"
+UAL = os.environ.get("GB_POSE_MODEL", "/home/user/gb_e7/assets/anim/ual2.glb")
 FITS = "/home/user/gb_e7/tools/blender/refs/fit.json"
 FPS = 60
 
@@ -427,7 +428,7 @@ def camera(sc):
     co.rotation_euler = (math.radians(90), 0, math.radians(90))
     sc.render.engine = "BLENDER_WORKBENCH"
     sc.display.shading.light = "STUDIO"
-    sc.display.shading.color_type = "OBJECT"
+    sc.display.shading.color_type = "MATERIAL" if "blocky" in UAL else "OBJECT"
     sc.render.resolution_x, sc.render.resolution_y = 520, 620
     sc.view_settings.view_transform = "Standard"
     sc.world = bpy.data.worlds.new("w")
