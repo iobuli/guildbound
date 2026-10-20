@@ -262,6 +262,7 @@ fn trigger(
             vfx::burst(&mut commands, vfx.burst(Element::Fire), tf.translation + Vec3::Y * 0.6, 1.4);
             vfx::burst(&mut commands, vfx.shock(), tf.translation - Vec3::Y * 0.8, 2.0);
         }
+        commands.write_message(super::fracture::Shatter { at: tf.translation, radius: 4.5, force: 50.0 });
         hitstop.trigger(0.25);
         if player {
             shake.add(0.45);

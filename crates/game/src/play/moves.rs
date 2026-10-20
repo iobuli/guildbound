@@ -184,6 +184,7 @@ fn run_vault(
             if let Some(vfx) = &vfx {
                 vfx::burst(&mut commands, vfx.shock(), mark_pos - Vec3::Y * HALF_HEIGHT, 2.2);
             }
+            commands.write_message(super::fracture::Shatter { at: mark_pos - Vec3::Y * HALF_HEIGHT, radius: 3.5, force: 60.0 });
             shake.add(0.5);
             info!("[moves] slam {e} slams {}", v.mark);
         }
@@ -300,6 +301,7 @@ fn run_aerial(
                     vfx::burst(&mut commands, vfx.shock(), foe - Vec3::Y * HALF_HEIGHT, 2.6);
                     vfx::burst(&mut commands, vfx.burst(Element::Fire), foe, 1.2);
                 }
+                commands.write_message(super::fracture::Shatter { at: foe - Vec3::Y * HALF_HEIGHT, radius: 4.0, force: 70.0 });
                 hitstop.trigger(0.3);
                 shake.add(0.6);
                 info!("[moves] spike {e} spikes {}", a.target);

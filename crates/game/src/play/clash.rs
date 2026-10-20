@@ -583,6 +583,7 @@ fn clash_fx(
         if let Some(st) = state.remove(&k) {
             vfx::impact(&mut commands, &mut meshes, &mut materials, &vfx, Element::Fire, st.mid + Vec3::Y, 2.2);
             vfx::burst(&mut commands, vfx.shock(), st.mid, 3.5);
+            commands.write_message(super::fracture::Shatter { at: st.mid, radius: 6.0, force: 80.0 });
             hitstop.trigger(SLOWMO_END);
             shake.add(0.7);
         }
