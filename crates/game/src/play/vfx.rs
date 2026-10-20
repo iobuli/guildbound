@@ -781,6 +781,37 @@ pub fn ring(inner: f32, outer: f32) -> Mesh {
         .with_inserted_indices(Indices::U32(idx))
 }
 
+/// A soft flat ring (XZ plane, normal +Y): white at radius `peak`, fading to black at `inner` and `outer` through
+/// vertex colours. On an additive material black adds nothing, so its edges melt into the scene.
+pub fn soft_ring(inner: f32, peak: f32, outer: f32) -> Mesh {
+    let n = 48;
+    let radii = [(inner, 0.0), (peak, 1.0), (outer, 0.0)];
+    let mut pos: Vec<[f32; 3]> = Vec::new();
+    let mut col: Vec<[f32; 4]> = Vec::new();
+    let mut idx: Vec<u32> = Vec::new();
+    for i in 0..=n {
+        let a = i as f32 / n as f32 * std::f32::consts::TAU;
+        let d = Vec3::new(a.cos(), 0.0, a.sin());
+        for (r, c) in radii {
+            pos.push((d * r).to_array());
+            col.push([c, c, c, 1.0]);
+        }
+        if i < n {
+            let k = (i * 3) as u32;
+            for j in 0..2 {
+                let (a0, a1, b0, b1) = (k + j, k + j + 1, k + 3 + j, k + 3 + j + 1);
+                idx.extend([a0, a1, b0, a1, b1, b0]);
+            }
+        }
+    }
+    let normals = vec![[0.0, 1.0, 0.0]; pos.len()];
+    Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default())
+        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, pos)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, col)
+        .with_inserted_indices(Indices::U32(idx))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

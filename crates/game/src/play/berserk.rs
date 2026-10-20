@@ -6,11 +6,12 @@
 //! - Full rage: the player presses V (`Intent::berserk_pressed`), an NPC goes berserk by itself. `Berserk` lasts
 //!   `DURATION` s: attack speed ×`SPEED`, damage dealt ×`MIGHT`, damage taken ×`FRAGILE` (`combat` reads the
 //!   `Berserkers` set), with a roar burst (aura + fire, a slow-motion beat, a camera kick). Rage empties.
-//! - The aura (`Flame`): a pool of `RINGS` glowing rings rising fast up a spine of `NODES` spring-driven points
-//!   (each takes `RISE` s from base to tip, then is reborn at the base with new looks). Every ring has its own
-//!   size jitter, oval squash, tilt and spin, so they read as an irregular rush of circles; their radius follows
-//!   `taper` (widest a little below the middle, a point at the tip) and they fade in off the base and out at the
-//!   tip (`ring_glow`). Most are dim (a low colour on an additive material reads as low alpha); `HIGHLIGHT` of
+//! - The aura (`Flame`): a pool of `RINGS` soft glowing rings rising fast up a spine of `NODES` spring-driven
+//!   points (each takes `RISE` s from base to tip, then is reborn at the base with new looks). Rings face the
+//!   camera, so they read as circles from any side, and sit scattered through the flame's body: each has its own
+//!   angle and distance from the spine (inside `taper`, widest a little below the middle, a point at the tip),
+//!   swirl, size, oval squash and roll, so they read as an irregular rush of circles. They fade in off the base
+//!   and out at the tip (`ring_glow`). Most are dim (a low colour on an additive material reads as low alpha); `HIGHLIGHT` of
 //!   them are bright gold-white highlights. Short lightning arcs crackle through it every `ARC_EVERY` s. Each spine point springs toward straight-up minus the fighter's ground velocity ×
 //!   `LAG` × s², so moving forward bends the tip back and stopping lets it swing up and settle. Additive,
 //!   unlit, no depth write, no shadow, no collider: see-through and not solid. It grows in on the trigger,
@@ -18,7 +19,7 @@
 //! - HUD: a rage bar above the hotbar while the player has rage; it pulses when full.
 //! - `GB_BERSERK=<seconds>` fills the player's rage and triggers berserk at that time (smoke runs).
 use super::combat::Hitstop;
-use super::camera::CameraShake;
+use super::camera::{CameraShake, MainCamera};
 use super::hud::log::{HudLog, LogKind};
 use super::vfx::{self, Element, Vfx};
 use super::{Fighter, Hit, Intent, Mover, Npc, Player};
@@ -45,9 +46,9 @@ const DAMP: f32 = 12.0;
 const GROW: f32 = 0.3;
 const FADE: f32 = 0.5;
 /// Aura rings: pool per fighter, rise time range (s), share of bright highlight rings, brightness levels.
-const RINGS: usize = 48;
+const RINGS: usize = 90;
 const RISE: (f32, f32) = (0.3, 0.55);
-const HIGHLIGHT: f32 = 0.14;
+const HIGHLIGHT: f32 = 0.1;
 const LEVELS: usize = 6;
 /// Electricity: seconds between arcs, and their length (m).
 const ARC_EVERY: f32 = 0.12;
@@ -104,16 +105,19 @@ pub struct Berserk {
 pub struct Berserkers(pub HashSet<Entity>);
 
 /// One rising ring of the aura: where it is up the taper (0 base .. 1 tip), how fast it rises, its own size
-/// jitter, oval squash, tilt and spin, thickness and whether it is a bright highlight.
+/// angle round the spine and swirl, distance out (share of the taper), size, oval squash and roll, thickness and
+/// whether it is a bright highlight.
 #[derive(Clone, Copy, Debug)]
 struct Ring {
     entity: Entity,
     s: f32,
     rate: f32,
+    angle: f32,
+    swirl: f32,
+    out: f32,
     size: f32,
     squash: Vec2,
-    tilt: Quat,
-    spin: f32,
+    roll: f32,
     mesh: usize,
     bright: bool,
 }
@@ -158,10 +162,12 @@ fn new_ring(entity: Entity, seed: &mut u32, s: f32) -> Ring {
         entity,
         s,
         rate: 1.0 / (RISE.0 + (RISE.1 - RISE.0) * r()),
-        size: 0.55 + 0.8 * r(),
-        squash: Vec2::new(0.75 + 0.5 * r(), 0.75 + 0.5 * r()),
-        tilt: Quat::from_euler(EulerRot::XZY, (r() - 0.5) * 0.7, (r() - 0.5) * 0.7, 0.0),
-        spin: (r() - 0.5) * 9.0,
+        angle: r() * std::f32::consts::TAU,
+        swirl: (r() - 0.5) * 6.0,
+        out: r().sqrt() * 0.75,
+        size: 0.18 + 0.5 * r() * r() + if bright { 0.0 } else { 0.08 },
+        squash: Vec2::new(0.8 + 0.4 * r(), 0.8 + 0.4 * r()),
+        roll: r() * std::f32::consts::TAU,
         mesh: if bright { 2 } else { (r() * 2.0) as usize },
         bright,
     }
@@ -193,12 +199,13 @@ fn load_kit(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materi
         let a = (k + 1) as f32 / LEVELS as f32;
         vfx::glow(materials, LinearRgba::rgb(c.red * a, c.green * a, c.blue * a))
     };
-    let aura = LinearRgba::rgb(0.55, 0.16, 0.05);
-    let hot = LinearRgba::rgb(2.4, 1.9, 1.2);
+    // Many rings overlap along any line of sight, so each is faint; highlights stay hot.
+    let aura = LinearRgba::rgb(0.32, 0.09, 0.025);
+    let hot = LinearRgba::rgb(1.5, 1.1, 0.6);
     let dim = (0..LEVELS).map(|k| level(&mut materials, aura, k)).collect();
     let bright = (0..LEVELS).map(|k| level(&mut materials, hot, k)).collect();
     commands.insert_resource(FlameKit {
-        meshes: [meshes.add(vfx::ring(0.86, 1.0)), meshes.add(vfx::ring(0.93, 1.0)), meshes.add(vfx::ring(0.975, 1.0))],
+        meshes: [meshes.add(vfx::soft_ring(0.6, 0.85, 1.0)), meshes.add(vfx::soft_ring(0.75, 0.9, 1.0)), meshes.add(vfx::soft_ring(0.84, 0.94, 1.0))],
         dim,
         bright,
     });
@@ -298,11 +305,13 @@ fn flame(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut flames: Query<(Entity, &mut Flame)>,
+    cameras: Query<&GlobalTransform, With<MainCamera>>,
     mut rings: Query<(&mut Transform, &mut Mesh3d, &mut MeshMaterial3d<StandardMaterial>, &mut Visibility), (Without<Flame>, Without<Mover>)>,
 ) {
     let Some(kit) = kit else { return };
     let dt = time.delta_secs().clamp(0.0, 0.05);
     let t = time.elapsed_secs();
+    let eye = cameras.iter().next().map(|c| c.translation());
     // New auras: a pool of rings spread up the taper so it starts full.
     let lit: HashSet<Entity> = flames.iter().map(|(_, f)| f.owner).collect();
     for (e, tf, _, berserk) in &owners {
@@ -380,13 +389,17 @@ fn flame(
                 *r = new_ring(id, &mut seed, r.s - 1.0);
             }
             let Ok((mut rt, mut mesh, mut mat, mut vis)) = rings.get_mut(r.entity) else { continue };
-            let (at, up) = along(r.s);
-            let radius = 0.5 * WIDTH * taper(r.s) * r.size * size;
+            let (on, up) = along(r.s);
+            let body = 0.5 * WIDTH * taper(r.s) * size;
+            let side = Quat::from_rotation_arc(Vec3::Y, up) * Vec3::new((r.angle + t * r.swirl).cos(), 0.0, (r.angle + t * r.swirl).sin());
+            let at = on + side * body * r.out;
+            // The ring's size shrinks with the taper too, so the tip stays a point.
+            let radius = WIDTH * r.size * (0.35 + 0.65 * taper(r.s)) * size.min(1.0) * if r.s > 0.7 { taper(r.s) / taper(0.7) } else { 1.0 };
             let glow = ring_glow(r.s) * size.min(1.0);
             let level = ((glow * LEVELS as f32) as usize).min(LEVELS - 1);
-            let flat = Quat::from_rotation_arc(Vec3::Y, up);
+            let face = eye.map_or(Vec3::Z, |e| (e - at).normalize_or(Vec3::Z));
             *rt = Transform::from_translation(at)
-                .with_rotation(flat * r.tilt * Quat::from_rotation_y(t * r.spin))
+                .with_rotation(Quat::from_rotation_arc(Vec3::Y, face) * Quat::from_rotation_y(r.roll + t * r.swirl))
                 .with_scale(Vec3::new(radius * r.squash.x, 1.0, radius * r.squash.y));
             mesh.0 = kit.meshes[r.mesh].clone();
             mat.0 = if r.bright { kit.bright[level].clone() } else { kit.dim[level].clone() };
