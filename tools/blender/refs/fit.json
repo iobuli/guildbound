@@ -36,5 +36,37 @@
   "r.foot": 37.5,
   "hl.shoulder.0": -18.6563,
   "hl.elbow": 105.25
+ },
+ "Ushiro_Geri.chamber": {
+  "pel.0": 0.0797,
+  "pel.1": 0.0097,
+  "pel.2": 0.0097,
+  "tilt.0": 15.125,
+  "chest.0": 17.375,
+  "head.0": -11.125,
+  "r.thigh.0": 100.5,
+  "r.thigh.2": 0.25,
+  "r.knee": 141.875,
+  "r.foot": -11.0,
+  "hl.shoulder.0": 32.125,
+  "hl.elbow": 70.875
+ },
+ "Ushiro_Geri.kick": {
+  "pel.0": 0.0974,
+  "pel.1": -0.0043,
+  "pel.2": 0.0495,
+  "tilt.0": 60.5625,
+  "chest.0": 18.5625,
+  "head.0": -35.5625,
+  "r.thigh.0": -35.625,
+  "r.thigh.2": 1.6875,
+  "r.knee": 2.9375,
+  "r.foot": -16.0625,
+  "hl.shoulder.0": 54.25,
+  "hl.elbow": 114.25,
+  "hr.shoulder.0": 54.25,
+  "hr.elbow": 114.25,
+  "hl.shoulder.1": 25.75,
+  "hr.shoulder.1": 25.75
  }
 }

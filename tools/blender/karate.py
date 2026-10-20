@@ -262,12 +262,17 @@ POSES = {
                   hl={"shoulder": (-30, 10, 0), "elbow": 100}, hr={"shoulder": (40, 30, 0), "elbow": 100}),
     },
     "Ushiro_Geri": {
-        "chamber": P(yaw=180, pel=(0.04, 0.03, -0.01), tilt=(14, 0), chest=(14, 0, 0), head=(-15, 75),
-                     r={"ankle": (-0.07, -0.18, 0.64), "pole": (0, -0.5, 1), "foot": -25}),
-        "kick": P(yaw=180, pel=(0.06, 0.04, 0.03), tilt=(60, 0), chest=(22, 0, 0), head=(-50, 70),
-                  r={"ankle": (-0.08, 1.10, 0.98), "pole": (0, 0.2, -1), "foot": -25}),
+        # Turned away from the target, hunched, knee to the chest, foot tucked under it heel-first, hands on the knee.
+        "chamber": P(yaw=180, pel=(0.04, -0.03, -0.03), tilt=(15, 0), chest=(20, 0, 0), head=(-15, 0, 0),
+                     r={"thigh": (110, 0, 0), "knee": 140, "foot": -20},
+                     hl={"shoulder": (40, 5, 0), "elbow": 60}, hr={"shoulder": (40, 5, 0), "elbow": 60}),
+        # Leg straight back at hip height, heel leading, torso near horizontal over a vertical support leg.
+        "kick": P(yaw=180, pel=(0.05, 0.05, -0.03), tilt=(60, 0), chest=(20, 0, 0), head=(-40, 0, 0),
+                  r={"thigh": (-30, 0, 0), "knee": 3, "foot": -20},
+                  hl={"shoulder": (30, 10, 0), "elbow": 110}, hr={"shoulder": (30, 10, 0), "elbow": 110}),
     },
 }
+
 # Mae geri, as a real one moves: weight onto the support foot, knee driven up, the shin snapped out around the knee
 # (ease-out: most of the travel in the first frames) with the hips thrusting and the shoulders going back, a short
 # lock, the same fast pullback, the foot lowered and planted, a small absorbing dip, settle.
@@ -280,6 +285,26 @@ SEQUENCES = {
                  (POSES["Mae_Geri"]["kick"], 0.05, "linear", "lock"), (POSES["Mae_Geri"]["chamber"], 0.11, "smooth", "rechamber"),
                  (MAE_LAND, 0.18, "smooth", "land"), (STANCE, 0.22, "smooth", "stance")],
 }
+# Yoko and ushiro geri are thrust kicks (kekomi): a slightly longer drive (0.15 s) with the hips behind it. Yoko
+# pivots on the support foot as the hips turn side-on; ushiro turns its back to the target in the chamber and turns
+# back to face it while it settles.
+YOKO_SHIFT = P(yaw=30, pel=(0.075, -0.01, -0.03), tilt=(0, 3), chest=(0, 2, 0), head=(5, -30, 0),
+               l={"ankle": SUPPORT, "planted": True, "pole": (0.05, -1, 0), "turn": 1.4}, r=STANDING_R)
+YOKO_LAND = P(yaw=40, pel=(0.07, -0.01, -0.045), tilt=(0, 4), chest=(0, 2, 0), head=(5, -40, 0),
+              l={"ankle": SUPPORT, "planted": True, "pole": (0.05, -1, 0), "turn": 1.4}, r=dict(STANDING_R, knee=12))
+USHIRO_SHIFT = P(yaw=90, pel=(0.075, -0.01, -0.03), tilt=(5, 0), chest=(5, 0, 0), head=(0, 60, 0), r=STANDING_R)
+USHIRO_LAND = P(yaw=150, pel=(0.07, -0.01, -0.045), tilt=(8, 0), chest=(5, 0, 0), head=(-5, 60, 0), r=dict(STANDING_R, knee=12))
+
+
+def kick_sequence(name, shift, land, drive):
+    k = POSES[name]
+    return [(STANCE, 0.20, "smooth", "stance"), (shift, 0.12, "smooth", "shift"), (k["chamber"], 0.20, "smooth", "chamber"),
+            (k["kick"], drive, "snap", "kick"), (k["kick"], 0.06, "linear", "lock"), (k["chamber"], 0.16, "smooth", "rechamber"),
+            (land, 0.20, "smooth", "land"), (STANCE, 0.30, "smooth", "stance")]
+
+
+SEQUENCES["Yoko_Geri"] = kick_sequence("Yoko_Geri", YOKO_SHIFT, YOKO_LAND, 0.20)
+SEQUENCES["Ushiro_Geri"] = kick_sequence("Ushiro_Geri", USHIRO_SHIFT, USHIRO_LAND, 0.20)
 TIMES = (0.25, 0.30, 0.13, 0.12, 0.17, 0.30)
 EASES = ("smooth", "smooth", "out", "smooth", "smooth", "smooth")
 

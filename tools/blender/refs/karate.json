@@ -413,6 +413,205 @@
           ]
         }
       }
+    },
+    "Ushiro_Geri": {
+      "forward": "left",
+      "anchor": "ankle_s",
+      "height_px": 180,
+      "landmarks": {
+        "crown": "crown",
+        "nose": "nose",
+        "neck": "neck",
+        "shoulder": "shoulder_l",
+        "elbow": "elbow_l",
+        "fist": "knuckle_l",
+        "hip_k": "hip_r",
+        "knee_k": "knee_r",
+        "ankle_k": "ankle_r",
+        "heel_k": "heel_r",
+        "toe_k": "toe_tip_r",
+        "hip_s": "hip_l",
+        "knee_s": "knee_l",
+        "ankle_s": "ankle_l",
+        "heel_s": "heel_l",
+        "toe_s": "toe_tip_l"
+      },
+      "phases": {
+        "chamber": {
+          "crop": [
+            110,
+            425,
+            95,
+            190
+          ],
+          "top": 430,
+          "floor": 604,
+          "points": {
+            "crown": [
+              190,
+              430
+            ],
+            "nose": [
+              180,
+              455
+            ],
+            "neck": [
+              176,
+              460
+            ],
+            "shoulder": [
+              158,
+              463
+            ],
+            "elbow": [
+              156,
+              501
+            ],
+            "fist": [
+              184,
+              509
+            ],
+            "hip_k": [
+              140,
+              519
+            ],
+            "knee_k": [
+              186,
+              521
+            ],
+            "ankle_k": [
+              136,
+              545
+            ],
+            "heel_k": [
+              130,
+              537
+            ],
+            "toe_k": [
+              140,
+              553
+            ],
+            "hip_s": [
+              142,
+              521
+            ],
+            "knee_s": [
+              146,
+              563
+            ],
+            "ankle_s": [
+              144,
+              595
+            ],
+            "heel_s": [
+              140,
+              601
+            ],
+            "toe_s": [
+              165,
+              602
+            ]
+          },
+          "facing": {
+            "chest": "back",
+            "kneecap_r": "back",
+            "sole_r": "forward",
+            "sole_l": "down",
+            "toes_l": "back"
+          },
+          "in_plane": [
+            "knee_k",
+            "ankle_k"
+          ],
+          "notes": "Turned away from the target, hunched forward, knee pulled to the chest, foot tucked under it with the heel aimed back at the target, hands on the knee, looking back over the shoulder."
+        },
+        "kick": {
+          "crop": [
+            200,
+            445,
+            210,
+            165
+          ],
+          "top": 460,
+          "floor": 605,
+          "points": {
+            "crown": [
+              395,
+              460
+            ],
+            "nose": [
+              381.25,
+              480
+            ],
+            "neck": [
+              372.5,
+              485
+            ],
+            "shoulder": [
+              352.5,
+              482.5
+            ],
+            "elbow": [
+              347.5,
+              503.75
+            ],
+            "fist": [
+              362.5,
+              508.75
+            ],
+            "hip_k": [
+              312.5,
+              492.5
+            ],
+            "knee_k": [
+              275,
+              488.75
+            ],
+            "ankle_k": [
+              240,
+              485
+            ],
+            "heel_k": [
+              212.5,
+              495
+            ],
+            "hip_s": [
+              312.5,
+              507.5
+            ],
+            "knee_s": [
+              310,
+              550
+            ],
+            "ankle_s": [
+              310,
+              597.5
+            ],
+            "heel_s": [
+              303.75,
+              602.5
+            ],
+            "toe_s": [
+              331.25,
+              602.5
+            ]
+          },
+          "facing": {
+            "chest": "down",
+            "kneecap_r": "down",
+            "sole_r": "forward",
+            "sole_l": "down",
+            "toes_l": "back",
+            "toes_r": "down"
+          },
+          "in_plane": [
+            "knee_k",
+            "ankle_k",
+            "heel_k"
+          ],
+          "notes": "Leg straight back at hip height, heel leading; torso pitched near horizontal over a vertical support leg; fists tucked; head low."
+        }
+      }
     }
   }
 }

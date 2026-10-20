@@ -450,18 +450,23 @@ def track(bm, paths, fps, kick):
     floor = bm["body"]["floor"]
     sup = "l" if kick == "r" else "r"
     frames = [posed_landmarks(bm, load_pose(p, bm)) for p in paths]
-    start = {k: frames[0][f"{k}_{sup}"] for k in ("heel", "toe_tip")}
+    start = {"ankle": frames[0][f"ankle_{sup}"]}
+    fwd0 = frames[0][f"toe_tip_{sup}"] - frames[0][f"heel_{sup}"]
     rows = []
     for i, L in enumerate(frames):
         prev = frames[max(i - 1, 0)]
         nxt = frames[min(i + 1, len(frames) - 1)]
         span = (min(i + 1, len(frames) - 1) - max(i - 1, 0)) / fps
         speed = {k: float(np.linalg.norm(nxt[f"{k}_{kick}"] - prev[f"{k}_{kick}"]) / span) if span else 0.0 for k in ("ball", "toe_tip", "ankle")}
-        slip = max(float(np.linalg.norm(L[f"{k}_{sup}"] - start[k])) for k in start)
+        # Slip = the support ankle sliding; turning the foot on the spot (a pivot) is reported apart.
+        slip = float(np.linalg.norm(L[f"ankle_{sup}"] - start["ankle"]))
+        f_now = L[f"toe_tip_{sup}"] - L[f"heel_{sup}"]
+        a, b = fwd0 - up * (fwd0 @ up), f_now - up * (f_now @ up)
+        pivot = math.degrees(math.atan2(float(np.cross(a, b) @ up), float(a @ b)))
         lifted = min(float(L[f"{k}_{kick}"] @ up) - floor for k in ("heel", "toe_tip", "ball")) > 0.03
         bal = balance(bm, L)
         rows.append({"frame": i + 1, "ball_mps": speed["ball"], "toe_mps": speed["toe_tip"], "ankle_mps": speed["ankle"],
-                     "support_slip_m": slip, "single_support": lifted, "com_over_foot": bal["over_foot"], "com_off_h": bal["off_foot"],
+                     "support_slip_m": slip, "pivot_deg": pivot, "single_support": lifted, "com_over_foot": bal["over_foot"], "com_off_h": bal["off_foot"],
                      "ankle_height_m": float(L[f"ankle_{kick}"] @ up) - floor})
     return rows
 
@@ -501,7 +506,7 @@ def main():
         peak = max(rows, key=lambda r: r["ball_mps"])
         single = [r for r in rows if r["single_support"]]
         print(f"peak ball-of-foot speed {peak['ball_mps']:.1f} m/s at frame {peak['frame']}; support foot slip max "
-              f"{max(r['support_slip_m'] for r in rows) * 1000:.1f} mm; one-foot frames {len(single)}, CoM off the foot in "
+              f"{max(r['support_slip_m'] for r in rows) * 1000:.1f} mm (pivot up to {max(abs(r['pivot_deg']) for r in rows):.0f} deg); one-foot frames {len(single)}, CoM off the foot in "
               f"{sum(1 for r in single if not r['com_over_foot'])}")
         return
     D = load_pose(a.pose, bm)

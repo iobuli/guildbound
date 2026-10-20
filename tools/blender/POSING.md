@@ -65,3 +65,17 @@ Kev or the rig.
   restarts.
 - **Fit only the parameters that matter.** Body yaw, hip height and head angle pull other segments; add them
   when the support thigh or neck stays off.
+
+## Timing (measured by `bodymap.py track`)
+| Kick | Strike | Pullback | Peak foot speed | Support foot | CoM in single support |
+|---|---|---|---|---|---|
+| Mae geri (snap) | 0.13 s | 0.11 s | 16.4 m/s | no slip | always over the foot |
+| Yoko geri (thrust) | 0.20 s | 0.16 s | about 17 m/s | 3 mm slip, pivots 174° | always over the foot |
+| Ushiro geri (thrust) | 0.20 s | 0.16 s | about 15 m/s | 0.6 mm slip, pivots 180° | always over the foot |
+
+Order of every kick: shift weight, chamber, strike (snap ease), lock, pull back, plant (FK-to-IK blend), absorb, settle.
+
+## Time per kick
+- Mae geri, by hand: about 12 check-and-fix rounds per pose.
+- Yoko and ushiro geri, with `posefit.py`: 1 to 3 fits of about 7 s each per pose, plus a seed or a reference fix
+  where the chart was ambiguous (the back-kick foot follows the technique, toes down).
