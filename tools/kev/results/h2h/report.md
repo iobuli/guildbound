@@ -16,10 +16,10 @@
 
 | enemy | reach m | windup s | ranged | chain | cost | heavy | parry s | absorb | arc |
 |---|---|---|---|---|---|---|---|---|---|
-| axe | 1.57 | 0.149 | False | jab > cross | 2.14 | kick | 0.11 | 0.6 | 120 |
-| bow | 0.7 | None | True | hammer fist > jab > hook > jab | -18.75 | charge | 0.2 | 0.75 | 160 |
-| crossbow | 0.7 | None | True | hammer fist > jab > hook > jab | -18.75 | charge | 0.2 | 0.75 | 160 |
-| dagger | 1.0 | 0.247 | False | jab > cross | -2.0 | kick | 0.129 | 0.6 | 120 |
-| greatsword | 1.85 | 0.529 | False | hammer fist > jab > hook > jab | -18.75 | shoulder bash | 0.186 | 0.4 | 120 |
-| katana | 1.45 | 0.313 | False | hook > jab > hook | -2.67 | kick | 0.143 | 0.6 | 120 |
-| knives | 0.86 | None | True | hammer fist > jab > hook > jab | -18.75 | charge | 0.2 | 0.75 | 160 |
+| axe | 1.57 | 0.149 | False | jab > cross | 2.64 | kick | 0.11 | 0.6 | 120 |
+| bow | 0.7 | None | True | hammer fist > jab > hammer fist > jab | -16.18 | charge | 0.2 | 0.75 | 160 |
+| crossbow | 0.7 | None | True | hammer fist > jab > hammer fist > jab | -16.18 | charge | 0.2 | 0.75 | 160 |
+| dagger | 1.0 | 0.247 | False | jab > cross | -1.5 | kick | 0.129 | 0.6 | 120 |
+| greatsword | 1.85 | 0.529 | False | hammer fist > jab > hammer fist > jab | -16.18 | shoulder bash | 0.186 | 0.4 | 120 |
+| katana | 1.45 | 0.313 | False | hook > jab > cross | -0.85 | kick | 0.143 | 0.6 | 120 |
+| knives | 0.86 | None | True | hammer fist > jab > hammer fist > jab | -16.18 | charge | 0.2 | 0.75 | 160 |

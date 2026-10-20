@@ -43,24 +43,22 @@
       }
     },
     {
-      "name": "hook",
+      "name": "cross",
       "clip": {
-        "track": "ual2/Melee_Hook"
+        "track": "ual1/Punch_Cross",
+        "end": 0.7
       },
-      "windup": 0.571,
-      "active": 0.643,
-      "cancel": 0.643,
-      "damage": 11,
-      "poise": 16,
-      "knockback": 1.6,
-      "stamina": 12,
+      "windup": 0.286,
+      "active": 0.381,
+      "cancel": 0.429,
+      "damage": 9,
+      "poise": 12,
+      "knockback": 1.2,
+      "stamina": 10,
       "travel": 0.25,
       "hitbox": {
         "bone": "hand_r",
         "radius": 0.1
-      },
-      "recover": {
-        "track": "ual2/Melee_Hook_Rec"
       }
     }
   ],

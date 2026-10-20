@@ -16,6 +16,7 @@ import argparse
 import json
 import math
 import os
+import re
 import sys
 
 import numpy as np
@@ -82,6 +83,21 @@ def pose_ends(path):
     return first, last
 
 
+# Arm joints across rig families (UE / UAL, Mixamo, Kevin).
+ARM = re.compile(r"(upperarm|lowerarm|hand_|clavicle|Arm|ForeArm|Hand$|hand\.|forearm|shoulder)")
+# Mean arm motion (deg per key) at a clip's end above which it ends mid-swing. Measured: clips that
+# ship with a `_Rec` recovery (Melee_Hook 4.0, Sword_Regular_A 3.6) sit far above it; settled ends
+# (Punch_Jab 0.15, the _Rec clips, idles) stay under 0.6.
+MID_SWING_DEG = 2.0
+
+
+def mid_swing(last):
+    """True when a clip ends with its arms still moving fast: a strike that wants its recovery clip,
+    not a place to cut into the next clip."""
+    v = [np.linalg.norm(last[j][1]) for j in last if ARM.search(j)]
+    return bool(v) and math.degrees(float(np.mean(v))) > MID_SWING_DEG
+
+
 def angle(a, b):
     d = abs(float(np.dot(a, b)))
     return math.degrees(2 * math.acos(min(1.0, d)))
@@ -124,10 +140,11 @@ def best_next(names, score, top):
     return out
 
 
-def chain(start, names, score, length):
-    """Greedy: at each step take the cheapest unused next clip."""
+def chain(start, names, score, length, stops=frozenset()):
+    """Greedy: at each step take the cheapest unused next clip. A clip in `stops` (ends mid-swing)
+    may close a chain but nothing is cut onto its end."""
     path, total, used = [start], 0.0, {start}
-    while len(path) < length:
+    while len(path) < length and path[-1] not in stops:
         options = [(score[(path[-1], b)], b) for b in names if b not in used and (path[-1], b) in score]
         if not options:
             break
@@ -156,12 +173,14 @@ def main():
         raise SystemExit(f"need at least two clips with rotation keys under {args.clips}")
 
     names, score = build_matrix(clips)
-    chains = sorted((chain(n, names, score, args.length) for n in names), key=lambda c: c["total_degrees"])
+    stops = frozenset(n for n in names if mid_swing(clips[n][1]))
+    chains = sorted((chain(n, names, score, args.length, stops) for n in names), key=lambda c: c["total_degrees"])
     result = {
         "rule": {"score": "mean joint angle (deg), last pose of A vs first pose of B", "length": args.length},
         "clips": len(names),
         "best_next": best_next(names, score, args.top),
         "chains": chains[: args.top * 2],
+        "mid_swing_ends": sorted(stops),
     }
     os.makedirs(args.out, exist_ok=True)
     with open(os.path.join(args.out, "combos.json"), "w") as f:

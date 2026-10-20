@@ -25,6 +25,7 @@ import argparse
 import copy
 import itertools
 import json
+import math
 import os
 import sys
 
@@ -68,8 +69,19 @@ def check_punch_rule(pool, libs):
             raise SystemExit(f"{e['track']}: hand strikes must come from {libs} (the punch rule)")
 
 
+def hip_yaw(clip, frame):
+    """Facing (deg) of the hip line at a frame: the horizontal direction across thigh_l -> thigh_r."""
+    w = clip.world(frame)
+    d = np.asarray(clip.pos(w, "thigh_r")) - np.asarray(clip.pos(w, "thigh_l"))
+    return math.degrees(math.atan2(d[0], d[2]))
+
+
 def time_strike(clip, fast, recover, end=None):
-    """Striking hand and (windup, active, cancel) fractions of the window [0, end or duration]."""
+    """Striking hand, (windup, active, cancel) fractions of the window [0, end or duration], and what
+    the cut at the window end looks like: the hand's speed there as a share of its peak (high = the
+    window ends mid-swing) and the hip facing at the window's start and end. Speeds are raw: the UAL
+    hook moves its hand ~1.3 m between two keys (an authored snap), so its peak reads ~39 m/s; that is
+    the asset, and the strike window is placed on it."""
     clip.precompute()
     fps = clip.fps
     speeds = {}
@@ -82,6 +94,7 @@ def time_strike(clip, fast, recover, end=None):
         speeds[side] = np.r_[0.0, np.linalg.norm(np.diff(rel, axis=0), axis=1) * fps]
     side = max(speeds, key=lambda s: speeds[s].max())
     v = speeds[side]
+    dist = np.array([np.linalg.norm(np.asarray(clip.pos(clip.world(f), f"hand_{side}")) - np.asarray(clip.pos(clip.world(f), "pelvis"))) for f in range(clip.frames)])
     window = end if end else clip.duration
     last = min(len(v) - 1, int(round(window * fps)))
     v = v[: last + 1]
@@ -97,7 +110,15 @@ def time_strike(clip, fast, recover, end=None):
     while cancel < len(v) - 1 and v[cancel] >= recover * top:
         cancel += 1
     frac = lambda f: round(min(1.0, (f / fps) / window), 3)  # noqa: E731
-    return side, {"windup": frac(start), "active": max(frac(stop + 1), frac(start) + 0.05), "cancel": max(frac(cancel), frac(stop + 1)), "peak_mps": round(float(top), 2)}
+    return side, {
+        "windup": frac(start), "active": max(frac(stop + 1), frac(start) + 0.05), "cancel": max(frac(cancel), frac(stop + 1)),
+        "peak_mps": round(float(top), 2),
+        "end_speed_mps": round(float(v[last]), 3),
+        # Radial speed of the hand at the window end: negative = drawing back toward the body.
+        "end_radial_mps": round(float((dist[last] - dist[max(0, last - 1)]) * fps), 3),
+        "yaw_start": round(hip_yaw(clip, 0), 1),
+        "yaw_end": round(hip_yaw(clip, last), 1),
+    }
 
 
 def measure_pool(pool, timing):
@@ -113,7 +134,10 @@ def measure_pool(pool, timing):
         clip = Clip(lib_path(lib), name, gltf=loaded[lib])
         side, t = time_strike(clip, timing["fast_fraction"], timing["recover_fraction"], e.get("end"))
         window = e.get("end") or clip.duration
-        out[e["track"]] = {"hand": side, **t, "duration": round(clip.duration, 3), "windup_s": round(t["windup"] * window, 3)}
+        # Mid-swing: still moving fast at the window end and not drawing back. A hand returning to the
+        # guard (the jab and cross windows end on the way back) is a recovery and may be cut.
+        mid = t["end_speed_mps"] > timing["mid_swing_mps"] and t["end_radial_mps"] > -timing["retract_mps"]
+        out[e["track"]] = {"hand": side, **t, "duration": round(clip.duration, 3), "windup_s": round(t["windup"] * window, 3), "mid_swing": mid}
     return out
 
 
@@ -160,6 +184,10 @@ def chain_cost(seq, ends, timing, by_track, rules, weight, impact, enemy_windup)
     fast one only quick strikes are."""
     cost = 0.0
     for a, b in zip(seq, seq[1:]):
+        if timing[a]["mid_swing"]:
+            return None  # a strike whose window ends mid-swing can only close the chain
+        turn = abs((timing[a]["yaw_end"] - timing[b]["yaw_start"] + 180.0) % 360.0 - 180.0)
+        cost += rules["facing_weight"] * turn
         t = combos.transition(ends[a][1], ends[b][0])
         # A crossfade hides a small cut; only the part above `crossfade_hides_deg` costs.
         cost += max(0.0, combos.total(t) - rules["crossfade_hides_deg"]) if t else 90.0
@@ -181,6 +209,8 @@ def best_chain(light, ends, timing, by_track, rules, enemy):
         if any(a == b for a, b in zip(seq, seq[1:])):
             continue
         c = chain_cost(seq, ends, timing, by_track, rules, weight, impact, windup)
+        if c is None:
+            continue
         if best is None or c < best[0]:
             best = (c, seq)
     return round(best[0], 2), list(best[1])

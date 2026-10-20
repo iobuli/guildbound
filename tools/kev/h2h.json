@@ -115,12 +115,16 @@
     "arm_reach_m": 0.7,
     "impact_weight_slow": 1.5,
     "impact_weight_fast": 0.2,
-    "crossfade_hides_deg": 15.0
+    "crossfade_hides_deg": 15.0,
+    "facing_weight": 0.5
   },
   "timing": {
     "fast_fraction": 0.6,
-    "recover_fraction": 0.2
+    "recover_fraction": 0.2,
+    "mid_swing_mps": 1.0,
+    "retract_mps": 0.0
   },
   "_doc_tempo": "Windup weight applies only to the part of a strike's windup longer than the enemy's windup (seconds).",
-  "_doc_crossfade": "crossfade_hides_deg: pose+motion mismatch (degrees) that the chained-attack crossfade is assumed to hide. An assumption: lower it if cuts look visible in game."
+  "_doc_crossfade": "crossfade_hides_deg: pose+motion mismatch (degrees) that the chained-attack crossfade is assumed to hide. An assumption: lower it if cuts look visible in game.",
+  "_doc_chain": "A strike whose window ends with the striking hand faster than mid_swing_mps and not drawing back (radial speed >= -retract_mps) is mid-swing: it only closes a chain, its recovery plays after. A hand drawing back to the guard is a recovery and may be cut. facing_weight: cost per degree the hips turn across a cut."
 }

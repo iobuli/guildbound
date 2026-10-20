@@ -40,24 +40,21 @@
       }
     },
     {
-      "name": "hook",
+      "name": "hammer fist",
       "clip": {
-        "track": "ual2/Melee_Hook"
+        "track": "ual2/OverhandThrow"
       },
-      "windup": 0.571,
-      "active": 0.643,
-      "cancel": 0.643,
-      "damage": 11,
-      "poise": 16,
-      "knockback": 1.6,
-      "stamina": 12,
+      "windup": 0.275,
+      "active": 0.325,
+      "cancel": 0.35,
+      "damage": 12,
+      "poise": 18,
+      "knockback": 1.4,
+      "stamina": 13,
       "travel": 0.25,
       "hitbox": {
         "bone": "hand_r",
         "radius": 0.1
-      },
-      "recover": {
-        "track": "ual2/Melee_Hook_Rec"
       }
     },
     {
