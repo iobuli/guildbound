@@ -1,5 +1,167 @@
 # Agent log (newest first)
 
+## 2026-10-20T14:48Z · agent-1
+
+**Branch:** ev/kev-categoriser   ·  **Range:** `1d13070..b48fea5`
+
+**What:** Kev + combat batch on ev/kev-categoriser: Kev nodes on Rigify/ARP rigs, motion labels (gait/burst/level), strike cutter finds hook+scratch with reasons, 60 Hz pose bank, per-weapon unarmed_vs_* sets all distinct (combo, heavy, guard), body-landing planner, charge clash (Budokai 3 mash) with streaks/impact frames/clash_fx, per-limb hurtboxes (melee, spells, arrows), skill-shot spells, map doubled with foundry/market/plaza from the uploaded packs, viewer combos + turntable, GIF/turntable recorders
+
+**Config / try it:** cargo run -p guildbound with GB_FIGHT=unarmed GB_RIVAL=1 GB_CLASH=4 for a clash; tools/showcase/gif.sh name from to 1920x1080 KEY=VAL...; cargo run -p gb_viewer, GB_VIEWER_TURNTABLE=packs/...glb,...
+
+- `86c469d` Kev nodes: Rigify rigs (segment suffixes, spine neck/head); test checklist on the company characters
+    - tools/kev/nodes.py: +41 +72-74
+    - tools/kev/results/nodes/rigs.txt: +1-107
+    - tools/kev/roles.json: +2-12 +14-27 +30-93 +96-110
+    - tools/kev/test_nodes.py: +21-24 +26-27 +57-66 +93-107
+- `436fe26` Kev: Auto-Rig Pro roles; motion features find bones by role and read multi-clip files
+    - tools/kev/motion.py: +5-8 +37 +44-69 +79-80 +164-165 +167-171 +173 +175
+    - tools/kev/results/imports.md: +1-27
+    - tools/kev/results/motion/mech_00.json: +1-375
+    - tools/kev/results/nodes/rigs.txt: +108-119
+    - tools/kev/roles.json: +2 +11-12 +33 +57 +73 +77
+    - tools/kev/test_motion.py: +1-52
+    - tools/kev/test_nodes.py: +27-30 +70-76
+- `76e7ab4` Kev motion: per-clip strike / fall-or-rise rules from extend and level features
+    - tools/kev/motion.py: +17-20 +24-27 +46-61 +107 +116 +132 +135 +152-160 -162 +165-166 +184-185
+    - tools/kev/results/imports.md: +23-42
+    - tools/kev/results/motion/actionforge.json: +1-1212
+    - tools/kev/results/motion/mech_00.json: +5 +8 +16 +21 +26 +41 +44 +46-47 +55 +58 +60-61 +69 …
+    - tools/kev/test_motion.py: +51-74
+- `8cc2034` Strike cutter: finds the hook and the scratch; records why a peak was turned down
+    - assets/anim/movesets/unarmed_vs_bow.json: +8-10 +12-14 +51-53 +55-57
+    - assets/anim/movesets/unarmed_vs_crossbow.json: +8-10 +12-14 +51-53 +55-57
+    - assets/anim/movesets/unarmed_vs_dagger.json: +5-27 -46
+    - assets/anim/movesets/unarmed_vs_greatsword.json: +8-10 +12-14 +51-53 +55-57
+    - assets/anim/movesets/unarmed_vs_katana.json: +8-10 +12-14
+    - assets/anim/movesets/unarmed_vs_knives.json: +8-10 +12-14 +51-53 +55-57
+    - crates/game/src/play/repertoire.rs: +10-13 +146-162 +165-170 +176 +184 +201-206 +209 +233-239 +247 +251 +255 +265-276 …
+    - tools/kev/results/h2h/report.json: +43-45 +51-55 +57 +81-83 +85-86 +88-93 +95-96 +222-223 +225
+    - tools/kev/results/h2h/report.md: +12 +14 +25
+    - tools/kev/results/strikes/strikes.json: +1-189
+- `ce23928` Kev targets: where each strike of each plan lands on six enemy bodies
+    - tools/kev/nodes.py: +193-194
+    - tools/kev/pipeline.json: +157-177
+    - tools/kev/results/h2h/targets.json: +1-528
+    - tools/kev/results/h2h/targets.md: +1-25
+    - tools/kev/targets.py: +1-170
+    - tools/kev/test_targets.py: +1-38
+- `b24d11f` Viewer: combo list from the unarmed_vs_* movesets, played on the UAL mannequin
+    - Cargo.lock: +2912
+    - crates/viewer/Cargo.toml: +14
+    - crates/viewer/src/main.rs: +7-10 +25 +45-50 +63 +69 +71 +154 +171 +174 +206-216 +483-692
+- `aff0957` Kev h2h: the chain planner scores where each punch lands on the enemy's body
+    - assets/anim/movesets/unarmed_vs_dagger.json: -4 +24-43
+    - crates/viewer/src/main.rs: +652
+    - tools/kev/h2h.json: +119-121 +131-139
+    - tools/kev/h2h.py: +40 +207-211 +229-230 +234 +244 +281-282 +285 +304-308 +310-311 +315-342 +364-372
+    - tools/kev/results/h2h/report.json: +143-147 +158-225 +243-249 +260-351 +369-375 +386-477 +490-496 -497 +508-575 +593-599 +610-701 +718-723 …
+    - tools/kev/results/h2h/report.md: +22-43
+    - tools/kev/results/h2h/targets.json: +291-292 +297 +300
+    - tools/kev/results/h2h/targets.md: +22
+    - tools/kev/test_h2h.py: +83-92
+- `1b17507` Kev motion: gait and burst features; Kev architecture write-up
+    - tools/kev/ARCHITECTURE.md: +1-127
+    - tools/kev/graph.py: +13-14
+    - tools/kev/motion.py: +21-24 +50 +62-71 +103 +119 +130-131 +134-136 +141-142 +154-155 +181-185 +189-191
+    - tools/kev/nodes.py: +20-21
+    - tools/kev/results/imports.md: +36-47
+    - tools/kev/results/motion/actionforge.json: +9-10 +13 +18 +23 +28 +47-48 +63-64 +66 +79-80 +95-96 +99 +111-112 …
+    - tools/kev/results/motion/mech_00.json: +9-10 +18 +23 +28 +47-48 +63-64 +79-80 +95-96 +111-112 +127-128 +143-144 +146 …
+    - tools/kev/test_motion.py: +52 +54 +71 +74-81
+- `a26b5c5` Kev: per-combo acceptance tests against every planned body
+    - tools/kev/test_combo_bodies.py: +1-61
+- `1305530` Kev: borderline clip labels as JSON overrides; giants get a legs-only note
+    - tools/kev/ARCHITECTURE.md: +121
+    - tools/kev/h2h.py: +309-312 +375-376
+    - tools/kev/motion.py: +74-77 +216-218
+    - tools/kev/motion_overrides.json: +1-8
+    - tools/kev/results/h2h/report.json: +224-226 +352-354 +480-482 +580-582 +708-710 +822-824 +950-952
+    - tools/kev/results/h2h/report.md: +37-43
+    - tools/kev/results/motion/actionforge.json: +1219-1221
+    - tools/kev/results/motion/mech_00.json: +307-309 +325-327
+    - tools/kev/test_motion.py: +83-99
+- `0afd653` Kev targets: a punch at the top of a UAL jump reaches the mech's torso
+    - tools/kev/results/h2h/targets.json: +527-593
+    - tools/kev/results/h2h/targets.md: +15-28
+    - tools/kev/targets.py: +114-131 +155-157 +171 +182-186
+    - tools/kev/test_combo_bodies.py: +59-72
+- `8c38431` Charge clash: two foes full-charging into each other lock into a super-speed exchange
+    - crates/game/src/play/clash.rs: +1-338
+    - crates/game/src/play/combat.rs: +373-374 +394 +431-438 +611 +613 +1365 +1386 +1401 +1417 +1436-1439 +1463-1487 +1664 …
+    - crates/game/src/play/mod.rs: +32 +137
+- `1e3e7c0` Pose bank sampled at 60 Hz: twice the keys of the authored 30 fps clips
+    - assets/anim/movesets/unarmed_vs_axe.json: +10 +12-14 +29 +32-34
+    - assets/anim/movesets/unarmed_vs_bow.json: -4 +10 +12-14 +29 +32-34 +53 +55-57 +67-86
+    - assets/anim/movesets/unarmed_vs_crossbow.json: -4 +10 +12-14 +29 +32-34 +53 +55-57 +67-86
+    - assets/anim/movesets/unarmed_vs_dagger.json: +10 +12-14 +29 +32-34
+    - assets/anim/movesets/unarmed_vs_greatsword.json: -4 +10 +12-14 +19 +29 +32-34 +53 +55-57 +67-86
+    - assets/anim/movesets/unarmed_vs_katana.json: +9 +12-14 +33 +35-37 +52 +55-57
+    - assets/anim/movesets/unarmed_vs_knives.json: -4 +10 +12-14 +29 +32-34 +53 +55-57 +67-86
+    - crates/game/src/motion/mod.rs: +44-46
+    - crates/game/src/motion/retarget.rs: +904 +906-909
+    - tools/kev/results/h2h/report.json: +5-7 +9-10 +12 +15 +19 +24-26 +33 +38 +43-45 +52 +57 +62-64 …
+    - tools/kev/results/h2h/report.md: +10-14 +22-28 +38-43
+    - tools/kev/results/strikes/strikes.json: +6 +8 +14 +16 +22 +24 +30 +32 +38 +40 +46 +48 …
+- `076b0ca` Kev targets: fist height at the speed peak, interpolated between keys
+    - assets/anim/movesets/unarmed_vs_bow.json: +5-27 -89
+    - assets/anim/movesets/unarmed_vs_crossbow.json: +5-27 -89
+    - assets/anim/movesets/unarmed_vs_greatsword.json: +5-27 +42 -89
+    - assets/anim/movesets/unarmed_vs_knives.json: +5-27 -89
+    - tools/kev/results/h2h/report.json: -239 +242-243 +245 +247 +249 -265 +268-269 +272 +274 +277 -301 +303-304 …
+    - tools/kev/results/h2h/report.md: +23-24 +26-28 +38-43
+    - tools/kev/results/h2h/targets.json: +14-15 +19-20 +24-25 +29-30 +67 +75-77 +178 +180 +183 +243 +245 +248 …
+    - tools/kev/results/h2h/targets.md: +7 +9-10 +21 +23-24 +34-35 +37-39
+    - tools/kev/targets.py: +6-7 +77-80 +82-86 +89-90 +116-117
+    - tools/kev/test_combo_bodies.py: +14-15 +35 +44-45
+- `60cf925` Per-limb hurtboxes: blows land on the limb they cross
+    - crates/game/src/play/combat.rs: +930 +933-934 +1382 +1394 +2155 +2163 +2165 +2177 +2186 +2243-2251 +2261-2263
+    - crates/game/src/play/hurtbox.rs: +1-163
+    - crates/game/src/play/mod.rs: +33 +138
+- `5fa60ec` Skill shots: the player's spells go where the crosshair points; shots hit limbs
+    - crates/game/src/play/magic.rs: +75-76 +426-428 +454-455 +623-624 +657 +671 +674-675 +684 +689 +693 +704 +740 …
+    - crates/game/src/play/ranged.rs: +376 +395-396 +403-411 +431
+- `7b3b4c3` Bigger map with the imported packs; clash speed streaks and impact frames; GIF tool
+    - assets/data/regions.json: +1-3332
+    - crates/game/src/main.rs: +40-41 +79-90
+    - crates/game/src/play/clash.rs: +13-17 +43-51 +127-159 +166-168 +380-388 +397-477
+    - crates/game/src/play/grass.rs: +60
+    - crates/game/src/play/hud/minimap.rs: +25-26 +294
+    - crates/game/src/play/mod.rs: +34 +139
+    - crates/game/src/play/regions.rs: +1-133
+    - crates/game/src/play/world.rs: +55 +297-308 +313-324 +951 +953-954 +956 +1520 +1527-1530 +1535
+    - tools/kev/fix_textures.py: +1-82
+    - tools/kev/layout.py: +1-268
+    - tools/kev/statue.py: +1-147
+    - tools/showcase/gif.sh: +1-25
+- `f3d5820` Kev h2h: every enemy weapon gets its own combo
+    - assets/anim/movesets/unarmed_vs_crossbow.json: -4 +67-86
+    - assets/anim/movesets/unarmed_vs_dagger.json: +5-27 -46
+    - assets/anim/movesets/unarmed_vs_greatsword.json: +49 +51-53 +55-61 -65
+    - assets/anim/movesets/unarmed_vs_knives.json: -4 +26 +28-30 +32-38 -42 +64-83
+    - tools/kev/h2h.json: +121-123
+    - tools/kev/h2h.py: +234-262 +313-315 +317-319
+    - tools/kev/results/h2h/report.json: -367 +370-371 +373 -374 +377 +496-497 +499 +501 +598 +601 +605 -837 …
+    - tools/kev/results/h2h/report.md: +24-26 +28
+    - tools/kev/results/h2h/targets.json: -225 +228-229 -233 +236 +239 -242 +245 +248 +291-292 +297 +300 +304 …
+    - tools/kev/results/h2h/targets.md: +35-37 +39
+- `0f06fe1` Kev h2h: ranged foes get their own heavy and guard from their numbers
+    - assets/anim/movesets/unarmed_vs_crossbow.json: +91 +93 +95-101 +116-117
+    - assets/anim/movesets/unarmed_vs_knives.json: +88 +90-92 +94-102 +104-105 +115-117
+    - tools/kev/h2h.json: +123-124
+    - tools/kev/h2h.py: +196-203 +210-211 +334 +336-345 +347 +349-351 +355-360
+    - tools/kev/results/h2h/report.json: +137-138 +238-239 +367-368 +383 +391-392 +496-497 +597-598 +726-727 +841-842 +857 +864-866
+    - tools/kev/results/h2h/report.md: +24 +28
+- `5e41b05` Note from agent-2: status, what your branch should know, open items (delete when read)
+    - MESSAGE_FROM_AGENT2.md: +1-40
+- `a2da376` Clash effects; viewer turntable; statues keep their colours
+    - crates/game/src/play/clash.rs: +18-22 +27-29 +59-63 +180 +490-583
+    - crates/viewer/src/main.rs: +11-14 +70 +76 +698-822
+    - tools/kev/statue.py: +7-8 +82 +124-127 +143 +146
+    - tools/showcase/turntable.sh: +1-27
+- `0c657e4` Merge remote-tracking branch 'origin/ev/kev-categoriser' into ev/kev-categoriser
+    - MESSAGE_FROM_AGENT2.md: +1-40
+- `b48fea5` Remove agent-2's note (read)
+
 ## 2026-10-19T10:00Z · agent-3 → agent-1
 
 **Branch:** ev/E24-fixes (`068a97c`, on master 726e017). cargo test 314/0. **Ready to merge.**
