@@ -927,9 +927,11 @@ fn forward(yaw: f32) -> Vec3 {
 }
 
 /// A body hit tests can strike: capsule axis (world), radius, team (dummies have none).
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 struct Target {
     entity: Entity,
+    /// Per-limb hurtboxes (`hurtbox`), refining a hit on the body capsule; empty for dummies.
+    parts: Vec<super::hurtbox::Part>,
     center: Vec3,
     axis: [Vec3; 2],
     radius: f32,
@@ -1377,6 +1379,7 @@ fn drive(
         .iter()
         .map(|(entity, tf, mover, _, _, fighter, melee, ..)| Target {
             entity,
+            parts: Vec::new(),
             center: tf.translation,
             axis: body_axis(tf.translation),
             radius: BODY_RADIUS,
@@ -1388,6 +1391,7 @@ fn drive(
         .collect();
     targets.extend(dummies.iter().map(|(entity, tf)| Target {
         entity,
+        parts: Vec::new(),
         center: tf.translation,
         axis: [tf.translation - Vec3::Y * DUMMY_HALF, tf.translation + Vec3::Y * DUMMY_HALF],
         radius: DUMMY_RADIUS,
@@ -2148,7 +2152,7 @@ fn hit_test(
     mut hits: MessageWriter<Hit>,
     mut sfx: MessageWriter<Sfx>,
     mut shake: ResMut<CameraShake>,
-    mut fighters: Query<(Entity, &Transform, &Mover, &Fighter, &mut Melee, Option<&Rig>, Option<&WeaponSlot>, Has<Player>)>,
+    mut fighters: Query<(Entity, &Transform, &Mover, &Fighter, &mut Melee, Option<&Rig>, Option<&WeaponSlot>, Has<Player>, Option<&super::hurtbox::Hurtboxes>)>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
     globals: Query<&GlobalTransform>,
 ) {
@@ -2156,8 +2160,9 @@ fn hit_test(
     let dt = time.delta_secs().max(1e-4);
     let mut targets: Vec<Target> = fighters
         .iter()
-        .map(|(entity, tf, mover, fighter, melee, ..)| Target {
+        .map(|(entity, tf, mover, fighter, melee, _, _, _, boxes)| Target {
             entity,
+            parts: boxes.map(|b| b.0.clone()).unwrap_or_default(),
             center: tf.translation,
             axis: body_axis(tf.translation),
             radius: BODY_RADIUS,
@@ -2169,6 +2174,7 @@ fn hit_test(
         .collect();
     targets.extend(dummies.iter().map(|(entity, tf)| Target {
         entity,
+        parts: Vec::new(),
         center: tf.translation,
         axis: [tf.translation - Vec3::Y * DUMMY_HALF, tf.translation + Vec3::Y * DUMMY_HALF],
         radius: DUMMY_RADIUS,
@@ -2177,7 +2183,7 @@ fn hit_test(
         alive: true,
         immune: false,
     }));
-    for (entity, tf, _, fighter, mut melee, rig, slot, player) in &mut fighters {
+    for (entity, tf, _, fighter, mut melee, rig, slot, player, _) in &mut fighters {
         let State::Swing(sw) = &mut melee.state else { continue };
         // A heavy held to full charge strikes by itself; a ring and a kick say it is coming.
         if sw.heavy() && !sw.primed && sw.attack.charge > 0.0 && sw.charged >= sw.attack.charge {
@@ -2234,6 +2240,15 @@ fn hit_test(
                 continue;
             }
             let Some((_, s, point)) = sweep(prev, now, radius, t.axis, t.radius) else { continue };
+            // On the body capsule; now the limb it actually crosses (or the gap between them).
+            let (point, region) = if t.parts.is_empty() {
+                (point, None)
+            } else {
+                match super::hurtbox::refine(prev, now, radius, &t.parts) {
+                    Some((_, p, r)) => (p, Some(r)),
+                    None => continue,
+                }
+            };
             let velocity = (now[0].lerp(now[1], s) - prev[0].lerp(prev[1], s)) / dt;
             let closing = (velocity - t.velocity).length();
             if prev != now && velocity.length() < MIN_HIT_SPEED {
@@ -2243,7 +2258,9 @@ fn hit_test(
             let away = flat(t.center - tf.translation).normalize_or(forward(sw.yaw));
             let swept = flat(velocity).normalize_or_zero();
             let dir = (away * 0.65 + swept * 0.35).normalize_or(away);
-            hits.write(blow(entity, t, sw, point, dir, closing));
+            let mut hit = blow(entity, t, sw, point, dir, closing);
+            hit.damage *= region.map_or(1.0, |r| r.damage());
+            hits.write(hit);
         }
     }
 }
