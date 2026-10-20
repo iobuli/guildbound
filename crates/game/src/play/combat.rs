@@ -1367,6 +1367,7 @@ fn drive(
         Option<&super::clash::Clashing>,
     )>,
     dummies: Query<(Entity, &Transform), With<TrainingDummy>>,
+    berserkers: Res<super::berserk::Berserkers>,
 ) {
     let Some(bank) = bank else { return };
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -1418,7 +1419,8 @@ fn drive(
             repertoire,
             set_name: loadout.equipped(),
             variety: mastery.map_or(VARIANT_CHANCE, |m| variety(*m)),
-            attack_speed: attack_speed(derived.map_or(1.0, |d| d.attack_speed), mastery.map_or(0, |m| m.rank)) * clash.map_or(1.0, |c| c.speed),
+            attack_speed: attack_speed(derived.map_or(1.0, |d| d.attack_speed), mastery.map_or(0, |m| m.rank)) * clash.map_or(1.0, |c| c.speed)
+                * if berserkers.0.contains(&entity) { super::berserk::SPEED } else { 1.0 },
         };
         if melee.rng == 0 {
             melee.rng = (entity.to_bits() as u32) | 1;
@@ -2289,6 +2291,9 @@ struct Attacker {
     player: bool,
     /// The wielded moveset (the `hit` deed's tag).
     weapon: String,
+    /// Berserk (`berserk`): the attacker's blows hit harder, and a berserk victim takes them harder.
+    berserk: bool,
+    victim_berserk: bool,
     /// Path and rank, and whether the blow came from fists (`discipline::weapon_scale`).
     mastery: Mastery,
     unarmed: bool,
@@ -2376,6 +2381,7 @@ fn resolve(
     mut fighters: Query<Victim>,
     mut witnessed: MessageWriter<Witnessed>,
     mut countered: MessageWriter<Countered>,
+    berserkers: Res<super::berserk::Berserkers>,
 ) {
     let Some(bank) = bank else {
         hits.clear();
@@ -2399,6 +2405,8 @@ fn resolve(
             weapon: loadout.equipped().to_string(),
             mastery: mastery.copied().unwrap_or_default(),
             unarmed: movesets.get(loadout.equipped()).is_some_and(|s| s.kind == super::moveset::Kind::Unarmed),
+            berserk: berserkers.0.contains(&hit.attacker),
+            victim_berserk: berserkers.0.contains(&hit.target),
         });
         let attacker = attacker.unwrap_or(Attacker {
             pos: hit.point - hit.direction,
@@ -2407,6 +2415,8 @@ fn resolve(
             weapon: String::new(),
             mastery: Mastery::default(),
             unarmed: false,
+            berserk: false,
+            victim_berserk: berserkers.0.contains(&hit.target),
         });
         // What reached the victim, for it to learn (`repertoire`).
         if hit.kind == HitKind::Melee
@@ -2546,6 +2556,13 @@ fn strike(
         fx.deed(hit.target, "ward", "");
     }
     let mut damage = hit.damage * factor * scale * kept;
+    // Berserk hits harder and takes harder hits.
+    if attacker.berserk {
+        damage *= super::berserk::MIGHT;
+    }
+    if attacker.victim_berserk {
+        damage *= super::berserk::FRAGILE;
+    }
     // Sparring: blows stop at the floor and the fighter yields there.
     if let Some(sp) = sparring {
         let floor = fighter.max_hp * sp.floor.clamp(0.01, 0.9);

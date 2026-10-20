@@ -125,6 +125,11 @@ pub fn outcome(taps: [f32; 2]) -> (Option<usize>, f32) {
     (Some(w), taps[w] / total - 0.5)
 }
 
+/// A berserk fighter's taps count for more in a clash.
+pub fn berserk_taps(berserk: bool) -> f32 {
+    if berserk { 1.25 } else { 1.0 }
+}
+
 /// Damage of the winning blow for a margin (0..0.5).
 pub fn blow_damage(margin: f32) -> f32 {
     DAMAGE * (0.6 + margin.clamp(0.0, 0.5) * 2.0)
@@ -248,6 +253,7 @@ fn tick(
     mut log: MessageWriter<HudLog>,
     mut shake: ResMut<CameraShake>,
     fighters: Query<(&Transform, &Fighter, Option<&Intent>, Has<Player>, Has<Autopilot>, Option<&Name>)>,
+    berserkers: Res<super::berserk::Berserkers>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     clashes.0.retain_mut(|c| {
@@ -264,10 +270,10 @@ fn tick(
             if *player && !*autopilot {
                 human = true;
                 if intent.is_some_and(|i| i.primary_pressed) {
-                    c.taps[side] += 1.0;
+                    c.taps[side] += berserk_taps(berserkers.0.contains(&c.sides[side]));
                 }
             } else {
-                c.taps[side] += ai_rate(c.sides[side]) * dt;
+                c.taps[side] += ai_rate(c.sides[side]) * dt * berserk_taps(berserkers.0.contains(&c.sides[side]));
             }
         }
         let (pa, pb) = (rows[0].0.translation, rows[1].0.translation);

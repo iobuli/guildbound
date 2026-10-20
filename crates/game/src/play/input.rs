@@ -199,6 +199,7 @@ fn player_input(
     let mut interact = keys.just_pressed(KeyCode::KeyF);
     let sheathe = keys.just_pressed(KeyCode::KeyX);
     let grab = keys.just_pressed(KeyCode::KeyG);
+    let berserk = keys.just_pressed(KeyCode::KeyV);
     let mut art = keys.just_pressed(KeyCode::KeyQ);
     let mut spell = keys.just_pressed(KeyCode::KeyE);
     let mut art_held = keys.pressed(KeyCode::KeyQ);
@@ -329,6 +330,7 @@ fn player_input(
         target,
         sheathe_pressed: sheathe,
         grab_pressed: grab,
+        berserk_pressed: berserk,
     };
 }
 

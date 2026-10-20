@@ -1,0 +1,2 @@
+flame.png: "Pixel Flame VFX" (fire-a-168x62.png) from OpenGameArt, https://opengameart.org/content/pixel-flame-vfx
+License: CC0 1.0 (public domain dedication). No attribution required.
