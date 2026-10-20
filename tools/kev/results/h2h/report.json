@@ -221,7 +221,9 @@
       "leg",
       "leg"
      ],
-     "cost": -2.3
+     "cost": -2.3,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -347,7 +349,9 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15
+     "cost": -10.15,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -473,7 +477,9 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15
+     "cost": -10.15,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -571,7 +577,9 @@
       "leg",
       "leg"
      ],
-     "cost": -2.85
+     "cost": -2.85,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -697,7 +705,9 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15
+     "cost": -10.15,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -809,7 +819,9 @@
       "leg",
       "leg"
      ],
-     "cost": -1.65
+     "cost": -1.65,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   },
@@ -935,7 +947,9 @@
       "leg",
       "leg"
      ],
-     "cost": -10.15
+     "cost": -10.15,
+     "heavy": "kick",
+     "note": "legs only: no allowed punch reaches higher"
     }
    }
   }

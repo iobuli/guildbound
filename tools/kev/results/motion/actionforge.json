@@ -1216,7 +1216,9 @@
    "burst": 1.956,
    "returns": 0.0,
    "cluster": "gesture",
-   "category": "fall-or-rise"
+   "category": "transition",
+   "rule_category": "fall-or-rise",
+   "overridden": true
   },
   {
    "file": "sword_regular_c.glb",

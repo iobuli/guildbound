@@ -80,5 +80,22 @@ class LabelTests(unittest.TestCase):
         self.assertEqual(motion.name_cluster(row(0.3, 0.05, 0.0, 0.001, 0.009, 1)), "idle")                      # idle_loop
 
 
+
+class OverrideTests(unittest.TestCase):
+    def test_overrides_name_real_labels_and_are_flagged(self):
+        for clip, o in motion.OVERRIDES.items():
+            self.assertIn(o["label"], motion.LABELS, clip)
+            self.assertTrue(o["reason"])
+        rows = [{"clip": "Mech_Run", **row(17.5, 0.407, 0.055, 0.908, 0.711, 1, gait=0.779)},
+                {"clip": "punch_jab", **row(5.96, 0.534, 0.0, 0.001, 0.234, 1)}]
+        for r in rows:
+            for f in motion.FEATURES:
+                r.setdefault(f, 0.0)
+        motion.cluster(rows, 2)
+        self.assertEqual((rows[0]["category"], rows[0]["rule_category"], rows[0].get("overridden")), ("locomotion", "jump-or-kick", True))
+        self.assertEqual(rows[1]["category"], "strike")
+        self.assertNotIn("overridden", rows[1])
+
+
 if __name__ == "__main__":
     unittest.main()

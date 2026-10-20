@@ -71,6 +71,10 @@ GAIT_CORR = -0.4
 STEADY_BURST = 1.6
 STRIKE_LEVEL = 0.4
 LOOP_DEG = 3.0
+# Borderline clips labelled by hand (motion_overrides.json), flagged in the output.
+LABELS = {"strike", "fall-or-rise", "jump-or-kick", "locomotion", "transition", "idle", "gesture"}
+with open(os.path.join(HERE, "motion_overrides.json")) as _f:
+    OVERRIDES = json.load(_f)["overrides"]
 
 
 # Canonical key -> (role, side) in nodes.py terms.
@@ -209,6 +213,9 @@ def cluster(rows, kmax, seed=1):
     for r, lab in zip(rows, labels):
         r["cluster"] = names[lab]
         r["category"] = name_cluster(r)
+        o = OVERRIDES.get(r["clip"])
+        if o:
+            r["rule_category"], r["category"], r["overridden"] = r["category"], o["label"], True
     stab = survey.stability(z, seed) if len(rows) >= 6 else None
     return k, names, stab
 

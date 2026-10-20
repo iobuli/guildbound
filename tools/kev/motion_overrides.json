@@ -1,0 +1,8 @@
+{
+  "_doc": "Per-clip label overrides for motion.py, for borderline clips the rules cannot separate without a rule fitted to one clip. Each entry: clip name -> {label, reason}. Rows are flagged \"overridden\": true in motion.json so the rule label stays auditable.",
+  "overrides": {
+    "sword_regular_b_rec": {"label": "transition", "reason": "lunge recovery; hips rise 0.401, on the 0.4 fall-or-rise line"},
+    "Mech_Run": {"label": "locomotion", "reason": "bounding run: both feet move together (gait +0.78), so the gait rule reads it as a jump"},
+    "Mech_Run_Root": {"label": "locomotion", "reason": "root-motion version of Mech_Run"}
+  }
+}

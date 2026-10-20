@@ -118,6 +118,7 @@ change.
   - `--only` runs a stage and everything it comes after.
 - **A planner weight or rule:** edit `h2h.json` (`rules`, `target_rig`, `other_rigs`). The pool's punches must
   come from the allowed libraries (`hand_strike_libs`), which the planner checks before planning.
+- **A borderline clip label:** add it to `motion_overrides.json` with a reason; the row keeps its rule label as `rule_category` and is flagged `overridden`.
 - **A motion threshold:** edit the constant in `motion.py`, beside its measured range, and pin it with a row in
   `test_motion.py`.
 

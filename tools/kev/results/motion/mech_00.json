@@ -304,7 +304,9 @@
    "burst": 1.623,
    "returns": 1.0,
    "cluster": "jump-or-kick",
-   "category": "jump-or-kick"
+   "category": "locomotion",
+   "rule_category": "jump-or-kick",
+   "overridden": true
   },
   {
    "file": "Mech_00_Anim.glb",
@@ -320,7 +322,9 @@
    "burst": 1.236,
    "returns": 1.0,
    "cluster": "jump-or-kick",
-   "category": "jump-or-kick"
+   "category": "locomotion",
+   "rule_category": "jump-or-kick",
+   "overridden": true
   },
   {
    "file": "Mech_00_Anim.glb",

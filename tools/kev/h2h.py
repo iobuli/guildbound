@@ -306,6 +306,10 @@ def build(plan, strikes=None):
         for r, l in lands.items():
             c2, s2 = best_chain(light, ends, timing, by_track, rules, enemy, l["score"])
             on[r] = {"chain": [by_track[t]["name"] for t in s2], "lands": [l["region"].get(t, "?") for t in s2], "cost": c2}
+            if all(l["region"].get(t) == "leg" for t in light):
+                # No allowed punch reaches above this body's legs (a giant): open with the kick instead.
+                on[r]["heavy"] = base["heavy"][0]["name"]
+                on[r]["note"] = "legs only: no allowed punch reaches higher"
         report.append({"enemy": enemy, "chain": [by_track[t]["name"] for t in seq], "cost": cost,
                        "lands": [lands.get(rig_name(plan.get("target_rig", "")), {}).get("region", {}).get(t, "?") for t in seq],
                        "heavy": m["heavy"][0]["name"] if m["heavy"] else None, "guard": g, "on_rigs": on})
@@ -368,7 +372,8 @@ def write(sets, report, timing, plan):
                   "planner would pick against the same weapon on a body of that size (targets.py).", "",
                   "| enemy | " + " | ".join(rigs) + " |", "|---|" + "---|" * len(rigs)]
         for r in report:
-            cells = [f"{' > '.join(r['on_rigs'][g]['chain'])} ({', '.join(r['on_rigs'][g]['lands'])})" for g in rigs]
+            cells = [f"{' > '.join(r['on_rigs'][g]['chain'])} ({', '.join(r['on_rigs'][g]['lands'])})"
+                     + (f" - {r['on_rigs'][g]['note']}, heavy {r['on_rigs'][g]['heavy']}" if r['on_rigs'][g].get('note') else "") for g in rigs]
             lines.append(f"| {r['enemy']['name']} | " + " | ".join(cells) + " |")
     with open(os.path.join(out, "report.md"), "w") as f:
         f.write("\n".join(lines) + "\n")
