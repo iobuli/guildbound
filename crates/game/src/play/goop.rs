@@ -94,19 +94,24 @@ pub fn arm_scales(axis: usize, x: f32) -> (Vec3, Vec3) {
 fn stretch(
     time: Res<Time>,
     bank: Option<Res<PoseBank>>,
-    mut fighters: Query<(&Melee, &Rig, &mut Goop)>,
+    mut fighters: Query<(&Melee, &Rig, &mut Goop, Option<&Name>)>,
     mut bones: Query<&mut Transform, With<RigBone>>,
 ) {
     let Some(bank) = bank else { return };
     let dt = time.delta_secs();
-    for (melee, rig, mut goop) in &mut fighters {
+    for (melee, rig, mut goop, name) in &mut fighters {
         let fist = melee.fist();
         for side in 0..2 {
             let target = match fist {
                 Some((s, true)) if s == side => STRETCH,
                 _ => 0.0,
             };
+            let before = goop.arms[side].x;
             goop.arms[side].step(target, dt);
+            // One log line per strike, when the arm passes 80 % of its stretch on the way out.
+            if before < STRETCH * 0.8 && goop.arms[side].x >= STRETCH * 0.8 {
+                info!("[goop] {} {} arm stretched to {:.0} %", name.map_or("?", |n| n.as_str()), ["left", "right"][side], goop.arms[side].x * 100.0);
+            }
             let (lower, hand) = (bank.bones.lowerarm[side], bank.bones.hand[side]);
             let axis = length_axis(bank.skeleton.rest[hand].translation);
             let (arm_scale, hand_scale) = arm_scales(axis, goop.arms[side].x);
