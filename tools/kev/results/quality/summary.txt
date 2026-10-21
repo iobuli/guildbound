@@ -1,0 +1,136 @@
+name                     motion     wrist  before   after  kinds still open
+a_tpose                  static       0.0       0       0  
+attack1h01_l             ok         14.87     454       5  ankle_limit,knee_limit
+attack1h01_r             ok         14.57     488      15  ankle_limit,discontinuity,elbow_hyperextension,finger_backbend,knee_limit
+attack2h01               ok         12.41     808      15  ankle_limit,discontinuity,finger_backbend,palm_backward
+attackpolearm01          ok         11.51     553       8  ankle_limit,elbow_hyperextension,finger_backbend,knee_limit
+attackshield01           ok         14.47     493       6  ankle_limit,discontinuity
+bigfrontkick             ok         17.85   10603      41  ankle_limit,foot_slide,palm_backward
+blocking                 ok          3.75     857       0  
+boxing                   ok          17.4   18210      61  elbow_hyperextension,foot_slide
+chest_open               ok          1.16       0       0  
+climbup_1m               ok          2.98     212       2  palm_backward
+combatdamage01           ok          1.24     214       6  ankle_limit,discontinuity,knee_limit
+combatidle01             ok          0.16     133       0  
+combatidle1h01           ok          0.16     133       0  
+combatidle2h01           ok           0.1     214       0  
+combatidlepolearm01      ok           0.1     184       0  
+consume                  ok           1.7      29       0  
+cross                    ok          4.61      30       0  
+crouch_fwd_loop          ok           0.2     356       0  
+crouch_idle_loop         ok          0.06     177       0  
+dance_loop               ok          0.79       0       0  
+death                    ok          1.62    1407      66  ankle_limit,foot_slide,palm_backward
+death01                  ok          3.44     320       6  ankle_limit,discontinuity,knee_limit
+death_backstab           ok           2.6    1536      20  ankle_limit,foot_slide,palm_backward
+death_kneeling           ok          2.54    1065     146  foot_slide,palm_backward
+dizzy_idle               ok          0.17     826     329  finger_backbend,palm_backward
+drinking                 ok          0.35     709       0  
+driving_loop             ok           0.0       0       0  
+drstrangemagic           ok         10.38   31631     104  elbow_hyperextension,foot_floor,foot_slide,palm_backward
+falling_idle             ok          0.14      45       0  
+farm_harvest             ok          1.23       0       0  
+farm_plantseed           ok          1.02     329       0  
+farm_watering            ok          0.71      27       0  
+fightingidle             ok         14.37   60184      85  elbow_hyperextension,foot_slide,palm_backward
+finisher_on_kneeling_victim ok          6.55    1567      45  foot_slide,palm_backward
+fireballs                ok         12.03   32517     146  foot_slide,palm_backward
+fixing_kneeling          ok          1.42     636      74  palm_backward
+heavy_combo              ok         15.27    1319      44  ankle_limit,foot_slide,palm_backward
+hit_chest                ok          0.62      12       0  
+hit_head                 ok          0.22      18       0  
+hit_knockback            ok          8.57     249      20  ankle_limit
+idle_foldarms_loop       ok          0.04     151       0  
+idle_lantern_loop        ok          0.06       0       0  
+idle_loop                ok          0.06       0       0  
+idle_no_loop             ok          0.06       0       0  
+idle_rail_call           ok          0.69      66       0  
+idle_rail_loop           ok           0.0       0       0  
+idle_shield_break        ok          6.29      58       9  palm_backward
+idle_shield_loop         ok          0.06     151       0  
+idle_talking_loop        ok          0.28       0       0  
+idle_talkingphone_loop   ok          0.28       0       0  
+idle_torch_loop          ok          0.15      77       0  
+interact                 ok           1.4      61      51  palm_backward
+jab                      ok          5.23      20       0  
+jog_fwd_loop             ok          2.53      65       0  
+jump_land                ok          4.43      62      47  palm_backward
+jump_loop                ok          0.06     445       0  
+jump_start               ok          3.38     231       0  
+karate_test              ok          4.81     632      16  ankle_limit,palm_backward
+karate_variations        ok          2.42    2910      93  ankle_limit,discontinuity,palm_backward
+laytoidle                ok           2.8     505      12  ankle_limit,palm_backward
+mae_geri                 ok          0.31      95       7  ankle_limit
+melee_hook               ok         21.12     244       1  discontinuity
+melee_hook_rec           ok          1.89      98       0  
+ninjajump_idle_loop      ok          0.07     484       0  
+ninjajump_land           ok          6.14      83      46  ankle_limit,palm_backward
+ninjajump_start          ok          4.08     205       0  
+overhandthrow            ok         12.37     191      25  ankle_limit,palm_backward
+pickup_table             ok          2.32      39       8  palm_backward
+pistol_aim_down          static       0.0      33       0  
+pistol_aim_neutral       static       0.0      33       0  
+pistol_aim_up            static       0.0      55       0  
+pistol_idle_loop         ok          0.01     303       0  
+pistol_reload            ok          1.78     388       5  palm_backward
+pistol_shoot             ok          0.29     117       0  
+punch_cross              ok          4.61      30       0  
+punch_jab                ok          5.23      20       0  
+push_loop                ok          0.02    1394       0  
+roll                     ok          8.91     389       8  ankle_limit
+roll_rm                  ok          11.4     563      23  ankle_limit,foot_slide,knee_limit
+sheet_cross              ok          4.25     536       0  
+sheet_front_kick         ok           2.4     404       0  
+sheet_jab                ok          1.43     316       0  
+sheet_jump_kick          ok          5.22     476       1  hand_intersection
+shield_dash              ok          6.85     160       3  ankle_limit
+shield_oneshot           ok          4.98      65      28  palm_backward
+sitting_enter            ok           0.8      38       0  
+sitting_exit             ok          0.97      92      13  palm_backward
+sitting_idle_loop        ok           0.0       0       0  
+sitting_talking_loop     ok          0.26      96       8  palm_backward
+slide_exit               ok           3.5     188       3  ankle_limit
+slide_loop               ok          0.28     541      31  ankle_limit
+slide_start              ok          3.45     196      19  ankle_limit
+spell_simple_enter       ok          1.79      11      11  palm_backward
+spell_simple_exit        ok          2.31       9       9  palm_backward
+spell_simple_idle_loop   ok          0.05       0       0  
+spell_simple_shoot       ok          0.26      39       0  
+sprint_loop              ok          2.38      76       0  
+style_aikido             ok          2.23    4789      17  discontinuity,foot_slide,palm_backward
+style_battle_manga       ok          2.77     885      11  foot_slide
+style_boxing             ok          3.33     346       4  elbow_hyperextension
+style_drunken_boxing     ok          5.57    1451       4  foot_slide
+style_judo               ok          11.1    1663      14  ankle_limit,palm_backward
+style_karate             ok          3.56      24       0  
+style_kung_fu            ok          4.41     595       5  ankle_limit
+style_muay_thai          ok          1.59     548       0  
+style_sumo               ok          6.92     878       5  foot_slide
+style_tai_chi            ok          0.32       0       0  
+styles_all               ok          11.1   17361     128  ankle_limit,discontinuity,elbow_hyperextension,foot_floor,foot_slide,palm_backward
+swim_fwd_loop            ok          2.85     348      56  ankle_limit,finger_backbend,palm_backward
+swim_idle_loop           ok          0.14    2266       9  ankle_limit,discontinuity,foot_slide
+sword_attack             ok         16.93     209       7  palm_backward
+sword_attack_rm          ok         20.91     533      12  ankle_limit,foot_slide,palm_backward
+sword_block              ok          5.81      31       1  palm_backward
+sword_dash               ok         14.79     324      59  palm_backward
+sword_heavy_combo        ok         15.27    1319      44  ankle_limit,foot_slide,palm_backward
+sword_idle               ok          0.12       0       0  
+sword_regular_a          ok         14.41     115      10  palm_backward
+sword_regular_a_rec      ok          3.33     298       4  palm_backward
+sword_regular_b          ok         14.82     148      19  palm_backward
+sword_regular_b_rec      ok          1.02     198      44  palm_backward
+sword_regular_c          ok         15.82     377      15  ankle_limit,palm_backward
+sword_regular_combo      ok         15.71     726      51  ankle_limit,discontinuity,palm_backward
+sword_slash              ok         16.93     209       7  palm_backward
+treechopping_loop        ok          9.09      55      36  palm_backward
+ushiro_geri              ok          4.18     344       3  palm_backward
+walk_carry_loop          ok           0.3     572       1  discontinuity
+walk_formal_loop         ok          0.22     139       0  
+walk_loop                ok          0.59     136       0  
+yes                      ok          1.77      72       0  
+yoko_geri                ok          4.81     188       6  palm_backward
+zombie_idle_loop         ok          0.16     281       0  
+zombie_scratch           ok         11.44     514      46  palm_backward
+zombie_walk_fwd_loop     ok           0.7     684      31  ankle_limit,foot_slide,palm_backward
+TOTAL                                      220612    2370  clips 134  frozen 0

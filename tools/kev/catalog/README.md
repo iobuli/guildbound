@@ -15,3 +15,8 @@ Studio: `cat list`, `cat info NAME`, `cat play NAME` (bakes the smoothed referen
 peaks, slow drift and keyframe seams flatten), foot lock (low, slow feet pinned in x/z), limb-length relaxation (each segment
 pulled toward its median length). Defaults (min-cut 4 Hz, beta 6) cut jerk to ~25-40 % while wrist reach stays within ~2 % and
 peak wrist speed within ~25 %.
+
+`smooth` then runs the no-glitch pass (`tools/kev/quality`): segment lengths, knee and elbow limits, wrist and ankle
+ranges, floor contact, planted feet, toe-off, finger back-bend, and palm facing. Each index entry stores `quality.before`
+and `quality.after` (flagged frame counts) and `motion.state` (`ok`, `static`, or `frozen` when the source clip moves
+but the sample does not). See `tools/kev/quality/README.md`.
