@@ -37,6 +37,17 @@ The graph evaluates, and `kev_evaluate` reports, in the trader's order of operat
 
 This covers only levels where price goes the OPPOSITE way to the last participants. The second webinar (buying support, including the SFP) is not in the sources.
 
+## Nucleus: 1-minute tracing of multi-timeframe n-n-n Ichimoku lines (SOL 2020-2022)
+```
+python3 kev-lab/ingest_m1.py SOLUSDT 2020-08 2022-12   # Binance 1m archive -> markets/SOLUSDT/raw/m1.npz (checked against h1.json)
+python3 kev-lab/nucleus.py export                       # browser data file + 5-minute snapshots -> out/nucleus/
+python3 kev-lab/trace.py                                # what the nucleus says about the rest of the hour -> out/lab/trace.json
+bash kev-lab/build-exe.sh                               # dist/kev-explorer.exe (Windows) + dist/kev-explorer-linux, read-only explorer
+```
+- 6 timeframes (1m, 5m, 15m, 1h, 4h, 1D) x 3 lines (n = 9, 26, 52). An n-n-n Ichimoku is one line, the midpoint of the last n bars, and the three together rebuild the classic 9-26-52 Ichimoku. Every line is read at each 1-minute close, with the forming bar included, so nothing is seen early.
+- `web/nucleus-core.js` is a JS port that gives bit-identical results (tested against Python), so the Nucleus page and the exe need no Python.
+- Tracing only: no money, no rules. The write-up is in `kev-brain/experiments/2026-10-21-nucleus.md`.
+
 ## kev-lab: Python app, quant tools, $100k paper book
 ```
 npx tsx src/cli.ts signals            # kev's causal fills (+ matched random orders) -> out/signals/*.json

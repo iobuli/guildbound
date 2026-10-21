@@ -6,6 +6,7 @@
 @media (prefers-color-scheme:dark){:root{--bg:#0f1514;--panel:#161e1c;--ink:#e3ebe8;--dim:#8d9c96;--hair:#2a3532;--acc:#3fb8aa;--up:#3dbb73;--dn:#ef6b5b;--warn:#e0a443;--band:#3fb8aa26;color-scheme:dark}}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--ui);padding:16px}
 h1{font-size:19px;margin:0}h2{font-size:15px;margin:0 0 8px}.sub{color:var(--dim);font-size:12.5px}
+nav{display:flex;gap:14px;margin-bottom:10px;font-size:13px}nav a{color:var(--dim);text-decoration:none}nav a.on{color:var(--ink);font-weight:600}
 header{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px 16px;align-items:baseline;margin-bottom:12px}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px}.wide{grid-column:1/-1}
 .card{background:var(--panel);border:1px solid var(--hair);border-radius:8px;padding:12px;min-width:0}
@@ -17,6 +18,7 @@ tr.chosen{background:var(--band)}.good{color:var(--up)}.bad{color:var(--dn)}
 button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:5px 10px;cursor:pointer}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--dim);margin-top:6px}.legend i{display:inline-block;width:14px;border-top:2px solid;vertical-align:middle;margin-right:4px}
 </style></head><body>
+<nav><a href="/" class="on">Lab</a><a href="/nucleus.html">Nucleus</a></nav>
 <header><div><h1>kev-lab · $100k paper book</h1><div class="sub">kev's signals (TypeScript) traded by a Python paper broker. Rules frozen on 2020-2022, run once on 2023 onward.</div></div>
 <div><span class="sub" id="status"></span> <button id="recompute">Recompute</button> <button id="live">Check for new SOL hours</button></div></header>
 <div class="banner" id="verdict">Loading…</div>

@@ -19,6 +19,8 @@ import run  # noqa: E402
 
 WEB = Path(__file__).resolve().parent / "web"
 RESULTS = data.ROOT / "out" / "lab" / "results.json"
+TRACE = data.ROOT / "out" / "lab" / "trace.json"
+M1BIN = data.ROOT / "out" / "nucleus" / "SOLUSDT-m1.bin.gz"
 STATE = {"live": False, "last_check": None, "last_added": 0, "message": "idle", "busy": False}
 LOCK = threading.Lock()
 
@@ -67,6 +69,18 @@ class Handler(SimpleHTTPRequestHandler):
             return self._json(json.loads(RESULTS.read_text()) if RESULTS.exists() else {"error": "no results yet; POST /api/recompute"})
         if self.path == "/api/status":
             return self._json(STATE)
+        if self.path == "/api/trace":
+            return self._json(json.loads(TRACE.read_text())) if TRACE.exists() else self._json({"error": "no trace yet; run python3 kev-lab/trace.py"}, 404)
+        if self.path == "/data/SOLUSDT-m1.bin":  # pre-gzipped minute bars for the Nucleus page
+            if not M1BIN.exists():
+                return self._json({"error": "no data; run kev-lab/nucleus.py export"}, 404)
+            body = M1BIN.read_bytes()
+            self.send_response(200)
+            self.send_header("Content-Type", "application/octet-stream")
+            self.send_header("Content-Encoding", "gzip")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            return self.wfile.write(body)
         if self.path.startswith("/api/candles/"):
             sym = self.path.rsplit("/", 1)[-1]
             c = data.h1(sym)
