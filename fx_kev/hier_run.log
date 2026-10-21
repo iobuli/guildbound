@@ -1,0 +1,59 @@
+common start (all timeframes have full context): 2022-09-02 03:30:00 | data end: 2026-09-02 20:45:00
+         n       avg       win
+split                         
+test   284  0.000510  0.464789
+train  567  0.000284  0.432099
+val    288 -0.000156  0.434028
+leak test: 12/12 decision times unchanged after corrupting all future bars
+  0/600
+  50/600
+  100/600
+  150/600
+  200/600
+  250/600
+  300/600
+  350/600
+  400/600
+  450/600
+  500/600
+  550/600
+
+AUC by level (0.5 = no skill)
+  train n= 200 D1=0.563 H1=0.562 M15=0.539
+  val   n= 200 D1=0.522 H1=0.528 M15=0.571
+  test  n= 200 D1=0.531 H1=0.568 M15=0.532
+  gate q=(0,0,0) train n= 200 total=  +9.8% avg=+0.050% win=47.5% sharpe=+0.85 | val n= 200 total=  +0.6% avg=+0.006% win=46.0% sharpe=+0.11
+  gate q=(0,0,0.3) train n= 144 total=  +4.2% avg=+0.031% win=48.6% sharpe=+0.48 | val n= 137 total=  +2.6% avg=+0.022% win=48.9% sharpe=+0.33
+  gate q=(0,0,0.5) train n= 108 total=  +7.5% avg=+0.070% win=53.7% sharpe=+0.96 | val n=  92 total=  +2.7% avg=+0.032% win=52.2% sharpe=+0.38
+  gate q=(0,0.3,0) train n= 143 total= +11.3% avg=+0.078% win=50.3% sharpe=+1.10 | val n= 137 total=  +0.2% avg=+0.005% win=48.9% sharpe=+0.07
+  gate q=(0,0.3,0.3) train n= 121 total=  +5.0% avg=+0.043% win=50.4% sharpe=+0.61 | val n= 116 total=  +2.6% avg=+0.025% win=50.0% sharpe=+0.34
+  gate q=(0,0.3,0.5) train n= 101 total=  +8.2% avg=+0.081% win=54.5% sharpe=+1.07 | val n=  89 total=  +1.5% avg=+0.020% win=51.7% sharpe=+0.23
+  gate q=(0,0.5,0) train n= 111 total=  +9.0% avg=+0.080% win=53.2% sharpe=+1.10 | val n=  89 total=  -1.9% avg=-0.018% win=49.4% sharpe=-0.21
+  gate q=(0,0.5,0.3) train n= 104 total=  +6.1% avg=+0.059% win=52.9% sharpe=+0.83 | val n=  88 total=  -1.0% avg=-0.009% win=50.0% sharpe=-0.10
+  gate q=(0,0.5,0.5) train n=  95 total=  +8.7% avg=+0.090% win=55.8% sharpe=+1.23 | val n=  77 total=  +1.0% avg=+0.016% win=51.9% sharpe=+0.18
+  gate q=(0.3,0,0) train n= 152 total= +11.1% avg=+0.073% win=48.7% sharpe=+1.04 | val n= 128 total=  -2.7% avg=-0.018% win=46.9% sharpe=-0.28
+  gate q=(0.3,0,0.3) train n= 112 total=  +8.1% avg=+0.073% win=51.8% sharpe=+1.00 | val n=  99 total=  +0.2% avg=+0.005% win=49.5% sharpe=+0.06
+  gate q=(0.3,0,0.5) train n=  87 total=  +8.2% avg=+0.094% win=56.3% sharpe=+1.17 | val n=  74 total=  -1.7% avg=-0.020% win=50.0% sharpe=-0.22
+  gate q=(0.3,0.3,0) train n= 113 total= +15.3% avg=+0.130% win=53.1% sharpe=+1.60 | val n=  98 total=  -4.6% avg=-0.045% win=48.0% sharpe=-0.62
+  gate q=(0.3,0.3,0.3) train n=  95 total=  +9.5% avg=+0.098% win=53.7% sharpe=+1.24 | val n=  88 total=  -3.4% avg=-0.037% win=48.9% sharpe=-0.46
+  gate q=(0.3,0.3,0.5) train n=  83 total=  +8.1% avg=+0.097% win=55.4% sharpe=+1.19 | val n=  71 total=  -2.8% avg=-0.038% win=49.3% sharpe=-0.42
+  gate q=(0.3,0.5,0) train n=  91 total=  +7.5% avg=+0.082% win=52.7% sharpe=+1.04 | val n=  72 total=  -5.6% avg=-0.077% win=48.6% sharpe=-0.88
+  gate q=(0.3,0.5,0.3) train n=  85 total=  +5.4% avg=+0.065% win=52.9% sharpe=+0.84 | val n=  71 total=  -4.8% avg=-0.067% win=49.3% sharpe=-0.76
+  gate q=(0.3,0.5,0.5) train n=  78 total=  +8.1% avg=+0.102% win=56.4% sharpe=+1.32 | val n=  63 total=  -2.0% avg=-0.030% win=50.8% sharpe=-0.32
+  gate q=(0.5,0,0) train n= 110 total= +10.0% avg=+0.089% win=52.7% sharpe=+1.27 | val n=  90 total=  +1.6% avg=+0.021% win=48.9% sharpe=+0.27
+  gate q=(0.5,0,0.3) train n=  93 total=  +8.7% avg=+0.092% win=54.8% sharpe=+1.27 | val n=  75 total=  +5.0% avg=+0.068% win=53.3% sharpe=+0.81
+  gate q=(0.5,0,0.5) train n=  79 total=  +8.4% avg=+0.104% win=58.2% sharpe=+1.39 | val n=  63 total=  +2.4% avg=+0.040% win=52.4% sharpe=+0.44
+  gate q=(0.5,0.3,0) train n=  96 total=  +7.3% avg=+0.076% win=53.1% sharpe=+1.00 | val n=  74 total=  +1.0% avg=+0.016% win=50.0% sharpe=+0.19
+  gate q=(0.5,0.3,0.3) train n=  87 total=  +6.1% avg=+0.070% win=54.0% sharpe=+0.93 | val n=  71 total=  +2.6% avg=+0.038% win=52.1% sharpe=+0.46
+  gate q=(0.5,0.3,0.5) train n=  77 total=  +6.8% avg=+0.087% win=57.1% sharpe=+1.15 | val n=  60 total=  +1.2% avg=+0.022% win=51.7% sharpe=+0.24
+  gate q=(0.5,0.5,0) train n=  87 total=  +7.4% avg=+0.085% win=54.0% sharpe=+1.07 | val n=  62 total=  -2.4% avg=-0.037% win=50.0% sharpe=-0.43
+  gate q=(0.5,0.5,0.3) train n=  81 total=  +5.3% avg=+0.067% win=54.3% sharpe=+0.87 | val n=  61 total=  -1.6% avg=-0.024% win=50.8% sharpe=-0.28
+  gate q=(0.5,0.5,0.5) train n=  74 total=  +8.0% avg=+0.106% win=58.1% sharpe=+1.37 | val n=  55 total=  -0.6% avg=-0.008% win=50.9% sharpe=-0.09
+
+CHOSEN on train+val (worst-of-two Sharpe): quantile gates D1/H1/M15 = (0.5, 0, 0.3)
+  TEST unfiltered       : n= 200 total= +10.8% avg=+0.053% win=47.0% sharpe=+1.22
+  TEST hierarchical Kev : n=  91 total=  +4.4% avg=+0.049% win=52.7% sharpe=+0.90
+  TEST random subsets of same size: mean Sharpe +0.83; Kev beats 51% of draws
+  TEST single level D1 (top half): n= 107 total=  +4.6% avg=+0.043% win=51.4% sharpe=+0.83
+  TEST single level H1 (top half): n=  97 total= +11.2% avg=+0.112% win=56.7% sharpe=+1.81
+  TEST single level M15 (top half): n= 101 total=  +4.5% avg=+0.045% win=51.5% sharpe=+0.91

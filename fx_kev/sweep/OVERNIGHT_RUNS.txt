@@ -1,0 +1,8 @@
+N1 liquidity-to-liquidity: FAIL, all 4 instruments negative, CI below 0 (-0.16/-0.26/-0.20/-0.21 R)
+N2 gold/silver SMT divergence: FAIL, pooled -0.22 R, CI [-0.31,-0.13]
+N3 run: N3   | USDJPY n= 1057 R=+0.007 [-0.144,+0.189] | SOLUSD n=  364 R=-0.146 [-0.384,+0.119] | XAUUSD n=  546 R=-0.081 [-0.318,+0.143] | XAGUSD n=  513 R=-0.266 [-0.453,-0.085] | P1=0 P2=0 P3=0 P5=0 P4=0 CLAIMED=False
+N4 run (unattended): N4   | USDJPY n= 2361 R=-0.044 [-0.148,+0.065] | SOLUSD n= 1102 R=-0.106 [-0.245,+0.034] | XAUUSD n= 1248 R=-0.065 [-0.239,+0.115] | XAGUSD n= 1309 R=-0.231 [-0.342,-0.117] | P1=0 P2=0 P3=0 P5=0 P4=0 CLAIMED=False
+N5 run (unattended): N5   | USDJPY n=  865 R=-0.026 [-0.212,+0.177] | SOLUSD n=  373 R=-0.146 [-0.400,+0.172] | XAUUSD n=  410 R=-0.151 [-0.389,+0.216] | XAGUSD n=  457 R=-0.196 [-0.374,+0.020] | P1=0 P2=0 P3=0 P5=0 P4=0 CLAIMED=False
+N6 run (unattended): N6   | USDJPY n=  444 R=-0.161 [-0.403,+0.081] | SOLUSD n=  157 R=-0.116 [-0.660,+0.437] | XAUUSD n=  272 R=-0.190 [-0.439,+0.183] | XAGUSD n=  238 R=-0.050 [-0.344,+0.265] | P1=0 P2=0 P3=0 P5=0 P4=0 CLAIMED=False
+N7 run (unattended): N7   | USDJPY n=100 rho=+0.024 gated=+0.092 ungated=-0.276 P[0.36,0.58] | SOLUSD n=100 rho=-0.173 gated=-0.148 ungated=+0.236 P[0.37,0.56] | XAUUSD n=100 rho=-0.128 gated=-0.101 ungated=-0.329 P[0.39,0.59] | XAGUSD n=100 rho=-0.074 gated=-0.521 ungated=-0.221 P[0.37,0.57] | PASS=False
+N8 run (scheduled task): N8   | USDJPY n=   82 R=-0.084 [-0.636,+0.315] | SOLUSD n=   31 R=+0.190 [-0.420,+0.477] | XAUUSD n=   34 R=-0.177 [-0.638,+0.012] | XAGUSD n=   40 R=-0.443 [-0.443,+0.122] | P1=0 P2=0 P3=0 P5=0 P4=0 CLAIMED=False
