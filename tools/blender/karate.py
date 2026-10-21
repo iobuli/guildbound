@@ -143,7 +143,7 @@ def pose(rig, p, origin):
             # Joint angles relative to the pelvis (hip flexion forward, abduction out, twist knee-out; knee; ankle)
             # blended toward a planted foot by `plant` (1 = on its ground spot, flat, turned with the body), so a
             # kicking foot leaves the floor and lands again without a pop.
-            w = 1.0 if leg.get("planted") else max(0.0, min(1.0, leg.get("plant", 0.0)))
+            w = max(0.0, min(1.0, leg.get("plant", 0.0)))
             fl, ab, tw = leg.get("thigh", (0.0, 0.0, 0.0))
             f_thigh = q_pel @ rot((1, 0, 0), -fl) @ rot((0, 1, 0), -s * ab) @ rot((0, 0, 1), s * tw)
             f_calf = f_thigh @ rot((1, 0, 0), leg.get("knee", 0.0))
@@ -320,9 +320,11 @@ def sequence(name):
 
 
 def origin_for(p):
-    """Body origin so the planted left ankle stays at its world spot whatever the yaw."""
+    """Body origin that keeps the planted left foot's spot fixed in the world whatever the yaw (a pivot on that foot)."""
     B = rot((0, 0, 1), p.get("yaw", 0.0))
-    return Vector(SUPPORT) - B @ Vector(SUPPORT)
+    left = p.get("l", {})
+    spot = Vector(left["ankle"]) if left.get("planted") and "ankle" in left else Vector(SUPPORT)
+    return spot - B @ spot
 
 
 DEFAULTS = {"yaw": 0.0, "pel": (0.0, 0.0, 0.0), "tilt": (0.0, 0.0), "chest": (0.0, 0.0, 0.0), "head": (0.0, 0.0, 0.0)}
