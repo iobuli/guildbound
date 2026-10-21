@@ -18,7 +18,7 @@ speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in th
 landmarks [name] | facings | balance | rig | state |
 hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
 ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
-ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref live <name> [rate] | ref stop | ref status.
+ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status.
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
 import argparse
@@ -757,6 +757,9 @@ def execute(line):
                 play_baked(STATE["model"], a[1])
             return (f"baked '{a[1]}' -> {STATE['model']}: {len(b['frames'])} frames, {b['solve_ms_per_frame']} ms/frame solve, "
                     f"mean error {b['mean_cm']} cm, fingers {b['finger_cm']} cm" + ("; playing in the viewer at 60 fps" if sub == "play" else ""))
+        if sub == "baked" and len(a) > 1:
+            b = play_baked(STATE["model"], a[1])
+            return f"playing baked '{a[1]}' ({len(b['frames'])} frames)"
         if sub == "live" and len(a) > 1:
             start_ref(a[1], float(a[2]) if len(a) > 2 else 1.0)
             return f"live controller (per-frame solve over SSE): '{a[1]}'"
