@@ -31,6 +31,9 @@ import { aggregateSession, buildSession, defaultSpec, londonOffsetH, nyOffsetH }
 import { listMarkets, openMarket } from './core/market-io.js';
 import { loadFile } from './data/load.js';
 import { bucket } from './data/profile.js';
+import { applyPreset, withPreset } from './core/presets.js';
+import { analyzeLevel } from './core/levelmath.js';
+import { ltfIndex, settleOrder } from './backtest/settle.js';
 import { writeFileSync, existsSync, rmSync } from 'node:fs';
 
 let fails = 0, passes = 0;
@@ -338,6 +341,34 @@ const rules = nodes.flatMap((n) => n.rules);
 const by = (s: string) => rules.filter((r) => r.status === s).length;
 ok(`knowledge base: ${rules.length} rules across ${nodes.length} nodes, all with provenance`, rules.every((r) => r.sources.length > 0) && rules.length > 100,
   `${by('stated')} stated, ${by('observed')} observed, ${by('inferred')} inferred, ${by('backtest-reported')} backtest-reported, ${by('backtest-rejected')} backtest-rejected; ${rules.filter((r) => r.codable).length} coded`);
+// ---- presets, the fractal touch rule, finer-bar settlement ----
+{
+  const before = JSON.stringify(P);
+  const restore = applyPreset('one-hour-spec');
+  const during = { rule: P.touchRule, scale: P.levelScaleD1, gap: P.touchClusterBars };
+  restore();
+  ok('presets: one-hour-spec switches the parser to the fractal rule on the daily-ATR scale, and restore puts every value back', during.rule === 'fractal' && during.scale === 1 && during.gap === 12 && JSON.stringify(P) === before);
+  const srcFiles = (dir: string): string[] => readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? srcFiles(`${dir}/${e.name}`) : e.name.endsWith('.ts') ? [`${dir}/${e.name}`] : []));
+  const root = new URL('.', import.meta.url).pathname.replace(/\/$/, '');
+  const writers = srcFiles(root).filter((f) => !/core\/(presets|scale)\.ts$|selftest\.ts$/.test(f) && /Object\.assign\(P\b|\bP\.[A-Za-z0-9_]+(\.[a-z0-9]+)?\s*=[^=]|\bP\[[^\]]+\]\s*=[^=]/.test(readFileSync(f, 'utf8')));
+  ok('presets: nothing outside presets.ts and scale.ts writes the shared parameters', writers.length === 0, writers.join(', '));
+  // fractal rule: four 3-bar swing highs at 100 (bars 70, 76, 95, 120), then a break above. 76 is only 6 bars after 70 so it is not a new touch.
+  const fc: Candle[] = Array.from({ length: 160 }, (_, i) => ({ t: i * H, o: 95, h: 96, l: 94, c: 95, v: 1 }));
+  for (const k of [70, 76, 95, 120]) fc[k] = { ...fc[k]!, h: 100.02, c: 96 };
+  for (let k = 140; k < 160; k++) fc[k] = { ...fc[k]!, o: 101, h: 102, l: 100.6, c: 101.5 };
+  const fr = withPreset('one-hour-spec', () => analyzeLevel(fc, 100, 'long', 2));
+  ok('fractal rule: swing points at the level count once per 12 bars (70, 95, 120 -> 3; 76 is too close to 70)', fr.found && fr.touches === 3 && fr.breakIdx === 140, JSON.stringify({ found: fr.found, touches: fr.touches, br: fr.breakIdx }));
+  // finer-bar settlement: an H1 bar holds both the stop and the target; the minutes show the target first
+  const hb = (o: number, h: number, l: number, c: number, i: number) => ({ t: i * H, o, h, l, c, v: 1 });
+  const hc = [hb(100, 100.5, 99.8, 100.2, 0), hb(100.2, 102.5, 98.5, 99, 1)];
+  const sub60 = (i: number, path: [number, number][]) => path.map(([h, l], k) => ({ t: i * H + k * 60_000, o: (h + l) / 2, h, l, c: (h + l) / 2, v: 1 }));
+  const minutes = [...sub60(0, [[100.4, 100.1], [100.3, 99.9], ...Array.from({ length: 58 }, () => [100.3, 100.1] as [number, number])]), ...sub60(1, [[102.5, 100.5], ...Array.from({ length: 59 }, () => [100, 98.5] as [number, number])])];
+  const lx = ltfIndex([{ tf: 60_000, c: minutes }]);
+  const cons = settleOrder(hc, 0, true, 100, 99, { '2': 102 }, 5, 0), fine = settleOrder(hc, 0, true, 100, 99, { '2': 102 }, 5, 0, { ltf: lx });
+  ok('settlement: with only H1 a bar holding stop and target is a loss; minute bars that show the target first make it a 2R win', cons.r['2'] === -1 && fine.r['2'] === 2 && fine.resolvedBy === 'ltf', JSON.stringify({ cons: cons.r, fine: fine.r }));
+  const same = settleOrder(hc, 0, true, 100, 99, { '2': 102 }, 5, 0, { ltf: ltfIndex([{ tf: 60_000, c: [] }]) });
+  ok('settlement: when no finer bars cover the hour, the result is exactly the conservative one', same.r['2'] === cons.r['2'] && same.resolvedBy === 'h1');
+}
 void lastClosed;
 console.log(`\n${passes} passed, ${fails} failed`);
 process.exit(fails ? 1 : 0);

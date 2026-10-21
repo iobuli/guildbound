@@ -35,21 +35,32 @@ export function analyzeLevel(c: readonly Candle[], centre: number, dir: 'long' |
   if (br < 0) return base;
   let era = Math.max(0, br - P.eraLookbackBars);
   for (let i = br - 1; i >= 0; i--) if (long ? c[i]!.c > hi : c[i]!.c < lo) { era = i + 1; break; }
-  const contact = (i: number) => (long ? c[i]!.h >= lo : c[i]!.l <= hi);
-  const react = P.touchReactionAtr * atrH1;
-  const away = (i: number) => (long ? lo - c[i]!.l : c[i]!.h - hi);
-  const clusters: { s: number; e: number }[] = [];
-  let prev = -1;
-  for (let i = era; i < br; i++) {
-    if (!contact(i)) continue;
-    let split = prev < 0 || i - prev > P.touchClusterBars;
-    if (!split) for (let k = prev + 1; k < i; k++) if (away(k) >= react) { split = true; break; }
-    if (split) clusters.push({ s: i, e: i }); else clusters[clusters.length - 1]!.e = i;
-    prev = i;
-  }
   const counted: { s: number; e: number }[] = [];
-  for (const cl of clusters) {
-    for (let k = cl.e + 1; k < Math.min(br, cl.e + 1 + P.touchReactionBars); k++) if (away(k) >= react) { counted.push(cl); break; }
+  if (P.touchRule === 'fractal') {
+    // the user's One Hour engine: every 3-bar swing point of the level's previous role within tol of it, 12+ bars apart
+    const tolP = P.fractalTolAtr * atrH1;
+    let last = -Infinity;
+    for (let i = Math.max(era, 1); i < br - 1; i++) {
+      const piv = long ? c[i]!.h > c[i - 1]!.h && c[i]!.h > c[i + 1]!.h : c[i]!.l < c[i - 1]!.l && c[i]!.l < c[i + 1]!.l;
+      if (!piv || Math.abs((long ? c[i]!.h : c[i]!.l) - centre) > tolP || i - last < P.touchClusterBars) continue;
+      counted.push({ s: i, e: i }); last = i;
+    }
+  } else {
+    const contact = (i: number) => (long ? c[i]!.h >= lo : c[i]!.l <= hi);
+    const react = P.touchReactionAtr * atrH1;
+    const away = (i: number) => (long ? lo - c[i]!.l : c[i]!.h - hi);
+    const clusters: { s: number; e: number }[] = [];
+    let prev = -1;
+    for (let i = era; i < br; i++) {
+      if (!contact(i)) continue;
+      let split = prev < 0 || i - prev > P.touchClusterBars;
+      if (!split) for (let k = prev + 1; k < i; k++) if (away(k) >= react) { split = true; break; }
+      if (split) clusters.push({ s: i, e: i }); else clusters[clusters.length - 1]!.e = i;
+      prev = i;
+    }
+    for (const cl of clusters) {
+      for (let k = cl.e + 1; k < Math.min(br, cl.e + 1 + P.touchReactionBars); k++) if (away(k) >= react) { counted.push(cl); break; }
+    }
   }
   const last = counted[counted.length - 1] ?? null;
   let lxpb: number | null = null;

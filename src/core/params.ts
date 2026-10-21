@@ -58,4 +58,8 @@ export const P = {
   scanClusterAtr: 0.5, // inferred: swing prices closer than this are one level
   scanRangePct: 0.2, // inferred: only levels within 20% of price
   scanMax: 30,
+  // ---- how a level is parsed; switched by the presets in presets.ts, never by hand ----
+  scanSource: 'swings' as 'swings' | 'fractals', // where candidate levels come from: depth-checked swings, or every 3-bar swing point (the user's engine)
+  touchRule: 'reaction' as 'reaction' | 'fractal', // reaction: a touch counts if price then moves away; fractal: every 3-bar swing point at the level, 12+ bars apart (the user's One Hour engine)
+  fractalTolAtr: 0.1, // fractal rule: swing points within this many ATR of the level count as touches
 };

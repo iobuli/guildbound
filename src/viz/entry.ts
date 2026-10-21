@@ -1,18 +1,16 @@
 // Browser entry for the inspector page. Same nodes and graph as the MCP server; the page only calls these functions.
 import { graph, nodes } from '../kev.js';
 import { P } from '../core/params.js';
+import { applyPreset } from '../core/presets.js';
 import { makeFeed, SOL, GOLD, H } from '../core/series.js';
 import { defaultSpec } from '../core/session.js';
 import { analyzeLevel } from '../core/levelmath.js';
 import { SetupSchema, type Candle } from '../core/types.js';
 
-const DEFAULTS = JSON.parse(JSON.stringify(P)) as Record<string, unknown>;
-/** The Trade Check page's config, expressed in this graph's parameters. */
-const SPEC: Record<string, unknown> = { levelScaleD1: 1, zoneHalfAtr: 0.05, touchReactionAtr: 0.5, retestMinExcursionAtr: 0.5, touchClusterBars: 12, scanClusterAtr: 0.1 };
 const MKT = { SOL: { instrument: SOL, session: defaultSpec('crypto') }, GOLD: { instrument: GOLD, session: defaultSpec('metal') } } as const;
 type Mkt = keyof typeof MKT;
 
-function preset(spec: boolean) { Object.assign(P, DEFAULTS, spec ? SPEC : {}); }
+function preset(spec: boolean) { applyPreset(spec ? 'trade-check-spec' : 'kev-default'); }
 
 export interface RunIn { candles: Candle[]; T: number; mkt: Mkt; dir: 'long' | 'short'; spec: boolean; centre?: number; price?: number }
 

@@ -2,6 +2,7 @@ import { defineNode } from '../core/node.js';
 import { AtrPort, LevelScanPort, SwingsPort } from '../core/ports.js';
 import { analyzeLevel, tierOf } from '../core/levelmath.js';
 import { P } from '../core/params.js';
+import { fractals } from '../core/ta.js';
 import { rule, src } from '../core/rule.js';
 
 const T = (t: string) => src('transcript', `levels webinar part 1, user-pasted transcript @${t}`);
@@ -32,7 +33,8 @@ export default defineNode({
   evaluate: (inp, v) => {
     const c = v.h1, price = c.at(-1)?.c;
     if (price === undefined || !(inp.atr.h1 > 0)) return { out: { levels: { price: 0, rows: [] } } };
-    const pts = [...inp.swings.h1, ...inp.swings.d1].map((s) => s.price).filter((p) => Math.abs(p / price - 1) <= P.scanRangePct).sort((a, b) => a - b);
+    const raw = P.scanSource === 'fractals' ? fractals(c, 1).map((f) => f.price) : [...inp.swings.h1, ...inp.swings.d1].map((s) => s.price);
+    const pts = raw.filter((p) => Math.abs(p / price - 1) <= P.scanRangePct).sort((a, b) => a - b);
     const scale = P.levelScaleD1 ? inp.atr.d1 : inp.atr.h1;
     const gap = P.scanClusterAtr * scale, groups: number[][] = [];
     for (const p of pts) { const g = groups[groups.length - 1]; if (g && p - g[g.length - 1]! <= gap) g.push(p); else groups.push([p]); }

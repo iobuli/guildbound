@@ -19,7 +19,32 @@ export function clusterMean(rows: { r: number; day: number }[], reps = 600, seed
   return { n, mean: mean(rows.map((x) => x.r)), lo: means[Math.floor(0.025 * reps)]!, hi: means[Math.floor(0.975 * reps)]! };
 }
 
-/** Two-sample difference of means, p from a day-cluster permutation of the group labels (cheap and honest about overlap). */
+/**
+ * Difference of means (a - b) with a day-cluster bootstrap: resample whole days, recompute both means from the trades on those days.
+ * Valid when the two groups share days (matched placebos, rule pass/fail splits). Two-sided p from the bootstrap distribution.
+ */
+export function clusterDiffBoot(a: { r: number; day: number }[], b: { r: number; day: number }[], reps = 1000, seed = 3) {
+  if (a.length < 2 || b.length < 2) return { diff: NaN, lo: NaN, hi: NaN, p: NaN };
+  const diff = mean(a.map((x) => x.r)) - mean(b.map((x) => x.r));
+  const byDay = new Map<number, [number, number, number, number]>();
+  for (const x of a) { const s = byDay.get(x.day) ?? [0, 0, 0, 0]; s[0] += x.r; s[1]++; byDay.set(x.day, s); }
+  for (const x of b) { const s = byDay.get(x.day) ?? [0, 0, 0, 0]; s[2] += x.r; s[3]++; byDay.set(x.day, s); }
+  const days = [...byDay.values()], rand = rng(seed), ds: number[] = [];
+  for (let k = 0; k < reps; k++) {
+    let sa = 0, na = 0, sb = 0, nb = 0;
+    for (let d = 0; d < days.length; d++) { const s = days[Math.floor(rand() * days.length)]!; sa += s[0]; na += s[1]; sb += s[2]; nb += s[3]; }
+    if (na && nb) ds.push(sa / na - sb / nb);
+  }
+  ds.sort((x, y) => x - y);
+  // mid-p: ties at exactly 0 (common with few days and discrete R) count half to each side
+  const z = ds.filter((x) => x === 0).length / ds.length, le = ds.filter((x) => x < 0).length / ds.length + z / 2, ge = ds.filter((x) => x > 0).length / ds.length + z / 2;
+  return { diff, lo: ds[Math.floor(0.025 * ds.length)]!, hi: ds[Math.floor(0.975 * ds.length)]!, p: Math.max(1 / ds.length, Math.min(1, 2 * Math.min(le, ge))) };
+}
+
+/**
+ * DEPRECATED (kept so old reports can be reproduced): label permutation that never swaps days holding both groups. When the groups share
+ * most days, as matched placebos and rule pass/fail splits do, that makes p far too conservative (often 1.0). Use clusterDiffBoot.
+ */
 export function clusterDiff(a: { r: number; day: number }[], b: { r: number; day: number }[], reps = 800, seed = 5) {
   if (a.length < 2 || b.length < 2) return { diff: NaN, p: NaN };
   const diff = mean(a.map((x) => x.r)) - mean(b.map((x) => x.r));

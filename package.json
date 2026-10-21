@@ -8,10 +8,8 @@
     "test": "tsx src/selftest.ts",
     "typecheck": "tsc",
     "docs": "tsx src/docs.ts",
-    "replay": "tsx src/replay.ts",
     "mcp": "tsx src/mcp.ts",
-    "backtest": "tsx src/backtest/report.ts",
-    "optimize": "tsx src/backtest/optimize.ts"
+    "kev": "tsx src/cli.ts"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.1",
