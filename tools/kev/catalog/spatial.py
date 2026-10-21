@@ -1,6 +1,6 @@
 """Spatial smoothing for Kev references: landmark trajectories (T x N x 3, metres, fixed fps) in, smoother ones out.
 
-Three passes, all offline so they can look both ways in time:
+Three passes (limb lengths, then the filter, then the foot lock), all offline so they can look both ways in time:
   1. adaptive zero-phase filter per landmark: a One-Euro low-pass whose cutoff rises with the landmark's own speed,
      run forward then backward. Slow drift (idle sway, keyframe seams) is flattened, fast strikes keep their peaks.
   2. foot lock: ankle/ball runs that are low and slow are pinned to their mean ground position (no slide under a plant).
@@ -57,8 +57,10 @@ def foot_lock(L, names, fps, floor, height, speed=0.35, lift=0.08):
                     e += 1
                 if e - t >= 3:
                     mean = p[t:e + 1][:, [0, 2]].mean(axis=0)
-                    for k in range(t, e + 1):
-                        L[k, ix[j]][[0, 2]] = mean
+                    ramp = 4  # blend the pin in and out so the lock itself adds no step
+                    for k in range(max(t - ramp, 0), min(e + ramp, len(p) - 1) + 1):
+                        w = 1.0 if t <= k <= e else 1.0 - (t - k if k < t else k - e) / (ramp + 1)
+                        L[k, ix[j]][[0, 2]] = (1 - w) * p[k][[0, 2]] + w * mean
                     locked += e - t + 1
                 t = e + 1
     return locked
@@ -79,10 +81,10 @@ def relax_limbs(L, names, strength=0.8):
 def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0):
     """L: T x N x 3. Returns (smoothed copy, frames locked)."""
     out = L.copy()
+    relax_limbs(out, names)  # first: its direction changes are then filtered like any other motion
     for k in range(out.shape[1]):
         out[:, k] = smooth_track(out[:, k], fps, min_cut, beta)
     locked = foot_lock(out, names, fps, floor, height)
-    relax_limbs(out, names)
     return out, locked
 
 

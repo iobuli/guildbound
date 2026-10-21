@@ -40,7 +40,7 @@ def lift(sheet, pose, srv, info):
     left = np.cross(up, fwd)
     H, floor = bm["body"]["height"], bm["body"]["floor"]
     d = 1.0 if sheet.get("facing", "right") == "right" else -1.0
-    s = H / (sheet["floor_row"] - pose["crown"][1])
+    s = H / sheet.get("height_cells", sheet["floor_row"] - pose["crown"][1])  # fixed standing height when poses crouch or leave the ground
     hip = np.array(pose["hip"], float)
     pelvis = srv.rest_lm(info, "pelvis")
     base = pelvis - up * (pelvis @ up) + up * (floor + (sheet["floor_row"] - hip[1]) * s)

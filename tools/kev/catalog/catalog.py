@@ -129,6 +129,27 @@ def main():
         print(json.dumps(load_index()["animations"][a.args[0]], indent=1))
         return
     srv = studio()
+    if a.cmd == "bulk":
+        # every clip of every rig that carries a body map: name = clip name, tags from its words + the file
+        import re
+        done = load_index()["animations"]
+        for clip, files in sorted(srv.clip_index().items()):
+            for model in files:
+                name = re.sub(r"[^a-z0-9]+", "_", clip.lower()).strip("_")
+                if model != files[0] or name in done or (a.args and not re.search(a.args[0], clip)):
+                    continue
+                try:
+                    info = srv.model_info(model)
+                    if not info["bm"]:
+                        continue
+                    srv.grab(model, clip, name)
+                    ref = json.load(open(os.path.join(srv.REFDIR, name + ".json")))
+                    words = [w for w in re.split(r"[_\W]+", clip.lower()) if w and w not in ("loop", "01", "02")]
+                    b, s = add(srv, name, {"type": "clip", "model": model, "clip": clip}, sorted(set(words + [model[:-4]])), ref)
+                    print(f"{name:28} {model:12} {ref['duration']:5.2f}s jerk {b['jerk']:>8} -> {s['jerk']:>8}")
+                except Exception as ex:  # noqa: BLE001 - a clip with odd tracks must not stop the sweep
+                    print(f"skip {clip} ({model}): {ex}")
+        return
     if a.cmd == "add-clip":
         name, model, clip = a.args
         srv.grab(model, clip, name)

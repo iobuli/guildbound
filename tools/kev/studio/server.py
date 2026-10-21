@@ -60,11 +60,63 @@ def quat_to_mat(q):
                      [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
 
 
+FINGER_WORDS = {"index": "index", "middle": "middle", "ring": "ring", "pinky": "pinky", "thumb": "thumb"}
+MIXAMO = {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03", "Neck": "neck_01", "Head": "Head",
+          "HeadTop_End": "Head_leaf", "Shoulder": "clavicle", "Arm": "upperarm", "ForeArm": "lowerarm", "Hand": "hand",
+          "UpLeg": "thigh", "Leg": "calf", "Foot": "foot", "ToeBase": "ball", "Toe_End": "ball_leaf", "Root": "root"}
+BRIG = {"hips": "pelvis", "spine": "spine_01", "chest": "spine_03", "neck": "neck_01", "head": "Head", "jaw": "jaw", "shoulder": "clavicle",
+        "upperArm": "upperarm", "forearm": "lowerarm", "hand": "hand", "thigh": "thigh", "shin": "calf", "foot": "foot", "toe": "ball"}
+
+
+def canonical(name):
+    """Name in the UAL convention the body map and solvers use, or the name unchanged (UAL rigs pass through)."""
+    m = re.match(r"^mixamorig:(Left|Right)?(.*)$", name)
+    if m:
+        side, rest = m.group(1), m.group(2)
+        f = re.match(r"^Hand(Index|Middle|Ring|Pinky|Thumb)(\d)$", rest)
+        sd = {"Left": "l", "Right": "r", None: None}[side]
+        if f:
+            k = int(f.group(2))
+            base = f.group(1).lower()
+            return f"{base}_{k:02d}_{sd}" if k < 4 else f"{base}_04_leaf_{sd}"
+        base = MIXAMO.get(rest)
+        if base:
+            return f"{base}_{sd}" if sd else base
+        return name
+    m = re.match(r"^B-(.*?)(?:\.([LR]))?$", name)
+    if m:
+        rest, sd = m.group(1), (m.group(2) or "").lower()
+        f = re.match(r"^(index|middle|ring)Finger(\d\d)$|^(pinky|thumb)(\d\d)$", rest)
+        if f:
+            base, k = (f.group(1), f.group(2)) if f.group(1) else (f.group(3), f.group(4))
+            return f"{base}_{k}_{sd}"
+        base = BRIG.get(rest)
+        if base:
+            return f"{base}_{sd}" if sd else base
+    return name
+
+
+def canonical_glb(path, name):
+    """A copy of the GLB with UAL bone names when the rig uses another convention (only the JSON chunk changes)."""
+    js, blob = statue.read_glb(path)
+    new = [canonical(nd.get("name", "")) for nd in js["nodes"]]
+    old = [nd.get("name", "") for nd in js["nodes"]]
+    if new == old or len(set(new)) != len(new):
+        return path
+    for nd, nm in zip(js["nodes"], new):
+        nd["name"] = nm
+    d = os.path.join(REPO, "staging", "kev", "canon")
+    os.makedirs(d, exist_ok=True)
+    out = os.path.join(d, name)
+    statue.write_glb(out, js, blob)
+    return out
+
+
 def model_info(name):
     """Per-model cache: glTF JSON, node hierarchy with rest TRS, Kev body map, clip list."""
     if name in CACHE:
         return CACHE[name]
-    path = os.path.join(ANIM, name)
+    path = canonical_glb(os.path.join(ANIM, name), name)
     js, blob = statue.read_glb(path)
     n = len(js["nodes"])
     parent = [-1] * n
@@ -368,6 +420,8 @@ def pose_hand(info, Q, P, side, hands):
                 continue
             aim(info, Q, P, b, Ft @ (Fref.T @ (np.asarray(hands[c]) - np.asarray(hands[b]))), c)
     tips = [ch[-1] for ch in names.values() if ch[-1] in hands]
+    if not tips:
+        return None
     return max(float(np.linalg.norm((wp(t) - wp(hb)) - (np.asarray(hands[t]) - np.asarray(hands[hb])))) for t in tips)
 
 
@@ -438,13 +492,16 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
         Dp = basis(np.array(lm["hip_l"]) - np.array(lm["hip_r"]), up) @ basis(rest_lm(info, "hip_l") - rest_lm(info, "hip_r"), up0).T
         Dc = basis(np.array(lm["shoulder_l"]) - np.array(lm["shoulder_r"]), up) @ basis(rest_lm(info, "shoulder_l") - rest_lm(info, "shoulder_r"), up0).T
         for bone, t in (("pelvis", 0.0), ("spine_01", 1 / 3), ("spine_02", 2 / 3), ("spine_03", 1.0)):
+            if bone not in info["index"]:
+                continue
             set_world_rot(info, Q, P, bone, slerp_mat(Dp, Dc, t) @ rest_rot(bone))
         if need("crown", "nose", "head_joint"):
             hj = np.array(lm["head_joint"])
             Dh = basis(np.cross(np.array(lm["crown"]) - hj, np.array(lm["nose"]) - hj), np.array(lm["crown"]) - hj) @ \
                 basis(np.cross(rest_lm(info, "crown") - rest_lm(info, "head_joint"), rest_lm(info, "nose") - rest_lm(info, "head_joint")),
                       rest_lm(info, "crown") - rest_lm(info, "head_joint")).T
-            set_world_rot(info, Q, P, "neck_01", slerp_mat(Dc, Dh, 0.5) @ rest_rot("neck_01"))
+            if "neck_01" in info["index"]:
+                set_world_rot(info, Q, P, "neck_01", slerp_mat(Dc, Dh, 0.5) @ rest_rot("neck_01"))
             set_world_rot(info, Q, P, "Head", Dh @ rest_rot("Head"))
     err = {}
     for chain, (root, mid, end, tgt, pole) in CHAINS.items():

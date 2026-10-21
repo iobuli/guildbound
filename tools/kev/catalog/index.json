@@ -1,6 +1,2253 @@
 {
  "animations": {
+  "a_tpose": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.495,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.495,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "A_TPose",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "a",
+    "tpose",
+    "ual1"
+   ]
+  },
+  "attack1h01_l": {
+   "duration_s": 1.1,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.0,
+    "frames": 67,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.0,
+    "frames": 67,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 268,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Attack1H01_L",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack1h01",
+    "kev_melee",
+    "l"
+   ]
+  },
+  "attack1h01_r": {
+   "duration_s": 1.1,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.0,
+    "frames": 67,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.0,
+    "frames": 67,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 268,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Attack1H01_R",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack1h01",
+    "kev_melee",
+    "r"
+   ]
+  },
+  "attack2h01": {
+   "duration_s": 1.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.0,
+    "frames": 97,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.0,
+    "frames": 97,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 388,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Attack2H01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack2h01",
+    "kev_melee"
+   ]
+  },
+  "attackpolearm01": {
+   "duration_s": 1.3667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.0,
+    "frames": 83,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.0,
+    "frames": 83,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 332,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "AttackPolearm01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attackpolearm01",
+    "kev_melee"
+   ]
+  },
+  "attackshield01": {
+   "duration_s": 0.9,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.0,
+    "frames": 55,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.0,
+    "frames": 55,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 220,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "AttackShield01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attackshield01",
+    "kev_melee"
+   ]
+  },
+  "bigfrontkick": {
+   "duration_s": 10.8333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 14.66,
+    "duration_s": 10.85,
+    "foot_slip_hs": 0.09,
+    "frames": 651,
+    "jerk": 255.5,
+    "wrist_reach_h": 0.463,
+    "wrist_speed_hs": 17.49
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 16.23,
+    "duration_s": 10.85,
+    "foot_slip_hs": 0.105,
+    "frames": 651,
+    "jerk": 425.7,
+    "wrist_reach_h": 0.463,
+    "wrist_speed_hs": 18.89
+   },
+   "model": "rokoko.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 2392,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "BigFrontKick",
+    "model": "rokoko.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "bigfrontkick",
+    "rokoko"
+   ]
+  },
+  "blocking": {
+   "duration_s": 1.3667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.0,
+    "frames": 83,
+    "jerk": 72.2,
+    "wrist_reach_h": 0.425,
+    "wrist_speed_hs": 3.65
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.09,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.021,
+    "frames": 83,
+    "jerk": 346.1,
+    "wrist_reach_h": 0.426,
+    "wrist_speed_hs": 3.7
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 332,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Blocking",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "blocking",
+    "sekiro"
+   ]
+  },
+  "boxing": {
+   "duration_s": 17.9167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 15.77,
+    "duration_s": 17.933,
+    "foot_slip_hs": 0.164,
+    "frames": 1076,
+    "jerk": 209.8,
+    "wrist_reach_h": 0.507,
+    "wrist_speed_hs": 15.83
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 16.98,
+    "duration_s": 17.933,
+    "foot_slip_hs": 0.202,
+    "frames": 1076,
+    "jerk": 496.1,
+    "wrist_reach_h": 0.518,
+    "wrist_speed_hs": 17.96
+   },
+   "model": "rokoko.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 3707,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Boxing",
+    "model": "rokoko.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "boxing",
+    "rokoko"
+   ]
+  },
+  "chest_open": {
+   "duration_s": 1.3667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.0,
+    "frames": 83,
+    "jerk": 20.3,
+    "wrist_reach_h": 0.321,
+    "wrist_speed_hs": 1.16
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.383,
+    "foot_slip_hs": 0.0,
+    "frames": 83,
+    "jerk": 148.7,
+    "wrist_reach_h": 0.326,
+    "wrist_speed_hs": 1.21
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 332,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Chest_Open",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "chest",
+    "open",
+    "ual2"
+   ]
+  },
+  "climbup_1m": {
+   "duration_s": 0.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.89,
+    "duration_s": 0.683,
+    "foot_slip_hs": 0.573,
+    "frames": 41,
+    "jerk": 769.0,
+    "wrist_reach_h": 0.375,
+    "wrist_speed_hs": 2.94
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 7.97,
+    "duration_s": 0.683,
+    "foot_slip_hs": 0.957,
+    "frames": 41,
+    "jerk": 2554.8,
+    "wrist_reach_h": 0.381,
+    "wrist_speed_hs": 2.86
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 4,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "ClimbUp_1m",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "1m",
+    "climbup",
+    "ual2"
+   ]
+  },
+  "combatdamage01": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "model": "kev_melee.glb",
+   "source": {
+    "clip": "CombatDamage01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combatdamage01",
+    "kev_melee"
+   ]
+  },
+  "consume": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 26.3,
+    "wrist_reach_h": 0.5,
+    "wrist_speed_hs": 1.71
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 164.6,
+    "wrist_reach_h": 0.5,
+    "wrist_speed_hs": 1.64
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Consume",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "consume",
+    "ual2"
+   ]
+  },
   "cross": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.05,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.014,
+    "frames": 61,
+    "jerk": 147.9,
+    "wrist_reach_h": 0.472,
+    "wrist_speed_hs": 4.55
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.24,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.041,
+    "frames": 61,
+    "jerk": 586.0,
+    "wrist_reach_h": 0.473,
+    "wrist_speed_hs": 4.85
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 214,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Punch_Cross",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "ual"
+   ]
+  },
+  "crouch_fwd_loop": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.73,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.314,
+    "frames": 121,
+    "jerk": 93.5,
+    "wrist_reach_h": 0.281,
+    "wrist_speed_hs": 0.2
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.6,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.355,
+    "frames": 121,
+    "jerk": 207.1,
+    "wrist_reach_h": 0.282,
+    "wrist_speed_hs": 0.21
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 174,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Crouch_Fwd_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "crouch",
+    "fwd",
+    "ual1"
+   ]
+  },
+  "crouch_idle_loop": {
+   "duration_s": 2.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 0.9,
+    "wrist_reach_h": 0.257,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.003,
+    "frames": 177,
+    "jerk": 21.6,
+    "wrist_reach_h": 0.257,
+    "wrist_speed_hs": 0.06
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 531,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Crouch_Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "crouch",
+    "idle",
+    "ual1"
+   ]
+  },
+  "dance_loop": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.02,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.001,
+    "frames": 61,
+    "jerk": 33.3,
+    "wrist_reach_h": 0.283,
+    "wrist_speed_hs": 0.79
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.02,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.001,
+    "frames": 61,
+    "jerk": 321.4,
+    "wrist_reach_h": 0.283,
+    "wrist_speed_hs": 0.85
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 244,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Dance_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "dance",
+    "ual1"
+   ]
+  },
+  "driving_loop": {
+   "duration_s": 1.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 0.4,
+    "wrist_reach_h": 0.299,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 9.0,
+    "wrist_reach_h": 0.299,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 404,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Driving_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "driving",
+    "ual1"
+   ]
+  },
+  "farm_harvest": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 31.5,
+    "wrist_reach_h": 0.393,
+    "wrist_speed_hs": 1.24
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 239.5,
+    "wrist_reach_h": 0.395,
+    "wrist_speed_hs": 1.41
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Farm_Harvest",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "farm",
+    "harvest",
+    "ual2"
+   ]
+  },
+  "farm_plantseed": {
+   "duration_s": 2.7667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.54,
+    "duration_s": 2.783,
+    "foot_slip_hs": 0.01,
+    "frames": 167,
+    "jerk": 36.0,
+    "wrist_reach_h": 0.36,
+    "wrist_speed_hs": 1.01
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.66,
+    "duration_s": 2.783,
+    "foot_slip_hs": 0.012,
+    "frames": 167,
+    "jerk": 201.1,
+    "wrist_reach_h": 0.36,
+    "wrist_speed_hs": 0.96
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 608,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Farm_PlantSeed",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "farm",
+    "plantseed",
+    "ual2"
+   ]
+  },
+  "farm_watering": {
+   "duration_s": 3.8,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 3.817,
+    "foot_slip_hs": 0.0,
+    "frames": 229,
+    "jerk": 3.0,
+    "wrist_reach_h": 0.333,
+    "wrist_speed_hs": 0.71
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 3.817,
+    "foot_slip_hs": 0.0,
+    "frames": 229,
+    "jerk": 42.2,
+    "wrist_reach_h": 0.334,
+    "wrist_speed_hs": 0.69
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 916,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Farm_Watering",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "farm",
+    "ual2",
+    "watering"
+   ]
+  },
+  "fixing_kneeling": {
+   "duration_s": 5.2,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.86,
+    "duration_s": 5.217,
+    "foot_slip_hs": 0.003,
+    "frames": 313,
+    "jerk": 25.6,
+    "wrist_reach_h": 0.344,
+    "wrist_speed_hs": 1.42
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.02,
+    "duration_s": 5.217,
+    "foot_slip_hs": 0.005,
+    "frames": 313,
+    "jerk": 157.9,
+    "wrist_reach_h": 0.345,
+    "wrist_speed_hs": 1.37
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1181,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Fixing_Kneeling",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fixing",
+    "kneeling",
+    "ual1"
+   ]
+  },
+  "heavy_combo": {
+   "duration_s": 4.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 14.23,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.617,
+    "frames": 261,
+    "jerk": 1603.3,
+    "wrist_reach_h": 0.582,
+    "wrist_speed_hs": 14.74
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 17.73,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.756,
+    "frames": 261,
+    "jerk": 4181.8,
+    "wrist_reach_h": 0.593,
+    "wrist_speed_hs": 18.48
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 557,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Heavy_Combo",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "sword",
+    "combo",
+    "ual"
+   ]
+  },
+  "hit_chest": {
+   "duration_s": 0.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.35,
+    "foot_slip_hs": 0.0,
+    "frames": 21,
+    "jerk": 46.6,
+    "wrist_reach_h": 0.232,
+    "wrist_speed_hs": 0.62
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.35,
+    "foot_slip_hs": 0.0,
+    "frames": 21,
+    "jerk": 321.3,
+    "wrist_reach_h": 0.239,
+    "wrist_speed_hs": 0.65
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 84,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Hit_Chest",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "chest",
+    "hit",
+    "ual1"
+   ]
+  },
+  "hit_head": {
+   "duration_s": 0.4333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.45,
+    "foot_slip_hs": 0.0,
+    "frames": 27,
+    "jerk": 17.7,
+    "wrist_reach_h": 0.212,
+    "wrist_speed_hs": 0.22
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.45,
+    "foot_slip_hs": 0.0,
+    "frames": 27,
+    "jerk": 157.5,
+    "wrist_reach_h": 0.215,
+    "wrist_speed_hs": 0.28
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 108,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Hit_Head",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "head",
+    "hit",
+    "ual1"
+   ]
+  },
+  "hit_knockback": {
+   "duration_s": 0.8333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.51,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.421,
+    "frames": 51,
+    "jerk": 1604.5,
+    "wrist_reach_h": 0.483,
+    "wrist_speed_hs": 8.54
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.95,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.658,
+    "frames": 51,
+    "jerk": 4451.6,
+    "wrist_reach_h": 0.505,
+    "wrist_speed_hs": 9.12
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 24,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Hit_Knockback",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "hit",
+    "knockback",
+    "ual2"
+   ]
+  },
+  "idle_foldarms_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.8,
+    "wrist_reach_h": 0.267,
+    "wrist_speed_hs": 0.04
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.08,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.011,
+    "frames": 151,
+    "jerk": 30.8,
+    "wrist_reach_h": 0.267,
+    "wrist_speed_hs": 0.04
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_FoldArms_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "foldarms",
+    "idle",
+    "ual2"
+   ]
+  },
+  "idle_lantern_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.2,
+    "wrist_reach_h": 0.403,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 23.6,
+    "wrist_reach_h": 0.403,
+    "wrist_speed_hs": 0.07
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Lantern_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "lantern",
+    "ual2"
+   ]
+  },
+  "idle_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.2,
+    "wrist_reach_h": 0.195,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 24.8,
+    "wrist_reach_h": 0.195,
+    "wrist_speed_hs": 0.07
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "ual1"
+   ]
+  },
+  "idle_no_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.9,
+    "wrist_reach_h": 0.195,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 30.8,
+    "wrist_reach_h": 0.195,
+    "wrist_speed_hs": 0.07
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_No_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "no",
+    "ual2"
+   ]
+  },
+  "idle_rail_call": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 3.5,
+    "wrist_reach_h": 0.505,
+    "wrist_speed_hs": 0.69
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 39.2,
+    "wrist_reach_h": 0.506,
+    "wrist_speed_hs": 0.66
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Rail_Call",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "call",
+    "idle",
+    "rail",
+    "ual2"
+   ]
+  },
+  "idle_rail_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 0.6,
+    "wrist_reach_h": 0.347,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 15.4,
+    "wrist_reach_h": 0.347,
+    "wrist_speed_hs": 0.01
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Rail_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "rail",
+    "ual2"
+   ]
+  },
+  "idle_shield_break": {
+   "duration_s": 1.0667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.18,
+    "duration_s": 1.083,
+    "foot_slip_hs": 0.002,
+    "frames": 65,
+    "jerk": 200.4,
+    "wrist_reach_h": 0.374,
+    "wrist_speed_hs": 6.27
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.23,
+    "duration_s": 1.083,
+    "foot_slip_hs": 0.021,
+    "frames": 65,
+    "jerk": 620.0,
+    "wrist_reach_h": 0.375,
+    "wrist_speed_hs": 6.13
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 260,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Shield_Break",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "break",
+    "idle",
+    "shield",
+    "ual2"
+   ]
+  },
+  "idle_shield_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.2,
+    "wrist_reach_h": 0.305,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 24.3,
+    "wrist_reach_h": 0.305,
+    "wrist_speed_hs": 0.06
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Shield_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "shield",
+    "ual2"
+   ]
+  },
+  "idle_talking_loop": {
+   "duration_s": 2.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 5.0,
+    "wrist_reach_h": 0.283,
+    "wrist_speed_hs": 0.28
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 53.6,
+    "wrist_reach_h": 0.284,
+    "wrist_speed_hs": 0.33
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 708,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Talking_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "talking",
+    "ual1"
+   ]
+  },
+  "idle_talkingphone_loop": {
+   "duration_s": 2.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 3.4,
+    "wrist_reach_h": 0.381,
+    "wrist_speed_hs": 0.28
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 40.5,
+    "wrist_reach_h": 0.381,
+    "wrist_speed_hs": 0.31
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 708,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_TalkingPhone_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "talkingphone",
+    "ual2"
+   ]
+  },
+  "idle_torch_loop": {
+   "duration_s": 1.2667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.0,
+    "frames": 77,
+    "jerk": 1.5,
+    "wrist_reach_h": 0.427,
+    "wrist_speed_hs": 0.15
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.0,
+    "frames": 77,
+    "jerk": 26.7,
+    "wrist_reach_h": 0.428,
+    "wrist_speed_hs": 0.16
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 308,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Idle_Torch_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "torch",
+    "ual1"
+   ]
+  },
+  "interact": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.0,
+    "frames": 121,
+    "jerk": 7.1,
+    "wrist_reach_h": 0.412,
+    "wrist_speed_hs": 1.4
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.0,
+    "frames": 121,
+    "jerk": 60.0,
+    "wrist_reach_h": 0.414,
+    "wrist_speed_hs": 1.37
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 484,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Interact",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "interact",
+    "ual1"
+   ]
+  },
+  "jab": {
+   "duration_s": 0.8667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.883,
+    "foot_slip_hs": 0.0,
+    "frames": 53,
+    "jerk": 191.1,
+    "wrist_reach_h": 0.499,
+    "wrist_speed_hs": 5.1
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.03,
+    "duration_s": 0.883,
+    "foot_slip_hs": 0.001,
+    "frames": 53,
+    "jerk": 704.1,
+    "wrist_reach_h": 0.501,
+    "wrist_speed_hs": 6.79
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 212,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Punch_Jab",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "ual"
+   ]
+  },
+  "jog_fwd_loop": {
+   "duration_s": 0.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.96,
+    "duration_s": 0.95,
+    "foot_slip_hs": 2.899,
+    "frames": 57,
+    "jerk": 551.8,
+    "wrist_reach_h": 0.337,
+    "wrist_speed_hs": 2.52
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.21,
+    "duration_s": 0.95,
+    "foot_slip_hs": 2.981,
+    "frames": 57,
+    "jerk": 2034.2,
+    "wrist_reach_h": 0.337,
+    "wrist_speed_hs": 2.37
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Jog_Fwd_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fwd",
+    "jog",
+    "ual1"
+   ]
+  },
+  "jump_land": {
+   "duration_s": 1.2667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.9,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.002,
+    "frames": 77,
+    "jerk": 165.2,
+    "wrist_reach_h": 0.428,
+    "wrist_speed_hs": 4.43
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.71,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.021,
+    "frames": 77,
+    "jerk": 564.5,
+    "wrist_reach_h": 0.426,
+    "wrist_speed_hs": 4.12
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 304,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Jump_Land",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "jump",
+    "land",
+    "ual1"
+   ]
+  },
+  "jump_loop": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.05,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 1.2,
+    "wrist_reach_h": 0.458,
+    "wrist_speed_hs": 0.06
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.05,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.003,
+    "frames": 151,
+    "jerk": 26.1,
+    "wrist_reach_h": 0.458,
+    "wrist_speed_hs": 0.06
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 302,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Jump_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "jump",
+    "ual1"
+   ]
+  },
+  "jump_start": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.08,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.14,
+    "frames": 81,
+    "jerk": 267.8,
+    "wrist_reach_h": 0.499,
+    "wrist_speed_hs": 3.36
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.81,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.199,
+    "frames": 81,
+    "jerk": 793.2,
+    "wrist_reach_h": 0.499,
+    "wrist_speed_hs": 4.06
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 82,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Jump_Start",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "jump",
+    "start",
+    "ual1"
+   ]
+  },
+  "karate_test": {
+   "duration_s": 4.2333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.99,
+    "duration_s": 4.25,
+    "foot_slip_hs": 0.24,
+    "frames": 255,
+    "jerk": 625.6,
+    "wrist_reach_h": 0.442,
+    "wrist_speed_hs": 4.74
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 8.49,
+    "duration_s": 4.25,
+    "foot_slip_hs": 0.261,
+    "frames": 255,
+    "jerk": 994.9,
+    "wrist_reach_h": 0.445,
+    "wrist_speed_hs": 4.56
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 607,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Karate_Test",
+    "model": "karate.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "karate",
+    "test"
+   ]
+  },
+  "karate_variations": {
+   "duration_s": 22.6333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.8,
+    "duration_s": 22.65,
+    "foot_slip_hs": 0.105,
+    "frames": 1359,
+    "jerk": 106.5,
+    "wrist_reach_h": 0.445,
+    "wrist_speed_hs": 2.48
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.58,
+    "duration_s": 22.65,
+    "foot_slip_hs": 0.117,
+    "frames": 1359,
+    "jerk": 249.9,
+    "wrist_reach_h": 0.445,
+    "wrist_speed_hs": 2.3
+   },
+   "model": "karate_variants.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 3736,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Karate_Variations",
+    "model": "karate_variants.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "karate",
+    "karate_variants",
+    "variations"
+   ]
+  },
+  "laytoidle": {
+   "duration_s": 1.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.45,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.22,
+    "frames": 93,
+    "jerk": 138.3,
+    "wrist_reach_h": 0.349,
+    "wrist_speed_hs": 2.79
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.07,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.233,
+    "frames": 93,
+    "jerk": 536.7,
+    "wrist_reach_h": 0.354,
+    "wrist_speed_hs": 2.63
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 250,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "LayToIdle",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "laytoidle",
+    "ual2"
+   ]
+  },
+  "mae_geri": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.12,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.082,
+    "frames": 81,
+    "jerk": 420.7,
+    "wrist_reach_h": 0.152,
+    "wrist_speed_hs": 0.31
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 7.72,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.096,
+    "frames": 81,
+    "jerk": 764.5,
+    "wrist_reach_h": 0.153,
+    "wrist_speed_hs": 0.55
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 252,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Mae_Geri",
+    "model": "karate.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "geri",
+    "karate",
+    "mae"
+   ]
+  },
+  "melee_hook": {
+   "duration_s": 0.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.31,
+    "duration_s": 0.483,
+    "foot_slip_hs": 0.319,
+    "frames": 29,
+    "jerk": 3295.4,
+    "wrist_reach_h": 0.568,
+    "wrist_speed_hs": 20.75
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.16,
+    "duration_s": 0.483,
+    "foot_slip_hs": 0.404,
+    "frames": 29,
+    "jerk": 7137.0,
+    "wrist_reach_h": 0.579,
+    "wrist_speed_hs": 22.47
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 53,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Melee_Hook",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "hook",
+    "melee",
+    "ual2"
+   ]
+  },
+  "melee_hook_rec": {
+   "duration_s": 0.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.94,
+    "duration_s": 0.617,
+    "foot_slip_hs": 0.236,
+    "frames": 37,
+    "jerk": 100.4,
+    "wrist_reach_h": 0.399,
+    "wrist_speed_hs": 1.87
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.89,
+    "duration_s": 0.617,
+    "foot_slip_hs": 0.315,
+    "frames": 37,
+    "jerk": 458.6,
+    "wrist_reach_h": 0.402,
+    "wrist_speed_hs": 1.86
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 80,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Melee_Hook_Rec",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "hook",
+    "melee",
+    "rec",
+    "ual2"
+   ]
+  },
+  "ninjajump_idle_loop": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.05,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.0,
+    "frames": 121,
+    "jerk": 1.2,
+    "wrist_reach_h": 0.43,
+    "wrist_speed_hs": 0.07
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.05,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.0,
+    "frames": 121,
+    "jerk": 25.1,
+    "wrist_reach_h": 0.43,
+    "wrist_speed_hs": 0.07
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "NinjaJump_Idle_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "ninjajump",
+    "ual2"
+   ]
+  },
+  "ninjajump_land": {
+   "duration_s": 1.2667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.37,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.008,
+    "frames": 77,
+    "jerk": 265.9,
+    "wrist_reach_h": 0.43,
+    "wrist_speed_hs": 6.12
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.56,
+    "duration_s": 1.283,
+    "foot_slip_hs": 0.012,
+    "frames": 77,
+    "jerk": 764.0,
+    "wrist_reach_h": 0.429,
+    "wrist_speed_hs": 6.12
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 281,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "NinjaJump_Land",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "land",
+    "ninjajump",
+    "ual2"
+   ]
+  },
+  "ninjajump_start": {
+   "duration_s": 0.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.0,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.392,
+    "frames": 59,
+    "jerk": 427.8,
+    "wrist_reach_h": 0.443,
+    "wrist_speed_hs": 4.09
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.05,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.765,
+    "frames": 59,
+    "jerk": 1223.4,
+    "wrist_reach_h": 0.443,
+    "wrist_speed_hs": 5.74
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "NinjaJump_Start",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "ninjajump",
+    "start",
+    "ual2"
+   ]
+  },
+  "overhandthrow": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.26,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.093,
+    "frames": 81,
+    "jerk": 691.8,
+    "wrist_reach_h": 0.556,
+    "wrist_speed_hs": 12.24
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.63,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.128,
+    "frames": 81,
+    "jerk": 1643.3,
+    "wrist_reach_h": 0.576,
+    "wrist_speed_hs": 11.99
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 247,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "OverhandThrow",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "overhandthrow",
+    "ual2"
+   ]
+  },
+  "pickup_table": {
+   "duration_s": 0.8333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.0,
+    "frames": 51,
+    "jerk": 70.3,
+    "wrist_reach_h": 0.313,
+    "wrist_speed_hs": 2.3
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.0,
+    "frames": 51,
+    "jerk": 348.0,
+    "wrist_reach_h": 0.317,
+    "wrist_speed_hs": 2.13
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 204,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "PickUp_Table",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "pickup",
+    "table",
+    "ual1"
+   ]
+  },
+  "pistol_aim_down": {
+   "duration_s": 0.1667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.175,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.175,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 44,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Aim_Down",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "aim",
+    "down",
+    "pistol",
+    "ual1"
+   ]
+  },
+  "pistol_aim_neutral": {
+   "duration_s": 0.1667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 44,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Aim_Neutral",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "aim",
+    "neutral",
+    "pistol",
+    "ual1"
+   ]
+  },
+  "pistol_aim_up": {
+   "duration_s": 0.1667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.514,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.183,
+    "foot_slip_hs": 0.0,
+    "frames": 11,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.514,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 44,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Aim_Up",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "aim",
+    "pistol",
+    "ual1",
+    "up"
+   ]
+  },
+  "pistol_idle_loop": {
+   "duration_s": 1.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 0.5,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.01
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 13.6,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.01
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 404,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "pistol",
+    "ual1"
+   ]
+  },
+  "pistol_reload": {
+   "duration_s": 1.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 33.0,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 1.77
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 179.7,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 1.92
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 404,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Reload",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "pistol",
+    "reload",
+    "ual1"
+   ]
+  },
+  "pistol_shoot": {
+   "duration_s": 0.6333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.65,
+    "foot_slip_hs": 0.0,
+    "frames": 39,
+    "jerk": 8.4,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.29
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.65,
+    "foot_slip_hs": 0.0,
+    "frames": 39,
+    "jerk": 70.7,
+    "wrist_reach_h": 0.404,
+    "wrist_speed_hs": 0.83
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 156,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Pistol_Shoot",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "pistol",
+    "shoot",
+    "ual1"
+   ]
+  },
+  "punch_cross": {
    "duration_s": 1.0,
    "fps": 60,
    "metrics": {
@@ -33,50 +2280,12 @@
     "type": "clip"
    },
    "tags": [
+    "cross",
     "punch",
-    "fist",
-    "ual"
+    "ual1"
    ]
   },
-  "heavy_combo": {
-   "duration_s": 4.3333,
-   "fps": 60,
-   "metrics": {
-    "ankle_speed_hs": 13.9,
-    "duration_s": 4.35,
-    "foot_slip_hs": 0.646,
-    "frames": 261,
-    "jerk": 1646.5,
-    "wrist_reach_h": 0.58,
-    "wrist_speed_hs": 15.1
-   },
-   "metrics_raw": {
-    "ankle_speed_hs": 17.73,
-    "duration_s": 4.35,
-    "foot_slip_hs": 0.756,
-    "frames": 261,
-    "jerk": 4181.8,
-    "wrist_reach_h": 0.593,
-    "wrist_speed_hs": 18.48
-   },
-   "model": "ual2.glb",
-   "smoothing": {
-    "beta": 6.0,
-    "foot_frames_locked": 557,
-    "min_cut_hz": 4.0
-   },
-   "source": {
-    "clip": "Sword_Heavy_Combo",
-    "model": "ual2.glb",
-    "type": "clip"
-   },
-   "tags": [
-    "sword",
-    "combo",
-    "ual"
-   ]
-  },
-  "jab": {
+  "punch_jab": {
    "duration_s": 0.8667,
    "fps": 60,
    "metrics": {
@@ -109,22 +2318,134 @@
     "type": "clip"
    },
    "tags": [
+    "jab",
     "punch",
-    "fist",
-    "ual"
+    "ual1"
+   ]
+  },
+  "push_loop": {
+   "duration_s": 2.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.61,
+    "duration_s": 2.683,
+    "foot_slip_hs": 0.077,
+    "frames": 161,
+    "jerk": 76.8,
+    "wrist_reach_h": 0.569,
+    "wrist_speed_hs": 0.02
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.38,
+    "duration_s": 2.683,
+    "foot_slip_hs": 0.138,
+    "frames": 161,
+    "jerk": 109.9,
+    "wrist_reach_h": 0.569,
+    "wrist_speed_hs": 0.03
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 453,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Push_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "push",
+    "ual1"
+   ]
+  },
+  "roll": {
+   "duration_s": 1.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.4,
+    "duration_s": 1.483,
+    "foot_slip_hs": 0.422,
+    "frames": 89,
+    "jerk": 980.7,
+    "wrist_reach_h": 0.569,
+    "wrist_speed_hs": 8.94
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.65,
+    "duration_s": 1.483,
+    "foot_slip_hs": 0.517,
+    "frames": 89,
+    "jerk": 2787.7,
+    "wrist_reach_h": 0.573,
+    "wrist_speed_hs": 8.8
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 141,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Roll",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "roll",
+    "ual1"
+   ]
+  },
+  "roll_rm": {
+   "duration_s": 1.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.54,
+    "duration_s": 1.483,
+    "foot_slip_hs": 0.175,
+    "frames": 89,
+    "jerk": 1303.7,
+    "wrist_reach_h": 0.578,
+    "wrist_speed_hs": 11.44
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.41,
+    "duration_s": 1.483,
+    "foot_slip_hs": 0.251,
+    "frames": 89,
+    "jerk": 2840.9,
+    "wrist_reach_h": 0.573,
+    "wrist_speed_hs": 11.41
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 152,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Roll_RM",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "rm",
+    "roll",
+    "ual1"
    ]
   },
   "sheet_cross": {
    "duration_s": 0.8,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.47,
+    "ankle_speed_hs": 1.23,
     "duration_s": 0.817,
-    "foot_slip_hs": 0.097,
+    "foot_slip_hs": 0.04,
     "frames": 49,
-    "jerk": 394.5,
-    "wrist_reach_h": 0.543,
-    "wrist_speed_hs": 5.22
+    "jerk": 226.7,
+    "wrist_reach_h": 0.541,
+    "wrist_speed_hs": 4.58
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.09,
@@ -138,7 +2459,7 @@
    "model": "karate.glb",
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 172,
+    "foot_frames_locked": 178,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -153,7 +2474,1157 @@
     "brawler"
    ]
   },
-  "sword_slash": {
+  "sheet_front_kick": {
+   "duration_s": 0.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 12.23,
+    "duration_s": 0.617,
+    "foot_slip_hs": 0.004,
+    "frames": 37,
+    "jerk": 498.2,
+    "wrist_reach_h": 0.41,
+    "wrist_speed_hs": 2.6
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 15.1,
+    "duration_s": 0.617,
+    "foot_slip_hs": 0.107,
+    "frames": 37,
+    "jerk": 258.0,
+    "wrist_reach_h": 0.422,
+    "wrist_speed_hs": 2.61
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 70,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "19.webp",
+    "sheet": "../grid/sheets/front_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "kick",
+    "sheet",
+    "brawler"
+   ]
+  },
+  "sheet_jab": {
+   "duration_s": 0.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.32,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.003,
+    "frames": 31,
+    "jerk": 117.9,
+    "wrist_reach_h": 0.582,
+    "wrist_speed_hs": 4.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.39,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.092,
+    "frames": 31,
+    "jerk": 175.8,
+    "wrist_reach_h": 0.716,
+    "wrist_speed_hs": 9.94
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 111,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "19.webp",
+    "sheet": "../grid/sheets/jab.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "sheet",
+    "brawler",
+    "jab"
+   ]
+  },
+  "sheet_jump_kick": {
+   "duration_s": 0.7,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 10.81,
+    "duration_s": 0.717,
+    "foot_slip_hs": 0.121,
+    "frames": 43,
+    "jerk": 683.0,
+    "wrist_reach_h": 0.378,
+    "wrist_speed_hs": 3.23
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 9.02,
+    "duration_s": 0.717,
+    "foot_slip_hs": 0.279,
+    "frames": 43,
+    "jerk": 753.7,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 3.37
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "19.webp",
+    "sheet": "../grid/sheets/jump_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "kick",
+    "jump",
+    "aerial",
+    "sheet",
+    "brawler"
+   ]
+  },
+  "shield_dash": {
+   "duration_s": 1.1,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.45,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.259,
+    "frames": 67,
+    "jerk": 406.5,
+    "wrist_reach_h": 0.473,
+    "wrist_speed_hs": 6.86
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.82,
+    "duration_s": 1.117,
+    "foot_slip_hs": 0.282,
+    "frames": 67,
+    "jerk": 1399.8,
+    "wrist_reach_h": 0.472,
+    "wrist_speed_hs": 6.91
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 175,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Shield_Dash",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "dash",
+    "shield",
+    "ual2"
+   ]
+  },
+  "shield_oneshot": {
+   "duration_s": 0.8333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.0,
+    "frames": 51,
+    "jerk": 127.1,
+    "wrist_reach_h": 0.342,
+    "wrist_speed_hs": 4.9
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.0,
+    "frames": 51,
+    "jerk": 439.0,
+    "wrist_reach_h": 0.349,
+    "wrist_speed_hs": 4.67
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 204,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Shield_OneShot",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "oneshot",
+    "shield",
+    "ual2"
+   ]
+  },
+  "sitting_enter": {
+   "duration_s": 1.3,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.84,
+    "duration_s": 1.317,
+    "foot_slip_hs": 0.033,
+    "frames": 79,
+    "jerk": 39.8,
+    "wrist_reach_h": 0.212,
+    "wrist_speed_hs": 0.8
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.81,
+    "duration_s": 1.317,
+    "foot_slip_hs": 0.042,
+    "frames": 79,
+    "jerk": 199.7,
+    "wrist_reach_h": 0.214,
+    "wrist_speed_hs": 0.77
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 284,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sitting_Enter",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "enter",
+    "sitting",
+    "ual1"
+   ]
+  },
+  "sitting_exit": {
+   "duration_s": 1.0333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.03,
+    "duration_s": 1.05,
+    "foot_slip_hs": 0.043,
+    "frames": 63,
+    "jerk": 66.8,
+    "wrist_reach_h": 0.212,
+    "wrist_speed_hs": 0.97
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.99,
+    "duration_s": 1.05,
+    "foot_slip_hs": 0.05,
+    "frames": 63,
+    "jerk": 367.5,
+    "wrist_reach_h": 0.213,
+    "wrist_speed_hs": 0.98
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 223,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sitting_Exit",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "exit",
+    "sitting",
+    "ual1"
+   ]
+  },
+  "sitting_idle_loop": {
+   "duration_s": 1.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 0.4,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 9.5,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 404,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sitting_Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "sitting",
+    "ual1"
+   ]
+  },
+  "sitting_talking_loop": {
+   "duration_s": 2.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 4.7,
+    "wrist_reach_h": 0.363,
+    "wrist_speed_hs": 0.26
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.95,
+    "foot_slip_hs": 0.0,
+    "frames": 177,
+    "jerk": 49.2,
+    "wrist_reach_h": 0.364,
+    "wrist_speed_hs": 0.31
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 708,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sitting_Talking_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "sitting",
+    "talking",
+    "ual1"
+   ]
+  },
+  "slide_exit": {
+   "duration_s": 0.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.59,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.736,
+    "frames": 31,
+    "jerk": 801.4,
+    "wrist_reach_h": 0.378,
+    "wrist_speed_hs": 3.54
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.17,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.918,
+    "frames": 31,
+    "jerk": 2896.5,
+    "wrist_reach_h": 0.36,
+    "wrist_speed_hs": 3.43
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 40,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Slide_Exit",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "exit",
+    "slide",
+    "ual2"
+   ]
+  },
+  "slide_loop": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.03,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.014,
+    "frames": 121,
+    "jerk": 19.3,
+    "wrist_reach_h": 0.387,
+    "wrist_speed_hs": 0.28
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.06,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.029,
+    "frames": 121,
+    "jerk": 181.6,
+    "wrist_reach_h": 0.388,
+    "wrist_speed_hs": 0.29
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 484,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Slide_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "slide",
+    "ual2"
+   ]
+  },
+  "slide_start": {
+   "duration_s": 0.8333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.35,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.459,
+    "frames": 51,
+    "jerk": 420.0,
+    "wrist_reach_h": 0.414,
+    "wrist_speed_hs": 3.46
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.76,
+    "duration_s": 0.85,
+    "foot_slip_hs": 0.534,
+    "frames": 51,
+    "jerk": 1563.1,
+    "wrist_reach_h": 0.418,
+    "wrist_speed_hs": 3.28
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 126,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Slide_Start",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "slide",
+    "start",
+    "ual2"
+   ]
+  },
+  "spell_simple_enter": {
+   "duration_s": 0.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.55,
+    "foot_slip_hs": 0.0,
+    "frames": 33,
+    "jerk": 33.1,
+    "wrist_reach_h": 0.516,
+    "wrist_speed_hs": 1.78
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.55,
+    "foot_slip_hs": 0.0,
+    "frames": 33,
+    "jerk": 192.1,
+    "wrist_reach_h": 0.517,
+    "wrist_speed_hs": 1.7
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 132,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Spell_Simple_Enter",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "enter",
+    "simple",
+    "spell",
+    "ual1"
+   ]
+  },
+  "spell_simple_exit": {
+   "duration_s": 0.4333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.45,
+    "foot_slip_hs": 0.0,
+    "frames": 27,
+    "jerk": 60.0,
+    "wrist_reach_h": 0.516,
+    "wrist_speed_hs": 2.3
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.45,
+    "foot_slip_hs": 0.0,
+    "frames": 27,
+    "jerk": 297.4,
+    "wrist_reach_h": 0.517,
+    "wrist_speed_hs": 2.17
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 108,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Spell_Simple_Exit",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "exit",
+    "simple",
+    "spell",
+    "ual1"
+   ]
+  },
+  "spell_simple_idle_loop": {
+   "duration_s": 2.1,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.117,
+    "foot_slip_hs": 0.0,
+    "frames": 127,
+    "jerk": 0.9,
+    "wrist_reach_h": 0.521,
+    "wrist_speed_hs": 0.05
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 2.117,
+    "foot_slip_hs": 0.0,
+    "frames": 127,
+    "jerk": 19.2,
+    "wrist_reach_h": 0.521,
+    "wrist_speed_hs": 0.05
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 508,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Spell_Simple_Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "simple",
+    "spell",
+    "ual1"
+   ]
+  },
+  "spell_simple_shoot": {
+   "duration_s": 0.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.0,
+    "frames": 31,
+    "jerk": 12.2,
+    "wrist_reach_h": 0.517,
+    "wrist_speed_hs": 0.26
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.517,
+    "foot_slip_hs": 0.0,
+    "frames": 31,
+    "jerk": 112.5,
+    "wrist_reach_h": 0.518,
+    "wrist_speed_hs": 0.48
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 124,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Spell_Simple_Shoot",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "shoot",
+    "simple",
+    "spell",
+    "ual1"
+   ]
+  },
+  "sprint_loop": {
+   "duration_s": 0.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.49,
+    "duration_s": 0.683,
+    "foot_slip_hs": 1.859,
+    "frames": 41,
+    "jerk": 843.8,
+    "wrist_reach_h": 0.347,
+    "wrist_speed_hs": 2.36
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.84,
+    "duration_s": 0.683,
+    "foot_slip_hs": 1.114,
+    "frames": 41,
+    "jerk": 3104.8,
+    "wrist_reach_h": 0.352,
+    "wrist_speed_hs": 2.44
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sprint_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "sprint",
+    "ual1"
+   ]
+  },
+  "style_aikido": {
+   "duration_s": 11.1333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.13,
+    "duration_s": 11.15,
+    "foot_slip_hs": 0.2,
+    "frames": 669,
+    "jerk": 66.5,
+    "wrist_reach_h": 0.487,
+    "wrist_speed_hs": 2.22
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.88,
+    "duration_s": 11.15,
+    "foot_slip_hs": 0.227,
+    "frames": 669,
+    "jerk": 63.3,
+    "wrist_reach_h": 0.488,
+    "wrist_speed_hs": 2.23
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1891,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Aikido",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "aikido",
+    "style",
+    "styles"
+   ]
+  },
+  "style_battle_manga": {
+   "duration_s": 3.3,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.55,
+    "duration_s": 3.317,
+    "foot_slip_hs": 0.181,
+    "frames": 199,
+    "jerk": 98.8,
+    "wrist_reach_h": 0.436,
+    "wrist_speed_hs": 2.77
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.76,
+    "duration_s": 3.317,
+    "foot_slip_hs": 0.207,
+    "frames": 199,
+    "jerk": 197.5,
+    "wrist_reach_h": 0.436,
+    "wrist_speed_hs": 2.76
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 576,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Battle_Manga",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "battle",
+    "manga",
+    "style",
+    "styles"
+   ]
+  },
+  "style_boxing": {
+   "duration_s": 5.6333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 5.65,
+    "foot_slip_hs": 0.0,
+    "frames": 339,
+    "jerk": 27.3,
+    "wrist_reach_h": 0.507,
+    "wrist_speed_hs": 3.33
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 5.65,
+    "foot_slip_hs": 0.0,
+    "frames": 339,
+    "jerk": 84.9,
+    "wrist_reach_h": 0.507,
+    "wrist_speed_hs": 3.34
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1356,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Boxing",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "boxing",
+    "style",
+    "styles"
+   ]
+  },
+  "style_drunken_boxing": {
+   "duration_s": 4.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.2,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.045,
+    "frames": 269,
+    "jerk": 109.4,
+    "wrist_reach_h": 0.419,
+    "wrist_speed_hs": 5.59
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.68,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.068,
+    "frames": 269,
+    "jerk": 286.6,
+    "wrist_reach_h": 0.42,
+    "wrist_speed_hs": 4.98
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1052,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Drunken_Boxing",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "boxing",
+    "drunken",
+    "style",
+    "styles"
+   ]
+  },
+  "style_judo": {
+   "duration_s": 4.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.71,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.295,
+    "frames": 269,
+    "jerk": 614.3,
+    "wrist_reach_h": 0.479,
+    "wrist_speed_hs": 11.11
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.39,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.375,
+    "frames": 269,
+    "jerk": 1176.5,
+    "wrist_reach_h": 0.486,
+    "wrist_speed_hs": 11.52
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 765,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Judo",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "judo",
+    "style",
+    "styles"
+   ]
+  },
+  "style_karate": {
+   "duration_s": 3.3,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 3.317,
+    "foot_slip_hs": 0.0,
+    "frames": 199,
+    "jerk": 25.0,
+    "wrist_reach_h": 0.475,
+    "wrist_speed_hs": 3.47
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 3.317,
+    "foot_slip_hs": 0.0,
+    "frames": 199,
+    "jerk": 77.5,
+    "wrist_reach_h": 0.476,
+    "wrist_speed_hs": 3.42
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 796,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Karate",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "karate",
+    "style",
+    "styles"
+   ]
+  },
+  "style_kung_fu": {
+   "duration_s": 4.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 12.51,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.088,
+    "frames": 269,
+    "jerk": 228.6,
+    "wrist_reach_h": 0.561,
+    "wrist_speed_hs": 4.39
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 11.61,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.106,
+    "frames": 269,
+    "jerk": 489.9,
+    "wrist_reach_h": 0.562,
+    "wrist_speed_hs": 4.0
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 760,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Kung_Fu",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fu",
+    "kung",
+    "style",
+    "styles"
+   ]
+  },
+  "style_muay_thai": {
+   "duration_s": 4.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.72,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.032,
+    "frames": 269,
+    "jerk": 106.9,
+    "wrist_reach_h": 0.432,
+    "wrist_speed_hs": 1.56
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 8.23,
+    "duration_s": 4.483,
+    "foot_slip_hs": 0.037,
+    "frames": 269,
+    "jerk": 212.9,
+    "wrist_reach_h": 0.432,
+    "wrist_speed_hs": 1.5
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 968,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Muay_Thai",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "muay",
+    "style",
+    "styles",
+    "thai"
+   ]
+  },
+  "style_sumo": {
+   "duration_s": 5.6333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 12.22,
+    "duration_s": 5.65,
+    "foot_slip_hs": 0.06,
+    "frames": 339,
+    "jerk": 154.1,
+    "wrist_reach_h": 0.518,
+    "wrist_speed_hs": 6.92
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 11.7,
+    "duration_s": 5.65,
+    "foot_slip_hs": 0.076,
+    "frames": 339,
+    "jerk": 355.7,
+    "wrist_reach_h": 0.517,
+    "wrist_speed_hs": 6.39
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1210,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Sumo",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "style",
+    "styles",
+    "sumo"
+   ]
+  },
+  "style_tai_chi": {
+   "duration_s": 11.1333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 11.15,
+    "foot_slip_hs": 0.0,
+    "frames": 669,
+    "jerk": 0.9,
+    "wrist_reach_h": 0.443,
+    "wrist_speed_hs": 0.32
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 11.15,
+    "foot_slip_hs": 0.0,
+    "frames": 669,
+    "jerk": 15.8,
+    "wrist_reach_h": 0.444,
+    "wrist_speed_hs": 0.31
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 2676,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Style_Tai_Chi",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "chi",
+    "style",
+    "styles",
+    "tai"
+   ]
+  },
+  "styles_all": {
+   "duration_s": 54.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 12.49,
+    "duration_s": 54.55,
+    "foot_slip_hs": 0.116,
+    "frames": 3273,
+    "jerk": 142.8,
+    "wrist_reach_h": 0.561,
+    "wrist_speed_hs": 11.11
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 11.7,
+    "duration_s": 54.55,
+    "foot_slip_hs": 0.138,
+    "frames": 3273,
+    "jerk": 265.3,
+    "wrist_reach_h": 0.562,
+    "wrist_speed_hs": 11.52
+   },
+   "model": "styles.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 11012,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Styles_All",
+    "model": "styles.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "all",
+    "styles"
+   ]
+  },
+  "swim_fwd_loop": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.61,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 128.2,
+    "wrist_reach_h": 0.627,
+    "wrist_speed_hs": 2.83
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.63,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 545.3,
+    "wrist_reach_h": 0.629,
+    "wrist_speed_hs": 2.77
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Swim_Fwd_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fwd",
+    "swim",
+    "ual1"
+   ]
+  },
+  "swim_idle_loop": {
+   "duration_s": 3.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.2,
+    "duration_s": 3.35,
+    "foot_slip_hs": 0.067,
+    "frames": 201,
+    "jerk": 105.6,
+    "wrist_reach_h": 0.446,
+    "wrist_speed_hs": 0.14
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.28,
+    "duration_s": 3.35,
+    "foot_slip_hs": 0.175,
+    "frames": 201,
+    "jerk": 33.7,
+    "wrist_reach_h": 0.447,
+    "wrist_speed_hs": 0.14
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 620,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Swim_Idle_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "swim",
+    "ual1"
+   ]
+  },
+  "sword_attack": {
    "duration_s": 1.5333,
    "fps": 60,
    "metrics": {
@@ -186,8 +3657,852 @@
     "type": "clip"
    },
    "tags": [
+    "attack",
+    "sword",
+    "ual1"
+   ]
+  },
+  "sword_attack_rm": {
+   "duration_s": 1.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 8.55,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.357,
+    "frames": 93,
+    "jerk": 956.2,
+    "wrist_reach_h": 0.545,
+    "wrist_speed_hs": 20.61
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 8.59,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.325,
+    "frames": 93,
+    "jerk": 2347.9,
+    "wrist_reach_h": 0.547,
+    "wrist_speed_hs": 20.31
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 261,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Attack_RM",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack",
+    "rm",
+    "sword",
+    "ual1"
+   ]
+  },
+  "sword_block": {
+   "duration_s": 1.2333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.08,
+    "duration_s": 1.25,
+    "foot_slip_hs": 0.003,
+    "frames": 75,
+    "jerk": 259.1,
+    "wrist_reach_h": 0.395,
+    "wrist_speed_hs": 5.75
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.14,
+    "duration_s": 1.25,
+    "foot_slip_hs": 0.003,
+    "frames": 75,
+    "jerk": 946.8,
+    "wrist_reach_h": 0.398,
+    "wrist_speed_hs": 7.26
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 300,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Block",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "block",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_dash": {
+   "duration_s": 1.5667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.25,
+    "duration_s": 1.583,
+    "foot_slip_hs": 0.548,
+    "frames": 95,
+    "jerk": 999.0,
+    "wrist_reach_h": 0.533,
+    "wrist_speed_hs": 14.26
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.52,
+    "duration_s": 1.583,
+    "foot_slip_hs": 0.569,
+    "frames": 95,
+    "jerk": 2591.1,
+    "wrist_reach_h": 0.557,
+    "wrist_speed_hs": 14.94
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 247,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Dash",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "dash",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_heavy_combo": {
+   "duration_s": 4.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 13.9,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.646,
+    "frames": 261,
+    "jerk": 1646.5,
+    "wrist_reach_h": 0.58,
+    "wrist_speed_hs": 15.1
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 17.73,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.756,
+    "frames": 261,
+    "jerk": 4181.8,
+    "wrist_reach_h": 0.593,
+    "wrist_speed_hs": 18.48
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 557,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Heavy_Combo",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combo",
+    "heavy",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_idle": {
+   "duration_s": 1.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 2.5,
+    "wrist_reach_h": 0.317,
+    "wrist_speed_hs": 0.12
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.683,
+    "foot_slip_hs": 0.0,
+    "frames": 101,
+    "jerk": 38.3,
+    "wrist_reach_h": 0.317,
+    "wrist_speed_hs": 0.13
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 404,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Idle",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "sword",
+    "ual1"
+   ]
+  },
+  "sword_regular_a": {
+   "duration_s": 0.4333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.97,
+    "duration_s": 0.45,
+    "foot_slip_hs": 0.943,
+    "frames": 27,
+    "jerk": 2707.6,
+    "wrist_reach_h": 0.48,
+    "wrist_speed_hs": 13.58
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 3.8,
+    "duration_s": 0.45,
+    "foot_slip_hs": 1.058,
+    "frames": 27,
+    "jerk": 6327.2,
+    "wrist_reach_h": 0.495,
+    "wrist_speed_hs": 14.59
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 26,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_A",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "a",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_regular_a_rec": {
+   "duration_s": 0.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.0,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.106,
+    "frames": 59,
+    "jerk": 210.4,
+    "wrist_reach_h": 0.468,
+    "wrist_speed_hs": 3.31
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.81,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.195,
+    "frames": 59,
+    "jerk": 633.5,
+    "wrist_reach_h": 0.47,
+    "wrist_speed_hs": 3.28
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 189,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_A_Rec",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "a",
+    "rec",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_regular_b": {
+   "duration_s": 0.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.98,
+    "duration_s": 0.55,
+    "foot_slip_hs": 0.121,
+    "frames": 33,
+    "jerk": 1544.2,
+    "wrist_reach_h": 0.545,
+    "wrist_speed_hs": 14.36
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.39,
+    "duration_s": 0.55,
+    "foot_slip_hs": 0.282,
+    "frames": 33,
+    "jerk": 3822.4,
+    "wrist_reach_h": 0.566,
+    "wrist_speed_hs": 15.21
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 103,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_B",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "b",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_regular_b_rec": {
+   "duration_s": 1.0333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.11,
+    "duration_s": 1.05,
+    "foot_slip_hs": 0.174,
+    "frames": 63,
+    "jerk": 117.1,
+    "wrist_reach_h": 0.46,
+    "wrist_speed_hs": 1.03
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.95,
+    "duration_s": 1.05,
+    "foot_slip_hs": 0.23,
+    "frames": 63,
+    "jerk": 376.9,
+    "wrist_reach_h": 0.461,
+    "wrist_speed_hs": 1.0
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 143,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_B_Rec",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "b",
+    "rec",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_regular_c": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.45,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.274,
+    "frames": 121,
+    "jerk": 798.0,
+    "wrist_reach_h": 0.518,
+    "wrist_speed_hs": 15.43
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.69,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.338,
+    "frames": 121,
+    "jerk": 2001.7,
+    "wrist_reach_h": 0.549,
+    "wrist_speed_hs": 16.41
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 240,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_C",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "c",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_regular_combo": {
+   "duration_s": 3.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.18,
+    "duration_s": 3.017,
+    "foot_slip_hs": 0.321,
+    "frames": 181,
+    "jerk": 1261.7,
+    "wrist_reach_h": 0.543,
+    "wrist_speed_hs": 15.34
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.72,
+    "duration_s": 3.017,
+    "foot_slip_hs": 0.412,
+    "frames": 181,
+    "jerk": 3073.2,
+    "wrist_reach_h": 0.566,
+    "wrist_speed_hs": 16.1
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 411,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Regular_Combo",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combo",
+    "regular",
+    "sword",
+    "ual2"
+   ]
+  },
+  "sword_slash": {
+   "duration_s": 1.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.21,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.408,
+    "frames": 93,
+    "jerk": 751.9,
+    "wrist_reach_h": 0.544,
+    "wrist_speed_hs": 15.8
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.02,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.397,
+    "frames": 93,
+    "jerk": 1948.1,
+    "wrist_reach_h": 0.547,
+    "wrist_speed_hs": 16.93
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 216,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Attack",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
     "sword",
     "ual"
+   ]
+  },
+  "treechopping_loop": {
+   "duration_s": 0.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.001,
+    "frames": 59,
+    "jerk": 287.2,
+    "wrist_reach_h": 0.556,
+    "wrist_speed_hs": 9.07
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.02,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.001,
+    "frames": 59,
+    "jerk": 770.0,
+    "wrist_reach_h": 0.556,
+    "wrist_speed_hs": 9.19
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 236,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "TreeChopping_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "treechopping",
+    "ual2"
+   ]
+  },
+  "ushiro_geri": {
+   "duration_s": 1.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.72,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.362,
+    "frames": 97,
+    "jerk": 708.0,
+    "wrist_reach_h": 0.387,
+    "wrist_speed_hs": 4.15
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 7.32,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.384,
+    "frames": 97,
+    "jerk": 1069.8,
+    "wrist_reach_h": 0.387,
+    "wrist_speed_hs": 4.16
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 211,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Ushiro_Geri",
+    "model": "karate.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "geri",
+    "karate",
+    "ushiro"
+   ]
+  },
+  "walk_carry_loop": {
+   "duration_s": 2.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 3.03,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.265,
+    "frames": 121,
+    "jerk": 139.8,
+    "wrist_reach_h": 0.231,
+    "wrist_speed_hs": 0.3
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.68,
+    "duration_s": 2.017,
+    "foot_slip_hs": 0.315,
+    "frames": 121,
+    "jerk": 172.1,
+    "wrist_reach_h": 0.231,
+    "wrist_speed_hs": 0.32
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 170,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Walk_Carry_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "carry",
+    "ual2",
+    "walk"
+   ]
+  },
+  "walk_formal_loop": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.12,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.426,
+    "frames": 81,
+    "jerk": 62.6,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.22
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.1,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.465,
+    "frames": 81,
+    "jerk": 263.8,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.23
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 41,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Walk_Formal_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "formal",
+    "ual1",
+    "walk"
+   ]
+  },
+  "walk_loop": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.12,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.433,
+    "frames": 81,
+    "jerk": 67.3,
+    "wrist_reach_h": 0.236,
+    "wrist_speed_hs": 0.6
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.1,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.463,
+    "frames": 81,
+    "jerk": 306.5,
+    "wrist_reach_h": 0.239,
+    "wrist_speed_hs": 0.58
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 41,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Walk_Loop",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "ual1",
+    "walk"
+   ]
+  },
+  "yes": {
+   "duration_s": 2.5,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.05,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.0,
+    "frames": 151,
+    "jerk": 10.6,
+    "wrist_reach_h": 0.478,
+    "wrist_speed_hs": 1.77
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.06,
+    "duration_s": 2.517,
+    "foot_slip_hs": 0.001,
+    "frames": 151,
+    "jerk": 85.2,
+    "wrist_reach_h": 0.48,
+    "wrist_speed_hs": 1.69
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 604,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Yes",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "ual2",
+    "yes"
+   ]
+  },
+  "yoko_geri": {
+   "duration_s": 1.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.99,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.181,
+    "frames": 97,
+    "jerk": 619.9,
+    "wrist_reach_h": 0.442,
+    "wrist_speed_hs": 4.75
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 8.49,
+    "duration_s": 1.617,
+    "foot_slip_hs": 0.196,
+    "frames": 97,
+    "jerk": 962.9,
+    "wrist_reach_h": 0.445,
+    "wrist_speed_hs": 4.56
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 222,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Yoko_Geri",
+    "model": "karate.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "geri",
+    "karate",
+    "yoko"
+   ]
+  },
+  "zombie_idle_loop": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 2.6,
+    "wrist_reach_h": 0.269,
+    "wrist_speed_hs": 0.16
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 41.6,
+    "wrist_reach_h": 0.269,
+    "wrist_speed_hs": 0.16
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Zombie_Idle_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "idle",
+    "ual2",
+    "zombie"
+   ]
+  },
+  "zombie_scratch": {
+   "duration_s": 1.8,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.72,
+    "duration_s": 1.817,
+    "foot_slip_hs": 0.034,
+    "frames": 109,
+    "jerk": 355.1,
+    "wrist_reach_h": 0.577,
+    "wrist_speed_hs": 11.38
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.74,
+    "duration_s": 1.817,
+    "foot_slip_hs": 0.071,
+    "frames": 109,
+    "jerk": 1006.3,
+    "wrist_reach_h": 0.583,
+    "wrist_speed_hs": 11.92
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 407,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Zombie_Scratch",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "scratch",
+    "ual2",
+    "zombie"
+   ]
+  },
+  "zombie_walk_fwd_loop": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.24,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.465,
+    "frames": 81,
+    "jerk": 85.8,
+    "wrist_reach_h": 0.304,
+    "wrist_speed_hs": 0.7
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.15,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.497,
+    "frames": 81,
+    "jerk": 530.4,
+    "wrist_reach_h": 0.306,
+    "wrist_speed_hs": 0.92
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 54,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Zombie_Walk_Fwd_Loop",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fwd",
+    "ual2",
+    "walk",
+    "zombie"
    ]
   }
  }
