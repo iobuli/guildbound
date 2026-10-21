@@ -76,22 +76,33 @@ function play(name) {
 
 function handle(cmd) {
   switch (cmd.cmd) {
-    case 'model': loadModel(cmd.file); break;
-    case 'play': play(cmd.clip ?? $('clip').value); break;
+    case 'model': state.baked = null; loadModel(cmd.file); break;
+    case 'play': state.baked = null; play(cmd.clip ?? $('clip').value); break;
     case 'pause': state.mixer.timeScale = 0; state.playing = false; break;
     case 'resume': state.mixer.timeScale = state.speed; state.playing = !!state.action; break;
     case 'seek': if (state.action) { state.action.time = cmd.value; state.mixer.update(0); } break;
     case 'speed': state.speed = cmd.value; if (state.playing) state.mixer.timeScale = cmd.value; break;
-    case 'stopclip': if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null; break;
-    case 'pose': for (const [n, q] of Object.entries(cmd.quats || {})) state.overrideQ[n] = q; for (const [n, p] of Object.entries(cmd.pos || {})) state.overrideP[n] = p; break;
-    case 'reset': state.overrideQ = {}; state.overrideP = {}; for (const [n, b] of Object.entries(state.bones)) b.position.copy(state.restP[n]); state.overrides = {}; if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null;
+    case 'baked': state.baked = { fps: cmd.fps, frames: cmd.frames, t0: performance.now(), loop: cmd.loop }; state.overrideQ = {}; state.overrideP = {}; if (state.action) state.action.stop(); state.action = null; state.clipName = null; break;
+    case 'stopclip': state.baked = null; if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null; break;
+    case 'pose': state.baked = null; for (const [n, q] of Object.entries(cmd.quats || {})) state.overrideQ[n] = q; for (const [n, p] of Object.entries(cmd.pos || {})) state.overrideP[n] = p; break;
+    case 'reset': state.baked = null; state.overrideQ = {}; state.overrideP = {}; for (const [n, b] of Object.entries(state.bones)) b.position.copy(state.restP[n]); state.overrides = {}; if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null;
       for (const [n, b] of Object.entries(state.bones)) b.quaternion.copy(state.rest[n]); break;
     case 'set': if (state.bones[cmd.bone]) { setOverride(cmd.bone, cmd.euler); if (state.selected === cmd.bone) selectBone(cmd.bone); } break;
   }
 }
 
 const tmpE = new THREE.Euler(), tmpQ = new THREE.Quaternion();
+function applyBaked() {
+  const bk = state.baked; if (!bk) return;
+  const n = bk.frames.length; let f = bk.fixed != null ? bk.fixed : Math.floor((performance.now() - bk.t0) / 1000 * bk.fps);
+  f = bk.loop ? f % n : Math.min(f, n - 1);
+  const fr = bk.frames[f];
+  for (const [nm, q] of Object.entries(fr.q)) { const b = state.bones[nm]; if (b) b.quaternion.set(q[0], q[1], q[2], q[3]); }
+  const pb = state.bones.pelvis; if (pb) pb.position.set(fr.p[0], fr.p[1], fr.p[2]);
+  state.bakedFrame = f;
+}
 function applyOverrides() {
+  applyBaked();
   for (const [n, e] of Object.entries(state.overrides)) {
     const b = state.bones[n]; if (!b) continue;
     tmpE.set(e[0] * Math.PI / 180, e[1] * Math.PI / 180, e[2] * Math.PI / 180, 'XYZ'); tmpQ.setFromEuler(tmpE);
@@ -195,3 +206,6 @@ renderer.setAnimationLoop(() => {
   controls.update(); renderer.render(scene, camera);
 });
 init();
+
+// deterministic stepping for offline recording: ksStep(frame) pins the baked track to a frame
+window.ksStep = (f) => { if (state.baked) state.baked.fixed = f; return state.baked ? state.baked.frames.length : 0; };

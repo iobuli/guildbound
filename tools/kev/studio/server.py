@@ -17,7 +17,8 @@ Console commands (also in the page): help | models | model <file> | clips | play
 speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in the bone's own rest frame) | reset |
 landmarks [name] | facings | balance | rig | state |
 hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
-ref capture [name] (records one loop of the playing clip) | ref list | ref play <name> [rate] | ref stop | ref status.
+ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
+ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref live <name> [rate] | ref stop | ref status.
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
 import argparse
@@ -88,7 +89,7 @@ def model_info(name):
     skin = (js.get("skins") or [{}])[0]
     info = {"name": name, "js": js, "parent": parent, "order": order, "rest_q": rest_q, "names": names,
             "index": {nm: i for i, nm in enumerate(names)}, "clips": [a.get("name", f"clip{i}") for i, a in enumerate(js.get("animations", []))],
-            "joints": skin.get("joints", []), "bm": None, "kev": None}
+            "joints": skin.get("joints", []), "bm": None, "kev": None, "blob": blob}
     if skin:
         out = os.path.join(REPO, "staging", "kev", "bodymap")
         info["bm"] = bodymap.build(path, out)
@@ -179,6 +180,33 @@ def resolve_clip(info, want):
     return None, f"no clip like '{want}' in any model"
 
 
+def local_mat(info, Q, P, i):
+    nd = info["js"]["nodes"][i]
+    if "matrix" in nd:
+        return np.array(nd["matrix"], float).reshape(4, 4).T
+    nm = info["names"][i]
+    local = np.eye(4)
+    local[:3, :3] = quat_to_mat(Q.get(nm, info["rest_q"][i])) * np.array(nd.get("scale", [1, 1, 1]), float)
+    local[:3, 3] = (P or {}).get(nm, nd.get("translation", [0, 0, 0]))
+    return local
+
+
+def chain_world(info, Q, P, i):
+    """World matrix of one node: only its ancestors are multiplied (the solvers ask for a handful of nodes per step)."""
+    path = []
+    while i >= 0:
+        path.append(i)
+        i = info["parent"][i]
+    W = np.eye(4)
+    for j in reversed(path):
+        W = W @ local_mat(info, Q, P, j)
+    return W
+
+
+def child_pos(info, Q, P, bone_i, child_i, Wb):
+    return (Wb @ local_mat(info, Q, P, child_i))[:3, 3]
+
+
 # ---- Kev moves things: world-space solvers --------------------------------------------------------------------------
 COMMANDED = {}      # local quaternions Kev has commanded (name -> xyzw), the solver's own state
 COMMANDED_POS = {}  # local translation overrides (the pelvis)
@@ -245,27 +273,26 @@ def slerp_mat(R0, R1, t):
 
 def set_world_rot(info, Q, P, bone, R):
     """Command bone so its world rotation is R (the parents' current world rotation is read from FK)."""
-    W = world_transforms(info, Q, P)
     i = info["index"][bone]
     p = info["parent"][i]
-    Pw = rot_of(W[p]) if p >= 0 else np.eye(3)
+    Pw = rot_of(chain_world(info, Q, P, p)) if p >= 0 else np.eye(3)
     Q[bone] = mat_to_quat(Pw.T @ R)
 
 
 def aim(info, Q, P, bone, direction, child=None):
     """Swing `bone` so its direction to its child points along `direction` (world), from the current pose."""
     child = child or CHILD[bone]
-    W = world_transforms(info, Q, P)
     bi, ci = info["index"][bone], info["index"][child]
-    cur = W[ci][:3, 3] - W[bi][:3, 3]
-    set_world_rot(info, Q, P, bone, arc_mat(cur, direction) @ rot_of(W[bi]))
+    Wb = chain_world(info, Q, P, bi)
+    cur = child_pos(info, Q, P, bi, ci, Wb) - Wb[:3, 3]
+    set_world_rot(info, Q, P, bone, arc_mat(cur, direction) @ rot_of(Wb))
 
 
 def reach(info, Q, P, chain, target, pole_pt=None):
     """Two-bone IK: put the chain's end joint at `target` (world), bending toward `pole_pt`. Returns the reach error (m)."""
     root, mid, end = CHAINS[chain][:3]
-    W = world_transforms(info, Q, P)
-    r, m, e = (W[info["index"][n]][:3, 3] for n in (root, mid, end))
+    pos = lambda n: chain_world(info, Q, P, info["index"][n])[:3, 3]  # noqa: E731
+    r, m, e = pos(root), pos(mid), pos(end)
     l1, l2 = np.linalg.norm(m - r), np.linalg.norm(e - m)
     t = np.asarray(target, float) - r
     d = float(np.clip(np.linalg.norm(t), 1e-3, (l1 + l2) * 0.999))
@@ -278,10 +305,8 @@ def reach(info, Q, P, chain, target, pole_pt=None):
     h = math.sqrt(max(l1 * l1 - a_ * a_, 0.0))
     mid_new = r + u * a_ + pole * h
     aim(info, Q, P, root, mid_new - r)
-    W = world_transforms(info, Q, P)
-    aim(info, Q, P, mid, (r + u * d) - W[info["index"][mid]][:3, 3])
-    W = world_transforms(info, Q, P)
-    return float(np.linalg.norm(W[info["index"][end]][:3, 3] - np.asarray(target, float)))
+    aim(info, Q, P, mid, (r + u * d) - pos(mid))
+    return float(np.linalg.norm(pos(end) - np.asarray(target, float)))
 
 
 def basis(x_dir, y_dir):
@@ -335,17 +360,15 @@ def pose_hand(info, Q, P, side, hands):
     Frest = hand_frame(hand_pts(rpos, side))
     hb = f"hand_{side}"
     set_world_rot(info, Q, P, hb, Fref @ Frest.T @ rot_of(Wr[info["index"][hb]]))
-    cur = lambda: world_transforms(info, Q, P)  # noqa: E731
-    W = cur()
-    Ft = hand_frame(hand_pts(lambda n: W[info["index"][n]][:3, 3], side))
+    wp = lambda n: chain_world(info, Q, P, info["index"][n])[:3, 3]  # noqa: E731
+    Ft = hand_frame(hand_pts(wp, side))
     for f, ch in names.items():
         for b, c in zip(ch, ch[1:]):
             if b not in hands or c not in hands:
                 continue
             aim(info, Q, P, b, Ft @ (Fref.T @ (np.asarray(hands[c]) - np.asarray(hands[b]))), c)
-    W = cur()
     tips = [ch[-1] for ch in names.values() if ch[-1] in hands]
-    return max(float(np.linalg.norm((W[info["index"][t]][:3, 3] - W[info["index"][hb]][:3, 3]) - (np.asarray(hands[t]) - np.asarray(hands[hb])))) for t in tips)
+    return max(float(np.linalg.norm((wp(t) - wp(hb)) - (np.asarray(hands[t]) - np.asarray(hands[hb])))) for t in tips)
 
 
 CURL = {"thumb": (35, 45, 35), "index": (80, 95, 70), "middle": (85, 100, 75), "ring": (85, 100, 75), "pinky": (85, 100, 70)}
@@ -389,14 +412,14 @@ def curl_hand(info, Q, P, side, amount, point=False):
     return sgn
 
 
-def apply_frame(info, lm, inplace=True, hands=None):
+def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
     """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
 
     Pelvis: translated to the pelvis target; pelvis and chest oriented from the hip line and shoulder line with the
     spine direction as up (the spine bones share the twist between them); head from crown and nose; each arm and leg
     reaches wrist / ankle with the elbow / knee as the pole; feet aim at the ball. Missing targets are skipped.
     Returns {landmark: error_m} for the reach targets."""
-    Q, P = COMMANDED, COMMANDED_POS
+    Q, P = (Qp, Pp) if Qp is not None else (COMMANDED, COMMANDED_POS)
     need = lambda *ns: all(n in lm for n in ns)  # noqa: E731
     Wr = info["rest_world"]
     rest_rot = lambda b: rot_of(Wr[info["index"][b]])  # noqa: E731
@@ -404,11 +427,10 @@ def apply_frame(info, lm, inplace=True, hands=None):
         target = np.array(lm["pelvis"], float)
         if inplace:
             target[[0, 2]] = rest_lm(info, "pelvis")[[0, 2]]
-        W = world_transforms(info, Q, P)
         pi = info["index"]["pelvis"]
         p = info["parent"][pi]
-        Pw = rot_of(W[p]) if p >= 0 else np.eye(3)
-        pp = W[p][:3, 3] if p >= 0 else np.zeros(3)
+        Wp = chain_world(info, Q, P, p) if p >= 0 else np.eye(4)
+        Pw, pp = rot_of(Wp), Wp[:3, 3]
         P["pelvis"] = Pw.T @ (target - pp)
     if need("hip_l", "hip_r", "neck", "pelvis", "shoulder_l", "shoulder_r"):
         up = np.array(lm["neck"]) - np.array(lm["pelvis"])
@@ -439,6 +461,10 @@ def apply_frame(info, lm, inplace=True, hands=None):
             aim(info, Q, P, f"foot_{side}", np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"]))
     err.update(herr)
     return err
+
+
+def apply_frame_into(info, Q, P, lm, hands):
+    return apply_frame(info, lm, inplace=False, hands=hands, Qp=Q, Pp=P)
 
 
 def pose_event():
@@ -508,6 +534,109 @@ def scale_to(info, ref, lm):
 def scale_hands(info, ref, hands):
     s = info["bm"]["body"]["height"] / ref["height"]
     return {k: [v[0] * s, v[1] * s, v[2] * s] for k, v in hands.items()}  # directions only: no offset needed
+
+
+def clip_tracks(info, clip):
+    """{bone: (times, values, path)} for one animation of the loaded GLB, read straight from the buffer."""
+    js, blob = info["js"], info["blob"]
+    anim = next(a for a in js["animations"] if a.get("name") == clip)
+    out = {}
+    for ch in anim["channels"]:
+        path = ch["target"].get("path")
+        if path not in ("rotation", "translation"):
+            continue
+        sm = anim["samplers"][ch["sampler"]]
+        t, _ = statue.accessor_view(js, blob, sm["input"])
+        v, _ = statue.accessor_view(js, blob, sm["output"])
+        kind = sm.get("interpolation", "LINEAR")
+        if kind == "CUBICSPLINE":  # (in-tangent, value, out-tangent) per key: keep the values, read them linearly
+            v, kind = v[1::3], "LINEAR"
+        out[(info["names"][ch["target"]["node"]], path)] = (t[:, 0], v, kind)
+    return out
+
+
+def eval_track(t, v, kind, x):
+    x = min(max(x, t[0]), t[-1])
+    hi = min(int(np.searchsorted(t, x)), len(t) - 1)
+    if hi == 0:
+        return v[0]
+    lo = hi - 1
+    u = (x - t[lo]) / max(t[hi] - t[lo], 1e-9)
+    if kind == "STEP":
+        return v[lo]
+    if v.shape[1] == 4:
+        a, b = v[lo], v[hi]
+        if a @ b < 0:
+            b = -b
+        q = a * (1 - u) + b * u
+        return q / np.linalg.norm(q)
+    return v[lo] * (1 - u) + v[hi] * u
+
+
+def grab(model, clip, name, fps=60):
+    """Kev reference straight from a clip: every frame at `fps`, no browser, no real-time wait."""
+    info = model_info(model)
+    tracks = clip_tracks(info, clip)
+    dur = max(t[-1] for t, _, _ in tracks.values())
+    samples = []
+    for k in range(int(round(dur * fps)) + 1):
+        x = k / fps
+        Q, P = {}, {}
+        for (bone, path), (t, v, kind) in tracks.items():
+            (Q if path == "rotation" else P)[bone] = eval_track(t, v, kind, x)
+        r = kev_read(info, Q, P)
+        hands = {kk: vv for kk, vv in r["joints"].items() if HAND_RE.match(kk)}
+        samples.append({"t": round(x, 4), "landmarks": r["landmarks"], "hands": hands, "com": r["balance"]["com"]})
+    bm = info["bm"]
+    ref = {"name": name, "model": model, "clip": clip, "height": bm["body"]["height"], "floor": bm["body"]["floor"],
+           "duration": samples[-1]["t"], "samples": samples}
+    os.makedirs(REFDIR, exist_ok=True)
+    with open(os.path.join(REFDIR, name + ".json"), "w") as f:
+        json.dump(ref, f)
+    return ref
+
+
+def solve_ref(info, ref, tau):
+    lm0, hd0 = sample_ref(ref, tau)
+    lm = scale_to(info, ref, lm0)
+    hd = scale_hands(info, ref, hd0)
+    rp = rest_lm(info, "pelvis")
+    for k in lm:
+        lm[k][0] += rp[0]
+        lm[k][2] += rp[2]
+    return lm, hd
+
+
+def bake(model, name, fps=60):
+    """Solve a whole reference onto `model` and keep the numbers: per-frame local rotations (+ pelvis position)."""
+    info = model_info(model)
+    ref = load_ref(name)
+    Q, P = {}, {}
+    frames, errs, tips = [], [], []
+    t0 = time.time()
+    n = int(round(ref["duration"] * fps)) + 1
+    for k in range(n):
+        lm, hd = solve_ref(info, ref, k / fps)
+        err = apply_frame_into(info, Q, P, lm, hd)
+        frames.append({"q": {b: [round(float(x), 5) for x in q] for b, q in Q.items()}, "p": [round(float(x), 5) for x in P["pelvis"]]})
+        m = kev_read(info, Q, P)
+        errs.append(float(np.mean([np.linalg.norm(np.array(m["landmarks"][kk]) - np.array(lm[kk])) for kk in lm if kk in m["landmarks"]])))
+        tips.append(max(err.get("fingers_l", 0), err.get("fingers_r", 0)))
+    out = {"model": model, "ref": name, "fps": fps, "duration": ref["duration"], "frames": frames,
+           "mean_cm": round(100 * float(np.mean(errs)), 2), "max_mean_cm": round(100 * float(np.max(errs)), 2),
+           "finger_cm": round(100 * float(np.max(tips)), 2), "solve_ms_per_frame": round((time.time() - t0) / n * 1000, 1)}
+    os.makedirs(os.path.join(REPO, "staging", "kev", "baked"), exist_ok=True)
+    with open(os.path.join(REPO, "staging", "kev", "baked", f"{model[:-4]}__{name}.json"), "w") as f:
+        json.dump(out, f)
+    return out
+
+
+def play_baked(model, name):
+    with open(os.path.join(REPO, "staging", "kev", "baked", f"{model[:-4]}__{name}.json")) as f:
+        b = json.load(f)
+    stop_ref()
+    send_cmd({"cmd": "baked", "fps": b["fps"], "frames": b["frames"], "loop": True})
+    return b
 
 
 def run_ref(name, rate, loop):
@@ -616,11 +745,21 @@ def execute(line):
             return f"capturing '{name}' while {STATE['clip']} plays one full loop..."
         if sub == "list":
             return table(sorted(f[:-5] for f in os.listdir(REFDIR) if f.endswith(".json"))) if os.path.isdir(REFDIR) else "(none)"
-        if sub == "play" and len(a) > 1:
+        if sub == "grab" and len(a) > 2:
+            t0 = time.time()
+            r = grab(a[1], a[2], a[3] if len(a) > 3 else a[2])
+            return f"grabbed '{r['name']}' from {a[1]} / {a[2]}: {len(r['samples'])} frames @60 fps in {time.time() - t0:.1f} s"
+        if sub in ("play", "bake") and len(a) > 1:
             if not info or not info["bm"]:
                 return "no skinned model streamed"
+            b = bake(STATE["model"], a[1])
+            if sub == "play":
+                play_baked(STATE["model"], a[1])
+            return (f"baked '{a[1]}' -> {STATE['model']}: {len(b['frames'])} frames, {b['solve_ms_per_frame']} ms/frame solve, "
+                    f"mean error {b['mean_cm']} cm, fingers {b['finger_cm']} cm" + ("; playing in the viewer at 60 fps" if sub == "play" else ""))
+        if sub == "live" and len(a) > 1:
             start_ref(a[1], float(a[2]) if len(a) > 2 else 1.0)
-            return f"controller running: reference '{a[1]}' -> {STATE['model']}"
+            return f"live controller (per-frame solve over SSE): '{a[1]}'"
         if sub == "stop":
             stop_ref()
             return "controller stopped"
