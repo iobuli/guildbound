@@ -474,6 +474,7 @@ def pose_event():
 
 # ---- Kev references: capture measurements while a clip plays, replay them onto any model --------------------------
 HAND_RE = re.compile(r"^(hand|thumb|index|middle|ring|pinky)(_\d\d)?(_leaf)?_[lr]$")
+HERE_TOOLS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 REFDIR = os.path.join(REPO, "staging", "kev", "refs")
 CAPTURE = {"on": False, "name": None, "samples": [], "last_t": -1.0, "model": None, "clip": None}
 REFPLAY = {"thread": None, "stop": False, "status": {}}
@@ -767,6 +768,23 @@ def execute(line):
             stop_ref()
             return "controller stopped"
         return json.dumps(REFPLAY["status"] or {"running": False}, indent=1)
+    if c == "cat":
+        ixp = os.path.join(HERE_TOOLS, "catalog", "index.json")
+        cat = json.load(open(ixp))["animations"] if os.path.exists(ixp) else {}
+        sub = a[0] if a else "list"
+        if sub == "list":
+            return table([f"{n:16} {e['source']['type']:5} {e['duration_s']:5.2f}s  jerk {e['metrics']['jerk']:>7}  reach {e['metrics']['wrist_reach_h']}  {','.join(e['tags'])}" for n, e in sorted(cat.items())]) or "(empty: tools/kev/catalog/catalog.py add-clip ...)"
+        if sub == "info" and len(a) > 1 and a[1] in cat:
+            return json.dumps(cat[a[1]], indent=1)
+        if sub == "play" and len(a) > 1 and a[1] in cat:
+            if not info or not info["bm"]:
+                return "no skinned model streamed"
+            if not os.path.exists(os.path.join(REFDIR, a[1] + ".json")):
+                return "reference data missing: python3 -I tools/kev/catalog/catalog.py rebuild"
+            b = bake(STATE["model"], a[1])
+            play_baked(STATE["model"], a[1])
+            return f"'{a[1]}' (smoothed) -> {STATE['model']}: {len(b['frames'])} frames, mean error {b['mean_cm']} cm"
+        return "cat list | cat info <name> | cat play <name>"
     if c == "hand" and len(a) >= 2:
         if not info or not info["bm"]:
             return "no skinned model streamed"

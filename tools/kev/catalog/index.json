@@ -1,0 +1,194 @@
+{
+ "animations": {
+  "cross": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.82,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.036,
+    "frames": 61,
+    "jerk": 158.5,
+    "wrist_reach_h": 0.472,
+    "wrist_speed_hs": 4.57
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.24,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.041,
+    "frames": 61,
+    "jerk": 586.0,
+    "wrist_reach_h": 0.473,
+    "wrist_speed_hs": 4.85
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 214,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Punch_Cross",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "ual"
+   ]
+  },
+  "heavy_combo": {
+   "duration_s": 4.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 13.9,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.646,
+    "frames": 261,
+    "jerk": 1646.5,
+    "wrist_reach_h": 0.58,
+    "wrist_speed_hs": 15.1
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 17.73,
+    "duration_s": 4.35,
+    "foot_slip_hs": 0.756,
+    "frames": 261,
+    "jerk": 4181.8,
+    "wrist_reach_h": 0.593,
+    "wrist_speed_hs": 18.48
+   },
+   "model": "ual2.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 557,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Heavy_Combo",
+    "model": "ual2.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "sword",
+    "combo",
+    "ual"
+   ]
+  },
+  "jab": {
+   "duration_s": 0.8667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.01,
+    "duration_s": 0.883,
+    "foot_slip_hs": 0.001,
+    "frames": 53,
+    "jerk": 195.0,
+    "wrist_reach_h": 0.498,
+    "wrist_speed_hs": 5.17
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.03,
+    "duration_s": 0.883,
+    "foot_slip_hs": 0.001,
+    "frames": 53,
+    "jerk": 704.1,
+    "wrist_reach_h": 0.501,
+    "wrist_speed_hs": 6.79
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 212,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Punch_Jab",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "ual"
+   ]
+  },
+  "sheet_cross": {
+   "duration_s": 0.8,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.47,
+    "duration_s": 0.817,
+    "foot_slip_hs": 0.097,
+    "frames": 49,
+    "jerk": 394.5,
+    "wrist_reach_h": 0.543,
+    "wrist_speed_hs": 5.22
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.09,
+    "duration_s": 0.817,
+    "foot_slip_hs": 0.186,
+    "frames": 49,
+    "jerk": 416.4,
+    "wrist_reach_h": 0.637,
+    "wrist_speed_hs": 6.15
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 172,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "19.webp",
+    "sheet": "../grid/sheets/cross.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "punch",
+    "fist",
+    "sheet",
+    "brawler"
+   ]
+  },
+  "sword_slash": {
+   "duration_s": 1.5333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.4,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.417,
+    "frames": 93,
+    "jerk": 757.4,
+    "wrist_reach_h": 0.544,
+    "wrist_speed_hs": 16.58
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.02,
+    "duration_s": 1.55,
+    "foot_slip_hs": 0.397,
+    "frames": 93,
+    "jerk": 1948.1,
+    "wrist_reach_h": 0.547,
+    "wrist_speed_hs": 16.93
+   },
+   "model": "ual1.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 216,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Sword_Attack",
+    "model": "ual1.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "sword",
+    "ual"
+   ]
+  }
+ }
+}
