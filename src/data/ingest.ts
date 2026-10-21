@@ -1,6 +1,6 @@
 // `kev ingest SYMBOL files...`: any set of price files for one market becomes markets/SYMBOL/ with a UTC H1 execution series,
 // the finer series kept for intrabar settlement, a profile.json, and an ingest report saying what was found and assumed.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { basename } from 'node:path';
 import type { Candle, InstrumentClass } from '../core/types.js';
 import { toCols, type MarketProfile, type SourceFile } from '../core/market.js';
@@ -32,7 +32,9 @@ export interface IngestOptions { net: boolean; cls?: InstrumentClass }
 
 export async function ingest(symbol: string, paths: string[], opt: IngestOptions) {
   const out = `${MARKETS_DIR}${symbol}/`;
-  mkdirSync(out, { recursive: true });
+  mkdirSync(`${out}raw/`, { recursive: true });
+  // keep a copy of every input so the market can be re-ingested later with more files (markets/<SYM>/raw is not committed)
+  for (const p of paths) if (!p.startsWith(`${out}raw/`) && !existsSync(`${out}raw/${basename(p)}`)) copyFileSync(p, `${out}raw/${basename(p)}`);
   const notes: string[] = [], lines: string[] = [`# ${symbol}: ingest report`, '', `${new Date().toISOString().slice(0, 10)}. ${paths.length} file(s).`, ''];
   const files: Loaded[] = paths.map(loadFile).sort((a, b) => a.tf - b.tf || a.candles[0]!.t - b.candles[0]!.t);
   const decimals = Math.max(...files.map((f) => f.decimals)), tol = 0.51 * 10 ** -decimals;

@@ -3,7 +3,10 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { z } from 'zod';
 import { graph, nodes, edges } from './kev.js';
 import { H } from './core/series.js';
-import { listMarkets, openMarket, type Market } from './core/market-io.js';
+import { listMarkets, loadProfile, openMarket, type Market } from './core/market-io.js';
+import { BRAIN, search } from './brain/brain.js';
+import { existsSync, readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { encode } from './core/token.js';
 import { SetupSchema, type Candle } from './core/types.js';
 
@@ -118,5 +121,25 @@ server.registerTool('kev_graph', {
   description: 'The wiring: evaluation order, every wire, and what each node is allowed to know and when.',
   inputSchema: {},
 }, async () => json({ order: graph.order(), phases: ['prior_bars', 'bar_open', 'fill_time', 'bar_close', 'post_fill'], wires: edges.map((e) => `${e.from} -> ${e.to}`), problems: graph.validate() }));
+
+server.registerTool('kev_brain_search', {
+  description: 'Search kev\'s memory (kev-brain): the method notes generated from the code, the course text, the levels-webinar transcript, the user\'s pages, market notes, experiments and findings. BM25 keyword search; returns file:line, heading and the best-matching line. Use it before answering anything about the method or past results.',
+  inputSchema: { query: z.string(), k: z.number().int().min(1).max(30).optional(), under: z.string().optional().describe('limit to a folder, e.g. "sources/" or "experiments/"') },
+}, async ({ query, k, under }) => json(search(query, k ?? 8, under)));
+
+server.registerTool('kev_brain_note', {
+  description: 'Read one note from kev-brain by its path relative to the vault (as returned by kev_brain_search), e.g. "MEMORY.md" or "method/level-scan.md". Optional 1-based line range.',
+  inputSchema: { path: z.string(), from: z.number().int().optional(), to: z.number().int().optional() },
+}, async ({ path, from, to }) => {
+  const full = resolve(BRAIN, path);
+  if (!full.startsWith(BRAIN) || !existsSync(full)) return json({ error: `no note ${path}` });
+  const lines = readFileSync(full, 'utf8').split('\n'), a = Math.max(0, (from ?? 1) - 1);
+  return { content: [{ type: 'text' as const, text: lines.slice(a, to ?? a + 400).join('\n') }] };
+});
+
+server.registerTool('kev_markets', {
+  description: 'Every ingested market (markets/<SYMBOL>/profile.json): class, dates, clock and how it was checked, session, costs, in-sample split, finer timeframes, and the notes found at ingest.',
+  inputSchema: {},
+}, async () => json(listMarkets().map((m) => { const p = loadProfile(m); return { symbol: m, cls: p.cls, from: new Date(p.data.from).toISOString().slice(0, 10), to: new Date(p.data.to).toISOString().slice(0, 10), clock: p.clock, session: p.session, costs: p.costs, isEndYear: p.split.isEndYear, ltf: p.data.ltf.map((x) => x.file), notes: p.notes }; })));
 
 await server.connect(new StdioServerTransport());

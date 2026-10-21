@@ -1,0 +1,61 @@
+# Sources
+
+Everything the method was built from. Search with `kev brain search "..."`. Course text has names, handles and IDs removed.
+
+| file | words |
+|---|---|
+| [course/curated/INDEX.md](course/curated/INDEX.md) | 336 |
+| [course/curated/actual-lxpb-trades-no-hs-atr.md](course/curated/actual-lxpb-trades-no-hs-atr.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-engulfings.md](course/curated/actual-lxpb-trades-no-hs-engulfings.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-eql.md](course/curated/actual-lxpb-trades-no-hs-eql.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-htf-level.md](course/curated/actual-lxpb-trades-no-hs-htf-level.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-inside-failure.md](course/curated/actual-lxpb-trades-no-hs-inside-failure.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-pinbars.md](course/curated/actual-lxpb-trades-no-hs-pinbars.md) | 3 |
+| [course/curated/actual-lxpb-trades-no-hs-skips.md](course/curated/actual-lxpb-trades-no-hs-skips.md) | 3 |
+| [course/curated/advanced-sfp.md](course/curated/advanced-sfp.md) | 1654 |
+| [course/curated/daily-plan.md](course/curated/daily-plan.md) | 3 |
+| [course/curated/ideas.md](course/curated/ideas.md) | 3 |
+| [course/curated/levels.md](course/curated/levels.md) | 1100 |
+| [course/curated/lxpb-trades-cut-and-reverse.md](course/curated/lxpb-trades-cut-and-reverse.md) | 3 |
+| [course/curated/lxpb-trades-engulfing.md](course/curated/lxpb-trades-engulfing.md) | 205 |
+| [course/curated/lxpb-trades-equal-swings.md](course/curated/lxpb-trades-equal-swings.md) | 129 |
+| [course/curated/lxpb-trades-htf-level.md](course/curated/lxpb-trades-htf-level.md) | 312 |
+| [course/curated/lxpb-trades-idf-anticipation.md](course/curated/lxpb-trades-idf-anticipation.md) | 3 |
+| [course/curated/lxpb-trades-inside-failure.md](course/curated/lxpb-trades-inside-failure.md) | 3 |
+| [course/curated/lxpb-trades-passed-atr.md](course/curated/lxpb-trades-passed-atr.md) | 681 |
+| [course/curated/lxpb-trades-pattern-failure.md](course/curated/lxpb-trades-pattern-failure.md) | 402 |
+| [course/curated/lxpb-trades-random-shit.md](course/curated/lxpb-trades-random-shit.md) | 27 |
+| [course/curated/lxpb-trades-return-to-hammer.md](course/curated/lxpb-trades-return-to-hammer.md) | 415 |
+| [course/curated/lxpb-trades-to-pin-head.md](course/curated/lxpb-trades-to-pin-head.md) | 3 |
+| [course/curated/lxpb-trades-tuesday-rto.md](course/curated/lxpb-trades-tuesday-rto.md) | 3 |
+| [course/curated/lxpb-trades-what-constitutes-a-daily-bias.md](course/curated/lxpb-trades-what-constitutes-a-daily-bias.md) | 231 |
+| [course/curated/member-ta.md](course/curated/member-ta.md) | 3 |
+| [course/curated/notes-images.md](course/curated/notes-images.md) | 1405 |
+| [course/curated/notes-text.md](course/curated/notes-text.md) | 31 |
+| [course/curated/shit-i-should-probably-know.md](course/curated/shit-i-should-probably-know.md) | 3 |
+| [course/curated/taking-a-trade-1-touch-level.md](course/curated/taking-a-trade-1-touch-level.md) | 368 |
+| [course/curated/taking-a-trade-2-touch-level.md](course/curated/taking-a-trade-2-touch-level.md) | 91 |
+| [course/curated/taking-a-trade-3-touch-level.md](course/curated/taking-a-trade-3-touch-level.md) | 124 |
+| [course/curated/taking-a-trade-daily-biases.md](course/curated/taking-a-trade-daily-biases.md) | 17 |
+| [course/curated/taking-a-trade-h1-sweep.md](course/curated/taking-a-trade-h1-sweep.md) | 573 |
+| [course/curated/taking-a-trade-stoplosses.md](course/curated/taking-a-trade-stoplosses.md) | 13 |
+| [course/curated/taking-a-trade-targets.md](course/curated/taking-a-trade-targets.md) | 299 |
+| [course/curated/taking-a-trade-tuesday-rto.md](course/curated/taking-a-trade-tuesday-rto.md) | 148 |
+| [course/curated/tp-selection.md](course/curated/tp-selection.md) | 1675 |
+| [course/curated/trade-management.md](course/curated/trade-management.md) | 2724 |
+| [course/curated/trades-double-tap-atr.md](course/curated/trades-double-tap-atr.md) | 3 |
+| [course/curated/trades-double-tap-d1.md](course/curated/trades-double-tap-d1.md) | 3 |
+| [course/curated/trades-double-tap-fibs.md](course/curated/trades-double-tap-fibs.md) | 3 |
+| [course/curated/trades-h1-sweeps.md](course/curated/trades-h1-sweeps.md) | 3 |
+| [course/curated/trades-single-taps.md](course/curated/trades-single-taps.md) | 3 |
+| [course/curated/trades-skipped-trades.md](course/curated/trades-skipped-trades.md) | 3 |
+| [course/curated/trades-triple-taps.md](course/curated/trades-triple-taps.md) | 3 |
+| [course/curated/weekly-review.md](course/curated/weekly-review.md) | 3 |
+| [course/general/general_clusters.md](course/general/general_clusters.md) | 773 |
+| [course/general/general_full.md](course/general/general_full.md) | 50748 |
+| [course/general/general_keywords.md](course/general/general_keywords.md) | 11234 |
+| [course/tweets/tweets_clean.md](course/tweets/tweets_clean.md) | 941 |
+| [levels-webinar-part1.md](levels-webinar-part1.md) | 13978 |
+| [pages/One_Hour_At_A_Time.md](pages/One_Hour_At_A_Time.md) | 227 |
+| [pages/SOL_Trade_Check.md](pages/SOL_Trade_Check.md) | 359 |
+| [user-research-pages.md](user-research-pages.md) | 5667 |

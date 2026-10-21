@@ -1,0 +1,942 @@
+# general: keyword snippets (+/-5 words around each trading term)
+
+941 snippets, 938 after removing exact repeats.
+
+- 06/05/2022 | NFP at half 1 btw
+- 06/05/2022 | i assume youre gonna be trading NY
+- 06/05/2022 | NFP was the one where if
+- 09/05/2022 | weekly bearish MS
+- 09/05/2022 | i dont tend to ignore weekly MS on bitcoin
+- 09/05/2022 | fatty liquidity under all those lows too
+- 09/05/2022 | just waiting for a bullish weekly MSB now, until then down only
+- 09/05/2022 | was in after a bullish MSB
+- 10/05/2022 | you mentioned how the bearish 4H MS was sBMS
+- 10/05/2022 | a similar deal with the hourly, you also mentioned how the latest bearish MSB was tBMS [image]
+- 10/05/2022 | i see the hourly rbms btw
+- 12/05/2022 | If you hover over a candle does it show you the
+- 12/05/2022 | Of that candle
+- 13/05/2022 | mentioned how there was no hourly rBMS
+- 13/05/2022 | so there was a new level created
+- 13/05/2022 | is also part of the candle that broke MS
+- 13/05/2022 | i was waiting for another level? was it bc i had the wrong bias? was it because i was
+- 13/05/2022 | show the 4h + 1h and all that
+- 17/05/2022 | sweep closed 1 min too late
+- 17/05/2022 | if only it had retested the BZ 1 min later
+- 18/05/2022 | figure out why the bad trades dont work. rather than just
+- 18/05/2022 | up to being bad at trading. it'll improve your trading a lot quicker
+- 18/05/2022 | get caught out by a 4h void then I’m guessing
+- 18/05/2022 | combo of the 4h liq taken + the 4h void
+- 18/05/2022 | How did the liquidity do you over
+- 18/05/2022 | shit loads of OBs and levels on the chart
+- 18/05/2022 | the important aspects of a trade
+- 19/05/2022 | my first week off from trading in about 3 years
+- 19/05/2022 | but i wanna see some trades filled out in your and
+- 31/05/2022 | youd have been fine on spread on a proper broker
+- 31/05/2022 | trade would have won
+- 31/05/2022 | ICM has like 0.0-0.1 pip spread most of the time
+- 31/05/2022 | though, cause they use oanda's spread which is dirty @ like 1-2 pips
+- 06/06/2022 | as promised, your daily critique of your analysis:
+- 06/06/2022 | wouldnt have drawn on the daily OB that you did, is
+- 06/06/2022 | the downside, and then the daily would be bearish. which would
+- 06/06/2022 | (the latest one) has been invalidated [image]
+- 06/06/2022 | thats your daily chart analysis
+- 06/06/2022 | now onto your 4h
+- 06/06/2022 | and we drag it one candle to the left to make
+- 06/06/2022 | BZ, just because its a daily sweep: [image]
+- 07/06/2022 | most recent BMS near the sweep would that be Bearish cBMS
+- 07/06/2022 | but he got out at breakeven cause hes a cunt
+- 07/06/2022 | where i dont close a trade early if i 'think' its
+- 07/06/2022 | everything but was far from entry then we started turbo pumping
+- 07/06/2022 | and it'll get confusing which trade was which
+- 07/06/2022 | a (in this case, losing) setup because you were scared
+- 07/06/2022 | Did you say yesterday that sweeps are more powerful inside voids?
+- 07/06/2022 | same with sweeps in OBs
+- 10/06/2022 | brewdog not hit his 2 entries a week quota
+- 16/06/2022 | still need to hit 3 entries for this week
+- 10/08/2022 | it better. considering every single MSB on the planet is 'technically
+- 10/08/2022 | out in terms of intermediate levels.
+- 10/08/2022 | if you care about trading whatsoever, then spend 4 minutes,
+- 19/09/2022 | then just this on the hourly, just missed the bullish OB
+- 19/10/2022 | this OB is invalidated [image]
+- 07/12/2022 | banger trade
+- 10/12/2022 | You see that trade fam? With the void and the sweep?? Man might finally start moving
+- 10/12/2022 | counter trading every MS on every time
+- 18/01/2023 | your hourly was 1 behind though
+- 18/01/2023 | nothing changed in the 1 candle (06:00-07:00) after anyway
+- 27/02/2023 | potentially longs if this 1h candle closes as sweep?
+- 27/02/2023 | + longing directly into bearish h1 OB [image]
+- 27/02/2023 | best part about trading
+- 28/02/2023 | Lmao Im' waiting for Bearish MSB before i Jump on any
+- 28/02/2023 | msb on what timeframe?
+- 28/02/2023 | h1 is already bearish [image]
+- 28/02/2023 | I'd understand a sweep or some shit
+- 28/02/2023 | 1H FVG above (Draw) H4 FVG completely filled, usually pushes
+- 28/02/2023 | H4 FVGs gettting completely filled usually
+- 28/02/2023 | Draw: H1 FVG above Obstacle: we were inside a bearish H1 OB Reason: H4 cVF (complete void fill) Concern: H1 and H4 MS = bearish
+- 28/02/2023 | Draw: H4 FVG below Obstacle: H4 cVF Reason: inside a bearish H1 OB Concern: H1 FVG above price could suck us up from the H4 cVF
+- 28/02/2023 | h1 left a flat open too,
+- 28/02/2023 | some point to tag that level [image]
+- 28/02/2023 | no trades for me now until 14:00
+- 28/02/2023 | H4 still has bearish MS, now with bearish sweep and that FVG below
+- 28/02/2023 | i take shorts with bullish H1 kMS
+- 28/02/2023 | hopefully the next H4 candle closes above the sweep to invalidate it, then longs look nice
+- 28/02/2023 | doubt we get a bearish H1 MSB for shorts at this point
+- 02/03/2023 | the h1 bz you drew
+- 02/03/2023 | thats a bearish bz (bearish sweep, bearish msb), and its invalidated when price goes above it
+- 03/03/2023 | can figure out why that trade you took was a loss
+- 06/03/2023 | hourly just looks like this rn
+- 06/03/2023 | i want it to stop chopping around before i look
+- 06/03/2023 | hourly ranges <<<
+- 06/03/2023 | bearish fractal now on the h1
+- 06/03/2023 | would need that to be invalidated by a HH before i
+- 08/03/2023 | not a BZ until the MSB happens [image]
+- 08/03/2023 | same way we need an MSB to form an orderblock, we need an MSB to form a BZ too
+- 09/03/2023 | EU to close as a sweep and push price under low
+- 09/03/2023 | yea im hoping we msb here
+- 09/03/2023 | in terms of this, a trade is still valid even if it goes 2r before entry
+- 09/03/2023 | rule where if it goes 5r+ without giving him an entry, only then will he cancel
+- 09/03/2023 | same rule, its valid till stoploss or tp for us
+- 09/03/2023 | ­ first example: price hits 3R without giving entry = still valid to sell
+- 09/03/2023 | second example: price hits 3R after giving entry = not valid to sell
+- 09/03/2023 | goes back up, because the liquidity in the BZ has been
+- 09/03/2023 | untested trades are on
+- 09/03/2023 | write off with all the Sweeps?
+- 09/03/2023 | best to wait for the h4 close
+- 09/03/2023 | if we sweep the h4 high then i dont want
+- 09/03/2023 | and h1 ms is bullish, so cant
+- 09/03/2023 | but if we sweep the h4, and break down under the h1 low, then shorts are on
+- 09/03/2023 | to be bearish if we sweep in that H4 FVG. so the h1 msb could be pretty likely
+- 09/03/2023 | personally take it with the sfp above, cause of my own
+- 09/03/2023 | flow trades bringing the dubs
+- 09/03/2023 | wanted it to hit the H4 OB before i took longs, or to invalidate the bearish SFP
+- 09/03/2023 | OB was formed after that candle closed
+- 09/03/2023 | Bruv that rar would've been 4R if Ade didn't convo lock
+- 09/03/2023 | 4R day
+- 09/03/2023 | CT took the same gu trade as you
+- 12/03/2023 | Crack lmao stop chatting in here rar kicking
+- 12/03/2023 | don’t see no title of trading talk only boy
+- 14/03/2023 | h1 iMS is bearish, and tp is in the bearish h1 OB [image]
+- 14/03/2023 | i want a bullish h1 msb before i stalk longs
+- 14/03/2023 | the translation and seen a sweep in the void
+- 14/03/2023 | 4h bullish ms, inside bullish ob
+- 14/03/2023 | yeah 2r wasnt too far into the
+- 14/03/2023 | If it was a stop out
+- 14/03/2023 | billy if if was a stop out
+- 14/03/2023 | only take trades where you wont feel like
+- 14/03/2023 | that, so its a good trade even if its a loss
+- 14/03/2023 | went to tp without me
+- 16/03/2023 | candle not closed yet
+- 16/03/2023 | eu has the same setup, but EUs bullish void is
+- 16/03/2023 | and EU has a bullish H1 kMS - instead of GU's bullish H1 iMS
+- 16/03/2023 | 3 pips away from tp
+- 16/03/2023 | new h1 ob now too
+- 16/03/2023 | ngl your first trade today probably would have been
+- 16/03/2023 | with the ~0.1 spread
+- 16/03/2023 | cause your SL was 0.2p below the low
+- 17/03/2023 | there was no H12 MSB
+- 17/03/2023 | one of the first ever trading pairs on forex
+- 21/03/2023 | gave 3 chances for that trade to go on to win
+- 21/03/2023 | and 13.7 pip BZ on GU is equivalent to a 10 pip BZ on EU (cause GU
+- 21/03/2023 | the BZs up at 13,14,15 pips big (and you said 4
+- 21/03/2023 | this", or "i like this trade a lot" - and he
+- 21/03/2023 | how much he 'liked' the trade
+- 21/03/2023 | are your stats on this setup
+- 21/03/2023 | do you have on this trade, that make you 'not like
+- 21/03/2023 | like how you dropped to 2.2r consistently
+- 21/03/2023 | results are consistent, then your trades will be consistent
+- 22/03/2023 | would you journal and record trades that ypu didn't even get
+- 22/03/2023 | thread for like "not tag trades" or someshit
+- 23/03/2023 | need to short against the h1 ms
+- 23/03/2023 | as far as weekly sweeps go, theyre only really powerful
+- 23/03/2023 | theyre WITH MS, a bearish sweep AGAINST bullish MS doesnt do
+- 23/03/2023 | of the time. a bullish sweep WITH bullish MS would be
+- 23/03/2023 | H4 was key bullish, with a bullish SFP and loads of liquidity clumped super close together up
+- 23/03/2023 | remember both the H12 and weekly MS say price should pump
+- 23/03/2023 | and H1 was hard to spot, as
+- 23/03/2023 | low. so kMS on the hourly chart is actually still bullish
+- 10/04/2023 | to ask to go over sweeps within voids/OB.. are there any
+- 10/04/2023 | or is it simply any sweep within any OB/void is powerful
+- 10/04/2023 | h12 sweep = strong
+- 10/04/2023 | h12 sweep in ob = strong x
+- 10/04/2023 | VFs bounce price sweeps bounce price
+- 10/04/2023 | still be bullish if we swept a low into a void
+- 10/04/2023 | ­ H4 short thesis: would only be willing to short the H4, if that bullish H12 chart was invalidated [image]
+- 10/04/2023 | ­ H4 long thesis: [image]
+- 10/04/2023 | weekly, h12, h4, h1, m5
+- 10/04/2023 | your 3rd screenshot is the h4
+- 10/04/2023 | When we invalidate a void do we expect
+- 10/04/2023 | to get us in the trade
+- 10/04/2023 | eventualy we come back from TP and hit the BZ for
+- 10/04/2023 | does the trade get weaker the more the
+- 10/04/2023 | or is this some hourly / 4h chart
+- 10/04/2023 | makes a difference to my trades
+- 10/04/2023 | it 10 times on the m5
+- 10/04/2023 | still went to tp
+- 10/04/2023 | such thing as 'strong 5m levels' really
+- 10/04/2023 | spread is so dirty man
+- 10/04/2023 | really shouldn't have taken this trade at all
+- 10/04/2023 | price hits EQ of 4h Bearish void invalidating it + the Bearish inefficiency
+- 10/04/2023 | seen a sweep within the void fill
+- 11/04/2023 | i think its a retarded trade
+- 11/04/2023 | it could be a 4 trade streak coincidence
+- 11/04/2023 | it shows you the spread in pipettes ( on the
+- 11/04/2023 | you just type in entry price, SL, TP straight off your pc screen
+- 11/04/2023 | then boom, you’re in a trade, and you can see how
+- 11/04/2023 | by. in this case the trade i just placed is up
+- 11/04/2023 | entry SL & TP you can copy from TradingView
+- 11/04/2023 | you cant just click "1% risk" on tradingview
+- 11/04/2023 | just write how big your SL is (it tells you on TV that this SL is 4.4 pips wide)
+- 12/04/2023 | +12.5R
+- 12/04/2023 | just clip it, form a sweep then push downwards. Regardless I'd
+- 12/04/2023 | see 12h MS breaking Bullish, invalidating the 1h sweeps so it's safe to Long
+- 12/04/2023 | Obstacle = Bearish sweeps?
+- 12/04/2023 | REASON: bullish H1 sweep
+- 12/04/2023 | CONCERN: we're clipping a H4 high and might close as a bearish sweep in 20 mins
+- 12/04/2023 | you get in a long, TP will be beyond this H12
+- 12/04/2023 | in the way' of our TP.
+- 12/04/2023 | isn't the 1h Bearish sweep a obstacle?
+- 12/04/2023 | the way of me and TP? H1 OB? H4 high? etc.
+- 12/04/2023 | from right HERE, right NOW? 4H SFP? hourly OB? etc.
+- 12/04/2023 | there anything offputting about this trade? 4H is against me. H12 sweep against me. etc. (edited)
+- 12/04/2023 | there is no 1h bearish sweep
+- 12/04/2023 | only a 1h bullish sweep
+- 12/04/2023 | if your TP was past the high of the bearish sweep
+- 12/04/2023 | we are assuming the bearish sweep gets invalidated
+- 12/04/2023 | if you can get your TP without invalidating the sweep tho, its not an obstacle
+- 12/04/2023 | still an obstacle even when invalidated xD
+- 12/04/2023 | a 'off put' to the trade
+- 12/04/2023 | Surely an active sweep, repelling price is an obstacle
+- 12/04/2023 | through a bearish OB to tp on my longs?
+- 12/04/2023 | its physically obstructing my tp
+- 12/04/2023 | bullish MS, longing the OB, tp 2.2r before the sweep gets invalidated... sweep is not an obstacle. because the sweep is not in the way of tp [image]
+- 12/04/2023 | same setup except im aiming for 5r. sweep is now in the way of my tp. it is physically obstructing my tp, therefore it is an obstacle
+- 12/04/2023 | the bullish sweep h1 sweep in OB is a nice
+- 12/04/2023 | up from anywhere. a bullish sweep in a bullish ob is
+- 12/04/2023 | to figure out if a trade is worth taking
+- 12/04/2023 | i said would you tp new highs with bearish ms
+- 12/04/2023 | would you tp new highs if ms is
+- 12/04/2023 | wait.... peepoStop what if our trade is a bad idea??? ohokaythen
+- 12/04/2023 | before we even get to TP if a trade does set up. our REASON:
+- 12/04/2023 | well, we have a bullish sweep in a bullish OB. aint
+- 12/04/2023 | CONCERN: oh nooo Despair the H4 is clipping a high. this
+- 12/04/2023 | fact that we clipped that H4 high, and the fact that
+- 12/04/2023 | be able to hit our TP without hitting the H12 high
+- 12/04/2023 | youre not gonna take a trade
+- 12/04/2023 | need to punch into the SL and TP to make it equal to this shitty pip
+- 12/04/2023 | like add 'X' amount of pips to stop if taking longs
+- 12/04/2023 | oh for spread?
+- 12/04/2023 | add spread to any buy order
+- 12/04/2023 | or a short TP is technically a buy order
+- 12/04/2023 | and a short SL is a buy order as
+- 12/04/2023 | so if spread is 1.3, add 1.3 to your buy price (or sl/tp or whatever)
+- 12/04/2023 | h4 bearish sweep
+- 12/04/2023 | draw is our target
+- 12/04/2023 | maybe a new H4 high
+- 12/04/2023 | and theres no H4 swing high
+- 12/04/2023 | no H1 swing high
+- 12/04/2023 | there any point taking any trades?
+- 12/04/2023 | you can still trade, but a lot of the
+- 12/04/2023 | DRAW: none OBSTACLE: bearish H4/H1 SFP. doubt we can TP on longs without running into
+- 12/04/2023 | closed could we use the hourly FVG as a draw?
+- 12/04/2023 | youre looking for shorts, yeah H1 FVG would be a draw
+- 12/04/2023 | in the way of your TP
+- 12/04/2023 | obstructing price from hitting my target
+- 12/04/2023 | the way between you and TP
+- 13/04/2023 | invalidated before we msb'd
+- 13/04/2023 | So can they be invalidated before they are even formed?
+- 13/04/2023 | a long = 1h Bullish sweep Obstacle = nothing? (maybe 1h
+- 13/04/2023 | if we close under the sweep before we MSB then the sweep is already invalidated
+- 13/04/2023 | bullish sweep is not a draw. we're
+- 13/04/2023 | being drawn in towards that sweep obstacle is the bearish H1 OB in the way of you and TP reason to go up from
+- 13/04/2023 | would have been the bullish sweep (before it got invalidated) concern yeah, bearish ms +
+- 13/04/2023 | you could say the H4 high
+- 13/04/2023 | get there with the bearish H1 MS OB in the way?'
+- 13/04/2023 | unreasonable for a trade
+- 13/04/2023 | didn't even think about usung swing highs/lows as draws
+- 13/04/2023 | DRAW- New 4h high
+- 13/04/2023 | OBSTACLE- 1h Bearish sweep
+- 13/04/2023 | Bullish MS + 1h Bullish sweep within void
+- 13/04/2023 | CONCERN- 1h Bearish sweep?
+- 13/04/2023 | can be concerned about the sweep. i would typically not re-use
+- 13/04/2023 | for example 1h bearish sweep + fvg underneath
+- 13/04/2023 | im concerned the bearish sweep will take us to the
+- 13/04/2023 | or raid candle
+- 13/04/2023 | or maybe if we bullish sweep in the BZ. then even
+- 13/04/2023 | the H1 chart will look the exact
+- 13/04/2023 | invalidated OB, creating bearish MS, coming
+- 13/04/2023 | weekly ob isnt a good reason
+- 13/04/2023 | to bounce now for your m5 long
+- 13/04/2023 | h1 ob is perfect
+- 13/04/2023 | do you mean the Bullish sweep doesnt exist man 😭 theres one on like the previous candle
+- 13/04/2023 | take any longs with bearish h1 ms
+- 13/04/2023 | you wont opposite trade through current MS
+- 13/04/2023 | never counter h1 personally
+- 13/04/2023 | h1 is my main timeframe
+- 13/04/2023 | i dont gather stats on trades outside of my strategy
+- 14/04/2023 | DRAW: none, there is no H4 high above us, we already took the weekly high. 0 draw.
+- 14/04/2023 | OBSTACLE: bearish H1 BZ in the way of
+- 14/04/2023 | REASON: H4 OB, could take a few
+- 14/04/2023 | pump from it though, because H4 is a higher time frame
+- 14/04/2023 | CONCERN: bearish H1 kMS after clipping the weekly high. large FVGs underneath price
+- 17/04/2023 | the bearish kBMS on the H4
+- 17/04/2023 | yo can a sweep be a obstacle if TP is under the sweep
+- 17/04/2023 | you have to go against sweep for the trade
+- 17/04/2023 | So like the weekly sweep would not be obstacle? Just
+- 17/04/2023 | youre taking longs with a tp above the sweep, then it would be obstructing the price from hitting tp. and he becomes an obstacle
+- 17/04/2023 | but tbh we know weekly sweeps against trend dont do a
+- 17/04/2023 | but thats just for the weekly tho
+- 17/04/2023 | bearish h4 kBMS
+- 17/04/2023 | bearish h1 kBMS
+- 17/04/2023 | bearish H1 sweep of a key high
+- 17/04/2023 | looking for longs on the m15 strat, but i wouldnt personally
+- 17/04/2023 | longs with my method of trading m5
+- 17/04/2023 | was just looking at your weekly backtest and i noticed you
+- 17/04/2023 | it doesnt go lower and stop us out
+- 18/04/2023 | h1 is bullish
+- 18/04/2023 | might go up after 3 candles
+- 18/04/2023 | hits entry, no fill because of spread, straight to TP [image]
+- 02/05/2023 | tp on EU ?
+- 02/05/2023 | you hit tp on the short
+- 02/05/2023 | is it that candle there that entered me and TP?
+- 02/05/2023 | entry and TP happened 5 mins before the hourly broke MS bullish
+- 02/05/2023 | Sweep?
+- 02/05/2023 | in the most recent Litz H1 video, he talks about why
+- 02/05/2023 | ­ H4 OB [image]
+- 02/05/2023 | ­ H1 OB right underneath the H4 OB [image]
+- 02/05/2023 | ­ Litz says he wouldnt trade this H1 OB [image]
+- 02/05/2023 | it, to get to the H4 OB, are too high [image]
+- 02/05/2023 | instead, you use the upper hourly OB, the one inside the 4H OB [image]
+- 02/05/2023 | to get to the H4 OB, we have to slice through the H1 OB
+- 03/05/2023 | and couple boys wanna start trading
+- 05/05/2023 | for example, you miss your entry because you was asleep
+- 05/05/2023 | would you only cancel the entry if it hits TP?
+- 05/05/2023 | its still valid until TP or SL
+- 05/05/2023 | and it came back to entry for a second time, you'd
+- 05/05/2023 | may as well leave a limit order in there
+- 05/05/2023 | but if it already hits TP before before coming back to entry not a good idea?
+- 05/05/2023 | it can go 10R before coming back to entry and its still valid
+- 05/05/2023 | there is no h1 ob on eu today
+- 05/05/2023 | the OB + went to TP? (edited)
+- 05/05/2023 | it never went 2R from the full OB
+- 05/05/2023 | the full OB, moved about 0.5R and then came back to the EQ for your entry
+- 05/05/2023 | youve got trading and she's got uni
+- 05/05/2023 | I missed the trade by one minute.. I had
+- 05/05/2023 | I got the entry down on 09:25 when the
+- 05/05/2023 | but I finally placed an entry at 09:25
+- 05/05/2023 | hit the eq and run 2r?
+- 05/05/2023 | before kBMS, before FVGs and liquidity sweeps, even the step before swing points
+- 08/05/2023 | cant be bottling trades boss
+- 08/05/2023 | cant introduce emotion into our trades
+- 10/05/2023 | H1 OB bossman [image]  (x2)
+- 10/05/2023 | aldready tapped OB and hot TP right?
+- 10/05/2023 | if you'd just TP'd, you wouldnt jump in the same trade again
+- 10/05/2023 | h4h1 means H4 sweep H1 MSB + BZ
+- 10/05/2023 | if the MSB is before the downcandle, you use the MSB
+- 10/05/2023 | ­ bullish H12 SFP with FVGs above [image]
+- 10/05/2023 | here? we wouldnt want to counter-trade the range. so that would
+- 30/05/2023 | time ABC happens, you can trade it more profitably
+- 30/05/2023 | thought process going into a trade?
+- 30/05/2023 | fucked me I done some trades myself and got them right
+- 01/06/2023 | your trade, or that dude's trade?
+- 01/06/2023 | That dudes trade
+- 01/06/2023 | improve by journaling someone else's trades
+- 01/06/2023 | improve by journaling your own trades
+- 01/06/2023 | Do daily videos of u waking him
+- 01/06/2023 | lmao i just realised my target is your stoploss
+- 01/06/2023 | I changed the stop loss to my entry to avoid risk
+- 01/06/2023 | h1 ob lazy strat provided +$10,000
+- 02/06/2023 | from the swing low
+- 02/06/2023 | is that a swing low
+- 02/06/2023 | all that much like a swing low to me [image]
+- 02/06/2023 | me where the last down candle was
+- 02/06/2023 | to the right, of the msb point
+- 02/06/2023 | Whatever happened to Bearish sweep goes to Bearish candle?
+- 02/06/2023 | do NOT trade
+- 02/06/2023 | it’s NFP
+- 02/06/2023 | trading drugs on a train doesn’t count as trading baxter
+- 02/06/2023 | reckon eu dies here on nfp
+- 02/06/2023 | but not worth trading it
+- 02/06/2023 | gold TP
+- 03/06/2023 | month on h4m15 was EU: +4R GOLD: +6R UCAD: +2.5R (had to close 1 trade for -0.5R due to CPI news) DAX: +6R
+- 03/06/2023 | pair that with h1 ob eq and youve made
+- 05/06/2023 | next lazy trade is this: [image]
+- 05/06/2023 | Just done a little trade on gold
+- 05/06/2023 | Sell trade
+- 05/06/2023 | your own trade or some other guys?
+- 05/06/2023 | i have no setup, but it makes sense
+- 05/06/2023 | you should start trading euro
+- 06/06/2023 | is it 15m sweep followed by 15 bms?
+- 06/06/2023 | and m15 bz
+- 06/06/2023 | you place a trade right
+- 06/06/2023 | the order just above the TP
+- 06/06/2023 | h4m15: gold loss in london -1R gold win in ny +1R ucad win london +1R
+- 06/06/2023 | h1 ob: eu win london +2R ucad win lunch +2R
+- 06/06/2023 | total +5R today (so far at least)
+- 06/06/2023 | you have 5 trades to log
+- 14/06/2023 | I be looking into sell trades now?
+- 15/06/2023 | bearish h4 zone [image]
+- 15/06/2023 | short tomorrow if a good setup happens
+- 21/06/2023 | leave that shitcoin alone and trade some real shit
+- 21/06/2023 | Give me some trades u doing today mate
+- 21/06/2023 | buy, perfect hit into the TP. straight drop down
+- 21/06/2023 | Master at the trading u are
+- 21/06/2023 | What are the currency’s u trade
+- 23/06/2023 | / why i can enter trades
+- 24/06/2023 | btc htf is so clean [image]
+- 25/06/2023 | I do it on a daily
+- 27/06/2023 | another TP on gold
+- 27/06/2023 | I see no entry?
+- 27/06/2023 | 3R onna miss
+- 28/06/2023 | Iv got some bad entry’s on rn
+- 28/06/2023 | tho taken out my highest entry hopefully take this one out
+- 28/06/2023 | and look for a re entry
+- 28/06/2023 | Changed stop loss to above entry to avoid risk of loss
+- 28/06/2023 | Stop loss hit seen it coming
+- 28/06/2023 | They used his id to trade in a robbed phone 😂
+- 28/06/2023 | Do we count msb even if the swing is not recent?
+- 29/06/2023 | tp on ucad and gold
+- 29/06/2023 | What's you R target? hasn't hit me yet
+- 29/06/2023 | TP wise
+- 29/06/2023 | just saw CT say his tp was hit so i assumed
+- 29/06/2023 | the guy he copies trades off
+- 29/06/2023 | guy is lying, he cant trade for shit
+- 29/06/2023 | I don’t copy all his trades anyway
+- 29/06/2023 | mo claiming to trade 5 times a day, with 1.5R TPs and a 95% winrate
+- 29/06/2023 | For copy 1/2 trade isn’t on
+- 29/06/2023 | of for copy one two trade
+- 29/06/2023 | Give me your trades
+- 29/06/2023 | I just copy one two trade
+- 29/06/2023 | ive been giving you my trades scumbag
+- 29/06/2023 | 100% strikerate on the trades ive given you so far
+- 03/07/2023 | there has been times where trades would be acceptable but I've
+- 03/07/2023 | a good time to place trades are
+- 03/07/2023 | them and decide on more trades cause so far I've only
+- 04/07/2023 | the high is the exact pip of the close do we
+- 04/07/2023 | its an equal high  (x2)
+- 04/07/2023 | well nah but it doesnt sweep it either
+- 04/07/2023 | but yeah the H1 is vaild
+- 04/07/2023 | litz is in the h1 ob short
+- 04/07/2023 | fat TP
+- 04/07/2023 | you hoppin on that H4 sweep UCAD?
+- 04/07/2023 | strat, so if theres a setup, its valid
+- 05/07/2023 | h1 on eu is bullish kBMS
+- 05/07/2023 | h1 ob is using the latest msb only
+- 05/07/2023 | the latest msb
+- 05/07/2023 | Bro he needs to stop man 🤣😭
+- 05/07/2023 | His a laughing stop
+- 06/07/2023 | Chnaged my SL as was dropping then hit
+- 06/07/2023 | Ignore the quids was bad entry
+- 11/07/2023 | there like a cut off limit we have with how far back we can use a swing high/low?
+- 11/07/2023 | you can only take setups formed today
+- 11/07/2023 | same as h1 ob
+- 11/07/2023 | taking sweeps from 4 days ago is
+- 12/07/2023 | stop talking
+- 13/07/2023 | Is your Tp one in grey in left
+- 13/07/2023 | tp is green, because green is
+- 13/07/2023 | stoploss is red, because red is
+- 13/07/2023 | entry is grey
+- 13/07/2023 | this would have been my trade [image]
+- 13/07/2023 | I had my stop loss on 153.5
+- 13/07/2023 | TP 155.5
+- 13/07/2023 | entry?
+- 13/07/2023 | Entry was 154. Somthing
+- 13/07/2023 | alright yeah that trade actually lost money then
+- 13/07/2023 | the trade was aiming for 1.5R
+- 13/07/2023 | but you closed for 0.18R
+- 13/07/2023 | fees usually cost 0.2R
+- 13/07/2023 | so you lost -0.02R
+- 13/07/2023 | so net +2R
+- 13/07/2023 | u need to hit your TP
+- 13/07/2023 | if they both lose (-1R each), then i only need
+- 13/07/2023 | winner to get back to breakeven
+- 13/07/2023 | let it either hit the SL or hit the TP
+- 13/07/2023 | unless youre still in the trade at 13:25
+- 13/07/2023 | 137.860 before giving us our entry. and UCAD short is cancelled
+- 13/07/2023 | price hits 1.31436 before giving entry.
+- 13/07/2023 | Bro I laugh at his trades now uno
+- 13/07/2023 | you take a bunch of trades
+- 13/07/2023 | paid a bonus for every trade you take
+- 13/07/2023 | a bonus for making you trade
+- 13/07/2023 | the more trades you take, the more he
+- 13/07/2023 | Any trades u doing
+- 14/07/2023 | thats Polish that came to stop
+- 14/07/2023 | guy pinning piff-car in the trading journal discord
+- 14/07/2023 | sleeps naked
+- 14/07/2023 | perfectly at eye level
+- 14/07/2023 | can you stop begging for money
+- 18/07/2023 | cares if the high being swept was within the last 2 weeks. thats his limit to avoid taking setups like your L just now, that swept a high from 5 weeks
+- 18/07/2023 | video again, and watch the h1 ob videos again
+- 18/07/2023 | like only taking sweeps from the same day for
+- 18/07/2023 | The high being swept has to be in the same trading day?
+- 18/07/2023 | the sweep has to be from the
+- 18/07/2023 | the high being swept must be within the last
+- 19/07/2023 | say theres like a sweep inbetween the the H/L and
+- 19/07/2023 | its not technically the last swing low
+- 19/07/2023 | yeah that counts as an MSB
+- 19/07/2023 | invalid because there was no H4+H1 alignment
+- 19/07/2023 | all of our (h1 ob) stats come from taking trades 7am onwards
+- 19/07/2023 | so we wouldnt take this trade even if there was h4+h1 alignment
+- 19/07/2023 | in the garden on the swing
+- 31/07/2023 | how’s your trading going
+- 31/07/2023 | with trading you fucking mug
+- 31/07/2023 | Naa I stil like trading
+- 03/08/2023 | do you still take m15 if its against h1 ms?
+- 03/08/2023 | I’m max level on that
+- 03/08/2023 | Got starwars yday level 60
+- 03/08/2023 | (you own clothes already) weed (stop being addicted) rent
+- 03/08/2023 | Food I done a weekly shop
+- 03/08/2023 | on that, it gives you daily, weekly and monthly tasks to compete
+- 03/08/2023 | +4R
+- 03/08/2023 | realistic, take the first setup = +2 -1 take the second setup = -1 +2
+- 03/08/2023 | And took a trade on eu that I didn't
+- 09/08/2023 | You still trading
+- 09/08/2023 | Hahah trading while gym
+- 14/08/2023 | we like m5m1s in HTF areas (like the H1 BZ), or with flow
+- 14/08/2023 | plus a bearish sweep with a bearish FVG underneath
+- 14/08/2023 | point why I think the trade was a stopout
+- 14/08/2023 | "Followed someone trade done me dirty so did
+- 14/08/2023 | justified if you ask me, H1 FVG filled
+- 14/08/2023 | i still would prefer the H1 BZ
+- 14/08/2023 | 0.3 pips
+- 14/08/2023 | 3R if he can TP before a major H1 high 2R target if 3 goes beyond a major H1 high
+- 14/08/2023 | b isnt a swing high  (x2)
+- 14/08/2023 | so 3R would be the tp
+- 14/08/2023 | is the meaning of a swing high (edited)
+- 14/08/2023 | class A tho as a target for 3R
+- 14/08/2023 | ie if 3R was beyond A would we
+- 14/08/2023 | if we had a deeper pullback then yeah maybe it would
+- 14/08/2023 | or more time after the swing high was formed
+- 14/08/2023 | but typically swing highs that are kinda shallow
+- 14/08/2023 | broken immediately, arent really 'major' levels in my experience
+- 14/08/2023 | if any of the previous swing highs have been taken its
+- 14/08/2023 | we get back there, the liquidity will be grabbed and we'll
+- 14/08/2023 | though its not the closest swing high
+- 17/08/2023 | Jaff still trading
+- 31/08/2023 | 📍1. Master 1 setup
+- 31/08/2023 | Mastering 1 setup is much better than trading 10 setups 90% of the time, more trades == more gain
+- 31/08/2023 | Be the best in that setup.
+- 31/08/2023 | Focus 100% on your setup, ignore all the noise Think
+- 31/08/2023 | improve your execution Decrease your risk to reduce influences on your
+- 31/08/2023 | Set rules. Trade. Win/Lose. Repeat
+- 31/08/2023 | 📍3. Don't stop
+- 31/08/2023 | and knowledge in 30 days Stop thinking in days, start thinking
+- 31/08/2023 | you want confidence, reduce your risk If you want patience, meditate
+- 31/08/2023 | Shape your mindset, shape your trading.
+- 31/08/2023 | 📍5. Leverage your trading skills
+- 31/08/2023 | Trust the process. Trading is a marathon, not a
+- 31/08/2023 | Follow rules Review your trades Learn from your mistakes Increase
+- 31/08/2023 | Never stop improving.
+- 31/08/2023 | 📍7. Improve 10x your trading
+- 31/08/2023 | Focus 100% on 1 setup Never stop trading Develop trading skills Plan your trading success
+- 31/08/2023 | Stop wasting time. Start becoming a
+- 31/08/2023 | Why aren't you trading anymore
+- 11/09/2023 | the alignemtns off because the msb from like previous week or
+- 11/09/2023 | was very clearly a bullish msb through a sweep
+- 11/09/2023 | count it as a bullish msb personally, but thats because thats
+- 11/09/2023 | Litz doesn't class those as msb?
+- 11/09/2023 | off with his version for h1 ob
+- 14/09/2023 | h4 is bearish
+- 14/09/2023 | tp on h1 ob short
+- 14/09/2023 | my bad it was like +1.5R or something
+- 14/09/2023 | i assumed it was full tp
+- 14/09/2023 | in the middle of a h4 range
+- 14/09/2023 | Can't argue with 1R
+- 20/09/2023 | on your latest trade
+- 20/09/2023 | Is the tp to high then?
+- 20/09/2023 | a random number for a tp and say 'yeah thatll work'
+- 20/09/2023 | So for the tp
+- 20/09/2023 | My entry was 183.1 (edited)
+- 20/09/2023 | Make my tp like 184? (edited)
+- 20/09/2023 | yeah so lowering tp to 183.8
+- 20/09/2023 | and it hits sl, you lose $100
+- 20/09/2023 | but if it hits tp, you only make $140
+- 20/09/2023 | have a 42% winrate to breakeven
+- 20/09/2023 | you need to take 6 trades a day to make $120
+- 20/09/2023 | do you get 6 trades a day?
+- 20/09/2023 | When I put trades on
+- 20/09/2023 | two on of the same trade
+- 20/09/2023 | well thats just the same trade with x2 risk
+- 20/09/2023 | A thought trade
+- 20/09/2023 | man and slapped on a trade with a 291 pip tp
+- 20/09/2023 | What trades u doin
+- 20/09/2023 | asking what trades im taking lmao
+- 20/09/2023 | Well imma cry anyway my trade going the wrong way
+- 20/09/2023 | youre on the weekly chart you fucking mong
+- 20/09/2023 | Breaking weekly bearish ms
+- 20/09/2023 | It wasn’t on weekly
+- 20/09/2023 | it says 4h on mine
+- 20/09/2023 | only 300 pips to TP
+- 20/09/2023 | I lowed that trade
+- 20/09/2023 | have to sort my own stop out 🤣😭
+- 20/09/2023 | give us trade signals
+- 20/09/2023 | asking about the h12 clips invalidating xD
+- 20/09/2023 | the 5th time.. I don't trade over h12 clips, I've told
+- 20/09/2023 | shame the eu h4m15 RTO'd before the candle close
+- 20/09/2023 | Swear we didn't touch 4hm15 with eu? Thought it
+- 20/09/2023 | h4 sweep into ob at range low,
+- 20/09/2023 | filled and already had the rejection ig
+- 20/09/2023 | strictly UC and XU while H1 is EU and UC
+- 20/09/2023 | should've hoped on that XU trade this morning
+- 20/09/2023 | would have been a SL [image]
+- 25/09/2023 | how do you draw on trading view
+- 25/09/2023 | Not even u flipping woman
+- 25/09/2023 | Not doing any trades myself
+- 25/09/2023 | Yeah , imma lowe trades on UJ. I've back tested
+- 25/09/2023 | + 1R
+- 25/09/2023 | No silly rushed trades because of a deadline
+- 26/09/2023 | Flipping my life around
+- 26/09/2023 | you wanna get better at trading
+- 05/10/2023 | Pretty breakeven tbh
+- 05/10/2023 | yeahhhh 8 trades is not nearly enough for
+- 05/10/2023 | just draw 100 sweeps
+- 05/10/2023 | Those 8 trades was for all off 2023
+- 05/10/2023 | just drawing on every sweep formed 14:00 and later
+- 05/10/2023 | 100 / 6 trades. i need to repeat that
+- 06/10/2023 | Trading been dryyyyyy for a while
+- 18/10/2023 | I've missed waiting for the sweep to close, should really keep the msb as confirmations [image]
+- 18/10/2023 | lots of h4 clips with m15 breaks dont end up sweeping
+- 18/10/2023 | I draw the sweep
+- 18/10/2023 | drawing confirmed sweeps, but entering before you know the sweep is confirmed
+- 18/10/2023 | I've been using the last m15 msb as the entry basically
+- 18/10/2023 | but imagine a setup where it clips, breaks m15, and then dumps back down and SL + the h4 never ends up sweeping
+- 18/10/2023 | bc it wasnt a sweep
+- 18/10/2023 | youve been drawing every h4 clip?
+- 18/10/2023 | not every h4 sweep?
+- 18/10/2023 | Nah every sweep man
+- 18/10/2023 | every time h4 breaks MS, you draw that
+- 18/10/2023 | Regardless if its a sweep its still a clip
+- 18/10/2023 | H4 clip forms into sweep (edited)
+- 18/10/2023 | you have h4m15 (confirmed sweep) stats, and youre entering before the sweep confirms
+- 18/10/2023 | because its not a sweep
+- 18/10/2023 | it does because the only trades I've taken are the sweep trades
+- 18/10/2023 | a sweep
+- 18/10/2023 | before the sweep is confirmed
+- 18/10/2023 | that is a clip trade
+- 18/10/2023 | not a sweep trade
+- 18/10/2023 | as a FACT that the h4 will sweep, because youre looking at it
+- 18/10/2023 | if it closes as a sweep or not
+- 18/10/2023 | I have backtested sweeps
+- 18/10/2023 | They just are taken as m15 breaks rather then CONFIRMED sweeps
+- 18/10/2023 | because I was backtesting the sweeps
+- 18/10/2023 | and see if its a sweep or not
+- 18/10/2023 | if youre entering after the MSB, but before the sweep closes. then youre trading clips
+- 18/10/2023 | clip. youve drawn on every sfp
+- 18/10/2023 | back and scan the clip trades, knowing I've got the results for the sweeps
+- 18/10/2023 | you were active trading on the 4th of october
+- 18/10/2023 | an EU h4m15 (clip, not sweep) loss
+- 18/10/2023 | fully valid loss if youre trading h4m15 clips
+- 18/10/2023 | not a confirmed sweep
+- 18/10/2023 | be so aware of every swing point if youre testing this
+- 18/10/2023 | Bruv you've gotta stop putting down your mates
+- 18/10/2023 | You need to stop rn
+- 18/10/2023 | Because they were sweeps.. so what do we look for after a sweep? A mbs
+- 18/10/2023 | taught you to draw the sweep to the candle after, so we know when the sweep has closed, which you do.
+- 18/10/2023 | they were drawn out as sweeps
+- 18/10/2023 | Huh sweep
+- 18/10/2023 | M15, oh look, after the point
+- 18/10/2023 | was taken, we've had an msb
+- 18/10/2023 | that shit gonna be a sweep, you can still take that
+- 18/10/2023 | 2 candles before yeah
+- 18/10/2023 | 2 candles on m15?
+- 18/10/2023 | A). clearly a sweep, no way it could realistically MSB from here. B). we are within 2 m15 candles of the H4 close.
+- 18/10/2023 | It's hit tp?
+- 13/11/2023 | you forget the bearish h12 sweep ? [image]
+- 13/11/2023 | and paste from the last trade you spastic
+- 13/11/2023 | fucking charachter space cause my entries are too hench, I dont
+- 13/11/2023 | picture next to my new entry
+- 13/11/2023 | to copy paste the old entry why?
+- 27/11/2023 | why you quit on trading bro 😭 I had hope
+- 27/11/2023 | Get on trading you little batty boy
+- 27/11/2023 | Daily
+- 02/01/2024 | My trade looking whack ngl
+- 02/01/2024 | Made 2R 8am today
+- 02/01/2024 | you subconsciously knew you missed 2R
+- 02/01/2024 | I’m in no rush to trade I have income 😂
+- 02/01/2024 | sort of thing baxter trades
+- 02/01/2024 | It is Francesco that trades the DailyH4M15?
+- 02/01/2024 | What was it, daily clip/sweep with a H4 sweep with an m15 bms?
+- 02/01/2024 | Or was it H1 msb?
+- 02/01/2024 | h4h1m15 with daily sponsor
+- 02/01/2024 | H4 sweep with a H1 sweep or msb?
+- 02/01/2024 | h4 sweep
+- 02/01/2024 | h1 msb
+- 02/01/2024 | m15 bz
+- 02/01/2024 | daily liq taken
+- 03/01/2024 | on charge while drawing out trade
+- 03/01/2024 | not mans writing out the TP and entry on paper
+- 03/01/2024 | charge and copy paste the trade info from your TV app
+- 03/01/2024 | Bumbaclart 2 mins after entry
+- 03/01/2024 | your account to open this trade
+- 03/01/2024 | otherwise the trade wont open
+- 03/01/2024 | if you have a 4 pip SL (25x leverage) and you minus -2 pips. leverage has now doubled to
+- 03/01/2024 | if you have a 10 pip SL (10x leverage) and you minus -2 pips. leverage is now only 12x
+- 03/01/2024 | TP
+- 03/01/2024 | it bareeee low in the SL
+- 03/01/2024 | well im glad it hit tp
+- 03/01/2024 | brain just assumed the current candle was a msb or something
+- 03/01/2024 | you prob saw the unclosed candle going above this line [image]
+- 03/01/2024 | if we get the msb
+- 03/01/2024 | m15 didnt end up sweeping
+- 03/01/2024 | I cant forget about the m15 sweep
+- 03/01/2024 | time frame he brackets the confluence
+- 03/01/2024 | was being proper batty about trading
+- 03/01/2024 | Stop that batty shit and come
+- 05/01/2024 | NFP at 13:30
+- 05/01/2024 | so no trades around then
+- 29/01/2024 | your last entry was 26 days ago
+- 29/01/2024 | 56.19R
+- 29/01/2024 | jan-sep for me was +73.1R on the old system and it was +44.3R on the new system
+- 22/02/2024 | you were going to start trading again
+- 13/03/2024 | did a journal entry cause i saw brewdog filling
+- 13/03/2024 | because we have the bullish h4 sweep
+- 13/03/2024 | but its sweeping the wrong level
+- 13/03/2024 | it needs to sweep the key low/high. these are the previous key levels [image]
+- 13/03/2024 | and yes. there is a sweep, but its not sweeping the
+- 13/03/2024 | close and it was another sweep, would longs be on?
+- 13/03/2024 | case, kMS would never have flipped bearish in the first place,
+- 12/06/2024 | the grind never stops
+- 12/06/2024 | How the trading going
+- 12/06/2024 | or something to start stuffing trading again
+- 12/06/2024 | Dayz n trading I recon
+- 15/08/2024 | What you doing trading news anyway
+- 10/10/2024 | I seen that news candle today on lunch
+- 10/10/2024 | This live trading yet?
+- 10/10/2024 | to show me how to trade for real
+- 11/10/2024 | 9.79R is alright
+- 11/10/2024 | +3R
+- 15/10/2024 | and closes above through the resistance. Does this invalidate the set up making it
+- 15/10/2024 | thats just a 2 tap level that flips, and we would want to buy the level after its flipped
+- 15/10/2024 | (with 1 extra confluence of course)
+- 15/10/2024 | a single tap or no confluence to make 3 it's just
+- 15/10/2024 | for example this trade on EURCHF: [image]
+- 15/10/2024 | its exactly at the same level as the ATR. so we would be expecting for price to stop going up once it reaches that level (because it, on average, should stop going up from here). [image]
+- 15/10/2024 | in the form of a fib. see how that bottom fib lines up perfectly with our level [image]
+- 15/10/2024 | Is this considered a pinbar or is the lower wick not large enough?
+- 16/10/2024 | Given the context of h1
+- 16/10/2024 | Given the context on the h1
+- 16/10/2024 | that be the sort of pinbar I'm lookign for (edited)
+- 16/10/2024 | retarded as to figuring out s/r taps combining with a daily bias, I get confused with because we flip s/r does the daily bias have to be reverse of
+- 16/10/2024 | Tap resistance, tap resistance. We look for a Bullish pinbar?
+- 16/10/2024 | Tap support, tap support. We look for a Bearish pinbar?
+- 16/10/2024 | only give a shit about pinbars on the daily chart
+- 16/10/2024 | if youre looking to short resistance
+- 16/10/2024 | you would want a bearish pinbar on the daily [image]
+- 16/10/2024 | h1 pinbars dont mean shit
+- 16/10/2024 | a 2 touch bearish resistance + a daily bearish pinbar = 3 confluences to short
+- 16/10/2024 | EURUSD 30th of september bearish pinbar on the daily for shorts solid 2 taps,
+- 16/10/2024 | we already have our third confluence (daily pinbar) anyway [image]
+- 17/10/2024 | say that my drop down S/R is okay on GU? [image]
+- 17/10/2024 | support support, line duppied, line duppied, support support support support support [image]
+- 17/10/2024 | h1 levels are the most important ones
+- 17/10/2024 | / high for your SR levels
+- 17/10/2024 | it is even after a breakout. Thats like 5 taps
+- 17/10/2024 | sounds weird, but can the h1 S/R lines be higher/lower then the Daily?
+- 17/10/2024 | like 2 taps on the hourly and what looks like a Bullish pinbar on the daily
+- 17/10/2024 | the pinbar was that daily candle on the 10th
+- 17/10/2024 | didnt take out the previous candle's low
+- 17/10/2024 | Ahhhhh a pinbar has to go lower then
+- 17/10/2024 | the candle two to the left
+- 17/10/2024 | Is that considered a pinbar
+- 17/10/2024 | long lower wick, took out the prev candle low. little to no upper wick
+- 18/10/2024 | to come back after 3 candles [image]
+- 18/10/2024 | went straight to SL
+- 18/10/2024 | also threw in the 4th daily bias cause fuck it why not
+- 18/10/2024 | think its mostly applied to LTF tbh, i scrolled back through
+- 18/10/2024 | 6/8 hit target, which is cool
+- 18/10/2024 | then looking for a 2 touch level on the H1 (to add to my 1 confluence of daily bias) - there were legit 0 trades
+- 21/10/2024 | 3 tap EJ + engulfing 2 tap aussie + engulfing 3 tap kiwi + engulfing
+- 21/10/2024 | when there are multiple possible setups that you would need to
+- 21/10/2024 | shorting both would be double risk
+- 21/10/2024 | so taking an EJ trade along with either of these
+- 22/10/2024 | instead of monday, thats another 1R while i was asleep [image]
+- 22/10/2024 | GU a avoid cause the rto was so short plus a
+- 24/10/2024 | swing low wasnt deep enough
+- 24/10/2024 | it was 24 pips
+- 24/10/2024 | ATR was 32
+- 24/10/2024 | What was this gold trade strat?
+- 24/10/2024 | Sweep strat?
+- 24/10/2024 | obvious trade, but it wasnt valid mechanically
+- 24/10/2024 | maybe some sweeps
+- 25/10/2024 | The sweeps
+- 25/10/2024 | Once they've "swept"
+- 25/10/2024 | back to the low/high they swept and identify if that swing was significant?
+- 25/10/2024 | Literally had to stop typing
+- 25/10/2024 | bed, i'll check the nearest swing points that we could conceivably
+- 25/10/2024 | if its closing as a sweep or an msb
+- 25/10/2024 | time to work out my SL
+- 26/10/2024 | willing to call that a triple tap
+- 26/10/2024 | this recent one to historical levels [image]
+- 29/10/2024 | h1 sweep past ATR, never had a loss
+- 29/10/2024 | to get in my brain hourly sweeps
+- 29/10/2024 | I keep scanning on the daily but never on the H1
+- 29/10/2024 | just wait till theres a sweep on the h1, then go and dig to
+- 29/10/2024 | EG 3 tap gold possible sweep. not a clear TP though, so hopefully PA sets up some clear levels for us before the sweep happens (if it happens at
+- 29/10/2024 | hour to see if its swept
+- 29/10/2024 | are you fr scanning every swing point seeing if its significant
+- 29/10/2024 | if theyre bigger than the daily atr
+- 29/10/2024 | now you have 3 levels to set alarms at
+- 29/10/2024 | days, than it is setting sweep alerts for every single h1 sfp of every 0.1 pip swing high
+- 29/10/2024 | is always gonna be a sweep, at least
+- 29/10/2024 | wait.. So its not every swing point?
+- 30/10/2024 | a swerve count as a RTO? Like say within a few hours of break out a wick swerves, that classes as a
+- 30/10/2024 | RO right and theres no trade?
+- 30/10/2024 | we have tap tap on resistance. We're looking for a Bullish daily confluence aswell right?
+- 30/10/2024 | Is this a Bullish engulfing on the hourly and does it count as
+- 30/10/2024 | its not a daily bullish engulfing... yet
+- 30/10/2024 | need the daily candle to close first
+- 30/10/2024 | if we close as an engulfing and break above that level - then yes, those confluences
+- 30/10/2024 | bro for the significant swings. To find the "smaller side"
+- 30/10/2024 | we just draw from the swing till we hit last PA
+- 31/10/2024 | examples of him pulling a trade due to a swerve
+- 31/10/2024 | swerve comes well after the breakout is established
+- 31/10/2024 | 'swerve' coming too soon to RTO, but with plenty of space
+- 31/10/2024 | and it also had a fib [image]
+- 31/10/2024 | ofc we had our third confluence as fib
+- 31/10/2024 | pinbar
+- 31/10/2024 | Ahhhhh was this the trade you was on about
+- 31/10/2024 | Are you gonna take bookie breakouts like that from now on?
+- 31/10/2024 | many losses if theyre valid trades
+- 31/10/2024 | get like 3 more bookey breakouts and they all lose, well
+- 31/10/2024 | came back too quickpassed lower ATR (dumped too much already, shouldnt
+- 31/10/2024 | been a clean 2tap + fib
+- 31/10/2024 | rules and it goes to tp
+- 31/10/2024 | the quick RTO avoid rule is so cracked
+- 31/10/2024 | day closes as a bearish engulfing
+- 31/10/2024 | which means if this trade happened tomorrow instead of earlier today, the 6h RTO would have been valid
+- 04/11/2024 | nah rto after 1 candle
+- 06/11/2024 | lotta potential setups tomorrow [image]
+- 06/11/2024 | all sweeps (except UJ, which im not
+- 06/11/2024 | of those are against the daily bias though, so im not really
+- 07/11/2024 | the space time for the entry to count
+- 07/11/2024 | Do we class the actual Breakout candle as one of the 10
+- 07/11/2024 | 10 candles after the breakout
+- 10/11/2024 | this is it for mondays levels [image]
+- 10/11/2024 | bunch of potential sweeps out there, so alerts are
+- 12/11/2024 | take a random gold trade for no reason
+- 12/11/2024 | anything above like a 1050 level gpu is good to run
+- 13/11/2024 | inside day low taken
+- 13/11/2024 | 0.6 pip swerve
+- 14/11/2024 | past ATR too [image]
+- 14/11/2024 | h1 sweep of an old low
+- 14/11/2024 | was super visible on the daily chart
+- 22/11/2024 | man these sweeps are just too easy [image]
+- 16/12/2024 | looking at a few setups for monday:
+- 16/12/2024 | + fibXAGUSD 1 tap + ATR + fibXAUUSD 2 tap + fib
+- 16/12/2024 | lows that could potentially get swept
+- 21/12/2024 | the end of the trading year
+- 21/12/2024 | you given up on the trading then?
+- 21/12/2024 | Or u went full trading now
+- 22/12/2024 | When the daily atr is looking this low, what
+- 08/01/2025 | Would you class that candle as the breakout or is that whole cluster a breakout? [image]
+- 08/01/2025 | I'd assume that that candles the breakout then we have an immediate retest to resistance
+- 08/01/2025 | using the actual wicks, not slicing through them with my s/r line
+- 08/01/2025 | inside day failure strat is doing bits on
+- 14/01/2025 | quite a few possible setups going into tomorrow
+- 23/01/2025 | push lower to enable a fib confluence. without that, its a no-go
+- 23/01/2025 | if they all push and MSB right now. i can sleep
+- 23/01/2025 | of them are allowed to RTO
+- 27/02/2025 | bearish IDF, H1 bearish pin entry to the ID low. fat 4R [image]
+- 11/03/2025 | invalid trade
+- 11/03/2025 | No daily bias against me
+- 11/03/2025 | Sufficient time between breakout and retest
+- 11/03/2025 | Unless you class the candle straight after breakout as retest/swerve
+- 11/03/2025 | Was this trade acceptable yesterday? [image]
+- 11/03/2025 | I'm looking on the Daily
+- 11/03/2025 | was another win but with FIB
+- 11/03/2025 | So does fib not count towards a daily bias?
+- 11/03/2025 | do any of these say "FIBS"? [image]
+- 13/03/2025 | Say we have a daily bias, but then out of time
+- 13/03/2025 | go back to a 10h breakout gap?
+- 13/03/2025 | if the daily bias has already expired
+- 13/03/2025 | Say like we have a pinbar. Doesn't become invalidated but time but makes it
+- 13/03/2025 | trend, despite the last 2/3 candles saying down?] [image]
+- 13/03/2025 | Hoping golds atr resets clean
+- 13/03/2025 | just have to assume the daily closes "somewhere around here"
+- 13/03/2025 | be off by a few pips
+- 13/03/2025 | the current price with the daily ATR
+- 13/03/2025 | Tricks to the trade
+- 14/03/2025 | for a tick apply for h1 sweeps? [image]
+- 20/03/2025 | would this be considered a pinbar? I dont think so right
+- 20/03/2025 | its closed outside of the candle [image]
+- 20/03/2025 | the top one on the daily chart? nah
+- 21/03/2025 | but keep in mind the ATR is always changing
+- 21/03/2025 | lets say the daily ATR is 60.3 pips, and you find a high thats 59.2 pips
+- 21/03/2025 | when we come up and sweep that high, the ATR might be 54 pips
+- 21/03/2025 | and now that swing high (59.2 pips) IS larger than the current daily ATR (54 pips)
+- 21/03/2025 | and set alerts on every swing high thats 'close enough'
+- 21/03/2025 | or not (based on todays ATR). and if its not significant,
+- 25/03/2025 | to one too many late H1 sweeps. Need to start whacking alerts
+- 25/03/2025 | I had a question about sweeps
+- 25/03/2025 | Say a sweep has closed and its sweeping a super recent swing. But scrolling back you also notice its sweeping a significant swing aswell. Do we prioritise the recent swing that its swept or the significant one? I'm
+- 25/03/2025 | highs and lows are usually daily swing points
+- 25/03/2025 | least the size of 1 daily candle (the size of 1 ATR)
+- 25/03/2025 | Does the size of the candle usually equal to the ATR?
+- 25/03/2025 | DAILY atr
+- 25/03/2025 | a daily candle
+- 25/03/2025 | the daily atr is just the avg size of the last months daily candles
+- 25/03/2025 | flying fuck if they get swept
+- 25/03/2025 | (significant) red highs to be swept
+- 25/03/2025 | we only trade a sweep if there are no excess touches to the level
+- 25/03/2025 | remember how a level gets weaker and weaker the
+- 25/03/2025 | touch #1 - the swing high is formed touch #2 - we sweep and short good trade ✅
+- 25/03/2025 | touch #1 - the swing high is formed touch #2 - the resistance gets weaker touch #3 - we sweep and resistance gets weaker again bad trade ❌
+- 25/03/2025 | insignificant green highs to get swept... i am focusing on if theyre making the resistance weak
+- 25/03/2025 | cause i want strong resistance if im shorting
+- 25/03/2025 | Also, would I target 1. or 2. with this trade? [image]
+- 25/03/2025 | on the way down to TP
+- 25/03/2025 | which level does price hit first?
+- 25/03/2025 | therefore which one should your TP be at
+- 26/03/2025 | If we are in a h1 trade and the next candle or two closes as a msb of the swing that was swept. Do you just leave the
+- 28/03/2025 | Yo bro, for the h1. Say if the sweep closes as a Bullish candle, do we still use the close of the candle or the open? [image]
+- 28/03/2025 | when the candle closes as a sweep, if you can travel back
+- 28/03/2025 | to get in on the candle close
+- 28/03/2025 | the bearish candle was the initial sweep
+- 28/03/2025 | it’s drawn on the bearish candle
+- 28/03/2025 | Yo, with daily biases. If they are not
+- 28/03/2025 | have to use the 10 candle rule I'm assuming?
+- 28/03/2025 | yeah still 10 candles if im not using the daily bias as a confluence
+- 28/03/2025 | reminded 5 mins before the sweep to come back, put the
+- 28/03/2025 | just absolutely chadded through the swing point, and theres no way we're closing as a sweep - then i can just
+- 10/03/2026 | ^while the target on the trade above is super easy to understand, the SL was a little more nuanced
+- 12/03/2026 | the thought process behind the SL: [image]
+- 12/03/2026 | same setup again: weekly sweep should push price higherengulfing should
+- 12/03/2026 | the KPI (high of the candle prior to the engulf) if its so bullish... wouldnt it be bouncing off support? not closing under it?think of
+- 12/03/2026 | baited into longing after the engulfing think of how many people
+- 12/03/2026 | inside day failure off a daily support level (slightly swerved, but close enough).
+- 19/03/2026 | daily level way past ATR, super clean hourly break. obvious thrust candle, obvious LXPB. no brainer [image]
+- 20/03/2026 | hit the weekly bearish LXPB closed under the engulfing KPI (prev day high) bias: engulfing failure = bearish
+- 20/03/2026 | h1 lxpb closed early due to the weekend for +0.5R [image]
+- 20/03/2026 | weekly bias: engulfing failure = bullish daily bias: bullish engulfing h1: lxpb past ATR
+- 20/03/2026 | tp @ FTA (green S/R zone) +1.18R [image]
+- 27/03/2026 | weeky bias: IWF off resistance = bearish daily bias: engulfing failure = bearish h1: LXPB in an S/R zone
+- 27/03/2026 | tp @ engulfing low for engulfing failure exited early for +0.66R due to the market closing
+- 27/03/2026 | i could have put my stop much tighter, above the H1 hammer thats above the green zone.
+- 27/03/2026 | stopped out right into the S/R just above it. i would
+- 27/03/2026 | idiot if price wicked my stop into the resistance above and then dumped [image]
+- 27/03/2026 | as usual, i took the stoploss back to the previous thrust candle. and this is well out
+- 27/03/2026 | way, even protected by both HTF (D1 + W1) levels. theres no way im getting
+- 27/03/2026 | weekly bias: none daily bias: double top = bullish h1: broke above its green resistance level. no resistance between here and the double top. entry is the hourly hammer in the green S/R zone. [image]
+- 02/04/2026 | weekly bias: pinbar + sweep = bullishdaily bias: broke above resistance, coming back to retest it as support = bullishh1: bullish pinbar right at the D1/W1 support levelTP at the next level up (green circle) for +2.1R [image]
+- 21/04/2026 | skipped trade: engulfing failure price above the weekly S/Rdaily closed above the engulfing KPI (low of the candle prior to the bearish engulfing)hourly LXPB right on top of the weekly zoneSL well below the weekly zone to be safeTP is the high of the bearish engulfing [image]
+- 21/04/2026 | due to price swerving the entry and running a good amount of the way to TP
+- 23/04/2026 | weekly bearish sweepdaily bearish engulfingshould 1000% go down... right? if
+- 23/04/2026 | why did the very next daily candle close above the engulfing KPI (low of the day
+- 23/04/2026 | really bearish, that is THE level to reject off... but instead
+- 23/04/2026 | if it cant go down... entry is an hourly bullish engulfing off the daily KPI (since there was no naked level in the area)
+- 23/04/2026 | stoploss was trailed below the thrust candle in the picture, and the trade was exited for +0.58R [image]
+- 24/04/2026 | i didnt take this next trade, because i didnt have AUDCAD
+- 24/04/2026 | weekly above its S/R - turning it into support to bounce up offdaily formed bullish Inside Day Failure (red dashed line), giving us a target of the ID high (green
+- 24/04/2026 | on top of that: daily formed a bullish pinbar drawing the Key Point of Interest (the previous daily low) makes us look for
+- 24/04/2026 | which is also right on weekly support (red zone) [image]
+- 24/04/2026 | and then the trade looks like this: [image]
+- 28/04/2026 | weekly: nothing muchdaily: bullish LXPBhourly: 2 touch level with LXPB. fib confluence. equal highs as a bullish draw. [image]
+- 29/04/2026 | DOLEDirection:down, weekly inside high taken. perfect equal lows on the hourly.Objection:potential inside day trap (took out the low,
+- 29/04/2026 | up and close as bullish IDF).given we have bearish inside failure on the weekly, i think this objection is mostly negated.Location:the last area of S/R that price could have bounced
+- 29/04/2026 | likely to drop to the lows.Execution:H1 LXPB with a very wide + safe SL tucked behind the last good thrust candle. [image]
+- 29/04/2026 | CHFJPY Direction:W1 bearish pinbar x SFPW1 Low of HammerD1 S/RObjection:the weekly technically hasnt broken under the bearish hammer, as it hasnt yet closed.Location:D1 LXPBExecution:H1 LXPB with TP @FTA [image]
+- 11/05/2026 | EURUSDDirection:D1 bullish engulfingH1 equal highs (pink line)Objection:D1 engulfing is not counter-trendLocation:D1 KPI (high before the engulf)Execution:H1 engulfing, H1 KPI (high before the engulf) [image]
+- 11/05/2026 | +2.4R
+- 11/05/2026 | wouldnt care to take this trade based off just the D1 engulfing (because it wasnt counter trend), but the extremely obvious equal highs liquidity was also a huge confluence that price will go at
+- 19/05/2026 | EURGBPDirection:D1 bullish breakPast ATRObjection:NoneLocation:D1 LXPBExecution:H1 LPXB (edited) [image]
+- 19/05/2026 | +1.17R
+- 19/05/2026 | if youre wondering why that TP, its just because of the violence of the bullish breakout

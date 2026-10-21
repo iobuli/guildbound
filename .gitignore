@@ -3,3 +3,4 @@ out/*.log
 kev-brain/.index/
 *.tmp
 markets/*/ltf-*.json
+markets/*/raw/
