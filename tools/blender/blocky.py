@@ -16,34 +16,37 @@ from mathutils import Matrix, Vector
 
 UAL = "/home/user/gb_e7/assets/anim/ual2.glb"
 # bone: (width_head, depth_head, width_tail, depth_tail, colour group, extend tail m[, extend head m])
+# Male heroic proportions from the proportion chart: head / chest / hips 1/6 of height each, thigh and shin 1/4;
+# shoulders 3 heads (0.69 m deltoid to deltoid), chest 0.51 m, waist 0.26 m, big forearms and calves.
 BLOCKS = {
-    "pelvis": (0.30, 0.20, 0.36, 0.23, "glute", 0.0, 0.14),
-    "spine_01": (0.29, 0.19, 0.30, 0.19, "abs", 0.0, 0.03),
-    "spine_02": (0.31, 0.20, 0.38, 0.23, "lat", 0.0, 0.03),
-    "spine_03": (0.40, 0.24, 0.46, 0.22, "pec", 0.04, 0.03),
-    "neck_01": (0.11, 0.11, 0.10, 0.10, "neck", 0.0),
-    "Head": (0.19, 0.23, 0.19, 0.22, "head", 0.15, 0.02),
-    "clavicle_l": (0.10, 0.10, 0.12, 0.12, "trap", 0.0),
-    "clavicle_r": (0.10, 0.10, 0.12, 0.12, "trap", 0.0),
-    "upperarm_l": (0.12, 0.12, 0.08, 0.08, "delt", 0.0),
-    "upperarm_r": (0.12, 0.12, 0.08, 0.08, "delt", 0.0),
-    "lowerarm_l": (0.085, 0.08, 0.055, 0.045, "forearm", 0.0),
-    "lowerarm_r": (0.085, 0.08, 0.055, 0.045, "forearm", 0.0),
-    "hand_l": (0.085, 0.035, 0.09, 0.03, "hand", 0.06),
-    "hand_r": (0.085, 0.035, 0.09, 0.03, "hand", 0.06),
-    "thigh_l": (0.16, 0.17, 0.10, 0.10, "quad", 0.0, 0.03),
-    "thigh_r": (0.16, 0.17, 0.10, 0.10, "quad", 0.0, 0.03),
-    "calf_l": (0.11, 0.12, 0.07, 0.07, "calf", 0.0),
-    "calf_r": (0.11, 0.12, 0.07, 0.07, "calf", 0.0),
-    "foot_l": (0.09, 0.07, 0.09, 0.04, "foot", 0.0),
-    "foot_r": (0.09, 0.07, 0.09, 0.04, "foot", 0.0),
-    "ball_l": (0.09, 0.035, 0.08, 0.025, "foot", 0.03),
-    "ball_r": (0.09, 0.035, 0.08, 0.025, "foot", 0.03),
+    "pelvis": (0.3, 0.22, 0.35, 0.24, 'glute', 0.0, 0.14),
+    "spine_01": (0.26, 0.2, 0.28, 0.21, 'abs', 0.0, 0.03),
+    "spine_02": (0.27, 0.21, 0.34, 0.24, 'lat', 0.0, 0.03),
+    "spine_03": (0.34, 0.25, 0.51, 0.25, 'pec', 0.04, 0.03),
+    "neck_01": (0.14, 0.13, 0.12, 0.12, 'neck', 0.0),
+    "Head": (0.17, 0.21, 0.16, 0.2, 'head', 0.1, 0.02),
+    "clavicle_l": (0.13, 0.13, 0.15, 0.15, 'trap', 0.0),
+    "clavicle_r": (0.13, 0.13, 0.15, 0.15, 'trap', 0.0),
+    "upperarm_l": (0.17, 0.16, 0.12, 0.11, 'delt', 0.0),
+    "upperarm_r": (0.17, 0.16, 0.12, 0.11, 'delt', 0.0),
+    "lowerarm_l": (0.19, 0.14, 0.1, 0.07, 'forearm', 0.0),
+    "lowerarm_r": (0.19, 0.14, 0.1, 0.07, 'forearm', 0.0),
+    "hand_l": (0.11, 0.045, 0.12, 0.04, 'hand', 0.08),
+    "hand_r": (0.11, 0.045, 0.12, 0.04, 'hand', 0.08),
+    "thigh_l": (0.18, 0.19, 0.12, 0.12, 'quad', 0.0, 0.03),
+    "thigh_r": (0.18, 0.19, 0.12, 0.12, 'quad', 0.0, 0.03),
+    "calf_l": (0.16, 0.17, 0.1, 0.09, 'calf', 0.0),
+    "calf_r": (0.16, 0.17, 0.1, 0.09, 'calf', 0.0),
+    "foot_l": (0.1, 0.08, 0.1, 0.045, 'foot', 0.0),
+    "foot_r": (0.1, 0.08, 0.1, 0.045, 'foot', 0.0),
+    "ball_l": (0.1, 0.04, 0.09, 0.03, 'foot', 0.03),
+    "ball_r": (0.1, 0.04, 0.09, 0.03, 'foot', 0.03),
 }
 COLOURS = {"glute": (0.80, 0.45, 0.55), "abs": (0.40, 0.65, 0.60), "lat": (0.55, 0.45, 0.75), "pec": (0.85, 0.55, 0.42),
            "neck": (0.70, 0.60, 0.75), "head": (0.78, 0.74, 0.85), "trap": (0.65, 0.68, 0.45), "delt": (0.55, 0.70, 0.80),
            "forearm": (0.85, 0.60, 0.65), "hand": (0.90, 0.88, 0.85), "quad": (0.55, 0.55, 0.80), "calf": (0.50, 0.72, 0.68),
            "foot": (0.82, 0.82, 0.80), "joint": (1.0, 0.55, 0.55)}
+UPRIGHT = {"pelvis", "spine_01", "spine_02", "spine_03", "Head"}
 JOINTS = ["neck_01", "upperarm_l", "upperarm_r", "lowerarm_l", "lowerarm_r", "hand_l", "hand_r", "thigh_l", "thigh_r",
           "calf_l", "calf_r", "foot_l", "foot_r", "spine_02"]
 
@@ -80,6 +83,10 @@ def main():
             m = arm.matrix_world @ bone.matrix_local
             h, t = m.translation, (arm.matrix_world @ bone.tail_local)
             axis = (t - h).normalized()
+            if name in UPRIGHT:
+                # Torso and head blocks stand upright (the pelvis bone itself tilts).
+                axis = Vector((0, 0, 1)) * (1 if (t - h).z >= 0 else -1)
+                t = h + axis * (t - h).length
             t = t + axis * ext
             h = h - axis * (pre[0] if pre else 0.0)
             # Cross-section frame: depth toward the body's front (-Y) made perpendicular to the bone.
@@ -136,14 +143,17 @@ def main():
         sc.collection.objects.link(co)
         sc.camera = co
         cam.lens = 50
-        co.location = (3.2, -4.4, 1.5)
-        co.rotation_euler = (Vector((0, 0, 0.95)) - co.location).to_track_quat("-Z", "Y").to_euler()
+        cam.type = "ORTHO"
+        cam.ortho_scale = 2.1
         sc.render.engine = "BLENDER_WORKBENCH"
         sc.display.shading.color_type = "MATERIAL"
         sc.view_settings.view_transform = "Standard"
         sc.render.resolution_x, sc.render.resolution_y = 700, 900
-        sc.render.filepath = opt["--render"]
-        bpy.ops.render.render(write_still=True)
+        for tag, loc in (("front", (0, -6, 0.95)), ("side", (6, 0, 0.95))):
+            co.location = loc
+            co.rotation_euler = (Vector((0, 0, 0.95)) - co.location).to_track_quat("-Z", "Y").to_euler()
+            sc.render.filepath = opt["--render"].replace(".png", f"_{tag}.png")
+            bpy.ops.render.render(write_still=True)
     out = opt.get("--out", "/home/user/gb_e7/assets/anim/blocky.glb")
     for o in bpy.data.objects:
         o.select_set(o in (arm, obj))
