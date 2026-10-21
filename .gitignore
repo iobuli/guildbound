@@ -5,3 +5,5 @@ kev-brain/.index/
 markets/*/ltf-*.json
 markets/*/raw/
 __pycache__/
+dist/
+out/nucleus/

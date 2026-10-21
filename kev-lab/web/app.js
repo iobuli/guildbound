@@ -57,7 +57,7 @@ function draw() {
   const peak = []; c.real.reduce((m, v, i) => (peak[i] = Math.max(m, v)), -Infinity);
   chart('#dd', [{ y: c.real.map((v, i) => v / peak[i] - 1), color: css('--dn') }], { fmt: (v) => (100 * v).toFixed(0) + '%', max: 0, labels });
 }
-async function status() { try { const s = await (await fetch('/api/status')).json(); $('#status').textContent = `${s.live ? 'live on' : 'live off'} · ${s.busy ? 'working…' : s.message}${s.last_check ? ' · checked ' + new Date(s.last_check).toLocaleTimeString() : ''}`; } catch { /* server stopped */ } }
+async function status() { try { const s = await (await fetch('/api/status')).json(); if (s.readonly) ['#recompute', '#live'].forEach((k) => ($(k).hidden = true)); $('#status').textContent = `${s.live ? 'live on' : 'live off'} · ${s.busy ? 'working…' : s.message}${s.last_check ? ' · checked ' + new Date(s.last_check).toLocaleTimeString() : ''}`; } catch { /* server stopped */ } }
 $('#recompute').onclick = async () => { $('#status').textContent = 'recomputing…'; await fetch('/api/recompute', { method: 'POST' }); load(); };
 $('#live').onclick = async () => { $('#status').textContent = 'fetching new SOL hours and re-running kev…'; const r = await (await fetch('/api/live', { method: 'POST' })).json(); $('#status').textContent = r.message; load(); };
 addEventListener('resize', draw);

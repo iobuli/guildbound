@@ -42,6 +42,8 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 - Hurst ~0.55 / VR(24h) ~1 in every market-year: no exploitable regime persistence at H1.
 - Iteration 1 (walk-forward self-selection, 50 configs/market, DSR): at DSR>=0.9 it never trades; at 0.5 only SOL GO trades, $98,118 vs random $95,813. In-sample SOL +0.2-0.47R decays to about 0 out of sample; ETH and gold have nothing. Live choice: sit out.
 - Pattern lab 2020-2022 (12,327 H1 events; experiments/2026-10-21-pattern-lab.md): T3 fills, sweeps/SFP, MSB and sweep->MSB have 24h lift ~0 (|lift| <= 0.04 ATR, all CIs span 0); 70 refinements (vol, session, 50-day trend), none pass; quarterly lift flips sign. Faint leads: fading the 50-day move (+-0.05 ATR), below costs. kev's limit-order edge is the limit fill itself, not post-close information.
+- Nucleus (SOL 1m 2020-11..2022, 6 TFs x n-n-n lines n=9/26/52; experiments/2026-10-21-nucleus.md): JS/Python bit-identical, no lookahead (tests). Trace: nothing tells where the hour closes; weak contrarian rho (~-0.02, AUC ~0.48) in 2022 only, mostly 1m-15m and slopes (part bid-ask bounce); 4h/1D never above the noise band; no state has q<0.05.
+- Binance 1m archive fills no-trade minutes with flat bars at the last close (v=0; 10.5% of 2020 minutes): they set the open (sometimes high/low) of replayed 2020 bars, which is why 209 hours differ from h1.json. Skipping v=0 minutes for open/high/low gives 20,919/20,921 matches. Not yet applied to the nucleus.
 - kev-lab/ (Python stdlib server + JS page) reads out/signals/*.json from `kev signals`; tests in kev-lab/tests.
 
 ## Findings before v2 (superseded where the v2 runs disagree)

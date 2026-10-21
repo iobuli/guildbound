@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><link rel="icon" href="data:,"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>kev-lab nucleus</title>
+<style>
+:root{--bg:#f4f5f3;--panel:#fff;--ink:#17201d;--dim:#5e6b66;--hair:#dadfdb;--acc:#0f766e;--up:#1f8a4c;--dn:#c0392b;--warn:#b7791f;--band:#0f766e22;--mono:ui-monospace,Menlo,Consolas,monospace;--ui:system-ui,-apple-system,"Segoe UI",sans-serif}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1514;--panel:#161e1c;--ink:#e3ebe8;--dim:#8d9c96;--hair:#2a3532;--acc:#3fb8aa;--up:#3dbb73;--dn:#ef6b5b;--warn:#e0a443;--band:#3fb8aa26;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 var(--ui);padding:16px}
+h1{font-size:19px;margin:0}h2{font-size:15px;margin:0 0 8px}.sub{color:var(--dim);font-size:12.5px}
+nav{display:flex;gap:14px;margin-bottom:10px;font-size:13px}nav a{color:var(--dim);text-decoration:none}nav a.on{color:var(--ink);font-weight:600}
+header{margin-bottom:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px}.wide{grid-column:1/-1}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:8px;padding:12px;min-width:0}
+canvas{width:100%;height:260px;display:block}#rem{height:90px}
+.banner{border:1px solid var(--warn);border-radius:6px;padding:8px 10px;margin-bottom:12px;font-size:13px}
+button,select,input{font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:5px 8px;cursor:pointer}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center}.ctl input[type=range]{flex:1;min-width:160px;padding:0}
+.clock{font:600 16px var(--mono);min-width:150px}
+.dots{display:grid;grid-template-columns:44px repeat(3,34px) 1fr;gap:6px 8px;align-items:center;font-size:12.5px}
+.dots .h{color:var(--dim);font-size:11.5px;text-align:center}.dots .tf{font:600 12.5px var(--mono)}
+.dot{width:26px;height:26px;border-radius:50%;margin:auto;border:3px solid transparent;background-clip:padding-box}
+.dot.ring{box-shadow:0 0 0 2px var(--ink)}.dot.nan{background:var(--hair)}
+.meta{display:flex;flex-wrap:wrap;gap:4px 8px;font-family:var(--mono);font-size:11.5px;color:var(--dim)}
+.badge{border:1px solid var(--hair);border-radius:4px;padding:0 5px}.badge.bull{color:var(--up);border-color:var(--up)}.badge.bear{color:var(--dn);border-color:var(--dn)}
+.bar{position:relative;height:18px;border:1px solid var(--hair);border-radius:4px;margin:4px 0 10px;background:linear-gradient(90deg,transparent 49.8%,var(--hair) 49.8% 50.2%,transparent 50.2%)}
+.bar i{position:absolute;top:2px;bottom:2px;border-radius:2px}
+.good{color:var(--up)}.bad{color:var(--dn)}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--dim);margin-top:6px}.legend i{display:inline-block;width:14px;border-top:2px solid;vertical-align:middle;margin-right:4px}
+</style></head><body>
+<nav><a href="/">Lab</a><a href="/nucleus.html" class="on">Nucleus</a></nav>
+<header><h1>Nucleus · SOLUSDT minute by minute</h1><div class="sub">18 Ichimoku mid lines (6 timeframes × n = 9, 26, 52) read at every 1-minute close of an hour (UTC). Green/red = price above/below the line's mid, opacity = how far; ring = the line's slope agrees.</div></header>
+<div class="banner" id="msg">Loading minute data…</div>
+<div class="grid">
+  <div class="card wide"><div class="ctl">
+    <input type="date" id="date" min="2020-11-26" max="2022-12-31" value="2021-05-19"><select id="hour"></select>
+    <button id="prev">◀ hour</button><button id="next">hour ▶</button><button id="rand">Random hour</button>
+    <button id="play">▶ Play</button><select id="speed"><option value="1000">1×</option><option value="400" selected>2.5×</option><option value="150">7×</option><option value="50">20×</option></select>
+    <button id="reveal">Reveal</button></div>
+    <div class="ctl" style="margin-top:8px"><span class="clock" id="clock">–</span><input type="range" id="slider" min="0" max="59" value="0"></div></div>
+  <div class="card"><h2>Lines lit at this minute</h2><div class="dots" id="dots"></div></div>
+  <div class="card"><h2>Convergence</h2><div class="sub">bal: share of the 18 lines price is above minus below</div><div class="bar" id="balbar"></div>
+    <div class="sub">slope balance: rising minus falling lines</div><div class="bar" id="slbar"></div><div id="nums" class="meta"></div></div>
+  <div class="card wide"><h2>Price this hour, with the 1h mid lines</h2><canvas id="px"></canvas>
+    <div class="legend"><span><i style="border-color:var(--ink)"></i>1m close</span><span><i style="border-color:var(--acc)"></i>1h n=9</span><span><i style="border-color:var(--warn)"></i>1h n=26</span><span><i style="border-color:var(--dim)"></i>1h n=52</span></div>
+    <div id="revtxt" class="sub" style="margin-top:6px"></div><canvas id="rem" hidden></canvas></div>
+  <div class="card wide"><h2>What the nucleus said about the rest of the hour (rank correlation by minute)</h2>
+    <div class="ctl"><select id="feat"></select><select id="tgt"><option value="curves">vs rest of this hour</option><option value="next_hour">vs next hour</option></select></div>
+    <canvas id="rho"></canvas>
+    <div class="legend"><span><i style="border-color:var(--acc)"></i>discovery</span><span><i style="border-color:var(--warn)"></i>check (out of sample)</span><span><i style="border-color:var(--band);border-top-width:8px"></i>noise band (±)</span></div>
+    <p class="sub" id="verdict">Loading trace…</p></div>
+</div>
+<script src="nucleus-core.js"></script><script src="nucleus.js"></script></body></html>
