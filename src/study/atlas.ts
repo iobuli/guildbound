@@ -29,7 +29,7 @@ export interface LevelId {
 export interface Leg { from: number; to: number; dir: 'up' | 'down'; pFrom: number; pTo: number; movePct: number; moveAtr: number; days: number }
 
 /** Zigzag on daily closes: a leg ends when price reverses by `k` daily ATRs from its extreme. */
-function zigzag(d: Candle[], atr: number[], k: number): Leg[] {
+export function zigzag(d: Candle[], atr: number[], k: number): Leg[] {
   const legs: Leg[] = [];
   if (d.length < 3) return legs;
   let dir: 'up' | 'down' = d[1]!.c >= d[0]!.c ? 'up' : 'down', startI = 0, extI = 0;
@@ -43,7 +43,7 @@ function zigzag(d: Candle[], atr: number[], k: number): Leg[] {
       else if (d[i]!.h - d[extI]!.l >= k * a) { legs.push(leg(d, atr, startI, extI, 'down')); dir = 'up'; startI = extI; extI = i; }
     }
   }
-  legs.push(leg(d, atr, startI, d.length - 1, dir));
+  legs.push(leg(d, atr, startI, extI, dir)); // the unfinished last leg ends at its extreme so far, not at the window edge
   return legs;
 }
 function leg(d: Candle[], atr: number[], s: number, e: number, dir: 'up' | 'down'): Leg {
@@ -158,10 +158,10 @@ export function atlas(sym: string, from: number, to: number, preset = 'kev-defau
 }
 
 /** The same level seen in successive scans is one identity: same side, within 0.25 daily ATR, seen again within 30 days. */
-export function mergeLevels(steps: { t: number; r: Pick<Reading, 'levels' | 'atrD1' | 'keys'> }[]): LevelId[] {
+export function mergeLevels(steps: { t: number; r: Pick<Reading, 'levels' | 'atrD1' | 'keys'> }[], tolAtr = 0.25): LevelId[] {
   const ids: LevelId[] = [], active: LevelId[] = [];
   for (const { t, r } of steps) {
-    const tol = 0.25 * (r.atrD1 || 1);
+    const tol = tolAtr * (r.atrD1 || 1);
     for (const L of r.levels) {
       let hit = active.find((x) => x.dir === L.d && Math.abs(x.price - L.p) <= tol && t - x.last <= 30 * DAY);
       if (!hit) {

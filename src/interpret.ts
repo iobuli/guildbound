@@ -14,7 +14,7 @@ export interface Reading {
   salience: Record<string, number>; status: Record<string, Status>; changed?: string[];
   focus: { price: number; dir: 'long' | 'short'; touches: number; tier: string; distAtr: number } | null;
   firstBlocker: { node: string; label: string } | null;
-  keys: { trend: string; vol: string; bias: string; nLevels: number; go: boolean; spaceOk: boolean | null };
+  keys: { trend: string; trendPct: string; vol: string; bias: string; nLevels: number; go: boolean; spaceOk: boolean | null };
   /** the levels kev marked at this moment (compact): price, dir, touches, tier, bars since break, tradable */
   levels: { p: number; d: 1 | -1; n: number; tier: string; bsb: number; ok: boolean }[];
   atrD1: number;
@@ -103,7 +103,7 @@ export function interpret(feed: Feed, T: number, ctx: { instrument: Instrument; 
     asOf: T, price, layers, headline, salience: sal, status: statuses(R),
     focus: focusRow ? { price: focusRow.price, dir: focusRow.dir, touches: focusRow.touches, tier: focusRow.tier, distAtr: focusRow.distAtr * (atr.h1 || 0) / a1 } : null,
     firstBlocker: flow.firstBlocker ? { node: flow.firstBlocker.node, label: flow.firstBlocker.label } : null,
-    keys: { trend: reg?.trend ?? 'n/a', vol: reg?.volState ?? 'n/a', bias: bias?.d1.dir ?? 'n/a', nLevels: rows.length, go: !!p?.go, spaceOk: rt ? !!rt.spaceOk : null },
+    keys: { trend: reg?.trend ?? 'n/a', trendPct: reg?.trendPct ?? 'n/a', vol: reg?.volState ?? 'n/a', bias: bias?.d1.dir ?? 'n/a', nLevels: rows.length, go: !!p?.go, spaceOk: rt ? !!rt.spaceOk : null },
     levels: rows.map((r) => ({ p: r.price, d: r.dir === 'long' ? 1 : -1, n: r.touches, tier: r.tier, bsb: r.barsSinceBreak, ok: r.tradable })),
     atrD1: atr.d1 ?? 0,
     bias: { dir: bias?.d1.dir ?? 'neutral', fresh: !!bias?.d1.fresh, kinds: (bias?.d1.signals ?? []).filter((s: Any) => s.ageBars === 0).map((s: Any) => `${s.dir} ${s.kind}`) },

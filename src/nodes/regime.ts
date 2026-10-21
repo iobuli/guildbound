@@ -31,13 +31,16 @@ export default defineNode({
     rule('regime.volatility-against-its-own-past', 'Volatility is the daily ATR as a percentage of price, ranked against the past 250 days: below the 33rd percentile is low, above the 67th is high.', {
       status: 'inferred', kind: 'heuristic', codable: true, sources: [B('ranks volatility so that crypto and gold read on the same scale')],
     }),
+    rule('regime.trend-in-percent', 'A second trend measure in percent, added after the audit found the ATR one calls crashes "range": down when the 50-day return is below -15% and price is 25% or more under its 90-day high; up when the 50-day return is above +15% and price is 25% or more above its 90-day low; otherwise range.', {
+      status: 'inferred', kind: 'heuristic', codable: true, sources: [B('audit 2026-10-21: the ATR trend labelled every hour of the May-July 2021 crash as range')],
+    }),
     rule('regime.context-only', 'Regime never vetoes or adds a confluence. It feeds the interpreter so a reading can say what kind of market a level is in.', {
       status: 'inferred', codable: true, sources: [B('kept out of the decision path until a pre-registered test says it helps')],
     }),
   ],
   evaluate: (inp, v) => {
     const d = v.d1, w = v.w1, n = d.length, atr = inp.atr.d1;
-    const blank = { trend: 'range' as const, slopeAtr: 0, weekTrend: 'range' as const, rangePos: 0.5, volPct: 0.5, volState: 'normal' as const, atrPct: 0, drawdown: 0, days: n };
+    const blank = { trend: 'range' as const, slopeAtr: 0, weekTrend: 'range' as const, trendPct: 'range' as const, ret50: 0, dd90: 0, rangePos: 0.5, volPct: 0.5, volState: 'normal' as const, atrPct: 0, drawdown: 0, days: n };
     if (n < 35 || !(atr > 0)) return { out: { regime: blank } };
     const mean = (a: number, b: number) => { let s = 0; for (let i = a; i < b; i++) s += d[i]!.c; return s / (b - a); };
     const slopeAtr = (mean(n - 20, n) - mean(n - 30, n - 10)) / atr;
@@ -49,6 +52,10 @@ export default defineNode({
     let top = -Infinity; for (const b of d) top = Math.max(top, b.h);
     let weekTrend: 'up' | 'down' | 'range' = 'range';
     if (w.length >= 11) { let s = 0; for (let i = w.length - 10; i < w.length; i++) s += w[i]!.c; const m = s / 10, wc = w[w.length - 1]!.c; weekTrend = wc > m * 1.02 ? 'up' : wc < m * 0.98 ? 'down' : 'range'; }
-    return { out: { regime: { trend, slopeAtr, weekTrend, rangePos, volPct, volState: (volPct < 0.33 ? 'low' : volPct > 0.67 ? 'high' : 'normal') as 'low' | 'normal' | 'high', atrPct: atr / last, drawdown: last / top - 1, days: n } } };
+    const c50 = d[Math.max(0, n - 51)]!.c, ret50 = last / c50 - 1;
+    let h90 = -Infinity, l90 = Infinity; for (let i = Math.max(0, n - 90); i < n; i++) { h90 = Math.max(h90, d[i]!.h); l90 = Math.min(l90, d[i]!.l); }
+    const dd90 = last / h90 - 1, up90 = last / l90 - 1;
+    const trendPct: 'up' | 'down' | 'range' = ret50 < -0.15 && dd90 <= -0.25 ? 'down' : ret50 > 0.15 && up90 >= 0.25 ? 'up' : 'range';
+    return { out: { regime: { trend, slopeAtr, weekTrend, trendPct, ret50, dd90, rangePos, volPct, volState: (volPct < 0.33 ? 'low' : volPct > 0.67 ? 'high' : 'normal') as 'low' | 'normal' | 'high', atrPct: atr / last, drawdown: last / top - 1, days: n } } };
   },
 });

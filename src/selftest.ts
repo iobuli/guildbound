@@ -380,7 +380,7 @@ ok(`knowledge base: ${rules.length} rules across ${nodes.length} nodes, all with
 }
 // ---- atlas: one identity per level, hindsight only from bars after first sight ----
 {
-  const keys = { trend: 'up', vol: 'low', bias: 'long', nLevels: 1, go: false, spaceOk: null };
+  const keys = { trend: 'up', trendPct: 'up', vol: 'low', bias: 'long', nLevels: 1, go: false, spaceOk: null };
   const st = (t: number, p: number) => ({ t, r: { levels: [{ p, d: 1 as const, n: 2, tier: 'needs-one-confluence', bsb: 3, ok: true }], atrD1: 10, keys } });
   const ids = mergeLevels([st(0, 100), st(H, 101), st(2 * H, 102.4), st(3 * H, 104)]);
   ok('atlas: the same support seen at 100, 101 and 102.4 in successive scans is one level; 104 (over 0.25 ATR away) is a new one', ids.length === 2 && ids[0]!.seen === 3 && ids[1]!.price === 104, JSON.stringify(ids.map((x) => [x.price, x.seen])));

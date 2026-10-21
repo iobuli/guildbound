@@ -103,5 +103,6 @@ export const LevelScanPort = z.object({ price: z.number(), rows: z.array(ScanRow
 
 export const RegimePort = z.object({
   trend: z.enum(['up', 'down', 'range']), slopeAtr: z.number(), weekTrend: z.enum(['up', 'down', 'range']),
+  trendPct: z.enum(['up', 'down', 'range']), ret50: z.number(), dd90: z.number(),
   rangePos: z.number(), volPct: z.number(), volState: z.enum(['low', 'normal', 'high']), atrPct: z.number(), drawdown: z.number(), days: z.number(),
 });
