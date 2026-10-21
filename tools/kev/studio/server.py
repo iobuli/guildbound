@@ -18,7 +18,8 @@ speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in th
 landmarks [name] | facings | balance | rig | state |
 hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
 ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
-ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status.
+ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status |
+combo list | combo show <name> | combo bake <name|file.json> [--model M] | combo play <name|file.json> (chains strikes, bakes, plays once).
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
 import argparse
@@ -842,6 +843,9 @@ def execute(line):
             play_baked(STATE["model"], a[1])
             return f"'{a[1]}' (smoothed) -> {STATE['model']}: {len(b['frames'])} frames, mean error {b['mean_cm']} cm"
         return "cat list | cat info <name> | cat play <name>"
+    if c == "combo":
+        import combo.console as combo_console
+        return combo_console.handle(a, sys.modules[__name__])
     if c == "hand" and len(a) >= 2:
         if not info or not info["bm"]:
             return "no skinned model streamed"

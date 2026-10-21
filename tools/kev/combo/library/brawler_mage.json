@@ -1,0 +1,44 @@
+{
+  "name": "brawler_mage",
+  "model": "ual1.glb",
+  "fps": 60,
+  "notes": "Brawler_Jab and Brawler_Cross are not clips on the GLB (they live as joint keys in tools/blender/brawler.py). The punches use the ual1 Punch_Jab / Punch_Cross clips, fists closed. The cast half is keyed offsets in the same vocabulary as Mage_Palm_Thrust_Cast and Mage_Two_Hand_Forward_Cast: open hands, a short hold on the sigil.",
+  "moves": [
+    {"id": "brawler_jab", "do": "jab", "clip": "Punch_Jab", "limb": "wrist_l", "plant": "l", "step": 0.14,
+     "hands": {"l": "fist", "r": "guard"},
+     "dur": {"antic": 0.12, "strike": 0.08, "hold": 0.04, "overshoot": 0.045, "follow": 0.12},
+     "arc": 0.04, "ramp": 1.1},
+    {"id": "brawler_cross", "do": "cross", "clip": "Punch_Cross", "limb": "wrist_r", "plant": "l", "step": 0.12, "pivot": 22,
+     "hands": {"l": "guard", "r": "fist"},
+     "dur": {"antic": 0.12, "strike": 0.085, "hold": 0.045, "overshoot": 0.045, "follow": 0.12},
+     "arc": 0.035, "ramp": 1.05},
+    {"id": "palm_thrust_cast", "do": "offsets", "plant": "l", "step": 0.1, "arc": 0.035, "reach": 0.94,
+     "hands": {"l": "cast", "r": "cast"},
+     "dur": {"antic": 0.16, "strike": 0.12, "hold": 0.08, "overshoot": 0.05, "follow": 0.14},
+     "phases": {
+       "load": {"pelvis": [0.0, -0.03, 0.0], "yaw": -12,
+                "wrists": {"r": [-0.02, -0.14, -0.06], "l": [0.04, 0.02, 0.02]},
+                "hands": {"l": "cast", "r": "cast"}, "elbows": {"r": "down"}},
+       "contact": {"pelvis": [0.0, 0.02, 0.05], "yaw": 16,
+                   "wrists": {"r": [0.06, 0.04, 0.32], "l": [0.02, 0.06, 0.12]},
+                   "hands": {"l": "open", "r": "open"}, "elbows": {"r": "down"}},
+       "follow": {"pelvis": [0.0, 0.0, 0.02], "yaw": 6,
+                  "wrists": {"r": [0.03, 0.02, 0.12], "l": [0.02, 0.04, 0.08]},
+                  "hands": {"l": "cast", "r": "cast"}}
+     }},
+    {"id": "two_hand_cast", "do": "offsets", "plant": "l", "step": 0.08, "arc": 0.04, "reach": 0.92,
+     "hands": {"l": "open", "r": "open"},
+     "dur": {"antic": 0.18, "strike": 0.14, "hold": 0.1, "overshoot": 0.05, "follow": 0.18},
+     "phases": {
+       "load": {"pelvis": [0.0, -0.04, -0.02], "yaw": 0,
+                "wrists": {"l": [0.02, -0.06, -0.04], "r": [-0.02, -0.06, -0.04]},
+                "hands": {"l": "cast", "r": "cast"}},
+       "contact": {"pelvis": [0.0, 0.03, 0.06], "yaw": 0,
+                   "wrists": {"l": [0.0, 0.06, 0.30], "r": [0.02, 0.06, 0.30]},
+                   "hands": {"l": "open", "r": "open"}, "elbows": {"l": "down", "r": "down"}},
+       "follow": {"pelvis": [0.0, 0.0, 0.0], "yaw": 0,
+                  "wrists": {"l": [0.02, 0.02, 0.08], "r": [-0.02, 0.02, 0.08]},
+                  "hands": {"l": "cast", "r": "cast"}}
+     }}
+  ]
+}

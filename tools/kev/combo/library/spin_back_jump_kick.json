@@ -1,0 +1,13 @@
+{
+  "name": "spin_back_jump_kick",
+  "model": "ual1.glb",
+  "fps": 60,
+  "moves": [
+    {"id": "spin_back", "do": "spin_back", "foot": "r", "plant": "l", "step": 0.05, "pivot": 95,
+     "hands": {"l": "guard", "r": "guard"},
+     "dur": {"antic": 0.2, "strike": 0.22, "hold": 0.05, "overshoot": 0.05, "follow": 0.16}},
+    {"id": "jump_kick", "do": "sheet", "sheet": "jump_kick", "plant": "r",
+     "hands": {"l": "guard", "r": "guard"},
+     "dur": {"antic": 0.16, "strike": 0.22, "hold": 0.06, "overshoot": 0.05, "follow": 0.18}}
+  ]
+}
