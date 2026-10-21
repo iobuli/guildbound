@@ -66,11 +66,20 @@ function selectBone(n) {
 
 function setOverride(name, euler) { state.overrides[name] = euler; }
 
+const ROOTS = new Set(['root', 'pelvis', 'mixamorig:Hips', 'B-hips']);
+function inPlace(clip) {
+  const c = clip.clone();
+  for (const t of c.tracks) {
+    const m = t.name.match(/^(.*)\.position$/);
+    if (m && ROOTS.has(m[1])) { const v = t.values; for (let i = 3; i < v.length; i += 3) { v[i] = v[0]; v[i + 2] = v[2]; } }
+  }
+  return c;
+}
 function play(name) {
   const clip = state.clips.find((c) => c.name === name) || (/^\d+$/.test(String(name)) ? state.clips[+name] : null);
   if (!clip) { log('no such clip: ' + name); return; }
   if (state.action) state.action.stop();
-  state.action = state.mixer.clipAction(clip); state.action.reset().play(); state.clipName = clip.name;
+  state.action = state.mixer.clipAction(state.inplace === false ? clip : inPlace(clip)); state.action.reset().play(); state.clipName = clip.name;
   state.mixer.timeScale = state.speed; state.playing = true; $('clip').value = clip.name;
 }
 
@@ -209,3 +218,4 @@ init();
 
 // deterministic stepping for offline recording: ksStep(frame) pins the baked track to a frame
 window.ksStep = (f) => { if (state.baked) state.baked.fixed = f; return state.baked ? state.baked.frames.length : 0; };
+window.ksSeek = (t) => { if (state.action) { state.action.paused = false; state.action.time = t; state.mixer.update(0); state.mixer.timeScale = 0; } return state.action ? state.action.getClip().duration : 0; };
