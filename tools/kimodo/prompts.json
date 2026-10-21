@@ -1,0 +1,262 @@
+{
+ "Idle": {
+  "prompt": "A person bounces lightly in a boxing fighting stance, guard up, weight shifting.",
+  "duration": 3.0
+ },
+ "Step_In": {
+  "prompt": "A fighter takes a quick step forward in a fighting stance, keeping the guard up.",
+  "duration": 2.0
+ },
+ "Jab": {
+  "prompt": "A boxer throws a quick left jab and snaps the hand back to the guard.",
+  "duration": 2.0
+ },
+ "Cross": {
+  "prompt": "A boxer throws a straight right punch, rotating the hips, and returns to guard.",
+  "duration": 2.0
+ },
+ "Hook": {
+  "prompt": "A boxer throws a left hook, turning the whole body, and resets.",
+  "duration": 2.0
+ },
+ "Elbow_Strike": {
+  "prompt": "A muay thai fighter throws a horizontal elbow strike and recovers.",
+  "duration": 2.0
+ },
+ "Knee_Strike": {
+  "prompt": "A muay thai fighter drives a rising knee strike forward and sets the foot down.",
+  "duration": 2.0
+ },
+ "Front_Kick": {
+  "prompt": "A martial artist throws a fast front snap kick and pulls the leg back.",
+  "duration": 2.5
+ },
+ "Roundhouse_Kick": {
+  "prompt": "A martial artist throws a powerful roundhouse kick with the right leg and recovers.",
+  "duration": 2.5
+ },
+ "Spinning_Kick": {
+  "prompt": "A martial artist performs a spinning back kick and lands in a fighting stance.",
+  "duration": 3.0
+ },
+ "Rising_Uppercut": {
+  "prompt": "A fighter crouches, then explodes upward with a rising uppercut and lands.",
+  "duration": 2.5
+ },
+ "Jump_Kick": {
+  "prompt": "A fighter leaps forward into a flying kick and lands in a crouch.",
+  "duration": 3.0
+ },
+ "Aerial_Knee": {
+  "prompt": "A fighter jumps and drives a flying knee, then lands.",
+  "duration": 3.0
+ },
+ "Aerial_Spin": {
+  "prompt": "A fighter jumps and spins in the air with a spinning kick, then lands.",
+  "duration": 3.0
+ },
+ "Axe_Kick": {
+  "prompt": "A fighter jumps and brings the leg up and down in an axe kick, landing in a crouch.",
+  "duration": 3.0
+ },
+ "Landing_Recovery": {
+  "prompt": "A fighter lands from a jump in a deep crouch and rises into a fighting stance.",
+  "duration": 2.5
+ },
+ "Focus_Idle": {
+  "prompt": "A fighter holds a low wide stance with open hands near the chest, focused, breathing, weight shifting.",
+  "duration": 3.0
+ },
+ "One_Hand_Cast": {
+  "prompt": "A fighter pulls the right hand back, then thrusts it forward with an open palm, casting a spell.",
+  "duration": 2.5
+ },
+ "Two_Hand_Forward_Cast": {
+  "prompt": "A fighter gathers both hands at the chest, then pushes both palms forward in a powerful cast.",
+  "duration": 3.0
+ },
+ "Overhead_Cast": {
+  "prompt": "A fighter raises both hands overhead, rises on the toes, then slams the hands down and forward.",
+  "duration": 3.0
+ },
+ "Low_Cast": {
+  "prompt": "A fighter drops into a deep crouch and sweeps a hand low along the ground in a casting motion.",
+  "duration": 3.0
+ },
+ "Palm_Thrust_Cast": {
+  "prompt": "A fighter lunges forward with a palm thrust, fingers spread, casting a spell, then recovers.",
+  "duration": 2.5
+ },
+ "Sigil_Hand_Motion": {
+  "prompt": "A fighter traces a circular sigil in the air with one hand, standing in a low wide stance.",
+  "duration": 3.5
+ },
+ "Step_In_Cast": {
+  "prompt": "A fighter steps forward and casts a spell with an outstretched hand.",
+  "duration": 2.5
+ },
+ "Backstep_Cast": {
+  "prompt": "A fighter hops backward and casts a spell with an outstretched hand.",
+  "duration": 2.5
+ },
+ "Air_Cast": {
+  "prompt": "A fighter jumps and casts a spell with one hand in mid-air, then lands in a crouch.",
+  "duration": 3.0
+ },
+ "Cast_Cancel_Recovery": {
+  "prompt": "A fighter cuts a cast short, pulls the hands back and drops into a defensive crouch, then rises.",
+  "duration": 2.5
+ },
+ "Return_To_Stance": {
+  "prompt": "A fighter relaxes from a casting pose and settles into a boxing fighting stance.",
+  "duration": 2.5
+ },
+ "Ready_Stance": {
+  "prompt": "A boxer bounces on the spot in a ready stance, hands up, knees bent.",
+  "duration": 3.0
+ },
+ "Head_Weave_Left": {
+  "prompt": "A boxer weaves the head and body to the left to dodge a punch, then returns to the guard.",
+  "duration": 2.0
+ },
+ "Head_Weave_Right": {
+  "prompt": "A boxer weaves the head and body to the right to dodge a punch, then returns to the guard.",
+  "duration": 2.0
+ },
+ "Duck_And_Rise": {
+  "prompt": "A boxer ducks low under a punch and rises back to the guard.",
+  "duration": 2.0
+ },
+ "Slip_Back": {
+  "prompt": "A boxer leans the upper body backward to slip a punch, then returns.",
+  "duration": 2.0
+ },
+ "Bob_And_Weave_Combo": {
+  "prompt": "A boxer bobs and weaves left and right, ducking low in a continuous combination.",
+  "duration": 3.5
+ },
+ "Pivot_Evade": {
+  "prompt": "A fighter pivots on the front foot to sidestep an attack and faces the opponent again.",
+  "duration": 2.5
+ },
+ "Crouch_Feint": {
+  "prompt": "A fighter drops into a quick crouching feint and snaps back up.",
+  "duration": 2.0
+ },
+ "Advance_Weave": {
+  "prompt": "A boxer advances forward while weaving the head left and right.",
+  "duration": 3.0
+ },
+ "Retreat_Weave": {
+  "prompt": "A boxer retreats backward while weaving the head left and right.",
+  "duration": 3.0
+ },
+ "Low_Sway_Recovery": {
+  "prompt": "A fighter sways low to one side with a hand near the ground and recovers upright.",
+  "duration": 2.5
+ },
+ "Reset_To_Guard": {
+  "prompt": "A fighter settles from a crouch into a balanced boxing guard.",
+  "duration": 2.0
+ },
+ "Calm_Combat_Stance": {
+  "prompt": "A fighter stands calmly in a relaxed combat stance, breathing slowly.",
+  "duration": 3.0
+ },
+ "Berserk_Activation": {
+  "prompt": "A fighter crouches clutching the body, then rises with clenched fists and roars, transforming in rage.",
+  "duration": 4.5
+ },
+ "Roar_Pose": {
+  "prompt": "A fighter throws the head back and roars with arms spread wide and fists clenched, in a wide stance.",
+  "duration": 3.0
+ },
+ "Power_Surge_Breath": {
+  "prompt": "A fighter crouches and takes a deep breath, then expands the chest and clenches both fists, surging with power.",
+  "duration": 3.5
+ },
+ "Feral_Guard": {
+  "prompt": "A hunched feral fighter in a wide low stance with clawed hands swaying menacingly.",
+  "duration": 3.0
+ },
+ "Lunge_Start": {
+  "prompt": "A fighter crouches low, coils the body, and launches into a ferocious lunge forward.",
+  "duration": 2.5
+ },
+ "Heavy_Step_In": {
+  "prompt": "A rage-filled fighter takes heavy stomping steps forward, shoulders hunched.",
+  "duration": 3.0
+ },
+ "Wild_Swing_Windup": {
+  "prompt": "A fighter winds up a wild haymaker, swinging the arm up overhead and back.",
+  "duration": 3.0
+ },
+ "Grounding_Recover": {
+  "prompt": "A fighter crouches with both hands on the ground to steady themselves, then rises into a stance.",
+  "duration": 3.5
+ },
+ "Berserk_Idle_Loop": {
+  "prompt": "A raging hunched fighter pants and sways in a wide low stance, arms hanging forward.",
+  "duration": 4.0
+ },
+ "Guard_Impact": {
+  "prompt": "A fighter in a guard is hit on the blocking arms and is pushed back slightly, then holds the guard.",
+  "duration": 2.0
+ },
+ "Light_Hit_Reaction": {
+  "prompt": "A fighter is hit lightly in the face, the head snaps to the side, then recovers.",
+  "duration": 2.0
+ },
+ "Heavy_Body_Hit": {
+  "prompt": "A fighter is hit hard in the stomach, doubles over, and slowly straightens.",
+  "duration": 2.5
+ },
+ "Head_Hit_Snapback": {
+  "prompt": "A fighter is punched in the jaw, the head snaps back, and the body staggers.",
+  "duration": 2.0
+ },
+ "Stagger_Backward": {
+  "prompt": "A fighter staggers backward in several unsteady steps, arms flailing, then regains balance.",
+  "duration": 3.0
+ },
+ "Stagger_Forward": {
+  "prompt": "A fighter stumbles forward hunched over after being hit from behind, then recovers.",
+  "duration": 3.0
+ },
+ "Knockback": {
+  "prompt": "A fighter is hit by a powerful blow and is thrown backward through the air, landing on the back.",
+  "duration": 3.0
+ },
+ "Launch_Reaction": {
+  "prompt": "A fighter is hit by an uppercut and is launched high into the air, then falls to the ground.",
+  "duration": 3.5
+ },
+ "Airborne_Tumble": {
+  "prompt": "A fighter tumbles through the air after being launched, rotating, and lands.",
+  "duration": 3.5
+ },
+ "Falling_Reaction": {
+  "prompt": "A fighter falls backward and crumples onto the ground.",
+  "duration": 3.0
+ },
+ "Hard_Landing": {
+  "prompt": "A fighter hits the ground hard on the back, rolls over, and pushes up onto hands and knees.",
+  "duration": 3.5
+ },
+ "Knockdown_Crumple": {
+  "prompt": "A fighter's knees buckle and they collapse sideways onto the ground.",
+  "duration": 3.5
+ },
+ "Get_Up_Recovery": {
+  "prompt": "A fighter lying on the ground pushes up, kneels on one knee and stands into a fighting stance.",
+  "duration": 4.0
+ },
+ "Dazed_Stunned": {
+  "prompt": "A dazed fighter sways on the spot holding the head, groggy and unsteady.",
+  "duration": 4.0
+ },
+ "Braced_Recovery": {
+  "prompt": "A fighter recovers from a hit by bracing in a crouch, then rises to a stance.",
+  "duration": 2.5
+ }
+}
