@@ -40,6 +40,7 @@ This covers only levels where price goes the OPPOSITE way to the last participan
 ## kev-lab: Python app, quant tools, $100k paper book
 ```
 npx tsx src/cli.ts signals            # kev's causal fills (+ matched random orders) -> out/signals/*.json
+npx tsx src/cli.ts events             # H1 sweeps / structure breaks -> out/events/*.json (pattern lab)
 python3 kev-lab/run.py                # paper book + metrics -> out/lab/results.json
 python3 kev-lab/server.py --live      # http://localhost:8765 (--live appends new SOL hours every 10 min)
 python3 -m unittest discover -s kev-lab/tests

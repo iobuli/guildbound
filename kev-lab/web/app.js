@@ -16,6 +16,14 @@ async function load() {
   const years = [...new Set(Object.values(R.regime).flatMap((m) => Object.keys(m)))].sort();
   const mk = Object.keys(R.regime);
   $('#regime').innerHTML = `<table><tr><th>year</th>${mk.map((m) => `<th>${m}</th>`).join('')}</tr>${years.slice().reverse().map((y) => `<tr><td>${y}</td>${mk.map((m) => { const v = R.regime[m][y]; return v ? `<td title="VR z ${f(v.z, 1)}">H ${f(v.hurst)} · VR ${f(v.vr24)}</td>` : '<td>–</td>'; }).join('')}</tr>`).join('')}</table>`;
+  if (R.patterns) {
+    const Pt = R.patterns, ms = Pt.markets;
+    $('#patsum').innerHTML = `${Pt.n_events.toLocaleString()} events. Entry at the event bar's close, signed in the trade's direction. Lift = event minus all hours of the same month and direction. Bold = CI excludes 0. Passed the pre-registered bar (q &lt; 0.05, 2 of 3 markets, n ≥ 100): <b>${Pt.chosen.length ? Pt.chosen.join(', ') : 'none'}</b>.`;
+    $('#pat').innerHTML = `<table><tr><th>pattern</th><th>n</th><th>lift 24h [95% CI]</th><th>q</th><th>1h</th><th>4h</th><th>24h</th><th>72h</th><th>MFE/MAE 24h</th><th>best stop/target (R, gross)</th>${ms.map((m) => `<th>${m}</th>`).join('')}</tr>${Pt.table.map((x) => `<tr><td>${x.group}</td><td>${x.n}</td><td class="${x.lo > 0 ? 'good' : x.hi < 0 ? 'bad' : ''}" style="${x.lo > 0 || x.hi < 0 ? 'font-weight:600' : ''}">${f(x.lift24)} [${f(x.lo)}, ${f(x.hi)}]</td><td>${f(x.q)}</td><td>${f(x.r1)}</td><td>${f(x.r4)}</td><td>${f(x.r24)}</td><td>${f(x.r72)}</td><td>${f(x.mfe24)} / ${f(x.mae24)}</td><td>${x.best} ${f(x.pairs[x.best])}</td>${ms.map((m) => `<td>${x.per_market[m] == null ? '–' : f(x.per_market[m])}</td>`).join('')}</tr>`).join('')}</table>`;
+    const qs = [...new Set(Object.values(Pt.quarters).flatMap((v) => Object.keys(v)))].sort();
+    const cell = (v) => { if (!v) return '<td>–</td>'; const a = Math.min(1, Math.abs(v.lift24) / 0.25); return `<td title="n ${v.n}" style="background:${v.lift24 >= 0 ? `rgba(31,122,90,${a * 0.45})` : `rgba(192,57,43,${a * 0.45})`}">${f(v.lift24)}</td>`; };
+    $('#patq').innerHTML = `<table><tr><th>pattern</th>${qs.map((q) => `<th>${q}</th>`).join('')}</tr>${Object.entries(Pt.quarters).map(([k, v]) => `<tr><td>${k}</td>${qs.map((q) => cell(v[q])).join('')}</tr>`).join('')}</table>`;
+  }
   if (R.walk) {
     const W = R.walk, P = W['0.9'], S = W['0.5'];
     const line = (w, th) => `DSR ≥ ${th}: ${w.real.trades} trades, $100k → <b>${usd(w.real.final)}</b>${w.real.trades ? ` (mean ${f(w.real.meanR)}R; random orders ${usd(w.placebo.final)})` : ' (sat out everything)'}`;

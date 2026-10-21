@@ -2,7 +2,7 @@
 import json, sys, time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import data, strategy, quant, iterate
+import data, strategy, quant, iterate, patterns
 import numpy as np
 
 def clean(x):
@@ -25,6 +25,9 @@ def main():
     # iteration 1: walk-forward self-selection (primary DSR >= 0.90, sensitivity 0.50) and the frozen live choice
     res["walk"] = {str(th): iterate.walk_forward(sig, th) for th in (0.9, 0.5)}
     res["live_choice"] = iterate.live_choice(sig, 0.9)
+    # pattern lab: what price does after T3 fills, sweeps and structure breaks (needs `kev events`)
+    if (data.ROOT / "out" / "events").exists():
+        res["patterns"] = patterns.main()
     res["generated"] = int(time.time() * 1000)
     out = data.ROOT / "out" / "lab"; out.mkdir(parents=True, exist_ok=True)
     (out / "results.json").write_text(json.dumps(clean(res), default=float))

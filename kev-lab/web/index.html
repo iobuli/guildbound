@@ -28,6 +28,7 @@ button{font:inherit;color:var(--ink);background:var(--panel);border:1px solid va
   <div class="card"><h2>Candidates scored on 2020-2022 (4 trials, deflated)</h2><div class="tw" id="cands"></div><p class="sub">DSR = probability the Sharpe is real after allowing for picking the best of 4. Chosen: highest DSR. Kelly = fraction of equity per trade the edge would justify (0 = no edge).</p></div>
   <div class="card"><h2>By market (forward)</h2><div class="tw" id="mkts"></div></div>
   <div class="card"><h2>Regime: Hurst and variance ratio (hourly returns)</h2><div class="tw" id="regime"></div><p class="sub">Hurst ≈ 0.5 and VR ≈ 1 mean a random walk; above means trending, below mean-reverting. |z| &gt; 2 is significant.</p></div>
+  <div class="card wide"><h2>Pattern lab 2020-2022: what price does after each pattern (24h move vs all hours of the same month, in daily ATR)</h2><div class="sub" id="patsum"></div><div class="tw" id="pat" style="max-height:520px;overflow:auto"></div><h2 style="margin-top:14px">By quarter (lift of the 24h move)</h2><div class="tw" id="patq"></div></div>
   <div class="card wide"><h2>Iteration 1: kev picks its own rules each year from earlier data only (walk-forward, 50 configs per market, deflated Sharpe)</h2><div class="sub" id="walksum"></div><div class="tw" id="walk"></div><div class="sub" id="live"></div></div>
   <div class="card wide"><h2>Trades (forward, newest first)</h2><div class="tw" id="trades" style="max-height:380px;overflow:auto"></div></div>
 </div>

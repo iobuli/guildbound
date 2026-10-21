@@ -1,4 +1,5 @@
 // One entry point for everything kev does with data: `npx tsx src/cli.ts <command> ...`
+import { events } from './study/events.js';
 import { ingest } from './data/ingest.js';
 import { listMarkets, loadProfile } from './core/market-io.js';
 import { PRESETS } from './core/presets.js';
@@ -60,6 +61,7 @@ async function main() {
     }
     case 'audit-pages': console.log(auditPages()); break;
     case 'signals': { for (const sym of (args.length ? args : listMarkets()).map((x) => x.toUpperCase())) { const r = signals(sym, opt('preset') ?? 'one-hour-spec'); console.log(`${sym}: ${r.n} fills, ${r.placebo} placebos, ${new Date(r.from).toISOString().slice(0, 10)} to ${new Date(r.to).toISOString().slice(0, 10)}`); } break; }
+    case 'events': { for (const sym of (args.length ? args : listMarkets()).map((x) => x.toUpperCase())) console.log(sym, JSON.stringify(events(sym))); break; }
     case 'audit-kev': console.log(auditKev((s) => console.error(s))); break;
     case 'inspect': console.log(buildInspector()); break;
     case 'atlas': {

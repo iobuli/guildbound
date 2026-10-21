@@ -8,6 +8,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import iterate  # noqa: E402
+import patterns  # noqa: E402
 import quant  # noqa: E402
 from paper import KEY, Book  # noqa: E402
 
@@ -71,6 +72,25 @@ class WalkForward(unittest.TestCase):
         future = [{**r, "r": {e: -5.0 for e in iterate.EXITS}} if r["t"] >= 59 else r for r in rows]
         self.assertEqual(before, iterate.choose(future, 60))  # fills at/after 60, and fills exiting at/after 60, are unseen
         self.assertEqual(iterate.choose(rows[:30], 60)["filter"], None)  # under 40 trades: no choice
+
+
+class Patterns(unittest.TestCase):
+    def test_measures_on_a_known_path(self):
+        n = 200
+        c = 100 + np.arange(n, dtype=float)  # rises 1 per bar, bars 0.2 wide
+        b = {"c": c, "h": c + 0.1, "l": c - 0.1}
+        atr = np.full(n, 4.0)
+        L, S = patterns.bar_measures(b, atr, 1), patterns.bar_measures(b, atr, -1)
+        self.assertAlmostEqual(L["r24"][0], 24 / 4)
+        self.assertAlmostEqual(S["r24"][0], -24 / 4)
+        self.assertEqual(L["S1.0_T2.0"][0], 2.0)  # target 8 above is reached before a stop 4 below
+        self.assertEqual(S["S0.5_T1.0"][0], -1.0)
+        self.assertTrue(np.isnan(L["r72"][n - 10]))  # no future, no number
+
+    def test_bootstrap_ci_covers_mean(self):
+        v = np.random.default_rng(2).normal(0.1, 1, 3000)
+        m, lo, hi, p = patterns.boot(v, np.arange(3000) // 10)
+        self.assertTrue(lo < m < hi and lo > 0 and p < 0.05)
 
 
 if __name__ == "__main__":
