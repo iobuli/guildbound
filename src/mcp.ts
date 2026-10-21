@@ -1,25 +1,21 @@
-import { readFileSync } from 'node:fs';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { graph, nodes, edges } from './kev.js';
-import { H, makeFeed } from './core/series.js';
-import { INSTRUMENTS } from './core/instruments.js';
+import { H } from './core/series.js';
+import { listMarkets, openMarket, type Market } from './core/market-io.js';
 import { encode } from './core/token.js';
 import { SetupSchema, type Candle } from './core/types.js';
 
-const feeds = new Map<string, { feed: ReturnType<typeof makeFeed>; last: number; cfg: (typeof INSTRUMENTS)[string] }>();
-/** Loads (once) the H1 history and the market-specific configuration for a symbol. */
+const opened = new Map<string, Market>();
+/** Any market ingested under markets/ (kev ingest). Loaded once per symbol. */
 function market(symbol = 'SOLUSDT') {
-  const cfg = INSTRUMENTS[symbol];
-  if (!cfg) throw new Error(`unknown symbol ${symbol}; available: ${Object.keys(INSTRUMENTS).join(', ')}`);
-  if (!feeds.has(symbol)) {
-    const c: Candle[] = JSON.parse(readFileSync(new URL(`../data/${cfg.dataFile}`, import.meta.url), 'utf8'));
-    feeds.set(symbol, { feed: makeFeed(c, { weekAnchor: cfg.weekAnchor }), last: c.at(-1)!.t, cfg });
-  }
-  return feeds.get(symbol)!;
+  const sym = symbol.toUpperCase();
+  if (!opened.has(sym)) opened.set(sym, openMarket(sym));
+  const m = opened.get(sym)!;
+  return { feed: m.feed(), last: m.h1.at(-1)!.t, cfg: { instrument: m.instrument }, profile: m.profile };
 }
-const SYMBOL = z.enum(['SOLUSDT', 'XAUUSD']).optional().describe('market; default SOLUSDT');
+const SYMBOL = z.string().optional().describe(`market symbol from markets/ (currently ${listMarkets().join(', ') || 'none'}); default SOLUSDT`);
 const json = (x: unknown) => ({ content: [{ type: 'text' as const, text: JSON.stringify(x) }] });
 
 const trim = (port: string, v: any): unknown => {

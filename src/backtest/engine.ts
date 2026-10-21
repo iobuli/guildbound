@@ -1,9 +1,10 @@
 import { graph } from '../kev.js';
-import { H, MONDAY, makeFeed, SOL, type Feed } from '../core/series.js';
+import { H, makeFeed, SOL, type Feed } from '../core/series.js';
+import type { Session } from '../core/session.js';
 import { SetupSchema, type Candle, type Instrument } from '../core/types.js';
 
 /** step / maxHold / cooldown are in HOURS so they mean the same thing on M30, H1 and H4 bases. */
-export interface BtConfig { start: number; end: number; step: number; maxHold: number; cooldown: number; slipR: number; spreadBps: number; seed: number; period: number; weekAnchor: number; inst: Instrument; holdB: number; heldExit: boolean; minTier: number; entryAtLevel: boolean }
+export interface BtConfig { start: number; end: number; step: number; maxHold: number; cooldown: number; slipR: number; spreadBps: number; seed: number; period: number; session?: Session; inst: Instrument; holdB: number; heldExit: boolean; minTier: number; entryAtLevel: boolean }
 export const TARGETS = [1, 2, 3, 4] as const;
 export const KEYS = ['1', '2', '3', '4', 'fta'] as const;
 export type RKey = (typeof KEYS)[number];
@@ -62,11 +63,11 @@ const flat = (res: ReturnType<typeof graph.run>) => {
 };
 
 export function runBacktest(candles: Candle[], cfg: Partial<BtConfig> & { start: number; end: number }) {
-  const C: BtConfig = { step: 3, maxHold: 120, cooldown: 24, slipR: 0.1, spreadBps: 0, seed: 7, period: H, weekAnchor: MONDAY, inst: SOL, holdB: 0, heldExit: false, minTier: 1, entryAtLevel: false, ...cfg };
+  const C: BtConfig = { step: 3, maxHold: 120, cooldown: 24, slipR: 0.1, spreadBps: 0, seed: 7, period: H, inst: SOL, holdB: 0, heldExit: false, minTier: 1, entryAtLevel: false, ...cfg };
   const bars = (hours: number) => Math.max(1, Math.round((hours * H) / C.period));
   const stepB = bars(C.step), coolB = bars(C.cooldown);
   C.holdB = bars(C.maxHold);
-  const c = candles, feed: Feed = makeFeed(c, { period: C.period, weekAnchor: C.weekAnchor });
+  const c = candles, feed: Feed = makeFeed(c, { period: C.period, session: C.session });
   const trades: Trade[] = [], scans: Scan[] = [], cool = new Map<string, number>();
   let scan: Scan | null = null, last = -1e9;
   for (let j = C.start; j < Math.min(C.end, c.length - C.holdB - 2); j++) {

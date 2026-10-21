@@ -1,0 +1,1 @@
+{ "costs": { "spreadBps": 0, "slipR": 0.1, "note": "Binance spot: no spread modelled, 0.10R slippage, the same costs as every earlier SOL run" } }

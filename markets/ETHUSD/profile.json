@@ -1,0 +1,103 @@
+{
+ "symbol": "ETHUSD",
+ "cls": "crypto",
+ "tick": 0.1,
+ "decimals": 1,
+ "clock": {
+  "kind": "fixed",
+  "offsetHours": 0,
+  "method": "matches Binance ETHUSDT at an offset of 0h (hourly return correlation 0.989, 3 windows)"
+ },
+ "session": {
+  "day": "utc",
+  "stubHours": 6,
+  "traderTz": "Europe/London"
+ },
+ "costs": {
+  "spreadBps": 5,
+  "slipR": 0.1,
+  "note": "assumed broker CFD spread; set 0 for exchange spot via override.json; slippage 0.10R per trade as on the user's pages"
+ },
+ "split": {
+  "isEndYear": 2022
+ },
+ "data": {
+  "h1": "h1.json",
+  "ltf": [
+   {
+    "tf": 60000,
+    "file": "ltf-m1.json",
+    "from": 1780486860000,
+    "to": 1792598340000
+   },
+   {
+    "tf": 300000,
+    "file": "ltf-m5.json",
+    "from": 1732415100000,
+    "to": 1792598100000
+   },
+   {
+    "tf": 900000,
+    "file": "ltf-m15.json",
+    "from": 1610642700000,
+    "to": 1792597500000
+   },
+   {
+    "tf": 1800000,
+    "file": "ltf-m30.json",
+    "from": 1514844000000,
+    "to": 1792596600000
+   }
+  ],
+  "from": 1514844000000,
+  "to": 1792594800000,
+  "sources": [
+   {
+    "file": "6f384fbe-ETHUSD1.csv",
+    "tf": 60000,
+    "n": 200000,
+    "from": 1780486860000,
+    "to": 1792598340000,
+    "role": "base"
+   },
+   {
+    "file": "db3ff727-ETHUSD5.csv",
+    "tf": 300000,
+    "n": 200000,
+    "from": 1732415100000,
+    "to": 1792598100000,
+    "role": "base"
+   },
+   {
+    "file": "3eb81ca4-ETHUSD15.csv",
+    "tf": 900000,
+    "n": 200000,
+    "from": 1610642700000,
+    "to": 1792597500000,
+    "role": "base"
+   },
+   {
+    "file": "baac8c7d-ETHUSD30.csv",
+    "tf": 1800000,
+    "n": 139593,
+    "from": 1514844000000,
+    "to": 1792596600000,
+    "role": "base"
+   },
+   {
+    "file": "7c2692aa-ETHUSD240.csv",
+    "tf": 14400000,
+    "n": 17646,
+    "from": 1514836800000,
+    "to": 1792584000000,
+    "role": "check"
+   }
+  ]
+ },
+ "notes": [
+  "106 H1 bars were built from incomplete finer buckets; their high/low may be slightly understated.",
+  "Weekend trading changes over time (2018: 2%, 2019: 2%, 2020: 13%, 2021: 29%, 2022: 26%, 2023: 28%, 2024: 28%, 2025: 29%, 2026: 29%): the market was closed at weekends in some years and open in others. Sessions merge the short Sunday reopening into Monday in the closed years.",
+  "7 gaps of 24h+ that are not weekends (holidays or missing data).",
+  "Volume scale changes 110x between years: only use volume relative to a trailing window."
+ ]
+}

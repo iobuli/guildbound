@@ -1,0 +1,84 @@
+{
+ "symbol": "XAUUSD",
+ "cls": "metal",
+ "tick": 0.001,
+ "decimals": 3,
+ "clock": {
+  "kind": "fixed",
+  "offsetHours": 0,
+  "method": "weekly reopen at 18:00 New York on 86% of 889 weeks with the clock read as UTC, so the clock is UTC"
+ },
+ "session": {
+  "day": "ny-close",
+  "stubHours": 6,
+  "traderTz": "Europe/London"
+ },
+ "costs": {
+  "spreadBps": 1.2,
+  "slipR": 0.1,
+  "note": "from the user's gold backtest page; slippage 0.10R per trade as on the user's pages"
+ },
+ "split": {
+  "isEndYear": 2019
+ },
+ "data": {
+  "h1": "h1.json",
+  "ltf": [
+   {
+    "tf": 1800000,
+    "file": "ltf-m30.json",
+    "from": 1256086800000,
+    "to": 1785177000000
+   }
+  ],
+  "from": 1256086800000,
+  "to": 1785175200000,
+  "sources": [
+   {
+    "file": "bd123664-XAUUSD30.csv",
+    "tf": 1800000,
+    "n": 200000,
+    "from": 1256086800000,
+    "to": 1785177000000,
+    "role": "ltf"
+   },
+   {
+    "file": "299d826d-XAUUSD60_1.csv",
+    "tf": 3600000,
+    "n": 100345,
+    "from": 1256086800000,
+    "to": 1785175200000,
+    "role": "base"
+   },
+   {
+    "file": "24af8ff4-XAUUSD60_2.csv",
+    "tf": 3600000,
+    "n": 100345,
+    "from": 1256086800000,
+    "to": 1785175200000,
+    "role": "duplicate"
+   },
+   {
+    "file": "84661a18-XAUUSD240.csv",
+    "tf": 14400000,
+    "n": 26835,
+    "from": 1256083200000,
+    "to": 1785168000000,
+    "role": "check"
+   },
+   {
+    "file": "7c855670-XAUUSD1440.csv",
+    "tf": 86400000,
+    "n": 5216,
+    "from": 1256083200000,
+    "to": 1785110400000,
+    "role": "check"
+   }
+  ]
+ },
+ "notes": [
+  "24af8ff4-XAUUSD60_2.csv is identical to 299d826d-XAUUSD60_1.csv and was ignored.",
+  "The file's own daily candles end at 0:00 on its clock (100% of closes match). kev builds its own days from the session instead (see Session).",
+  "14 gaps of 24h+ that are not weekends (holidays or missing data)."
+ ]
+}

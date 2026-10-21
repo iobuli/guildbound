@@ -35,12 +35,13 @@ export default defineNode({
     }),
   ],
   evaluate: (inp, v) => {
-    const d = new Date(v.asOf), wd = d.getUTCDay(), hr = d.getUTCHours();
-    const session = (hr < 7 ? 'asian' : hr < 12 ? 'london' : hr < 21 ? 'ny' : 'off') as 'asian' | 'london' | 'ny' | 'off';
+    const wd = v.session.weekday(v.asOf), loc = v.session.local(v.asOf), hr = new Date(v.asOf).getUTCHours();
+    // session names on the trader's (London) clock: Asia before 08:00, London 08-13, New York 13-22, then off
+    const session = (loc.hour < 8 ? 'asian' : loc.hour < 13 ? 'london' : loc.hour < 22 ? 'ny' : 'off') as 'asian' | 'london' | 'ny' | 'off';
     const cls = v.instrument.cls;
     const flattenBy = (cls.startsWith('fx') || cls === 'metal' ? 'end-of-week' : cls === 'index' || cls === 'bund' ? 'end-of-day' : 'none') as 'none' | 'end-of-week' | 'end-of-day';
     const mode = (inp.bias.htf !== 'neutral' ? 'with-bias' : 'no-bias') as 'with-bias' | 'no-bias';
-    const fridayLate = wd === 5 && hr >= 13;
+    const fridayLate = wd === 5 && loc.hour >= 14;
     return { out: { context: { weekday: wd, hourUtc: hr, session, fridayLate, flattenBy, mode, conservativeTargets: fridayLate && mode === 'no-bias' } } };
   },
 });

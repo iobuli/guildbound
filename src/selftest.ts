@@ -26,7 +26,11 @@ import { runBacktest, settle, settleFull } from './backtest/engine.js';
 import { scaleForPeriod } from './core/scale.js';
 import { P } from './core/params.js';
 import { parseMt4 } from './data/mt4.js';
-import { aggregate, weekStart, SUNDAY_NOON } from './core/series.js';
+import { aggregate } from './core/series.js';
+import { aggregateSession, buildSession, defaultSpec, londonOffsetH, nyOffsetH } from './core/session.js';
+import { listMarkets, openMarket } from './core/market-io.js';
+import { loadFile } from './data/load.js';
+import { bucket } from './data/profile.js';
 import { writeFileSync, existsSync, rmSync } from 'node:fs';
 
 let fails = 0, passes = 0;
@@ -35,7 +39,7 @@ const ok = (name: string, cond: boolean, detail = '') => { cond ? passes++ : fai
 // ---------- helpers ----------
 const setup = (o: Partial<Setup> = {}): Setup => SetupSchema.parse({ dir: 'long', ...o });
 const bar = (t: number, o: number, h: number, l: number, c: number): Candle => ({ t, o, h, l, c, v: 1 });
-const view = (o: Partial<View> = {}): View => ({ period: H, weekAnchor: MONDAY, asOf: 0, phase: 'prior_bars', instrument: SOL, h1: [], d1: [], w1: [], now: null, calendar: [], ...o });
+const view = (o: Partial<View> = {}): View => ({ period: H, session: buildSession(defaultSpec('crypto')), asOf: 0, phase: 'prior_bars', instrument: SOL, h1: [], d1: [], w1: [], now: null, calendar: [], ...o });
 /** piecewise-linear H1 path with a small fixed range, so ATR is about 2 * wiggle */
 function path(pts: [number, number][], wiggle = 0.3, t0 = Date.UTC(2026, 0, 5)): Candle[] {
   const out: Candle[] = [];
@@ -284,8 +288,37 @@ ok(`lookahead audit 2: tampering with the forming bar's H/L/C changes no node th
   const m30 = scaleForPeriod(H / 2), a = P.retestMinBars; m30();
   const h4 = scaleForPeriod(4 * H), c4 = P.retestMinBars, lb4 = P.lookback.h1; h4();
   ok('scaleForPeriod: 11 H1 bars of space = 22 M30 bars = 3 H4 bars, and values are restored', a === 22 && c4 === 3 && lb4 === 200 && P.retestMinBars === 11 && P.lookback.h1 === 800, `${a} ${c4} ${lb4} ${P.retestMinBars}`);
-  const sunEve = Date.UTC(2026, 6, 26, 22), mon = Date.UTC(2026, 6, 27, 9);
-  ok('week anchor: Sunday-evening bars open the NEW week for gold, but belong to the previous week on a Monday anchor', weekStart(sunEve, SUNDAY_NOON) === weekStart(mon, SUNDAY_NOON) && weekStart(sunEve) !== weekStart(mon));
+  // ---- sessions: daylight saving, NY-close days, Sunday stubs, causality of merged days ----
+  const tz = (zone: string, t: number) => { const p = new Intl.DateTimeFormat('en-US', { timeZone: zone, hourCycle: 'h23', year: 'numeric', month: 'numeric', day: 'numeric', hour: 'numeric' }).formatToParts(new Date(t)); const g = (k: string) => +p.find((x) => x.type === k)!.value; return Math.round((Date.UTC(g('year'), g('month') - 1, g('day'), g('hour')) - Math.floor(t / H) * H) / H); };
+  let dstBad = 0; for (let t = Date.UTC(2005, 0, 1); t < Date.UTC(2027, 0, 1); t += 7 * H + 13 * 60_000) { if (tz('America/New_York', t) !== nyOffsetH(t)) dstBad++; if (tz('Europe/London', t) !== londonOffsetH(t)) dstBad++; }
+  ok('session: hand-rolled New York and London daylight saving agree with Intl for every 7h13m step 2005-2026', dstBad === 0, `${dstBad} disagreements`);
+  const ny = buildSession(defaultSpec('metal'));
+  ok('session: a NY-close day starts 21:00 UTC in July and 22:00 UTC in January, and Sunday 18:00 NY opens Monday', ny.dayStart(Date.UTC(2026, 6, 15, 12)) === Date.UTC(2026, 6, 14, 21) && ny.dayStart(Date.UTC(2026, 0, 15, 12)) === Date.UTC(2026, 0, 14, 22) && ny.weekday(Date.UTC(2026, 6, 26, 22)) === 1 && ny.weekStart(Date.UTC(2026, 6, 28, 9)) === Date.UTC(2026, 6, 26, 21));
+  const stubBars = [Date.UTC(2019, 0, 4, 20), Date.UTC(2019, 0, 4, 21), Date.UTC(2019, 0, 6, 22), Date.UTC(2019, 0, 6, 23), Date.UTC(2019, 0, 7, 0), Date.UTC(2019, 0, 7, 1)].map((t, i) => ({ t, o: 10 + i, h: 11 + i, l: 9 + i, c: 10.5 + i, v: 1 }));
+  const us = buildSession(defaultSpec('crypto'), stubBars), d1s = aggregateSession(stubBars, us, 'day');
+  ok('session: a 2h Sunday reopening after a weekend close is merged into Monday (no stub daily bar), and that day only closes at Monday 24:00', d1s.length === 2 && d1s[1]!.t === Date.UTC(2019, 0, 6) && d1s[1]!.e === Date.UTC(2019, 0, 8) && us.weekday(Date.UTC(2019, 0, 6, 22)) === 1 && lastClosed(d1s, 86_400_000, Date.UTC(2019, 0, 7, 23)) === 0, JSON.stringify(d1s.map((x) => [new Date(x.t).toISOString(), x.e && new Date(x.e).toISOString()])));
+  if (listMarkets().includes('XAUUSD')) {
+    const gm = openMarket('XAUUSD'), gd = gm.feed().d1, per = new Map<number, number>();
+    for (const b of gm.h1) per.set(gm.session.dayStart(b.t), (per.get(gm.session.dayStart(b.t)) ?? 0) + 1);
+    const short = [...per.values()].filter((n) => n < 6).length, sundays = gd.filter((b) => gm.session.weekday(b.t + 12 * H) === 0).length;
+    ok('session: gold on NY-close days has no Sunday daily bars and under 1% of days shorter than 6 hours (was 16.5% Sunday stubs on UTC days)', sundays === 0 && short / per.size < 0.01, `${per.size} days, ${short} short, ${sundays} Sunday bars`);
+  }
+  if (listMarkets().includes('ETHUSD')) {
+    const em = openMarket('ETHUSD'), lt = em.ltf(), m30 = lt.find((x) => x.tf === 30 * 60_000), m15 = lt.find((x) => x.tf === 15 * 60_000);
+    if (m30 && m15) {
+      const a = bucket(m30.c, H), b = bucket(m15.c, H); let cmp = 0, bad = 0;
+      for (const [k, x] of a) { const y = b.get(k); if (!y || x.n !== 2 || y.n !== 4) continue; cmp++; if (Math.max(Math.abs(x.o - y.o), Math.abs(x.h - y.h), Math.abs(x.l - y.l), Math.abs(x.c - y.c)) > 1e-9) bad++; }
+      ok('ingest: ETH H1 built from M30 equals H1 built from M15 wherever both are complete', cmp > 40_000 && bad === 0, `${cmp} hours compared, ${bad} differ`);
+    }
+    const stubDays = [...em.session.merged].filter((l) => new Date(l).getUTCFullYear() <= 2019).length;
+    ok('session: ETH Sunday reopenings in its weekend-closed years (2018-2019) are merged into Monday', stubDays > 80, `${stubDays} merged`);
+  }
+  // ---- any-CSV sniffing ----
+  const tmp = (name: string, body: string) => { const u = new URL(`../out/_sniff_${name}`, import.meta.url); writeFileSync(u, body); const r = loadFile(u.pathname); rmSync(u.pathname, { force: true }); return r; };
+  const k1 = tmp('mt4.csv', '2020.01.02,01:00,1.1,1.2,1.0,1.15,10\r\n2020.01.02,02:00,1.15,1.3,1.1,1.2,11\r\n2020.01.02,03:00,1.2,1.25,1.1,1.12,9\r\n2020.01.02,04:00,1.12,1.3,1.1,1.2,9\r\n2020.01.02,05:00,1.2,1.3,1.1,1.25,9\r\n');
+  const k2 = tmp('binance.csv', '1577926800000,7200.1,7210,7190,7205,12,1577930399999\n1577930400000,7205,7215,7200,7210,10,1577933999999\n1577934000000,7210,7212,7201,7202,9,1577937599999\n');
+  const k3 = tmp('hdr.csv', 'Date;Open;High;Low;Close;Volume\n31.12.2024 23:59:59;1,5;1,7;1,4;1,6;100\n30.12.2024 23:59:59;1,4;1,6;1,3;1,5;90\n29.12.2024 23:59:59;1,3;1,5;1,2;1,4;80\n');
+  ok('sniff: MT4 date+time CSV, Binance kline CSV (epoch ms), and a day-first, decimal-comma, newest-first, end-stamped file all load', k1.candles.length === 5 && k1.tf === H && k1.candles[0]!.t === Date.UTC(2020, 0, 2, 1) && k2.candles.length === 3 && k2.tf === H && k2.candles[0]!.c === 7205 && k3.candles.length === 3 && k3.problems.descending && k3.problems.endStamped === 3 && k3.candles[0]!.t === Date.UTC(2024, 11, 29) && k3.candles[2]!.c === 1.6, JSON.stringify([k1.layout.name, k2.layout.name, k3.layout.name, k3.candles[0]]));
   const f = new URL('../out/_mt4test.csv', import.meta.url); /* removed after the test */
   writeFileSync(f, '2020-01-02 01:00\t1500.0\t1501.0\t1499.0\t1500.5\t10\n2020-01-02 02:00\t1500.5\t1500.0\t1500.9\t1500.2\t11\n2020-01-02 02:00\t1\t2\t3\t4\t5\nbad row\n');
   const pm = parseMt4(f.pathname);

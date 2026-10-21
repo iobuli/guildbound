@@ -2,3 +2,4 @@ node_modules/
 out/*.log
 kev-brain/.index/
 *.tmp
+markets/*/ltf-*.json

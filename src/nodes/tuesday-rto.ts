@@ -1,7 +1,6 @@
 import { defineNode } from '../core/node.js';
 import { TuesdayPort } from '../core/ports.js';
 import { rule, src } from '../core/rule.js';
-import { H, MONDAY, weekStart } from '../core/series.js';
 import { P } from '../core/params.js';
 import { bodyOf, rng } from '../core/ta.js';
 
@@ -27,7 +26,7 @@ export default defineNode({
     rule('tuesday-rto.holds-past-tuesday', 'It does not matter if the trade runs into Wednesday; only the entry day counts.', {
       sources: [src('lesson', 'curated/taking-a-trade-tuesday-rto.md', '2025-01-10')],
     }),
-    rule('tuesday-rto.weekly-open-definition', 'The sources do not say which clock defines the weekly open. This build uses the first base bar of the trading week (Monday 00:00 for crypto, Sunday evening for metals and FX).', {
+    rule('tuesday-rto.weekly-open-definition', 'The weekly open is the first bar of the trading week: Sunday 17:00 New York for FX and metals (the 22:00 UK open the sources refer to), Monday 00:00 UTC for crypto. \"Since 22:00 on Monday\" is read on the London clock.', {
       status: 'inferred', codable: true, sources: [src('lesson', 'curated/taking-a-trade-tuesday-rto.md', '2025-01-10')],
     }),
   ],
@@ -36,11 +35,11 @@ export default defineNode({
     const out = (valid: boolean, f: Partial<{ dir: 'long' | 'short'; entry: number; stop: number; target: number; rr: number }> = {}) =>
       ({ out: { tuesday: { valid, dir: f.dir ?? null, entry: f.entry ?? null, stop: f.stop ?? null, target: f.target ?? null, rr: f.rr ?? null, reasons } } });
     if (c.length < 30) { reasons.push('not enough bars'); return out(false); }
-    if (new Date(v.asOf).getUTCDay() !== 2) { reasons.push('not a Tuesday (UTC)'); return out(false); }
-    const ws = weekStart(v.asOf, v.weekAnchor), wi = c.findIndex((b) => b.t >= ws), mon0 = ws + (MONDAY - v.weekAnchor);
+    if (v.session.weekday(v.asOf) !== 2) { reasons.push('not a Tuesday (trading day)'); return out(false); }
+    const ws = v.session.weekStart(v.asOf), wi = c.findIndex((b) => b.t >= ws), since = v.session.wallClock(v.session.label(v.asOf) - 86_400_000, 22);
     if (wi < 0) { reasons.push('no bars for this week'); return out(false); }
     const wo = c[wi]!.o;
-    if (c.some((b) => b.t >= mon0 + 22 * H && b.l <= wo && wo <= b.h)) { reasons.push('weekly open already touched since Monday 22:00'); return out(false); }
+    if (c.some((b) => b.t >= since && b.l <= wo && wo <= b.h)) { reasons.push('weekly open already touched since Monday 22:00 London'); return out(false); }
     const pin = c[c.length - 1]!, r = rng(pin);
     const lower = r > 0 ? (Math.min(pin.o, pin.c) - pin.l) / r : 0, upper = r > 0 ? (pin.h - Math.max(pin.o, pin.c)) / r : 0;
     const isPin = r > 0 && bodyOf(pin) <= P.pinBodyMax * r;

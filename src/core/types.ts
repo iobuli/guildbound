@@ -1,6 +1,8 @@
 import { z } from 'zod';
+import type { Session } from './session.js';
 
-export interface Candle { t: number; o: number; h: number; l: number; c: number; v: number }
+/** `e` (optional) is the instant the bar closes; set on session-aggregated D1/W1 bars, whose length can differ from 24h/7d. */
+export interface Candle { t: number; o: number; h: number; l: number; c: number; v: number; e?: number }
 export type Dir = 'long' | 'short';
 
 /**
@@ -47,8 +49,8 @@ export interface Now { t: number; price: number; dayOpen: number; weekOpen: numb
 export interface View {
   /** length of one base bar in ms (3.6e6 for H1) */
   period: number;
-  /** start of the trading week in ms-of-epoch terms (see series.weekStart) */
-  weekAnchor: number;
+  /** trading-day and trading-week boundaries, and the trader's clock, for this market */
+  session: Session;
   asOf: number;
   phase: Knowable;
   instrument: Instrument;

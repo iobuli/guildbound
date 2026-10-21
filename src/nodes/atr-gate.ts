@@ -1,7 +1,6 @@
 import { defineNode } from '../core/node.js';
 import { AtrGatePort, AtrPort } from '../core/ports.js';
 import { P } from '../core/params.js';
-import { dayStart } from '../core/series.js';
 import { rule, src } from '../core/rule.js';
 import type { Check } from '../core/types.js';
 
@@ -32,7 +31,7 @@ export default defineNode({
     }),
   ],
   evaluate: (inp, v, setup) => {
-    const now = v.now!, ds = dayStart(now.t);
+    const now = v.now!, ds = v.session.dayStart(now.t);
     const today = v.h1.filter((b) => b.t >= ds);
     const hi = Math.max(now.dayOpen, now.price, ...today.map((b) => b.h)), lo = Math.min(now.dayOpen, now.price, ...today.map((b) => b.l));
     const a = inp.atr.d1;
