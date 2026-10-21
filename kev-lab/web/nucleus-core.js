@@ -1,4 +1,4 @@
-// The nucleus, JS port of kev-lab/nucleus.py (same definitions, same integer-tick prices, so the numbers are bit-identical; see
+// The nucleus, JS port of kev-lab/nucleus.py (same definitions, same integer-tick prices, so signs and orders are identical and positions agree to float32 storage precision; see
 // tests/test_nucleus.py). Works in the browser and in Node. Data: { t: Float64Array (ms), h, l, c: Int32Array (ticks of 1e-4) }.
 (function () {
   const TFS = [['1m', 60000], ['5m', 300000], ['15m', 900000], ['1h', 3600000], ['4h', 14400000], ['1D', 86400000]];
@@ -39,7 +39,7 @@
     const js = j - n + 1, shifted = js >= 0 ? cmidBar(tf, js, n) : NaN;
     const jl = j - n, lagc = jl >= 0 ? tf.BC[jl] : NaN;
     const z = (x) => (Number.isNaN(x) ? 0 : x);
-    return { n, mid: ok ? mid : NaN, HH, LL, pos, slope: z(sign(mid - cmid)), shift: z(sign(c - shifted)), lag: z(sign(c - lagc)), okSlope: ok };
+    return { n, mid: ok ? mid : NaN, HH, LL, pos, slope: z(sign(mid - cmid)), shift: z(sign(c - shifted)), lag: z(sign(c - lagc)), okSlope: ok && !Number.isNaN(cmid) };
   }
 
   /** The 60 minute-frames of the hour starting at hourT, from the minutes since WARMUP_DAYS before that day. */

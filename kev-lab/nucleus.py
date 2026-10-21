@@ -13,7 +13,7 @@ Per line, at minute m (bar j of the line's timeframe is the one still forming; i
 Per timeframe: the order of mid9 / mid26 / mid52, and price against the rebuilt cloud (spans from closed lines at bar j-25, i.e. shifted 26).
 Convergence (counts, no weights): the balance of lines with price above them, per timeframe and over all 18; the balance of slopes (up - down).
 
-Prices are integer ticks (1e-4) so the JS port in web/nucleus-core.js gives bit-identical numbers. Bars are UTC-aligned; a bar exists only if
+Prices are integer ticks (1e-4) so the JS port in web/nucleus-core.js gives identical signs and orders, and positions equal to float32 storage precision. Bars are UTC-aligned; a bar exists only if
 it has at least one minute, and missing minutes are never filled.
 """
 from __future__ import annotations
@@ -140,7 +140,7 @@ def snapshots(sym: str = "SOLUSDT") -> Path:
     """Every 5th minute of the full nucleus, plus each hour's close, to out/nucleus/<sym>.npz (gitignored)."""
     m = load_m1(sym)
     nu = nucleus(m)
-    keep = (nu["t"] // 60_000) % 5 == 0
+    keep = ((nu["t"] // 60_000) % 5 == 0) | ((nu["t"] // 60_000) % 60 == 59)  # every 5th minute and each hour's last
     out = data.ROOT / "out" / "nucleus"
     out.mkdir(parents=True, exist_ok=True)
     p = out / f"{sym}.npz"
