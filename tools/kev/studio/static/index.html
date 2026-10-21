@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kev Studio</title>
+<style>
+  :root { --bg:#14161c; --panel:#1c2029; --line:#2c3240; --text:#d8dce6; --dim:#8a93a6; --accent:#7cc4ff; --good:#5fd38d; --bad:#ff6b6b; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:13px/1.4 ui-sans-serif,system-ui,sans-serif; height:100vh; display:grid;
+         grid-template-columns:270px 1fr 330px; grid-template-rows:minmax(0,1fr) 190px; }
+  aside, section { background:var(--panel); border:1px solid var(--line); overflow:auto; }
+  #left { grid-column:1; grid-row:1/3; padding:10px; } #right { grid-column:3; grid-row:1/3; padding:10px; }
+  #view { grid-column:2; grid-row:1; min-width:0; min-height:0; position:relative; border:0; background:#0f1115; } #view canvas { display:block; width:100%; height:100%; }
+  #console { grid-column:2; grid-row:2; padding:8px; display:flex; flex-direction:column; }
+  #log { flex:1; overflow:auto; white-space:pre-wrap; font:12px ui-monospace,monospace; color:#b9c1d3; }
+  #line { background:#0f1115; color:var(--text); border:1px solid var(--line); padding:6px 8px; font:12px ui-monospace,monospace; width:100%; }
+  h3 { margin:10px 0 4px; font-size:11px; letter-spacing:.08em; text-transform:uppercase; color:var(--dim); }
+  select, button, input[type=range] { width:100%; margin:2px 0; background:#0f1115; color:var(--text); border:1px solid var(--line); padding:4px; }
+  button { cursor:pointer; } button:hover { border-color:var(--accent); }
+  .row { display:flex; gap:4px; } .row > * { flex:1; }
+  #bones div { padding:1px 4px; cursor:pointer; font:12px ui-monospace,monospace; white-space:nowrap; }
+  #bones div:hover { background:#252b38; } #bones div.sel { background:#2b4260; }
+  .kv { display:flex; justify-content:space-between; font:12px ui-monospace,monospace; padding:1px 0; border-bottom:1px solid #232834; }
+  .kv span:first-child { color:var(--dim); } #bal { padding:8px; border-radius:4px; font-weight:600; text-align:center; margin:4px 0; }
+  .over { background:#173a28; color:var(--good); } .off { background:#40191b; color:var(--bad); }
+  label { display:flex; gap:6px; align-items:center; color:var(--dim); }
+  .sl { display:grid; grid-template-columns:18px 1fr 44px; align-items:center; gap:4px; } .sl input { margin:0; }
+</style>
+</head>
+<body>
+<aside id="left">
+  <h3>Model</h3><select id="model"></select>
+  <h3>Clip</h3><select id="clip"></select>
+  <div class="row"><button id="play">Play</button><button id="pause">Pause</button></div>
+  <input id="seek" type="range" min="0" max="1" step="0.001" value="0">
+  <div class="row"><span id="tinfo" style="color:var(--dim)">t 0.00 / 0.00</span></div>
+  <h3>Show</h3>
+  <label><input type="checkbox" id="showSkel" checked> skeleton</label>
+  <label><input type="checkbox" id="showLm" checked> Kev landmarks + centre of mass</label>
+  <label><input type="checkbox" id="showMesh" checked> mesh</label>
+  <h3>Bones <span id="bcount"></span></h3>
+  <input id="bfilter" placeholder="filter..." style="width:100%;background:#0f1115;color:var(--text);border:1px solid var(--line);padding:4px">
+  <div id="bones"></div>
+</aside>
+<section id="view"></section>
+<aside id="right">
+  <h3>Selected bone</h3><div id="bsel" style="color:var(--dim)">click a bone</div>
+  <div id="sliders" style="display:none">
+    <div class="sl"><span>X</span><input type="range" min="-180" max="180" step="1" value="0" data-a="0"><span id="vx">0</span></div>
+    <div class="sl"><span>Y</span><input type="range" min="-180" max="180" step="1" value="0" data-a="1"><span id="vy">0</span></div>
+    <div class="sl"><span>Z</span><input type="range" min="-180" max="180" step="1" value="0" data-a="2"><span id="vz">0</span></div>
+    <button id="resetBone">reset this bone</button><button id="resetAll">reset all</button>
+  </div>
+  <h3>Controller (Kev reference)</h3><div id="ctl"></div>
+  <h3>Kev: balance</h3><div id="bal" class="off">no data</div><div id="balkv"></div>
+  <h3>Kev: facings</h3><div id="facings"></div>
+  <h3>Kev: landmarks (height / body height)</h3><div id="lms"></div>
+</aside>
+<section id="console">
+  <div id="log">Kev Studio. Type help.</div>
+  <input id="line" placeholder="kev> get upperarm_l   |   set upperarm_l 0 0 60   |   play Punch_Jab   |   balance   |   help" autocomplete="off">
+</section>
+<script type="importmap">{"imports":{"three":"/static/vendor/three.module.js","three/addons/":"/static/vendor/addons/"}}</script>
+<script type="module" src="/static/app.js"></script>
+</body>
+</html>

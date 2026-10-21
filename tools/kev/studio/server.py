@@ -1,0 +1,718 @@
+"""Kev Studio: a local web app to read and write a skeleton rig, with Kev's measurements live next to a 3D view.
+
+    python3 -I tools/kev/studio/server.py [--port 8765] [--host 127.0.0.1]     then open http://localhost:8765
+
+The browser (three.js) draws the rig and plays its clips; it streams the current bone rotations to this server several
+times a second. Kev (this server, numpy only) turns them into world transforms with FK from the GLB's own hierarchy and
+answers with the body map: landmark positions, facings, centre of mass against the support. Anything can read and write:
+
+  MOVE   Kev solves for the rig: `reach arm_r 0.4 1.3 0.3` (IK to a world point), `aim`, and whole-body landmark frames:
+         POST /api/control {"landmarks": {"wrist_r": [x, y, z], "pelvis": [...], ...}} -> commanded pose + reach errors back
+  REFS   `ref capture` records Kev's landmarks while a clip plays; `ref play <name>` replays them onto the loaded model
+  READ   GET /api/state  /api/rig  /api/models  /api/clips      (JSON)      or console / POST /api/exec {"line": "get LeftArm"}
+  WRITE  POST /api/exec {"line": "set upperarm_l 0 0 60"}  or  POST /api/cmd {"cmd": "set", "bone": ..., "euler": [x, y, z]}
+  LIVE   GET /api/events (server-sent events: "state" every update, "cmd" for commands bound for the viewer)
+
+Console commands (also in the page): help | models | model <file> | clips | play <clip> | pause | resume | seek <s> |
+speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in the bone's own rest frame) | reset |
+landmarks [name] | facings | balance | rig | state |
+reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
+ref capture [name] (records one loop of the playing clip) | ref list | ref play <name> [rate] | ref stop | ref status.
+Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
+"""
+import argparse
+import json
+import math
+import os
+import queue
+import re
+import sys
+import threading
+import time
+import urllib.parse
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+KEV = os.path.dirname(HERE)
+REPO = os.path.dirname(os.path.dirname(KEV))
+ANIM = os.path.join(REPO, "assets", "anim")
+sys.path.insert(0, KEV)
+import bodymap  # noqa: E402
+import nodes as kev_nodes  # noqa: E402
+import statue  # noqa: E402
+
+MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".glb": "model/gltf-binary",
+        ".txt": "text/plain", ".png": "image/png"}
+LOCK = threading.Lock()
+CLIENTS = []
+STATE = {"model": None, "clip": None, "playing": False, "t": 0.0, "duration": 0.0, "speed": 1.0, "summary": {}, "stamp": 0.0}
+LATEST_QUATS = {}
+CACHE = {}
+
+
+def quat_to_mat(q):
+    x, y, z, w = q
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def model_info(name):
+    """Per-model cache: glTF JSON, node hierarchy with rest TRS, Kev body map, clip list."""
+    if name in CACHE:
+        return CACHE[name]
+    path = os.path.join(ANIM, name)
+    js, blob = statue.read_glb(path)
+    n = len(js["nodes"])
+    parent = [-1] * n
+    for i, nd in enumerate(js["nodes"]):
+        for c in nd.get("children", []):
+            parent[c] = i
+    order = []
+    seen = set()
+
+    def visit(i):
+        if i in seen:
+            return
+        if parent[i] >= 0:
+            visit(parent[i])
+        seen.add(i)
+        order.append(i)
+
+    for i in range(n):
+        visit(i)
+    rest_q = [np.array(nd.get("rotation", [0, 0, 0, 1]), float) for nd in js["nodes"]]
+    names = [nd.get("name", f"node{i}") for i, nd in enumerate(js["nodes"])]
+    skin = (js.get("skins") or [{}])[0]
+    info = {"name": name, "js": js, "parent": parent, "order": order, "rest_q": rest_q, "names": names,
+            "index": {nm: i for i, nm in enumerate(names)}, "clips": [a.get("name", f"clip{i}") for i, a in enumerate(js.get("animations", []))],
+            "joints": skin.get("joints", []), "bm": None, "kev": None}
+    if skin:
+        out = os.path.join(REPO, "staging", "kev", "bodymap")
+        info["bm"] = bodymap.build(path, out)
+        info["kev"] = kev_nodes.parse(path)
+        info["rest_world"] = world_transforms(info, {})
+    CACHE[name] = info
+    return info
+
+
+def world_transforms(info, quats, pos=None):
+    """World 4x4 per node (glTF space): FK from the hierarchy, rest TRS with the given local rotations (and
+    translations, `pos`) substituted."""
+    n = len(info["names"])
+    W = [None] * n
+    for i in info["order"]:
+        nd = info["js"]["nodes"][i]
+        if "matrix" in nd:
+            local = np.array(nd["matrix"], float).reshape(4, 4).T
+        else:
+            q = quats.get(info["names"][i], info["rest_q"][i])
+            local = np.eye(4)
+            local[:3, :3] = quat_to_mat(q) * np.array(nd.get("scale", [1, 1, 1]), float)
+            local[:3, 3] = (pos or {}).get(info["names"][i], nd.get("translation", [0, 0, 0]))
+        p = info["parent"][i]
+        W[i] = local if p < 0 else W[p] @ local
+    return W
+
+
+def kev_read(info, quats, pos=None):
+    """Kev's answer for a pose: landmarks (m), facings, balance, and the world position of every joint."""
+    bm = info["bm"]
+    if bm is None:
+        return {}
+    Wn = world_transforms(info, quats, pos)
+    jn = bm["joints"]
+    D = np.zeros((len(jn), 4, 4))
+    for k, name in enumerate(jn):
+        i = info["index"][name]
+        D[k] = Wn[i] @ np.linalg.inv(info["rest_world"][i])
+    L = bodymap.posed_landmarks(bm, D)
+    F = bodymap.posed_facings(bm, D)
+    bal = bodymap.balance(bm, L)
+    up, fwd = np.array(bm["body"]["up"]), np.array(bm["body"]["forward"])
+    H, floor = bm["body"]["height"], bm["body"]["floor"]
+    left = np.cross(up, fwd)
+    words = {}
+    for name, v in F.items():
+        w, d = bodymap.word(v, fwd, up, left)
+        words[name] = {"vector": [round(float(x), 3) for x in v], "toward": w, "off_deg": round(d)}
+    joints = {jn[k]: [round(float(x), 4) for x in Wn[info["index"][jn[k]]][:3, 3]] for k in range(len(jn))}
+    return {"landmarks": {k: [round(float(x), 4) for x in v] for k, v in L.items()},
+            "heights": {k: round(float((v @ up - floor) / H), 3) for k, v in L.items()},
+            "facings": words,
+            "balance": {"com": [round(float(x), 4) for x in bal["com"]], "support": bal["support"], "over_foot": bal["over_foot"],
+                        "off_foot_heights": round(bal["off_foot"], 4), "forward": round(bal["forward"], 3), "left": round(bal["left"], 3)},
+            "joints": joints}
+
+
+def clip_index():
+    """clip name -> [glb files that carry it] (names only: no full model parse)."""
+    if "clips" not in CACHE:
+        idx = {}
+        for f in sorted(os.listdir(ANIM)):
+            if f.endswith(".glb"):
+                try:
+                    js, _ = statue.read_glb(os.path.join(ANIM, f))
+                except Exception:  # noqa: BLE001
+                    continue
+                for i, an in enumerate(js.get("animations", [])):
+                    idx.setdefault(an.get("name", f"clip{i}"), []).append(f)
+        CACHE["clips"] = idx
+    return CACHE["clips"]
+
+
+def resolve_clip(info, want):
+    """Exact, then unique case-insensitive substring in this model's clips; else a message saying where it lives."""
+    clips = info["clips"] if info else []
+    if want in clips:
+        return want, None
+    low = [c for c in clips if want.lower() in c.lower()]
+    if len(low) == 1:
+        return low[0], None
+    if len(low) > 1:
+        return None, f"'{want}' matches {len(low)} clips here: " + ", ".join(low[:8])
+    elsewhere = {c: f for c, f in clip_index().items() if want.lower() in c.lower()}
+    if elsewhere:
+        return None, "not in this model; found in: " + "; ".join(f"{c} -> {', '.join(f)}" for c, f in list(elsewhere.items())[:6]) + "  (use `model <file>` first)"
+    return None, f"no clip like '{want}' in any model"
+
+
+# ---- Kev moves things: world-space solvers --------------------------------------------------------------------------
+COMMANDED = {}      # local quaternions Kev has commanded (name -> xyzw), the solver's own state
+COMMANDED_POS = {}  # local translation overrides (the pelvis)
+CHAINS = {"arm_l": ("upperarm_l", "lowerarm_l", "hand_l", "wrist_l", "elbow_l"), "arm_r": ("upperarm_r", "lowerarm_r", "hand_r", "wrist_r", "elbow_r"),
+          "leg_l": ("thigh_l", "calf_l", "foot_l", "ankle_l", "knee_l"), "leg_r": ("thigh_r", "calf_r", "foot_r", "ankle_r", "knee_r")}
+CHILD = {"upperarm_l": "lowerarm_l", "lowerarm_l": "hand_l", "upperarm_r": "lowerarm_r", "lowerarm_r": "hand_r",
+         "thigh_l": "calf_l", "calf_l": "foot_l", "thigh_r": "calf_r", "calf_r": "foot_r", "foot_l": "ball_l", "foot_r": "ball_r"}
+
+
+def unit(v):
+    n = np.linalg.norm(v)
+    return v / n if n > 1e-9 else v
+
+
+def mat_to_quat(R):
+    t = np.trace(R)
+    if t > 0:
+        k = math.sqrt(t + 1) * 2
+        q = [(R[2, 1] - R[1, 2]) / k, (R[0, 2] - R[2, 0]) / k, (R[1, 0] - R[0, 1]) / k, 0.25 * k]
+    elif R[0, 0] > R[1, 1] and R[0, 0] > R[2, 2]:
+        k = math.sqrt(1 + R[0, 0] - R[1, 1] - R[2, 2]) * 2
+        q = [0.25 * k, (R[0, 1] + R[1, 0]) / k, (R[0, 2] + R[2, 0]) / k, (R[2, 1] - R[1, 2]) / k]
+    elif R[1, 1] > R[2, 2]:
+        k = math.sqrt(1 + R[1, 1] - R[0, 0] - R[2, 2]) * 2
+        q = [(R[0, 1] + R[1, 0]) / k, 0.25 * k, (R[1, 2] + R[2, 1]) / k, (R[0, 2] - R[2, 0]) / k]
+    else:
+        k = math.sqrt(1 + R[2, 2] - R[0, 0] - R[1, 1]) * 2
+        q = [(R[0, 2] + R[2, 0]) / k, (R[1, 2] + R[2, 1]) / k, 0.25 * k, (R[1, 0] - R[0, 1]) / k]
+    q = np.array(q)
+    return q / np.linalg.norm(q)
+
+
+def arc_mat(a, b):
+    """Rotation matrix taking unit vector a to unit vector b along the shortest arc."""
+    a, b = unit(a), unit(b)
+    v = np.cross(a, b)
+    c = float(a @ b)
+    if c < -0.999999:
+        axis = unit(np.cross(a, [1, 0, 0]) if abs(a[0]) < 0.9 else np.cross(a, [0, 1, 0]))
+        return 2 * np.outer(axis, axis) - np.eye(3)
+    K = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + K + K @ K / (1 + c)
+
+
+def rot_of(W):
+    R = W[:3, :3].copy()
+    for i in range(3):
+        R[:, i] = unit(R[:, i])
+    return R
+
+
+def slerp_mat(R0, R1, t):
+    q0, q1 = mat_to_quat(R0), mat_to_quat(R1)
+    if q0 @ q1 < 0:
+        q1 = -q1
+    d = min(1.0, float(q0 @ q1))
+    th = math.acos(d)
+    q = q0 if th < 1e-6 else (math.sin((1 - t) * th) * q0 + math.sin(t * th) * q1) / math.sin(th)
+    x, y, z, w = q / np.linalg.norm(q)
+    return np.array([[1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w)],
+                     [2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w)],
+                     [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
+
+
+def set_world_rot(info, Q, P, bone, R):
+    """Command bone so its world rotation is R (the parents' current world rotation is read from FK)."""
+    W = world_transforms(info, Q, P)
+    i = info["index"][bone]
+    p = info["parent"][i]
+    Pw = rot_of(W[p]) if p >= 0 else np.eye(3)
+    Q[bone] = mat_to_quat(Pw.T @ R)
+
+
+def aim(info, Q, P, bone, direction, child=None):
+    """Swing `bone` so its direction to its child points along `direction` (world), from the current pose."""
+    child = child or CHILD[bone]
+    W = world_transforms(info, Q, P)
+    bi, ci = info["index"][bone], info["index"][child]
+    cur = W[ci][:3, 3] - W[bi][:3, 3]
+    set_world_rot(info, Q, P, bone, arc_mat(cur, direction) @ rot_of(W[bi]))
+
+
+def reach(info, Q, P, chain, target, pole_pt=None):
+    """Two-bone IK: put the chain's end joint at `target` (world), bending toward `pole_pt`. Returns the reach error (m)."""
+    root, mid, end = CHAINS[chain][:3]
+    W = world_transforms(info, Q, P)
+    r, m, e = (W[info["index"][n]][:3, 3] for n in (root, mid, end))
+    l1, l2 = np.linalg.norm(m - r), np.linalg.norm(e - m)
+    t = np.asarray(target, float) - r
+    d = float(np.clip(np.linalg.norm(t), 1e-3, (l1 + l2) * 0.999))
+    u = unit(t)
+    pole = (np.asarray(pole_pt, float) - r) if pole_pt is not None else (m - r)
+    pole = unit(pole - u * (pole @ u))
+    if np.linalg.norm(pole) < 1e-6:
+        pole = unit((m - r) - u * ((m - r) @ u))
+    a_ = (l1 * l1 - l2 * l2 + d * d) / (2 * d)
+    h = math.sqrt(max(l1 * l1 - a_ * a_, 0.0))
+    mid_new = r + u * a_ + pole * h
+    aim(info, Q, P, root, mid_new - r)
+    W = world_transforms(info, Q, P)
+    aim(info, Q, P, mid, (r + u * d) - W[info["index"][mid]][:3, 3])
+    W = world_transforms(info, Q, P)
+    return float(np.linalg.norm(W[info["index"][end]][:3, 3] - np.asarray(target, float)))
+
+
+def basis(x_dir, y_dir):
+    x = unit(np.asarray(x_dir, float))
+    z = unit(np.cross(x, y_dir))
+    y = np.cross(z, x)
+    return np.column_stack([x, y, z])
+
+
+def rest_lm(info, name):
+    return np.array(info["bm"]["landmarks"][name]["rest"], float)
+
+
+def apply_frame(info, lm, inplace=True):
+    """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
+
+    Pelvis: translated to the pelvis target; pelvis and chest oriented from the hip line and shoulder line with the
+    spine direction as up (the spine bones share the twist between them); head from crown and nose; each arm and leg
+    reaches wrist / ankle with the elbow / knee as the pole; feet aim at the ball. Missing targets are skipped.
+    Returns {landmark: error_m} for the reach targets."""
+    Q, P = COMMANDED, COMMANDED_POS
+    need = lambda *ns: all(n in lm for n in ns)  # noqa: E731
+    Wr = info["rest_world"]
+    rest_rot = lambda b: rot_of(Wr[info["index"][b]])  # noqa: E731
+    if need("pelvis"):
+        target = np.array(lm["pelvis"], float)
+        if inplace:
+            target[[0, 2]] = rest_lm(info, "pelvis")[[0, 2]]
+        W = world_transforms(info, Q, P)
+        pi = info["index"]["pelvis"]
+        p = info["parent"][pi]
+        Pw = rot_of(W[p]) if p >= 0 else np.eye(3)
+        pp = W[p][:3, 3] if p >= 0 else np.zeros(3)
+        P["pelvis"] = Pw.T @ (target - pp)
+    if need("hip_l", "hip_r", "neck", "pelvis", "shoulder_l", "shoulder_r"):
+        up = np.array(lm["neck"]) - np.array(lm["pelvis"])
+        up0 = rest_lm(info, "neck") - rest_lm(info, "pelvis")
+        Dp = basis(np.array(lm["hip_l"]) - np.array(lm["hip_r"]), up) @ basis(rest_lm(info, "hip_l") - rest_lm(info, "hip_r"), up0).T
+        Dc = basis(np.array(lm["shoulder_l"]) - np.array(lm["shoulder_r"]), up) @ basis(rest_lm(info, "shoulder_l") - rest_lm(info, "shoulder_r"), up0).T
+        for bone, t in (("pelvis", 0.0), ("spine_01", 1 / 3), ("spine_02", 2 / 3), ("spine_03", 1.0)):
+            set_world_rot(info, Q, P, bone, slerp_mat(Dp, Dc, t) @ rest_rot(bone))
+        if need("crown", "nose", "head_joint"):
+            hj = np.array(lm["head_joint"])
+            Dh = basis(np.cross(np.array(lm["crown"]) - hj, np.array(lm["nose"]) - hj), np.array(lm["crown"]) - hj) @ \
+                basis(np.cross(rest_lm(info, "crown") - rest_lm(info, "head_joint"), rest_lm(info, "nose") - rest_lm(info, "head_joint")),
+                      rest_lm(info, "crown") - rest_lm(info, "head_joint")).T
+            set_world_rot(info, Q, P, "neck_01", slerp_mat(Dc, Dh, 0.5) @ rest_rot("neck_01"))
+            set_world_rot(info, Q, P, "Head", Dh @ rest_rot("Head"))
+    err = {}
+    for chain, (root, mid, end, tgt, pole) in CHAINS.items():
+        if need(tgt):
+            err[tgt] = reach(info, Q, P, chain, lm[tgt], lm.get(pole))
+    for side in "lr":
+        if need(f"ball_{side}", f"ankle_{side}"):
+            aim(info, Q, P, f"foot_{side}", np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"]))
+    return err
+
+
+def pose_event():
+    return {"cmd": "pose", "quats": {k: [round(float(x), 5) for x in v] for k, v in COMMANDED.items()},
+            "pos": {k: [round(float(x), 5) for x in v] for k, v in COMMANDED_POS.items()}}
+
+
+# ---- Kev references: capture measurements while a clip plays, replay them onto any model --------------------------
+REFDIR = os.path.join(REPO, "staging", "kev", "refs")
+CAPTURE = {"on": False, "name": None, "samples": [], "last_t": -1.0, "model": None, "clip": None}
+REFPLAY = {"thread": None, "stop": False, "status": {}}
+
+
+def capture_sample(model, clip, t, summary):
+    c = CAPTURE
+    if not c["on"]:
+        return
+    if c["clip"] is None:
+        c["clip"], c["model"] = clip, model
+    if t < c["last_t"] - 0.05 and len(c["samples"]) > 5:  # the clip looped: one full cycle recorded
+        return finish_capture()
+    c["last_t"] = t
+    if not c["samples"] or t > c["samples"][-1]["t"] + 1e-4:
+        c["samples"].append({"t": round(t, 4), "landmarks": summary["landmarks"], "com": summary["balance"]["com"]})
+
+
+def finish_capture():
+    c = CAPTURE
+    c["on"] = False
+    info = model_info(c["model"])
+    bm = info["bm"]
+    ref = {"name": c["name"], "model": c["model"], "clip": c["clip"], "height": bm["body"]["height"], "floor": bm["body"]["floor"],
+           "duration": c["samples"][-1]["t"] if c["samples"] else 0.0, "samples": c["samples"]}
+    os.makedirs(REFDIR, exist_ok=True)
+    with open(os.path.join(REFDIR, c["name"] + ".json"), "w") as f:
+        json.dump(ref, f)
+    broadcast("log", {"line": f"(capture finished) {c['name']}", "out": f"{len(c['samples'])} samples, {ref['duration']:.2f} s, from {c['model']} / {c['clip']}", "from": "kev"})
+    return ref
+
+
+def load_ref(name):
+    with open(os.path.join(REFDIR, name + ".json")) as f:
+        return json.load(f)
+
+
+def sample_ref(ref, tau):
+    ss = ref["samples"]
+    tau = min(max(tau, ss[0]["t"]), ss[-1]["t"])
+    hi = next((i for i, s in enumerate(ss) if s["t"] >= tau), len(ss) - 1)
+    lo = max(hi - 1, 0)
+    a, b = ss[lo], ss[hi]
+    u = 0.0 if b["t"] == a["t"] else (tau - a["t"]) / (b["t"] - a["t"])
+    return {k: [x + (y - x) * u for x, y in zip(a["landmarks"][k], b["landmarks"][k])] for k in a["landmarks"] if k in b["landmarks"]}
+
+
+def scale_to(info, ref, lm):
+    """Reference landmarks (its model's metres) -> this model: uniform height ratio about the floor."""
+    s = info["bm"]["body"]["height"] / ref["height"]
+    f0, f1 = ref["floor"], info["bm"]["body"]["floor"]
+    first = ref["samples"][0]["landmarks"]["pelvis"]
+    return {k: [(v[0] - first[0]) * s, (v[1] - f0) * s + f1, (v[2] - first[2]) * s] for k, v in lm.items()}
+
+
+def run_ref(name, rate, loop):
+    info = model_info(STATE["model"])
+    ref = load_ref(name)
+    broadcast("cmd", {"cmd": "stopclip"})
+    COMMANDED.clear()
+    COMMANDED_POS.clear()
+    t0 = time.time()
+    n = 0
+    while not REFPLAY["stop"]:
+        tau = (time.time() - t0) * rate
+        if tau > ref["duration"]:
+            if not loop:
+                break
+            t0 = time.time()
+            tau = 0.0
+        lm = scale_to(info, ref, sample_ref(ref, tau))
+        # place the reference pelvis x,z at this model's rest pelvis (in place); keep heights
+        for k in lm:
+            lm[k][0] += rest_lm(info, "pelvis")[0]
+            lm[k][2] += rest_lm(info, "pelvis")[2]
+        err = apply_frame(info, lm, inplace=False)
+        measured = kev_read(info, COMMANDED, COMMANDED_POS)
+        track = [float(np.linalg.norm(np.array(measured["landmarks"][k]) - np.array(lm[k]))) for k in lm if k in measured["landmarks"]]
+        REFPLAY["status"] = {"name": name, "tau": round(tau, 2), "duration": ref["duration"], "rate": rate, "frames": n,
+                             "tracking_error_m": {"mean": round(float(np.mean(track)), 4), "max": round(float(np.max(track)), 4)},
+                             "reach_error_m": {k: round(v, 4) for k, v in err.items()},
+                             "worst": sorted(((k, round(v, 3)) for k, v in zip([k for k in lm if k in measured["landmarks"]], track)), key=lambda x: -x[1])[:4]}
+        broadcast("cmd", pose_event())
+        n += 1
+        time.sleep(0.05)
+    REFPLAY["status"] = {**REFPLAY["status"], "running": False}
+
+
+def start_ref(name, rate=1.0, loop=True):
+    stop_ref()
+    REFPLAY["stop"] = False
+    th = threading.Thread(target=run_ref, args=(name, rate, loop), daemon=True)
+    REFPLAY["thread"] = th
+    th.start()
+
+
+def stop_ref():
+    REFPLAY["stop"] = True
+    th = REFPLAY["thread"]
+    if th and th.is_alive():
+        th.join(timeout=1.0)
+
+
+def broadcast(event, data):
+    msg = f"event: {event}\ndata: {json.dumps(data)}\n\n"
+    with LOCK:
+        for q in list(CLIENTS):
+            try:
+                q.put_nowait(msg)
+            except queue.Full:
+                pass
+
+
+def send_cmd(cmd):
+    broadcast("cmd", cmd)
+    return {"sent": cmd}
+
+
+def table(rows):
+    return "\n".join(rows)
+
+
+def execute(line):
+    """One console line -> text. Writes go to the viewer as commands; reads answer from the latest streamed pose."""
+    t = line.strip().split()
+    if not t:
+        return ""
+    c, a = t[0].lower(), t[1:]
+    info = model_info(STATE["model"]) if STATE["model"] else None
+    s = STATE["summary"]
+    if c == "help":
+        return __doc__.split("Console commands")[1].split("Files are served")[0].strip()
+    if c == "models":
+        return table(sorted(f for f in os.listdir(ANIM) if f.endswith(".glb")))
+    if c == "model" and a:
+        return json.dumps(send_cmd({"cmd": "model", "file": a[0]}))
+    if c == "clips":
+        return table(f"{i:2d} {n}" for i, n in enumerate(info["clips"])) if info else "(no model loaded)"
+    if c in ("play", "pause", "resume", "seek", "speed", "reset"):
+        cmd = {"cmd": c}
+        if c == "play" and a:
+            name, err = resolve_clip(info, " ".join(a))
+            if err:
+                return err
+            cmd["clip"] = name
+        if c in ("seek", "speed") and a:
+            cmd["value"] = float(a[0])
+        return json.dumps(send_cmd(cmd))
+    if c == "ref":
+        sub = a[0] if a else "status"
+        if sub == "capture":
+            if not STATE.get("clip"):
+                return "play a clip first (ref capture records one loop of it)"
+            name = a[1] if len(a) > 1 else f"{STATE['model'].replace('.glb', '')}__{STATE['clip']}"
+            CAPTURE.update({"on": True, "name": name, "samples": [], "last_t": -1.0, "model": None, "clip": None})
+            send_cmd({"cmd": "play", "clip": STATE["clip"]})  # restart from t=0 so one full loop is recorded
+            return f"capturing '{name}' while {STATE['clip']} plays one full loop..."
+        if sub == "list":
+            return table(sorted(f[:-5] for f in os.listdir(REFDIR) if f.endswith(".json"))) if os.path.isdir(REFDIR) else "(none)"
+        if sub == "play" and len(a) > 1:
+            if not info or not info["bm"]:
+                return "no skinned model streamed"
+            start_ref(a[1], float(a[2]) if len(a) > 2 else 1.0)
+            return f"controller running: reference '{a[1]}' -> {STATE['model']}"
+        if sub == "stop":
+            stop_ref()
+            return "controller stopped"
+        return json.dumps(REFPLAY["status"] or {"running": False}, indent=1)
+    if c in ("reach", "aim") and len(a) >= 4:
+        if not info or not info["bm"]:
+            return "no skinned model streamed"
+        stop_ref()
+        if not COMMANDED:
+            send_cmd({"cmd": "stopclip"})
+        vec = lambda i: np.array([float(x) for x in a[i:i + 3]])  # noqa: E731
+        if c == "aim":
+            aim(info, COMMANDED, COMMANDED_POS, a[0], vec(1))
+            out = f"aimed {a[0]}"
+        else:
+            chain = a[0]
+            if chain not in CHAINS:
+                return "chain: " + ", ".join(CHAINS)
+            e = reach(info, COMMANDED, COMMANDED_POS, chain, vec(1), vec(4) if len(a) >= 7 else None)
+            out = f"reached {chain}: error {e * 100:.1f} cm"
+        send_cmd(pose_event())
+        return out
+    if c == "set" and len(a) >= 4:
+        cmd = {"cmd": "set", "bone": a[0], "euler": [float(x) for x in a[1:4]]}
+        out = json.dumps(send_cmd(cmd))
+        time.sleep(0.25)
+        return out + "\n" + describe_bone(a[0])
+    if not info:
+        return "(no model streamed yet: open the page)"
+    if c == "bones":
+        flt = a[0].lower() if a else ""
+        rows = []
+        for r in info["kev"]["nodes"]:
+            if flt in r[1].lower() or flt in str(r[3]).lower() or flt in str(r[4]).lower():
+                rows.append(f"{r[0]:3d} {r[1]:<22} parent {r[2]!s:<4} role {r[3]:<9} region {r[4]}")
+        return table(rows) or "no match"
+    if c == "get" and a:
+        return describe_bone(a[0])
+    if c == "landmarks":
+        lm = s.get("landmarks", {})
+        if a:
+            return f"{a[0]}: {lm.get(a[0])}  height {s.get('heights', {}).get(a[0])}"
+        return table(f"{k:<16} {v}  h={s['heights'][k]}" for k, v in lm.items())
+    if c == "facings":
+        return table(f"{k:<16} toward {v['toward']:<8} ({v['off_deg']} deg off)  {v['vector']}" for k, v in s.get("facings", {}).items())
+    if c == "balance":
+        return json.dumps(s.get("balance", {}), indent=1)
+    if c == "rig":
+        b = info["bm"]["body"]
+        k = info["kev"]
+        return json.dumps({"model": info["name"], "joints": k["joints"], "height_m": b["height"], "units": k.get("units_guess"),
+                           "limbs": k["limbs"], "regions": {r: v["span_h"] for r, v in k["regions"].items()},
+                           "landmarks": len(info["bm"]["landmarks"]), "facings": len(info["bm"]["facings"])}, indent=1)
+    if c == "state":
+        return json.dumps({k: STATE[k] for k in ("model", "clip", "playing", "t", "duration", "speed")}, indent=1)
+    return f"unknown command: {c} (try help)"
+
+
+def describe_bone(name):
+    info = model_info(STATE["model"])
+    if name not in info["index"]:
+        return f"no bone named {name}"
+    i = info["index"][name]
+    q = LATEST_QUATS.get(name, info["rest_q"][i].tolist())
+    p = info["parent"][i]
+    W = world_transforms(info, LATEST_QUATS)
+    row = next((r for r in (info["kev"] or {}).get("nodes", []) if r[1] == name), None)
+    return json.dumps({"bone": name, "parent": info["names"][p] if p >= 0 else None, "role": row[3] if row else None,
+                       "region": row[4] if row else None, "local_quat_xyzw": [round(float(x), 4) for x in q],
+                       "rest_quat_xyzw": [round(float(x), 4) for x in info["rest_q"][i]],
+                       "world_position": [round(float(x), 4) for x in W[i][:3, 3]]})
+
+
+class Handler(BaseHTTPRequestHandler):
+    protocol_version = "HTTP/1.1"
+
+    def log_message(self, *a):
+        pass
+
+    def reply(self, code, body, ctype="application/json"):
+        data = body if isinstance(body, bytes) else (body if isinstance(body, str) else json.dumps(body)).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Cache-Control", "no-store")
+        self.end_headers()
+        self.wfile.write(data)
+
+    def serve_file(self, root, rel):
+        p = os.path.normpath(os.path.join(root, rel))
+        if not p.startswith(root + os.sep) or not os.path.isfile(p):
+            return self.reply(404, {"error": "not found"})
+        ext = os.path.splitext(p)[1]
+        with open(p, "rb") as f:
+            self.reply(200, f.read(), MIME.get(ext, "application/octet-stream"))
+
+    def do_GET(self):
+        u = urllib.parse.urlparse(self.path)
+        path = u.path
+        if path == "/":
+            return self.serve_file(os.path.join(HERE, "static"), "index.html")
+        if path.startswith("/static/"):
+            return self.serve_file(os.path.join(HERE, "static"), path[8:])
+        if path.startswith("/assets/anim/") and path.endswith(".glb"):
+            return self.serve_file(ANIM, path[13:])
+        if path == "/api/models":
+            return self.reply(200, sorted(f for f in os.listdir(ANIM) if f.endswith(".glb")))
+        if path == "/api/clips":
+            return self.reply(200, model_info(STATE["model"])["clips"] if STATE["model"] else [])
+        if path == "/api/rig":
+            q = urllib.parse.parse_qs(u.query)
+            info = model_info(q.get("model", [STATE["model"]])[0])
+            return self.reply(200, {"model": info["name"], "kev": info["kev"], "landmarks": info["bm"]["landmarks"] if info["bm"] else {},
+                                    "facings": info["bm"]["facings"] if info["bm"] else {}})
+        if path == "/api/state":
+            return self.reply(200, {**{k: STATE[k] for k in ("model", "clip", "playing", "t", "duration", "speed", "stamp")}, **STATE["summary"],
+                                    "quats": LATEST_QUATS})
+        if path == "/api/events":
+            q = queue.Queue(maxsize=200)
+            with LOCK:
+                CLIENTS.append(q)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("Connection", "keep-alive")
+            self.end_headers()
+            try:
+                self.wfile.write(b": hello\n\n")
+                self.wfile.flush()
+                while True:
+                    try:
+                        self.wfile.write(q.get(timeout=15).encode())
+                    except queue.Empty:
+                        self.wfile.write(b": ping\n\n")
+                    self.wfile.flush()
+            except (BrokenPipeError, ConnectionResetError, OSError):
+                pass
+            finally:
+                with LOCK:
+                    if q in CLIENTS:
+                        CLIENTS.remove(q)
+            return
+        self.reply(404, {"error": "not found"})
+
+    def do_POST(self):
+        n = int(self.headers.get("Content-Length", 0))
+        try:
+            body = json.loads(self.rfile.read(n) or b"{}")
+        except ValueError:
+            return self.reply(400, {"error": "bad json"})
+        path = urllib.parse.urlparse(self.path).path
+        if path == "/api/telemetry":
+            return self.telemetry(body)
+        if path == "/api/cmd":
+            return self.reply(200, send_cmd(body))
+        if path == "/api/control":
+            info = model_info(STATE["model"]) if STATE["model"] else None
+            if not info or not info["bm"]:
+                return self.reply(400, {"error": "no skinned model streamed"})
+            stop_ref()
+            if not COMMANDED:
+                send_cmd({"cmd": "stopclip"})
+            err = apply_frame(info, {k: v for k, v in body.get("landmarks", {}).items()}, inplace=body.get("inplace", False))
+            measured = kev_read(info, COMMANDED, COMMANDED_POS)
+            send_cmd(pose_event())
+            return self.reply(200, {"reach_error_m": {k: round(v, 4) for k, v in err.items()},
+                                    "landmarks": measured["landmarks"], "balance": measured["balance"]})
+        if path == "/api/exec":
+            try:
+                out = execute(body.get("line", ""))
+            except Exception as e:  # noqa: BLE001
+                out = f"error: {e}"
+            broadcast("log", {"line": body.get("line", ""), "out": out, "from": body.get("from", "api")})
+            return self.reply(200, {"out": out})
+        self.reply(404, {"error": "not found"})
+
+    def telemetry(self, body):
+        global LATEST_QUATS
+        model = body.get("model")
+        if not model or not os.path.isfile(os.path.join(ANIM, model)):
+            return self.reply(400, {"error": "unknown model"})
+        info = model_info(model)
+        quats = {k: v for k, v in body.get("quats", {}).items() if k in info["index"]}
+        LATEST_QUATS = quats
+        STATE.update({"model": model, "clip": body.get("clip"), "playing": body.get("playing"), "t": body.get("t", 0.0),
+                      "duration": body.get("duration", 0.0), "speed": body.get("speed", 1.0), "stamp": time.time()})
+        STATE["summary"] = kev_read(info, quats)
+        capture_sample(model, body.get("clip"), body.get("t", 0.0), STATE["summary"])
+        broadcast("state", {**{k: STATE[k] for k in ("model", "clip", "playing", "t", "duration", "speed")}, **STATE["summary"],
+                            "ref": REFPLAY["status"], "capturing": CAPTURE["on"]})
+        self.reply(200, {"ok": True})
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--port", type=int, default=8765)
+    ap.add_argument("--host", default="127.0.0.1")
+    a = ap.parse_args()
+    srv = ThreadingHTTPServer((a.host, a.port), Handler)
+    srv.daemon_threads = True
+    print(f"Kev Studio on http://{a.host}:{a.port}  (assets: {ANIM})", flush=True)
+    srv.serve_forever()
+
+
+if __name__ == "__main__":
+    main()
