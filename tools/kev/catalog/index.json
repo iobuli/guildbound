@@ -415,7 +415,30 @@
   "combatdamage01": {
    "duration_s": 1.0,
    "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.0,
+    "frames": 61,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.0,
+    "frames": 61,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
    "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 244,
+    "min_cut_hz": 4.0
+   },
    "source": {
     "clip": "CombatDamage01",
     "model": "kev_melee.glb",
@@ -423,6 +446,154 @@
    },
    "tags": [
     "combatdamage01",
+    "kev_melee"
+   ]
+  },
+  "combatidle01": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "CombatIdle01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combatidle01",
+    "kev_melee"
+   ]
+  },
+  "combatidle1h01": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "CombatIdle1H01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combatidle1h01",
+    "kev_melee"
+   ]
+  },
+  "combatidle2h01": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "CombatIdle2H01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combatidle2h01",
+    "kev_melee"
+   ]
+  },
+  "combatidlepolearm01": {
+   "duration_s": 1.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.35,
+    "foot_slip_hs": 0.0,
+    "frames": 81,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 324,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "CombatIdlePolearm01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "combatidlepolearm01",
     "kev_melee"
    ]
   },
@@ -614,6 +785,231 @@
     "ual1"
    ]
   },
+  "death": {
+   "duration_s": 3.9333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.76,
+    "duration_s": 3.95,
+    "foot_slip_hs": 0.057,
+    "frames": 237,
+    "jerk": 93.3,
+    "wrist_reach_h": 0.512,
+    "wrist_speed_hs": 1.65
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.46,
+    "duration_s": 3.95,
+    "foot_slip_hs": 0.121,
+    "frames": 237,
+    "jerk": 486.0,
+    "wrist_reach_h": 0.513,
+    "wrist_speed_hs": 1.66
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 734,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Death",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "death",
+    "sekiro"
+   ]
+  },
+  "death01": {
+   "duration_s": 0.7333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.75,
+    "foot_slip_hs": 0.0,
+    "frames": 45,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.75,
+    "foot_slip_hs": 0.0,
+    "frames": 45,
+    "jerk": 0.0,
+    "wrist_reach_h": 0.423,
+    "wrist_speed_hs": 0.0
+   },
+   "model": "kev_melee.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 180,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Death01",
+    "model": "kev_melee.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "death01",
+    "kev_melee"
+   ]
+  },
+  "death_backstab": {
+   "duration_s": 4.3667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 1.32,
+    "duration_s": 4.383,
+    "foot_slip_hs": 0.049,
+    "frames": 263,
+    "jerk": 63.2,
+    "wrist_reach_h": 0.518,
+    "wrist_speed_hs": 2.64
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 1.09,
+    "duration_s": 4.383,
+    "foot_slip_hs": 0.144,
+    "frames": 263,
+    "jerk": 314.6,
+    "wrist_reach_h": 0.515,
+    "wrist_speed_hs": 2.54
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 581,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Death Backstab",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "backstab",
+    "death",
+    "sekiro"
+   ]
+  },
+  "death_kneeling": {
+   "duration_s": 4.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.76,
+    "duration_s": 4.983,
+    "foot_slip_hs": 0.031,
+    "frames": 299,
+    "jerk": 128.7,
+    "wrist_reach_h": 0.44,
+    "wrist_speed_hs": 2.66
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 2.7,
+    "duration_s": 4.983,
+    "foot_slip_hs": 0.087,
+    "frames": 299,
+    "jerk": 616.2,
+    "wrist_reach_h": 0.441,
+    "wrist_speed_hs": 2.62
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 732,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Death Kneeling",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "death",
+    "kneeling",
+    "sekiro"
+   ]
+  },
+  "dizzy_idle": {
+   "duration_s": 5.6667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 5.683,
+    "foot_slip_hs": 0.0,
+    "frames": 341,
+    "jerk": 2.9,
+    "wrist_reach_h": 0.198,
+    "wrist_speed_hs": 0.17
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.04,
+    "duration_s": 5.683,
+    "foot_slip_hs": 0.007,
+    "frames": 341,
+    "jerk": 43.9,
+    "wrist_reach_h": 0.198,
+    "wrist_speed_hs": 0.17
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 1364,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Dizzy Idle",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "dizzy",
+    "idle",
+    "sekiro"
+   ]
+  },
+  "drinking": {
+   "duration_s": 8.9,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 8.917,
+    "foot_slip_hs": 0.0,
+    "frames": 535,
+    "jerk": 1.6,
+    "wrist_reach_h": 0.363,
+    "wrist_speed_hs": 0.35
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.02,
+    "duration_s": 8.917,
+    "foot_slip_hs": 0.006,
+    "frames": 535,
+    "jerk": 29.8,
+    "wrist_reach_h": 0.363,
+    "wrist_speed_hs": 0.35
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 2140,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Drinking",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "drinking",
+    "sekiro"
+   ]
+  },
   "driving_loop": {
    "duration_s": 1.6667,
    "fps": 60,
@@ -649,6 +1045,81 @@
    "tags": [
     "driving",
     "ual1"
+   ]
+  },
+  "drstrangemagic": {
+   "duration_s": 35.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.27,
+    "duration_s": 35.983,
+    "foot_slip_hs": 0.048,
+    "frames": 2159,
+    "jerk": 40.4,
+    "wrist_reach_h": 0.492,
+    "wrist_speed_hs": 9.18
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.5,
+    "duration_s": 35.983,
+    "foot_slip_hs": 0.061,
+    "frames": 2159,
+    "jerk": 158.3,
+    "wrist_reach_h": 0.493,
+    "wrist_speed_hs": 10.72
+   },
+   "model": "rokoko.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 8173,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "DrStrangeMagic",
+    "model": "rokoko.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "drstrangemagic",
+    "rokoko"
+   ]
+  },
+  "falling_idle": {
+   "duration_s": 0.7333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.07,
+    "duration_s": 0.75,
+    "foot_slip_hs": 0.0,
+    "frames": 45,
+    "jerk": 6.6,
+    "wrist_reach_h": 0.523,
+    "wrist_speed_hs": 0.14
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.1,
+    "duration_s": 0.75,
+    "foot_slip_hs": 0.0,
+    "frames": 45,
+    "jerk": 76.7,
+    "wrist_reach_h": 0.524,
+    "wrist_speed_hs": 0.17
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Falling Idle",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "falling",
+    "idle",
+    "sekiro"
    ]
   },
   "farm_harvest": {
@@ -763,6 +1234,120 @@
     "farm",
     "ual2",
     "watering"
+   ]
+  },
+  "fightingidle": {
+   "duration_s": 52.4667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 9.69,
+    "duration_s": 52.483,
+    "foot_slip_hs": 0.021,
+    "frames": 3149,
+    "jerk": 37.3,
+    "wrist_reach_h": 0.462,
+    "wrist_speed_hs": 12.98
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 11.29,
+    "duration_s": 52.483,
+    "foot_slip_hs": 0.035,
+    "frames": 3149,
+    "jerk": 125.5,
+    "wrist_reach_h": 0.463,
+    "wrist_speed_hs": 14.86
+   },
+   "model": "rokoko.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 12361,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "FightingIdle",
+    "model": "rokoko.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fightingidle",
+    "rokoko"
+   ]
+  },
+  "finisher_on_kneeling_victim": {
+   "duration_s": 4.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.16,
+    "duration_s": 4.983,
+    "foot_slip_hs": 0.067,
+    "frames": 299,
+    "jerk": 229.1,
+    "wrist_reach_h": 0.44,
+    "wrist_speed_hs": 6.41
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 7.0,
+    "duration_s": 4.983,
+    "foot_slip_hs": 0.141,
+    "frames": 299,
+    "jerk": 889.4,
+    "wrist_reach_h": 0.444,
+    "wrist_speed_hs": 6.68
+   },
+   "model": "sekiro.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 902,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Finisher on Kneeling Victim",
+    "model": "sekiro.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "finisher",
+    "kneeling",
+    "on",
+    "sekiro",
+    "victim"
+   ]
+  },
+  "fireballs": {
+   "duration_s": 37.3333,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 5.28,
+    "duration_s": 37.35,
+    "foot_slip_hs": 0.041,
+    "frames": 2241,
+    "jerk": 43.9,
+    "wrist_reach_h": 0.519,
+    "wrist_speed_hs": 10.43
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.36,
+    "duration_s": 37.35,
+    "foot_slip_hs": 0.053,
+    "frames": 2241,
+    "jerk": 151.1,
+    "wrist_reach_h": 0.52,
+    "wrist_speed_hs": 12.05
+   },
+   "model": "rokoko.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 8528,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Fireballs",
+    "model": "rokoko.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "fireballs",
+    "rokoko"
    ]
   },
   "fixing_kneeling": {
