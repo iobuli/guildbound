@@ -1,0 +1,282 @@
+[
+ {
+  "name": "gait_walk",
+  "slip_mps": [
+   0.5173,
+   0.0031
+  ],
+  "slip_max_mps": [
+   0.8467,
+   0.0318
+  ],
+  "penetration_mm": [
+   14.924,
+   0.0
+  ],
+  "balance_violations": [
+   0,
+   0
+  ],
+  "jerk": [
+   70.3,
+   210.6
+  ],
+  "pelvis_travel_m": [
+   0.0078,
+   0.9639
+  ],
+  "mu_required": [
+   0.212,
+   0.942
+  ],
+  "pass": {
+   "compression_peak_m": 0.0045,
+   "pelvis_shift_peak_m": 0.0,
+   "step_peak_m": 0.0,
+   "root_offset_m": [
+    0.0,
+    0.9639
+   ]
+  }
+ },
+ {
+  "name": "Walk_Loop",
+  "slip_mps": [
+   0.9444,
+   0.0886
+  ],
+  "slip_max_mps": [
+   1.3951,
+   0.8229
+  ],
+  "penetration_mm": [
+   21.796,
+   0.01
+  ],
+  "balance_violations": [
+   24,
+   16
+  ],
+  "jerk": [
+   59.6,
+   288.8
+  ],
+  "pelvis_travel_m": [
+   0.0,
+   1.3173
+  ],
+  "mu_required": [
+   0.395,
+   1.457
+  ],
+  "pass": {
+   "compression_peak_m": 0.0067,
+   "pelvis_shift_peak_m": 0.012,
+   "step_peak_m": 0.02,
+   "root_offset_m": [
+    -0.0011,
+    1.3173
+   ]
+  }
+ },
+ {
+  "name": "Punch_Jab",
+  "slip_mps": [
+   0.0,
+   0.0001
+  ],
+  "slip_max_mps": [
+   0.0002,
+   0.0006
+  ],
+  "penetration_mm": [
+   0.562,
+   0.007
+  ],
+  "balance_violations": [
+   0,
+   0
+  ],
+  "jerk": [
+   614.0,
+   532.5
+  ],
+  "pelvis_travel_m": [
+   0.0,
+   0.0
+  ],
+  "mu_required": [
+   6.09,
+   5.794
+  ],
+  "pass": {
+   "compression_peak_m": 0.0,
+   "pelvis_shift_peak_m": 0.0,
+   "step_peak_m": 0.0,
+   "root_offset_m": [
+    0.0,
+    0.0
+   ]
+  }
+ },
+ {
+  "name": "Punch_Cross",
+  "slip_mps": [
+   0.0231,
+   0.0027
+  ],
+  "slip_max_mps": [
+   0.5586,
+   0.2533
+  ],
+  "penetration_mm": [
+   25.603,
+   0.006
+  ],
+  "balance_violations": [
+   0,
+   0
+  ],
+  "jerk": [
+   442.8,
+   406.3
+  ],
+  "pelvis_travel_m": [
+   0.0,
+   0.0
+  ],
+  "mu_required": [
+   2.791,
+   2.704
+  ],
+  "pass": {
+   "compression_peak_m": 0.0,
+   "pelvis_shift_peak_m": 0.0,
+   "step_peak_m": 0.0,
+   "root_offset_m": [
+    0.0,
+    0.0
+   ]
+  }
+ },
+ {
+  "name": "Jump_Land",
+  "slip_mps": [
+   0.0063,
+   0.0882
+  ],
+  "slip_max_mps": [
+   0.1144,
+   0.365
+  ],
+  "penetration_mm": [
+   20.534,
+   0.008
+  ],
+  "balance_violations": [
+   0,
+   9
+  ],
+  "jerk": [
+   176.9,
+   227.0
+  ],
+  "pelvis_travel_m": [
+   0.03,
+   0.199
+  ],
+  "mu_required": [
+   0.96,
+   1.218
+  ],
+  "pass": {
+   "compression_peak_m": 0.0,
+   "pelvis_shift_peak_m": 0.012,
+   "step_peak_m": 0.0,
+   "root_offset_m": [
+    -0.0316,
+    0.1949
+   ]
+  }
+ },
+ {
+  "name": "Jump_Start",
+  "slip_mps": [
+   0.5347,
+   0.2834
+  ],
+  "slip_max_mps": [
+   3.1806,
+   2.6181
+  ],
+  "penetration_mm": [
+   116.945,
+   0.0
+  ],
+  "balance_violations": [
+   17,
+   17
+  ],
+  "jerk": [
+   300.1,
+   517.7
+  ],
+  "pelvis_travel_m": [
+   0.083,
+   0.2903
+  ],
+  "mu_required": [
+   4.461,
+   5.326
+  ],
+  "pass": {
+   "compression_peak_m": 0.0043,
+   "pelvis_shift_peak_m": 0.012,
+   "step_peak_m": 0.0,
+   "root_offset_m": [
+    -0.0056,
+    0.2092
+   ]
+  }
+ },
+ {
+  "name": "Sword_Attack",
+  "slip_mps": [
+   0.5727,
+   1.1333
+  ],
+  "slip_max_mps": [
+   6.9115,
+   6.501
+  ],
+  "penetration_mm": [
+   25.203,
+   0.006
+  ],
+  "balance_violations": [
+   8,
+   10
+  ],
+  "jerk": [
+   1607.3,
+   1598.5
+  ],
+  "pelvis_travel_m": [
+   0.0,
+   1.8
+  ],
+  "mu_required": [
+   4.643,
+   4.937
+  ],
+  "pass": {
+   "compression_peak_m": 0.0034,
+   "pelvis_shift_peak_m": 0.012,
+   "step_peak_m": 0.02,
+   "root_offset_m": [
+    -0.0215,
+    1.7998
+   ]
+  }
+ }
+]
