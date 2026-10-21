@@ -1,25 +1,19 @@
-// Browser entry for the inspector page. Same nodes and graph as the MCP server; the page only calls these functions.
+// Browser entry for the inspector page. Same nodes, graph, sessions and presets as the CLI and the MCP server; any ingested market.
 import { graph, nodes } from '../kev.js';
 import { P } from '../core/params.js';
-import { applyPreset } from '../core/presets.js';
-import { makeFeed, SOL, GOLD, H } from '../core/series.js';
-import { defaultSpec } from '../core/session.js';
+import { applyPreset, PRESETS } from '../core/presets.js';
+import { makeFeed, H } from '../core/series.js';
+import type { SessionSpec } from '../core/session.js';
 import { analyzeLevel } from '../core/levelmath.js';
-import { SetupSchema, type Candle } from '../core/types.js';
+import { SetupSchema, type Candle, type Instrument } from '../core/types.js';
 
-const MKT = { SOL: { instrument: SOL, session: defaultSpec('crypto') }, GOLD: { instrument: GOLD, session: defaultSpec('metal') } } as const;
-type Mkt = keyof typeof MKT;
-
-function preset(spec: boolean) { applyPreset(spec ? 'trade-check-spec' : 'kev-default'); }
-
-export interface RunIn { candles: Candle[]; T: number; mkt: Mkt; dir: 'long' | 'short'; spec: boolean; centre?: number; price?: number }
+export interface RunIn { candles: Candle[]; T: number; session: SessionSpec; instrument: Instrument; dir: 'long' | 'short'; preset: string; centre?: number; price?: number }
 
 /** One decision: run the whole graph at time T on what is knowable then, and (optionally) pin one level for drawing. */
 export function run(a: RunIn) {
-  preset(a.spec);
-  const feed = makeFeed(a.candles, { session: MKT[a.mkt].session });
-  const setup = SetupSchema.parse({ dir: a.dir });
-  const res = graph.run(feed, a.T, setup, { instrument: MKT[a.mkt].instrument, price: a.price });
+  applyPreset(a.preset);
+  const feed = makeFeed(a.candles, { session: a.session });
+  const res = graph.run(feed, a.T, SetupSchema.parse({ dir: a.dir }), { instrument: a.instrument, price: a.price });
   const flow = graph.flow(res);
   const atr = res.states.atr?.out.atr as { h1: number; d1: number } | undefined;
   const scan = (res.states['level-scan']?.out.levels as { price: number; rows: unknown[] } | undefined) ?? null;
@@ -28,13 +22,14 @@ export function run(a: RunIn) {
     const closed = a.candles.filter((b) => b.t + H <= a.T);
     level = analyzeLevel(closed.slice(-P.lookback.h1), a.centre, a.dir, P.levelScaleD1 ? atr.d1 : atr.h1);
   }
-  const states = Object.fromEntries(Object.entries(res.states).map(([id, s]) => [id, { ran: s.ran, error: s.error, skipped: s.skipped, out: s.out, checks: s.checks }]));
-  return { flow, atr, scan, level, states, order: res.order };
+  const s = feed.session, day = { start: s.dayStart(a.T), weekday: s.weekday(a.T), weekStart: s.weekStart(a.T), londonHour: s.local(a.T).hour };
+  const states = Object.fromEntries(Object.entries(res.states).map(([id, st]) => [id, { ran: st.ran, error: st.error, skipped: st.skipped, out: st.out, checks: st.checks }]));
+  return { flow, atr, scan, level, states, order: res.order, day };
 }
 
 export function catalogue() {
   return nodes.map((n) => ({ id: n.id, title: n.title, stage: n.stage, summary: n.summary, decideAt: n.decideAt, step: n.step ?? null, inputs: Object.keys(n.inputs), outputs: Object.keys(n.outputs),
-    rules: n.rules.map((r) => ({ id: r.id, text: r.text, kind: r.kind, status: r.status, codable: r.codable, note: r.note ?? null, sources: r.sources.map((s) => `${s.kind}: ${s.ref}`) })) }));
+    rules: n.rules.map((r) => ({ id: r.id, text: r.text, kind: r.kind, status: r.status, codable: r.codable, note: r.note ?? null, sources: r.sources.map((x) => `${x.kind}: ${x.ref}`) })) }));
 }
-export const params = (spec: boolean) => { preset(spec); return JSON.parse(JSON.stringify(P)); };
-(globalThis as unknown as { Kev: unknown }).Kev = { run, catalogue, params };
+export const presets = () => Object.entries(PRESETS).map(([name, p]) => ({ name, note: p.note }));
+(globalThis as unknown as { Kev: unknown }).Kev = { run, catalogue, presets };

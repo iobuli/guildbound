@@ -59,13 +59,13 @@ p{margin:6px 0}
 </style>
 
 <header>
-  <div><h1>Kev Inspector</h1><div class="sub">SOL and gold H1. The chart shows only bars that had closed at the decision cursor; kev's parse is computed from those bars alone.</div></div>
+  <div><h1>Kev Inspector</h1><div class="sub">Any ingested market, H1. The chart shows only bars that had closed at the decision cursor; kev's parse is computed from those bars alone, on the market's own trading days.</div></div>
   <div class="sub" id="status">Loading prices…</div>
 </header>
 
 <div class="ctl">
-  <div class="seg" id="mkt" role="group" aria-label="Market"><button data-v="SOL" aria-pressed="true">SOL</button><button data-v="GOLD" aria-pressed="false">Gold</button></div>
-  <div class="seg" id="spec" role="group" aria-label="Parameters"><button data-v="0" aria-pressed="false">Kev default</button><button data-v="1" aria-pressed="true">Trade Check spec</button></div>
+  <div class="seg" id="mkt" role="group" aria-label="Market"></div>
+  <select id="preset" aria-label="Level parser preset"></select>
   <div class="seg" id="dir" role="group" aria-label="Direction"><button data-v="long" aria-pressed="true">Long</button><button data-v="short" aria-pressed="false">Short</button></div>
   <div class="seg" id="phase" role="group" aria-label="Decision moment"><button data-v="open" aria-pressed="true">At bar open</button><button data-v="close" aria-pressed="false">After close</button></div>
   <label class="sub"><input type="checkbox" id="future" checked> show hidden future</label>
@@ -87,12 +87,13 @@ p{margin:6px 0}
 
 <script>/*@@BUNDLE@@*/</script>
 <script>
-const PACK = "@@DATA@@", CASES = @@CASES@@, OH = @@OH@@, STUDY = @@STUDY@@, COMPAT = @@COMPAT@@, TCSUM = @@SUMMARY@@;
+const PACK = "@@DATA@@", MARKETS = @@MARKETS@@, CASES = @@CASES@@, OH = @@OH@@, STUDY = @@STUDY@@, AUDIT = @@AUDIT@@, TCSUM = @@SUMMARY@@;
 const H = 3600000, $ = (s) => document.querySelector(s), esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmtT = (t) => new Date(t).toISOString().slice(0, 16).replace('T', ' ');
 const f2 = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const S = { mkt: 'SOL', i: 0, phase: 'open', dir: 'long', spec: true, sel: null, cas: null, tab: 'flow', future: true, win: 150 };
+const S = { mkt: MARKETS.SOLUSDT ? 'SOLUSDT' : Object.keys(MARKETS)[0], i: 0, phase: 'open', dir: 'long', preset: 'kev-default', sel: null, cas: null, tab: 'flow', future: true, win: 150 };
+const MK = () => MARKETS[S.mkt];
 const DATA = {}; let R = null, CAT = null, db = null;
 
 async function unpack(b64) {
@@ -119,9 +120,10 @@ function compute() {
   const d = D(); if (!d || !window.Kev) return;
   const a = Math.max(0, S.i - 1100), candles = []; for (let k = a; k <= S.i; k++) candles.push(bar(k));
   const T = S.phase === 'open' ? d.t[S.i] : d.t[S.i] + H;
-  try { R = Kev.run({ candles, T, mkt: S.mkt, dir: S.dir, spec: S.spec, centre: S.sel ?? undefined }); R.err = null; } catch (e) { R = { err: String(e), flow: { steps: [], firstBlocker: null }, scan: null, level: null, states: {} }; }
+  try { R = Kev.run({ candles, T, session: MK().session, instrument: MK().instrument, dir: S.dir, preset: S.preset, centre: S.sel ?? undefined }); R.err = null; } catch (e) { R = { err: String(e), flow: { steps: [], firstBlocker: null }, scan: null, level: null, states: {} }; }
   $('#slider').value = S.i; draw(); renderPane();
-  $('#status').textContent = `${S.mkt === 'SOL' ? 'SOLUSDT' : 'XAUUSD'} · decision ${fmtT(T)} UTC · bar ${S.i} of ${d.n - 1}`;
+  const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  $('#status').textContent = `${S.mkt} · decision ${fmtT(T)} UTC${R && R.day ? ` · trading day ${WD[R.day.weekday]} (from ${fmtT(R.day.start).slice(5)} UTC)` : ''} · bar ${S.i} of ${d.n - 1}`;
 }
 
 /* ---------- chart ---------- */
@@ -194,9 +196,9 @@ function draw() {
 }
 
 /* ---------- panes ---------- */
-const TABS = [['flow', 'Flow'], ['levels', 'Levels'], ['bars', 'Bars'], ['compare', 'Compare'], ['study', 'SOL study'], ['rules', 'Rules'], ['notes', 'Notes']];
+const TABS = [['flow', 'Flow'], ['levels', 'Levels'], ['bars', 'Bars'], ['market', 'Market'], ['compare', 'Your pages'], ['study', 'Study'], ['rules', 'Rules'], ['notes', 'Notes']];
 function renderTabs() { $('#tabs').innerHTML = TABS.map(([k, v]) => `<button role="tab" data-t="${k}" aria-selected="${S.tab === k}">${v}</button>`).join(''); }
-function renderPane() { const p = $('#pane'); if (!R) { p.textContent = ''; return; } const fn = { flow: paneFlow, levels: paneLevels, bars: paneBars, compare: paneCompare, study: paneStudy, rules: paneRules, notes: paneNotes }[S.tab]; p.innerHTML = fn(); if (S.tab === 'notes') bindNotes(); }
+function renderPane() { const p = $('#pane'); if (!R) { p.textContent = ''; return; } const fn = { flow: paneFlow, levels: paneLevels, bars: paneBars, market: paneMarket, compare: paneCompare, study: paneStudy, rules: paneRules, notes: paneNotes }[S.tab]; p.innerHTML = fn(); if (S.tab === 'notes') bindNotes(); }
 const chip = (s) => `<span class="chip ${s}">${s}</span>`;
 function paneFlow() {
   if (R.err) return `<div class="banner warn">Kev could not run here: ${esc(R.err)}</div>`;
@@ -241,15 +243,28 @@ function paneCompare() {
     h += `<h4>One Hour decision at frame ${c.f} · ${c.side}</h4><dl class="kv"><dt>their level</dt><dd>${c.p}, ${c.n} touches</dd><dt>kev touches (reaction count)</dt><dd>${L ? L.touches : 'not found'}</dd><dt>their break</dt><dd>${fmtT(c.bT)}</dd><dt>kev break</dt><dd>${L && L.breakT ? fmtT(L.breakT) : 'none'}</dd><dt>their far (space)</dt><dd>${f2(c.far, 3)} ATR</dd><dt>far from prior bars only</dt><dd>${f2(c.farPrior, 3)} ATR${Math.abs(c.far - c.farPrior) > 0.006 ? ' <span class="bad">(differs: their value includes the decision bar)</span>' : ''}</dd><dt>decision bar closed through level</dt><dd class="${c.ct ? 'bad' : 'good'}">${c.ct ? 'yes' : 'no'}</dd><dt>terms T1 T2 T3 T4</dt><dd>${c.T.map((v) => f2(v, 2)).join(' · ')}</dd></dl>`;
     h += `<p class="sub">Their touch count is plain 3-bar swing points within 0.1 ATR and 12+ bars apart. Kev counts a touch only when price then travels 0.5 ATR away, so kev counts fewer. Across the 83 breaks the counts agree on 18; the break bar agrees on 69.</p>`;
   }
-  h += `<h4>Causal replication of the Trade Check spec</h4><p class="sub">Entry at the level, 4R target, net of costs, every fill decided from earlier bars only. Compare with the page's ${f2(TCSUM.win * 100, 0)}% win rate.</p><div class="tw"><table><tr><th>market</th><th class="n">touches ≥</th><th class="n">fills</th><th class="n">mean 4R [95% CI]</th><th class="n">random orders</th><th class="n">win % (one at a time)</th></tr>`;
-  h += COMPAT.filter((r) => r.space === 0.5).map((r) => `<tr><td>${r.mkt}</td><td class="n">${r.tier}</td><td class="n">${r.fills}</td><td class="n">${f2(r.r4)} [${f2(r.lo)}, ${f2(r.hi)}]</td><td class="n">${f2(r.pl)}</td><td class="n">${f2(r.win * 100, 0)}</td></tr>`).join('') + '</table></div>';
+  h += `<h4>Audit of your two pages</h4>${md2html(AUDIT.split('\n').slice(3).join('\n'))}`;
   return h;
 }
+const md2html = (md) => { let h = '', ul = false; for (const l of md.split('\n')) { if (/^- /.test(l) || /^  \S/.test(l) && ul) { if (!ul) { h += '<ul>'; ul = true; } h += /^- /.test(l) ? `<li>${esc(l.slice(2)).replace(/`([^`]+)`/g, '<code>$1</code>')}</li>` : ''; continue; } if (ul) { h += '</ul>'; ul = false; } if (/^#{2,4} /.test(l)) h += `<h4>${esc(l.replace(/^#+ /, ''))}</h4>`; else if (l.trim()) h += `<p>${esc(l)}</p>`; } return h + (ul ? '</ul>' : ''); };
+const cellRows = (cells) => `<div class="tw"><table><tr><th>group</th><th class="n">n</th><th class="n">mean R [95% CI]</th><th class="n">random</th><th class="n">real − random [95% CI]</th><th class="n">q</th></tr>${cells.map((c) => `<tr><td>${esc(c.name)}</td><td class="n">${c.n}</td><td class="n">${f2(c.mean)} <span class="sub">[${f2(c.lo)}, ${f2(c.hi)}]</span></td><td class="n">${f2(c.plMean)}</td><td class="n">${f2(c.diff)} <span class="sub">[${f2(c.dLo)}, ${f2(c.dHi)}]</span></td><td class="n">${c.q === undefined || c.q === null ? '' : f2(c.q, 3)}</td></tr>`).join('')}</table></div>`;
 function paneStudy() {
-  const row = (n) => STUDY.table.find((t) => t.name === n);
-  const ct = row('fill bar closed through level (unknowable at fill)'), nct = row('fill bar did not close through');
-  let h = `<div class="banner info"><b>What holds up</b><ul style="margin:4px 0 0 16px;padding:0"><li>Structure adds nothing: every level fill averages ${f2(row('all fills').mean)}R, the same as random orders (${f2(row('all fills').plMean)}R).</li><li>Splitting by "the fill bar closed through the level" moves the average from ${f2(ct.mean)}R to ${f2(nct.mean)}R, and random orders move the same way (${f2(ct.plMean)}R to ${f2(nct.plMean)}R). That split is the Trade Check keep/reject rule, and it uses information a resting order does not have.</li><li>One Hour's "far" matches only when it includes the decision bar (79 of 79; 54 of 79 from earlier bars).</li><li>Space from earlier bars (price moved 0.5 ATR away before the return) beats random by about +0.09R in both halves of the data, but not significantly, and is still -0.02R after costs.</li></ul></div><p class="sub">${STUDY.events} first returns to a freshly broken SOL level, 2020-2026. Each row is a causal limit order at the level; stop 0.5 daily ATR, target 2R, net of 0.10R. "Random" is the same construction at random bars. q is Benjamini-Hochberg across rows.</p><div class="tw"><table><tr><th>group</th><th class="n">n</th><th class="n">mean R</th><th class="n">random</th><th class="n">diff</th><th class="n">q</th></tr>`;
-  h += STUDY.table.map((t) => `<tr><td>${esc(t.name)}</td><td class="n">${t.n}</td><td class="n">${f2(t.mean)} <span class="sub">[${f2(t.lo)}, ${f2(t.hi)}]</span></td><td class="n">${f2(t.plMean)}</td><td class="n">${f2(t.diff)}</td><td class="n">${f2(t.q)}</td></tr>`).join('') + '</table></div>';
+  if (!STUDY) return '<p class="sub">No study results yet: run <code>kev study</code>.</p>';
+  const X = STUDY;
+  let h = `<p class="sub">Pre-registered on 2026-10-21 before ETH and gold were run. Every row compares fills at kev's levels with random orders at the same distance, side, window and risk. Stop 0.5 × prior-day ATR, target 2R, net of costs; finer bars settle intrabar order where they exist.</p>`;
+  h += `<div class="banner info"><b>Overview:</b> ${esc(X.overview)}</div>`;
+  h += `<h4>H1 · space before the return: ${X.H1.verdict}</h4>${cellRows(X.H1.cells)}<p class="sub">Net mean R of space-ok fills: ${X.H1.net.map((x) => `${x.m} ${f2(x.mean)} [${f2(x.lo)}, ${f2(x.hi)}]`).join(' · ')}</p>${cellRows([...X.H1.split, ...X.H1.secondary])}`;
+  h += `<h4>H2 · more touches, better level? ${X.H2.contradicted ? 'yes somewhere' : 'no'}</h4><div class="tw"><table><tr><th>market</th><th>parser</th><th class="n">n ≥3</th><th class="n">n =1</th><th class="n">extra edge of ≥3 over 1 [95% CI]</th><th class="n">q</th></tr>${X.H2.cells.map((x) => `<tr><td>${x.m}</td><td>${x.preset}</td><td class="n">${x.nHigh}</td><td class="n">${x.nOne}</td><td class="n">${f2(x.d)} <span class="sub">[${f2(x.lo)}, ${f2(x.hi)}]</span></td><td class="n">${f2(x.q, 3)}</td></tr>`).join('')}</table></div>`;
+  h += `<h4>H3 · the fill-bar-close filter on random orders: ${X.H3.confirmed ? 'creates a fake edge everywhere' : 'not everywhere'}</h4><div class="tw"><table><tr><th>market</th><th class="n">closed through</th><th class="n">mean R closed through</th><th class="n">mean R not</th><th class="n">difference [95% CI]</th></tr>${X.H3.cells.map((x) => `<tr><td>${x.m}</td><td class="n">${x.nCT} of ${x.nCT + x.nNot}</td><td class="n">${f2(x.ct)}</td><td class="n">${f2(x.not)}</td><td class="n">${f2(x.diff)} <span class="sub">[${f2(x.lo)}, ${f2(x.hi)}]</span></td></tr>`).join('')}</table></div>`;
+  h += `<h4>H4 · what worst-case intrabar rules cost</h4><div class="tw"><table><tr><th>market</th><th>outcome</th><th class="n">trades</th><th class="n">finer bars used</th><th class="n">finer − conservative [95% CI]</th></tr>${X.H4.map((x) => `<tr><td>${x.m}</td><td>${x.key === '2' ? 'structural 2R' : x.key}</td><td class="n">${x.n}</td><td class="n">${f2(100 * x.ltfShare, 0)}%</td><td class="n">${f2(x.mean, 3)} <span class="sub">[${f2(x.lo, 3)}, ${f2(x.hi, 3)}]</span></td></tr>`).join('')}</table></div>`;
+  h += `<h4>H5 · trading-day sessions</h4><p class="sub">Gold median daily ATR(20): ${f2(X.H5.goldAtr.ny.median)} on New York-close days vs ${f2(X.H5.goldAtr.raw.median)} on the old UTC days with Sunday stubs.</p><div class="tw"><table><tr><th>run</th><th class="n">fills</th><th class="n">mean R [95% CI]</th><th class="n">random</th></tr>${X.H5.runs.map((x) => `<tr><td>${esc(x.name)}</td><td class="n">${x.fills}</td><td class="n">${f2(x.mean)} <span class="sub">[${f2(x.lo)}, ${f2(x.hi)}]</span></td><td class="n">${f2(x.placebo)}</td></tr>`).join('')}</table></div>`;
+  return h;
+}
+function paneMarket() {
+  const m = MK(), p = m.profile, WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  let h = `<dl class="kv"><dt>class</dt><dd>${p.cls} · tick ${p.tick}</dd><dt>data</dt><dd>${fmtT(p.from).slice(0, 10)} to ${fmtT(p.to).slice(0, 10)} · ${D().n} H1 bars${p.ltf.length ? ` · finer: ${p.ltf.map((x) => x.replace(/^ltf-|\.json$/g, '')).join(', ')}` : ''}</dd><dt>clock</dt><dd>${p.clock.kind === 'fixed' ? `UTC${p.clock.offsetHours >= 0 ? '+' : ''}${p.clock.offsetHours}` : 'New York + 7h'}: ${esc(p.clock.method)}</dd><dt>trading day</dt><dd>${m.session.day === 'ny-close' ? '17:00–17:00 New York' : '00:00–00:00 UTC'}; short reopenings after a weekend (≤ ${m.session.stubHours}h) merge into Monday; sessions on the ${m.session.traderTz} clock</dd><dt>costs</dt><dd>${p.costs.spreadBps} bps spread + ${p.costs.slipR}R (${esc(p.costs.note)})</dd><dt>in-sample</dt><dd>years ≤ ${p.split.isEndYear}</dd>${R && R.day ? `<dt>at the cursor</dt><dd>trading day ${WD[R.day.weekday]} began ${fmtT(R.day.start)} UTC; week began ${fmtT(R.day.weekStart)} UTC; London ${R.day.londonHour}:00</dd>` : ''}</dl>`;
+  h += `<h4>Files</h4><div class="tw"><table><tr><th>file</th><th class="n">bars</th><th>role</th></tr>${p.sources.map((x) => `<tr><td>${esc(x.file)}</td><td class="n">${x.n}</td><td>${x.role}</td></tr>`).join('')}</table></div>`;
+  h += `<h4>Found at ingest</h4>${p.notes.length ? '<ul>' + p.notes.map((n) => `<li>${esc(n)}</li>`).join('') + '</ul>' : '<p class="sub">Nothing unusual.</p>'}`;
   return h;
 }
 function paneRules() {
@@ -269,7 +284,7 @@ async function bindNotes() {
   $('#ns').onclick = async () => {
     if (!db) return; const text = $('#nt').value.trim(); if (!text) return;
     const d = D();
-    try { await db.collection('notes').add({ text, kind: $('#nk').value, mkt: S.mkt, t: d.t[S.i], phase: S.phase, dir: S.dir, spec: S.spec, level: S.sel, caseSet: S.cas ? S.cas.set : null, caseKey: S.cas ? (S.cas.set === 'tc' ? S.cas.d.n : S.cas.d.f) : null, createdAt: Date.now() }); $('#nt').value = ''; } catch (e) { $('#nl').textContent = 'Could not save: ' + (e.message || e.code); }
+    try { await db.collection('notes').add({ text, kind: $('#nk').value, mkt: S.mkt, t: d.t[S.i], phase: S.phase, dir: S.dir, preset: S.preset, level: S.sel, caseSet: S.cas ? S.cas.set : null, caseKey: S.cas ? (S.cas.set === 'tc' ? S.cas.d.n : S.cas.d.f) : null, createdAt: Date.now() }); $('#nt').value = ''; } catch (e) { $('#nl').textContent = 'Could not save: ' + (e.message || e.code); }
   };
   if (!db) { $('#nl').textContent = 'Notes need a signed-in viewer.'; $('#ns').disabled = true; return; }
   if (unsub) unsub();
@@ -286,14 +301,14 @@ function loadMarket(m) { S.mkt = m; S.cas = null; S.sel = null; setSeg('mkt', m)
 function openCase(v) {
   if (!v) { S.cas = null; schedule(); return; }
   const [set, k] = v.split(':'), C = set === 'tc' ? { set, d: CASES.find((c) => c.n === +k) } : { set, d: OH.find((c) => c.f === +k) };
-  if (S.mkt !== 'SOL') loadMarket('SOL');
-  S.cas = C; S.phase = 'open'; setSeg('phase', 'open'); S.spec = true; setSeg('spec', 1);
+  if (S.mkt !== 'SOLUSDT') loadMarket('SOLUSDT');
+  S.cas = C; S.phase = 'open'; setSeg('phase', 'open'); S.preset = set === 'tc' ? 'trade-check-spec' : 'one-hour-spec'; $('#preset').value = S.preset;
   if (set === 'tc') { S.dir = C.d.side; S.sel = C.d.level; S.i = idxOf(C.d.entryT); } else { S.dir = C.d.side; S.sel = C.d.p; S.i = idxOf(C.d.t); }
   setSeg('dir', S.dir); schedule();
 }
 function fillCases() {
   const sel = $('#cases'); let h = '<option value="">Example cases…</option>';
-  if (S.mkt === 'SOL') {
+  if (S.mkt === 'SOLUSDT' && CASES.length) {
     h += '<optgroup label="Trade Check: kept by the page">' + CASES.filter((c) => c.kind === 'taken').map((c) => `<option value="tc:${c.n}">#${c.n} ${c.side} ${c.win ? 'won' : 'lost'} ${fmtT(c.entryT).slice(0, 10)}</option>`).join('') + '</optgroup>';
     h += '<optgroup label="Trade Check: rejected by the page">' + CASES.filter((c) => c.kind === 'rejected').map((c) => `<option value="tc:${c.n}">#${c.n} ${c.side} ${fmtT(c.entryT).slice(0, 10)}</option>`).join('') + '</optgroup>';
     h += '<optgroup label="One Hour: retest decisions">' + OH.map((c) => `<option value="oh:${c.f}">${fmtT(c.t)} ${c.side} ${c.n}× ${c.ct ? '(closed through)' : ''}</option>`).join('') + '</optgroup>';
@@ -303,14 +318,14 @@ function fillCases() {
 document.addEventListener('click', (e) => {
   const sg = e.target.closest('.seg button'); if (sg) {
     const id = sg.parentElement.id, v = sg.dataset.v;
-    if (id === 'mkt') { loadMarket(v); S.i = D().n - 400; schedule(); } else if (id === 'spec') { S.spec = v === '1'; setSeg('spec', v); schedule(); } else if (id === 'dir') { S.dir = v; setSeg('dir', v); schedule(); } else if (id === 'phase') { S.phase = v; setSeg('phase', v); schedule(); }
+    if (id === 'mkt') { loadMarket(v); S.i = D().n - 400; schedule(); } else if (id === 'dir') { S.dir = v; setSeg('dir', v); schedule(); } else if (id === 'phase') { S.phase = v; setSeg('phase', v); schedule(); }
     return;
   }
   const st = e.target.closest('[data-step]'); if (st) { go(S.i + +st.dataset.step); return; }
   const tb = e.target.closest('#tabs button'); if (tb) { S.tab = tb.dataset.t; renderTabs(); renderPane(); return; }
   const tr = e.target.closest('tr[data-p]'); if (tr) { S.sel = +tr.dataset.p; schedule(); }
 });
-document.addEventListener('change', (e) => { if (e.target.id === 'cases') openCase(e.target.value); if (e.target.id === 'future') { S.future = e.target.checked; draw(); } if (e.target.id === 'rn') { S.ruleNode = e.target.value; renderPane(); } });
+document.addEventListener('change', (e) => { if (e.target.id === 'cases') openCase(e.target.value); if (e.target.id === 'preset') { S.preset = e.target.value; schedule(); } if (e.target.id === 'future') { S.future = e.target.checked; draw(); } if (e.target.id === 'rn') { S.ruleNode = e.target.value; renderPane(); } });
 $('#slider').addEventListener('input', (e) => go(+e.target.value));
 $('#go').onclick = () => { let v = $('#jump').value.trim().replace(' ', 'T'); if (v.length === 10) v += 'T00:00'; const t = Date.parse(/Z$/.test(v) ? v : v + 'Z'); if (Number.isFinite(t)) { S.cas = null; go(idxOf(t)); } };
 document.addEventListener('keydown', (e) => { if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.type !== 'range') return; if (e.key === 'ArrowLeft') { go(S.i - (e.shiftKey ? 24 : 1)); e.preventDefault(); } if (e.key === 'ArrowRight') { go(S.i + (e.shiftKey ? 24 : 1)); e.preventDefault(); } });
@@ -324,9 +339,11 @@ window.addEventListener('resize', () => draw());
 (async () => {
   renderTabs();
   try { Object.assign(DATA, await unpack(PACK)); } catch (e) { $('#status').textContent = 'Could not unpack prices: ' + e; return; }
-  loadMarket('SOL');
+  $('#mkt').innerHTML = Object.keys(MARKETS).map((m) => `<button data-v="${m}" aria-pressed="false">${m}</button>`).join('');
+  $('#preset').innerHTML = Kev.presets().map((p) => `<option value="${p.name}" title="${esc(p.note)}">${p.name}</option>`).join('');
+  loadMarket(S.mkt);
   const first = CASES.find((c) => c.kind === 'rejected' && c.entryT > Date.UTC(2021, 8, 1)) || CASES[0];
-  $('#cases').value = 'tc:' + first.n; openCase('tc:' + first.n);
+  if (first) { $('#cases').value = 'tc:' + first.n; openCase('tc:' + first.n); } else { S.i = D().n - 400; schedule(); }
   try { if (window.claude && window.claude.use) db = await window.claude.use('db'); } catch (e) { db = null; }
 })();
 </script>

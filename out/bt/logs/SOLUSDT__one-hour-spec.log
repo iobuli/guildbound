@@ -1,0 +1,45 @@
+SOLUSDT one-hour-spec: 2020-11-26 (1s)
+SOLUSDT one-hour-spec: 2021-01-28 (2s)
+SOLUSDT one-hour-spec: 2021-03-31 (3s)
+SOLUSDT one-hour-spec: 2021-06-02 (4s)
+SOLUSDT one-hour-spec: 2021-08-04 (5s)
+SOLUSDT one-hour-spec: 2021-10-05 (6s)
+SOLUSDT one-hour-spec: 2021-12-07 (8s)
+SOLUSDT one-hour-spec: 2022-02-07 (9s)
+SOLUSDT one-hour-spec: 2022-04-11 (9s)
+SOLUSDT one-hour-spec: 2022-06-12 (10s)
+SOLUSDT one-hour-spec: 2022-08-14 (11s)
+SOLUSDT one-hour-spec: 2022-10-15 (12s)
+SOLUSDT one-hour-spec: 2022-12-17 (13s)
+SOLUSDT one-hour-spec: 2023-02-17 (14s)
+SOLUSDT one-hour-spec: 2023-04-21 (15s)
+SOLUSDT one-hour-spec: 2023-06-22 (16s)
+SOLUSDT one-hour-spec: 2023-08-24 (17s)
+SOLUSDT one-hour-spec: 2023-10-25 (17s)
+SOLUSDT one-hour-spec: 2023-12-27 (18s)
+SOLUSDT one-hour-spec: 2024-02-27 (19s)
+SOLUSDT one-hour-spec: 2024-04-30 (20s)
+SOLUSDT one-hour-spec: 2024-07-01 (21s)
+SOLUSDT one-hour-spec: 2024-09-02 (22s)
+SOLUSDT one-hour-spec: 2024-11-03 (22s)
+SOLUSDT one-hour-spec: 2025-01-05 (23s)
+SOLUSDT one-hour-spec: 2025-03-08 (24s)
+SOLUSDT one-hour-spec: 2025-05-10 (25s)
+SOLUSDT one-hour-spec: 2025-07-11 (26s)
+SOLUSDT one-hour-spec: 2025-09-12 (27s)
+SOLUSDT one-hour-spec: 2025-11-13 (28s)
+SOLUSDT one-hour-spec: 2026-01-15 (28s)
+SOLUSDT one-hour-spec: 2026-03-18 (29s)
+SOLUSDT one-hour-spec: 2026-05-20 (30s)
+SOLUSDT one-hour-spec: 2026-07-21 (31s)
+SOLUSDT one-hour-spec: 2026-09-22 (32s)
+SOLUSDT one-hour-spec: 3222 fills, 5423 placebos, 17685 scans, 33s. Outcome S0.5_T2 (stop 0.5 x daily ATR, 2R, net of costs).
+
+| group | n | mean R [95% CI] | placebo | real - placebo [95% CI] | p | q |
+|---|---|---|---|---|---|---|
+| all fills | 3222 | -0.07 [-0.13, -0.01] | -0.16 | 0.09 [0.07, 0.11] | 0.003 |  |
+| GO at fill | 208 | 0.20 [-0.05, 0.45] | n/a | n/a [n/a, n/a] | n/a |  |
+| space ok (prior bars) | 554 | 0.03 [-0.12, 0.17] | -0.14 | 0.17 [0.12, 0.23] | 0.003 |  |
+| touches >= 2 | 994 | -0.11 [-0.23, -0.00] | -0.21 | 0.10 [0.06, 0.14] | 0.003 |  |
+| in-sample <= 2023 | 1846 | -0.08 [-0.17, 0.00] | -0.19 | 0.11 [0.07, 0.14] | 0.003 |  |
+| out-of-sample | 1376 | -0.05 [-0.15, 0.05] | -0.11 | 0.06 [0.03, 0.09] | 0.003 |  |

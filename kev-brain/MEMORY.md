@@ -18,7 +18,18 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 - Fills were never gated by the graph's verdict; every trade now carries GO, space and touches so gated results are reported directly.
 - Intrabar order was always the worst case; finer bars now decide when they exist (ETH M1-M30, gold M30), with the conservative result kept beside it.
 
-## Findings before v2 (to be re-checked under v2)
+## Findings v2 (2026-10-21, pre-registered, see findings.md)
+- Fills at kev's levels beat matched random orders in every market: SOL +0.09R, ETH +0.05R, gold +0.06R (p ~0.003), but every market is net negative
+  after costs (-0.07 to -0.13R at stop 0.5 daily ATR, 2R).
+- H1 space CONFIRMED on fresh data: fills with 0.5+ ATR of space (prior bars only) beat their placebos by +0.17 SOL, +0.15 ETH, +0.10 gold, in both halves.
+  Net it is still about breakeven on SOL (+0.03R, CI spans 0) and negative on ETH and gold. Part of the lift is random orders doing worse in those windows.
+- H2: touch count adds nothing, under either touch rule.
+- H3: the "fill bar did not close through" filter lifts RANDOM orders from about -0.31R to about 0R in all three markets: it is how the user's pages got their edge.
+- H4: worst-case intrabar rules understate structural-stop results by ~0.06R; negligible for 0.5-ATR stops.
+- H5: gold's Sunday stubs made the daily ATR 16% too small and added 18% more fills, but did not change the conclusion. Crypto: NY-close vs UTC days makes no difference.
+- SOL "GO at fill" looked good (+0.20R, n 208, descriptive) but does not replicate (ETH -0.10, gold -0.26).
+
+## Findings before v2 (superseded where the v2 runs disagree)
 - No net edge on SOL or gold (H4/H1/M30) after costs; real levels beat random orders by about +0.1R but only reach breakeven gross.
 - The user's Trade Check keep/reject rule is exactly "the fill bar closed through the level" (0 of 35 kept, 8 of 8 rejected): lookahead.
 - The user's One Hour `far` (space) includes the decision bar's own high/low on 79 of 79 decisions.

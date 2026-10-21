@@ -1,44 +1,48 @@
-// Builds out/inspector.html: the bundled engine + packed price data + the Trade Check cases + the page template.
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+// Builds out/inspector.html: the bundled engine, every ingested market (packed H1), the user's page cases, and the study results.
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
+import { fileURLToPath } from 'node:url';
 import { buildSync } from 'esbuild';
-import type { Candle } from '../core/types.js';
+import { listMarkets, openMarket } from '../core/market-io.js';
+import { BRAIN } from '../brain/brain.js';
 
-const root = new URL('../../', import.meta.url);
-const read = (p: string) => readFileSync(new URL(p, root), 'utf8');
+const root = fileURLToPath(new URL('../../', import.meta.url));
+const read = (p: string) => readFileSync(p, 'utf8');
 const H = 3_600_000;
 
-function pack(c: Candle[], k: number) {
-  const dh: number[] = [], q = (x: number) => Math.round(x * k);
-  c.forEach((b, i) => dh.push(i === 0 ? 0 : (b.t - c[i - 1]!.t) / H));
-  return { t0: c[0]!.t, k, dh, o: c.map((b) => q(b.o)), h: c.map((b) => q(b.h)), l: c.map((b) => q(b.l)), c: c.map((b) => q(b.c)) };
+export function buildInspector() {
+  const packs: Record<string, unknown> = {}, markets: Record<string, unknown> = {};
+  for (const sym of listMarkets()) {
+    const m = openMarket(sym), c = m.h1, p = m.profile, k = 10 ** Math.min(6, p.decimals);
+    packs[sym] = { t0: c[0]!.t, k, dh: c.map((b, i) => (i ? (b.t - c[i - 1]!.t) / H : 0)), o: c.map((b) => Math.round(b.o * k)), h: c.map((b) => Math.round(b.h * k)), l: c.map((b) => Math.round(b.l * k)), c: c.map((b) => Math.round(b.c * k)) };
+    markets[sym] = { instrument: m.instrument, session: p.session, profile: { cls: p.cls, tick: p.tick, clock: p.clock, costs: p.costs, split: p.split, from: p.data.from, to: p.data.to, ltf: p.data.ltf.map((x) => x.file), sources: p.data.sources, notes: p.notes } };
+  }
+  const data = Buffer.from(gzipSync(JSON.stringify(packs), { level: 9 })).toString('base64');
+  const ts = (s: string) => Date.parse(s.replace(' ', 'T') + ':00Z');
+  const tcPath = `${BRAIN}sources/pages/SOL_Trade_Check.data.json`, ohPath = `${BRAIN}sources/pages/One_Hour_At_A_Time.data.json`;
+  const tc = existsSync(tcPath) ? JSON.parse(read(tcPath)) : { trades: [], summary: {} };
+  const cases = tc.trades.map((t: any) => {
+    const at = (i: number) => ts(t.c[i][0]), fb = t.c[t.entry_i], L = t.level, long = t.side === 'long';
+    return { n: t.n, kind: t.kind, side: t.side, win: t.win, R: t.R, nT: t.nT, level: L, stop: t.stop, soft: t.soft, tgt: t.tgt, brkT: at(t.brk_i), touchT: t.touches.map(at), entryT: at(t.entry_i), exitT: at(t.exit_i), fb: fb.slice(1), fillOk: fb[3] <= L && L <= fb[2], closedThrough: long ? fb[4] < L : fb[4] > L };
+  });
+  let oh: unknown[] = [];
+  if (existsSync(ohPath)) {
+    const D = JSON.parse(read(ohPath)), F = D.frames;
+    oh = F.flatMap((fr: any) => (fr.retest ?? []).filter((r: any) => r.T1 !== undefined).map((r: any) => {
+      const long = r.side === 'long'; let farP = 0;
+      for (let k = r.b + 1; k < fr.f; k++) farP = Math.max(farP, (long ? F[k].h - r.p : r.p - F[k].l) / fr.atr);
+      return { f: fr.f, t: ts(fr.ts), p: r.p, side: r.side, n: r.n, bT: ts(F[r.b].ts), far: r.far, farPrior: Math.max(0, farP), ct: long ? fr.c < r.p : fr.c > r.p, T: [r.T1, r.T2, r.T3, r.T4] };
+    }));
+  }
+  const study = existsSync(`${root}out/study/hypotheses.json`) ? JSON.parse(read(`${root}out/study/hypotheses.json`)) : null;
+  const audit = existsSync(`${BRAIN}experiments/user-pages-audit.md`) ? read(`${BRAIN}experiments/user-pages-audit.md`) : '';
+  const bundle = buildSync({ entryPoints: [fileURLToPath(new URL('entry.ts', import.meta.url))], bundle: true, minify: true, format: 'iife', platform: 'browser', target: 'es2022', write: false }).outputFiles[0]!.text.replace(/<\/script/gi, '<\\/script');
+  const j = (x: unknown) => JSON.stringify(x).replace(/<\/script/gi, '<\\/script');
+  let html = read(fileURLToPath(new URL('inspector.html', import.meta.url)));
+  html = html.replace('/*@@BUNDLE@@*/', () => bundle).replace('@@DATA@@', () => data).replace('@@MARKETS@@', () => j(markets)).replace('@@CASES@@', () => j(cases)).replace('@@OH@@', () => j(oh))
+    .replace('@@STUDY@@', () => j(study)).replace('@@AUDIT@@', () => j(audit)).replace('@@SUMMARY@@', () => j(tc.summary));
+  mkdirSync(`${root}out/`, { recursive: true });
+  writeFileSync(`${root}out/inspector.html`, html);
+  return `out/inspector.html ${(html.length / 1e6).toFixed(2)} MB (engine ${(bundle.length / 1e3).toFixed(0)} kB, prices ${(data.length / 1e6).toFixed(2)} MB, markets ${Object.keys(markets).join(', ')})`;
 }
-const sol: Candle[] = JSON.parse(read('data/SOLUSDT_1h.json')), gold: Candle[] = JSON.parse(read('data/XAUUSD_h1.json'));
-const data = Buffer.from(gzipSync(JSON.stringify({ SOL: pack(sol, 1e4), GOLD: pack(gold, 1e3) }), { level: 9 })).toString('base64');
-
-const tc = JSON.parse(read('data/trade_check_sol.json'));
-const ts = (s: string) => Date.parse(s.replace(' ', 'T') + ':00Z');
-const cases = tc.trades.map((t: any) => {
-  const at = (i: number) => ts(t.c[i][0]), fb = t.c[t.entry_i], L = t.level, long = t.side === 'long';
-  return {
-    n: t.n, kind: t.kind, side: t.side, win: t.win, R: t.R, nT: t.nT, level: L, stop: t.stop, soft: t.soft, tgt: t.tgt, riskPct: t.risk_pct, mfe: t.mfe, bars: t.bars,
-    brkT: at(t.brk_i), touchT: t.touches.map(at), entryT: at(t.entry_i), exitT: at(t.exit_i), fb: fb.slice(1),
-    fillOk: fb[3] <= L && L <= fb[2], closedThrough: long ? fb[4] < L : fb[4] > L,
-  };
-});
-const compat = JSON.parse(read('out/compat.json')).filter((r: any) => !r.held).map((r: any) => ({ mkt: r.mkt, tier: r.minTier, space: r.space, fills: r.fills, r4: r.r4.mean, lo: r.r4.lo, hi: r.r4.hi, pl: r.pl4.mean, is: r.is4.mean, oos: r.oos4.mean, win: r.one4.win, perYear: r.one4.perYear }));
-
-// One Hour decisions: their level, side, touch count and `far`, next to the same measure computed from bars strictly before the decision bar.
-const oh = JSON.parse(read('data/one_hour_sol.json')), solIdx = new Map(sol.map((b, i) => [b.t, i]));
-const ohDec = oh.frames.flatMap((fr: any) => (fr.retest ?? []).filter((r: any) => r.T1 !== undefined).map((r: any) => {
-  const long = r.side === 'long', atr = fr.atr, t = ts(fr.ts), j = solIdx.get(t)!, bar = sol[j]!;
-  let farP = 0; for (let k = r.b + 1; k < fr.f; k++) { const g = oh.frames[k]; farP = Math.max(farP, ((long ? g.h - r.p : r.p - g.l)) / atr); }
-  return { f: fr.f, t, p: r.p, side: r.side, n: r.n, bT: ts(oh.frames[r.b].ts), far: r.far, farPrior: Math.max(0, farP), ct: long ? bar.c < r.p : bar.c > r.p, T: [r.T1, r.T2, r.T3, r.T4], atr };
-}));
-const study = JSON.parse(read('out/sol_levels.json'));
-const bundle = buildSync({ entryPoints: [new URL('entry.ts', import.meta.url).pathname], bundle: true, minify: true, format: 'iife', platform: 'browser', target: 'es2022', write: false }).outputFiles[0]!.text.replace(/<\/script/gi, '<\\/script');
-let html = read('src/viz/inspector.html');
-html = html.replace('/*@@BUNDLE@@*/', () => bundle).replace('@@DATA@@', () => data).replace('@@CASES@@', () => JSON.stringify(cases)).replace('@@COMPAT@@', () => JSON.stringify(compat)).replace('@@OH@@', () => JSON.stringify(ohDec)).replace('@@STUDY@@', () => JSON.stringify(study)).replace('@@SUMMARY@@', () => JSON.stringify(tc.summary));
-mkdirSync(new URL('out/', root), { recursive: true });
-writeFileSync(new URL('out/inspector.html', root), html);
-console.log(`out/inspector.html ${(html.length / 1e6).toFixed(2)} MB (bundle ${(bundle.length / 1e3).toFixed(0)} kB, data ${(data.length / 1e6).toFixed(2)} MB)`);
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) console.log(buildInspector());

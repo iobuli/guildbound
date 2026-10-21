@@ -1,0 +1,90 @@
+SOLUSDT kev-default: 2020-11-26 (2s)
+SOLUSDT kev-default: 2021-01-28 (4s)
+SOLUSDT kev-default: 2021-03-31 (5s)
+SOLUSDT kev-default: 2021-06-02 (6s)
+SOLUSDT kev-default: 2021-08-04 (8s)
+SOLUSDT kev-default: 2021-10-05 (9s)
+SOLUSDT kev-default: 2021-12-07 (10s)
+SOLUSDT kev-default: 2022-02-07 (12s)
+SOLUSDT kev-default: 2022-04-11 (13s)
+SOLUSDT kev-default: 2022-06-12 (14s)
+SOLUSDT kev-default: 2022-08-14 (15s)
+SOLUSDT kev-default: 2022-10-15 (16s)
+SOLUSDT kev-default: 2022-12-17 (17s)
+SOLUSDT kev-default: 2023-02-17 (18s)
+SOLUSDT kev-default: 2023-04-21 (19s)
+SOLUSDT kev-default: 2023-06-22 (20s)
+SOLUSDT kev-default: 2023-08-24 (21s)
+SOLUSDT kev-default: 2023-10-25 (22s)
+SOLUSDT kev-default: 2023-12-27 (23s)
+SOLUSDT kev-default: 2024-02-27 (24s)
+SOLUSDT kev-default: 2024-04-30 (25s)
+SOLUSDT kev-default: 2024-07-01 (26s)
+SOLUSDT kev-default: 2024-09-02 (27s)
+SOLUSDT kev-default: 2024-11-03 (28s)
+SOLUSDT kev-default: 2025-01-05 (29s)
+SOLUSDT kev-default: 2025-03-08 (30s)
+SOLUSDT kev-default: 2025-05-10 (31s)
+SOLUSDT kev-default: 2025-07-11 (32s)
+SOLUSDT kev-default: 2025-09-12 (33s)
+SOLUSDT kev-default: 2025-11-13 (34s)
+SOLUSDT kev-default: 2026-01-15 (35s)
+SOLUSDT kev-default: 2026-03-18 (36s)
+SOLUSDT kev-default: 2026-05-20 (37s)
+SOLUSDT kev-default: 2026-07-21 (38s)
+SOLUSDT kev-default: 2026-09-22 (39s)
+SOLUSDT kev-default: 7721 fills, 13063 placebos, 17685 scans, 40s. Outcome S0.5_T2 (stop 0.5 x daily ATR, 2R, net of costs).
+
+| group | n | mean R [95% CI] | placebo | real - placebo [95% CI] | p | q |
+|---|---|---|---|---|---|---|
+| all fills | 7721 | -0.08 [-0.12, -0.05] | -0.13 | 0.05 [0.04, 0.07] | 0.003 |  |
+| GO at fill | 1172 | -0.06 [-0.16, 0.04] | n/a | n/a [n/a, n/a] | n/a |  |
+| space ok (prior bars) | 2617 | -0.08 [-0.15, -0.02] | -0.14 | 0.06 [0.03, 0.09] | 0.003 |  |
+| touches >= 2 | 3969 | -0.10 [-0.14, -0.04] | -0.14 | 0.04 [0.02, 0.07] | 0.003 |  |
+| in-sample <= 2023 | 4226 | -0.04 [-0.09, 0.01] | -0.09 | 0.05 [0.03, 0.07] | 0.003 |  |
+| out-of-sample | 3495 | -0.13 [-0.18, -0.08] | -0.18 | 0.05 [0.03, 0.07] | 0.003 |  |
+SOLUSDT kev-default: 2020-11-26 (2s)
+SOLUSDT kev-default: 2021-01-28 (3s)
+SOLUSDT kev-default: 2021-03-31 (4s)
+SOLUSDT kev-default: 2021-06-02 (5s)
+SOLUSDT kev-default: 2021-08-04 (6s)
+SOLUSDT kev-default: 2021-10-05 (8s)
+SOLUSDT kev-default: 2021-12-07 (9s)
+SOLUSDT kev-default: 2022-02-07 (10s)
+SOLUSDT kev-default: 2022-04-11 (11s)
+SOLUSDT kev-default: 2022-06-12 (12s)
+SOLUSDT kev-default: 2022-08-14 (13s)
+SOLUSDT kev-default: 2022-10-15 (14s)
+SOLUSDT kev-default: 2022-12-17 (15s)
+SOLUSDT kev-default: 2023-02-17 (16s)
+SOLUSDT kev-default: 2023-04-21 (17s)
+SOLUSDT kev-default: 2023-06-22 (18s)
+SOLUSDT kev-default: 2023-08-24 (19s)
+SOLUSDT kev-default: 2023-10-25 (20s)
+SOLUSDT kev-default: 2023-12-27 (21s)
+SOLUSDT kev-default: 2024-02-27 (22s)
+SOLUSDT kev-default: 2024-04-30 (23s)
+SOLUSDT kev-default: 2024-07-01 (24s)
+SOLUSDT kev-default: 2024-09-02 (25s)
+SOLUSDT kev-default: 2024-11-03 (27s)
+SOLUSDT kev-default: 2025-01-05 (28s)
+SOLUSDT kev-default: 2025-03-08 (29s)
+SOLUSDT kev-default: 2025-05-10 (30s)
+SOLUSDT kev-default: 2025-07-11 (31s)
+SOLUSDT kev-default: 2025-09-12 (32s)
+SOLUSDT kev-default: 2025-11-13 (33s)
+SOLUSDT kev-default: 2026-01-15 (34s)
+SOLUSDT kev-default: 2026-03-18 (36s)
+SOLUSDT kev-default: 2026-05-20 (38s)
+SOLUSDT kev-default: 2026-07-21 (39s)
+SOLUSDT kev-default: 2026-09-22 (41s)
+SOLUSDT kev-default: 7721 fills, 13063 placebos, 17685 scans, 42s. Outcome S0.5_T2 (stop 0.5 x daily ATR, 2R, net of costs).
+
+| group | n | mean R [95% CI] | placebo | real - placebo [95% CI] | p | q |
+|---|---|---|---|---|---|---|
+| all fills | 7721 | -0.08 [-0.12, -0.05] | -0.13 | 0.05 [0.04, 0.07] | 0.003 |  |
+| GO at fill | 1172 | -0.06 [-0.16, 0.04] | n/a | n/a [n/a, n/a] | n/a |  |
+| space ok (prior bars) | 2617 | -0.08 [-0.15, -0.02] | -0.14 | 0.06 [0.03, 0.09] | 0.003 |  |
+| touches >= 2 | 3969 | -0.10 [-0.14, -0.04] | -0.14 | 0.04 [0.02, 0.07] | 0.003 |  |
+| in-sample <= 2023 | 4226 | -0.04 [-0.09, 0.01] | -0.09 | 0.05 [0.03, 0.07] | 0.003 |  |
+| out-of-sample | 3495 | -0.13 [-0.18, -0.08] | -0.18 | 0.05 [0.03, 0.07] | 0.003 |  |

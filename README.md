@@ -9,14 +9,26 @@ A trader's method, rebuilt as a graph of isolated nodes that an LLM agent can ca
 - **Causal by construction**: each node declares when its answer becomes knowable (`prior_bars`, `bar_open`, `fill_time`, `bar_close`, `post_fill`). The graph refuses a wire where a node needs something that is not knowable when it decides, and a node's view contains only the bars that had closed by then. This is the lesson of the "close that hadn't printed yet" forensic page: a filter that reads the fill bar's close cannot be wired to an order that fills mid-bar.
 - **Follows the trader's own framework**: Direction, Objection, Location, Execution (plus Management, Risk, Context).
 
+## v2: any market, one CLI, and a brain
+
 ```
-npm test        # 50 checks: each node alone, isolation, causality, lookahead audits on SOL
-npm run docs    # regenerates docs/ from the node definitions (graph, per-node pages, conflicts, sources)
-npm run replay  # the whole graph over SOL 2022-2026
-npm run backtest  # resting-order backtest of the whole graph vs placebo and shuffled SOL (~90s) -> out/backtest.md
-npm run optimize  # walk-forward search of the builder's thresholds, with the same search on shuffled SOL
-npm run mcp     # MCP server: kev_levels, kev_evaluate, kev_rules, kev_node, kev_nodes, kev_graph
+npx tsx src/cli.ts ingest ETHUSD a.csv b.csv ...   # any CSV/TSV/JSON price files -> markets/ETHUSD (layout, clock, timeframe, consistency checked)
+npx tsx src/cli.ts markets                          # every ingested market and its profile
+npx tsx src/cli.ts backtest ETHUSD --preset=one-hour-spec   # causal harness + matched random orders
+npx tsx src/cli.ts study                            # the pre-registered cross-market hypotheses -> kev-brain/experiments + findings.md
+npx tsx src/cli.ts audit-pages                      # re-checks the user's Trade Check and One Hour pages against the market data
+npx tsx src/cli.ts inspect                          # out/inspector.html: every market, step through time, see the parse
+npx tsx src/cli.ts brain build|search|context|log|process   # kev-brain: memory, sources, generated method/market notes, inbox
+npm test                                            # selftests: nodes, causality, lookahead, sessions, sniffing, presets, settlement
+npm run mcp                                         # MCP: kev_levels, kev_evaluate, kev_rules, kev_node(s), kev_graph, kev_markets, kev_brain_search, kev_brain_note
 ```
+
+- **Markets** live in `markets/<SYMBOL>/` (profile.json + H1 + finer series). Nothing in the code names a market; override any profile field in `override.json`.
+- **Sessions**: daily and weekly bars follow the market's trading day (17:00 New York for FX/metals, UTC for crypto), with short Sunday reopenings merged into Monday.
+- **Presets** (`src/core/presets.ts`) are the only way parameters change: `kev-default`, `trade-check-spec`, `one-hour-spec`.
+- **Settlement** uses finer bars to order stop and target inside an hour when they exist; the conservative H1 result is kept beside it.
+- **kev-brain/** is the memory (KEV.md rules, USER.md, MEMORY.md, daily log, sources incl. the levels-webinar transcript, experiments, findings). A SessionStart hook in `.claude/settings.json` loads it. Drop new files into `kev-brain/inbox/` and run `brain process`.
+- Old one-off runners are in `legacy/` (not compiled).
 
 ## The order it runs in
 The graph evaluates, and `kev_evaluate` reports, in the trader's order of operations, and names the first step that blocks the trade:
@@ -35,6 +47,8 @@ This covers only levels where price goes the OPPOSITE way to the last participan
 The knowledge is a third party's notes of a discretionary forex/index trader, plus two user-supplied backtest pages that were not reproduced. Nothing was developed on crypto. Several thresholds are the builder's, marked `inferred` in `src/core/params.ts` and in the rules. The replay on SOL (`out/replay.json`) found no edge in the SFP or daily-bias signals.
 
 ## What the backtest found (SOL/USDT H1, 2021 to Oct 2026, 7,101 fills, costs 0.10R per trade)
+
+> Pre-v2 numbers: before the trading-day session fix and before the corrected (bootstrap) p-values. Current results are in `kev-brain/findings.md`.
 Resting limit orders at each flipped level's last-high/low-before-breakout, filled on touch, stop from the `stop` node, stop wins same-bar ties. Day-clustered bootstrap CIs. Harness verified to have no lookahead (`npm test`).
 
 - **Net result is negative everywhere**: about -0.18R per trade at a 2R target (-0.13R at 4R), in-sample and out-of-sample.
@@ -46,6 +60,8 @@ Resting limit orders at each flipped level's last-high/low-before-breakout, fill
 Limits: events overlap (several fills per day), swerve cancellation is not simulated, intrabar order is unknowable (ties go to the stop), and the same-direction half of the method (second webinar) is not in the sources.
 
 ## Gold (XAUUSD, 2010-2026): M30, H1 and H4 bases
+
+> Pre-v2 numbers: before the trading-day session fix and before the corrected (bootstrap) p-values. Current results are in `kev-brain/findings.md`.
 Data: the user's MT4 exports (tab-separated, tick volume). The two H1 files are byte-identical. M30, H1, H4 and D1 agree exactly (M30 to H1, H1 to H4 and H1 to D1 match on every bar), so they are ONE market at four resolutions, not four samples. Week starts Sunday evening; costs are 1.2 bps spread + 0.10R slippage. In-sample 2010-2018, out-of-sample 2019-2026.
 
 | Base | Fills | Mean net R at 4R | Random-order placebo | Real minus placebo | One-at-a-time Sharpe |

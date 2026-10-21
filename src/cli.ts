@@ -5,6 +5,8 @@ import { PRESETS } from './core/presets.js';
 import { runMarket } from './study/run.js';
 import { cell, table } from './study/analyze.js';
 import { auditPages } from './study/audit-pages.js';
+import { analyse, runJobs } from './study/hypotheses.js';
+import { buildInspector } from './viz/build.js';
 import { context, log, processInbox, search, writeMarketNotes, writeMethodNotes, writeSourceIndex } from './brain/brain.js';
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -20,6 +22,8 @@ const HELP = `kev commands:
   brain context            what the SessionStart hook injects
   brain log "TEXT"         append to today's daily log
   brain process            route files dropped in kev-brain/inbox (prices -> ingest, pages/notes -> sources)
+  study [--force]          run the pre-registered cross-market hypotheses (H1-H5) and write results to the brain
+  inspect                  build out/inspector.html (every market, the user's pages, the study results)
   audit-pages              re-check the user's Trade Check and One Hour pages against the market data
   backtest SYMBOL          causal harness + matched placebos on one market
                            --preset=${Object.keys(PRESETS).join('|')}  --from=YYYY[-MM-DD]  --to=...  --session=utc|ny-close|utc-raw  --no-ltf`;
@@ -48,6 +52,8 @@ async function main() {
       break;
     }
     case 'audit-pages': console.log(auditPages()); break;
+    case 'inspect': console.log(buildInspector()); break;
+    case 'study': await runJobs(flags.has('--force')); console.log(analyse()); break;
     case 'backtest': {
       const sym = args[0]?.toUpperCase();
       if (!sym) throw new Error('usage: backtest SYMBOL [--preset=...]');

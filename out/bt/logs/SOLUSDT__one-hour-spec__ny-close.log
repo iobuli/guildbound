@@ -1,0 +1,90 @@
+SOLUSDT one-hour-spec: 2020-11-26 (1s)
+SOLUSDT one-hour-spec: 2021-01-28 (2s)
+SOLUSDT one-hour-spec: 2021-03-31 (3s)
+SOLUSDT one-hour-spec: 2021-06-02 (4s)
+SOLUSDT one-hour-spec: 2021-08-04 (5s)
+SOLUSDT one-hour-spec: 2021-10-05 (6s)
+SOLUSDT one-hour-spec: 2021-12-07 (7s)
+SOLUSDT one-hour-spec: 2022-02-07 (8s)
+SOLUSDT one-hour-spec: 2022-04-11 (8s)
+SOLUSDT one-hour-spec: 2022-06-12 (9s)
+SOLUSDT one-hour-spec: 2022-08-14 (10s)
+SOLUSDT one-hour-spec: 2022-10-15 (11s)
+SOLUSDT one-hour-spec: 2022-12-17 (12s)
+SOLUSDT one-hour-spec: 2023-02-17 (13s)
+SOLUSDT one-hour-spec: 2023-04-21 (13s)
+SOLUSDT one-hour-spec: 2023-06-22 (14s)
+SOLUSDT one-hour-spec: 2023-08-24 (15s)
+SOLUSDT one-hour-spec: 2023-10-25 (16s)
+SOLUSDT one-hour-spec: 2023-12-27 (17s)
+SOLUSDT one-hour-spec: 2024-02-27 (17s)
+SOLUSDT one-hour-spec: 2024-04-30 (18s)
+SOLUSDT one-hour-spec: 2024-07-01 (19s)
+SOLUSDT one-hour-spec: 2024-09-02 (20s)
+SOLUSDT one-hour-spec: 2024-11-03 (21s)
+SOLUSDT one-hour-spec: 2025-01-05 (22s)
+SOLUSDT one-hour-spec: 2025-03-08 (23s)
+SOLUSDT one-hour-spec: 2025-05-10 (23s)
+SOLUSDT one-hour-spec: 2025-07-11 (24s)
+SOLUSDT one-hour-spec: 2025-09-12 (25s)
+SOLUSDT one-hour-spec: 2025-11-13 (26s)
+SOLUSDT one-hour-spec: 2026-01-15 (27s)
+SOLUSDT one-hour-spec: 2026-03-18 (27s)
+SOLUSDT one-hour-spec: 2026-05-20 (28s)
+SOLUSDT one-hour-spec: 2026-07-21 (29s)
+SOLUSDT one-hour-spec: 2026-09-22 (30s)
+SOLUSDT one-hour-spec: 3251 fills, 5501 placebos, 17685 scans, 31s. Outcome S0.5_T2 (stop 0.5 x daily ATR, 2R, net of costs).
+
+| group | n | mean R [95% CI] | placebo | real - placebo [95% CI] | p | q |
+|---|---|---|---|---|---|---|
+| all fills | 3251 | -0.07 [-0.13, -0.01] | -0.15 | 0.08 [0.06, 0.11] | 0.003 |  |
+| GO at fill | 193 | 0.08 [-0.17, 0.35] | n/a | n/a [n/a, n/a] | n/a |  |
+| space ok (prior bars) | 522 | 0.05 [-0.13, 0.21] | -0.13 | 0.18 [0.11, 0.26] | 0.003 |  |
+| touches >= 2 | 1002 | -0.11 [-0.21, 0.01] | -0.17 | 0.06 [0.02, 0.10] | 0.003 |  |
+| in-sample <= 2023 | 1863 | -0.09 [-0.18, -0.02] | -0.19 | 0.10 [0.07, 0.13] | 0.003 |  |
+| out-of-sample | 1388 | -0.04 [-0.13, 0.06] | -0.10 | 0.06 [0.02, 0.10] | 0.003 |  |
+SOLUSDT one-hour-spec: 2020-11-26 (1s)
+SOLUSDT one-hour-spec: 2021-01-28 (2s)
+SOLUSDT one-hour-spec: 2021-03-31 (3s)
+SOLUSDT one-hour-spec: 2021-06-02 (4s)
+SOLUSDT one-hour-spec: 2021-08-04 (5s)
+SOLUSDT one-hour-spec: 2021-10-05 (6s)
+SOLUSDT one-hour-spec: 2021-12-07 (7s)
+SOLUSDT one-hour-spec: 2022-02-07 (8s)
+SOLUSDT one-hour-spec: 2022-04-11 (9s)
+SOLUSDT one-hour-spec: 2022-06-12 (10s)
+SOLUSDT one-hour-spec: 2022-08-14 (10s)
+SOLUSDT one-hour-spec: 2022-10-15 (11s)
+SOLUSDT one-hour-spec: 2022-12-17 (13s)
+SOLUSDT one-hour-spec: 2023-02-17 (13s)
+SOLUSDT one-hour-spec: 2023-04-21 (14s)
+SOLUSDT one-hour-spec: 2023-06-22 (15s)
+SOLUSDT one-hour-spec: 2023-08-24 (16s)
+SOLUSDT one-hour-spec: 2023-10-25 (17s)
+SOLUSDT one-hour-spec: 2023-12-27 (18s)
+SOLUSDT one-hour-spec: 2024-02-27 (19s)
+SOLUSDT one-hour-spec: 2024-04-30 (20s)
+SOLUSDT one-hour-spec: 2024-07-01 (22s)
+SOLUSDT one-hour-spec: 2024-09-02 (23s)
+SOLUSDT one-hour-spec: 2024-11-03 (25s)
+SOLUSDT one-hour-spec: 2025-01-05 (26s)
+SOLUSDT one-hour-spec: 2025-03-08 (27s)
+SOLUSDT one-hour-spec: 2025-05-10 (27s)
+SOLUSDT one-hour-spec: 2025-07-11 (28s)
+SOLUSDT one-hour-spec: 2025-09-12 (29s)
+SOLUSDT one-hour-spec: 2025-11-13 (30s)
+SOLUSDT one-hour-spec: 2026-01-15 (32s)
+SOLUSDT one-hour-spec: 2026-03-18 (33s)
+SOLUSDT one-hour-spec: 2026-05-20 (34s)
+SOLUSDT one-hour-spec: 2026-07-21 (35s)
+SOLUSDT one-hour-spec: 2026-09-22 (36s)
+SOLUSDT one-hour-spec: 3251 fills, 5501 placebos, 17685 scans, 36s. Outcome S0.5_T2 (stop 0.5 x daily ATR, 2R, net of costs).
+
+| group | n | mean R [95% CI] | placebo | real - placebo [95% CI] | p | q |
+|---|---|---|---|---|---|---|
+| all fills | 3251 | -0.07 [-0.13, -0.01] | -0.15 | 0.08 [0.06, 0.11] | 0.003 |  |
+| GO at fill | 193 | 0.08 [-0.17, 0.35] | n/a | n/a [n/a, n/a] | n/a |  |
+| space ok (prior bars) | 522 | 0.05 [-0.13, 0.21] | -0.13 | 0.18 [0.11, 0.26] | 0.003 |  |
+| touches >= 2 | 1002 | -0.11 [-0.21, 0.01] | -0.17 | 0.06 [0.02, 0.10] | 0.003 |  |
+| in-sample <= 2023 | 1863 | -0.09 [-0.18, -0.02] | -0.19 | 0.10 [0.07, 0.13] | 0.003 |  |
+| out-of-sample | 1388 | -0.04 [-0.13, 0.06] | -0.10 | 0.06 [0.02, 0.10] | 0.003 |  |
