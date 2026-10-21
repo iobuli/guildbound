@@ -6,6 +6,7 @@ import { makeFeed, H } from '../core/series.js';
 import type { SessionSpec } from '../core/session.js';
 import { analyzeLevel } from '../core/levelmath.js';
 import { SetupSchema, type Candle, type Instrument } from '../core/types.js';
+import { interpret as readMoment, topology } from '../interpret.js';
 
 export interface RunIn { candles: Candle[]; T: number; session: SessionSpec; instrument: Instrument; dir: 'long' | 'short'; preset: string; centre?: number; price?: number }
 
@@ -32,4 +33,9 @@ export function catalogue() {
     rules: n.rules.map((r) => ({ id: r.id, text: r.text, kind: r.kind, status: r.status, codable: r.codable, note: r.note ?? null, sources: r.sources.map((x) => `${x.kind}: ${x.ref}`) })) }));
 }
 export const presets = () => Object.entries(PRESETS).map(([name, p]) => ({ name, note: p.note }));
-(globalThis as unknown as { Kev: unknown }).Kev = { run, catalogue, presets };
+/** kev's layered reading at T plus per-node status and salience (what lights the graph). */
+export function interpret(a: { candles: Candle[]; T: number; session: SessionSpec; instrument: Instrument; preset: string; price?: number }) {
+  applyPreset(a.preset);
+  return readMoment(makeFeed(a.candles, { session: a.session }), a.T, { instrument: a.instrument, price: a.price });
+}
+(globalThis as unknown as { Kev: unknown }).Kev = { run, catalogue, presets, interpret, topology };

@@ -29,6 +29,13 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 - H5: gold's Sunday stubs made the daily ATR 16% too small and added 18% more fills, but did not change the conclusion. Crypto: NY-close vs UTC days makes no difference.
 - SOL "GO at fill" looked good (+0.20R, n 208, descriptive) but does not replicate (ETH -0.10, gold -0.26).
 
+## Atlas SOLUSDT 2020-2022 (2026-10-21; experiments/atlas-SOLUSDT-2020-2022.md)
+- 467 levels kev marked; median life about 1 day; 48% never revisited; first retests held 63% [hindsight].
+- Fills beat random orders in all 5 phases (+0.03 to +0.11R, best in the 2021 run) but net is about 0 or below in every phase [causal].
+- Nothing known at first sight picks the levels that later hold 3+ tests (AUC 0.38-0.58); more touches at first sight is slightly WORSE.
+- "With-trend levels hold better" (68% vs 53%) only works with hindsight phase direction; the causal regime trend gives AUC 0.44.
+- The regime node's ATR-normalised trend calls crashes "range" (all of May-Jul 2021, 60% of 2022): a known weakness, not tuned.
+
 ## Findings before v2 (superseded where the v2 runs disagree)
 - No net edge on SOL or gold (H4/H1/M30) after costs; real levels beat random orders by about +0.1R but only reach breakeven gross.
 - The user's Trade Check keep/reject rule is exactly "the fill bar closed through the level" (0 of 35 kept, 8 of 8 rejected): lookahead.

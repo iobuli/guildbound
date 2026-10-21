@@ -5,6 +5,7 @@ import { graph, nodes, edges } from './kev.js';
 import { H } from './core/series.js';
 import { listMarkets, loadProfile, openMarket, type Market } from './core/market-io.js';
 import { BRAIN, search } from './brain/brain.js';
+import { interpret } from './interpret.js';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { encode } from './core/token.js';
@@ -141,5 +142,13 @@ server.registerTool('kev_markets', {
   description: 'Every ingested market (markets/<SYMBOL>/profile.json): class, dates, clock and how it was checked, session, costs, in-sample split, finer timeframes, and the notes found at ingest.',
   inputSchema: {},
 }, async () => json(listMarkets().map((m) => { const p = loadProfile(m); return { symbol: m, cls: p.cls, from: new Date(p.data.from).toISOString().slice(0, 10), to: new Date(p.data.to).toISOString().slice(0, 10), clock: p.clock, session: p.session, costs: p.costs, isEndYear: p.split.isEndYear, ltf: p.data.ltf.map((x) => x.file), notes: p.notes }; })));
+
+server.registerTool('kev_interpret', {
+  description: 'kev\'s layered reading of one market at one moment, from closed bars only: L1 regime (trend, volatility, range position, drawdown), L2 daily/weekly bias, L3 nearest levels, L4 H1 structure (break, retest, space, SFP), L5 the order it would place and what blocks it. Also returns per-node salience (0-1) and status.',
+  inputSchema: { symbol: SYMBOL, time: z.string().optional().describe('ISO decision time; default just after the latest closed hour') },
+}, async ({ symbol, time }) => {
+  const m = market(symbol), T = time ? Date.parse(time) : defaultT(symbol);
+  return json(interpret(m.feed, T, { instrument: m.cfg.instrument }));
+});
 
 await server.connect(new StdioServerTransport());

@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Kev Inspector</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -56,6 +57,15 @@ textarea{width:100%;min-height:64px}
 .note{border-bottom:1px solid var(--hair);padding:6px 0}.note small{color:var(--dim)}
 .good{color:var(--okc)}.bad{color:var(--failc)}
 p{margin:6px 0}
+#graphcard{margin-top:12px}
+#gv{display:block;width:100%;height:320px;cursor:pointer}
+@media (max-width:640px){#gv{height:430px}}
+.gh{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;justify-content:space-between;margin-bottom:6px}
+.layer{border-left:3px solid var(--hair);padding:2px 0 2px 10px;margin:8px 0}
+.layer b{display:block;font-size:12px;color:var(--dim);font-weight:500;letter-spacing:.02em;text-transform:uppercase}
+.badge{display:inline-block;background:var(--warnsoft);border:1px solid var(--warn);color:var(--ink);border-radius:10px;padding:0 8px;font-size:11.5px}
+.ask{white-space:pre-wrap;font-size:13px;line-height:1.5}
+button.b[aria-pressed="true"]{background:var(--acc);color:#fff;border-color:var(--acc)}
 </style>
 
 <header>
@@ -68,6 +78,9 @@ p{margin:6px 0}
   <select id="preset" aria-label="Level parser preset"></select>
   <div class="seg" id="dir" role="group" aria-label="Direction"><button data-v="long" aria-pressed="true">Long</button><button data-v="short" aria-pressed="false">Short</button></div>
   <div class="seg" id="phase" role="group" aria-label="Decision moment"><button data-v="open" aria-pressed="true">At bar open</button><button data-v="close" aria-pressed="false">After close</button></div>
+  <button class="b" id="play" aria-pressed="false" title="step forward bar by bar">▶ Play</button>
+  <select id="speed" aria-label="Play speed"><option value="2">2 bars/s</option><option value="6" selected>6 bars/s</option><option value="15">15 bars/s</option><option value="30">30 bars/s</option></select>
+  <button class="b" id="atlasBtn" aria-pressed="false" title="the whole window, every level kev marked, coloured by what happened to it (hindsight)">Atlas view</button>
   <label class="sub"><input type="checkbox" id="future" checked> show hidden future</label>
   <select id="cases" aria-label="Example cases"></select>
   <input type="text" id="jump" size="16" placeholder="2022-08-02 14:00" aria-label="Jump to UTC time"><button class="b" id="go">Go</button>
@@ -85,14 +98,22 @@ p{margin:6px 0}
   </div>
 </div>
 
+<div class="card" id="graphcard">
+  <div class="gh"><div><b>kev's graph</b> <span class="sub">each dot is a node; colour = what it decided, brightness = how much it shapes the reading now; wires pulse when the node feeding them changes</span></div><div class="sub" id="ghead"></div></div>
+  <canvas id="gv" role="img" aria-label="kev's nodes and wires, lit by what each node is doing at the cursor"></canvas>
+  <div class="legend" id="glegend"></div>
+</div>
+
 <script>/*@@BUNDLE@@*/</script>
 <script>
+const ATLAS = @@ATLAS@@;
 const PACK = "@@DATA@@", MARKETS = @@MARKETS@@, CASES = @@CASES@@, OH = @@OH@@, STUDY = @@STUDY@@, AUDIT = @@AUDIT@@, TCSUM = @@SUMMARY@@;
 const H = 3600000, $ = (s) => document.querySelector(s), esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 const fmtT = (t) => new Date(t).toISOString().slice(0, 16).replace('T', ' ');
 const f2 = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
 const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const S = { mkt: MARKETS.SOLUSDT ? 'SOLUSDT' : Object.keys(MARKETS)[0], i: 0, phase: 'open', dir: 'long', preset: 'kev-default', sel: null, cas: null, tab: 'flow', future: true, win: 150 };
+const S = { mkt: MARKETS.SOLUSDT ? 'SOLUSDT' : Object.keys(MARKETS)[0], i: 0, phase: 'open', dir: 'long', preset: 'kev-default', sel: null, cas: null, tab: 'read', future: true, win: 150, node: null, atlas: false, playing: false };
+let RD = null, RDprev = null, TOPO = null, sample = null;
 const MK = () => MARKETS[S.mkt];
 const DATA = {}; let R = null, CAT = null, db = null;
 
@@ -121,7 +142,9 @@ function compute() {
   const a = Math.max(0, S.i - 1100), candles = []; for (let k = a; k <= S.i; k++) candles.push(bar(k));
   const T = S.phase === 'open' ? d.t[S.i] : d.t[S.i] + H;
   try { R = Kev.run({ candles, T, session: MK().session, instrument: MK().instrument, dir: S.dir, preset: S.preset, centre: S.sel ?? undefined }); R.err = null; } catch (e) { R = { err: String(e), flow: { steps: [], firstBlocker: null }, scan: null, level: null, states: {} }; }
-  $('#slider').value = S.i; draw(); renderPane();
+  RDprev = RD;
+  try { RD = Kev.interpret({ candles, T, session: MK().session, instrument: MK().instrument, preset: S.preset, price: S.phase === 'open' ? d.o[S.i] : d.c[S.i] }); } catch (e) { RD = null; }
+  $('#slider').value = S.i; draw(); renderPane(); drawGraph(true);
   const WD = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   $('#status').textContent = `${S.mkt} · decision ${fmtT(T)} UTC${R && R.day ? ` · trading day ${WD[R.day.weekday]} (from ${fmtT(R.day.start).slice(5)} UTC)` : ''} · bar ${S.i} of ${d.n - 1}`;
 }
@@ -129,6 +152,7 @@ function compute() {
 /* ---------- chart ---------- */
 let geom = null;
 function draw() {
+  if (S.atlas) return drawAtlas();
   const d = D(), cv = $('#cv'); if (!d) return;
   const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, Hh = cv.clientHeight;
   cv.width = W * dpr; cv.height = Hh * dpr;
@@ -196,9 +220,9 @@ function draw() {
 }
 
 /* ---------- panes ---------- */
-const TABS = [['flow', 'Flow'], ['levels', 'Levels'], ['bars', 'Bars'], ['market', 'Market'], ['compare', 'Your pages'], ['study', 'Study'], ['rules', 'Rules'], ['notes', 'Notes']];
+const TABS = [['read', 'Read'], ['flow', 'Flow'], ['levels', 'Levels'], ['bars', 'Bars'], ['market', 'Market'], ['compare', 'Your pages'], ['study', 'Study'], ['rules', 'Rules'], ['notes', 'Notes']];
 function renderTabs() { $('#tabs').innerHTML = TABS.map(([k, v]) => `<button role="tab" data-t="${k}" aria-selected="${S.tab === k}">${v}</button>`).join(''); }
-function renderPane() { const p = $('#pane'); if (!R) { p.textContent = ''; return; } const fn = { flow: paneFlow, levels: paneLevels, bars: paneBars, market: paneMarket, compare: paneCompare, study: paneStudy, rules: paneRules, notes: paneNotes }[S.tab]; p.innerHTML = fn(); if (S.tab === 'notes') bindNotes(); }
+function renderPane() { const p = $('#pane'); if (!R) { p.textContent = ''; return; } const fn = { read: paneRead, flow: paneFlow, levels: paneLevels, bars: paneBars, market: paneMarket, compare: paneCompare, study: paneStudy, rules: paneRules, notes: paneNotes }[S.tab]; p.innerHTML = fn(); if (S.tab === 'notes') bindNotes(); if (S.tab === 'read') bindRead(); }
 const chip = (s) => `<span class="chip ${s}">${s}</span>`;
 function paneFlow() {
   if (R.err) return `<div class="banner warn">Kev could not run here: ${esc(R.err)}</div>`;
@@ -246,12 +270,15 @@ function paneCompare() {
   h += `<h4>Audit of your two pages</h4>${md2html(AUDIT.split('\n').slice(3).join('\n'))}`;
   return h;
 }
-const md2html = (md) => { let h = '', ul = false; for (const l of md.split('\n')) { if (/^- /.test(l) || /^  \S/.test(l) && ul) { if (!ul) { h += '<ul>'; ul = true; } h += /^- /.test(l) ? `<li>${esc(l.slice(2)).replace(/`([^`]+)`/g, '<code>$1</code>')}</li>` : ''; continue; } if (ul) { h += '</ul>'; ul = false; } if (/^#{2,4} /.test(l)) h += `<h4>${esc(l.replace(/^#+ /, ''))}</h4>`; else if (l.trim()) h += `<p>${esc(l)}</p>`; } return h + (ul ? '</ul>' : ''); };
+const inl = (t) => esc(t).replace(/\*\*([^*]+)\*\*/g, '<b>$1</b>').replace(/`([^`]+)`/g, '<code>$1</code>');
+const md2html = (md) => { let h = '', ul = false; for (const l of md.split('\n')) { if (/^(- |\d+\. )/.test(l) || /^  \S/.test(l) && ul) { if (!ul) { h += '<ul>'; ul = true; } h += /^(- |\d+\. )/.test(l) ? `<li>${inl(l.replace(/^(- |\d+\. )/, ''))}</li>` : ''; continue; } if (ul) { h += '</ul>'; ul = false; } if (/^#{2,4} /.test(l)) h += `<h4>${esc(l.replace(/^#+ /, ''))}</h4>`; else if (l.trim()) h += `<p>${inl(l)}</p>`; } return h + (ul ? '</ul>' : ''); };
 const cellRows = (cells) => `<div class="tw"><table><tr><th>group</th><th class="n">n</th><th class="n">mean R [95% CI]</th><th class="n">random</th><th class="n">real − random [95% CI]</th><th class="n">q</th></tr>${cells.map((c) => `<tr><td>${esc(c.name)}</td><td class="n">${c.n}</td><td class="n">${f2(c.mean)} <span class="sub">[${f2(c.lo)}, ${f2(c.hi)}]</span></td><td class="n">${f2(c.plMean)}</td><td class="n">${f2(c.diff)} <span class="sub">[${f2(c.dLo)}, ${f2(c.dHi)}]</span></td><td class="n">${c.q === undefined || c.q === null ? '' : f2(c.q, 3)}</td></tr>`).join('')}</table></div>`;
 function paneStudy() {
-  if (!STUDY) return '<p class="sub">No study results yet: run <code>kev study</code>.</p>';
+  const A = AT();
+  let pre = A && A.learned ? `<div class="banner info"><b>Atlas ${esc(S.mkt)}: what Claude learned reading the whole window</b> <span class="badge">mixed causal and hindsight, tagged</span>${md2html(A.learned.split('\n').slice(1).join('\n'))}</div>` : '';
+  if (!STUDY) return pre + '<p class="sub">No study results yet: run <code>kev study</code>.</p>';
   const X = STUDY;
-  let h = `<p class="sub">Pre-registered on 2026-10-21 before ETH and gold were run. Every row compares fills at kev's levels with random orders at the same distance, side, window and risk. Stop 0.5 × prior-day ATR, target 2R, net of costs; finer bars settle intrabar order where they exist.</p>`;
+  let h = pre + `<p class="sub">Pre-registered on 2026-10-21 before ETH and gold were run. Every row compares fills at kev's levels with random orders at the same distance, side, window and risk. Stop 0.5 × prior-day ATR, target 2R, net of costs; finer bars settle intrabar order where they exist.</p>`;
   h += `<div class="banner info"><b>Overview:</b> ${esc(X.overview)}</div>`;
   h += `<h4>H1 · space before the return: ${X.H1.verdict}</h4>${cellRows(X.H1.cells)}<p class="sub">Net mean R of space-ok fills: ${X.H1.net.map((x) => `${x.m} ${f2(x.mean)} [${f2(x.lo)}, ${f2(x.hi)}]`).join(' · ')}</p>${cellRows([...X.H1.split, ...X.H1.secondary])}`;
   h += `<h4>H2 · more touches, better level? ${X.H2.contradicted ? 'yes somewhere' : 'no'}</h4><div class="tw"><table><tr><th>market</th><th>parser</th><th class="n">n ≥3</th><th class="n">n =1</th><th class="n">extra edge of ≥3 over 1 [95% CI]</th><th class="n">q</th></tr>${X.H2.cells.map((x) => `<tr><td>${x.m}</td><td>${x.preset}</td><td class="n">${x.nHigh}</td><td class="n">${x.nOne}</td><td class="n">${f2(x.d)} <span class="sub">[${f2(x.lo)}, ${f2(x.hi)}]</span></td><td class="n">${f2(x.q, 3)}</td></tr>`).join('')}</table></div>`;
@@ -294,6 +321,158 @@ async function bindNotes() {
   }, (e) => { const el = $('#nl'); if (el) el.textContent = 'Could not load notes: ' + (e.message || e.code); });
 }
 
+/* ---------- kev's graph: nodes as dots, wires as curves, lit by status and salience ---------- */
+const STATUS_COL = () => ({ pass: css('--okc'), fail: css('--failc'), judgement: css('--warn'), info: css('--acc'), 'not-run': css('--hid'), card: css('--hair') });
+let GL = null, pulses = [], animUntil = 0;
+function layoutGraph(W, Hh) {
+  const nodesC = TOPO.nodes.filter((n) => n.computed), cards = TOPO.nodes.filter((n) => !n.computed);
+  const col = (st) => (st === null ? -1 : st < 0.15 ? 0 : st < 0.5 ? 1 : st < 3 ? 2 : st < 5 ? 3 : st < 6 ? 4 : st < 10 ? 5 : 6);
+  const cols = [0, 1, 2, 3, 4, 5, 6].map((k) => nodesC.filter((n) => col(n.step) === k).sort((a, b) => a.step - b.step));
+  const narrow = W < 640, pos = {};
+  const PADX = 46, PADY = 26, usableH = Hh - PADY * 2 - 34;
+  cols.forEach((list, k) => list.forEach((n, j) => {
+    const x = narrow ? PADX + (j + 0.5) * ((W - 2 * PADX) / Math.max(1, list.length)) : PADX + k * ((W - 2 * PADX) / 6);
+    const y = narrow ? PADY + k * (usableH / 6) : PADY + (j + 0.5) * (usableH / Math.max(1, list.length));
+    pos[n.id] = { x, y, n };
+  }));
+  cards.forEach((n, j) => { pos[n.id] = { x: PADX + (j + 0.5) * ((W - 2 * PADX) / cards.length), y: Hh - (narrow && j % 2 ? 30 : 16), n }; });
+  return { pos, W, Hh };
+}
+function drawGraph(stepped) {
+  const cv = $('#gv'); if (!cv || !TOPO) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, Hh = cv.clientHeight;
+  if (!GL || GL.W !== W || GL.Hh !== Hh) GL = layoutGraph(W, Hh);
+  cv.width = W * dpr; cv.height = Hh * dpr;
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, Hh);
+  const C = STATUS_COL(), hair = css('--hair'), dim = css('--dim'), ink = css('--ink'), fail = css('--failc');
+  const st = RD ? RD.status : {}, sal = RD ? RD.salience : {}, prevSal = RDprev ? RDprev.salience : {}, prevSt = RDprev ? RDprev.status : {};
+  const changed = new Set(TOPO.nodes.map((n) => n.id).filter((id) => RDprev && (prevSt[id] !== st[id] || Math.abs((prevSal[id] ?? 0) - (sal[id] ?? 0)) > 0.04)));
+  const blocker = RD && RD.firstBlocker ? RD.firstBlocker.node : null;
+  if (stepped) { for (const e of TOPO.edges) if (changed.has(e.from)) pulses.push({ e, t0: performance.now() }); if (pulses.length > 200) pulses = pulses.slice(-200); animUntil = performance.now() + 900; }
+  const P = GL.pos, curve = (a, b) => { const mx = (a.x + b.x) / 2; return [a.x, a.y, mx, a.y, mx, b.y, b.x, b.y]; };
+  // wires
+  for (const e of TOPO.edges) {
+    const a = P[e.from], b = P[e.to]; if (!a || !b) continue;
+    const veto = blocker && e.from === blocker && (e.to === 'entry' || e.to === 'management');
+    x.strokeStyle = veto ? fail : hair; x.globalAlpha = veto ? 0.9 : 0.55 + 0.45 * Math.min(1, (sal[e.from] ?? 0)); x.lineWidth = veto ? 2 : 1;
+    const k = curve(a, b); x.beginPath(); x.moveTo(k[0], k[1]); x.bezierCurveTo(k[2], k[3], k[4], k[5], k[6], k[7]); x.stroke();
+  }
+  x.globalAlpha = 1;
+  // pulses travelling along wires whose source changed this step
+  const now = performance.now();
+  pulses = pulses.filter((p) => now - p.t0 < 850);
+  for (const p of pulses) {
+    const a = P[p.e.from], b = P[p.e.to]; if (!a || !b) continue;
+    const u = (now - p.t0) / 850, k = curve(a, b), it = (q, w0, w1, w2, w3) => (1 - q) ** 3 * w0 + 3 * (1 - q) ** 2 * q * w1 + 3 * (1 - q) * q * q * w2 + q ** 3 * w3;
+    const px = it(u, k[0], k[2], k[4], k[6]), py = it(u, k[1], k[3], k[5], k[7]);
+    x.fillStyle = C[st[p.e.from]] || C.info; x.globalAlpha = 1 - u * 0.6; x.beginPath(); x.arc(px, py, 3, 0, 7); x.fill();
+  }
+  x.globalAlpha = 1;
+  // nodes
+  x.font = '10.5px ' + css('--mono'); x.textAlign = 'center'; x.textBaseline = 'top';
+  for (const id in P) {
+    const { x: nx, y: ny, n } = P[id], s0 = n.computed ? (sal[id] ?? 0.05) : 0, colr = C[st[id] || (n.computed ? 'not-run' : 'card')];
+    const r = n.computed ? 6 + 8 * s0 : 4;
+    x.save(); x.shadowColor = colr; x.shadowBlur = n.computed ? 4 + 26 * s0 : 0; x.globalAlpha = n.computed ? 0.35 + 0.65 * s0 : 0.6;
+    x.fillStyle = colr; x.beginPath(); x.arc(nx, ny, r, 0, 7); x.fill(); x.restore();
+    if (S.node === id) { x.strokeStyle = ink; x.lineWidth = 1.5; x.beginPath(); x.arc(nx, ny, r + 4, 0, 7); x.stroke(); }
+    if (id === blocker) { x.strokeStyle = fail; x.lineWidth = 2; x.beginPath(); x.arc(nx, ny, r + 7, 0, 7); x.stroke(); }
+    x.fillStyle = n.computed ? ink : dim; x.globalAlpha = n.computed ? 0.85 : 0.6; x.fillText(id, nx, ny + r + 3); x.globalAlpha = 1;
+  }
+  $('#ghead').textContent = RD ? RD.headline : '';
+  if (performance.now() < animUntil || pulses.length) requestAnimationFrame(() => drawGraph(false));
+}
+function graphLegend() {
+  const C = STATUS_COL();
+  $('#glegend').innerHTML = [['pass', 'rule checks passed'], ['fail', 'a rule failed'], ['judgement', 'needs a judgement call'], ['info', 'computed, no checks'], ['not-run', 'could not run'], ['card', 'rule card (no code)']].map(([k, v]) => `<span><i style="border-color:${C[k]}"></i>${v}</span>`).join('') + `<span><i style="border-color:${css('--failc')}"></i>red ring: first step that blocks the trade</span>`;
+}
+/* ---------- Read: kev's layered reading, my note for this phase, and live Claude ---------- */
+const AT = () => (ATLAS && ATLAS[S.mkt]) || null;
+function phaseAt(t) { const a = AT(); if (!a) return null; return a.phases.major.find((g) => t >= g.from && t < g.to + 86400000) || null; }
+function noteAt(t) { const a = AT(); if (!a || !a.notes) return null; return a.notes.find((n) => t >= n.from && t < n.to + 86400000) || null; }
+function paneRead() {
+  const d = D(), t = d.t[S.i];
+  let h = RD ? `<div class="banner info"><b>${esc(RD.headline)}</b></div>${RD.layers.map((l) => `<div class="layer"><b>${esc(l.title)}</b>${esc(l.text)}</div>`).join('')}` : '<p class="sub">kev needs about 45 days of history before it can read the market.</p>';
+  const g = phaseAt(t), n = noteAt(t);
+  if (g) h += `<h4>Phase: ${g.dir === 'up' ? 'rising' : 'falling'} ${fmtT(g.from).slice(0, 10)} to ${fmtT(g.to).slice(0, 10)} (${(100 * g.movePct).toFixed(0)}%) <span class="badge">hindsight</span></h4>`;
+  if (n) h += `<p><b>Claude's note:</b> ${esc(n.text)}</p>`;
+  if (S.node) {
+    const R0 = R && R.states ? R.states[S.node] : null;
+    if (!CAT) CAT = Kev.catalogue();
+    const nd = CAT.find((x) => x.id === S.node);
+    h += `<h4>Node ${esc(S.node)}${nd ? ` · ${esc(nd.title)}` : ''}</h4>${nd ? `<p class="sub">${esc(nd.summary)}</p>` : ''}`;
+    if (R0) h += `<div class="tw"><pre class="mono" style="font-size:11.5px;white-space:pre-wrap">${esc(JSON.stringify(R0.out, (k, v) => (typeof v === 'number' ? +v.toFixed(4) : v), 1).slice(0, 2200))}</pre></div>${R0.checks.length ? '<ul>' + R0.checks.map((c) => `<li>${c.pass === true ? '✓' : c.pass === false ? '✗' : '?'} ${esc(c.rule)}: ${esc(c.detail)}</li>`).join('') + '</ul>' : ''}`;
+  }
+  h += `<h4>Ask Claude about this moment</h4><p class="sub">Sends kev's reading above and the node states to Claude on your account, only when you press the button.</p><button class="b" id="askBtn">Ask Claude</button> <button class="b" id="askStop" hidden>Stop</button><div class="ask" id="askOut"></div>`;
+  return h;
+}
+let askCtl = null;
+function bindRead() {
+  const btn = $('#askBtn'); if (!btn) return;
+  if (!sample) { btn.disabled = true; $('#askOut').textContent = 'Live Claude is not available in this view.'; return; }
+  btn.onclick = async () => {
+    if (!RD) return;
+    const d = D(), g = phaseAt(d.t[S.i]), n = noteAt(d.t[S.i]);
+    const nodesLine = Object.entries(RD.salience).filter(([, v]) => v >= 0.5).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} (${RD.status[k]}, ${v.toFixed(2)})`).join(', ');
+    const prompt = `You are observing kev, a causal trading-research engine that reads a market with a graph of rule nodes. Everything below was computed only from bars that had closed at this moment; nothing after it is known.\n\nMarket ${S.mkt}, ${fmtT(d.t[S.i])} UTC, price ${f2(d.o[S.i], 4)}.\n\nkev's layered reading:\n${RD.layers.map((l) => `${l.title}: ${l.text}`).join('\n')}\n\nMost active nodes (status, salience): ${nodesLine}\n${g ? `\nThe hindsight phase this moment sits in (not known at the time): ${g.dir} from ${fmtT(g.from).slice(0, 10)} to ${fmtT(g.to).slice(0, 10)}, ${(100 * g.movePct).toFixed(0)}%.` : ''}${n ? `\nAn earlier observer note on that phase: ${n.text}` : ''}\n\nIn 5 short bullets, interpret this moment on each level (context, bias, location, structure, decision): what kev is weighing, what would change its reading next, and one thing a careful trader would check that kev does not. Plain words, no trading advice, under 180 words.`;
+    btn.disabled = true; $('#askStop').hidden = false; $('#askOut').textContent = 'Thinking…';
+    askCtl = new AbortController();
+    try { const r = await sample(prompt, { signal: askCtl.signal, onText: ({ text }) => { const o = $('#askOut'); if (o) o.textContent = text; } }); const o = $('#askOut'); if (o) o.textContent = r.text + (r.truncated ? '\n(cut short)' : ''); }
+    catch (e) { const o = $('#askOut'); if (o) o.textContent = (e.text || '') + (e.code === 'cancelled' ? '' : `\n${e.code === 'not_granted' ? 'Claude was not allowed for this page.' : e.code === 'rate_limited' ? 'Claude is busy; try again in a minute.' : 'Claude could not answer: ' + (e.message || e.code)}`); }
+    finally { const b2 = $('#askBtn'); if (b2) b2.disabled = false; const st = $('#askStop'); if (st) st.hidden = true; }
+  };
+  $('#askStop').onclick = () => askCtl && askCtl.abort();
+}
+/* ---------- atlas mode: the whole window, every level kev marked, coloured by its fate (hindsight) ---------- */
+let AG = null, ADAY = null;
+function atlasDays() {
+  const a = AT(), d = D(); if (!a) return [];
+  if (ADAY && ADAY.mkt === S.mkt) return ADAY.days;
+  const days = []; let k = idxOf(a.from);
+  for (let j = 0; j < a.daily.length; j++) {
+    const t0 = a.daily[j].t, t1 = j + 1 < a.daily.length ? a.daily[j + 1].t : t0 + 86400000; let o = null, h = -Infinity, l = Infinity, c = null;
+    while (k < d.n && d.t[k] < t1) { if (d.t[k] >= t0) { if (o === null) o = d.o[k]; h = Math.max(h, d.h[k]); l = Math.min(l, d.l[k]); c = d.c[k]; } k++; }
+    if (o !== null) days.push({ t: t0, o, h, l, c });
+  }
+  ADAY = { mkt: S.mkt, days }; return days;
+}
+function drawAtlas() {
+  const a = AT(), cv = $('#cv'), x = cv.getContext('2d'), dpr = window.devicePixelRatio || 1, W = cv.clientWidth, Hh = cv.clientHeight;
+  cv.width = W * dpr; cv.height = Hh * dpr; x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, Hh);
+  if (!a) { x.fillStyle = css('--dim'); x.font = '13px ' + css('--ui'); x.fillText('No atlas for this market yet (kev atlas ' + S.mkt + ').', 16, 30); return; }
+  const days = atlasDays(), PL = 6, PR = 64, PT = 22, PB = 22;
+  let hi = -Infinity, lo = Infinity; for (const b of days) { hi = Math.max(hi, b.h); lo = Math.min(lo, b.l); }
+  const lg = (v) => Math.log(v), X = (t) => PL + (t - a.from) / (a.to - a.from) * (W - PL - PR), Y = (p) => PT + (lg(hi) - lg(p)) / (lg(hi) - lg(lo)) * (Hh - PT - PB);
+  AG = { X, Y, a, PL, PR };
+  // phases
+  for (const g of a.phases.major) { x.fillStyle = (g.dir === 'up' ? css('--up') : css('--dn')) + '1c'; x.fillRect(X(g.from), PT, X(g.to) - X(g.from), Hh - PT - PB); }
+  // levels across their lives
+  const col = { strong: css('--okc'), held: css('--acc'), failed: css('--failc'), untested: css('--hid') };
+  for (const L of a.levels) {
+    const fate = L.h >= 3 ? 'strong' : L.h >= 1 ? 'held' : L.t >= 1 ? 'failed' : 'untested';
+    if (!(L.p > lo && L.p < hi)) continue;
+    x.strokeStyle = col[fate]; x.globalAlpha = fate === 'untested' ? 0.25 : fate === 'strong' ? 0.95 : 0.55; x.lineWidth = fate === 'strong' ? 1.6 : 1;
+    x.beginPath(); x.moveTo(X(L.a), Y(L.p)); x.lineTo(Math.max(X(L.b), X(L.a) + 1.5), Y(L.p)); x.stroke();
+  }
+  x.globalAlpha = 1;
+  // daily candles
+  const cw = Math.max(1, (W - PL - PR) / days.length * 0.7);
+  for (const b of days) { const up = b.c >= b.o; x.strokeStyle = up ? css('--up') : css('--dn'); x.fillStyle = x.strokeStyle; const cx = X(b.t); x.beginPath(); x.moveTo(cx, Y(b.h)); x.lineTo(cx, Y(b.l)); x.stroke(); x.fillRect(cx - cw / 2, Y(Math.max(b.o, b.c)), cw, Math.max(1, Y(Math.min(b.o, b.c)) - Y(Math.max(b.o, b.c)))); }
+  // price axis (log), time axis, cursor
+  x.font = '10px ' + css('--mono'); x.fillStyle = css('--dim'); x.textBaseline = 'middle';
+  for (let g = 0; g <= 4; g++) { const p = Math.exp(lg(lo) + (lg(hi) - lg(lo)) * g / 4); x.fillText(p.toFixed(p > 100 ? 0 : 2), W - PR + 6, Y(p)); }
+  x.textAlign = 'center'; for (let g = 0; g <= 4; g++) { const t = a.from + (a.to - a.from) * g / 4; x.fillText(fmtT(t).slice(0, 7), Math.min(W - PR - 24, Math.max(PL + 24, X(t))), Hh - 9); } x.textAlign = 'left';
+  const ct = D().t[S.i]; if (ct >= a.from && ct <= a.to) { x.strokeStyle = css('--acc'); x.setLineDash([4, 3]); x.beginPath(); x.moveTo(X(ct), PT); x.lineTo(X(ct), Hh - PB); x.stroke(); x.setLineDash([]); }
+  x.fillStyle = css('--warn'); x.font = '11px ' + css('--ui'); x.fillText('HINDSIGHT: whole window, every level kev marked, coloured by what happened to it later', PL + 4, 11);
+  $('#legend').innerHTML = `<span><i style="border-color:${col.strong}"></i>held 3+ tests</span><span><i style="border-color:${col.held}"></i>held 1-2</span><span><i style="border-color:${col.failed}"></i>tested, never held</span><span><i style="border-color:${col.untested}"></i>never tested</span><span><i style="border-color:${css('--up')}"></i>rising phase (shaded)</span><span><i style="border-color:${css('--dn')}"></i>falling phase</span><span>click to jump the cursor there</span>`;
+}
+/* ---------- play ---------- */
+let playTimer = null;
+function setPlay(on) {
+  S.playing = on; $('#play').setAttribute('aria-pressed', String(on)); $('#play').textContent = on ? '❚❚ Pause' : '▶ Play';
+  clearInterval(playTimer); playTimer = null;
+  if (on) playTimer = setInterval(() => { const d = D(); if (S.i >= d.n - 1) { setPlay(false); return; } S.i++; compute(); }, Math.round(1000 / +$('#speed').value));
+}
 /* ---------- events ---------- */
 function setSeg(id, v) { document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
 function go(i) { const d = D(); S.i = Math.max(80, Math.min(d.n - 1, i)); schedule(); }
@@ -321,24 +500,33 @@ document.addEventListener('click', (e) => {
     if (id === 'mkt') { loadMarket(v); S.i = D().n - 400; schedule(); } else if (id === 'dir') { S.dir = v; setSeg('dir', v); schedule(); } else if (id === 'phase') { S.phase = v; setSeg('phase', v); schedule(); }
     return;
   }
+  if (e.target.id === 'play') { setPlay(!S.playing); return; }
+  if (e.target.id === 'atlasBtn') { S.atlas = !S.atlas; e.target.setAttribute('aria-pressed', String(S.atlas)); draw(); return; }
   const st = e.target.closest('[data-step]'); if (st) { go(S.i + +st.dataset.step); return; }
   const tb = e.target.closest('#tabs button'); if (tb) { S.tab = tb.dataset.t; renderTabs(); renderPane(); return; }
   const tr = e.target.closest('tr[data-p]'); if (tr) { S.sel = +tr.dataset.p; schedule(); }
 });
-document.addEventListener('change', (e) => { if (e.target.id === 'cases') openCase(e.target.value); if (e.target.id === 'preset') { S.preset = e.target.value; schedule(); } if (e.target.id === 'future') { S.future = e.target.checked; draw(); } if (e.target.id === 'rn') { S.ruleNode = e.target.value; renderPane(); } });
+document.addEventListener('change', (e) => { if (e.target.id === 'speed' && S.playing) setPlay(true); if (e.target.id === 'cases') openCase(e.target.value); if (e.target.id === 'preset') { S.preset = e.target.value; schedule(); } if (e.target.id === 'future') { S.future = e.target.checked; draw(); } if (e.target.id === 'rn') { S.ruleNode = e.target.value; renderPane(); } });
 $('#slider').addEventListener('input', (e) => go(+e.target.value));
-$('#go').onclick = () => { let v = $('#jump').value.trim().replace(' ', 'T'); if (v.length === 10) v += 'T00:00'; const t = Date.parse(/Z$/.test(v) ? v : v + 'Z'); if (Number.isFinite(t)) { S.cas = null; go(idxOf(t)); } };
-document.addEventListener('keydown', (e) => { if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.type !== 'range') return; if (e.key === 'ArrowLeft') { go(S.i - (e.shiftKey ? 24 : 1)); e.preventDefault(); } if (e.key === 'ArrowRight') { go(S.i + (e.shiftKey ? 24 : 1)); e.preventDefault(); } });
+$('#go').onclick = () => { let v = $('#jump').value.trim().replace(' ', 'T'); if (v.length === 10) v += 'T00:00'; const t = Date.parse(/Z$/.test(v) ? v : v + 'Z'); if (Number.isFinite(t)) { S.cas = null; S.sel = null; $('#cases').value = ''; go(idxOf(t)); } };
+document.addEventListener('keydown', (e) => { if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.type !== 'range') return; if (e.key === ' ' && document.activeElement.tagName !== 'BUTTON') { setPlay(!S.playing); e.preventDefault(); } if (e.key === 'ArrowLeft') { go(S.i - (e.shiftKey ? 24 : 1)); e.preventDefault(); } if (e.key === 'ArrowRight') { go(S.i + (e.shiftKey ? 24 : 1)); e.preventDefault(); } });
 const cv = $('#cv');
 cv.addEventListener('mousemove', (e) => { if (!geom) return; const r = cv.getBoundingClientRect(), k = geom.i0 + Math.floor((e.clientX - r.left - geom.PL) / geom.cw), d = D(); if (k < geom.i0 || k > geom.i1) { $('#tip').hidden = true; return; } const closed = k <= lastClosed(); $('#tip').hidden = false; $('#tip').innerHTML = `${fmtT(d.t[k])} · ${closed ? `O ${f2(d.o[k], 3)} H ${f2(d.h[k], 3)} L ${f2(d.l[k], 3)} C ${f2(d.c[k], 3)}` : k === S.i && S.phase === 'open' ? `forming · open ${f2(d.o[k], 3)}` : '<span class="hidtag">hidden at decision time</span>'}`; });
 cv.addEventListener('mouseleave', () => ($('#tip').hidden = true));
-cv.addEventListener('click', (e) => { if (!geom) return; const r = cv.getBoundingClientRect(), k = geom.i0 + Math.floor((e.clientX - r.left - geom.PL) / geom.cw); if (k >= geom.i0 && k <= geom.i1) go(k); });
-window.addEventListener('resize', () => draw());
+$('#gv').addEventListener('click', (e) => {
+  if (!GL) return; const r = $('#gv').getBoundingClientRect(), mx = e.clientX - r.left, my = e.clientY - r.top;
+  let best = null, bd = 22; for (const id in GL.pos) { const p = GL.pos[id], dd = Math.hypot(p.x - mx, p.y - my); if (dd < bd) { bd = dd; best = id; } }
+  if (best) { S.node = best; S.tab = 'read'; renderTabs(); renderPane(); drawGraph(false); }
+});
+cv.addEventListener('click', (e) => { if (S.atlas && AG) { const r = cv.getBoundingClientRect(), t = AG.a.from + (e.clientX - r.left - AG.PL) / (cv.clientWidth - AG.PL - AG.PR) * (AG.a.to - AG.a.from); S.atlas = false; $('#atlasBtn').setAttribute('aria-pressed', 'false'); S.cas = null; go(idxOf(t)); return; } if (!geom) return; const r = cv.getBoundingClientRect(), k = geom.i0 + Math.floor((e.clientX - r.left - geom.PL) / geom.cw); if (k >= geom.i0 && k <= geom.i1) go(k); });
+window.addEventListener('resize', () => { GL = null; draw(); drawGraph(false); });
 
 /* ---------- boot ---------- */
 (async () => {
   renderTabs();
   try { Object.assign(DATA, await unpack(PACK)); } catch (e) { $('#status').textContent = 'Could not unpack prices: ' + e; return; }
+  TOPO = Kev.topology(); graphLegend();
+  (async () => { try { sample = window.claude && window.claude.use ? await window.claude.use('sample') : null; } catch (e) { sample = null; } if (S.tab === 'read') renderPane(); })();
   $('#mkt').innerHTML = Object.keys(MARKETS).map((m) => `<button data-v="${m}" aria-pressed="false">${m}</button>`).join('');
   $('#preset').innerHTML = Kev.presets().map((p) => `<option value="${p.name}" title="${esc(p.note)}">${p.name}</option>`).join('');
   loadMarket(S.mkt);

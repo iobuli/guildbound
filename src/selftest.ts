@@ -34,6 +34,8 @@ import { bucket } from './data/profile.js';
 import { applyPreset, withPreset } from './core/presets.js';
 import { analyzeLevel } from './core/levelmath.js';
 import { ltfIndex, settleOrder } from './backtest/settle.js';
+import { interpret } from './interpret.js';
+import { fate, mergeLevels, type LevelId } from './study/atlas.js';
 import { writeFileSync, existsSync, rmSync } from 'node:fs';
 
 let fails = 0, passes = 0;
@@ -368,6 +370,25 @@ ok(`knowledge base: ${rules.length} rules across ${nodes.length} nodes, all with
   ok('settlement: with only H1 a bar holding stop and target is a loss; minute bars that show the target first make it a 2R win', cons.r['2'] === -1 && fine.r['2'] === 2 && fine.resolvedBy === 'ltf', JSON.stringify({ cons: cons.r, fine: fine.r }));
   const same = settleOrder(hc, 0, true, 100, 99, { '2': 102 }, 5, 0, { ltf: ltfIndex([{ tf: 60_000, c: [] }]) });
   ok('settlement: when no finer bars cover the hour, the result is exactly the conservative one', same.r['2'] === cons.r['2'] && same.resolvedBy === 'h1');
+}
+// ---- interpreter and regime: only closed bars, salience in range ----
+{
+  const T = sol[46000]!.t + 20 * 60_000, cut = sol.slice(0, 46001), tampered = sol.map((b, i) => (i >= 46000 ? { ...b, h: b.h * 1.3, l: b.l * 0.7, c: b.c * 1.2 } : b));
+  const a = interpret(makeFeed(cut), T, { instrument: SOL, price: sol[46000]!.o }), z = interpret(makeFeed(tampered), T, { instrument: SOL, price: sol[46000]!.o });
+  ok('interpreter: the reading at a moment is identical when every bar from the decision bar on is rewritten (no lookahead)', JSON.stringify(a.layers) === JSON.stringify(z.layers) && JSON.stringify(a.salience) === JSON.stringify(z.salience), a.headline);
+  ok('interpreter: five layers, salience in [0, 1] for every node, regime present', a.layers.length === 5 && Object.values(a.salience).every((v) => v >= 0 && v <= 1) && a.keys.trend !== 'n/a', JSON.stringify(a.keys));
+}
+// ---- atlas: one identity per level, hindsight only from bars after first sight ----
+{
+  const keys = { trend: 'up', vol: 'low', bias: 'long', nLevels: 1, go: false, spaceOk: null };
+  const st = (t: number, p: number) => ({ t, r: { levels: [{ p, d: 1 as const, n: 2, tier: 'needs-one-confluence', bsb: 3, ok: true }], atrD1: 10, keys } });
+  const ids = mergeLevels([st(0, 100), st(H, 101), st(2 * H, 102.4), st(3 * H, 104)]);
+  ok('atlas: the same support seen at 100, 101 and 102.4 in successive scans is one level; 104 (over 0.25 ATR away) is a new one', ids.length === 2 && ids[0]!.seen === 3 && ids[1]!.price === 104, JSON.stringify(ids.map((x) => [x.price, x.seen])));
+  // support at 100, zone +/-1, ATR 10: bar 1 sits 3 clear (away), bar 2 dips into the zone (test 1), bar 3 rallies 6 clear (held), bar 4 closes below 98 (dies)
+  const bars: Candle[] = [[100, 101, 99, 100], [104, 106, 103.6, 105], [103, 103.5, 100.5, 102], [102, 107.2, 101.5, 107], [104, 104.2, 97, 97.5]].map(([o, h, l, c2], i) => ({ t: i * H, o: o!, h: h!, l: l!, c: c2!, v: 1 }));
+  const L: LevelId = { id: 0, dir: 1, price: 100, first: 0, last: 0, seen: 1, firstTouches: 1, firstTier: 'x', firstBsb: 0, firstTrend: 'up', firstVol: 'low', firstBias: 'long', maxTouches: 1, flipOf: null, tests: 0, held: 0, diedAt: null, firstTestAfterBars: null, zone: 1 };
+  fate(bars, 0, 4, L);
+  ok('atlas: a level is tested, holds, then dies on a close through it, counting only bars after first sight', L.tests === 1 && L.held === 1 && L.diedAt === 4 * H && L.firstTestAfterBars === 2, JSON.stringify(L));
 }
 void lastClosed;
 console.log(`\n${passes} passed, ${fails} failed`);

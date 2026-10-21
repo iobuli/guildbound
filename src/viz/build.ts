@@ -1,5 +1,5 @@
 // Builds out/inspector.html: the bundled engine, every ingested market (packed H1), the user's page cases, and the study results.
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { gzipSync } from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { buildSync } from 'esbuild';
@@ -34,13 +34,27 @@ export function buildInspector() {
       return { f: fr.f, t: ts(fr.ts), p: r.p, side: r.side, n: r.n, bT: ts(F[r.b].ts), far: r.far, farPrior: Math.max(0, farP), ct: long ? fr.c < r.p : fr.c > r.p, T: [r.T1, r.T2, r.T3, r.T4] };
     }));
   }
+  // atlases (one per market, the latest window) with my observer notes parsed from the brain
+  const atlases: Record<string, unknown> = {};
+  const adir = `${root}out/atlas/`;
+  for (const f of existsSync(adir) ? readdirSync(adir).filter((x) => x.endsWith('.json')).sort() : []) {
+    const a = JSON.parse(read(`${adir}${f}`)), name = f.replace('.json', ''), notesPath = `${BRAIN}experiments/atlas-${name.replace('_', '-')}.md`;
+    let notes: { from: number; to: number; text: string }[] = [], learned = '';
+    if (existsSync(notesPath)) {
+      const md = read(notesPath), re = /^### (\d{4}-\d{2}-\d{2}) to (\d{4}-\d{2}-\d{2})[^\n]*\n([\s\S]*?)(?=^### |^## |(?![\s\S]))/gm;
+      for (let m; (m = re.exec(md)); ) notes.push({ from: Date.parse(m[1]!), to: Date.parse(m[2]!), text: m[3]!.trim().replace(/\s+/g, ' ') });
+      const k = md.indexOf('## What I learned'); if (k >= 0) learned = md.slice(k).split(/\n## (?!What I learned)/)[0]!;
+    }
+    atlases[a.symbol] = { symbol: a.symbol, from: a.from, to: a.to, phases: a.phases, phaseStats: a.phaseStats, totals: a.totals, hindsight: a.hindsight, fills: a.fills,
+      daily: a.daily.map((d: any) => ({ t: d.t, c: d.c })), levels: a.levels.map((L: any) => ({ d: L.dir, p: L.price, a: L.first, b: L.diedAt ?? L.last, n: L.maxTouches, n0: L.firstTouches, t: L.tests, h: L.held })), notes, learned };
+  }
   const study = existsSync(`${root}out/study/hypotheses.json`) ? JSON.parse(read(`${root}out/study/hypotheses.json`)) : null;
   const audit = existsSync(`${BRAIN}experiments/user-pages-audit.md`) ? read(`${BRAIN}experiments/user-pages-audit.md`) : '';
   const bundle = buildSync({ entryPoints: [fileURLToPath(new URL('entry.ts', import.meta.url))], bundle: true, minify: true, format: 'iife', platform: 'browser', target: 'es2022', write: false }).outputFiles[0]!.text.replace(/<\/script/gi, '<\\/script');
   const j = (x: unknown) => JSON.stringify(x).replace(/<\/script/gi, '<\\/script');
   let html = read(fileURLToPath(new URL('inspector.html', import.meta.url)));
   html = html.replace('/*@@BUNDLE@@*/', () => bundle).replace('@@DATA@@', () => data).replace('@@MARKETS@@', () => j(markets)).replace('@@CASES@@', () => j(cases)).replace('@@OH@@', () => j(oh))
-    .replace('@@STUDY@@', () => j(study)).replace('@@AUDIT@@', () => j(audit)).replace('@@SUMMARY@@', () => j(tc.summary));
+    .replace('@@STUDY@@', () => j(study)).replace('@@ATLAS@@', () => j(atlases)).replace('@@AUDIT@@', () => j(audit)).replace('@@SUMMARY@@', () => j(tc.summary));
   mkdirSync(`${root}out/`, { recursive: true });
   writeFileSync(`${root}out/inspector.html`, html);
   return `out/inspector.html ${(html.length / 1e6).toFixed(2)} MB (engine ${(bundle.length / 1e3).toFixed(0)} kB, prices ${(data.length / 1e6).toFixed(2)} MB, markets ${Object.keys(markets).join(', ')})`;

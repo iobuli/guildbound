@@ -23,15 +23,17 @@ import causality from './nodes/causality.js';
 import htfPatterns from './nodes/htf-patterns.js';
 import equalLiquidity from './nodes/equal-liquidity.js';
 import ltfReversal from './nodes/ltf-reversal.js';
+import regime from './nodes/regime.js';
 
 export const nodes: AnyNode[] = [
-  atr, swingDepth, sfp, dailyBias, atrGate, levelScan, marketSide, level, retest, confluence, news, tuesdayRto, context, stop, target, entry, risk, tradeManagement,
+  atr, regime, swingDepth, sfp, dailyBias, atrGate, levelScan, marketSide, level, retest, confluence, news, tuesdayRto, context, stop, target, entry, risk, tradeManagement,
   framework, causality, htfPatterns, equalLiquidity, ltfReversal,
 ];
 
 /** The only place nodes are connected. A node never names another node. */
 export const edges: Edge[] = [
   { from: 'atr.atr', to: 'swing-depth.atr' },
+  { from: 'atr.atr', to: 'regime.atr' }, // context only: nothing reads regime's output except the interpreter
   { from: 'atr.atr', to: 'sfp.atr' }, { from: 'swing-depth.swings', to: 'sfp.swings' },
   { from: 'sfp.sfp', to: 'daily-bias.sfp' },
   { from: 'atr.atr', to: 'atr-gate.atr' },

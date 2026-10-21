@@ -3,6 +3,7 @@
 One note per node, generated from `src/nodes/*.ts` by `kev brain build`. Do not edit by hand: change the node, then rebuild.
 
 - [ATR yardsticks](atr.md): 6 rules, 4 coded
+- [Market regime](regime.md): 3 rules, 3 coded
 - [Swing depth (swing in / swing out)](swing-depth.md): 4 rules, 2 coded
 - [Swing failure pattern (SFP)](sfp.md): 16 rules, 9 coded
 - [Higher-timeframe bias (D1 / W1)](daily-bias.md): 11 rules, 6 coded

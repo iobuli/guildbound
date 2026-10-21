@@ -7,6 +7,9 @@ import { cell, table } from './study/analyze.js';
 import { auditPages } from './study/audit-pages.js';
 import { analyse, runJobs } from './study/hypotheses.js';
 import { buildInspector } from './viz/build.js';
+import { interpret } from './interpret.js';
+import { atlas, summary } from './study/atlas.js';
+import { openMarket } from './core/market-io.js';
 import { context, log, processInbox, search, writeMarketNotes, writeMethodNotes, writeSourceIndex } from './brain/brain.js';
 
 const [cmd, ...rest] = process.argv.slice(2);
@@ -23,6 +26,8 @@ const HELP = `kev commands:
   brain log "TEXT"         append to today's daily log
   brain process            route files dropped in kev-brain/inbox (prices -> ingest, pages/notes -> sources)
   study [--force]          run the pre-registered cross-market hypotheses (H1-H5) and write results to the brain
+  atlas SYMBOL --from=YYYY --to=YYYY [--preset=...]   replay every hour of a window, follow every level to the end of its life, phases and stats
+  interpret SYMBOL [--at=ISO]   kev's layered reading (regime, bias, location, structure, decision) at a moment
   inspect                  build out/inspector.html (every market, the user's pages, the study results)
   audit-pages              re-check the user's Trade Check and One Hour pages against the market data
   backtest SYMBOL          causal harness + matched placebos on one market
@@ -53,6 +58,20 @@ async function main() {
     }
     case 'audit-pages': console.log(auditPages()); break;
     case 'inspect': console.log(buildInspector()); break;
+    case 'atlas': {
+      const sym = (args[0] ?? 'SOLUSDT').toUpperCase(), y0 = Number(opt('from') ?? 2020), y1 = Number(opt('to') ?? 2022);
+      const a = atlas(sym, Date.UTC(y0, 0, 1), Date.UTC(y1 + 1, 0, 1), opt('preset') ?? 'kev-default', (s) => console.error(s));
+      console.log(summary(a));
+      break;
+    }
+    case 'interpret': {
+      const m = openMarket((args[0] ?? 'SOLUSDT').toUpperCase()), at = date(opt('at')) ?? m.h1.at(-1)!.t + 3_600_000;
+      const r = interpret(m.feed(), at, { instrument: m.instrument });
+      console.log(`${m.profile.symbol} ${new Date(at).toISOString().slice(0, 16)} UTC: ${r.headline}\n`);
+      for (const l of r.layers) console.log(`${l.title}\n  ${l.text}\n`);
+      console.log('salience: ' + Object.entries(r.salience).filter(([, v]) => v >= 0.5).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toFixed(2)}`).join(', '));
+      break;
+    }
     case 'study': await runJobs(flags.has('--force')); console.log(analyse()); break;
     case 'backtest': {
       const sym = args[0]?.toUpperCase();
