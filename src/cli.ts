@@ -10,6 +10,7 @@ import { buildInspector } from './viz/build.js';
 import { interpret } from './interpret.js';
 import { atlas, summary } from './study/atlas.js';
 import { auditKev } from './study/audit-kev.js';
+import { signals } from './study/signals.js';
 import { openMarket } from './core/market-io.js';
 import { context, log, processInbox, search, writeMarketNotes, writeMethodNotes, writeSourceIndex } from './brain/brain.js';
 
@@ -58,6 +59,7 @@ async function main() {
       break;
     }
     case 'audit-pages': console.log(auditPages()); break;
+    case 'signals': { for (const sym of (args.length ? args : listMarkets()).map((x) => x.toUpperCase())) { const r = signals(sym, opt('preset') ?? 'one-hour-spec'); console.log(`${sym}: ${r.n} fills, ${r.placebo} placebos, ${new Date(r.from).toISOString().slice(0, 10)} to ${new Date(r.to).toISOString().slice(0, 10)}`); } break; }
     case 'audit-kev': console.log(auditKev((s) => console.error(s))); break;
     case 'inspect': console.log(buildInspector()); break;
     case 'atlas': {

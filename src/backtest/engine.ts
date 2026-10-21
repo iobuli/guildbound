@@ -32,6 +32,8 @@ export interface Trade {
   r: Record<string, number>; x: Record<string, number>; resolvedBy: 'h1' | 'ltf'; placebo: boolean;
   /** the same outcomes settled with H1 bars only (conservative rules); present when finer bars were available */
   rc?: Record<string, number>;
+  /** context at the fill instant: percent trend, ATR trend, volatility rank, higher-timeframe bias */
+  ctx?: { trendPct: string; trend: string; volPct: number; htf: string };
 }
 
 function outcomes(c: readonly Candle[], j: number, long: boolean, fill: number, stop: number | null, fta: number | null, atrD1: number, C: BtConfig, heldLevel?: number) {
@@ -106,6 +108,7 @@ export function runBacktest(candles: Candle[], cfg: Partial<BtConfig> & { start:
       const st = res.states.stop?.out.stop as { stop: number | null; ok: boolean; riskDist: number } | undefined;
       const tg = res.states.target?.out.target as { chosen: { price: number; rr: number } | null } | undefined;
       const rt = res.states.retest?.out.retest as { excursionAtr: number; spaceOk: boolean } | undefined;
+      const rg = res.states.regime?.out.regime as { trendPct: string; trend: string; volPct: number } | undefined, bz = res.states['daily-bias']?.out.bias as { htf: string } | undefined;
       const ok = !!st && st.ok && st.stop !== null && st.riskDist > 0 && st.riskDist / fill < 0.15;
       const o = outcomes(c, j, long, fill, ok ? st!.stop : null, tg?.chosen?.price ?? null, s.atrD1, C, C.heldExit ? L.price : undefined);
       const oc = C.ltf ? outcomes(c, j, long, fill, ok ? st!.stop : null, tg?.chosen?.price ?? null, s.atrD1, { ...C, ltf: undefined }, C.heldExit ? L.price : undefined) : null;
@@ -114,14 +117,14 @@ export function runBacktest(candles: Candle[], cfg: Partial<BtConfig> & { start:
         stop: st?.stop ?? null, risk: st?.riskDist ?? 0, riskAtr: s.atrH1 > 0 && st ? st.riskDist / s.atrH1 : 0, orderDist: Math.abs(px - s.lastClose), atrD1: s.atrD1, barsSinceBreak: L.barsSinceBreak,
         ok, go: entry?.primary?.go ?? false, vetoes: entry?.primary?.vetoes ?? [], checks: flat(res), ftaR: tg?.chosen?.rr ?? null,
         farAtr: rt?.excursionAtr ?? 0, spaceOk: rt?.spaceOk ?? false, closedThrough: long ? bar.c < px : bar.c > px,
-        r: o.r, x: o.x, resolvedBy: o.resolvedBy, placebo: false, ...(oc ? { rc: oc.r } : {}),
+        r: o.r, x: o.x, resolvedBy: o.resolvedBy, placebo: false, ...(oc ? { rc: oc.r } : {}), ctx: { trendPct: rg?.trendPct ?? 'range', trend: rg?.trend ?? 'range', volPct: rg?.volPct ?? 0.5, htf: bz?.htf ?? 'neutral' },
       });
     }
   }
   return { trades, scans, cfg: C };
 }
 
-/** One placebo per real fill: same side, distance from price x0.5-1.5, same fill window, same structural risk and the same fixed-ATR stops. */
+/** One placebo per real fill: same side, distance from price x0.5-1.5, same fill window, same structural risk and the same fixed-ATR stops. It keeps the real fill's labels (touches, space, GO, context) so any filter selects the matching placebos. */
 export function placebos(c: Candle[], real: Trade[], scans: Map<number, Scan>, cfg: BtConfig, reps = 1): Trade[] {
   let s = (cfg.seed * 2654435761) >>> 0;
   const rand = () => ((s = (s * 1664525 + 1013904223) >>> 0) / 4294967296);
@@ -136,7 +139,7 @@ export function placebos(c: Candle[], real: Trade[], scans: Map<number, Scan>, c
     const fill = long ? Math.min(px, c[j]!.o) : Math.max(px, c[j]!.o), risk = t.riskAtr * sc.atrH1, stop = t.ok && risk > 0 ? (long ? fill - risk : fill + risk) : null;
     const o = outcomes(c, j, long, fill, stop, null, sc.atrD1, cfg, cfg.heldExit ? px : undefined);
     const oc = cfg.ltf ? outcomes(c, j, long, fill, stop, null, sc.atrD1, { ...cfg, ltf: undefined }, cfg.heldExit ? px : undefined) : null;
-    out.push({ ...t, ...(oc ? { rc: oc.r } : {}), i: j, t: c[j]!.t, year: new Date(c[j]!.t).getUTCFullYear(), day: Math.floor(c[j]!.t / 86_400_000), fill, level: px, px, stop, risk, go: false, vetoes: [], checks: {}, ftaR: null, tier: 'placebo', closedThrough: long ? c[j]!.c < px : c[j]!.c > px, r: o.r, x: o.x, resolvedBy: o.resolvedBy, placebo: true });
+    out.push({ ...t, ...(oc ? { rc: oc.r } : {}), i: j, t: c[j]!.t, year: new Date(c[j]!.t).getUTCFullYear(), day: Math.floor(c[j]!.t / 86_400_000), fill, level: px, px, stop, risk, go: t.go, vetoes: [], checks: {}, ftaR: null, tier: 'placebo', closedThrough: long ? c[j]!.c < px : c[j]!.c > px, r: o.r, x: o.x, resolvedBy: o.resolvedBy, placebo: true });
   }
   return out;
 }

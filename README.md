@@ -37,6 +37,19 @@ The graph evaluates, and `kev_evaluate` reports, in the trader's order of operat
 
 This covers only levels where price goes the OPPOSITE way to the last participants. The second webinar (buying support, including the SFP) is not in the sources.
 
+## kev-lab: Python app, quant tools, $100k paper book
+```
+npx tsx src/cli.ts signals            # kev's causal fills (+ matched random orders) -> out/signals/*.json
+python3 kev-lab/run.py                # paper book + metrics -> out/lab/results.json
+python3 kev-lab/server.py --live      # http://localhost:8765 (--live appends new SOL hours every 10 min)
+python3 -m unittest discover -s kev-lab/tests
+```
+- `quant.py`: Sharpe/Sortino/Calmar/ulcer, probabilistic and deflated Sharpe (Bailey & López de Prado), stationary bootstrap, Hurst, variance ratio, Kelly.
+- `paper.py`: one $100k account, 0.5% risk per trade, one position per market, 1.5% total open risk.
+- `strategy.py`: 4 pre-registered candidates scored on 2020-2022, the best (deflated Sharpe) run once on 2023 onward against a placebo book.
+- Result (2026-10-21): $100k became $83,079 (random orders: $65,610). See `kev-brain/experiments/2026-10-21-paper-book.md`.
+- Live mode covers SOL only (Binance); gold and ETH have no free feed matching their broker data. It stops when the process stops.
+
 ## Read these first
 - `docs/graph.md` the wiring and stages
 - `docs/conflicts.md` where the sources disagree (kept, not resolved)

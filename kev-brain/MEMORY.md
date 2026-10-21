@@ -36,6 +36,12 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 - "With-trend levels hold better" (68% vs 53%) only works with hindsight phase direction; the causal regime trend gives AUC 0.44.
 - The regime node's ATR-normalised trend calls crashes "range" (all of May-Jul 2021, 60% of 2022): a known weakness, not tuned.
 
+## Audit + paper book (2026-10-21; experiments/2026-10-21-kev-audit.md, 2026-10-21-paper-book.md)
+- Audit: added causal percent trend `trendPct` (regime node) since the ATR trend missed crashes; atlas last leg fixed; engine placebos now keep the real trade's GO label (they had go:false, so any GO-gated placebo book was empty).
+- Paper book, $100k, 0.5% risk, rules frozen on 2020-2022 (D GO chosen by deflated Sharpe, all 4 candidates lost): 2023-now $83,079, Sharpe -0.79, maxDD -24%; placebo book $65,610. Beats random by ~0.25R/trade, still loses; gold -0.40R is most of it.
+- Hurst ~0.55 / VR(24h) ~1 in every market-year: no exploitable regime persistence at H1.
+- kev-lab/ (Python stdlib server + JS page) reads out/signals/*.json from `kev signals`; tests in kev-lab/tests.
+
 ## Findings before v2 (superseded where the v2 runs disagree)
 - No net edge on SOL or gold (H4/H1/M30) after costs; real levels beat random orders by about +0.1R but only reach breakeven gross.
 - The user's Trade Check keep/reject rule is exactly "the fill bar closed through the level" (0 of 35 kept, 8 of 8 rejected): lookahead.
