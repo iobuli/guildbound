@@ -16,7 +16,7 @@ answers with the body map: landmark positions, facings, centre of mass against t
 Console commands (also in the page): help | models | model <file> | clips | play <clip> | pause | resume | seek <s> |
 speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in the bone's own rest frame) | reset |
 landmarks [name] | facings | balance | rig | state |
-reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
+hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
 ref capture [name] (records one loop of the playing clip) | ref list | ref play <name> [rate] | ref stop | ref status.
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
@@ -295,7 +295,101 @@ def rest_lm(info, name):
     return np.array(info["bm"]["landmarks"][name]["rest"], float)
 
 
-def apply_frame(info, lm, inplace=True):
+FINGERS = ("thumb", "index", "middle", "ring", "pinky")
+
+
+def hand_names(info, side):
+    """Bones of one hand in chain order: {finger: [bone, ...child]} plus the hand bone itself."""
+    out = {}
+    for f in FINGERS:
+        ch, i = [], 1
+        while True:
+            hit = [n for n in (f"{f}_{i:02d}_{side}", f"{f}_{i:02d}_leaf_{side}") if n in info["index"]]
+            if not hit:
+                break
+            ch.append(hit[0])
+            i += 1
+        if ch:
+            out[f] = ch
+    return out
+
+
+def hand_frame(pt):
+    """Palm frame from positions of hand, middle_01, index_01, pinky_01: x along the fingers, z across the palm normal."""
+    return basis(np.asarray(pt["middle_01"]) - np.asarray(pt["hand"]), np.asarray(pt["pinky_01"]) - np.asarray(pt["index_01"]))
+
+
+def hand_pts(get, side):
+    return {"hand": get(f"hand_{side}"), "middle_01": get(f"middle_01_{side}"), "index_01": get(f"index_01_{side}"), "pinky_01": get(f"pinky_01_{side}")}
+
+
+def pose_hand(info, Q, P, side, hands):
+    """Orient the hand from the reference palm frame, then aim every finger bone along the reference's
+    segment direction taken in that frame. Returns the worst fingertip error (m) against the reference."""
+    names = hand_names(info, side)
+    if not names or f"hand_{side}" not in hands or not all(f"{k}_{side}" in hands for k in ("middle_01", "index_01", "pinky_01")):
+        return None
+    Wr = info["rest_world"]
+    rpos = lambda n: Wr[info["index"][n]][:3, 3]  # noqa: E731
+    Fref = hand_frame(hand_pts(lambda n: hands[n], side))
+    Frest = hand_frame(hand_pts(rpos, side))
+    hb = f"hand_{side}"
+    set_world_rot(info, Q, P, hb, Fref @ Frest.T @ rot_of(Wr[info["index"][hb]]))
+    cur = lambda: world_transforms(info, Q, P)  # noqa: E731
+    W = cur()
+    Ft = hand_frame(hand_pts(lambda n: W[info["index"][n]][:3, 3], side))
+    for f, ch in names.items():
+        for b, c in zip(ch, ch[1:]):
+            if b not in hands or c not in hands:
+                continue
+            aim(info, Q, P, b, Ft @ (Fref.T @ (np.asarray(hands[c]) - np.asarray(hands[b]))), c)
+    W = cur()
+    tips = [ch[-1] for ch in names.values() if ch[-1] in hands]
+    return max(float(np.linalg.norm((W[info["index"][t]][:3, 3] - W[info["index"][hb]][:3, 3]) - (np.asarray(hands[t]) - np.asarray(hands[hb])))) for t in tips)
+
+
+CURL = {"thumb": (35, 45, 35), "index": (80, 95, 70), "middle": (85, 100, 75), "ring": (85, 100, 75), "pinky": (85, 100, 70)}
+POSES = {"open": 0.0, "fist": 1.0, "point": None, "relaxed": 0.3}
+
+
+def curl_hand(info, Q, P, side, amount, point=False):
+    """Curl a hand from rest: each finger joint bends toward the palm by its share of `amount` (0 open .. 1 fist)."""
+    W = world_transforms(info, Q, P)
+    Wr = info["rest_world"]
+    hb = f"hand_{side}"
+    palm = None
+    kv = None
+    names = hand_names(info, side)
+    pt = hand_pts(lambda n: W[info["index"][n]][:3, 3], side)
+    F = hand_frame(pt)
+    axis = F[:, 1]
+    # sign: the curl must carry the fingertips toward the palm side (the hand's z axis points one way; test it)
+    c = 0.0
+    for f, ch in names.items():
+        if f == "thumb":
+            continue
+        d = W[info["index"][ch[1]]][:3, 3] - W[info["index"][ch[0]]][:3, 3]
+        c += float(np.cross(axis, d) @ F[:, 2])
+    sgn = 1.0 if c < 0 else -1.0
+    if STATE.get("summary") and f"palm_{side}" in STATE["summary"].get("facings", {}):
+        palm = np.array(STATE["summary"]["facings"][f"palm_{side}"]["vector"])
+        sgn = 1.0 if float(np.cross(axis, F[:, 0]) @ palm) < 0 else -1.0
+    for f, ch in names.items():
+        amt = 0.0 if (point and f == "index") else amount
+        d_rest = [Wr[info["index"][c]][:3, 3] - Wr[info["index"][b]][:3, 3] for b, c in zip(ch, ch[1:])]
+        Frest = hand_frame(hand_pts(lambda n: Wr[info["index"][n]][:3, 3], side))
+        ang = 0.0
+        for (b, c), dr, deg in zip(zip(ch, ch[1:]), d_rest, CURL[f]):
+            ang += math.radians(deg) * amt
+            rot = math.cos(ang / 2), axis * math.sin(sgn * ang / 2)
+            v = F @ (Frest.T @ dr)
+            w, u = rot
+            v2 = v + 2 * np.cross(u, np.cross(u, v) + w * v)
+            aim(info, Q, P, b, v2, c)
+    return sgn
+
+
+def apply_frame(info, lm, inplace=True, hands=None):
     """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
 
     Pelvis: translated to the pelvis target; pelvis and chest oriented from the hip line and shoulder line with the
@@ -334,9 +428,16 @@ def apply_frame(info, lm, inplace=True):
     for chain, (root, mid, end, tgt, pole) in CHAINS.items():
         if need(tgt):
             err[tgt] = reach(info, Q, P, chain, lm[tgt], lm.get(pole))
+    herr = {}
+    for side in "lr":
+        if hands:
+            e = pose_hand(info, Q, P, side, hands)
+            if e is not None:
+                herr[f"fingers_{side}"] = e
     for side in "lr":
         if need(f"ball_{side}", f"ankle_{side}"):
             aim(info, Q, P, f"foot_{side}", np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"]))
+    err.update(herr)
     return err
 
 
@@ -346,6 +447,7 @@ def pose_event():
 
 
 # ---- Kev references: capture measurements while a clip plays, replay them onto any model --------------------------
+HAND_RE = re.compile(r"^(hand|thumb|index|middle|ring|pinky)(_\d\d)?(_leaf)?_[lr]$")
 REFDIR = os.path.join(REPO, "staging", "kev", "refs")
 CAPTURE = {"on": False, "name": None, "samples": [], "last_t": -1.0, "model": None, "clip": None}
 REFPLAY = {"thread": None, "stop": False, "status": {}}
@@ -361,7 +463,8 @@ def capture_sample(model, clip, t, summary):
         return finish_capture()
     c["last_t"] = t
     if not c["samples"] or t > c["samples"][-1]["t"] + 1e-4:
-        c["samples"].append({"t": round(t, 4), "landmarks": summary["landmarks"], "com": summary["balance"]["com"]})
+        hands = {k: v for k, v in summary["joints"].items() if HAND_RE.match(k)}
+        c["samples"].append({"t": round(t, 4), "landmarks": summary["landmarks"], "hands": hands, "com": summary["balance"]["com"]})
 
 
 def finish_capture():
@@ -390,7 +493,8 @@ def sample_ref(ref, tau):
     lo = max(hi - 1, 0)
     a, b = ss[lo], ss[hi]
     u = 0.0 if b["t"] == a["t"] else (tau - a["t"]) / (b["t"] - a["t"])
-    return {k: [x + (y - x) * u for x, y in zip(a["landmarks"][k], b["landmarks"][k])] for k in a["landmarks"] if k in b["landmarks"]}
+    mixd = lambda da, db: {k: [x + (y - x) * u for x, y in zip(da[k], db[k])] for k in da if k in db}  # noqa: E731
+    return mixd(a["landmarks"], b["landmarks"]), mixd(a.get("hands", {}), b.get("hands", {}))
 
 
 def scale_to(info, ref, lm):
@@ -399,6 +503,11 @@ def scale_to(info, ref, lm):
     f0, f1 = ref["floor"], info["bm"]["body"]["floor"]
     first = ref["samples"][0]["landmarks"]["pelvis"]
     return {k: [(v[0] - first[0]) * s, (v[1] - f0) * s + f1, (v[2] - first[2]) * s] for k, v in lm.items()}
+
+
+def scale_hands(info, ref, hands):
+    s = info["bm"]["body"]["height"] / ref["height"]
+    return {k: [v[0] * s, v[1] * s, v[2] * s] for k, v in hands.items()}  # directions only: no offset needed
 
 
 def run_ref(name, rate, loop):
@@ -416,12 +525,14 @@ def run_ref(name, rate, loop):
                 break
             t0 = time.time()
             tau = 0.0
-        lm = scale_to(info, ref, sample_ref(ref, tau))
+        lm0, hd0 = sample_ref(ref, tau)
+        lm = scale_to(info, ref, lm0)
+        hd = scale_hands(info, ref, hd0)
         # place the reference pelvis x,z at this model's rest pelvis (in place); keep heights
         for k in lm:
             lm[k][0] += rest_lm(info, "pelvis")[0]
             lm[k][2] += rest_lm(info, "pelvis")[2]
-        err = apply_frame(info, lm, inplace=False)
+        err = apply_frame(info, lm, inplace=False, hands=hd)
         measured = kev_read(info, COMMANDED, COMMANDED_POS)
         track = [float(np.linalg.norm(np.array(measured["landmarks"][k]) - np.array(lm[k]))) for k in lm if k in measured["landmarks"]]
         REFPLAY["status"] = {"name": name, "tau": round(tau, 2), "duration": ref["duration"], "rate": rate, "frames": n,
@@ -514,6 +625,19 @@ def execute(line):
             stop_ref()
             return "controller stopped"
         return json.dumps(REFPLAY["status"] or {"running": False}, indent=1)
+    if c == "hand" and len(a) >= 2:
+        if not info or not info["bm"]:
+            return "no skinned model streamed"
+        side = {"l": "l", "left": "l", "r": "r", "right": "r"}.get(a[0])
+        if not side:
+            return "hand <l|r> <open|fist|point|relaxed|0..1>"
+        stop_ref()
+        if not COMMANDED:
+            send_cmd({"cmd": "stopclip"})
+        amt = POSES.get(a[1], None) if a[1] in POSES else float(a[1])
+        curl_hand(info, COMMANDED, COMMANDED_POS, side, 1.0 if amt is None else amt, point=a[1] == "point")
+        send_cmd(pose_event())
+        return f"hand_{side}: {a[1]}"
     if c in ("reach", "aim") and len(a) >= 4:
         if not info or not info["bm"]:
             return "no skinned model streamed"
@@ -672,7 +796,7 @@ class Handler(BaseHTTPRequestHandler):
             stop_ref()
             if not COMMANDED:
                 send_cmd({"cmd": "stopclip"})
-            err = apply_frame(info, {k: v for k, v in body.get("landmarks", {}).items()}, inplace=body.get("inplace", False))
+            err = apply_frame(info, {k: v for k, v in body.get("landmarks", {}).items()}, inplace=body.get("inplace", False), hands=body.get("hands"))
             measured = kev_read(info, COMMANDED, COMMANDED_POS)
             send_cmd(pose_event())
             return self.reply(200, {"reach_error_m": {k: round(v, 4) for k, v in err.items()},
