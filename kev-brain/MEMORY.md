@@ -40,6 +40,7 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 - Audit: added causal percent trend `trendPct` (regime node) since the ATR trend missed crashes; atlas last leg fixed; engine placebos now keep the real trade's GO label (they had go:false, so any GO-gated placebo book was empty).
 - Paper book, $100k, 0.5% risk, rules frozen on 2020-2022 (D GO chosen by deflated Sharpe, all 4 candidates lost): 2023-now $83,079, Sharpe -0.79, maxDD -24%; placebo book $65,610. Beats random by ~0.25R/trade, still loses; gold -0.40R is most of it.
 - Hurst ~0.55 / VR(24h) ~1 in every market-year: no exploitable regime persistence at H1.
+- Iteration 1 (walk-forward self-selection, 50 configs/market, DSR): at DSR>=0.9 it never trades; at 0.5 only SOL GO trades, $98,118 vs random $95,813. In-sample SOL +0.2-0.47R decays to about 0 out of sample; ETH and gold have nothing. Live choice: sit out.
 - kev-lab/ (Python stdlib server + JS page) reads out/signals/*.json from `kev signals`; tests in kev-lab/tests.
 
 ## Findings before v2 (superseded where the v2 runs disagree)

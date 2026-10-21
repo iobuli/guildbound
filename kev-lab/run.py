@@ -2,8 +2,15 @@
 import json, sys, time
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-import data, strategy, quant
+import data, strategy, quant, iterate
 import numpy as np
+
+def clean(x):
+    """JSON has no NaN/Infinity: write null so the page can parse it."""
+    if isinstance(x, dict): return {k: clean(v) for k, v in x.items()}
+    if isinstance(x, (list, tuple)): return [clean(v) for v in x]
+    if isinstance(x, (float, np.floating)): return float(x) if np.isfinite(x) else None
+    return x
 
 def main():
     t0 = time.time()
@@ -15,9 +22,12 @@ def main():
         c = data.h1(m); lr = np.diff(np.log(c["c"])); yrs = (c["t"][1:] / 1000 / 86400 / 365.25 + 1970).astype(int)
         reg[m] = {int(y): {"hurst": quant.hurst(lr[yrs == y]), "vr24": quant.variance_ratio(lr[yrs == y], 24)[0], "z": quant.variance_ratio(lr[yrs == y], 24)[1]} for y in sorted(set(yrs)) if (yrs == y).sum() > 500}
     res["regime"] = reg
+    # iteration 1: walk-forward self-selection (primary DSR >= 0.90, sensitivity 0.50) and the frozen live choice
+    res["walk"] = {str(th): iterate.walk_forward(sig, th) for th in (0.9, 0.5)}
+    res["live_choice"] = iterate.live_choice(sig, 0.9)
     res["generated"] = int(time.time() * 1000)
     out = data.ROOT / "out" / "lab"; out.mkdir(parents=True, exist_ok=True)
-    (out / "results.json").write_text(json.dumps(res, default=float))
+    (out / "results.json").write_text(json.dumps(clean(res), default=float))
     print(f"done in {time.time()-t0:.0f}s")
     return res
 

@@ -16,6 +16,14 @@ async function load() {
   const years = [...new Set(Object.values(R.regime).flatMap((m) => Object.keys(m)))].sort();
   const mk = Object.keys(R.regime);
   $('#regime').innerHTML = `<table><tr><th>year</th>${mk.map((m) => `<th>${m}</th>`).join('')}</tr>${years.slice().reverse().map((y) => `<tr><td>${y}</td>${mk.map((m) => { const v = R.regime[m][y]; return v ? `<td title="VR z ${f(v.z, 1)}">H ${f(v.hurst)} · VR ${f(v.vr24)}</td>` : '<td>–</td>'; }).join('')}</tr>`).join('')}</table>`;
+  if (R.walk) {
+    const W = R.walk, P = W['0.9'], S = W['0.5'];
+    const line = (w, th) => `DSR ≥ ${th}: ${w.real.trades} trades, $100k → <b>${usd(w.real.final)}</b>${w.real.trades ? ` (mean ${f(w.real.meanR)}R; random orders ${usd(w.placebo.final)})` : ' (sat out everything)'}`;
+    $('#walksum').innerHTML = `${line(P, '0.90 (pre-registered)')} · ${line(S, '0.50 (sensitivity)')}`;
+    const mk = [...new Set(S.plan.map((p) => p.mkt))], ys = [...new Set(S.plan.map((p) => p.year))];
+    $('#walk').innerHTML = `<table><tr><th>year</th>${mk.map((m) => `<th>${m}</th>`).join('')}</tr>${ys.map((y) => `<tr><td>${y}</td>${mk.map((m) => { const p = S.plan.find((q) => q.mkt === m && q.year === y); return `<td class="${p.dsr >= 0.9 ? 'good' : p.dsr >= 0.5 ? '' : 'sub'}" title="train n ${p.n}, ${p.trials} configs">${p.filter ?? '–'} / ${p.exit ?? ''} · train ${f(p.meanR)}R · DSR ${f(p.dsr)}</td>`; }).join('')}</tr>`).join('')}</table>`;
+    $('#live').innerHTML = 'Live choice from all data to date: ' + Object.entries(R.live_choice).map(([m, c]) => `${m} ${c.trade ? `<b>trade ${c.filter} / ${c.exit}</b>` : `sit out (best ${c.filter} / ${c.exit}, DSR ${f(c.dsr)})`}`).join(' · ');
+  }
   $('#trades').innerHTML = `<table><tr><th>filled</th><th>market</th><th>side</th><th>entry</th><th>exit</th><th>R</th><th>risked</th><th>P&amp;L</th><th>equity</th></tr>${R.ledger.slice().reverse().map((x) => `<tr><td>${day(x.t)}</td><td>${x.mkt}</td><td>${x.dir === 1 ? 'long' : 'short'}</td><td>${f(x.fill, x.fill > 100 ? 1 : 3)}</td><td>${day(x.exit_t)}${x.exit_t >= R.last_bar ? ' (open)' : ''}</td><td class="${x.R >= 0 ? 'good' : 'bad'}">${f(x.R)}</td><td>${usd(x.risk_usd)}</td><td class="${x.pnl >= 0 ? 'good' : 'bad'}">${usd(x.pnl)}</td><td>${usd(x.equity)}</td></tr>`).join('')}</table>`;
   draw();
 }

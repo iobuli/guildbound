@@ -7,6 +7,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+import iterate  # noqa: E402
 import quant  # noqa: E402
 from paper import KEY, Book  # noqa: E402
 
@@ -60,6 +61,16 @@ class Broker(unittest.TestCase):
         b = Book().run(rows)
         self.assertEqual(b.skipped["risk cap"], 1)
         self.assertTrue(math.isclose(b.equity, 101_500.0))
+
+
+class WalkForward(unittest.TestCase):
+    def test_choice_ignores_the_future(self):
+        rows = [{"t": k, "dir": 1, "sp": 1, "go": 1, "trendPct": "up", "htf": "long", "vol": 0.3,
+                 "r": {e: (1.0 if k % 2 else -0.5) for e in iterate.EXITS}, "xt": {e: k + 1 for e in iterate.EXITS}} for k in range(100)]
+        before = iterate.choose(rows, 60)
+        future = [{**r, "r": {e: -5.0 for e in iterate.EXITS}} if r["t"] >= 59 else r for r in rows]
+        self.assertEqual(before, iterate.choose(future, 60))  # fills at/after 60, and fills exiting at/after 60, are unseen
+        self.assertEqual(iterate.choose(rows[:30], 60)["filter"], None)  # under 40 trades: no choice
 
 
 if __name__ == "__main__":
