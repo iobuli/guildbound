@@ -20,7 +20,7 @@ const sun = new THREE.DirectionalLight(0xffffff, 1.6); sun.position.set(3, 5, 4)
 scene.add(new THREE.GridHelper(6, 24, 0x2c3240, 0x1d222c));
 
 const state = { model: null, root: null, mixer: null, clips: [], action: null, bones: {}, rest: {}, overrides: {}, selected: null,
-                playing: false, speed: 1, helper: null, clipName: null, overrideQ: {}, overrideP: {} };
+                playing: false, speed: 1, helper: null, clipName: null, overrideQ: {}, overrideP: {}, ghost: null, physDiag: null };
 const markers = new THREE.Group(); scene.add(markers);
 const sphereGeo = new THREE.SphereGeometry(0.018, 8, 8);
 let comMesh = null, lastKev = null;
@@ -93,7 +93,10 @@ function handle(cmd) {
     case 'speed': state.speed = cmd.value; if (state.playing) state.mixer.timeScale = cmd.value; break;
     case 'baked': state.baked = { fps: cmd.fps, frames: cmd.frames, t0: performance.now(), loop: cmd.loop }; state.overrideQ = {}; state.overrideP = {}; if (state.action) state.action.stop(); state.action = null; state.clipName = null; break;
     case 'stopclip': state.baked = null; if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null; break;
-    case 'pose': state.baked = null; for (const [n, q] of Object.entries(cmd.quats || {})) state.overrideQ[n] = q; for (const [n, p] of Object.entries(cmd.pos || {})) state.overrideP[n] = p; break;
+    case 'pose': state.baked = null; state.ghost = cmd.ghost || null; state.physDiag = cmd.phys || null;
+      if (cmd.phys && $('phys')) $('phys').textContent = `plants ${cmd.phys.plants}  slip ${cmd.phys.slip_mps} m/s  pen ${cmd.phys.penetration_mm} mm`;
+      for (const [n, q] of Object.entries(cmd.quats || {})) state.overrideQ[n] = q; for (const [n, p] of Object.entries(cmd.pos || {})) state.overrideP[n] = p; break;
+    case 'phys': if ($('showPhys')) $('showPhys').checked = !!cmd.on; if (!cmd.on && $('phys')) $('phys').textContent = ''; break;
     case 'reset': state.baked = null; state.overrideQ = {}; state.overrideP = {}; for (const [n, b] of Object.entries(state.bones)) b.position.copy(state.restP[n]); state.overrides = {}; if (state.action) state.action.stop(); state.action = null; state.playing = false; state.clipName = null;
       for (const [n, b] of Object.entries(state.bones)) b.quaternion.copy(state.rest[n]); break;
     case 'set': if (state.bones[cmd.bone]) { setOverride(cmd.bone, cmd.euler); if (state.selected === cmd.bone) selectBone(cmd.bone); } break;
@@ -162,6 +165,10 @@ function drawMarkers(k) {
   com.position.set(...c); com.renderOrder = 11; markers.add(com);
   const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(...c), new THREE.Vector3(c[0], 0, c[2])]), new THREE.LineBasicMaterial({ color: ok ? 0x5fd38d : 0xff6b6b }));
   markers.add(line);
+  if ($('showPhys') && $('showPhys').checked && state.ghost) {
+    const ghost = new THREE.MeshBasicMaterial({ color: 0xff9a3c, depthTest: false, transparent: true, opacity: 0.85 });
+    for (const p of Object.values(state.ghost)) { const m = new THREE.Mesh(sphereGeo, ghost); m.position.set(...p); m.scale.setScalar(0.65); m.renderOrder = 9; markers.add(m); }
+  }
 }
 
 function applyShow() {
@@ -186,6 +193,7 @@ async function init() {
   });
   $('resetBone').onclick = () => { delete state.overrides[state.selected]; selectBone(state.selected); };
   $('resetAll').onclick = () => handle({ cmd: 'reset' });
+  if ($('showPhys')) $('showPhys').onchange = () => fetch('/api/exec', { method: 'POST', body: JSON.stringify({ line: $('showPhys').checked ? 'phys on' : 'phys off' }) });
   const hist = []; let hi = 0;
   $('line').onkeydown = async (ev) => {
     if (ev.key === 'ArrowUp') { hi = Math.max(0, hi - 1); $('line').value = hist[hi] || ''; }

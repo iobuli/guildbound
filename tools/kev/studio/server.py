@@ -18,7 +18,8 @@ speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in th
 landmarks [name] | facings | balance | rig | state |
 hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
 ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
-ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status.
+ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status |
+phys on|off|toggle|status|reset (optional ground/balance/momentum pass on /api/control targets).
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
 import argparse
@@ -42,6 +43,7 @@ ANIM = os.path.join(REPO, "assets", "anim")
 sys.path.insert(0, KEV)
 import bodymap  # noqa: E402
 import nodes as kev_nodes  # noqa: E402
+import physics  # noqa: E402
 import statue  # noqa: E402
 
 MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".glb": "model/gltf-binary",
@@ -49,6 +51,7 @@ MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".js
 LOCK = threading.Lock()
 CLIENTS = []
 STATE = {"model": None, "clip": None, "playing": False, "t": 0.0, "duration": 0.0, "speed": 1.0, "summary": {}, "stamp": 0.0}
+PHYS = {"on": False, "sim": None, "last": 0.0, "model": None}
 LATEST_QUATS = {}
 CACHE = {}
 
@@ -529,6 +532,24 @@ def pose_event():
             "pos": {k: [round(float(x), 5) for x in v] for k, v in COMMANDED_POS.items()}}
 
 
+def apply_physics(info, landmarks):
+    """Optional pass in front of the kinematic solve. Off unless `phys on`. Returns (landmarks, status)."""
+    if not PHYS["on"]:
+        return landmarks, {"on": False}
+    if PHYS["sim"] is None or PHYS["model"] != STATE.get("model"):
+        floor = None
+        if info and info.get("bm"):
+            floor = info["bm"].get("body", {}).get("floor")
+        PHYS["sim"] = physics.PhysicsPass(floor=floor)
+        PHYS["model"] = STATE.get("model")
+        PHYS["last"] = time.time()
+    now = time.time()
+    dt = min(0.05, max(1.0 / 120.0, now - PHYS["last"] if PHYS["last"] else 1.0 / 30.0))
+    PHYS["last"] = now
+    step = PHYS["sim"].step(landmarks, dt)
+    return step["landmarks"], {"on": True, **step["diag"]}
+
+
 # ---- Kev references: capture measurements while a clip plays, replay them onto any model --------------------------
 HAND_RE = re.compile(r"^(hand|thumb|index|middle|ring|pinky)(_\d\d)?(_leaf)?_[lr]$")
 HERE_TOOLS = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -842,6 +863,19 @@ def execute(line):
             play_baked(STATE["model"], a[1])
             return f"'{a[1]}' (smoothed) -> {STATE['model']}: {len(b['frames'])} frames, mean error {b['mean_cm']} cm"
         return "cat list | cat info <name> | cat play <name>"
+    if c == "phys":
+        sub = a[0] if a else "status"
+        if sub in ("on", "off", "toggle"):
+            PHYS["on"] = sub == "on" or (sub == "toggle" and not PHYS["on"])
+            PHYS["sim"] = None
+            send_cmd({"cmd": "phys", "on": PHYS["on"]})
+            return f"physics {'on' if PHYS['on'] else 'off'}"
+        if sub == "reset":
+            PHYS["sim"] = None
+            return "physics reset"
+        if PHYS["sim"] is None:
+            return "physics on (no frame yet)" if PHYS["on"] else "physics off"
+        return json.dumps({"on": PHYS["on"], **PHYS["sim"].status()})
     if c == "hand" and len(a) >= 2:
         if not info or not info["bm"]:
             return "no skinned model streamed"
@@ -1013,11 +1047,25 @@ class Handler(BaseHTTPRequestHandler):
             stop_ref()
             if not COMMANDED:
                 send_cmd({"cmd": "stopclip"})
-            err = apply_frame(info, {k: v for k, v in body.get("landmarks", {}).items()}, inplace=body.get("inplace", False), hands=body.get("hands"))
+            incoming = {k: v for k, v in body.get("landmarks", {}).items()}
+            solved, phys = apply_physics(info, incoming)
+            err = apply_frame(info, solved, inplace=body.get("inplace", False), hands=body.get("hands"))
             measured = kev_read(info, COMMANDED, COMMANDED_POS)
-            send_cmd(pose_event())
+            ev = pose_event()
+            if phys.get("on"):
+                ev["ghost"] = {k: [round(float(x), 4) for x in v] for k, v in incoming.items() if isinstance(v, (list, tuple)) and len(v) == 3}
+                ev["phys"] = {k: phys[k] for k in ("plants", "slip_mps", "penetration_mm", "com_off_m", "compression_m") if k in phys}
+            send_cmd(ev)
             return self.reply(200, {"reach_error_m": {k: round(v, 4) for k, v in err.items()},
-                                    "landmarks": measured["landmarks"], "balance": measured["balance"]})
+                                    "landmarks": measured["landmarks"], "balance": measured["balance"], "physics": phys})
+        if path == "/api/physics":
+            frames = body.get("frames", body.get("landmarks"))
+            if isinstance(frames, dict):
+                frames = [frames]
+            if not isinstance(frames, list) or not frames:
+                return self.reply(400, {"error": "frames or landmarks required"})
+            return self.reply(200, physics.correct(frames, dt=body.get("dt", 1.0 / 30.0), floor=body.get("floor"),
+                                                    rest=body.get("rest"), config=body.get("config"), events=body.get("events")))
         if path == "/api/exec":
             try:
                 out = execute(body.get("line", ""))
