@@ -1425,6 +1425,348 @@
     "rokoko"
    ]
   },
+  "gen_aerial_dive_attack": {
+   "duration_s": 0.85,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 13.29,
+    "duration_s": 0.867,
+    "foot_slip_hs": 0.259,
+    "frames": 52,
+    "jerk": 4756.1,
+    "wrist_reach_h": 0.749,
+    "wrist_speed_hs": 20.11
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 14.38,
+    "duration_s": 0.867,
+    "foot_slip_hs": 1.838,
+    "frames": 52,
+    "jerk": 4747.1,
+    "wrist_reach_h": 0.824,
+    "wrist_speed_hs": 20.36
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 0,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet2.webp",
+    "sheet": "../grid/sheets/aerial_dive_attack.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "aerial_dive_attack"
+   ]
+  },
+  "gen_axe_kick": {
+   "duration_s": 0.9,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 24.92,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.65,
+    "frames": 55,
+    "jerk": 1843.1,
+    "wrist_reach_h": 0.42,
+    "wrist_speed_hs": 7.8
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 20.04,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.724,
+    "frames": 55,
+    "jerk": 1911.7,
+    "wrist_reach_h": 0.394,
+    "wrist_speed_hs": 7.8
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 34,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet2.webp",
+    "sheet": "../grid/sheets/axe_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "axe_kick"
+   ]
+  },
+  "gen_backflip_evade": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.3,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.214,
+    "frames": 61,
+    "jerk": 1723.8,
+    "wrist_reach_h": 0.699,
+    "wrist_speed_hs": 10.2
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.54,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.378,
+    "frames": 61,
+    "jerk": 1449.5,
+    "wrist_reach_h": 0.733,
+    "wrist_speed_hs": 9.29
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 50,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet3.webp",
+    "sheet": "../grid/sheets/backflip_evade.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "backflip_evade"
+   ]
+  },
+  "gen_crash_landing": {
+   "duration_s": 1.05,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 6.71,
+    "duration_s": 1.067,
+    "foot_slip_hs": 0.731,
+    "frames": 64,
+    "jerk": 1308.5,
+    "wrist_reach_h": 0.598,
+    "wrist_speed_hs": 8.12
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 6.62,
+    "duration_s": 1.067,
+    "foot_slip_hs": 0.374,
+    "frames": 64,
+    "jerk": 1424.8,
+    "wrist_reach_h": 0.591,
+    "wrist_speed_hs": 6.87
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 69,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet2.webp",
+    "sheet": "../grid/sheets/crash_landing.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "crash_landing"
+   ]
+  },
+  "gen_flying_side_kick": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 8.19,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.66,
+    "frames": 61,
+    "jerk": 1087.7,
+    "wrist_reach_h": 0.401,
+    "wrist_speed_hs": 6.93
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 8.39,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.221,
+    "frames": 61,
+    "jerk": 1417.1,
+    "wrist_reach_h": 0.395,
+    "wrist_speed_hs": 6.84
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 43,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet1.webp",
+    "sheet": "../grid/sheets/flying_side_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "flying_side_kick"
+   ]
+  },
+  "gen_jumping_knee": {
+   "duration_s": 0.9,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 4.02,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.36,
+    "frames": 55,
+    "jerk": 736.2,
+    "wrist_reach_h": 0.397,
+    "wrist_speed_hs": 5.83
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 3.43,
+    "duration_s": 0.917,
+    "foot_slip_hs": 0.192,
+    "frames": 55,
+    "jerk": 988.1,
+    "wrist_reach_h": 0.393,
+    "wrist_speed_hs": 4.68
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 55,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet1.webp",
+    "sheet": "../grid/sheets/jumping_knee.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "jumping_knee"
+   ]
+  },
+  "gen_palm_thrust_cast": {
+   "duration_s": 1.0,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.85,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.187,
+    "frames": 61,
+    "jerk": 201.3,
+    "wrist_reach_h": 0.54,
+    "wrist_speed_hs": 3.97
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.96,
+    "duration_s": 1.017,
+    "foot_slip_hs": 0.315,
+    "frames": 61,
+    "jerk": 371.1,
+    "wrist_reach_h": 0.602,
+    "wrist_speed_hs": 3.77
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 150,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet3.webp",
+    "sheet": "../grid/sheets/palm_thrust_cast.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "palm_thrust_cast"
+   ]
+  },
+  "gen_roundhouse_kick": {
+   "duration_s": 0.9167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 10.91,
+    "duration_s": 0.933,
+    "foot_slip_hs": 0.376,
+    "frames": 56,
+    "jerk": 810.0,
+    "wrist_reach_h": 0.441,
+    "wrist_speed_hs": 2.58
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 9.21,
+    "duration_s": 0.933,
+    "foot_slip_hs": 0.457,
+    "frames": 56,
+    "jerk": 1015.5,
+    "wrist_reach_h": 0.453,
+    "wrist_speed_hs": 3.52
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 57,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet3.webp",
+    "sheet": "../grid/sheets/roundhouse_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "roundhouse_kick"
+   ]
+  },
+  "gen_spinning_back_kick": {
+   "duration_s": 0.9667,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 9.32,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.535,
+    "frames": 59,
+    "jerk": 786.9,
+    "wrist_reach_h": 0.56,
+    "wrist_speed_hs": 4.23
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 9.16,
+    "duration_s": 0.983,
+    "foot_slip_hs": 0.675,
+    "frames": 59,
+    "jerk": 1006.7,
+    "wrist_reach_h": 0.623,
+    "wrist_speed_hs": 3.99
+   },
+   "model": "karate.glb",
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 77,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "image": "gen_sheet1.webp",
+    "sheet": "../grid/sheets/spinning_back_kick.json",
+    "type": "sheet"
+   },
+   "tags": [
+    "gen",
+    "sheet",
+    "spinning_back_kick"
+   ]
+  },
   "giantenergyblast": {
    "duration_s": 23.1667,
    "fps": 60,

@@ -219,3 +219,8 @@ init();
 // deterministic stepping for offline recording: ksStep(frame) pins the baked track to a frame
 window.ksStep = (f) => { if (state.baked) state.baked.fixed = f; return state.baked ? state.baked.frames.length : 0; };
 window.ksSeek = (t) => { if (state.action) { state.action.paused = false; state.action.time = t; state.mixer.update(0); state.mixer.timeScale = 0; } return state.action ? state.action.getClip().duration : 0; };
+// camera presets for filming and checking poses against orthographic-style references
+window.ksView = (name) => {
+  const v = { side: [-4.6, 1.0, 0], front: [0, 1.0, 4.6], back: [0, 1.0, -4.6], three: [2.6, 1.7, 3.2] }[name] || [2.6, 1.7, 3.2];
+  camera.position.set(...v); controls.target.set(0, 0.9, 0); controls.update();
+};
