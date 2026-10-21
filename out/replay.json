@@ -1,0 +1,138 @@
+{
+  "range": {
+    "from": "2022-01-01",
+    "to": "2026-10-20",
+    "step": 4,
+    "runs": 10503,
+    "seconds": 11.4,
+    "msPerRun": 1.1
+  },
+  "tokens": {
+    "coarseUsed": "9/18",
+    "fineUsed": "22/40",
+    "topCoarse": [
+      [
+        13,
+        4980
+      ],
+      [
+        7,
+        4013
+      ],
+      [
+        0,
+        575
+      ],
+      [
+        9,
+        286
+      ],
+      [
+        15,
+        241
+      ]
+    ]
+  },
+  "dailyBias": {
+    "long": 560,
+    "short": 677,
+    "neutral": 514
+  },
+  "sfpEvents": {
+    "h1Total": 3108,
+    "h1Valid": 168,
+    "h1NotDeep": 2899,
+    "h1Visit4Plus": 277,
+    "d1Total": 141
+  },
+  "forwardReturns": [
+    {
+      "group": "H1 SFP, all rules pass (valid)",
+      "horizonH": 24,
+      "n": 168,
+      "meanPct": -0.047,
+      "baselinePct": 0.005,
+      "diffPct": -0.052,
+      "tStat": -0.12,
+      "hit": 0.542,
+      "sdPct": 4.91
+    },
+    {
+      "group": "H1 SFP, all rules pass (valid)",
+      "horizonH": 72,
+      "n": 168,
+      "meanPct": 0.292,
+      "baselinePct": 0.016,
+      "diffPct": 0.275,
+      "tStat": 0.38,
+      "hit": 0.56,
+      "sdPct": 8.49
+    },
+    {
+      "group": "H1 SFP, swing NOT deep",
+      "horizonH": 24,
+      "n": 2626,
+      "meanPct": -0.12,
+      "baselinePct": 0.001,
+      "diffPct": -0.121,
+      "tStat": -1.34,
+      "hit": 0.514,
+      "sdPct": 4.91
+    },
+    {
+      "group": "H1 SFP, swing NOT deep",
+      "horizonH": 72,
+      "n": 2626,
+      "meanPct": -0.262,
+      "baselinePct": 0.004,
+      "diffPct": -0.266,
+      "tStat": -1.63,
+      "hit": 0.504,
+      "sdPct": 8.49
+    },
+    {
+      "group": "H1 SFP, 4th+ visit",
+      "horizonH": 24,
+      "n": 15,
+      "meanPct": -1.006,
+      "baselinePct": 0.018,
+      "diffPct": -1.025,
+      "tStat": -0.85,
+      "hit": 0.467,
+      "sdPct": 4.91
+    },
+    {
+      "group": "H1 SFP, 4th+ visit",
+      "horizonH": 72,
+      "n": 15,
+      "meanPct": -0.513,
+      "baselinePct": 0.055,
+      "diffPct": -0.569,
+      "tStat": -0.28,
+      "hit": 0.6,
+      "sdPct": 8.49
+    },
+    {
+      "group": "D1 bias event (fresh signal, bar 0)",
+      "horizonH": 24,
+      "n": 588,
+      "meanPct": 0.014,
+      "baselinePct": -0.007,
+      "diffPct": 0.021,
+      "tStat": 0.1,
+      "hit": 0.503,
+      "sdPct": 4.91
+    },
+    {
+      "group": "D1 bias event (fresh signal, bar 0)",
+      "horizonH": 72,
+      "n": 588,
+      "meanPct": 0.096,
+      "baselinePct": -0.02,
+      "diffPct": 0.116,
+      "tStat": 0.31,
+      "hit": 0.473,
+      "sdPct": 8.49
+    }
+  ]
+}

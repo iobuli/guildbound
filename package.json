@@ -1,0 +1,25 @@
+{
+  "name": "kev-nodes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Trading knowledge as an isolated, causally-checked node graph, built to be called by an LLM agent",
+  "scripts": {
+    "test": "tsx src/selftest.ts",
+    "typecheck": "tsc",
+    "docs": "tsx src/docs.ts",
+    "replay": "tsx src/replay.ts",
+    "mcp": "tsx src/mcp.ts",
+    "backtest": "tsx src/backtest/report.ts",
+    "optimize": "tsx src/backtest/optimize.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

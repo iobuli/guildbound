@@ -1,0 +1,332 @@
+<title>Kev Inspector</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: a chart that shows only what was knowable at the decision cursor, beside tabs that show how kev parsed it. */
+:root{--bg:#f3f4f2;--panel:#ffffff;--ink:#15201d;--dim:#5d6b66;--hair:#d9ddd9;--acc:#0f766e;--accsoft:#d5ece8;--up:#1f8a4c;--dn:#c0392b;--warn:#b7791f;--warnsoft:#f6e7c8;--hid:#9aa6a1;--sel:#6d28d9;--okc:#1f8a4c;--failc:#c0392b;
+--ui:"Schibsted Grotesk",system-ui,-apple-system,"Segoe UI",sans-serif;--mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1514;--panel:#161e1c;--ink:#e3ebe8;--dim:#8d9c96;--hair:#2a3532;--acc:#3fb8aa;--accsoft:#173a36;--up:#3dbb73;--dn:#ef6b5b;--warn:#e0a443;--warnsoft:#3a2f17;--hid:#5b6862;--sel:#a78bfa;--okc:#3dbb73;--failc:#ef6b5b;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f1514;--panel:#161e1c;--ink:#e3ebe8;--dim:#8d9c96;--hair:#2a3532;--acc:#3fb8aa;--accsoft:#173a36;--up:#3dbb73;--dn:#ef6b5b;--warn:#e0a443;--warnsoft:#3a2f17;--hid:#5b6862;--sel:#a78bfa;--okc:#3dbb73;--failc:#ef6b5b;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:14px/1.45 var(--ui);padding-block:12px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1{font-size:18px;margin:0;letter-spacing:.01em}
+.sub{color:var(--dim);font-size:12.5px}
+header{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;justify-content:space-between;margin-bottom:10px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;margin-bottom:10px}
+.seg{display:inline-flex;border:1px solid var(--hair);border-radius:6px;overflow:hidden}
+.seg button{border:0;background:var(--panel);color:var(--dim);padding:5px 10px;font:inherit;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--acc);color:#fff}
+button,select,input,textarea{font:inherit;color:var(--ink)}
+select,input[type=text],textarea{background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:5px 8px;max-width:100%}
+button.b{background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:5px 10px;cursor:pointer}
+button:focus-visible,select:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid var(--acc);outline-offset:1px}
+.grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:12px;align-items:start}
+@media (max-width:900px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--panel);border:1px solid var(--hair);border-radius:8px;padding:10px;min-width:0}
+#chartwrap{position:relative}
+canvas{display:block;width:100%;height:400px;touch-action:pan-y}
+#tip{position:absolute;left:8px;top:8px;background:var(--panel);border:1px solid var(--hair);border-radius:6px;padding:4px 8px;font:12px var(--mono);pointer-events:none;opacity:.96;max-width:calc(100% - 16px)}
+.scrub{display:flex;gap:6px;align-items:center;margin-top:8px}
+.scrub input[type=range]{flex:1;min-width:0}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:12px;color:var(--dim);margin-top:6px}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:4px}
+.tabs{display:flex;flex-wrap:wrap;gap:2px;border-bottom:1px solid var(--hair);margin-bottom:8px}
+.tabs button{border:0;background:none;padding:6px 10px;cursor:pointer;color:var(--dim);border-bottom:2px solid transparent;font-weight:500}
+.tabs button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--acc)}
+.pane{max-height:560px;overflow:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th,td{padding:3px 6px;border-bottom:1px solid var(--hair);text-align:left;vertical-align:top;white-space:nowrap}
+th{color:var(--dim);font-weight:500;position:sticky;top:0;background:var(--panel)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.tw{overflow-x:auto}
+.chip{display:inline-block;border-radius:10px;padding:0 7px;font-size:11.5px;line-height:18px;border:1px solid var(--hair);color:var(--dim)}
+.chip.pass{color:var(--okc);border-color:var(--okc)}.chip.fail{color:var(--failc);border-color:var(--failc)}.chip.judgement{color:var(--warn);border-color:var(--warn)}
+.step{padding:5px 0;border-bottom:1px solid var(--hair)}
+.step summary{cursor:pointer;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.step .no{font:12px var(--mono);color:var(--dim);min-width:26px}
+.step ul{margin:6px 0 0 34px;padding:0;color:var(--dim);font-size:12.5px}
+.banner{border-radius:6px;padding:7px 10px;margin-bottom:8px;font-size:13px}
+.banner.warn{background:var(--warnsoft);border:1px solid var(--warn)}
+.banner.info{background:var(--accsoft);border:1px solid var(--acc)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px}.kv dt{color:var(--dim)}.kv dd{margin:0;font-family:var(--mono);overflow-wrap:anywhere}
+.mono{font-family:var(--mono)}
+tr.sel{background:var(--accsoft)}tr.click{cursor:pointer}
+.hidtag{color:var(--hid)}
+textarea{width:100%;min-height:64px}
+.note{border-bottom:1px solid var(--hair);padding:6px 0}.note small{color:var(--dim)}
+.good{color:var(--okc)}.bad{color:var(--failc)}
+p{margin:6px 0}
+</style>
+
+<header>
+  <div><h1>Kev Inspector</h1><div class="sub">SOL and gold H1. The chart shows only bars that had closed at the decision cursor; kev's parse is computed from those bars alone.</div></div>
+  <div class="sub" id="status">Loading prices…</div>
+</header>
+
+<div class="ctl">
+  <div class="seg" id="mkt" role="group" aria-label="Market"><button data-v="SOL" aria-pressed="true">SOL</button><button data-v="GOLD" aria-pressed="false">Gold</button></div>
+  <div class="seg" id="spec" role="group" aria-label="Parameters"><button data-v="0" aria-pressed="false">Kev default</button><button data-v="1" aria-pressed="true">Trade Check spec</button></div>
+  <div class="seg" id="dir" role="group" aria-label="Direction"><button data-v="long" aria-pressed="true">Long</button><button data-v="short" aria-pressed="false">Short</button></div>
+  <div class="seg" id="phase" role="group" aria-label="Decision moment"><button data-v="open" aria-pressed="true">At bar open</button><button data-v="close" aria-pressed="false">After close</button></div>
+  <label class="sub"><input type="checkbox" id="future" checked> show hidden future</label>
+  <select id="cases" aria-label="Example cases"></select>
+  <input type="text" id="jump" size="16" placeholder="2022-08-02 14:00" aria-label="Jump to UTC time"><button class="b" id="go">Go</button>
+</div>
+
+<div class="grid">
+  <div class="card">
+    <div id="chartwrap"><canvas id="cv" role="img" aria-label="Candlestick chart with kev levels"></canvas><div id="tip" hidden></div></div>
+    <div class="scrub"><button class="b" data-step="-24" title="back a day">«</button><button class="b" data-step="-1" title="back a bar (←)">‹</button><input type="range" id="slider" min="0" max="1" value="0" aria-label="Decision bar"><button class="b" data-step="1" title="forward a bar (→)">›</button><button class="b" data-step="24" title="forward a day">»</button></div>
+    <div class="legend" id="legend"></div>
+  </div>
+  <div class="card">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="pane" id="pane"></div>
+  </div>
+</div>
+
+<script>/*@@BUNDLE@@*/</script>
+<script>
+const PACK = "@@DATA@@", CASES = @@CASES@@, OH = @@OH@@, STUDY = @@STUDY@@, COMPAT = @@COMPAT@@, TCSUM = @@SUMMARY@@;
+const H = 3600000, $ = (s) => document.querySelector(s), esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const fmtT = (t) => new Date(t).toISOString().slice(0, 16).replace('T', ' ');
+const f2 = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a');
+const css = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const S = { mkt: 'SOL', i: 0, phase: 'open', dir: 'long', spec: true, sel: null, cas: null, tab: 'flow', future: true, win: 150 };
+const DATA = {}; let R = null, CAT = null, db = null;
+
+async function unpack(b64) {
+  const bin = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+  const txt = await new Response(new Blob([bin]).stream().pipeThrough(new DecompressionStream('gzip'))).text();
+  const J = JSON.parse(txt), out = {};
+  for (const [m, d] of Object.entries(J)) {
+    const n = d.o.length, t = new Float64Array(n); let acc = d.t0;
+    for (let i = 0; i < n; i++) { acc += d.dh[i] * H; t[i] = acc; }
+    const mk = (a) => Float64Array.from(a, (x) => x / d.k);
+    out[m] = { n, t, o: mk(d.o), h: mk(d.h), l: mk(d.l), c: mk(d.c) };
+  }
+  return out;
+}
+const D = () => DATA[S.mkt];
+const idxOf = (t) => { const d = D(); let lo = 0, hi = d.n - 1; while (lo < hi) { const m = (lo + hi) >> 1; if (d.t[m] < t) lo = m + 1; else hi = m; } return lo; };
+const bar = (i) => { const d = D(); return { t: d.t[i], o: d.o[i], h: d.h[i], l: d.l[i], c: d.c[i], v: 0 }; };
+const lastClosed = () => (S.phase === 'open' ? S.i - 1 : S.i);
+
+/* ---------- run kev at the cursor ---------- */
+let pending = false;
+function schedule() { if (pending) return; pending = true; requestAnimationFrame(() => { pending = false; compute(); }); }
+function compute() {
+  const d = D(); if (!d || !window.Kev) return;
+  const a = Math.max(0, S.i - 1100), candles = []; for (let k = a; k <= S.i; k++) candles.push(bar(k));
+  const T = S.phase === 'open' ? d.t[S.i] : d.t[S.i] + H;
+  try { R = Kev.run({ candles, T, mkt: S.mkt, dir: S.dir, spec: S.spec, centre: S.sel ?? undefined }); R.err = null; } catch (e) { R = { err: String(e), flow: { steps: [], firstBlocker: null }, scan: null, level: null, states: {} }; }
+  $('#slider').value = S.i; draw(); renderPane();
+  $('#status').textContent = `${S.mkt === 'SOL' ? 'SOLUSDT' : 'XAUUSD'} · decision ${fmtT(T)} UTC · bar ${S.i} of ${d.n - 1}`;
+}
+
+/* ---------- chart ---------- */
+let geom = null;
+function draw() {
+  const d = D(), cv = $('#cv'); if (!d) return;
+  const dpr = window.devicePixelRatio || 1, W = cv.clientWidth, Hh = cv.clientHeight;
+  cv.width = W * dpr; cv.height = Hh * dpr;
+  const x = cv.getContext('2d'); x.setTransform(dpr, 0, 0, dpr, 0, 0); x.clearRect(0, 0, W, Hh);
+  const lc = lastClosed(), fut = S.future ? 26 : 0, i1 = Math.min(d.n - 1, Math.max(S.i, lc) + (S.phase === 'open' ? fut : fut)), i0 = Math.max(0, S.i - S.win + 1);
+  const PL = 6, PR = 78, PT = 10, PB = 22, n = i1 - i0 + 1, cw = (W - PL - PR) / Math.max(n, 1);
+  let hi = -Infinity, lo = Infinity;
+  for (let k = i0; k <= i1; k++) { hi = Math.max(hi, d.h[k]); lo = Math.min(lo, d.l[k]); }
+  const C = S.cas, extra = [];
+  if (C) { if (C.set === 'tc') extra.push(C.d.level, C.d.stop, C.d.tgt); else extra.push(C.d.p); }
+  if (S.sel) extra.push(S.sel);
+  const span = hi - lo; for (const v of extra) if (Number.isFinite(v) && v > lo - span * .6 && v < hi + span * .6) { hi = Math.max(hi, v); lo = Math.min(lo, v); }
+  const pad = (hi - lo) * .05; hi += pad; lo -= pad;
+  const X = (k) => PL + (k - i0) * cw + cw / 2, Y = (p) => PT + (hi - p) / (hi - lo) * (Hh - PT - PB);
+  const up = css('--up'), dn = css('--dn'), ink = css('--ink'), dim = css('--dim'), hair = css('--hair'), acc = css('--acc'), warn = css('--warn'), hid = css('--hid'), sel = css('--sel'), panel = css('--panel');
+  geom = { i0, i1, cw, PL, X, Y, hi, lo };
+  // grid
+  x.font = '10px ' + css('--mono'); x.textBaseline = 'middle'; x.textAlign = 'left';
+  for (let g = 0; g <= 4; g++) { const p = lo + (hi - lo) * g / 4, y = Y(p); x.strokeStyle = hair; x.lineWidth = 1; x.beginPath(); x.moveTo(PL, y); x.lineTo(W - PR, y); x.stroke(); x.fillStyle = dim; x.fillText(p.toFixed(p > 100 ? 1 : 3), W - PR + 4, y); }
+  // hidden-future shade
+  const cx0 = PL + (S.phase === 'open' ? S.i - i0 : S.i + 1 - i0) * cw;
+  if (S.future && i1 >= (S.phase === 'open' ? S.i : S.i + 1)) { x.fillStyle = hid + '22'; x.fillRect(cx0, PT, W - PR - cx0, Hh - PT - PB); x.fillStyle = hid; x.textAlign = 'right'; x.fillText('not knowable yet', W - PR - 4, PT + 8); x.textAlign = 'left'; x.strokeStyle = acc; x.setLineDash([4, 3]); x.beginPath(); x.moveTo(cx0, PT); x.lineTo(cx0, Hh - PB); x.stroke(); x.setLineDash([]); }
+  // level overlays
+  const used = []; const line = (p, col, lw, dash, label, alpha = 1, force = true) => { if (!(p > lo && p < hi)) return; const y = Y(p); const clash = used.some((u) => Math.abs(u - y) < 11); if (!force && clash) label = ''; else used.push(y); x.save(); x.globalAlpha = alpha; x.strokeStyle = col; x.lineWidth = lw; x.setLineDash(dash); x.beginPath(); x.moveTo(PL, y); x.lineTo(W - PR, y); x.stroke(); x.setLineDash([]); x.fillStyle = col; x.textAlign = 'left'; x.fillText(label, W - PR + 4, y); x.restore(); };
+  const L = R && R.level && R.level.found ? R.level : null;
+  if (S.sel) { if (L) { const y1 = Y(L.zoneHi), y2 = Y(L.zoneLo); x.fillStyle = sel + '33'; x.fillRect(PL, Math.min(y1, y2), W - PL - PR, Math.max(2, Math.abs(y2 - y1))); } line(S.sel, sel, 1.8, [], `kev ${L ? L.touches + '×' : '?'} ${S.sel.toFixed(S.sel > 100 ? 1 : 3)}`); if (L && L.lxpbPrice) line(L.lxpbPrice, sel, 1, [2, 3], 'LXPB', .8); }
+  if (R && R.scan) for (const r of R.scan.rows) { if (S.sel && Math.abs(r.price - S.sel) < 1e-9) continue; line(r.price, r.tier === 'blind' ? acc : r.tier === 'needs-one-confluence' ? warn : dim, 1, [5, 4], `${r.touches}× ${r.price.toFixed(r.price > 100 ? 1 : 3)}`, .75, false); }
+  // candles
+  for (let k = i0; k <= i1; k++) {
+    const closed = k <= lc, forming = S.phase === 'open' && k === S.i;
+    if (!closed && !S.future && !forming) continue;
+    const cx = X(k), isUp = d.c[k] >= d.o[k], col = isUp ? up : dn;
+    x.save(); x.globalAlpha = closed ? 1 : forming ? .45 : .28;
+    x.strokeStyle = closed ? col : hid; x.lineWidth = 1;
+    x.beginPath(); x.moveTo(cx, Y(d.h[k])); x.lineTo(cx, Y(d.l[k])); x.stroke();
+    const bw = Math.max(cw * .64, 1.2), y1 = Y(Math.max(d.o[k], d.c[k])), y2 = Y(Math.min(d.o[k], d.c[k]));
+    if (isUp) { x.fillStyle = panel; x.fillRect(cx - bw / 2, y1, bw, Math.max(1, y2 - y1)); x.strokeRect(cx - bw / 2, y1, bw, Math.max(1, y2 - y1)); } else { x.fillStyle = closed ? col : hid; x.fillRect(cx - bw / 2, y1, bw, Math.max(1, y2 - y1)); }
+    x.restore();
+    if (forming) { x.fillStyle = ink; x.beginPath(); x.arc(cx - bw / 2, Y(d.o[k]), 2.5, 0, 7); x.fill(); }
+  }
+  // kev touches and break
+  if (L) {
+    L.touchT.forEach(([ts, te], q) => { const a = idxOf(ts), b = idxOf(te); if (b < i0 || a > i1) return; const xm = (X(a) + X(b)) / 2, y = Y(S.sel); x.strokeStyle = sel; x.lineWidth = 2; x.beginPath(); x.moveTo(X(a) - cw / 2, y); x.lineTo(X(b) + cw / 2, y); x.stroke(); x.fillStyle = sel; x.beginPath(); x.arc(xm, y - 12, 8, 0, 7); x.fill(); x.fillStyle = '#fff'; x.textAlign = 'center'; x.fillText(String(q + 1), xm, y - 12); x.textAlign = 'left'; });
+    if (L.breakT) { const b = idxOf(L.breakT); if (b >= i0 && b <= i1) { x.fillStyle = sel; x.beginPath(); const bx = X(b), by = Y(S.dir === 'long' ? d.l[b] : d.h[b]) + (S.dir === 'long' ? 12 : -12); x.moveTo(bx, by - (S.dir === 'long' ? 8 : -8)); x.lineTo(bx - 5, by + (S.dir === 'long' ? 3 : -3)); x.lineTo(bx + 5, by + (S.dir === 'long' ? 3 : -3)); x.fill(); x.fillStyle = sel; x.textAlign = 'center'; x.fillText('break', bx, by + (S.dir === 'long' ? 14 : -14)); x.textAlign = 'left'; } }
+  }
+  // user's engine overlay
+  if (C) {
+    const c = C.d, tm = (t) => idxOf(t);
+    if (C.set === 'tc') {
+      line(c.level, warn, 1.5, [6, 3], 'page level'); line(c.stop, dn, 1, [3, 3], 'page stop'); line(c.tgt, up, 1, [3, 3], 'page target');
+      c.touchT.forEach((t) => { const k = tm(t); if (k < i0 || k > i1) return; const y = Y(c.level), cx = X(k); x.strokeStyle = warn; x.lineWidth = 1.6; x.beginPath(); x.moveTo(cx, y - 6); x.lineTo(cx + 6, y); x.lineTo(cx, y + 6); x.lineTo(cx - 6, y); x.closePath(); x.stroke(); });
+      const eb = tm(c.entryT), xb = tm(c.exitT);
+      if (xb >= i0 && eb <= i1) { x.fillStyle = (c.win ? up : dn) + '22'; x.fillRect(X(Math.max(eb, i0)) - cw / 2, PT, (Math.min(xb, i1) - Math.max(eb, i0) + 1) * cw, Hh - PT - PB); }
+    } else {
+      line(c.p, warn, 1.5, [6, 3], `their ${c.n}× ${c.p}`);
+      const kb = tm(c.bT); if (kb >= i0 && kb <= i1) { x.strokeStyle = warn; x.setLineDash([2, 3]); x.beginPath(); x.moveTo(X(kb), PT); x.lineTo(X(kb), Hh - PB); x.stroke(); x.setLineDash([]); x.fillStyle = warn; x.textAlign = 'center'; x.fillText('their break', X(kb), PT + 8); x.textAlign = 'left'; }
+    }
+    const fk = tm(C.set === 'tc' ? C.d.entryT : C.d.t); if (fk >= i0 && fk <= i1) { x.fillStyle = warn; x.textAlign = 'center'; x.fillText('fill', X(fk), Hh - PB + 10); x.textAlign = 'left'; }
+  }
+  // time axis
+  x.fillStyle = dim; x.textAlign = 'center';
+  const nt = W < 600 ? 2 : 4; for (let g = 0; g <= nt; g++) { const k = i0 + Math.round((i1 - i0) * g / nt); x.fillText(fmtT(d.t[k]).slice(5), Math.min(W - PR - 20, Math.max(PL + 20, X(k))), Hh - 8); }
+  x.textAlign = 'left';
+  $('#legend').innerHTML = `<span><i style="border-color:${acc}"></i>kev level, 3+ touches</span><span><i style="border-color:${warn}"></i>kev level, 2 touches</span><span><i style="border-color:${dim}"></i>1 touch</span><span><i style="border-color:${sel}"></i>pinned level, numbered touches</span>${C ? `<span><i style="border-color:${warn}"></i>your engine (amber, diamonds = its touches)</span>` : ''}<span><i style="border-color:${hid}"></i>hidden at decision time</span>`;
+}
+
+/* ---------- panes ---------- */
+const TABS = [['flow', 'Flow'], ['levels', 'Levels'], ['bars', 'Bars'], ['compare', 'Compare'], ['study', 'SOL study'], ['rules', 'Rules'], ['notes', 'Notes']];
+function renderTabs() { $('#tabs').innerHTML = TABS.map(([k, v]) => `<button role="tab" data-t="${k}" aria-selected="${S.tab === k}">${v}</button>`).join(''); }
+function renderPane() { const p = $('#pane'); if (!R) { p.textContent = ''; return; } const fn = { flow: paneFlow, levels: paneLevels, bars: paneBars, compare: paneCompare, study: paneStudy, rules: paneRules, notes: paneNotes }[S.tab]; p.innerHTML = fn(); if (S.tab === 'notes') bindNotes(); }
+const chip = (s) => `<span class="chip ${s}">${s}</span>`;
+function paneFlow() {
+  if (R.err) return `<div class="banner warn">Kev could not run here: ${esc(R.err)}</div>`;
+  const a = R.atr, fb = R.flow.firstBlocker, d = D();
+  const price = S.phase === 'open' ? d.o[S.i] : d.c[S.i];
+  let h = `<dl class="kv"><dt>decision</dt><dd>${S.phase === 'open' ? 'at the open of' : 'after the close of'} ${fmtT(d.t[S.i])} UTC</dd><dt>price known</dt><dd>${f2(price, 3)} (${S.phase === 'open' ? 'open only' : 'close'})</dd><dt>ATR</dt><dd>D1 ${a ? f2(a.d1, 3) : 'n/a'} · H1 ${a ? f2(a.h1, 3) : 'n/a'}</dd><dt>closed bars seen</dt><dd>${lastClosed() + 1} (the bar being decided is ${S.phase === 'open' ? 'hidden' : 'closed'})</dd></dl>`;
+  h += fb ? `<div class="banner warn" style="margin-top:8px"><b>First blocker:</b> step ${fb.step} · ${esc(fb.label)}</div>` : `<div class="banner info" style="margin-top:8px">No step fails at this moment.</div>`;
+  h += R.flow.steps.map((s) => `<details class="step"><summary><span class="no">${s.step}</span>${chip(s.status)}<span>${esc(s.label)}</span></summary>${s.notes.length ? '<ul>' + s.notes.map((n) => `<li>${esc(n)}</li>`).join('') + '</ul>' : ''}</details>`).join('');
+  return h;
+}
+function paneLevels() {
+  if (!R.scan) return '<p class="sub">No levels yet: kev needs about 21 days of history for the daily ATR.</p>';
+  const rows = R.scan.rows;
+  let h = `<p class="sub">Levels kev marks from closed bars, nearest first. Click one to pin it on the chart.</p><div class="tw"><table><tr><th>price</th><th>side</th><th class="n">dist ATR</th><th class="n">touches</th><th>tier</th><th class="n">since break</th><th>ok</th></tr>`;
+  h += rows.map((r) => `<tr class="click ${S.sel && Math.abs(S.sel - r.price) < 1e-9 ? 'sel' : ''}" data-p="${r.price}"><td class="mono">${f2(r.price, 3)}</td><td>${r.side}</td><td class="n">${f2(r.distAtr)}</td><td class="n">${r.touches}</td><td>${r.tier.replace('needs-', '').replace('-', ' ')}</td><td class="n">${r.barsSinceBreak}</td><td>${r.tradable ? '✓' : '·'}</td></tr>`).join('') + '</table></div>';
+  const L = R.level;
+  if (S.sel) h += L && L.found ? `<h4>Pinned ${f2(S.sel, 3)}</h4><dl class="kv"><dt>role</dt><dd>${L.role}</dd><dt>counted touches</dt><dd>${L.touches}${L.touchT.length ? ' at ' + L.touchT.map(([a, b]) => fmtT(a).slice(5) + (a !== b ? '–' + fmtT(b).slice(11) : '')).join(', ') : ''}</dd><dt>broke</dt><dd>${L.breakT ? fmtT(L.breakT) + ' (' + L.barsSinceBreak + ' bars ago)' : 'not broken'}</dd><dt>LXPB</dt><dd>${L.lxpbPrice ? f2(L.lxpbPrice, 3) : 'n/a'}</dd><dt>zone</dt><dd>${f2(L.zoneLo, 3)} to ${f2(L.zoneHi, 3)}</dd><dt>chop crossings</dt><dd>${L.chopCrossings}${L.disrespected ? ' (disrespected)' : ''}</dd></dl>` : `<p class="sub">At this cursor kev finds no broken level at ${f2(S.sel, 3)} for a ${S.dir}.</p>`;
+  return h;
+}
+function paneBars() {
+  const d = D(), lc = lastClosed(), L = R.level && R.level.found ? R.level : null, a = Math.max(0, lc - 17), last = S.phase === 'open' ? S.i : lc;
+  let h = `<p class="sub">Raw bars and what kev derived from them. ${S.phase === 'open' ? 'The forming bar shows only its open; its high, low and close are withheld.' : ''}</p><div class="tw"><table><tr><th>time</th><th class="n">open</th><th class="n">high</th><th class="n">low</th><th class="n">close</th><th>state</th><th>parse</th></tr>`;
+  for (let k = a; k <= last; k++) {
+    const forming = k > lc, tags = [];
+    if (L && !forming) { if (d.h[k] >= L.zoneLo && d.l[k] <= L.zoneHi) tags.push('in zone'); L.touchT.forEach(([s, e], q) => { if (d.t[k] >= s && d.t[k] <= e) tags.push('touch ' + (q + 1)); }); if (L.breakT === d.t[k]) tags.push('BREAK (close ' + (S.dir === 'long' ? 'above' : 'below') + ' zone)'); }
+    h += `<tr><td class="mono">${fmtT(d.t[k]).slice(5)}</td><td class="n">${f2(d.o[k], 3)}</td>${forming ? '<td class="n hidtag" colspan="3">hidden until it closes</td>' : `<td class="n">${f2(d.h[k], 3)}</td><td class="n">${f2(d.l[k], 3)}</td><td class="n">${f2(d.c[k], 3)}</td>`}<td>${forming ? 'forming' : 'closed'}</td><td>${tags.join(', ')}</td></tr>`;
+  }
+  return h + '</table></div>';
+}
+function paneCompare() {
+  const C = S.cas; let h = '';
+  if (!C) h += `<p class="sub">Pick an example case at the top to compare kev with your engine on the same bar.</p>`;
+  if (C && C.set === 'tc') {
+    const c = C.d, L = R.level && R.level.found ? R.level : null, kBrk = L && L.breakT ? fmtT(L.breakT) : 'none';
+    h += `<h4>Trade Check #${c.n} · ${c.kind} · ${c.side} · ${c.win ? 'won' : 'lost'} ${f2(c.R)}R</h4><dl class="kv"><dt>page level</dt><dd>${f2(c.level, 3)}, ${c.nT} touches</dd><dt>kev at this level</dt><dd>${L ? L.touches + ' counted touches' : 'no broken level found'}</dd><dt>page break</dt><dd>${fmtT(c.brkT)}</dd><dt>kev break</dt><dd>${kBrk}</dd><dt>fill bar</dt><dd>${fmtT(c.entryT)} · O ${c.fb[0]} H ${c.fb[1]} L ${c.fb[2]} C ${c.fb[3]}</dd><dt>level traded in fill bar</dt><dd>${c.fillOk ? 'yes' : 'no'}</dd><dt>fill bar closed through the level</dt><dd class="${c.closedThrough ? 'bad' : 'good'}">${c.closedThrough ? 'yes' : 'no'}</dd></dl>`;
+    h += `<div class="banner ${c.kind === 'rejected' ? 'warn' : 'info'}" style="margin-top:8px">${c.kind === 'rejected' ? 'The page rejected this trade, and its fill bar closed through the level.' : 'The page kept this trade, and its fill bar did not close through the level.'} A limit order cannot know the fill bar's close when it fills. Across all 43 cases, 0 of 35 kept and 8 of 8 rejected trades match this test exactly.</div>`;
+    if (c.t0 !== undefined) h += '';
+    h += `<p class="sub">Note: Trade Check candles match this page's Binance data until 2023-03 and differ slightly afterwards, so touch counts can differ for later cases.</p>`;
+  }
+  if (C && C.set === 'oh') {
+    const c = C.d, L = R.level && R.level.found ? R.level : null;
+    h += `<h4>One Hour decision at frame ${c.f} · ${c.side}</h4><dl class="kv"><dt>their level</dt><dd>${c.p}, ${c.n} touches</dd><dt>kev touches (reaction count)</dt><dd>${L ? L.touches : 'not found'}</dd><dt>their break</dt><dd>${fmtT(c.bT)}</dd><dt>kev break</dt><dd>${L && L.breakT ? fmtT(L.breakT) : 'none'}</dd><dt>their far (space)</dt><dd>${f2(c.far, 3)} ATR</dd><dt>far from prior bars only</dt><dd>${f2(c.farPrior, 3)} ATR${Math.abs(c.far - c.farPrior) > 0.006 ? ' <span class="bad">(differs: their value includes the decision bar)</span>' : ''}</dd><dt>decision bar closed through level</dt><dd class="${c.ct ? 'bad' : 'good'}">${c.ct ? 'yes' : 'no'}</dd><dt>terms T1 T2 T3 T4</dt><dd>${c.T.map((v) => f2(v, 2)).join(' · ')}</dd></dl>`;
+    h += `<p class="sub">Their touch count is plain 3-bar swing points within 0.1 ATR and 12+ bars apart. Kev counts a touch only when price then travels 0.5 ATR away, so kev counts fewer. Across the 83 breaks the counts agree on 18; the break bar agrees on 69.</p>`;
+  }
+  h += `<h4>Causal replication of the Trade Check spec</h4><p class="sub">Entry at the level, 4R target, net of costs, every fill decided from earlier bars only. Compare with the page's ${f2(TCSUM.win * 100, 0)}% win rate.</p><div class="tw"><table><tr><th>market</th><th class="n">touches ≥</th><th class="n">fills</th><th class="n">mean 4R [95% CI]</th><th class="n">random orders</th><th class="n">win % (one at a time)</th></tr>`;
+  h += COMPAT.filter((r) => r.space === 0.5).map((r) => `<tr><td>${r.mkt}</td><td class="n">${r.tier}</td><td class="n">${r.fills}</td><td class="n">${f2(r.r4)} [${f2(r.lo)}, ${f2(r.hi)}]</td><td class="n">${f2(r.pl)}</td><td class="n">${f2(r.win * 100, 0)}</td></tr>`).join('') + '</table></div>';
+  return h;
+}
+function paneStudy() {
+  const row = (n) => STUDY.table.find((t) => t.name === n);
+  const ct = row('fill bar closed through level (unknowable at fill)'), nct = row('fill bar did not close through');
+  let h = `<div class="banner info"><b>What holds up</b><ul style="margin:4px 0 0 16px;padding:0"><li>Structure adds nothing: every level fill averages ${f2(row('all fills').mean)}R, the same as random orders (${f2(row('all fills').plMean)}R).</li><li>Splitting by "the fill bar closed through the level" moves the average from ${f2(ct.mean)}R to ${f2(nct.mean)}R, and random orders move the same way (${f2(ct.plMean)}R to ${f2(nct.plMean)}R). That split is the Trade Check keep/reject rule, and it uses information a resting order does not have.</li><li>One Hour's "far" matches only when it includes the decision bar (79 of 79; 54 of 79 from earlier bars).</li><li>Space from earlier bars (price moved 0.5 ATR away before the return) beats random by about +0.09R in both halves of the data, but not significantly, and is still -0.02R after costs.</li></ul></div><p class="sub">${STUDY.events} first returns to a freshly broken SOL level, 2020-2026. Each row is a causal limit order at the level; stop 0.5 daily ATR, target 2R, net of 0.10R. "Random" is the same construction at random bars. q is Benjamini-Hochberg across rows.</p><div class="tw"><table><tr><th>group</th><th class="n">n</th><th class="n">mean R</th><th class="n">random</th><th class="n">diff</th><th class="n">q</th></tr>`;
+  h += STUDY.table.map((t) => `<tr><td>${esc(t.name)}</td><td class="n">${t.n}</td><td class="n">${f2(t.mean)} <span class="sub">[${f2(t.lo)}, ${f2(t.hi)}]</span></td><td class="n">${f2(t.plMean)}</td><td class="n">${f2(t.diff)}</td><td class="n">${f2(t.q)}</td></tr>`).join('') + '</table></div>';
+  return h;
+}
+function paneRules() {
+  if (!CAT) CAT = Kev.catalogue();
+  const sel = S.ruleNode || (R.flow.firstBlocker ? R.flow.firstBlocker.node : 'level-scan');
+  let h = `<select id="rn" aria-label="Node">${CAT.map((n) => `<option value="${n.id}" ${n.id === sel ? 'selected' : ''}>${n.step ? n.step.n + ' · ' : ''}${esc(n.title)}</option>`).join('')}</select>`;
+  const n = CAT.find((x) => x.id === sel) || CAT[0];
+  h += `<p>${esc(n.summary)}</p><p class="sub">decides at <b>${n.decideAt}</b> · inputs ${n.inputs.join(', ') || 'none'} · outputs ${n.outputs.join(', ')}</p>`;
+  h += n.rules.map((r) => `<div class="note"><span class="mono">${esc(r.id)}</span> <span class="chip">${r.status}</span> ${r.codable ? '<span class="chip pass">coded</span>' : ''}<br>${esc(r.text)}${r.note ? `<br><small>${esc(r.note)}</small>` : ''}<br><small>${r.sources.map(esc).join(' · ')}</small></div>`).join('');
+  return h;
+}
+function paneNotes() {
+  return `<p class="sub">Leave a note on this exact moment. Claude reads these and uses them to fix the parse.</p><select id="nk" aria-label="Kind"><option>parse is wrong</option><option>level missed</option><option>level should not exist</option><option>timing looks wrong</option><option>looks right</option><option>question</option></select><textarea id="nt" placeholder="What did you expect to see here?"></textarea><button class="b" id="ns">Save note</button><div id="nl" class="sub" style="margin-top:8px">Loading notes…</div>`;
+}
+let unsub = null;
+async function bindNotes() {
+  $('#ns').onclick = async () => {
+    if (!db) return; const text = $('#nt').value.trim(); if (!text) return;
+    const d = D();
+    try { await db.collection('notes').add({ text, kind: $('#nk').value, mkt: S.mkt, t: d.t[S.i], phase: S.phase, dir: S.dir, spec: S.spec, level: S.sel, caseSet: S.cas ? S.cas.set : null, caseKey: S.cas ? (S.cas.set === 'tc' ? S.cas.d.n : S.cas.d.f) : null, createdAt: Date.now() }); $('#nt').value = ''; } catch (e) { $('#nl').textContent = 'Could not save: ' + (e.message || e.code); }
+  };
+  if (!db) { $('#nl').textContent = 'Notes need a signed-in viewer.'; $('#ns').disabled = true; return; }
+  if (unsub) unsub();
+  unsub = db.collection('notes').orderBy('createdAt', 'desc').limit(40).onSnapshot((snap) => {
+    const el = $('#nl'); if (!el) return;
+    el.innerHTML = snap.empty ? 'No notes yet.' : snap.docs.map((s) => { const n = s.data(); return `<div class="note"><b>${esc(n.kind)}</b> · ${esc(n.mkt)} ${fmtT(n.t)} ${n.caseSet ? '· case ' + esc(n.caseSet) + ' ' + esc(n.caseKey) : ''}<br>${esc(n.text)}</div>`; }).join('');
+  }, (e) => { const el = $('#nl'); if (el) el.textContent = 'Could not load notes: ' + (e.message || e.code); });
+}
+
+/* ---------- events ---------- */
+function setSeg(id, v) { document.querySelectorAll(`#${id} button`).forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === String(v)))); }
+function go(i) { const d = D(); S.i = Math.max(80, Math.min(d.n - 1, i)); schedule(); }
+function loadMarket(m) { S.mkt = m; S.cas = null; S.sel = null; setSeg('mkt', m); $('#slider').max = D().n - 1; fillCases(); }
+function openCase(v) {
+  if (!v) { S.cas = null; schedule(); return; }
+  const [set, k] = v.split(':'), C = set === 'tc' ? { set, d: CASES.find((c) => c.n === +k) } : { set, d: OH.find((c) => c.f === +k) };
+  if (S.mkt !== 'SOL') loadMarket('SOL');
+  S.cas = C; S.phase = 'open'; setSeg('phase', 'open'); S.spec = true; setSeg('spec', 1);
+  if (set === 'tc') { S.dir = C.d.side; S.sel = C.d.level; S.i = idxOf(C.d.entryT); } else { S.dir = C.d.side; S.sel = C.d.p; S.i = idxOf(C.d.t); }
+  setSeg('dir', S.dir); schedule();
+}
+function fillCases() {
+  const sel = $('#cases'); let h = '<option value="">Example cases…</option>';
+  if (S.mkt === 'SOL') {
+    h += '<optgroup label="Trade Check: kept by the page">' + CASES.filter((c) => c.kind === 'taken').map((c) => `<option value="tc:${c.n}">#${c.n} ${c.side} ${c.win ? 'won' : 'lost'} ${fmtT(c.entryT).slice(0, 10)}</option>`).join('') + '</optgroup>';
+    h += '<optgroup label="Trade Check: rejected by the page">' + CASES.filter((c) => c.kind === 'rejected').map((c) => `<option value="tc:${c.n}">#${c.n} ${c.side} ${fmtT(c.entryT).slice(0, 10)}</option>`).join('') + '</optgroup>';
+    h += '<optgroup label="One Hour: retest decisions">' + OH.map((c) => `<option value="oh:${c.f}">${fmtT(c.t)} ${c.side} ${c.n}× ${c.ct ? '(closed through)' : ''}</option>`).join('') + '</optgroup>';
+  }
+  sel.innerHTML = h;
+}
+document.addEventListener('click', (e) => {
+  const sg = e.target.closest('.seg button'); if (sg) {
+    const id = sg.parentElement.id, v = sg.dataset.v;
+    if (id === 'mkt') { loadMarket(v); S.i = D().n - 400; schedule(); } else if (id === 'spec') { S.spec = v === '1'; setSeg('spec', v); schedule(); } else if (id === 'dir') { S.dir = v; setSeg('dir', v); schedule(); } else if (id === 'phase') { S.phase = v; setSeg('phase', v); schedule(); }
+    return;
+  }
+  const st = e.target.closest('[data-step]'); if (st) { go(S.i + +st.dataset.step); return; }
+  const tb = e.target.closest('#tabs button'); if (tb) { S.tab = tb.dataset.t; renderTabs(); renderPane(); return; }
+  const tr = e.target.closest('tr[data-p]'); if (tr) { S.sel = +tr.dataset.p; schedule(); }
+});
+document.addEventListener('change', (e) => { if (e.target.id === 'cases') openCase(e.target.value); if (e.target.id === 'future') { S.future = e.target.checked; draw(); } if (e.target.id === 'rn') { S.ruleNode = e.target.value; renderPane(); } });
+$('#slider').addEventListener('input', (e) => go(+e.target.value));
+$('#go').onclick = () => { let v = $('#jump').value.trim().replace(' ', 'T'); if (v.length === 10) v += 'T00:00'; const t = Date.parse(/Z$/.test(v) ? v : v + 'Z'); if (Number.isFinite(t)) { S.cas = null; go(idxOf(t)); } };
+document.addEventListener('keydown', (e) => { if (/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName) && document.activeElement.type !== 'range') return; if (e.key === 'ArrowLeft') { go(S.i - (e.shiftKey ? 24 : 1)); e.preventDefault(); } if (e.key === 'ArrowRight') { go(S.i + (e.shiftKey ? 24 : 1)); e.preventDefault(); } });
+const cv = $('#cv');
+cv.addEventListener('mousemove', (e) => { if (!geom) return; const r = cv.getBoundingClientRect(), k = geom.i0 + Math.floor((e.clientX - r.left - geom.PL) / geom.cw), d = D(); if (k < geom.i0 || k > geom.i1) { $('#tip').hidden = true; return; } const closed = k <= lastClosed(); $('#tip').hidden = false; $('#tip').innerHTML = `${fmtT(d.t[k])} · ${closed ? `O ${f2(d.o[k], 3)} H ${f2(d.h[k], 3)} L ${f2(d.l[k], 3)} C ${f2(d.c[k], 3)}` : k === S.i && S.phase === 'open' ? `forming · open ${f2(d.o[k], 3)}` : '<span class="hidtag">hidden at decision time</span>'}`; });
+cv.addEventListener('mouseleave', () => ($('#tip').hidden = true));
+cv.addEventListener('click', (e) => { if (!geom) return; const r = cv.getBoundingClientRect(), k = geom.i0 + Math.floor((e.clientX - r.left - geom.PL) / geom.cw); if (k >= geom.i0 && k <= geom.i1) go(k); });
+window.addEventListener('resize', () => draw());
+
+/* ---------- boot ---------- */
+(async () => {
+  renderTabs();
+  try { Object.assign(DATA, await unpack(PACK)); } catch (e) { $('#status').textContent = 'Could not unpack prices: ' + e; return; }
+  loadMarket('SOL');
+  const first = CASES.find((c) => c.kind === 'rejected' && c.entryT > Date.UTC(2021, 8, 1)) || CASES[0];
+  $('#cases').value = 'tc:' + first.n; openCase('tc:' + first.n);
+  try { if (window.claude && window.claude.use) db = await window.claude.use('db'); } catch (e) { db = null; }
+})();
+</script>

@@ -1,0 +1,21 @@
+# Glossary
+
+- **LXPB / LHPB / LLPB**: Last [high/low] pre-breakout. The last high (LHPB, for longs after an upside break) or low (LLPB, for shorts after a downside break) before price broke the level. The order is placed there because price tends to gravitate back to it.
+- **FTA**: First Trouble Area: the first place on the chart where price might meet trouble, used as the take-profit.
+- **SFP**: Swing failure pattern: a sweep of a deep swing high/low that closes back inside. Coined and taught by the trader.
+- **IDF**: Inside-day failure: an inside day whose break fails and closes back inside.
+- **RTO**: Return to the origin: the retest of a broken level. Inferred from use; never defined.
+- **MSB**: Market structure break.
+- **Thrust candle**: The candle that breaks through the level. The stop goes beyond it.
+- **Swerve**: Price turns away before reaching your order, then runs. About half way to target without a fill means the level is swerved.
+- **Squeeze point**: The extreme price would reach if it reacted off the level once more. A trailing stop goes beyond it.
+- **Crossbar**: A bar carrying two opposite biases at once (a bullish engulfing with a bearish SFP). They cancel.
+- **Naked level**: A level not retested on the H1 since it broke.
+- **Opposite last**: Count a level's touches in its previous role (a short at resistance counts the times it held as support).
+- **Swing in / swing out**: The two sides of a swing, measured from the swing price to the lowest (highest) point on each side before price hits the line again. Depth is the smaller side.
+- **Evolving R**: The reward-to-risk remaining from the current price to target against the current stop.
+- **Drift of doom**: Price stair-stepping down to a limit order. A reason to pull it.
+- **KPI**: Used without definition (D1 KPI, weekly engulfing KPI). Plausibly "key price inflection". Unconfirmed.
+- **HoH / LoH / IWL**: Used without definition. Plausibly head/low of a hammer or pin, and inside-week low. Unconfirmed.
+- **DOEL**: Direction, Objection, Location, Execution: the structure of the trader's journal entries.
+- **Kev token**: The two-level state word this build derives from the nodes: a coarse regime word and a fine event word.
