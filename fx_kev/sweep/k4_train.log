@@ -8,3 +8,13 @@ device=cpu world=1 trainable params=11.3M
 [transformers] `causal_conv1d_fn` is falling back to its reference PyTorch implementation because `causal_conv1d` is not installed. This is correct but much slower; install `causal_conv1d` for the optimized kernel.
 [transformers] `chunk_gated_delta_rule` is falling back to its reference PyTorch implementation because `flash-linear-attention` is not installed. This is correct but much slower; install `flash-linear-attention` for the optimized kernel.
 ep0 step 10/444 loss 1.238 kl 0.000 anchor 0.000 3.226s/rec
+ep0 step 20/444 loss 0.603 kl 0.000 anchor 0.000 3.286s/rec
+ep0 step 30/444 loss 0.758 kl 0.000 anchor 0.000 3.255s/rec
+ep0 step 40/444 loss 0.652 kl 0.000 anchor 0.000 3.227s/rec
+ep0 step 50/444 loss 0.570 kl 0.000 anchor 0.000 3.196s/rec
+ep0 step 60/444 loss 0.643 kl 0.000 anchor 0.000 3.227s/rec
+ep0 step 70/444 loss 0.614 kl 0.000 anchor 0.000 3.187s/rec
+ep0 step 80/444 loss 0.496 kl 0.000 anchor 0.000 3.157s/rec
+ep0 step 90/444 loss 0.625 kl 0.000 anchor 0.000 3.127s/rec
+ep0 step 100/444 loss 0.568 kl 0.000 anchor 0.000 3.186s/rec
+ep0 step 110/444 loss 0.340 kl 0.000 anchor 0.000 3.181s/rec

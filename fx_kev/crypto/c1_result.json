@@ -1,0 +1,250 @@
+{
+ "FVG1": {
+  "per_coin": {
+   "BTCUSDT": {
+    "n": 1119,
+    "mean": -0.0384,
+    "long_share": 0.534,
+    "drift_adj": -0.0413
+   },
+   "ETHUSDT": {
+    "n": 1191,
+    "mean": 0.0801,
+    "long_share": 0.525,
+    "drift_adj": 0.0788
+   },
+   "BNBUSDT": {
+    "n": 1126,
+    "mean": -0.0222,
+    "long_share": 0.534,
+    "drift_adj": -0.0274
+   },
+   "XRPUSDT": {
+    "n": 1046,
+    "mean": 0.0504,
+    "long_share": 0.531,
+    "drift_adj": 0.0498
+   },
+   "ADAUSDT": {
+    "n": 1086,
+    "mean": 0.0367,
+    "long_share": 0.541,
+    "drift_adj": 0.0363
+   },
+   "LTCUSDT": {
+    "n": 1146,
+    "mean": 0.0039,
+    "long_share": 0.528,
+    "drift_adj": 0.005
+   },
+   "LINKUSDT": {
+    "n": 966,
+    "mean": -0.0283,
+    "long_share": 0.565,
+    "drift_adj": -0.0328
+   },
+   "DOGEUSDT": {
+    "n": 864,
+    "mean": 0.0642,
+    "long_share": 0.506,
+    "drift_adj": 0.0653
+   }
+  },
+  "pooled_n": 8544,
+  "pooled_mean": 0.0179,
+  "week_cluster_ci": [
+   -0.0241,
+   0.0578
+  ],
+  "p_one_sided": 0.1815,
+  "coins_positive": 5,
+  "pooled_drift_adj": 0.0162,
+  "PASS": false
+ },
+ "EXH1": {
+  "per_coin": {
+   "BTCUSDT": {
+    "n": 548,
+    "mean": 0.1261,
+    "long_share": 0.546,
+    "drift_adj": 0.1205
+   },
+   "ETHUSDT": {
+    "n": 485,
+    "mean": 0.2204,
+    "long_share": 0.52,
+    "drift_adj": 0.2185
+   },
+   "BNBUSDT": {
+    "n": 360,
+    "mean": 0.0811,
+    "long_share": 0.508,
+    "drift_adj": 0.0795
+   },
+   "XRPUSDT": {
+    "n": 423,
+    "mean": 0.0856,
+    "long_share": 0.518,
+    "drift_adj": 0.0856
+   },
+   "ADAUSDT": {
+    "n": 384,
+    "mean": 0.0835,
+    "long_share": 0.516,
+    "drift_adj": 0.0835
+   },
+   "LTCUSDT": {
+    "n": 414,
+    "mean": 0.0973,
+    "long_share": 0.548,
+    "drift_adj": 0.0987
+   },
+   "LINKUSDT": {
+    "n": 282,
+    "mean": 0.1166,
+    "long_share": 0.479,
+    "drift_adj": 0.1185
+   },
+   "DOGEUSDT": {
+    "n": 308,
+    "mean": 0.069,
+    "long_share": 0.516,
+    "drift_adj": 0.071
+   }
+  },
+  "pooled_n": 3204,
+  "pooled_mean": 0.1148,
+  "week_cluster_ci": [
+   0.0459,
+   0.1895
+  ],
+  "p_one_sided": 0.0005,
+  "coins_positive": 8,
+  "pooled_drift_adj": 0.1139,
+  "PASS": true
+ },
+ "TSMOM1": {
+  "per_coin": {
+   "BTCUSDT": {
+    "n": 159,
+    "mean": 0.2455,
+    "long_share": 0.572,
+    "drift_adj": 0.2271
+   },
+   "ETHUSDT": {
+    "n": 155,
+    "mean": 0.2953,
+    "long_share": 0.568,
+    "drift_adj": 0.2866
+   },
+   "BNBUSDT": {
+    "n": 150,
+    "mean": 0.2395,
+    "long_share": 0.6,
+    "drift_adj": 0.1942
+   },
+   "XRPUSDT": {
+    "n": 134,
+    "mean": 0.2857,
+    "long_share": 0.47,
+    "drift_adj": 0.2838
+   },
+   "ADAUSDT": {
+    "n": 146,
+    "mean": 0.3215,
+    "long_share": 0.466,
+    "drift_adj": 0.3214
+   },
+   "LTCUSDT": {
+    "n": 155,
+    "mean": 0.0128,
+    "long_share": 0.542,
+    "drift_adj": 0.0194
+   },
+   "LINKUSDT": {
+    "n": 133,
+    "mean": 0.1774,
+    "long_share": 0.594,
+    "drift_adj": 0.1485
+   },
+   "DOGEUSDT": {
+    "n": 107,
+    "mean": 0.7751,
+    "long_share": 0.477,
+    "drift_adj": 0.76
+   }
+  },
+  "pooled_n": 1139,
+  "pooled_mean": 0.2761,
+  "week_cluster_ci": [
+   0.1319,
+   0.4289
+  ],
+  "p_one_sided": 0.0,
+  "coins_positive": 8,
+  "pooled_drift_adj": 0.2623,
+  "PASS": true
+ },
+ "R2C": {
+  "per_coin": {
+   "BTCUSDT": {
+    "n": 555,
+    "mean": 0.0557,
+    "long_share": 0.566,
+    "drift_adj": 0.0472
+   },
+   "ETHUSDT": {
+    "n": 555,
+    "mean": 0.0608,
+    "long_share": 0.539,
+    "drift_adj": 0.0584
+   },
+   "BNBUSDT": {
+    "n": 555,
+    "mean": 0.0583,
+    "long_share": 0.577,
+    "drift_adj": 0.0469
+   },
+   "XRPUSDT": {
+    "n": 531,
+    "mean": 0.0279,
+    "long_share": 0.488,
+    "drift_adj": 0.0287
+   },
+   "ADAUSDT": {
+    "n": 534,
+    "mean": 0.0838,
+    "long_share": 0.442,
+    "drift_adj": 0.0844
+   },
+   "LTCUSDT": {
+    "n": 555,
+    "mean": 0.0139,
+    "long_share": 0.44,
+    "drift_adj": 0.012
+   },
+   "LINKUSDT": {
+    "n": 480,
+    "mean": 0.0679,
+    "long_share": 0.567,
+    "drift_adj": 0.0617
+   },
+   "DOGEUSDT": {
+    "n": 446,
+    "mean": 0.1548,
+    "long_share": 0.462,
+    "drift_adj": 0.1642
+   }
+  },
+  "pooled_n": 4211,
+  "pooled_mean": 0.0631,
+  "week_cluster_ci": [
+   0.0203,
+   0.1059
+  ],
+  "p_one_sided": 0.0035,
+  "coins_positive": 8,
+  "pooled_drift_adj": 0.0604,
+  "PASS": true
+ }
+}

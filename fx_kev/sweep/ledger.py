@@ -112,3 +112,24 @@ METHODS += [
 #   Evaluation (read once): S1 events 2021-01-01..2025-12-31, up to 300 evenly spaced per instrument. Pass if Spearman(P(reversal), fade R) > 0 on all 4
 #   AND mean fade R of events with P above the causal rolling median (previous 100) beats ungated mean R on all 4 AND pooled gated block-bootstrap CI lower > 0.
 #   Only on pass are 2026 events scored.
+
+# ---- wave 12, registered 2026-10-21 BEFORE any of this data was downloaded. DATA-INFORMED (chosen from round-1/2 near-misses). ----
+# C1 "crypto continuation replication". Observation (pre-2026, drift-adjusted): follow/continuation rules showed a residual edge on SOL only
+#   (FVG1 +0.14R, EXH1 +0.26R, TSMOM1 +0.32R, R2C +0.07R after subtracting SOL's own drift; SOL shorts also positive for FVG1/EXH1).
+# Test on 8 coins never used in this project, Binance spot H1 (data.binance.vision), from first available month (>= 2018-01) to 2025-12-31:
+#   BTCUSDT ETHUSDT BNBUSDT XRPUSDT ADAUSDT LTCUSDT LINKUSDT DOGEUSDT. 2026 bars of these coins are NOT downloaded unless C1 passes.
+# The four REGISTERED proposal files are run UNCHANGED (sha256 in proposals/registry.jsonl). Cost 0.10% round trip (same as SOL).
+#   Calendar-dependent generators (TSMOM1, R2C) get name="SOLUSDT_H1" (crypto: plain UTC dates). EXH1's round-number step per coin =
+#   10**(round(log10(median close of the coin's first 365 days)) - 1) (price-scale only, no outcomes), passed via sweep_lib.RN_STEP.
+# PRIMARY: FVG1. Pass if, pooled over the 8 coins: mean net R > 0 with a calendar-WEEK cluster-bootstrap 95% CI lower bound > 0 (trades in
+#   the same week resampled together, which respects cross-coin correlation), AND mean net R > 0 on at least 6 of 8 coins, AND the pooled
+#   drift-adjusted mean (each coin's own mean H-bar log return removed, as in drift_diag.py) > 0.
+# SECONDARY: EXH1, TSMOM1, R2C with the same rule at a Bonferroni level of 0.05/4 (one-sided cluster-bootstrap p).
+# If anything passes: adversarial review, then ONE final confirmation on 2026 data (SOL + the 8 coins), read once.
+
+# ---- wave 12b, registered after C1 pre-2026 results and BEFORE any 2026 crypto data is downloaded or read ----
+# C1 result (pre-2026, 0.10% RT cost): FVG1 FAIL (primary). EXH1, TSMOM1, R2C PASS (8/8 coins positive, week-cluster CI > 0, drift-adj > 0).
+# Final confirmation (read once, after the adversarial review): 2026-01-01..2026-09-30 for the 8 coins (downloaded fresh) + SOL (sealed file).
+#   Each surviving method passes the confirmation if, at 0.20% round-trip cost (Binance spot taker 0.10% per side, stricter than C1's 0.10%):
+#   pooled mean net R over the 9 coins > 0 AND mean net R > 0 on at least 5 of 9 coins. Also reported, not used for the decision: 0.10% cost,
+#   per-coin table, week-cluster CI. With ~9 months of data the test has low power; a fail is informative, a pass is supportive, not proof.
