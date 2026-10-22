@@ -317,27 +317,42 @@ fn animate(time: Res<Time>, mut commands: Commands, mut q: Query<(Entity, &mut E
 struct Smoke {
     preset: usize,
     length: f32,
+    /// `GB_BEAM=all`: walk every preset.
+    all: bool,
 }
 
 fn smoke_setting() -> Option<Smoke> {
     let v = std::env::var("GB_BEAM").ok()?;
     let (name, len) = v.split_once(':').map_or((v.as_str(), None), |(a, b)| (a, Some(b)));
-    Some(Smoke { preset: preset_index(name)?, length: len.and_then(|l| l.trim().parse::<f32>().ok()).filter(|l| l.is_finite() && *l > 0.5).unwrap_or(6.0) })
+    let all = name == "all";
+    Some(Smoke { all, preset: if all { 0 } else { preset_index(name)? }, length: len.and_then(|l| l.trim().parse::<f32>().ok()).filter(|l| l.is_finite() && *l > 0.5).unwrap_or(6.0) })
 }
 
 /// `GB_BEAM`: from 2 s the player fires the preset ahead every 3.2 s.
-fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>) {
+fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>, mut count: Local<usize>, mut shot: Local<Option<(f32, String)>>) {
     let Some(smoke) = smoke else { return };
     let t = time.elapsed_secs();
-    if t < 2.0 || last.is_some_and(|l| t - l < 3.2) {
+    if let Some((at, path)) = shot.clone()
+        && t >= at
+    {
+        *shot = None;
+        super::flipbook::shoot(&mut commands, path);
+    }
+    let step = if smoke.all { super::flipbook::REEL_STEP } else { 3.2 };
+    if t < 2.0 || last.is_some_and(|l| t - l < step) || (smoke.all && *count >= PRESETS.len()) {
         return;
     }
     let Ok((tf, mover)) = players.single() else { return };
     *last = Some(t);
     let fwd = Vec3::new(mover.yaw.sin(), 0.0, mover.yaw.cos());
     let from = tf.translation + Vec3::Y * 0.25 + fwd * 0.7;
-    spawn_beam(&mut commands, &mut meshes, &mut beams, &mut quads, smoke.preset, from, from + fwd * smoke.length, 2.6);
-    info!("[energy] beam {} ({:.1} m)", PRESETS[smoke.preset].name, smoke.length);
+    let preset = if smoke.all { *count } else { smoke.preset };
+    *count += 1;
+    spawn_beam(&mut commands, &mut meshes, &mut beams, &mut quads, preset, from, from + fwd * smoke.length, 2.6);
+    info!("[energy] beam {} ({:.1} m)", PRESETS[preset].name, smoke.length);
+    if let Some(dir) = super::flipbook::reel_dir() {
+        *shot = Some((t + super::flipbook::REEL_SHOT, format!("{dir}/{}.png", PRESETS[preset].name)));
+    }
 }
 
 pub fn plugin(app: &mut App) {

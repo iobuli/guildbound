@@ -211,23 +211,45 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
     }
 }
 
-/// `GB_FLIP=<index>[:alpha]` shows that sheet beside the player every 2.4 s (dev smoke test).
-fn flip_smoke(time: Res<Time>, mut out: MessageWriter<Flip>, player: Query<&Transform, With<super::Player>>, mut last: Local<Option<f32>>) {
+/// `GB_FLIP=<index|all>[:alpha]` shows that sheet beside the player every 2.4 s (dev smoke test); `all` walks every sheet.
+fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Flip>, player: Query<&Transform, With<super::Player>>, mut state: Local<(Option<f32>, usize, Option<(f32, String)>)>) {
     let Ok(v) = std::env::var("GB_FLIP") else { return };
-    let (idx, smoke) = match v.split_once(':') {
-        Some((i, m)) => (i.parse().unwrap_or(0), m == "alpha"),
-        None => (v.parse().unwrap_or(0), false),
-    };
-    let Ok(pt) = player.single() else { return };
+    let (which, mode) = v.split_once(':').unwrap_or((v.as_str(), ""));
+    let all = which == "all";
     let now = time.elapsed_secs();
-    if now < 2.0 || last.is_some_and(|l| now - l < 2.4) {
+    if let Some((at, path)) = state.2.clone()
+        && now >= at
+    {
+        state.2 = None;
+        shoot(&mut commands, path);
+    }
+    let Ok(pt) = player.single() else { return };
+    if now < 2.0 || state.0.is_some_and(|l| now - l < REEL_STEP) || (all && state.1 >= Sheet::ALL.len()) {
         return;
     }
-    *last = Some(now);
-    let sheet = Sheet::ALL[idx.min(19)];
-    let mut f = Flip::new(sheet, pt.translation + Vec3::Y * 1.3 + *pt.forward() * 1.6, 3.0, 1.6);
-    f.additive = !smoke;
+    state.0 = Some(now);
+    let idx = if all { state.1 } else { which.parse::<usize>().unwrap_or(0).min(19) };
+    state.1 += 1;
+    let mut f = Flip::new(Sheet::ALL[idx], pt.translation + Vec3::Y * 1.3 + *pt.forward() * 1.6, 3.0, 1.6);
+    f.additive = mode != "alpha";
     out.write(f);
+    if let Some(dir) = reel_dir() {
+        state.2 = Some((now + REEL_SHOT, format!("{dir}/{}_{idx:02}.png", if f.additive { "add" } else { "alpha" })));
+    }
+}
+
+/// `GB_REEL=<dir>`: one game run stands in for many screenshots. Effect smoke tests (`GB_BEAM=all`, `GB_FLIP=all[:alpha]`)
+/// fire one item every `REEL_STEP` seconds and save a still `REEL_SHOT` seconds after each into the directory.
+pub const REEL_STEP: f32 = 2.4;
+pub const REEL_SHOT: f32 = 1.2;
+
+pub fn reel_dir() -> Option<String> {
+    std::env::var("GB_REEL").ok().filter(|s| !s.trim().is_empty())
+}
+
+pub fn shoot(commands: &mut Commands, path: String) {
+    use bevy::render::view::screenshot::{Screenshot, save_to_disk};
+    commands.spawn(Screenshot::primary_window()).observe(save_to_disk(path));
 }
 
 pub fn plugin(app: &mut App) {
