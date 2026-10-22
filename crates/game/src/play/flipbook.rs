@@ -176,6 +176,7 @@ fn spawn(mut commands: Commands, mut flips: MessageReader<Flip>, sheets: Option<
             sheet: sheets.images[i].clone(),
             additive: f.additive,
         });
+        info!("[flip] spawn sheet {i}");
         commands.spawn((
             Mesh3d(sheets.quad.clone()),
             MeshMaterial3d(material.clone()),
@@ -232,6 +233,7 @@ fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Fl
     state.1 += 1;
     let mut f = Flip::new(Sheet::ALL[idx], pt.translation + Vec3::Y * 1.3 + *pt.forward() * 1.6, 3.0, 1.6);
     f.additive = mode != "alpha";
+    info!("[flip] {:?} at {:?} size {} ({})", f.sheet, f.at, f.size, if f.additive { "add" } else { "alpha" });
     out.write(f);
     if let Some(dir) = reel_dir() {
         state.2 = Some((now + REEL_SHOT, format!("{dir}/{}_{idx:02}.png", if f.additive { "add" } else { "alpha" })));
