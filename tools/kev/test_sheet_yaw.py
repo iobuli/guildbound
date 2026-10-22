@@ -1,4 +1,4 @@
-"""Sheet yaw format. The solver does not read these yet.
+"""Sheet yaw format. Spinning back kick carries a turn. The other sheets do not.
 
 Run: python3 -I -m unittest discover -s tools/kev -t tools/kev -p 'test_sheet_yaw.py'
 """
@@ -36,15 +36,25 @@ class SheetYawTests(unittest.TestCase):
         self.assertNotIn("twist", pose)
         self.assertEqual(self.mod.pose_yaw(pose), (0.0, 0.0))
 
-    def test_shipped_spinning_back_kick_has_no_yaw_yet(self):
-        path = os.path.join(HERE, "grid", "sheets", "spinning_back_kick.json")
-        with open(path) as f:
-            sheet = json.load(f)
-        yaw, twist = self.mod.pose_yaw(sheet["poses"]["f1"])
-        self.assertEqual((yaw, twist), (0.0, 0.0))
-        for pose in sheet["poses"].values():
-            self.assertNotIn("yaw", pose)
-            self.assertNotIn("twist", pose)
+    def test_spinning_back_kick_yaw_and_the_other_sheets_stay_clear(self):
+        sheets = os.path.join(HERE, "grid", "sheets")
+        with open(os.path.join(sheets, "spinning_back_kick.json")) as f:
+            spin = json.load(f)
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f1"]), (0.0, 0.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f2"]), (80.0, 20.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f3"]), (160.0, 10.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f4"]), (180.0, 0.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f6"]), (180.0, 0.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f7"]), (90.0, 0.0))
+        self.assertEqual(self.mod.pose_yaw(spin["poses"]["f8"]), (0.0, 0.0))
+        for name in os.listdir(sheets):
+            if not name.endswith(".json") or name == "spinning_back_kick.json":
+                continue
+            with open(os.path.join(sheets, name)) as f:
+                sheet = json.load(f)
+            for pose in sheet["poses"].values():
+                self.assertNotIn("yaw", pose, name)
+                self.assertNotIn("twist", pose, name)
 
 
 if __name__ == "__main__":

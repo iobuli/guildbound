@@ -104,10 +104,24 @@ def _planted(a, b):
     return names
 
 
+def _lerp_deg(a, b, u):
+    """Shortest-angle blend. 180 toward 0 passes through 90, not through a full extra turn."""
+    delta = (float(b) - float(a) + 180.0) % 360.0 - 180.0
+    return float(a) + delta * float(u)
+
+
+def _has_yaw(keys):
+    for key in keys:
+        if abs(float(key.get("yaw", 0.0) or 0.0)) > 1e-6 or abs(float(key.get("twist", 0.0) or 0.0)) > 1e-6:
+            return True
+    return False
+
+
 def samples_from_keys(keys, fps):
     channels = {name: sample_channel(keys, lambda k, name=name: k["pose"][name], name, fps) for name in DRIVEN}
     hl = sample_channel(keys, lambda k: float(k["hands"]["l"]), None, fps)
     hr = sample_channel(keys, lambda k: float(k["hands"]["r"]), None, fps)
+    has_yaw = _has_yaw(keys)
     t1 = keys[-1]["t"]
     n = int(round(t1 * fps)) + 1
     out = []
@@ -115,6 +129,12 @@ def samples_from_keys(keys, fps):
         t = min(t1, i / fps)
         a, b = _segment(keys, t)
         lm = {name: [round(float(x), 5) for x in np.asarray(channels[name][i], float)] for name in DRIVEN}
+        if has_yaw:
+            span = b["t"] - a["t"]
+            u = 0.0 if span <= 1e-8 else (t - a["t"]) / span
+            u = min(1.0, max(0.0, u))
+            lm["yaw"] = round(_lerp_deg(a.get("yaw", 0.0), b.get("yaw", 0.0), u), 4)
+            lm["twist"] = round(_lerp_deg(a.get("twist", 0.0), b.get("twist", 0.0), u), 4)
         # safety: never ask the solver for a limb past its reach. Support feet are left alone
         # (clamping them would slide a plant); the arm and a raised foot are pulled back in.
         pose = {name: np.array(lm[name], float) for name in DRIVEN}
@@ -255,6 +275,12 @@ def clamp_samples(rig, samples):
         pose = s.pop("_pose")
         _keep_spine(rig, pose, prev)
         planted = set(s["plant"])
+        # A yawed ball already on the floor is the pivot. Later aim limits must not pick it up.
+        floored = {}
+        if "yaw" in s["landmarks"] or "twist" in s["landmarks"]:
+            for side in "lr":
+                if rig.up_of(pose[f"ball_{side}"]) - rig.floor <= 0.03:
+                    floored[side] = pose[f"ball_{side}"].copy()
         for side in "lr":
             before = pose[f"wrist_{side}"].copy()
             rig.clamp_wrist(pose, side, 0.93)
@@ -271,19 +297,29 @@ def clamp_samples(rig, samples):
                 if f"ankle_{side}" not in planted:
                     before = pose[f"ankle_{side}"].copy()
                     _limit_aim(pose, prev, f"hip_{side}", f"ankle_{side}", AIM_STEP_DEG)
-                    pose[f"ball_{side}"] = pose[f"ball_{side}"] + (pose[f"ankle_{side}"] - before)
-                    # The foot bone is ankle to ball. A kick that snaps it past the gate
-                    # reads as a flipped foot even when the ankle itself only stepped a few centimetres.
-                    _limit_aim(pose, prev, f"ankle_{side}", f"ball_{side}", 28.0)
+                    if side not in floored:
+                        pose[f"ball_{side}"] = pose[f"ball_{side}"] + (pose[f"ankle_{side}"] - before)
+                        # The foot bone is ankle to ball. A kick that snaps it past the gate
+                        # reads as a flipped foot even when the ankle itself only stepped a few centimetres.
+                        _limit_aim(pose, prev, f"ankle_{side}", f"ball_{side}", 28.0)
             for root, mid, end in POLES:
                 _limit_pole(pose, prev, root, mid, end)
             # Knees stay on the pole cap only. Pulling a knee off a planted shin slides the foot.
             for side in "lr":
                 _limit_aim(pose, prev, f"shoulder_{side}", f"elbow_{side}", HINGE_STEP_DEG)
+        for side, ball in floored.items():
+            pose[f"ball_{side}"] = ball
         support = [side for side in "lr" if f"ankle_{side}" in planted]
         _seat_over_feet(rig, pose, support)
         prev = {k: np.array(v, float).copy() for k, v in pose.items()}
+        yaw = s["landmarks"].get("yaw")
+        twist = s["landmarks"].get("twist")
         s["landmarks"] = {k: [round(float(x), 5) for x in pose[k]] for k in DRIVEN}
+        # Scalars, not positions. Rotating the positions here would turn the body a second time.
+        if yaw is not None:
+            s["landmarks"]["yaw"] = yaw
+        if twist is not None:
+            s["landmarks"]["twist"] = twist
     return clipped
 
 

@@ -39,7 +39,8 @@ def measure(info, samples, solved, fps):
     up = np.array(info["bm"]["body"]["up"], float)
     up = up / np.linalg.norm(up)
     H = float(info["bm"]["body"]["height"])
-    names = sorted(samples[0]["landmarks"])
+    names = sorted(n for n, v in samples[0]["landmarks"].items()
+                   if isinstance(v, (list, tuple)) and len(v) == 3)
     L = np.array([[solved[i]["landmarks"][n] for n in names] for i in range(len(solved))], float)
     jerk = 0.0
     if len(L) > 3:

@@ -11,8 +11,9 @@ crown-neck line on the same side as the neighbouring keys, so the head basis doe
 Optional per-pose yaw, degrees about world up. On a sheet, `yaw` is a list of
 [pelvis_deg, chest_twist_deg], one pair per frame. `build` writes `yaw` and `twist`
 onto that pose. `yaw` 0 faces the sheet's forward (the target). `twist` is the chest
-yaw minus the pelvis yaw. A pose with neither key reads as 0, 0 (`pose_yaw`). The
-solver does not apply these yet.
+yaw minus the pelvis yaw. A pose with neither key reads as 0, 0 (`pose_yaw`).
+The combo path copies the pair onto each sample as a scalar. The solver turns the
+landmarks; the sheet positions stay in the side-view plane.
 """
 import json
 import os
@@ -82,6 +83,8 @@ SHEETS = {
             [84.0, 4.25, 85.0, 5.6, 83.25, 6.5, 81.75, 7.25, 83.0, 12.75, 87.0, 9.25, 88.0, 6.75, 82.5, 8.75, 85.5, 6.6, 87.0, 16.75, 87.25, 21.75, 89.25, 22.5, 80.5, 18.0, 78.5, 21.5, 78.5, 22.5],
         ],
         "sequence": [[0, 0.0], [1, 0.12, "smooth"], [2, 0.22, "smooth"], [3, 0.34, "smooth"], [4, 0.46, "snap"], [5, 0.58, "smooth"], [6, 0.76, "smooth"], [7, 0.96, "smooth"]],
+        # Pelvis yaw, chest twist. Back to the target by f4, kick at f5-f6, recover through f7.
+        "yaw": [[0, 0], [80, 20], [160, 10], [180, 0], [180, 0], [180, 0], [90, 0], [0, 0]],
     },
     "roundhouse_kick": {
         "image": "gen_sheet3.webp", "row": "A", "floor_row": 23.6, "height_cells": 19.85,
@@ -170,9 +173,11 @@ SHEETS = {
 }
 
 
-def build():
+def build(only=None):
     os.makedirs(os.path.join(HERE, "sheets"), exist_ok=True)
-    for name, s in SHEETS.items():
+    names = [only] if only else list(SHEETS)
+    for name in names:
+        s = SHEETS[name]
         poses = {}
         yaws = s.get("yaw") or []
         for i, fr in enumerate(s["frames"]):

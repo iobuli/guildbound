@@ -618,10 +618,13 @@ def build_sheet(rig, move, entry_key):
         sheet = json.load(f)
     argv = sys.argv[:]
     sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "grid"))
+    import build_sheets
     import posesheet
     sys.argv = argv
     lifted = {}
+    yaw_of = {}
     for name, pose in sheet["poses"].items():
+        yaw_of[name] = build_sheets.pose_yaw(pose)
         raw = posesheet.lift(sheet, pose, rig.srv, rig.info)
         lifted[name] = _fit_sheet_pose(rig, rig.take(raw))
     seq = [(a[0], float(a[1])) for a in sheet["sequence"]]
@@ -644,6 +647,16 @@ def build_sheet(rig, move, entry_key):
         pose = rig.copy(lifted[name])
         for k in pose:
             pose[k] = pose[k] + delta
+        # A turning sheet's ball sits a few centimetres above the floor. Drop the standing
+        # foot onto it so the solver's 3 cm test pivots there instead of on the pelvis.
+        side = plant
+        turning = any(abs(y) > 1e-6 or abs(tw) > 1e-6 for y, tw in yaw_of.values())
+        if turning and rig.up_of(pose[f"ankle_{side}"]) <= rig.up_of(g_ankle(rig, side)) + 0.12:
+            drop = rig.up_of(pose[f"ball_{side}"]) - rig.up_of(rig.guard[f"ball_{side}"])
+            if drop > 0.0:
+                # The ball is the pivot. Leave the ankle where the sheet drew it so the
+                # shin stays inside the leg; the foot aims down onto the ball.
+                pose[f"ball_{side}"] = pose[f"ball_{side}"] - rig.up * drop
         return pose
 
     def low_feet(pose):
@@ -672,11 +685,22 @@ def build_sheet(rig, move, entry_key):
         if keys and t <= keys[-1]["t"]:
             t = keys[-1]["t"] + 0.05
         held, flat = low_feet(pose)
+        yaw, twist = yaw_of[name]
+        # A yawed ankle orbits the ball. It is a pivot, not a planted point, so slip is not scored on it.
+        if abs(yaw) > 1e-6 or abs(twist) > 1e-6:
+            for s in "lr":
+                held.discard(f"ankle_{s}")
         tag = "hit" if name == strike else name
         keys.append(_key(t, pose, hs, flat, held, tag))
+        if abs(yaw) > 1e-6 or abs(twist) > 1e-6:
+            keys[-1]["yaw"] = yaw
+            keys[-1]["twist"] = twist
         if name == strike:
             t = t + dur["hold"]
-            keys.append(_key(t, rig.copy(pose), hs, flat, held, "hit"))
+            keys.append(_key(t, rig.copy(pose), hs, flat, set(held), "hit"))
+            if abs(yaw) > 1e-6 or abs(twist) > 1e-6:
+                keys[-1]["yaw"] = yaw
+                keys[-1]["twist"] = twist
     return _tag(keys, move.get("id", sheet_name))
 
 
