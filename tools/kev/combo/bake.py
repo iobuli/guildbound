@@ -27,11 +27,24 @@ def solve(srv, info, samples):
     """One stateful IK pass. Q and P carry forward so a frame starts from the pose it will barely leave."""
     Q, P = {}, {}
     solved = []
+    prev_hand = {}
     t0 = time.time()
     for s in samples:
         err = srv.apply_frame_into(info, Q, P, s["landmarks"], None)
         for side in "lr":
             srv.curl_hand(info, Q, P, side, float(s["hands"][side]))
+            # Curl aims the fingers and can roll the hand a half turn. Put that roll back.
+            hb = f"hand_{side}"
+            child = f"middle_01_{side}"
+            if hb in info["index"] and child in info["index"] and hb in prev_hand:
+                now = srv.bone_world_rot(info, Q, P, hb)
+                # Curl can roll a hand through a half turn. A small roll is the strike; only unwind a flip.
+                if srv.quat_angle(prev_hand[hb], now) > 90.0:
+                    Wb = srv.chain_world(info, Q, P, info["index"][hb])
+                    axis = srv.child_pos(info, Q, P, info["index"][hb], info["index"][child], Wb) - Wb[:3, 3]
+                    srv.set_world_rot(info, Q, P, hb, srv.twist_closest(now, prev_hand[hb], axis))
+            if hb in info["index"]:
+                prev_hand[hb] = srv.bone_world_rot(info, Q, P, hb)
         m = srv.kev_read(info, Q, P)
         solved.append({
             "landmarks": m["landmarks"],

@@ -1,7 +1,8 @@
 """Quality numbers for a solved combo. Gates catch pops, stretched limbs, and feet that slide while planted.
 
 Jerk uses the same height-normalised third difference as tools/kev/catalog/spatial.py so a combo can be
-compared with a catalogue clip. Anime strikes are supposed to be sharp, so jerk is reported and not gated.
+compared with a catalogue clip. Anime strikes stay sharp, and jerk is gated so a chain cannot be
+rougher than a hard catalogue hit.
 The gates are the glitches: a one-frame joint pop, a bone that changes length, a planted foot that moves.
 """
 import math
@@ -12,7 +13,11 @@ PAIRS = (("upperarm_l", "lowerarm_l"), ("lowerarm_l", "hand_l"), ("upperarm_r", 
          ("thigh_l", "calf_l"), ("calf_l", "foot_l"), ("thigh_r", "calf_r"), ("calf_r", "foot_r"),
          ("foot_l", "ball_l"), ("foot_r", "ball_r"))
 
-GATES = {"max_joint_step_deg": 52.0, "segment_drift_cm": 1.5, "plant_slip_cm": 1.5, "reach_mean_cm": 3.0, "reach_max_cm": 8.0}
+# Jerk is the height-normalised third difference. A raw jab measures about 640 and a raw sword
+# swing about 1650. Chains of anime strikes sit between those, so the gate is the sword swing:
+# a combo may be sharper than one punch and must not be rougher than that hit.
+GATES = {"max_joint_step_deg": 52.0, "segment_drift_cm": 1.5, "plant_slip_cm": 1.5, "reach_mean_cm": 3.0, "reach_max_cm": 8.0,
+         "jerk": 1700.0}
 
 
 def _quat_angle(a, b):
@@ -129,6 +134,8 @@ def measure(info, samples, solved, fps):
         fails.append(f"mean reach {out['reach_mean_cm']} cm")
     if out["reach_max_cm"] > GATES["reach_max_cm"]:
         fails.append(f"max reach {out['reach_max_cm']} cm")
+    if out["jerk"] > GATES["jerk"]:
+        fails.append(f"jerk {out['jerk']} over {GATES['jerk']}")
     out["ok"] = not fails
     out["fails"] = fails
     return out

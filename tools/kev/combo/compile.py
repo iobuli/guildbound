@@ -9,7 +9,7 @@ import os
 import numpy as np
 
 from .geom import rot_axis, sample_channel
-from .moves import HAND, build_move, hands_of
+from .moves import HAND, _seat_over_feet, build_move, hands_of
 from .rig import DRIVEN
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -122,8 +122,11 @@ def samples_from_keys(keys, fps):
 
 # How fast an elbow or knee pole may twist, and how fast a hand or airborne foot may change aim.
 # Faster than this is a one-frame pop. Anime snaps still clear it; a flipped pole does not.
+# The elbow hinge (shoulder to elbow) is capped separately: a bowed strike swings that
+# bone harder than the wrist, and that swing is what reads as a joint pop.
 POLE_STEP_DEG = 32.0
 AIM_STEP_DEG = 40.0
+HINGE_STEP_DEG = 32.0
 POLES = (("shoulder_l", "elbow_l", "wrist_l"), ("shoulder_r", "elbow_r", "wrist_r"),
          ("hip_l", "knee_l", "ankle_l"), ("hip_r", "knee_r", "ankle_r"))
 
@@ -218,6 +221,11 @@ def clamp_samples(rig, samples):
                     pose[f"ball_{side}"] = pose[f"ball_{side}"] + (pose[f"ankle_{side}"] - before)
             for root, mid, end in POLES:
                 _limit_pole(pose, prev, root, mid, end)
+            # Knees stay on the pole cap only. Pulling a knee off a planted shin slides the foot.
+            for side in "lr":
+                _limit_aim(pose, prev, f"shoulder_{side}", f"elbow_{side}", HINGE_STEP_DEG)
+        support = [side for side in "lr" if f"ankle_{side}" in planted]
+        _seat_over_feet(rig, pose, support)
         prev = {k: np.array(v, float).copy() for k, v in pose.items()}
         s["landmarks"] = {k: [round(float(x), 5) for x in pose[k]] for k in DRIVEN}
     return clipped

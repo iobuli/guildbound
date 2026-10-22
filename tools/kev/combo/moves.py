@@ -706,7 +706,42 @@ def _fit_sheet_pose(rig, pose):
         if rig.up_of(pose[f"ankle_{s}"]) > rig.up_of(rig.guard[f"ankle_{s}"]) + 0.08:
             rig.clamp_ankle(pose, s, 0.93)
         rig.seat_knee(pose, s, rig.fwd)
+    # A side-view drawing stands taller than the bone. Bring the body onto the feet; the feet stay.
+    _seat_over_feet(rig, pose, [s for s in "lr" if rig.up_of(pose[f"ankle_{s}"]) <= rig.up_of(rig.guard[f"ankle_{s}"]) + 0.08])
     return pose
+
+
+def _seat_over_feet(rig, pose, support):
+    """Slide and crouch the body until each support hip reaches its ankle. Ankles and balls stay put."""
+    if not support:
+        return
+    feet = {s: (pose[f"ankle_{s}"].copy(), pose[f"ball_{s}"].copy()) for s in "lr"}
+    # Only a pose the bones cannot reach. A normal stance sits inside this and must not be nudged.
+    cap = rig.leg * 0.99
+    moved = False
+    for _ in range(4):
+        shift = np.zeros(3)
+        n = 0
+        for s in support:
+            v = pose[f"ankle_{s}"] - pose[f"hip_{s}"]
+            d = float(np.linalg.norm(v))
+            if d > cap and d > 1e-6:
+                shift = shift + v * ((d - cap) / d)
+                n += 1
+        if n == 0:
+            break
+        moved = True
+        shift = shift / n
+        for k in pose:
+            if k.startswith("ankle") or k.startswith("ball"):
+                continue
+            pose[k] = pose[k] + shift
+    for s, (ankle, ball) in feet.items():
+        pose[f"ankle_{s}"] = ankle
+        pose[f"ball_{s}"] = ball
+    if moved:
+        for s in support:
+            rig.seat_knee(pose, s, rig.fwd)
 
 
 def build_offsets(rig, move, entry_key):
