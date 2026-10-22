@@ -304,7 +304,8 @@ const AURA_SHEETS: [Sheet; 3] = [Sheet::Vortex, Sheet::FireSpin, Sheet::Vortex];
 const AURA_ANIM: f32 = 0.8;
 
 fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Entity, With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, u32)>>) {
-    let dt = time.delta_secs().clamp(0.0, 0.1);
+    // Same clock as the planes' own climb (flipbook `play`); clamping it here would leave gaps on slow frames.
+    let dt = time.delta_secs().clamp(0.0, AURA_RISE);
     clocks.retain(|e, _| fighters.contains(*e));
     for e in &fighters {
         let c = clocks.entry(e).or_insert((0.0, 0));
