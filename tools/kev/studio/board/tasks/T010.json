@@ -5,7 +5,8 @@
  "done_when": "a beam renders in game from a spell, with the preview look (compare to previews/)",
  "id": "T010",
  "owner": "claude",
- "status": "todo",
+ "result": "energy.rs + assets/shaders/energy_beam.wgsl, energy_quad.wgsl, commit 2107d9b and fix. Stills: staging/beams. Left: tune thickness and brightness, motion check.",
+ "status": "review",
  "title": "Port the Godot energy beam to a Bevy material",
- "updated": 1792670644.6
+ "updated": 1792672766.6
 }
