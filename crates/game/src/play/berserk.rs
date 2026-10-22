@@ -294,7 +294,7 @@ fn trigger(
 /// The berserk aura: flat pixel-effect planes stacked up the body. Each climbs along Y while its edge shrinks to a point,
 /// so the stack reads as a spinning cylinder with a closed top. One plane leaves the feet every `AURA_RISE / AURA_LAYERS` seconds.
 const AURA_RISE: f32 = 1.5;
-const AURA_LAYERS: f32 = 14.0;
+const AURA_LAYERS: f32 = 24.0;
 const AURA_HEIGHT: f32 = 2.4;
 const AURA_SIZE: f32 = 1.9;
 /// Share of the climb at full width; the top closes to a point over the rest (0 would be a cone).

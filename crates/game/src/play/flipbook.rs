@@ -277,7 +277,8 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         if let Some(height) = p.rise {
             tf.translation.y += height * prog;
             let close = ((prog - p.taper_from) / (1.0 - p.taper_from)).clamp(0.0, 1.0);
-            tf.scale = Vec3::splat((p.size * (1.0 - close)).max(0.001));
+            // Quarter-ellipse: full width stays wide, then rounds off into the tip instead of a straight cone.
+            tf.scale = Vec3::splat((p.size * (1.0 - close * close).sqrt()).max(0.001));
         }
         if p.flat {
             tf.rotation = Quat::from_rotation_y(p.phase + p.spin * p.age) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2);
