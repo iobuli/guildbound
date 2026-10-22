@@ -5,7 +5,8 @@
  "done_when": "mean landmark error on the nine drops below 6 cm",
  "id": "T003",
  "owner": "claude",
- "status": "doing",
+ "result": "Blocked on input: the generated 'front view' sheet (staging/poses/ref/gen_front.webp) is mostly NOT frontal. Only ~4 of 18 figures face the camera (axe kick peak, crash-landing compression, palm cast peak, a chamber). The flying side kick, jumping knee, spinning back kick, roundhouse, backflip and dive are drawn in the same profile / three-quarter view as the side sheet, so they carry no left/right information. Needs a regenerated front sheet with a stricter prompt (camera directly in front, shoulders level, nose to camera, mirror-symmetric where the move allows).",
+ "status": "blocked",
  "title": "Front-view depth for the peak poses",
- "updated": 1792662910.4
+ "updated": 1792663025.2
 }

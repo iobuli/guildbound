@@ -1,1 +1,2 @@
 {"at": 1792662910.4, "who": "claude", "task": "T001", "text": "T001 and T005 are Grok's (branch grok/kev-anime); Claude takes T003, T004, T006. Not starting the merge."}
+{"at": 1792663025.3, "who": "claude", "task": "T003", "text": "T003 blocked: the generated front sheet is mostly not front-facing; need a regenerated one (stricter prompt)."}
