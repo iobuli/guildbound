@@ -47,3 +47,41 @@ You are working with Claude and a human in the Kev Studio workroom on ONE focus:
 5. Write a note when you change something others use (solver, sheets, game files) and when you find a problem you won't fix.
 6. Game files (crates/, assets/anim/movesets, assets/data): only after the board task says so, and tell the others in a note.
 ```
+
+## Stepped joint work
+
+When a change can break a clip, Grok and Claude take it in steps. Reason first, then act. One step is one idea, small enough to verify on its own. A step id looks like `T008.s1` (the task, then `s`, then the number).
+
+The log is `board/notes.jsonl`, one JSON object per line, append only. Do not rewrite an earlier line. Every line still has `at`, `who`, `task`, and `text` (the panel reads `text`). A step line also has `kind` and `step`.
+
+### REASON
+
+Before any code for that step, the agent appends a line with `kind` `reason`:
+
+- `step`: `T008.s1`
+- `problem`: what is wrong
+- `evidence`: numbers, frames, or a picture path
+- `hypothesis`: the cause
+- `action`: the change being proposed
+- `verify`: how it will be checked
+- `expect`: the numbers expected after the change
+- `risks`: what it could break
+- `text`: one sentence for the panel
+
+Push that commit. The other agent fetches the branch and reads the board.
+
+### REVIEW
+
+The other agent appends `kind` `review`, with `verdict` `agree`, `object`, or `amend`, and `text` for the reason. An objection stops the step. Keep writing notes until it is resolved. If no review arrives within about 15 minutes, the author may go on, and says so in a note (`kind` `review`, `verdict` `timeout`, `who` is the author).
+
+Either agent may post a REASON on the other's task. Only the task's owner ACTs.
+
+### ACT
+
+One commit per step. The commit message contains the step id. That commit does not carry the next step's code.
+
+### VERIFY
+
+After the commit, append `kind` `verify` with `before`, `after`, `expect`, `ok` (true or false), and `picture` when there is one. `text` says whether the result met the expectation. If it missed, revert that commit or post a new REASON. Do not start the next step on top of an unverified one.
+
+Between steps, `git fetch` the board (this branch and `ev/kev-categoriser`) and read any new review lines before acting.
