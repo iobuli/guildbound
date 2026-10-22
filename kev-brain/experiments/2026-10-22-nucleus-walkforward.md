@@ -79,3 +79,28 @@ Uncertainty on gross bps and on the 0.10R net is a day-cluster bootstrap (`patte
 
 ## What will not be done
 No second model, no threshold search, no new minute, no refit after seeing 2025 or 2026. A crash fix that leaves this grid, this feature list, and this cost formula unchanged is allowed. The grid will not move after the test numbers exist.
+
+## Results (scored once, 2026-10-22, after the section above was committed)
+
+`python3 kev-lab/walkforward.py`. Training never saw an hour open in 2025. Rest-of-hour training ends 2024-12-31 23:00 (8,784 hours). Next-hour training ends 2024-12-31 22:00 (8,783 hours), which is the last hour whose next-hour exit is still in 2024.
+
+2024 chose the same cell for both targets: minute 0, λ = 1. Across λ the validation AUC barely moved (rest-of-hour minute 0 spans 0.546 to 0.548). Later minutes were worse (rest-of-hour minute 45 spans 0.523 to 0.528). Because minute 0 won, the two fade baselines are the same row.
+
+The frozen weights are small, about 0.01, and almost all negative on position and slope. The fit is a soft version of the contrarian fade, not a different pattern. Full grid and coefficients: `out/lab/walkforward.json`.
+
+Scores below are oriented so that higher means up. The fade score is minus `bal`, so its rho is the negative of the raw balance rho from the earlier trace. AUC 0.50 and rho 0 are the empty results. The fade drops hours where `bal` is exactly 0, which is why its n is lower.
+
+| Window | Target | Rule | n | AUC | Hit | Rho | Band | Gross bps | Gross CI | Net 0.10R | Net 5 bps |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| 2025 | rest of hour | learned | 8725 | 0.525 | 0.517 | +0.032 | 0.019 | +0.54 | -1.29 to +2.26 | -35.5 | -4.46 |
+| 2025 | rest of hour | fade bal | 8202 | 0.517 | 0.511 | +0.024 | 0.018 | +0.59 | -1.28 to +2.38 | -35.4 | -4.41 |
+| 2025 | next hour | learned | 8729 | 0.522 | 0.516 | +0.031 | 0.022 | +0.03 | -3.20 to +3.11 | -36.0 | -4.97 |
+| 2025 | next hour | fade bal | 8206 | 0.521 | 0.513 | +0.028 | 0.021 | +0.61 | -2.44 to +3.80 | -35.4 | -4.39 |
+| 2026 Jan-Sep | rest of hour | learned | 6476 | 0.531 | 0.519 | +0.036 | 0.023 | -1.58 | -3.17 to -0.02 | -28.2 | -6.58 |
+| 2026 Jan-Sep | rest of hour | fade bal | 6072 | 0.521 | 0.518 | +0.023 | 0.023 | -1.08 | -2.72 to +0.80 | -27.7 | -6.08 |
+| 2026 Jan-Sep | next hour | learned | 6510 | 0.535 | 0.525 | +0.039 | 0.022 | -0.97 | -3.82 to +1.72 | -27.5 | -5.97 |
+| 2026 Jan-Sep | next hour | fade bal | 6101 | 0.529 | 0.527 | +0.029 | 0.022 | -0.84 | -3.75 to +2.06 | -27.4 | -5.84 |
+
+Mean 0.10R cost was 36.0 bps in 2025 and 26.6 bps in 2026 Jan-Sep.
+
+Reading: the ranking carries a little. Learned AUC is 0.52 to 0.53 and the rho clears its band in every learned cell. That is a small step above the fade's AUC, about one point. It does not carry as money. Every gross interval covers zero or sits below it. In 2026 the rest-of-hour learned trade hit 52% of the time and still lost 1.6 bps a trade, so the losers were larger than the winners. The best gross point in the table is +0.6 bps. A 5 bps round trip is already past that, and 0.10R is about 30 bps further. The learned rule does not beat the unlearned fade on bps in any cell.
