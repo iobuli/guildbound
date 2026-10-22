@@ -123,6 +123,44 @@ fn start_distance() -> f32 {
         .map_or(DEFAULT_DISTANCE, |d| d.clamp(SMOKE_MIN_DISTANCE, MAX_DISTANCE))
 }
 
+/// `GB_CAM=side|front|back|orbit[:<deg per s>]` (recordings): the view turns to a fixed angle from the player's facing, so a
+/// kick or a dive reads in profile instead of from behind. `side` puts the player facing screen-right (as in the pose
+/// sheets), `front` has it face the camera, `orbit` starts at `side` and circles at the given speed (default 40 deg/s).
+/// Unset: the usual free orbit.
+#[derive(Clone, Copy, Debug, PartialEq)]
+enum CamMode {
+    Side,
+    Front,
+    Back,
+    Orbit(f32),
+}
+
+fn cam_mode() -> Option<CamMode> {
+    static MODE: std::sync::OnceLock<Option<CamMode>> = std::sync::OnceLock::new();
+    *MODE.get_or_init(|| {
+        let v = std::env::var("GB_CAM").ok()?;
+        let (name, arg) = v.split_once(':').map_or((v.as_str(), None), |(a, b)| (a, Some(b)));
+        match name.trim() {
+            "side" => Some(CamMode::Side),
+            "front" => Some(CamMode::Front),
+            "back" => Some(CamMode::Back),
+            "orbit" => Some(CamMode::Orbit(arg.and_then(|a| a.trim().parse::<f32>().ok()).filter(|d| d.is_finite()).unwrap_or(40.0).to_radians())),
+            _ => None,
+        }
+    })
+}
+
+/// View yaw for a `GB_CAM` mode: `facing` is the player's `Mover.yaw`, `t` the elapsed seconds.
+fn cam_yaw(mode: CamMode, facing: f32, t: f32) -> f32 {
+    use std::f32::consts::{FRAC_PI_2, PI};
+    match mode {
+        CamMode::Side => facing + FRAC_PI_2,
+        CamMode::Front => facing + PI,
+        CamMode::Back => facing,
+        CamMode::Orbit(rate) => facing + FRAC_PI_2 + rate * t,
+    }
+}
+
 /// Nearest `GB_ZOOM` boom (m).
 const SMOKE_MIN_DISTANCE: f32 = 0.8;
 
@@ -360,6 +398,7 @@ fn orbit(
     capture: Res<CursorCapture>,
     gamepads: Query<&Gamepad>,
     settings: Option<Res<super::pause::Settings>>,
+    player: Query<&super::Mover, With<super::Player>>,
     mut rig: ResMut<CameraRig>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -387,6 +426,13 @@ fn orbit(
     }
     rig.yaw = wrap_angle(rig.yaw + d_yaw);
     rig.pitch = (rig.pitch + d_pitch).clamp(PITCH_MIN, PITCH_MAX);
+    // `GB_CAM`: hold the chosen angle from the player's facing, level enough to see a kick's line.
+    if let (Some(mode), Ok(mover)) = (cam_mode(), player.single())
+        && mover.yaw.is_finite()
+    {
+        rig.yaw = wrap_angle(cam_yaw(mode, mover.yaw, time.elapsed_secs()));
+        rig.pitch = 0.12;
+    }
     if !rig.distance.is_finite() {
         rig.distance = DEFAULT_DISTANCE;
     }
@@ -537,6 +583,16 @@ pub(crate) fn follow(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn cam_yaws_put_the_player_in_profile_front_and_back() {
+        use super::{CamMode, cam_yaw};
+        use std::f32::consts::{FRAC_PI_2, PI};
+        assert!((cam_yaw(CamMode::Side, 0.3, 5.0) - (0.3 + FRAC_PI_2)).abs() < 1e-6);
+        assert!((cam_yaw(CamMode::Front, 0.3, 5.0) - (0.3 + PI)).abs() < 1e-6);
+        assert!((cam_yaw(CamMode::Back, 0.3, 5.0) - 0.3).abs() < 1e-6);
+        assert!((cam_yaw(CamMode::Orbit(1.0), 0.0, 2.0) - (FRAC_PI_2 + 2.0)).abs() < 1e-6);
+    }
+
     use super::*;
 
     #[test]
