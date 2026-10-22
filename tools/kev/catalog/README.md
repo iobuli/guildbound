@@ -16,3 +16,8 @@ peaks, slow drift and keyframe seams flatten; a landmark the filter would roughe
 ankles pinned in x/z, the ball keeping its offset). Defaults (min-cut 4 Hz, beta 6) cut jerk while wrist reach stays close
 and a planted foot does not slide. The ball is held up by the sole pad, not clamped onto the floor line. Segment lengths are not pulled to a median: stretching a short limb invented motion and
 made flips and fast kicks rougher. The solver clamps a reach at the bone length.
+
+`smooth` then runs the no-glitch pass (`tools/kev/quality`): segment lengths, knee and elbow limits, wrist and ankle
+ranges, floor contact, planted feet, toe-off, finger back-bend, and palm facing. Each index entry stores `quality.before`
+and `quality.after` (flagged frame counts) and `motion.state` (`ok`, `static`, or `frozen` when the source clip moves
+but the sample does not). See `tools/kev/quality/README.md`.

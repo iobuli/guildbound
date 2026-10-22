@@ -125,13 +125,18 @@ let lastSent = '', lastSendAt = 0;
 async function sendTelemetry(force) {
   const now = performance.now();
   if (!force && now - lastSendAt < 80) return;
-  const quats = {}; let h = '';
-  for (const [n, b] of Object.entries(state.bones)) { const q = b.quaternion; quats[n] = [+q.x.toFixed(5), +q.y.toFixed(5), +q.z.toFixed(5), +q.w.toFixed(5)]; h += quats[n].join(','); }
+  const quats = {}; const pos = {}; let h = '';
+  for (const [n, b] of Object.entries(state.bones)) {
+    const q = b.quaternion; const p = b.position;
+    quats[n] = [+q.x.toFixed(5), +q.y.toFixed(5), +q.z.toFixed(5), +q.w.toFixed(5)];
+    pos[n] = [+p.x.toFixed(5), +p.y.toFixed(5), +p.z.toFixed(5)];
+    h += quats[n].join(',') + '|' + pos[n].join(',') + ';';
+  }
   if (!force && h === lastSent && now - lastSendAt < 1000) return;
   lastSent = h; lastSendAt = now;
   const dur = state.action ? state.action.getClip().duration : 0;
   const t = state.action ? state.action.time : 0;
-  try { await fetch('/api/telemetry', { method: 'POST', body: JSON.stringify({ model: state.model, clip: state.clipName, playing: state.playing, t, duration: dur, speed: state.speed, quats }) }); } catch (e) { /* server gone */ }
+  try { await fetch('/api/telemetry', { method: 'POST', body: JSON.stringify({ model: state.model, clip: state.clipName, playing: state.playing, t, duration: dur, speed: state.speed, quats, pos }) }); } catch (e) { /* server gone */ }
 }
 
 function renderKev(k) {
