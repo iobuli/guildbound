@@ -85,24 +85,87 @@
   ],
   "heavy": [
     {
-      "name": "kick",
+      "name": "roundhouse",
       "clip": {
-        "track": "sekiro/Zombie Kick",
-        "start": 0.2,
-        "end": 1.6
+        "track": "brawler/Roundhouse_Kick",
+        "start": 0.1,
+        "end": 0.92
       },
-      "windup": 0.21,
-      "active": 0.54,
-      "cancel": 0.7,
+      "windup": 0.28,
+      "active": 0.48,
+      "cancel": 0.6,
       "damage": 16,
       "poise": 35,
       "knockback": 4.0,
       "stamina": 22,
       "travel": 0.4,
-      "charge": 0.6,
+      "charge": 0.5,
+      "hitbox": {
+        "bone": "foot_l",
+        "radius": 0.13
+      }
+    },
+    {
+      "name": "spinning back kick",
+      "clip": {
+        "track": "brawler/Spinning_Back_Kick",
+        "start": 0.08,
+        "end": 0.96
+      },
+      "windup": 0.34,
+      "active": 0.54,
+      "cancel": 0.66,
+      "damage": 18,
+      "poise": 40,
+      "knockback": 4.5,
+      "stamina": 24,
+      "travel": 0.5,
+      "charge": 0.35,
       "hitbox": {
         "bone": "foot_r",
-        "radius": 0.12
+        "radius": 0.13
+      }
+    },
+    {
+      "name": "axe kick",
+      "clip": {
+        "track": "brawler/Axe_Kick",
+        "start": 0.1,
+        "end": 0.95
+      },
+      "windup": 0.46,
+      "active": 0.6,
+      "cancel": 0.68,
+      "damage": 20,
+      "poise": 45,
+      "knockback": 2.5,
+      "stamina": 24,
+      "travel": 0.3,
+      "charge": 0.35,
+      "hitbox": {
+        "bone": "foot_l",
+        "radius": 0.13
+      }
+    },
+    {
+      "name": "flying side kick",
+      "clip": {
+        "track": "brawler/Flying_Side_Kick",
+        "start": 0.1,
+        "end": 1.0
+      },
+      "windup": 0.4,
+      "active": 0.52,
+      "cancel": 0.66,
+      "damage": 22,
+      "poise": 50,
+      "knockback": 6.0,
+      "stamina": 28,
+      "travel": 1.2,
+      "charge": 0.4,
+      "hitbox": {
+        "bone": "foot_l",
+        "radius": 0.13
       }
     }
   ],

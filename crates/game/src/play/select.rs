@@ -17,7 +17,8 @@
 //! Every weight is critically damped per track (`SelectState`), so mode, gait, direction and
 //! action changes cross-fade instead of popping. Ending actions fade out frozen on their last
 //! frame; a restarted clip (time jumps backwards) cross-fades from its old copy.
-use super::moveset::{Movesets, Stance};
+use super::berserk::Berserkers;
+use super::moveset::{ClipRef, Movesets, Stance};
 use super::{Action, ActionKind, Feel, HALF_HEIGHT, Intent, Loadout, MoveMode, Mover, Owner, PlaySet};
 use crate::motion::bank::PoseBank;
 use crate::motion::compose::{MotionFeel, StyleScale};
@@ -657,6 +658,8 @@ pub struct SelectState {
     narrow: f32,
     narrow_velocity: f32,
     narrow_width: f32,
+    /// Seconds since this character went berserk (0 while it is not): the roar plays over the first `ROAR_SECS`.
+    berserk_t: f32,
     started: bool,
 }
 
@@ -681,9 +684,26 @@ impl Default for SelectState {
             narrow: 0.0,
             narrow_velocity: 0.0,
             narrow_width: FREE_STANCE,
+            berserk_t: 0.0,
             started: false,
         }
     }
+}
+
+/// Berserk: the roar plays over this many seconds from `brawler/Brawler_Berserk_Activation`, then the feral guard holds.
+const ROAR_SECS: f32 = 1.6;
+const ROAR_TRACK: &str = "brawler/Brawler_Berserk_Activation";
+
+/// The berserk stance: feral guard held on the upper body, crouched berserk idle loop under it.
+fn berserk_stance() -> &'static Stance {
+    static STANCE: std::sync::OnceLock<Stance> = std::sync::OnceLock::new();
+    STANCE.get_or_init(|| Stance {
+        clip: ClipRef { track: "brawler/Brawler_Feral_Guard".into(), start: 0.0, end: None, speed: 1.0, mask: Mask::Upper, style: None },
+        hold: 0.0,
+        moving_weight: 0.7,
+        walk: None,
+        idle: Some("brawler/Brawler_Berserk_Idle_Loop".into()),
+    })
 }
 
 /// Resolved locomotion track names (missing tracks fall back to a neighbour, or `None`).
@@ -746,6 +766,7 @@ fn select(
     feel: Res<Feel>,
     bank: Option<Res<PoseBank>>,
     movesets: Option<Res<Movesets>>,
+    berserkers: Res<Berserkers>,
     targets: Query<(&Transform, Has<Mover>)>,
     mut characters: Query<CharacterQuery>,
     motion: Option<Res<MotionFeel>>,
@@ -808,6 +829,7 @@ fn select(
             look_at,
             strafing,
             aim,
+            berserk: berserkers.0.contains(&entity),
         };
         match state {
             Some(mut state) => {
@@ -849,6 +871,8 @@ struct CharacterInput<'a> {
     look_at: Option<Vec3>,
     strafing: bool,
     aim: Option<Vec3>,
+    /// The fighter is berserk (`berserk::Berserkers`): the feral stance, and the roar over its first seconds.
+    berserk: bool,
 }
 
 fn update_character(
@@ -888,8 +912,12 @@ fn update_character(
     state.prev_landing = landing;
     state.prev_mode = mode;
 
+    // Berserk: the generated feral stance (`brawler` library) replaces the moveset's, idling in its crouched loop.
+    state.berserk_t = if input.berserk { (state.berserk_t + dt).min(60.0) } else { 0.0 };
+    let stance = if input.berserk { Some(berserk_stance()) } else { input.stance };
+
     // 1. Locomotion base.
-    let loco = Loco::resolve(bank, input.stance);
+    let loco = Loco::resolve(bank, stance);
     let gait = gait_weights(speed, &frame.anchors);
     state.base.begin();
     let mut phase_speed = speed;
@@ -1020,7 +1048,14 @@ fn update_character(
 
     // 4. Stance (upper body held pose of the equipped moveset).
     state.stance.begin();
-    if let Some(stance) = input.stance
+    if input.berserk
+        && state.berserk_t < ROAR_SECS
+        && matches!(mode, MoveMode::Ground | MoveMode::Air)
+        && bank.has(ROAR_TRACK)
+    {
+        // The roar: scrub the activation pose (crouch, rise, head back, arms out) over its first seconds.
+        state.stance.want(ROAR_TRACK, Mask::Upper, Clock::Fixed(state.berserk_t), false, None, 1.0, u16::MAX);
+    } else if let Some(stance) = stance
         && matches!(mode, MoveMode::Ground | MoveMode::Air)
         && bank.has(&stance.clip.track)
     {

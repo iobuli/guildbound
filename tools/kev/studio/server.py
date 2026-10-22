@@ -676,6 +676,9 @@ def bake(model, name, fps=60):
     for k in range(n):
         lm, hd = solve_ref(info, ref, k / fps)
         err = apply_frame_into(info, Q, P, lm, hd)
+        if not hd and ref.get("hand_curl") is not None:  # sheet references carry no finger data: close (or open) both hands
+            for side in "lr":
+                curl_hand(info, Q, P, side, ref["hand_curl"])
         frames.append({"q": {b: [round(float(x), 5) for x in q] for b, q in Q.items()}, "p": [round(float(x), 5) for x in P["pelvis"]]})
         m = kev_read(info, Q, P)
         errs.append(float(np.mean([np.linalg.norm(np.array(m["landmarks"][kk]) - np.array(lm[kk])) for kk in lm if kk in m["landmarks"]])))

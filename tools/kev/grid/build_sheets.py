@@ -83,7 +83,7 @@ SHEETS = {
         "sequence": [[0, 0.0], [1, 0.16, "smooth"], [2, 0.3, "smooth"], [3, 0.42, "smooth"], [4, 0.56, "smooth"], [5, 0.72, "smooth"], [6, 0.84, "smooth"], [7, 1.0, "smooth"]],
     },
     "palm_thrust_cast": {
-        "image": "gen_sheet3.webp", "row": "C", "floor_row": 22.85, "height_cells": 20.0,
+        "hands": 0.05, "image": "gen_sheet3.webp", "row": "C", "floor_row": 22.85, "height_cells": 20.0,
         "frames": [
             [12.0, 2.75, 12.9, 4.6, 11.4, 5.5, 10.0, 6.25, 10.75, 11.75, 14.5, 9.0, 16.0, 6.25, 10.5, 8.75, 13.25, 6.5, 15.25, 16.25, 15.0, 21.75, 17.25, 22.5, 9.0, 17.75, 6.5, 22.0, 6.25, 22.75],
             [36.5, 3.75, 37.4, 5.25, 36.25, 6.0, 35.0, 6.75, 35.0, 12.25, 38.5, 9.5, 41.5, 11.5, 31.0, 8.25, 33.25, 11.0, 39.75, 16.5, 39.5, 21.75, 41.5, 22.4, 34.0, 17.75, 29.75, 21.0, 29.25, 22.25],
@@ -151,6 +151,8 @@ def build():
         seq = [[f"f{a[0] + 1}"] + a[1:] for a in s["sequence"]]
         out = {"image": s["image"], "cell": 10, "zoom": 2, "facing": "right", "floor_row": s["floor_row"], "height_cells": s["height_cells"],
                "row": s["row"], "poses": poses, "sequence": seq}
+        if "hands" in s:
+            out["hands"] = s["hands"]
         with open(os.path.join(HERE, "sheets", f"{name}.json"), "w") as f:
             json.dump(out, f, indent=1)
         print("wrote", name, len(poses), "poses")

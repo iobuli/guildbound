@@ -80,7 +80,7 @@ def ref_from_sheet(srv, sheet_path, model):
     bm = info["bm"]
     # sheet landmarks are already in this rig's metres; scale_to() re-bases by pelvis, so store pelvis-relative poses
     return {"model": model, "clip": os.path.basename(sheet_path), "height": bm["body"]["height"], "floor": bm["body"]["floor"],
-            "duration": samples[-1]["t"], "samples": samples}
+            "duration": samples[-1]["t"], "samples": samples, "hand_curl": sheet.get("hands", 0.9)}
 
 
 def do_smooth(srv, name, min_cut, beta):
