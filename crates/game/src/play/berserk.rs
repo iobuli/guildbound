@@ -299,9 +299,9 @@ const AURA_HEIGHT: f32 = 1.9;
 const AURA_SIZE: f32 = 1.9;
 /// Share of the climb at full width; the top closes to a point over the rest (0 would be a cone).
 const AURA_TAPER_FROM: f32 = 0.7;
-/// Sheets taken in turn, with the dark smoke plane every `SMOKE_EVERY` planes.
+/// Sheets taken in turn, and how long each plane takes to loop its sheet.
 const AURA_SHEETS: [Sheet; 3] = [Sheet::Vortex, Sheet::FireSpin, Sheet::Vortex];
-const SMOKE_EVERY: u32 = 3;
+const AURA_ANIM: f32 = 0.8;
 
 fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Entity, With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, u32)>>) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
@@ -317,12 +317,8 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
             // Planes lie flat (`_`) and stack up the body; `GB_AURA=board` turns them to face the camera instead.
             let flat = !std::env::var("GB_AURA").is_ok_and(|v| v == "board");
             let lay = |f: Flip| if flat { f.flat() } else { f };
-            if c.1 % SMOKE_EVERY == 0 {
-                out.write(lay(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).spin(dir * 1.5).smoke().tinted(Color::srgb(0.35, 0.05, 0.02), 0.95).follow(e, at)));
-            } else {
-                let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
-                out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.0).follow(e, at)));
-            }
+            let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
+            out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).animated(AURA_ANIM).aged(c.0).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.0).follow(e, at)));
         }
     }
 }

@@ -88,13 +88,19 @@ pub struct Flip {
     pub rise: Option<f32>,
     /// Share of the climb (0..1) kept at full size before the edge closes to a point: 0 is a cone, near 1 a cylinder.
     pub taper_from: f32,
+    /// Loops the sheet every this many seconds from a random frame, instead of one pass over `life`. Rising aura layers
+    /// need it: with one pass per climb, the frame a plane shows is fixed by its height and the stack freezes into bands.
+    pub anim: Option<f32>,
+    /// Seconds already played at spawn, for emitters catching up on a slow frame (else every plane due that frame starts
+    /// at the same height).
+    pub head_start: f32,
     /// Turns about Y at this many radians per second (flat planes).
     pub spin: f32,
 }
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, spin: 0.0 }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, anim: None, head_start: 0.0, spin: 0.0 }
     }
     pub fn flat(mut self) -> Self {
         self.flat = true;
@@ -106,6 +112,14 @@ impl Flip {
     }
     pub fn tapering_from(mut self, share: f32) -> Self {
         self.taper_from = share.clamp(0.0, 0.99);
+        self
+    }
+    pub fn animated(mut self, period: f32) -> Self {
+        self.anim = Some(period.max(0.05));
+        self
+    }
+    pub fn aged(mut self, secs: f32) -> Self {
+        self.head_start = secs.max(0.0);
         self
     }
     pub fn spin(mut self, rate: f32) -> Self {
@@ -183,6 +197,7 @@ struct Playing {
     flat: bool,
     rise: Option<f32>,
     taper_from: f32,
+    anim: Option<f32>,
     spin: f32,
     phase: f32,
 }
@@ -233,7 +248,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
             Transform::from_translation(f.at).with_scale(Vec3::splat(f.size)),
             Playing {
                 sheet: i,
-                age: 0.0,
+                age: f.head_start,
                 life: f.life.max(0.05),
                 loops: f.loops,
                 material,
@@ -244,9 +259,10 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
                 flat: f.flat,
                 rise: f.rise,
                 taper_from: f.taper_from,
+                anim: f.anim,
                 spin: f.spin,
                 // Golden-angle steps, so planes spawned one after another do not line up their art.
-                phase: time.elapsed_secs() * 2.399,
+                phase: (time.elapsed_secs() - f.head_start) * 2.399,
             },
             bevy::light::NotShadowCaster,
             Name::new("Flip"),
@@ -283,11 +299,15 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         if p.flat {
             tf.rotation = Quat::from_rotation_y(p.phase + p.spin * p.age) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2);
         }
-        let (_, n, frames) = SHEETS[p.sheet];
-        let _ = n;
-        let t = (p.age % p.life) / p.life * frames as f32;
-        let a = t.floor().min(frames as f32 - 1.0);
-        let b = if a + 1.0 >= frames as f32 { a } else { a + 1.0 };
+        let (_, _, frames) = SHEETS[p.sheet];
+        let frames = frames as f32;
+        let (t, wrap) = match p.anim {
+            // Own clock, started at a frame picked from the plane's phase.
+            Some(period) => (((p.age / period) + (p.phase * 0.618).fract()).fract() * frames, true),
+            None => ((p.age % p.life) / p.life * frames, false),
+        };
+        let a = t.floor().min(frames - 1.0);
+        let b = if a + 1.0 < frames { a + 1.0 } else if wrap { 0.0 } else { a };
         let fade_out = ((total - p.age) / (p.life * 0.18)).clamp(0.0, 1.0);
         let fade_in = if p.rise.is_some() { (prog / 0.15).clamp(0.0, 1.0) } else { 1.0 };
         p.opacity = fade_out * fade_in;
