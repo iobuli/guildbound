@@ -213,7 +213,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     col += mix(hot, p.color.rgb, 0.45) * core * p.core.a * ends * (0.65 + 0.35 * mask);
     // Four additive layers overexpose to white at peak: soft-cap the brightest channel and keep the hue.
     let m = max(col.r, max(col.g, col.b));
-    col = col * ((1.0 - exp(-m * 1.25)) / max(m, 0.0001));
+    col = col * (0.55 * (1.0 - exp(-m * 1.25)) / max(m, 0.0001));
     // `AlphaMode::Add` blends as premultiplied alpha, so alpha 0 is a pure add (see wind_aura.wgsl).
     return vec4<f32>(col, 0.0);
 }
