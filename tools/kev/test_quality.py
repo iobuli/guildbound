@@ -251,7 +251,11 @@ class StatePositionTests(unittest.TestCase):
         info = srv.model_info("ual1.glb")
         lm = {k: list(v["rest"]) for k, v in info["bm"]["landmarks"].items()}
         up = np.array(info["bm"]["body"]["up"], float)
+        # Crouch the body and leave the feet on the floor. Lowering the feet as well
+        # puts the sole through the floor, and the solve lifts the pose back up.
         for k in lm:
+            if k.startswith(("ankle", "ball", "heel", "toe")):
+                continue
             lm[k] = (np.array(lm[k]) - 0.025 * up).tolist()
         srv.COMMANDED.clear()
         srv.COMMANDED_POS.clear()

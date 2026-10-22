@@ -12,9 +12,10 @@ smoothed (`NAME.json`) - lives in `staging/kev/refs` (git-ignored); `catalog.py 
 Studio: `cat list`, `cat info NAME`, `cat play NAME` (bakes the smoothed reference onto the loaded rig and plays it).
 
 `spatial.py` smooths in space, not just time: an adaptive zero-phase One-Euro filter per landmark (fast strikes keep their
-peaks, slow drift and keyframe seams flatten), foot lock (low, slow feet pinned in x/z), limb-length relaxation (each segment
-pulled toward its median length). Defaults (min-cut 4 Hz, beta 6) cut jerk to ~25-40 % while wrist reach stays within ~2 % and
-peak wrist speed within ~25 %.
+peaks, slow drift and keyframe seams flatten; a landmark the filter would roughen is left raw), then foot lock (low, slow
+ankles pinned in x/z, the ball keeping its offset). Defaults (min-cut 4 Hz, beta 6) cut jerk while wrist reach stays close
+and a planted foot does not slide. The ball is held up by the sole pad, not clamped onto the floor line. Segment lengths are not pulled to a median: stretching a short limb invented motion and
+made flips and fast kicks rougher. The solver clamps a reach at the bone length.
 
 `smooth` then runs the no-glitch pass (`tools/kev/quality`): segment lengths, knee and elbow limits, wrist and ankle
 ranges, floor contact, planted feet, toe-off, finger back-bend, and palm facing. Each index entry stores `quality.before`

@@ -1628,6 +1628,7 @@ mod tests {
                 Duration::from_secs_f32(1.0 / 60.0),
             ))
             .init_resource::<Feel>()
+            .init_resource::<super::super::berserk::Berserkers>()
             .insert_resource(Movesets::default())
             .insert_resource(fake_bank())
             .add_plugins(plugin);

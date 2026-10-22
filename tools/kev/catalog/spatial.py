@@ -1,17 +1,17 @@
 """Spatial smoothing for Kev references: landmark trajectories (T x N x 3, metres, fixed fps) in, smoother ones out.
 
-Three passes (limb lengths, then the filter, then the foot lock), all offline so they can look both ways in time:
+Two passes, all offline so they can look both ways in time:
   1. adaptive zero-phase filter per landmark: a One-Euro low-pass whose cutoff rises with the landmark's own speed,
      run forward then backward. Slow drift (idle sway, keyframe seams) is flattened, fast strikes keep their peaks.
-  2. foot lock: ankle/ball runs that are low and slow are pinned to their mean ground position (no slide under a plant).
-  3. limb lengths: each limb segment is relaxed toward its median length (parent first), so the solver is not asked
-     for a stretched arm.
+     A landmark the filter would make rougher (higher jerk) is left raw. That is what was roughening backflip_evade,
+     aerial_dive_attack and axe_kick: stretching short segments up to a median length, then filtering that invented
+     motion. The solver already refuses a reach past the bone length, so landmarks are not stretched here.
+  2. foot lock: ankle runs that are low and slow are pinned in x/z, and the ball keeps its offset from the ankle so
+     the toe does not spin. The pin eases in and out with a smoothstep.
+A foot the filter pulled through the floor is put back on it. The ball is lifted by the sole pad (how far the
+mesh sole and the toe sit below the ball joint) so the joint is not clamped onto the floor line itself.
 """
 import numpy as np
-
-LIMBS = [("shoulder_l", "elbow_l"), ("elbow_l", "wrist_l"), ("shoulder_r", "elbow_r"), ("elbow_r", "wrist_r"),
-         ("hip_l", "knee_l"), ("knee_l", "ankle_l"), ("hip_r", "knee_r"), ("knee_r", "ankle_r"),
-         ("ankle_l", "ball_l"), ("ankle_r", "ball_r")]
 
 
 def one_euro(x, fps, min_cut, beta, d_cut=1.0):
@@ -34,57 +34,91 @@ def smooth_track(x, fps, min_cut=4.0, beta=6.0):
     return one_euro(fwd[::-1], fps, min_cut, beta)[::-1]
 
 
+def _smoothstep(x):
+    x = np.clip(x, 0.0, 1.0)
+    return x * x * (3.0 - 2.0 * x)
+
+
 def foot_lock(L, names, fps, floor, height, speed=0.35, lift=0.08):
-    """Pin low, slow feet in x/z. Returns the number of frames locked."""
+    """Pin low, slow ankles in x/z and move the ball by the same delta. Returns frames locked."""
     ix = {n: i for i, n in enumerate(names)}
     up_axis = 1
     locked = 0
+    ramp = 4
     for side in "lr":
-        for j in (f"ankle_{side}", f"ball_{side}"):
-            if j not in ix:
+        ankle, ball = f"ankle_{side}", f"ball_{side}"
+        if ankle not in ix:
+            continue
+        p = L[:, ix[ankle]].copy()
+        v = np.linalg.norm(np.gradient(p, axis=0)[:, [0, 2]], axis=1) * fps
+        low = (p[:, up_axis] - floor) < lift * height
+        still = low & (v < speed * height)
+        weight = np.zeros(len(p))
+        target = np.zeros((len(p), 2))
+        t = 0
+        while t < len(p):
+            if not still[t]:
+                t += 1
                 continue
-            p = L[:, ix[j]]
-            v = np.linalg.norm(np.gradient(p, axis=0)[:, [0, 2]], axis=1) * fps
-            low = (p[:, up_axis] - floor) < lift * height
-            still = low & (v < speed * height)
-            t = 0
-            while t < len(p):
-                if not still[t]:
-                    t += 1
-                    continue
-                e = t
-                while e + 1 < len(p) and still[e + 1]:
-                    e += 1
-                if e - t >= 3:
-                    mean = p[t:e + 1][:, [0, 2]].mean(axis=0)
-                    ramp = 4  # blend the pin in and out so the lock itself adds no step
-                    for k in range(max(t - ramp, 0), min(e + ramp, len(p) - 1) + 1):
-                        w = 1.0 if t <= k <= e else 1.0 - (t - k if k < t else k - e) / (ramp + 1)
-                        L[k, ix[j]][[0, 2]] = (1 - w) * p[k][[0, 2]] + w * mean
-                    locked += e - t + 1
-                t = e + 1
+            e = t
+            while e + 1 < len(p) and still[e + 1]:
+                e += 1
+            if e - t >= 3:
+                mean = p[t:e + 1][:, [0, 2]].mean(axis=0)
+                for k in range(max(t - ramp, 0), min(e + ramp, len(p) - 1) + 1):
+                    if k < t:
+                        x = (k - (t - ramp)) / ramp
+                    elif k > e:
+                        x = ((e + ramp) - k) / ramp
+                    else:
+                        x = 1.0
+                    w = float(_smoothstep(x))
+                    if w >= weight[k]:
+                        weight[k] = w
+                        target[k] = mean
+                locked += e - t + 1
+            t = e + 1
+        for k in range(len(p)):
+            if weight[k] <= 0.0:
+                continue
+            old = p[k][[0, 2]]
+            new = (1.0 - weight[k]) * old + weight[k] * target[k]
+            delta = new - L[k, ix[ankle]][[0, 2]]
+            L[k, ix[ankle]][[0, 2]] = new
+            if ball in ix:
+                L[k, ix[ball]][[0, 2]] = L[k, ix[ball]][[0, 2]] + delta
     return locked
 
 
-def relax_limbs(L, names, strength=0.8):
-    ix = {n: i for i, n in enumerate(names)}
-    for a, b in LIMBS:
-        if a not in ix or b not in ix:
-            continue
-        d = L[:, ix[b]] - L[:, ix[a]]
-        n = np.linalg.norm(d, axis=1, keepdims=True)
-        target = np.median(n)
-        fixed = d / np.maximum(n, 1e-9) * target
-        L[:, ix[b]] = L[:, ix[a]] + d + strength * (fixed - d)
+def _track_jerk(x):
+    if len(x) < 4:
+        return 0.0
+    return float(np.linalg.norm(np.diff(x, 3, axis=0), axis=1).mean())
 
 
-def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0):
-    """L: T x N x 3. Returns (smoothed copy, frames locked)."""
+def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0, pad=0.0):
+    """L: T x N x 3. Returns (smoothed copy, frames locked).
+
+    `pad` is how far the mesh sole hangs below the ball joint. Ankles, heels and toe tips clamp to the
+    floor; the ball clamps to the floor plus that pad, so a planted sole is not asked to cross it.
+    """
     out = L.copy()
-    relax_limbs(out, names)  # first: its direction changes are then filtered like any other motion
     for k in range(out.shape[1]):
-        out[:, k] = smooth_track(out[:, k], fps, min_cut, beta)
+        y = smooth_track(out[:, k], fps, min_cut, beta)
+        if _track_jerk(y) <= _track_jerk(out[:, k]):
+            out[:, k] = y
     locked = foot_lock(out, names, fps, floor, height)
+    ix = {n: i for i, n in enumerate(names)}
+    for j in ("ankle_l", "ankle_r", "heel_l", "heel_r", "toe_tip_l", "toe_tip_r"):
+        if j not in ix:
+            continue
+        y = out[:, ix[j], 1]
+        y[y < floor] = floor
+    for j in ("ball_l", "ball_r"):
+        if j not in ix:
+            continue
+        y = out[:, ix[j], 1]
+        y[y < floor + pad] = floor + pad
     return out, locked
 
 

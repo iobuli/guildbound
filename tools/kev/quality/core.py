@@ -595,13 +595,19 @@ def settle_legs(L, ix, lengths, forward):
             pole = _pole(pa, pb, pc)
             if np.linalg.norm(pole) < 1e-6 or float(unit(pole) @ forward) < 0:
                 pole = forward
-            joint, child = _place_joint(pa, pc, l1, l2, pole)
-            delta = child - pc
+            # Keep a planted ankle where it is. If the hip cannot reach it at rest length,
+            # slide the hip along the leg instead of dragging the foot off its lock.
+            axis = pc - pa
+            dist = float(np.linalg.norm(axis))
+            reach = l1 + l2
+            gap = abs(l1 - l2)
+            if dist > 1e-6:
+                target = min(max(dist, gap + 1e-4), reach - 1e-4)
+                if abs(target - dist) > 1e-5:
+                    pa = pc - axis * (target / dist)
+                    L[t, ix[hip]] = pa
+            joint, _child = _place_joint(pa, pc, l1, l2, pole)
             L[t, ix[knee]] = joint
-            if float(np.linalg.norm(delta)) > 1e-6:
-                for n in (ankle, f"ball_{side}", f"toe_tip_{side}", f"heel_{side}"):
-                    if n in ix:
-                        L[t, ix[n]] = L[t, ix[n]] + delta
 
 
 def bend_toes(L, ix, up, floor, height):
@@ -765,6 +771,26 @@ def restyle_fingers(harr, L, ix, fps, height):
     return True
 
 
+def _palm_swing(forearm, nrm, forward, up):
+    """Rotation that swings a palm normal toward forward/down when a forearm twist cannot."""
+    axis = np.cross(forearm, nrm)
+    if float(np.linalg.norm(axis)) < 1e-6:
+        axis = np.cross(forearm, up)
+    if float(np.linalg.norm(axis)) < 1e-6:
+        return None
+    axis = unit(axis)
+    best, score = None, float(nrm @ forward)
+    for sgn in (1.0, -1.0):
+        for deg in (20.0, 40.0, 60.0):
+            R = rodrigues(axis * sgn, math.radians(deg))
+            got = float((R @ nrm) @ forward)
+            if got > score + 0.08:
+                best, score = R, got
+                if score > -0.2:
+                    return best
+    return best
+
+
 def fix_palms(harr, L, ix, body):
     """Rotate finger joints about the forearm when an extended hand faces backward."""
     if not harr:
@@ -791,14 +817,23 @@ def fix_palms(harr, L, ix, body):
                 if arm < 1e-6 or reach / arm < 0.8:
                     continue
             ang = palm_delta(forearm, nrm, up, inward, forward)
-            if abs(ang) < math.radians(8):
-                continue
-            R = rodrigues(forearm, ang)
-            if float((R @ nrm) @ forward) <= float(nrm @ forward):
+            R = rodrigues(forearm, ang) if abs(ang) >= math.radians(8) else np.eye(3)
+            turned = R @ nrm
+            if float(turned @ forward) <= float(nrm @ forward):
+                R = np.eye(3)
+                turned = nrm
+            # A twist about the forearm cannot face a palm whose normal lies along the arm.
+            # Swing the hand a short way off that axis until the palm looks forward or down.
+            if float(turned @ forward) <= -0.55:
+                swing = _palm_swing(forearm, turned, forward, up)
+                if swing is not None:
+                    R = swing @ R
+                    turned = swing @ turned
+            if float(turned @ forward) <= float(nrm @ forward) + 0.02:
                 continue
             origin = harr[f"hand_{side}"][t]
             for n in harr:
-                if n.endswith("_" + side) and n != f"hand_{side}":
+                if n.endswith("_" + side):
                     harr[n][t] = origin + R @ (harr[n][t] - origin)
             fixed += 1
     return fixed

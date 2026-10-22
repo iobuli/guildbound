@@ -126,7 +126,7 @@ impl Ability {
     }
 }
 
-pub static ABILITIES: [Ability; 10] = [
+pub static ABILITIES: [Ability; 11] = [
     // --- Arts (Battlewill, Q).
     Ability {
         id: "crescent_edge",
@@ -247,6 +247,23 @@ pub static ABILITIES: [Ability; 10] = [
         knockback: 3.0,
         shape: Shape::Bolt { speed: 20.0, gravity: 2.0, radius: 0.2, bloom: 0.0 },
         about: "A seething ball of flame on a chaotic flow. Arcs slightly.",
+    },
+    Ability {
+        id: "palm_thrust",
+        name: "Palm Thrust",
+        pool: Pool::Magicules,
+        element: Element::Arcane,
+        cost: 16.0,
+        track: "kev/palm_thrust_cast",
+        start: 0.0,
+        end: 0.9,
+        speed: 1.15,
+        release: 0.42,
+        damage: 18.0,
+        poise: 16.0,
+        knockback: 2.4,
+        shape: Shape::Bolt { speed: 22.0, gravity: 0.0, radius: 0.16, bloom: 0.0 },
+        about: "Both palms drive a short bolt. The cast is the generated palm thrust.",
     },
     Ability {
         id: "frost_bloom",
@@ -594,7 +611,11 @@ fn start_cast(
         } else {
             continue;
         };
-        let Some(a) = ability(id).filter(|a| sheet.has_ability(a.id)) else { continue };
+        let want_art = intent.art_pressed;
+        let Some(a) = ability(id).filter(|a| sheet.has_ability(a.id)).or_else(|| {
+            // A bound art the sheet does not know still fires the first art or spell it does.
+            known(&sheet.abilities, want_art).next()
+        }) else { continue };
         if fighter.dead || holding || !action.is_free() || !matches!(mover.mode, MoveMode::Ground | MoveMode::Air) {
             continue;
         }

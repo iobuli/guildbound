@@ -49,7 +49,7 @@ pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
 pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 7] = [
+pub const LIBRARIES: [(&str, &str); 8] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
@@ -59,9 +59,10 @@ pub const LIBRARIES: [(&str, &str); 7] = [
     ("kev_melee", "anim/kev_melee.glb"),
     // Karate kicks (mae, yoko, ushiro geri) posed on the UAL mannequin by tools/blender/karate.py.
     ("karate", "anim/karate.glb"),
-    // The brawler-mage's berserk poses (tools/blender/brawler.py) and the kicks, dive, backflip and cast read off the
-    // generated keyframe sheets (tools/kev/grid, exported by tools/kev/export_glb.py), on the UAL mannequin.
+    // Berserk stance and roar (tools/blender/brawler.py). Shared kicks live on `kev`.
     ("brawler", "anim/brawler.glb"),
+    // Solved strikes, combos and the generated sheets. See tools/kev/combo/export_glb.py.
+    ("kev", "anim/kev.glb"),
 ];
 
 pub fn plugin(app: &mut App) {

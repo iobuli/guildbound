@@ -1,0 +1,19 @@
+{
+  "name": "rush_uppercut",
+  "model": "ual1.glb",
+  "fps": 60,
+  "moves": [
+    {"id": "jab1", "do": "jab", "clip": "Punch_Jab", "limb": "wrist_l", "plant": "l", "step": 0.13, "ramp": 1.65,
+     "hands": {"l": "fist", "r": "fist"},
+     "dur": {"antic": 0.08, "strike": 0.055, "hold": 0.03, "overshoot": 0.03, "follow": 0.06}, "arc": 0.03},
+    {"id": "cross1", "do": "cross", "clip": "Punch_Cross", "limb": "wrist_r", "plant": "l", "step": 0.12, "ramp": 1.75, "pivot": 16,
+     "hands": {"l": "fist", "r": "fist"},
+     "dur": {"antic": 0.07, "strike": 0.05, "hold": 0.028, "overshoot": 0.028, "follow": 0.055}, "arc": 0.025},
+    {"id": "jab2", "do": "jab", "clip": "Punch_Jab", "limb": "wrist_l", "plant": "l", "step": 0.11, "ramp": 1.85,
+     "hands": {"l": "fist", "r": "fist"},
+     "dur": {"antic": 0.065, "strike": 0.048, "hold": 0.026, "overshoot": 0.026, "follow": 0.05}, "arc": 0.03},
+    {"id": "uppercut", "do": "uppercut", "hand": "r", "plant": "r", "step": 0.06, "pivot": 20, "pitch": 24, "ramp": 1.05,
+     "hands": {"l": "guard", "r": "fist"},
+     "dur": {"antic": 0.16, "strike": 0.09, "hold": 0.07, "overshoot": 0.05, "follow": 0.2}, "arc": 0.04}
+  ]
+}
