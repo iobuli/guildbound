@@ -14,6 +14,7 @@ use bevy::platform::collections::HashMap;
 use bevy::prelude::*;
 use gbui::prelude::*;
 use std::collections::VecDeque;
+use std::io::Write;
 
 /// Every debug view, in list order (toggle number = index + 1).
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -140,6 +141,9 @@ pub fn plugin(app: &mut App) {
                 projectiles.run_if(shown(View::Projectiles)),
             ),
         );
+    if std::env::var("GB_POSELOG").ok().is_some_and(|p| !p.trim().is_empty()) {
+        app.add_systems(Last, pose_log);
+    }
 }
 
 fn keys(keys: Res<ButtonInput<KeyCode>>, mut t: ResMut<DebugToggles>, talking: Option<Res<super::talk::Talking>>) {
@@ -286,6 +290,83 @@ fn projectiles(
         gizmos.linestrip(trail.iter().copied(), Color::srgb(1.0, 0.9, 0.4));
         gizmos.sphere(Isometry3d::from_translation(g.translation()), 0.08, Color::srgb(1.0, 0.5, 0.2));
     }
+}
+
+/// `GB_POSELOG=<path>`: one JSON line per frame for the player's body, skeleton root, pelvis,
+/// feet and head, plus the camera distance. Used to measure pops and foot slide.
+fn pose_log(
+    time: Res<Time<Virtual>>,
+    players: Query<(Entity, &GlobalTransform, &Mover, Option<&crate::motion::MotionLayers>), With<super::Player>>,
+    named: Query<(Entity, &Name, &GlobalTransform)>,
+    parents: Query<&ChildOf>,
+    cameras: Query<&GlobalTransform, With<super::camera::MainCamera>>,
+    berserkers: Option<Res<super::berserk::Berserkers>>,
+    mut out: Local<Option<std::io::BufWriter<std::fs::File>>>,
+) {
+    if out.is_none() {
+        let path = std::env::var("GB_POSELOG").unwrap_or_default();
+        match std::fs::File::create(path.trim()) {
+            Ok(f) => {
+                info!("[pose] logging to {}", path.trim());
+                *out = Some(std::io::BufWriter::new(f));
+            }
+            Err(e) => {
+                error!("[pose] {path}: {e}");
+                return;
+            }
+        }
+    }
+    let Some(writer) = out.as_mut() else { return };
+    let Ok((player, body, mover, layers)) = players.single() else { return };
+    let belongs = |start: Entity| {
+        let mut e = start;
+        for _ in 0..24 {
+            if e == player {
+                return true;
+            }
+            match parents.get(e) {
+                Ok(ChildOf(p)) => e = *p,
+                Err(_) => return false,
+            }
+        }
+        false
+    };
+    let bone = |want: &str| -> Option<Vec3> {
+        named.iter().find(|(e, n, _)| n.as_str() == want && belongs(*e)).map(|(_, _, tf)| tf.translation())
+    };
+    let v3 = |p: Option<Vec3>| match p {
+        Some(p) => format!("[{:.4},{:.4},{:.4}]", p.x, p.y, p.z),
+        None => "null".to_string(),
+    };
+    let top = layers
+        .and_then(|l| {
+            l.layers.iter().rev().find(|layer| layer.weight > 0.35).and_then(|layer| match &layer.source {
+                crate::motion::Source::Track { name, time, .. } => Some(format!("{name}@{time:.3}")),
+                crate::motion::Source::Pose(_) => Some("pose".to_string()),
+            })
+        })
+        .unwrap_or_default();
+    let bz = berserkers.is_some_and(|b| b.0.contains(&player));
+    let cam = cameras.iter().next().map(|c| c.translation());
+    let body_p = body.translation();
+    let dist = cam.map(|c| c.distance(body_p)).unwrap_or(-1.0);
+    let spd = Vec2::new(mover.velocity.x, mover.velocity.z).length();
+    let _ = writeln!(
+        writer,
+        "{{\"t\":{:.4},\"bz\":{},\"spd\":{:.3},\"cam\":{:.3},\"body\":{},\"root\":{},\"pelvis\":{},\"foot_l\":{},\"foot_r\":{},\"head\":{},\"top\":\"{}\"}}",
+        time.elapsed_secs(),
+        if bz { 1 } else { 0 },
+        spd,
+        dist,
+        v3(Some(body_p)),
+        v3(bone("root")),
+        v3(bone("pelvis")),
+        v3(bone("foot_l")),
+        v3(bone("foot_r")),
+        v3(bone("Head")),
+        top.replace('"', "'"),
+    );
+    let _ = writer.flush();
 }
 
 #[cfg(test)]

@@ -492,7 +492,8 @@ pub(crate) fn follow(
         let sep = Vec2::new(to.x, to.z).length();
         lock_extra = (sep * LOCK_EXTRA_DISTANCE).min(LOCK_MAX_EXTRA) * w;
         // Steer the view behind the player toward the target.
-        if target.is_some() && sep > 0.5 && rig.aim_blend < 0.5 {
+        // A recording angle (`GB_CAM`) stays put. Lock-on would steer it behind the player.
+        if target.is_some() && sep > 0.5 && rig.aim_blend < 0.5 && cam_mode().is_none() {
             let wanted = to.x.atan2(to.z);
             rig.yaw = wrap_angle(rig.yaw + wrap_angle(wanted - rig.yaw) * blend(LOCK_YAW_RATE, dt));
         }
@@ -549,7 +550,49 @@ pub(crate) fn follow(
         state.boom += (allowed - state.boom) * blend(BOOM_RECOVER_RATE, dt);
     }
     state.boom = state.boom.max(BOOM_MIN.min(allowed.max(0.05)));
-    let eye = pivot - forward * state.boom;
+    let mut eye = pivot - forward * state.boom;
+    let mut look = forward;
+    // Side-on beside a wall the boom is crushed into the body (0.56 m). A ray that
+    // starts above the chest can begin inside the eaves, so sweep from the pivot.
+    if cam_mode().is_some() && eye.distance(pivot) < 2.4 {
+        let flat = Vec3::new(forward.x, 0.0, forward.z).normalize_or(Vec3::Z);
+        let along = Vec3::new(-flat.z, 0.0, flat.x);
+        let deltas = [
+            -flat * 5.0 + Vec3::Y * 1.4,
+            -flat * 3.5 + along * 3.0 + Vec3::Y * 1.8,
+            -flat * 3.5 - along * 3.0 + Vec3::Y * 1.8,
+            -flat * 1.5 + Vec3::Y * 4.0,
+            Vec3::Y * 4.5,
+        ];
+        let mut chosen: Option<Vec3> = None;
+        let mut longest = eye;
+        let mut longest_d = eye.distance(pivot);
+        for delta in deltas {
+            let goal = pivot + delta;
+            let clear = cast(pivot, goal);
+            let d = clear.distance(pivot);
+            if clear.distance(goal) < 0.35 && d > 2.2 {
+                chosen = Some(clear);
+                break;
+            }
+            if d > longest_d {
+                longest = clear;
+                longest_d = d;
+            }
+        }
+        eye = if let Some(clear) = chosen {
+            clear
+        } else if longest_d < 2.2 {
+            // Every opening is inside the mesh. Climb the longest one.
+            let dir = (longest - pivot).normalize_or(Vec3::Y);
+            let climb_goal = pivot + dir * longest_d * 0.85 + Vec3::Y * 2.4;
+            let climbed = cast(pivot, climb_goal);
+            if climbed.distance(pivot) > 1.6 { climbed } else { pivot + Vec3::Y * 2.4 }
+        } else {
+            longest
+        };
+        look = (rig.focus - eye).normalize_or(forward);
+    }
     rig.eye = eye;
 
     // Shake (real time, so it plays through hitstop).
@@ -570,7 +613,12 @@ pub(crate) fn follow(
 
     let fov = FOV_DEG.lerp(AIM_FOV_DEG, rig.aim_blend).to_radians();
     for (mut transform, mut projection) in &mut cameras {
-        let base = Transform::from_translation(eye).looking_to(forward, Vec3::Y);
+        let up = if look.y.abs() > 0.92 {
+            Vec3::new(forward.x, 0.0, forward.z).normalize_or(Vec3::Z)
+        } else {
+            Vec3::Y
+        };
+        let base = Transform::from_translation(eye).looking_to(look, up);
         transform.translation = eye + base.rotation * shake_offset;
         transform.rotation = (base.rotation * shake_rot).normalize();
         if let Projection::Perspective(p) = &mut *projection

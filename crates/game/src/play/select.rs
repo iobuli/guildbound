@@ -34,21 +34,31 @@ pub fn plugin(app: &mut App) {
 
 /// `GB_CLIP=<track>` (smoke runs, recordings): from `GB_CLIP_AT` s (default 2) the player plays that bank track
 /// on its own, looping, in place of whatever `select` chose (e.g. `GB_CLIP=karate/Karate_Test`).
-fn clip_smoke(time: Res<Time>, bank: Option<Res<PoseBank>>, mut players: Query<&mut MotionLayers, With<super::Player>>, mut said: Local<bool>) {
-    let Ok(name) = std::env::var("GB_CLIP") else { return };
-    let at: f32 = std::env::var("GB_CLIP_AT").ok().and_then(|v| v.parse().ok()).unwrap_or(2.0);
-    let t = time.elapsed_secs() - at;
-    if t < 0.0 || !bank.is_some_and(|b| b.has(&name)) {
+/// A comma-separated list plays each track for `GB_CLIP_EVERY` seconds (default: the first track only).
+fn clip_smoke(time: Res<Time>, bank: Option<Res<PoseBank>>, mut players: Query<&mut MotionLayers, With<super::Player>>, mut said: Local<Option<usize>>) {
+    let Ok(spec) = std::env::var("GB_CLIP") else { return };
+    let names: Vec<String> = spec.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+    if names.is_empty() {
         return;
     }
-    if !*said {
-        *said = true;
+    let at: f32 = std::env::var("GB_CLIP_AT").ok().and_then(|v| v.parse().ok()).unwrap_or(2.0);
+    let every: f32 = std::env::var("GB_CLIP_EVERY").ok().and_then(|v| v.parse().ok()).filter(|v| *v > 0.0).unwrap_or(f32::MAX);
+    let t = time.elapsed_secs() - at;
+    if t < 0.0 {
+        return;
+    }
+    let i = ((t / every) as usize).min(names.len() - 1);
+    let name = &names[i];
+    let local = t - i as f32 * every;
+    if !bank.is_some_and(|b| b.has(name)) {
+        return;
+    }
+    if said.is_none_or(|s| s != i) {
+        *said = Some(i);
         info!("[clip] player plays {name}");
     }
     for mut layers in &mut players {
-        layers.layers = vec![Layer { source: Source::Track { name: name.clone(), time: t, looping: true }, weight: 1.0, mask: Mask::Full, style: None }];
-        // The clip owns the feet: ground foot IK would drag a kicking foot down.
-        layers.contact.foot_ik = 0.0;
+        layers.layers = vec![Layer { source: Source::Track { name: name.clone(), time: local, looping: true }, weight: 1.0, mask: Mask::Full, style: None }];
         // The clip owns the feet: ground foot IK would drag a kicking foot down.
         layers.contact.foot_ik = 0.0;
     }
@@ -690,9 +700,24 @@ impl Default for SelectState {
     }
 }
 
-/// Berserk: the roar plays over this many seconds from `brawler/Brawler_Berserk_Activation`, then the feral guard holds.
+/// Berserk: the roar holds over this many seconds, then the feral guard is on its own.
 const ROAR_SECS: f32 = 1.6;
 const ROAR_TRACK: &str = "brawler/Brawler_Berserk_Activation";
+/// Head-back crest of the activation clip. The first 1.6s is still a bow (neck pitched forward);
+/// the throw-back is 3.45..3.95s. Scrub that, or the aura burst plays over a crouch.
+const ROAR_FROM: f32 = 3.45;
+const ROAR_TO: f32 = 3.95;
+/// How long the roar eases in over the guard. Short enough to meet the burst, long enough not to pop.
+const ROAR_IN: f32 = 0.20;
+/// Locomotion and attacks cross the crouched idle. The usual 0.12s / 0.05s finishes inside one
+/// 15 fps frame and the pelvis jumps; these stay under that.
+const BERSERK_BLEND: f32 = 0.28;
+const BERSERK_ACTION_IN: f32 = 0.16;
+
+fn roar_clip_time(t: f32) -> f32 {
+    let u = (t / ROAR_SECS).clamp(0.0, 1.0);
+    ROAR_FROM + (ROAR_TO - ROAR_FROM) * u
+}
 
 /// The berserk stance: feral guard held on the upper body, crouched berserk idle loop under it.
 fn berserk_stance() -> &'static Stance {
@@ -913,7 +938,16 @@ fn update_character(
     state.prev_mode = mode;
 
     // Berserk: the generated feral stance (`brawler` library) replaces the moveset's, idling in its crouched loop.
-    state.berserk_t = if input.berserk { (state.berserk_t + dt).min(60.0) } else { 0.0 };
+    // Negative berserk_t is a short blend tail after the stance drops. Zeroing it on
+    // the same frame snaps the 0.28s fade back to 0.12s, and the pelvis jumps.
+    state.berserk_t = if input.berserk {
+        (state.berserk_t.max(0.0) + dt).min(60.0)
+    } else if state.berserk_t > 0.0 {
+        -BERSERK_BLEND
+    } else {
+        (state.berserk_t + dt).min(0.0)
+    };
+    let slow_blend = input.berserk || state.berserk_t < 0.0;
     let stance = if input.berserk { Some(berserk_stance()) } else { input.stance };
 
     // 1. Locomotion base.
@@ -951,7 +985,8 @@ fn update_character(
         }
         MoveMode::Ragdoll => {}
     }
-    state.base.settle(dt, BLEND_TIME, BLEND_TIME, snap);
+    let base_blend = if slow_blend { BERSERK_BLEND } else { BLEND_TIME };
+    state.base.settle(dt, base_blend, base_blend, snap);
 
     // Phase: travelled distance over the blended stride of the visible synced loops.
     let strides: Vec<(f32, f32)> = state
@@ -1048,14 +1083,7 @@ fn update_character(
 
     // 4. Stance (upper body held pose of the equipped moveset).
     state.stance.begin();
-    if input.berserk
-        && state.berserk_t < ROAR_SECS
-        && matches!(mode, MoveMode::Ground | MoveMode::Air)
-        && bank.has(ROAR_TRACK)
-    {
-        // The roar: scrub the activation pose (crouch, rise, head back, arms out) over its first seconds.
-        state.stance.want(ROAR_TRACK, Mask::Upper, Clock::Fixed(state.berserk_t), false, None, 1.0, u16::MAX);
-    } else if let Some(stance) = stance
+    if let Some(stance) = stance
         && matches!(mode, MoveMode::Ground | MoveMode::Air)
         && bank.has(&stance.clip.track)
     {
@@ -1078,7 +1106,7 @@ fn update_character(
             u16::MAX,
         );
     }
-    state.stance.settle(dt, BLEND_TIME, BLEND_TIME, snap);
+    state.stance.settle(dt, base_blend, base_blend, snap);
     state.stance.emit(&mut out.layers);
 
     // 5./6. Action layers.
@@ -1104,8 +1132,30 @@ fn update_character(
                 warn!("[select] action track '{}' is not in the pose bank", l.track);
             }
         }
-        channel.settle(dt, ACTION_IN, ACTION_OUT, snap);
+        let inn = if input.berserk { BERSERK_ACTION_IN } else { ACTION_IN };
+        let out_t = if slow_blend { BERSERK_BLEND } else { ACTION_OUT };
+        channel.settle(dt, inn, out_t, snap);
         channel.emit(&mut out.layers);
+    }
+    // On top of the guard, or a block hides the roar until the swing (measured 0.71s after the burst).
+    if input.berserk
+        && state.berserk_t < ROAR_SECS
+        && matches!(mode, MoveMode::Ground | MoveMode::Air)
+        && bank.has(ROAR_TRACK)
+    {
+        let w = (state.berserk_t / ROAR_IN).clamp(0.0, 1.0);
+        if w > WEIGHT_EPS {
+            out.layers.push(Layer {
+                source: Source::Track {
+                    name: ROAR_TRACK.to_string(),
+                    time: roar_clip_time(state.berserk_t),
+                    looping: false,
+                },
+                weight: w,
+                mask: Mask::Upper,
+                style: None,
+            });
+        }
     }
 
     // 7. Riding: the seat, turned into a straddle, holds the legs whatever the rest is doing.
@@ -1319,6 +1369,16 @@ mod tests {
 
     fn anchors() -> GaitAnchors {
         GaitAnchors::from_feel(&Feel::default())
+    }
+
+    #[test]
+    fn roar_holds_the_head_back_crest() {
+        assert!((roar_clip_time(0.0) - ROAR_FROM).abs() < 1e-4);
+        assert!(roar_clip_time(0.0) > 3.0, "the bow at the start of the clip is not the roar");
+        let mid = roar_clip_time(ROAR_SECS * 0.5);
+        assert!(mid > ROAR_FROM && mid < ROAR_TO);
+        assert!((roar_clip_time(ROAR_SECS) - ROAR_TO).abs() < 1e-4);
+        assert!((roar_clip_time(10.0) - ROAR_TO).abs() < 1e-4);
     }
 
     #[test]
