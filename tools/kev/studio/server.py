@@ -504,10 +504,16 @@ def reach(info, Q, P, chain, target, pole_pt=None, flex_dir=None):
     if np.linalg.norm(pole) < 1e-6:
         pole = (m - r) - u * float((m - r) @ u)
     pole = unit(pole)
-    if flex_dir is not None:
+    prev_side = (m - r) - u * float((m - r) @ u)
+    if np.linalg.norm(prev_side) > 1e-4:
+        # Keep the bend on the side it had. Reflecting onto the anatomical side in one frame
+        # spins a straight knee half a turn.
+        if float(unit(prev_side) @ pole) < 0:
+            pole = -pole
+    elif flex_dir is not None:
         f = np.asarray(flex_dir, float)
         f = f - u * float(f @ u)
-        if np.linalg.norm(f) > 1e-4 and np.linalg.norm(pole) > 1e-6 and float(pole @ unit(f)) < -0.35:
+        if np.linalg.norm(f) > 1e-4 and float(pole @ unit(f)) < -0.35:
             pole = -pole
     a_ = (l1 * l1 - l2 * l2 + d * d) / (2 * d)
     h = math.sqrt(max(l1 * l1 - a_ * a_, 0.0))
@@ -688,24 +694,25 @@ def plant_sole(info, Q, P, side, lm):
     if min(float(origin @ up) - floor, float(ankle_lm @ up) - floor) > 0.32:
         return
     local = sole_locals(info)[side]
-    for _ in range(4):
-        Rw = bone_world_rot(info, Q, P, fb)
-        origin = chain_world(info, Q, P, info["index"][fb])[:3, 3]
-        h = (local @ Rw.T + origin) @ up
-        i = int(np.argmin(h))
-        pen = floor - float(h[i])
-        if pen <= 1e-4:
-            return
-        lever = (local[i] @ Rw.T + origin) - origin
-        axis = np.cross(up, lever)
-        if np.linalg.norm(axis) < 1e-4:
-            return
-        axis = unit(axis)
-        dy = float(np.cross(axis, lever) @ up)
-        if abs(dy) < 1e-5:
-            return
-        theta = float(np.clip(pen / dy, -0.6, 0.6))
-        set_world_rot(info, Q, P, fb, rot_about(axis, theta) @ Rw)
+    # One short pitch. Four swings of 0.6 rad spin a kicking foot through a right angle and
+    # shove the planted foot. A sole that is still through the floor is lifted with the body.
+    Rw = bone_world_rot(info, Q, P, fb)
+    origin = chain_world(info, Q, P, info["index"][fb])[:3, 3]
+    h = (local @ Rw.T + origin) @ up
+    i = int(np.argmin(h))
+    pen = floor - float(h[i])
+    if pen <= 1e-4:
+        return
+    lever = (local[i] @ Rw.T + origin) - origin
+    axis = np.cross(up, lever)
+    if np.linalg.norm(axis) < 1e-4:
+        return
+    axis = unit(axis)
+    dy = float(np.cross(axis, lever) @ up)
+    if abs(dy) < 1e-5:
+        return
+    theta = float(np.clip(pen / dy, -0.08, 0.08))
+    set_world_rot(info, Q, P, fb, rot_about(axis, theta) @ Rw)
 
 
 def sole_gap(info, Q, P, side, lm, read=None):
@@ -875,7 +882,7 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None, cleanup=Tr
         lift_skeleton(info, Q, P, max(sole_gap(info, Q, P, s, lm, read) for s in "lr"))
     if cleanup:
         _clamp_solved_hinges(info, Q, P)
-    if not hands:
+    if cleanup and not hands:
         for side in "lr":
             orient_palm(info, Q, P, side)
             ext = _arm_extension(info, Q, P, side)
@@ -907,8 +914,10 @@ def _clamp_solved_hinges(info, Q, P):
         reach(info, Q, P, chain, pc, pole)
 
 
-def apply_frame_into(info, Q, P, lm, hands):
-    return apply_frame(info, lm, inplace=False, hands=hands, Qp=Q, Pp=P)
+def apply_frame_into(info, Q, P, lm, hands, cleanup=False):
+    """Offline solve. Cleanup stays off: the catalogue and the combo already cleaned the tracks,
+    and a second pass moves a planted foot."""
+    return apply_frame(info, lm, inplace=False, hands=hands, Qp=Q, Pp=P, cleanup=cleanup)
 
 
 def pose_event():
