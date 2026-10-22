@@ -19,6 +19,8 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(HERE, ".."))
+import quality.core as quality  # noqa: E402
 import spatial  # noqa: E402
 
 INDEX = os.path.join(HERE, "index.json")
@@ -83,19 +85,36 @@ def ref_from_sheet(srv, sheet_path, model):
             "duration": samples[-1]["t"], "samples": samples, "hand_curl": sheet.get("hands", 0.9)}
 
 
+def _body(srv, ref):
+    info = srv.model_info(ref["model"])
+    return info, info["bm"]["body"], quality.lengths_from_body(info["bm"])
+
+
 def do_smooth(srv, name, min_cut, beta):
     ix = load_index()
     e = ix["animations"][name]
     raw = json.load(open(ref_path(srv, name, raw=True)))
     names, L = arrays(raw)
     H, floor = raw["height"], raw["floor"]
+    _info, body, lengths = _body(srv, raw)
+    hands = [s.get("hands") or {} for s in raw["samples"]]
     before = spatial.metrics(L, names, FPS, floor, H)
+    q_raw = quality.validate(L, names, FPS, floor, H, hands, body, lengths)
     S, locked = spatial.smooth(L, names, FPS, floor, H, min_cut, beta)
+    q_before = quality.validate(S, names, FPS, floor, H, hands, body, lengths)
+    S, hands2, qlock = quality.clean(S, names, FPS, floor, H, hands, body, lengths)
     after = spatial.metrics(S, names, FPS, floor, H)
+    q_after = quality.validate(S, names, FPS, floor, H, hands2, body, lengths)
     with open(ref_path(srv, name), "w") as f:
-        json.dump(with_landmarks(raw, names, S), f)
+        json.dump(quality.apply_tracks(raw, names, S, hands2), f)
+    rot = srv.clip_motion_span(e["source"]["model"], e["source"]["clip"]) if e["source"]["type"] == "clip" else 0.0
     e["metrics_raw"], e["metrics"] = before, after
-    e["smoothing"] = {"min_cut_hz": min_cut, "beta": beta, "foot_frames_locked": locked}
+    e["smoothing"] = {"min_cut_hz": min_cut, "beta": beta, "foot_frames_locked": locked + qlock}
+    e["quality"] = {"raw": quality.counts(q_raw), "before": quality.counts(q_before), "after": quality.counts(q_after)}
+    e["motion"] = {"state": quality.motion_state(L, rot), "source_rot_deg": round(float(rot), 2),
+                   "travel_m": round(float(np.max(L.max(0) - L.min(0))), 5)}
+    if e["motion"]["state"] == "frozen":
+        print(f"FROZEN {name}: source rotates {rot:.1f} deg but the sample does not move")
     save_index(ix)
     return before, after
 
@@ -164,7 +183,8 @@ def main():
         names = list(load_index()["animations"]) if a.args[0] == "all" else a.args
         for n in names:
             b, s = do_smooth(srv, n, a.min_cut, a.beta)
-            print(f"{n:22} jerk {b['jerk']:>9} -> {s['jerk']:>9}   slip {b['foot_slip_hs']} -> {s['foot_slip_hs']}")
+            q = load_index()["animations"][n]["quality"]
+            print(f"{n:22} jerk {b['jerk']:>9} -> {s['jerk']:>9}   slip {b['foot_slip_hs']} -> {s['foot_slip_hs']}  issues {sum(q['before'].values())} -> {sum(q['after'].values())}")
         return
     elif a.cmd == "rebuild":
         for n, e in load_index()["animations"].items():
@@ -177,7 +197,8 @@ def main():
             with open(ref_path(srv, n, raw=True), "w") as f:
                 json.dump(ref, f)
             do_smooth(srv, n, e["smoothing"]["min_cut_hz"], e["smoothing"]["beta"])
-            print("rebuilt", n)
+            ent = load_index()["animations"][n]
+            print(f"rebuilt {n}: motion {ent['motion']['state']}  wrist {ent['metrics']['wrist_speed_hs']}  issues {sum(ent['quality']['before'].values())} -> {sum(ent['quality']['after'].values())}")
         return
     print(f"{a.args[0]}: jerk {b['jerk']} -> {s['jerk']}, foot slip {b['foot_slip_hs']} -> {s['foot_slip_hs']}, reach {b['wrist_reach_h']} -> {s['wrist_reach_h']}")
 

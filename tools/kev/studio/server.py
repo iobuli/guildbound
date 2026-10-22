@@ -18,6 +18,7 @@ speed <x> | bones [filter] | get <bone> | set <bone> <x> <y> <z> (degrees, in th
 landmarks [name] | facings | balance | rig | state |
 hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y z [pole x y z] (world metres) | aim <bone> x y z |
 ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
+check <name> (no-glitch report for a catalogue clip: frame ranges) |
 ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status.
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
@@ -42,6 +43,7 @@ ANIM = os.path.join(REPO, "assets", "anim")
 sys.path.insert(0, KEV)
 import bodymap  # noqa: E402
 import nodes as kev_nodes  # noqa: E402
+import quality.core as quality  # noqa: E402
 import statue  # noqa: E402
 
 MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".glb": "model/gltf-binary",
@@ -50,6 +52,7 @@ LOCK = threading.Lock()
 CLIENTS = []
 STATE = {"model": None, "clip": None, "playing": False, "t": 0.0, "duration": 0.0, "speed": 1.0, "summary": {}, "stamp": 0.0}
 LATEST_QUATS = {}
+LATEST_POS = {}
 CACHE = {}
 
 
@@ -60,12 +63,24 @@ def quat_to_mat(q):
                      [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
 
 
+def compose_trs(t, q, s):
+    local = np.eye(4)
+    local[:3, :3] = quat_to_mat(q) * np.asarray(s, float)
+    local[:3, 3] = np.asarray(t, float)
+    return local
+
+
+def node_matrix(nd):
+    return np.array(nd["matrix"], float).reshape(4, 4).T
+
+
 FINGER_WORDS = {"index": "index", "middle": "middle", "ring": "ring", "pinky": "pinky", "thumb": "thumb"}
 MIXAMO = {"Hips": "pelvis", "Spine": "spine_01", "Spine1": "spine_02", "Spine2": "spine_03", "Neck": "neck_01", "Head": "Head",
           "HeadTop_End": "Head_leaf", "Shoulder": "clavicle", "Arm": "upperarm", "ForeArm": "lowerarm", "Hand": "hand",
           "UpLeg": "thigh", "Leg": "calf", "Foot": "foot", "ToeBase": "ball", "Toe_End": "ball_leaf", "Root": "root"}
 BRIG = {"hips": "pelvis", "spine": "spine_01", "chest": "spine_03", "neck": "neck_01", "head": "Head", "jaw": "jaw", "shoulder": "clavicle",
-        "upperArm": "upperarm", "forearm": "lowerarm", "hand": "hand", "thigh": "thigh", "shin": "calf", "foot": "foot", "toe": "ball"}
+        "upperArm": "upperarm", "forearm": "lowerarm", "hand": "hand", "thigh": "thigh", "shin": "calf", "foot": "foot", "toe": "ball",
+        "root": "root"}
 
 
 def canonical(name):
@@ -136,10 +151,13 @@ def model_info(name):
 
     for i in range(n):
         visit(i)
-    rest_q = [np.array(nd.get("rotation", [0, 0, 0, 1]), float) for nd in js["nodes"]]
+    rest = [node_rest_trs(nd) for nd in js["nodes"]]
+    rest_t = [r[0] for r in rest]
+    rest_q = [r[1] for r in rest]
+    rest_s = [r[2] for r in rest]
     names = [nd.get("name", f"node{i}") for i, nd in enumerate(js["nodes"])]
     skin = (js.get("skins") or [{}])[0]
-    info = {"name": name, "js": js, "parent": parent, "order": order, "rest_q": rest_q, "names": names,
+    info = {"name": name, "js": js, "parent": parent, "order": order, "rest_q": rest_q, "rest_t": rest_t, "rest_s": rest_s, "names": names,
             "index": {nm: i for i, nm in enumerate(names)}, "clips": [a.get("name", f"clip{i}") for i, a in enumerate(js.get("animations", []))],
             "joints": skin.get("joints", []), "bm": None, "kev": None, "blob": blob}
     if skin:
@@ -157,14 +175,7 @@ def world_transforms(info, quats, pos=None):
     n = len(info["names"])
     W = [None] * n
     for i in info["order"]:
-        nd = info["js"]["nodes"][i]
-        if "matrix" in nd:
-            local = np.array(nd["matrix"], float).reshape(4, 4).T
-        else:
-            q = quats.get(info["names"][i], info["rest_q"][i])
-            local = np.eye(4)
-            local[:3, :3] = quat_to_mat(q) * np.array(nd.get("scale", [1, 1, 1]), float)
-            local[:3, 3] = (pos or {}).get(info["names"][i], nd.get("translation", [0, 0, 0]))
+        local = local_mat(info, quats, pos, i)
         p = info["parent"][i]
         W[i] = local if p < 0 else W[p] @ local
     return W
@@ -233,14 +244,21 @@ def resolve_clip(info, want):
 
 
 def local_mat(info, Q, P, i):
+    """Rest matrix, or rest TRS with animated rotation / translation written over it.
+
+    Some rigs (kev_melee) store a node matrix and also animate that node's TRS. glTF runtimes
+    decompose the matrix and let the channels replace translation and rotation. Using the matrix
+    as-is drops the clip and the pose stays at rest.
+    """
     nd = info["js"]["nodes"][i]
-    if "matrix" in nd:
-        return np.array(nd["matrix"], float).reshape(4, 4).T
     nm = info["names"][i]
-    local = np.eye(4)
-    local[:3, :3] = quat_to_mat(Q.get(nm, info["rest_q"][i])) * np.array(nd.get("scale", [1, 1, 1]), float)
-    local[:3, 3] = (P or {}).get(nm, nd.get("translation", [0, 0, 0]))
-    return local
+    q_over = (Q or {}).get(nm)
+    p_over = (P or {}).get(nm)
+    if "matrix" in nd and q_over is None and p_over is None:
+        return node_matrix(nd)
+    t = info["rest_t"][i] if p_over is None else np.asarray(p_over, float)
+    q = info["rest_q"][i] if q_over is None else np.asarray(q_over, float)
+    return compose_trs(t, q, info["rest_s"][i])
 
 
 def chain_world(info, Q, P, i):
@@ -289,6 +307,35 @@ def mat_to_quat(R):
         q = [(R[0, 2] + R[2, 0]) / k, (R[1, 2] + R[2, 1]) / k, 0.25 * k, (R[1, 0] - R[0, 1]) / k]
     q = np.array(q)
     return q / np.linalg.norm(q)
+
+
+def decompose_trs(M):
+    """Translation, rotation quaternion, scale of a glTF node matrix (column scaling, no shear)."""
+    t = M[:3, 3].copy()
+    A = M[:3, :3].copy()
+    s = np.linalg.norm(A, axis=0)
+    s = np.where(s < 1e-12, 1.0, s)
+    R = A / s
+    if np.linalg.det(R) < 0:
+        s = s.copy()
+        s[0] *= -1
+        R[:, 0] *= -1
+    U, _, Vt = np.linalg.svd(R)
+    R = U @ Vt
+    if np.linalg.det(R) < 0:
+        U = U.copy()
+        U[:, -1] *= -1
+        R = U @ Vt
+    return t, mat_to_quat(R), s
+
+
+def node_rest_trs(nd):
+    if "matrix" in nd:
+        return decompose_trs(node_matrix(nd))
+    t = np.array(nd.get("translation", [0, 0, 0]), float)
+    q = np.array(nd.get("rotation", [0, 0, 0, 1]), float)
+    s = np.array(nd.get("scale", [1, 1, 1]), float)
+    return t, q, s
 
 
 def arc_mat(a, b):
@@ -466,14 +513,51 @@ def curl_hand(info, Q, P, side, amount, point=False):
     return sgn
 
 
-def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
+def _arm_extension(info, Q, P, side):
+    need = [f"upperarm_{side}", f"lowerarm_{side}", f"hand_{side}"]
+    if any(n not in info["index"] for n in need):
+        return 0.5
+    def wp(n):
+        return chain_world(info, Q, P, info["index"][n])[:3, 3]
+    upper = np.linalg.norm(wp(f"lowerarm_{side}") - wp(f"upperarm_{side}"))
+    lower = np.linalg.norm(wp(f"hand_{side}") - wp(f"lowerarm_{side}"))
+    reach = np.linalg.norm(wp(f"hand_{side}") - wp(f"upperarm_{side}"))
+    return float(reach / max(upper + lower, 1e-6))
+
+
+def orient_palm(info, Q, P, side):
+    """Twist the hand about the forearm so the palm faces down / inward instead of following the forearm."""
+    needed = [f"hand_{side}", f"lowerarm_{side}", f"middle_01_{side}", f"index_01_{side}", f"pinky_01_{side}"]
+    if any(n not in info["index"] for n in needed) or not info.get("bm"):
+        return
+    def wp(n):
+        return chain_world(info, Q, P, info["index"][n])[:3, 3]
+    nrm = quality.palm_normal(side, wp(f"hand_{side}"), wp(f"middle_01_{side}"), wp(f"index_01_{side}"), wp(f"pinky_01_{side}"))
+    if nrm is None:
+        return
+    forearm = wp(f"hand_{side}") - wp(f"lowerarm_{side}")
+    body = info["bm"]["body"]
+    up, fwd, left = np.array(body["up"], float), np.array(body["forward"], float), np.array(body["left"], float)
+    inward = left if side == "l" else -left
+    ang = quality.palm_delta(forearm, nrm, up, inward, fwd)
+    if abs(ang) < math.radians(6):
+        return
+    hb = f"hand_{side}"
+    Wb = chain_world(info, Q, P, info["index"][hb])
+    set_world_rot(info, Q, P, hb, quality.rodrigues(forearm, ang) @ rot_of(Wb))
+
+
+def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None, cleanup=True):
     """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
 
     Pelvis: translated to the pelvis target; pelvis and chest oriented from the hip line and shoulder line with the
     spine direction as up (the spine bones share the twist between them); head from crown and nose; each arm and leg
     reaches wrist / ankle with the elbow / knee as the pole; feet aim at the ball. Missing targets are skipped.
-    Returns {landmark: error_m} for the reach targets."""
+    Returns {landmark: error_m} for the reach targets. With `cleanup`, targets pass the no-glitch
+    frame pass (lengths, hinges, floor, finger back-bend) before the solve."""
     Q, P = (Qp, Pp) if Qp is not None else (COMMANDED, COMMANDED_POS)
+    if cleanup and lm and info.get("bm"):
+        lm, hands = quality.clean_targets(lm, hands, info["bm"]["body"], quality.lengths_from_body(info["bm"]))
     need = lambda *ns: all(n in lm for n in ns)  # noqa: E731
     Wr = info["rest_world"]
     rest_rot = lambda b: rot_of(Wr[info["index"][b]])  # noqa: E731
@@ -516,8 +600,38 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
     for side in "lr":
         if need(f"ball_{side}", f"ankle_{side}"):
             aim(info, Q, P, f"foot_{side}", np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"]))
+    if cleanup:
+        _clamp_solved_hinges(info, Q, P)
+    if not hands:
+        for side in "lr":
+            orient_palm(info, Q, P, side)
+            ext = _arm_extension(info, Q, P, side)
+            curl_hand(info, Q, P, side, float(np.clip(0.15 + max(ext - 0.55, 0) * 1.7, 0.15, 1.0)))
     err.update(herr)
     return err
+
+
+def _clamp_solved_hinges(info, Q, P):
+    """If IK left a knee backward or an elbow popped forward, re-aim with the pole on the legal side."""
+    if not info.get("bm"):
+        return
+    fwd = np.array(info["bm"]["body"]["forward"], float)
+    # Joint origins: thigh/calf/foot and upperarm/lowerarm/hand. Landmark names differ.
+    spec = (("leg_l", "thigh_l", "calf_l", "foot_l", "knee"),
+            ("leg_r", "thigh_r", "calf_r", "foot_r", "knee"),
+            ("arm_l", "upperarm_l", "lowerarm_l", "hand_l", "elbow"),
+            ("arm_r", "upperarm_r", "lowerarm_r", "hand_r", "elbow"))
+    for chain, a, b, c, kind in spec:
+        if any(n not in info["index"] for n in (a, b, c)):
+            continue
+        def wp(n, _Q=Q, _P=P):
+            return chain_world(info, _Q, _P, info["index"][n])[:3, 3]
+        pa, pb, pc = wp(a), wp(b), wp(c)
+        if not quality.hinge_bad(pa, pb, pc, kind, fwd):
+            continue
+        reflected = quality._reflect(pa, pb, pc)
+        pole = reflected if np.linalg.norm(reflected - pb) > 1e-4 else (pb + (fwd if kind == "knee" else -fwd))
+        reach(info, Q, P, chain, pc, pole)
 
 
 def apply_frame_into(info, Q, P, lm, hands):
@@ -613,6 +727,22 @@ def clip_tracks(info, clip):
     return out
 
 
+def clip_motion_span(model, clip):
+    """Largest rotation (degrees) of any bone away from its first key. Used to tell a real static clip
+    from one whose tracks never reached the skeleton."""
+    info = model_info(model)
+    tracks = clip_tracks(info, clip)
+    max_rot = 0.0
+    for (_bone, path), (_t, v, _kind) in tracks.items():
+        if path != "rotation" or len(v) < 2:
+            continue
+        dots = np.clip(np.abs(v @ v[0]), 0.0, 1.0)
+        ang = float(np.degrees(2 * np.arccos(dots)).max())
+        if ang > max_rot:
+            max_rot = ang
+    return max_rot
+
+
 def eval_track(t, v, kind, x):
     x = min(max(x, t[0]), t[-1])
     hi = min(int(np.searchsorted(t, x)), len(t) - 1)
@@ -683,9 +813,11 @@ def bake(model, name, fps=60):
         m = kev_read(info, Q, P)
         errs.append(float(np.mean([np.linalg.norm(np.array(m["landmarks"][kk]) - np.array(lm[kk])) for kk in lm if kk in m["landmarks"]])))
         tips.append(max(err.get("fingers_l", 0), err.get("fingers_r", 0)))
+    pops = quality.repair_baked(frames)
     out = {"model": model, "ref": name, "fps": fps, "duration": ref["duration"], "frames": frames,
            "mean_cm": round(100 * float(np.mean(errs)), 2), "max_mean_cm": round(100 * float(np.max(errs)), 2),
-           "finger_cm": round(100 * float(np.max(tips)), 2), "solve_ms_per_frame": round((time.time() - t0) / n * 1000, 1)}
+           "finger_cm": round(100 * float(np.max(tips)), 2), "solve_ms_per_frame": round((time.time() - t0) / n * 1000, 1),
+           "quat_pops_fixed": pops}
     os.makedirs(os.path.join(REPO, "staging", "kev", "baked"), exist_ok=True)
     with open(os.path.join(REPO, "staging", "kev", "baked", f"{model[:-4]}__{name}.json"), "w") as f:
         json.dump(out, f)
@@ -845,6 +977,21 @@ def execute(line):
             play_baked(STATE["model"], a[1])
             return f"'{a[1]}' (smoothed) -> {STATE['model']}: {len(b['frames'])} frames, mean error {b['mean_cm']} cm"
         return "cat list | cat info <name> | cat play <name>"
+    if c == "check" and a:
+        path = os.path.join(REFDIR, a[0] + ".json")
+        if not os.path.exists(path):
+            return "reference missing: python3 -I tools/kev/catalog/catalog.py rebuild"
+        ref = json.load(open(path))
+        info = model_info(ref["model"])
+        if not info.get("bm"):
+            return "no body map for " + ref["model"]
+        text = quality.check_text(ref, info["bm"]["body"], quality.lengths_from_body(info["bm"]))
+        ixp = os.path.join(HERE_TOOLS, "catalog", "index.json")
+        if os.path.exists(ixp):
+            motion = json.load(open(ixp))["animations"].get(a[0], {}).get("motion")
+            if motion:
+                text = f"motion {motion.get('state')} (source rotation {motion.get('source_rot_deg')} deg)\n" + text
+        return text
     if c == "hand" and len(a) >= 2:
         if not info or not info["bm"]:
             return "no skinned model streamed"
@@ -919,7 +1066,7 @@ def describe_bone(name):
     i = info["index"][name]
     q = LATEST_QUATS.get(name, info["rest_q"][i].tolist())
     p = info["parent"][i]
-    W = world_transforms(info, LATEST_QUATS)
+    W = world_transforms(info, LATEST_QUATS, LATEST_POS)
     row = next((r for r in (info["kev"] or {}).get("nodes", []) if r[1] == name), None)
     return json.dumps({"bone": name, "parent": info["names"][p] if p >= 0 else None, "role": row[3] if row else None,
                        "region": row[4] if row else None, "local_quat_xyzw": [round(float(x), 4) for x in q],
@@ -1031,16 +1178,18 @@ class Handler(BaseHTTPRequestHandler):
         self.reply(404, {"error": "not found"})
 
     def telemetry(self, body):
-        global LATEST_QUATS
+        global LATEST_QUATS, LATEST_POS
         model = body.get("model")
         if not model or not os.path.isfile(os.path.join(ANIM, model)):
             return self.reply(400, {"error": "unknown model"})
         info = model_info(model)
         quats = {k: v for k, v in body.get("quats", {}).items() if k in info["index"]}
+        pos = {k: v for k, v in (body.get("pos") or {}).items() if k in info["index"]}
         LATEST_QUATS = quats
+        LATEST_POS = pos
         STATE.update({"model": model, "clip": body.get("clip"), "playing": body.get("playing"), "t": body.get("t", 0.0),
                       "duration": body.get("duration", 0.0), "speed": body.get("speed", 1.0), "stamp": time.time()})
-        STATE["summary"] = kev_read(info, quats)
+        STATE["summary"] = kev_read(info, quats, pos)
         capture_sample(model, body.get("clip"), body.get("t", 0.0), STATE["summary"])
         broadcast("state", {**{k: STATE[k] for k in ("model", "clip", "playing", "t", "duration", "speed")}, **STATE["summary"],
                             "ref": REFPLAY["status"], "capturing": CAPTURE["on"]})
