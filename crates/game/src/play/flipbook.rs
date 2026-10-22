@@ -86,13 +86,15 @@ pub struct Flip {
     pub flat: bool,
     /// Climbs this many metres up Y over its life while its edge shrinks to a point (an aura layer).
     pub rise: Option<f32>,
+    /// Share of the climb (0..1) kept at full size before the edge closes to a point: 0 is a cone, near 1 a cylinder.
+    pub taper_from: f32,
     /// Turns about Y at this many radians per second (flat planes).
     pub spin: f32,
 }
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, spin: 0.0 }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, spin: 0.0 }
     }
     pub fn flat(mut self) -> Self {
         self.flat = true;
@@ -100,6 +102,10 @@ impl Flip {
     }
     pub fn rising(mut self, metres: f32) -> Self {
         self.rise = Some(metres);
+        self
+    }
+    pub fn tapering_from(mut self, share: f32) -> Self {
+        self.taper_from = share.clamp(0.0, 0.99);
         self
     }
     pub fn spin(mut self, rate: f32) -> Self {
@@ -176,6 +182,7 @@ struct Playing {
     size: f32,
     flat: bool,
     rise: Option<f32>,
+    taper_from: f32,
     spin: f32,
     phase: f32,
 }
@@ -236,6 +243,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
                 size: f.size,
                 flat: f.flat,
                 rise: f.rise,
+                taper_from: f.taper_from,
                 spin: f.spin,
                 // Golden-angle steps, so planes spawned one after another do not line up their art.
                 phase: time.elapsed_secs() * 2.399,
@@ -268,7 +276,8 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         tf.translation = base;
         if let Some(height) = p.rise {
             tf.translation.y += height * prog;
-            tf.scale = Vec3::splat((p.size * (1.0 - prog)).max(0.001));
+            let close = ((prog - p.taper_from) / (1.0 - p.taper_from)).clamp(0.0, 1.0);
+            tf.scale = Vec3::splat((p.size * (1.0 - close)).max(0.001));
         }
         if p.flat {
             tf.rotation = Quat::from_rotation_y(p.phase + p.spin * p.age) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2);
