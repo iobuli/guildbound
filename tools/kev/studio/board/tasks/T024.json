@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670813.3,
+ "detail": "Siphon, Devour, Absorb Art: absorb a spell in its window, store the element, empower the next spell, HUD tint.",
+ "done_when": "an enemy spell is absorbed, the stored element shows, and the next spell of that element is stronger by the stated number",
+ "id": "T024",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Absorption abilities",
+ "updated": 1792670813.3
+}

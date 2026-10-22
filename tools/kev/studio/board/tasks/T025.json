@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670813.3,
+ "detail": "Shape::Cut: a swept slash ribbon at the swing, instant hit along the arc, delayed after-cut; Wide, Piercing, X, Sky Splitter, Dimension. Replaces the Crescent projectile.",
+ "done_when": "a sword spell in a recording shows a cut line, not a ball, and hits everything on the arc at once",
+ "id": "T025",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Sword spells as cuts",
+ "updated": 1792670813.3
+}

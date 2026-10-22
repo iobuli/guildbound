@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670813.3,
+ "detail": "Charge stages on certain spells and arts: wind-up hold, three stage cues, release scales the effect, overhold drain, dodge cancels. See docs/MAGIC_AND_WORLD.md section 6.1.",
+ "done_when": "a charged cast is visibly three sizes and the release pose holds during the charge",
+ "id": "T019",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Hold and charge mechanic",
+ "updated": 1792670813.3
+}

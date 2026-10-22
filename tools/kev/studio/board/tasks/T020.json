@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670813.3,
+ "detail": "Ground reticle with true radius, range ring, beam line, lob arc, soft lock cone, target lead, camera ease while charging.",
+ "done_when": "each shape shows its preview and the cast lands where the preview shows, in a recording",
+ "id": "T020",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Better aiming",
+ "updated": 1792670813.3
+}

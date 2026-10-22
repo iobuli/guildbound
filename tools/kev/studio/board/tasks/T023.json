@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670813.3,
+ "detail": "Scripted finisher sequences with their own camera, slow-motion and animation from the Kev library; conditions and cost.",
+ "done_when": "two finishers play on a low-health foe in a recording, ending it",
+ "id": "T023",
+ "owner": "grok",
+ "status": "todo",
+ "title": "Set-piece finishers",
+ "updated": 1792670813.3
+}
