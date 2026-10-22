@@ -326,14 +326,14 @@ fn smoke_setting() -> Option<Smoke> {
 }
 
 /// `GB_BEAM`: from 2 s the player fires the preset ahead every 3.2 s.
-fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<f32>) {
+fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>) {
     let Some(smoke) = smoke else { return };
     let t = time.elapsed_secs();
-    if t < 2.0 || t - *last < 3.2 {
+    if t < 2.0 || last.is_some_and(|l| t - l < 3.2) {
         return;
     }
     let Ok((tf, mover)) = players.single() else { return };
-    *last = t;
+    *last = Some(t);
     let fwd = Vec3::new(mover.yaw.sin(), 0.0, mover.yaw.cos());
     let from = tf.translation + Vec3::Y * 0.25 + fwd * 0.7;
     spawn_beam(&mut commands, &mut meshes, &mut beams, &mut quads, smoke.preset, from, from + fwd * smoke.length, 2.6);
