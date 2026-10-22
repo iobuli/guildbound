@@ -1,8 +1,9 @@
 // Nucleus page: replay one UTC hour minute by minute through the 18-line nucleus (nucleus-core.js), plus the trace verdict.
 const $ = (s) => document.querySelector(s), css = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
-const f = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a'), H = 3600000, T0 = Date.UTC(2020, 10, 26), T1 = Date.UTC(2022, 11, 31, 23);
+const f = (x, d = 2) => (Number.isFinite(x) ? x.toFixed(d) : 'n/a'), H = 3600000;
+const sgn = (x) => (x === Nucleus.MISSING ? 'n/a' : String(x));
 const CLOUD = { 1: 'above', 0: 'in', '-1': 'below', '-9': '–' };
-let D = null, F = null, hourT = Date.UTC(2021, 4, 19, 14), m = 0, timer = null, shown = false, TR = null;
+let D = null, F = null, hourT = Date.UTC(2021, 4, 19, 14), T0 = hourT, T1 = hourT, m = 0, timer = null, shown = false, TR = null;
 
 $('#hour').innerHTML = Array.from({ length: 24 }, (_, h) => `<option value="${h}">${String(h).padStart(2, '0')}:00 UTC</option>`).join('');
 const clampT = (t) => Math.min(T1, Math.max(T0, Math.floor(t / H) * H));
@@ -35,10 +36,11 @@ function dots(fr) {
       const x = L[tf + '.' + n], p = x.pos, ok = Number.isFinite(p);
       const col = p > 0 ? css('--up') : p < 0 ? css('--dn') : css('--dim');
       const ring = ok && p !== 0 && Math.sign(p) === x.slope;
-      h += `<div class="dot${ok ? '' : ' nan'}${ring ? ' ring' : ''}" title="${tf} n=${n} pos ${f(p)} slope ${x.slope} shift ${x.shift} lag ${x.lag}" style="${ok ? `background:${col};opacity:${0.15 + 0.85 * Math.min(1, Math.abs(p))}` : ''}"></div>`;
+      h += `<div class="dot${ok ? '' : ' nan'}${ring ? ' ring' : ''}" title="${tf} n=${n} pos ${f(p)} closed ${f(x.cmid)} cpos ${f(x.cpos)} slope ${sgn(x.slope)} shift ${sgn(x.shift)} lag ${sgn(x.lag)}" style="${ok ? `background:${col};opacity:${0.15 + 0.85 * Math.min(1, Math.abs(p))}` : ''}"></div>`;
     }
     const s = fr.tf[tf], o = s.order, cls = o === 0 ? 'bull' : o === 5 ? 'bear' : '';
-    h += `<div class="meta"><span class="badge ${cls}">${o >= 0 ? Nucleus.ORDERS[o] : 'n/a'}</span><span class="${s.cloud === 1 ? 'good' : s.cloud === -1 ? 'bad' : ''}">${CLOUD[s.cloud]}</span><span>${s.bal > 0 ? '+' : ''}${f(s.bal)}</span></div>`;
+    const oname = o === Nucleus.TIE ? 'tie' : o >= 0 ? Nucleus.ORDERS[o] : 'n/a';
+    h += `<div class="meta"><span class="badge ${cls}">${oname}</span><span class="${s.cloud === 1 ? 'good' : s.cloud === -1 ? 'bad' : ''}">${CLOUD[s.cloud]}</span><span>${s.bal > 0 ? '+' : ''}${f(s.bal)}</span></div>`;
   }
   $('#dots').innerHTML = h;
 }
@@ -130,6 +132,10 @@ addEventListener('resize', () => { if (F) show(m); rho(); });
     if (!r.ok) throw new Error('HTTP ' + r.status);
     $('#msg').textContent = 'Decoding 1.25M minutes…';
     D = Nucleus.decode(await r.arrayBuffer());
+    const b = Nucleus.hourBounds(D);
+    T0 = b.t0; T1 = b.t1;
+    $('#date').min = new Date(T0).toISOString().slice(0, 10);
+    $('#date').max = new Date(T1).toISOString().slice(0, 10);
     setHour(hourT);
   } catch (e) { $('#msg').textContent = 'Could not load /data/SOLUSDT-m1.bin: ' + e.message; }
 })();
