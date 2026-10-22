@@ -5,12 +5,11 @@
     {
       "name": "jab",
       "clip": {
-        "track": "ual1/Punch_Jab",
-        "end": 0.6
+        "track": "kev/jab"
       },
-      "windup": 0.2,
-      "active": 0.33,
-      "cancel": 0.5,
+      "windup": 0.22,
+      "active": 0.42,
+      "cancel": 0.62,
       "damage": 6,
       "poise": 8,
       "knockback": 0.8,
@@ -24,12 +23,11 @@
     {
       "name": "cross",
       "clip": {
-        "track": "ual1/Punch_Cross",
-        "end": 0.7
+        "track": "kev/cross"
       },
-      "windup": 0.21,
-      "active": 0.36,
-      "cancel": 0.5,
+      "windup": 0.24,
+      "active": 0.44,
+      "cancel": 0.64,
       "damage": 9,
       "poise": 12,
       "knockback": 1.2,
@@ -43,22 +41,91 @@
     {
       "name": "hook",
       "clip": {
-        "track": "ual2/Melee_Hook"
+        "track": "kev/hook"
       },
-      "recover": {
-        "track": "ual2/Melee_Hook_Rec"
-      },
-      "windup": 0.47,
-      "active": 0.6,
-      "cancel": 0.62,
+      "windup": 0.14,
+      "active": 0.34,
+      "cancel": 0.5,
       "damage": 11,
       "poise": 16,
       "knockback": 1.6,
       "stamina": 12,
       "travel": 0.3,
       "hitbox": {
-        "bone": "hand_r",
+        "bone": "hand_l",
         "radius": 0.1
+      }
+    },
+    {
+      "name": "front kick",
+      "clip": {
+        "track": "kev/front_kick"
+      },
+      "windup": 0.1,
+      "active": 0.3,
+      "cancel": 0.48,
+      "damage": 12,
+      "poise": 18,
+      "knockback": 2.2,
+      "stamina": 14,
+      "travel": 0.35,
+      "hitbox": {
+        "bone": "foot_l",
+        "radius": 0.12
+      }
+    },
+    {
+      "name": "rush uppercut",
+      "clip": {
+        "track": "kev/rush_uppercut"
+      },
+      "windup": 0.55,
+      "active": 0.76,
+      "cancel": 0.88,
+      "damage": 14,
+      "poise": 22,
+      "knockback": 2.4,
+      "stamina": 16,
+      "travel": 0.55,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.11
+      }
+    },
+    {
+      "name": "brawler mage",
+      "clip": {
+        "track": "kev/brawler_mage"
+      },
+      "windup": 0.06,
+      "active": 0.22,
+      "cancel": 0.36,
+      "damage": 14,
+      "poise": 18,
+      "knockback": 1.6,
+      "stamina": 16,
+      "travel": 0.3,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.12
+      }
+    },
+    {
+      "name": "jab cross hook roundhouse",
+      "clip": {
+        "track": "kev/jab_cross_hook_roundhouse"
+      },
+      "windup": 0.6,
+      "active": 0.82,
+      "cancel": 0.92,
+      "damage": 16,
+      "poise": 28,
+      "knockback": 3.2,
+      "stamina": 18,
+      "travel": 0.45,
+      "hitbox": {
+        "bone": "foot_r",
+        "radius": 0.13
       }
     }
   ],
@@ -66,88 +133,157 @@
     {
       "name": "roundhouse",
       "clip": {
-        "track": "brawler/Roundhouse_Kick",
-        "start": 0.1,
-        "end": 0.92
+        "track": "kev/roundhouse_kick"
       },
-      "windup": 0.28,
+      "windup": 0.32,
       "active": 0.48,
-      "cancel": 0.6,
+      "cancel": 0.62,
       "damage": 16,
       "poise": 35,
       "knockback": 4.0,
       "stamina": 22,
       "travel": 0.4,
-      "charge": 0.5,
       "hitbox": {
         "bone": "foot_l",
         "radius": 0.13
-      }
+      },
+      "charge": 0.5
     },
     {
       "name": "spinning back kick",
       "clip": {
-        "track": "brawler/Spinning_Back_Kick",
-        "start": 0.08,
-        "end": 0.96
+        "track": "kev/spinning_back_kick"
       },
-      "windup": 0.34,
-      "active": 0.54,
-      "cancel": 0.66,
+      "windup": 0.3,
+      "active": 0.46,
+      "cancel": 0.6,
       "damage": 18,
       "poise": 40,
       "knockback": 4.5,
       "stamina": 24,
       "travel": 0.5,
-      "charge": 0.35,
       "hitbox": {
         "bone": "foot_r",
         "radius": 0.13
-      }
+      },
+      "charge": 0.35
     },
     {
       "name": "axe kick",
       "clip": {
-        "track": "brawler/Axe_Kick",
-        "start": 0.1,
-        "end": 0.95
+        "track": "kev/axe_kick"
       },
       "windup": 0.46,
-      "active": 0.6,
-      "cancel": 0.68,
+      "active": 0.62,
+      "cancel": 0.74,
       "damage": 20,
       "poise": 45,
       "knockback": 2.5,
       "stamina": 24,
       "travel": 0.3,
-      "charge": 0.35,
       "hitbox": {
         "bone": "foot_l",
         "radius": 0.13
-      }
+      },
+      "charge": 0.35
     },
     {
       "name": "flying side kick",
       "clip": {
-        "track": "brawler/Flying_Side_Kick",
-        "start": 0.1,
-        "end": 1.0
+        "track": "kev/flying_side_kick"
       },
-      "windup": 0.4,
-      "active": 0.52,
-      "cancel": 0.66,
+      "windup": 0.5,
+      "active": 0.74,
+      "cancel": 0.86,
       "damage": 22,
       "poise": 50,
       "knockback": 6.0,
       "stamina": 28,
       "travel": 1.2,
-      "charge": 0.4,
       "hitbox": {
         "bone": "foot_l",
         "radius": 0.13
-      }
+      },
+      "charge": 0.4
+    },
+    {
+      "name": "jumping knee",
+      "clip": {
+        "track": "kev/jumping_knee"
+      },
+      "windup": 0.16,
+      "active": 0.4,
+      "cancel": 0.56,
+      "damage": 18,
+      "poise": 36,
+      "knockback": 3.5,
+      "stamina": 22,
+      "travel": 0.45,
+      "hitbox": {
+        "bone": "calf_l",
+        "radius": 0.12
+      },
+      "charge": 0.3
+    },
+    {
+      "name": "spin back jump kick",
+      "clip": {
+        "track": "kev/spin_back_jump_kick"
+      },
+      "windup": 0.26,
+      "active": 0.48,
+      "cancel": 0.64,
+      "damage": 20,
+      "poise": 40,
+      "knockback": 4.0,
+      "stamina": 26,
+      "travel": 0.7,
+      "hitbox": {
+        "bone": "foot_l",
+        "radius": 0.13
+      },
+      "charge": 0.3
     }
   ],
+  "sprint_attack": {
+    "name": "jump kick",
+    "clip": {
+      "track": "kev/jump_kick"
+    },
+    "windup": 0.24,
+    "active": 0.46,
+    "cancel": 0.62,
+    "damage": 16,
+    "poise": 30,
+    "knockback": 3.5,
+    "stamina": 18,
+    "travel": 0.9,
+    "hitbox": {
+      "bone": "foot_l",
+      "radius": 0.13
+    }
+  },
+  "air_attack": {
+    "name": "aerial dive",
+    "clip": {
+      "track": "kev/aerial_dive_attack"
+    },
+    "windup": 0.26,
+    "active": 0.48,
+    "cancel": 0.64,
+    "damage": 20,
+    "poise": 40,
+    "knockback": 5.0,
+    "stamina": 16,
+    "travel": 0.4,
+    "hitbox": {
+      "bone": "hand_r",
+      "radius": 0.14
+    },
+    "recover": {
+      "track": "kev/crash_landing"
+    }
+  },
   "guard": {
     "clip": {
       "track": "ual2/Sword_Block",

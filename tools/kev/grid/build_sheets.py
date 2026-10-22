@@ -2,7 +2,17 @@
 
 Reading order per frame: crown nose neck shoulder hip | elbow_l wrist_l elbow_r wrist_r | knee_l ankle_l toe_l | knee_r ankle_r toe_r
 (l = the leading side: front arm and front/kicking leg; r = the trailing side). Side view, figure facing right.
+flying_side_kick f5/f6 knee_r and backflip_evade f4/f5 nose are geometry estimates: the sheet images are not in the repo.
+f5 knee_r is (13.4, 12.8), on the forward side of the hip-ankle line; f6 keeps that fraction along its own line
+and the same forward offset. f4 nose is (82.2, 6.7) and f5 nose is (13.56, 16.6), each about a cell off the
+crown-neck line on the same side as the neighbouring keys, so the head basis does not flip.
 `python3 -I build_sheets.py` rewrites every sheet from the data below.
+
+Optional per-pose yaw, degrees about world up. On a sheet, `yaw` is a list of
+[pelvis_deg, chest_twist_deg], one pair per frame. `build` writes `yaw` and `twist`
+onto that pose. `yaw` 0 faces the sheet's forward (the target). `twist` is the chest
+yaw minus the pelvis yaw. A pose with neither key reads as 0, 0 (`pose_yaw`). The
+solver does not apply these yet.
 """
 import json
 import os
@@ -10,6 +20,25 @@ import os
 ORDER = ["crown", "nose", "neck", "shoulder", "hip", "elbow_l", "wrist_l", "elbow_r", "wrist_r",
          "knee_l", "ankle_l", "toe_l", "knee_r", "ankle_r", "toe_r"]
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def pose_yaw(pose):
+    """Pelvis yaw and chest twist, degrees. Missing keys are 0."""
+    if not isinstance(pose, dict):
+        return 0.0, 0.0
+    return float(pose.get("yaw", 0.0) or 0.0), float(pose.get("twist", 0.0) or 0.0)
+
+
+def with_yaw(pose, pair):
+    """Copy a [pelvis_deg, chest_twist_deg] pair onto a pose. Zeros are left off."""
+    if not pair:
+        return pose
+    yaw, twist = float(pair[0]), float(pair[1] if len(pair) > 1 else 0.0)
+    if yaw != 0.0:
+        pose["yaw"] = yaw
+    if twist != 0.0:
+        pose["twist"] = twist
+    return pose
 
 SHEETS = {
     "flying_side_kick": {
@@ -19,8 +48,8 @@ SHEETS = {
             [36.9, 8.6, 37.75, 10.25, 35.9, 11.25, 34.5, 12.0, 34.5, 15.9, 38.75, 14.5, 40.15, 12.1, 34.5, 14.5, 37.1, 12.4, 39.5, 17.75, 39.0, 22.5, 40.75, 23.4, 32.75, 20.0, 30.0, 22.0, 30.5, 23.5],
             [61.1, 5.75, 62.0, 7.5, 60.25, 8.5, 58.75, 9.25, 59.75, 13.25, 61.75, 12.5, 63.75, 13.5, 56.0, 10.25, 58.75, 12.1, 63.25, 18.0, 63.5, 22.5, 65.25, 23.4, 55.75, 19.25, 52.0, 21.5, 51.75, 23.5],
             [82.5, 2.0, 83.4, 3.5, 81.25, 4.5, 80.25, 5.0, 82.0, 9.25, 85.0, 6.25, 87.0, 4.5, 82.0, 5.5, 84.25, 3.75, 88.0, 9.25, 86.25, 15.25, 86.75, 16.0, 81.0, 15.25, 78.5, 19.75, 79.0, 22.0],
-            [6.5, 4.25, 7.4, 5.5, 7.0, 6.0, 5.75, 6.75, 10.25, 11.1, 10.75, 6.25, 15.25, 6.4, 3.75, 9.75, 6.25, 7.75, 15.25, 9.25, 20.0, 8.0, 21.75, 7.9, 8.25, 14.25, 12.75, 14.5, 14.9, 14.9],
-            [30.5, 5.25, 31.4, 6.5, 31.5, 7.0, 29.75, 7.75, 34.0, 11.9, 35.0, 7.5, 39.25, 7.9, 26.25, 10.25, 29.25, 9.25, 39.25, 11.75, 44.25, 11.75, 46.0, 11.75, 31.25, 15.25, 35.75, 15.25, 37.5, 15.9],
+            [6.5, 4.25, 7.4, 5.5, 7.0, 6.0, 5.75, 6.75, 10.25, 11.1, 10.75, 6.25, 15.25, 6.4, 3.75, 9.75, 6.25, 7.75, 15.25, 9.25, 20.0, 8.0, 21.75, 7.9, 13.4, 12.8, 12.75, 14.5, 14.9, 14.9],
+            [30.5, 5.25, 31.4, 6.5, 31.5, 7.0, 29.75, 7.75, 34.0, 11.9, 35.0, 7.5, 39.25, 7.9, 26.25, 10.25, 29.25, 9.25, 39.25, 11.75, 44.25, 11.75, 46.0, 11.75, 36.75, 13.75, 35.75, 15.25, 37.5, 15.9],
             [59.25, 6.25, 60.0, 7.5, 58.5, 8.5, 57.0, 9.25, 58.25, 13.9, 61.75, 12.25, 63.75, 14.25, 56.25, 11.5, 59.75, 10.75, 62.5, 17.75, 65.0, 22.25, 66.75, 23.4, 60.75, 18.75, 59.25, 22.0, 60.25, 23.5],
             [85.5, 8.75, 86.1, 10.25, 84.5, 11.25, 83.25, 12.0, 82.5, 16.5, 86.5, 14.5, 88.75, 14.15, 83.75, 14.75, 86.0, 13.5, 88.0, 17.75, 86.75, 22.75, 88.75, 23.5, 82.0, 20.5, 79.0, 21.75, 78.75, 23.5],
         ],
@@ -74,8 +103,8 @@ SHEETS = {
             [12.1, 5.9, 13.0, 7.5, 11.4, 8.25, 10.0, 9.0, 11.0, 14.9, 14.75, 12.0, 16.0, 9.1, 10.75, 11.75, 13.25, 9.5, 15.25, 19.25, 15.0, 24.5, 17.25, 25.4, 9.0, 20.5, 6.5, 24.5, 6.25, 25.6],
             [39.1, 10.0, 40.0, 11.25, 37.75, 11.75, 36.25, 12.75, 35.75, 17.5, 32.0, 15.0, 30.25, 16.75, 32.75, 15.25, 31.25, 16.75, 39.75, 20.5, 37.75, 24.75, 39.5, 25.3, 37.0, 21.75, 33.0, 23.5, 32.25, 25.0],
             [56.25, 6.25, 57.4, 6.75, 57.25, 8.5, 57.0, 9.25, 60.25, 14.5, 59.75, 5.75, 61.75, 2.75, 55.25, 11.75, 54.5, 15.75, 62.5, 19.25, 60.0, 23.5, 59.75, 25.0, 62.0, 19.75, 59.0, 23.25, 59.25, 24.9],
-            [80.25, 6.5, 81.0, 6.9, 81.5, 7.75, 83.0, 7.0, 86.25, 13.25, 81.25, 3.5, 79.75, 0.4, 81.25, 3.5, 79.75, 0.4, 85.5, 17.75, 83.0, 22.5, 83.25, 24.25, 85.0, 18.0, 82.25, 22.0, 82.5, 23.9],
-            [14.25, 18.0, 15.0, 16.75, 15.25, 15.75, 15.5, 14.5, 14.5, 10.25, 12.5, 8.25, 10.25, 10.0, 13.0, 8.5, 10.75, 10.25, 9.5, 6.25, 8.25, 12.5, 7.0, 13.1, 10.0, 6.75, 9.25, 11.75, 8.0, 12.75],
+            [80.25, 6.5, 82.2, 6.7, 81.5, 7.75, 83.0, 7.0, 86.25, 13.25, 81.25, 3.5, 79.75, 0.4, 81.25, 3.5, 79.75, 0.4, 85.5, 17.75, 83.0, 22.5, 83.25, 24.25, 85.0, 18.0, 82.25, 22.0, 82.5, 23.9],
+            [14.25, 18.0, 13.56, 16.6, 15.25, 15.75, 15.5, 14.5, 14.5, 10.25, 12.5, 8.25, 10.25, 10.0, 13.0, 8.5, 10.75, 10.25, 9.5, 6.25, 8.25, 12.5, 7.0, 13.1, 10.0, 6.75, 9.25, 11.75, 8.0, 12.75],
             [37.6, 4.1, 38.6, 5.5, 36.9, 6.25, 35.75, 7.0, 35.5, 11.6, 33.25, 10.0, 33.75, 13.25, 33.0, 10.75, 34.5, 13.75, 38.75, 15.5, 37.75, 21.0, 39.25, 22.75, 38.25, 16.0, 37.0, 21.0, 38.5, 23.0],
             [62.0, 8.75, 62.75, 10.25, 61.0, 11.0, 59.5, 11.75, 58.5, 16.5, 56.5, 13.5, 54.75, 16.75, 57.0, 14.0, 55.0, 16.5, 62.75, 20.0, 60.75, 24.5, 62.25, 25.25, 61.5, 20.75, 58.25, 24.5, 59.75, 25.25],
             [88.0, 14.5, 88.75, 15.5, 86.75, 16.25, 85.0, 17.0, 82.0, 19.0, 85.75, 21.0, 86.25, 24.25, 84.75, 21.0, 85.0, 24.0, 86.75, 20.5, 84.5, 24.75, 86.0, 25.25, 85.5, 20.75, 82.75, 24.25, 84.5, 25.0],
@@ -145,9 +174,13 @@ def build():
     os.makedirs(os.path.join(HERE, "sheets"), exist_ok=True)
     for name, s in SHEETS.items():
         poses = {}
+        yaws = s.get("yaw") or []
         for i, fr in enumerate(s["frames"]):
             assert len(fr) == 2 * len(ORDER), (name, i, len(fr))
-            poses[f"f{i + 1}"] = {k: [fr[2 * j], fr[2 * j + 1]] for j, k in enumerate(ORDER)}
+            pose = {k: [fr[2 * j], fr[2 * j + 1]] for j, k in enumerate(ORDER)}
+            if i < len(yaws):
+                with_yaw(pose, yaws[i])
+            poses[f"f{i + 1}"] = pose
         seq = [[f"f{a[0] + 1}"] + a[1:] for a in s["sequence"]]
         out = {"image": s["image"], "cell": 10, "zoom": 2, "facing": "right", "floor_row": s["floor_row"], "height_cells": s["height_cells"],
                "row": s["row"], "poses": poses, "sequence": seq}

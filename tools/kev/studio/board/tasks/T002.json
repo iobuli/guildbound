@@ -5,7 +5,8 @@
  "done_when": "no glitch from the rules list on all three rigs, or the rest are listed with causes",
  "id": "T002",
  "owner": "grok",
+ "result": "Solved on ual1, gates jerk 1700 / step 52 deg / slip 1.5 cm / reach mean 3 max 8. Export of 19 clips all ok. Aerial dive jerk 1554 step 48 (catalogue bake was about 3600-4700 jerk and up to 162 deg). Spine is rebuilt from the previous up, at most 32 deg and 4 cm per frame, so the neck no longer collapses through the dive. Bone local step capped at 48 deg after the hand curl. Ankles planted; balls stay free so the sole can meet the floor. Jump_Land pelvis travel 0.030 -> 0.068 m (was 0.199) and Walk_Loop still travels 1.216 m (slip 0.175). Sword_Attack travel 0.164 m. Still open: ball pivots about 4 cm into guard on roundhouse and crash landing (ankles pass the slip gate); spinning_back_kick still has no body yaw from the side sheet, which is the front-view miss already noted.",
  "status": "review",
  "title": "Hand and foot glitch pass on the nine generated animations",
- "updated": 1.0
+ "updated": 1792665652.5532737
 }

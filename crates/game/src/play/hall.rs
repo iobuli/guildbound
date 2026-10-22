@@ -10,7 +10,8 @@
 //!   (`RING_CENTER`, `RING_RADIUS`), dummies, a weapon rack and a **balance beam** (`BEAM_START`–
 //!   `BEAM_END`, `beam::Beam`) with a mounting block at each end.
 //! **Doors**: both doorways hang a pair of leaves (`Door`) that swing open when anyone comes
-//! within `DOOR_REACH` and close behind them (`swing`; no collider, so NPCs pass as well).
+//! within `DOOR_REACH` and close behind them (`swing`). Each leaf is a kinematic body, so a
+//! closed door stops the camera and an open one leaves the gap.
 //! Who works here and what they do is `guild` / `occupations`; otherwise this module only builds.
 use super::world::{Kit, UseSpec, place, spawn_dummy};
 use avian3d::prelude::*;
@@ -167,11 +168,14 @@ fn doors(kit: &mut Kit, centre: Vec3, along: Vec3, inward: Vec3, width: f32) {
             .spawn((
                 Name::new("Door leaf"),
                 Door { closed, dir, open: 0.0, centre },
+                RigidBody::Kinematic,
                 Transform::from_translation(hinge).with_rotation(Quat::from_rotation_y(closed)),
                 Visibility::default(),
             ))
             .id();
-        kit.part(e, "Door planks", Cuboid::new(leaf, DOOR_H - 0.08, 0.08), &wood, Transform::from_xyz(leaf * 0.5, (DOOR_H - 0.08) * 0.5, 0.0), None);
+        // The leaf is the doorway. A kinematic body follows the swing, so a closed door stops
+        // the camera and an open one leaves the gap.
+        kit.part(e, "Door planks", Cuboid::new(leaf, DOOR_H - 0.08, 0.08), &wood, Transform::from_xyz(leaf * 0.5, (DOOR_H - 0.08) * 0.5, 0.0), Some(Collider::cuboid(leaf, DOOR_H - 0.08, 0.08)));
         for y in [0.5, DOOR_H - 0.6] {
             kit.part(e, "Door brace", Cuboid::new(leaf, 0.12, 0.1), &dark, Transform::from_xyz(leaf * 0.5, y, 0.0), None);
         }
@@ -351,9 +355,9 @@ fn spawn_training_ground(kit: &mut Kit) {
         z += 1.6;
     }
     for (y, h) in [(0.55, 0.06), (1.05, 0.06)] {
-        kit.solid("Yard rail", Cuboid::new(x1 - x0, h, 0.06), &dark, Transform::from_xyz(cx, y, z1), None);
-        kit.solid("Yard rail", Cuboid::new(0.06, h, z1 - z0), &dark, Transform::from_xyz(x0, y, cz), None);
-        kit.solid("Yard rail", Cuboid::new(0.06, h, z1 - z0), &dark, Transform::from_xyz(x1, y, cz), None);
+        kit.solid("Yard rail", Cuboid::new(x1 - x0, h, 0.06), &dark, Transform::from_xyz(cx, y, z1), Some(Collider::cuboid(x1 - x0, h, 0.06)));
+        kit.solid("Yard rail", Cuboid::new(0.06, h, z1 - z0), &dark, Transform::from_xyz(x0, y, cz), Some(Collider::cuboid(0.06, h, z1 - z0)));
+        kit.solid("Yard rail", Cuboid::new(0.06, h, z1 - z0), &dark, Transform::from_xyz(x1, y, cz), Some(Collider::cuboid(0.06, h, z1 - z0)));
     }
     // The duel ring: a dark sand circle edged with stones.
     let ring = super::vfx::ring(RING_RADIUS - 0.08, RING_RADIUS + 0.08);

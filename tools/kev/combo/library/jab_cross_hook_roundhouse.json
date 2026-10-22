@@ -1,0 +1,22 @@
+{
+  "name": "jab_cross_hook_roundhouse",
+  "model": "ual1.glb",
+  "fps": 60,
+  "moves": [
+    {"id": "jab", "do": "jab", "clip": "Punch_Jab", "limb": "wrist_l", "plant": "l", "step": 0.16,
+     "hands": {"l": "fist", "r": "guard"},
+     "dur": {"antic": 0.13, "strike": 0.08, "hold": 0.045, "overshoot": 0.05, "follow": 0.12},
+     "arc": 0.045, "ramp": 1.15},
+    {"id": "cross", "do": "cross", "clip": "Punch_Cross", "limb": "wrist_r", "plant": "l", "step": 0.14, "pivot": 26,
+     "hands": {"l": "guard", "r": "fist"},
+     "dur": {"antic": 0.12, "strike": 0.085, "hold": 0.05, "overshoot": 0.05, "follow": 0.12},
+     "arc": 0.04, "ramp": 1.1},
+    {"id": "hook", "do": "hook", "hand": "l", "plant": "l", "step": 0.08, "pivot": 18,
+     "hands": {"l": "fist", "r": "guard"},
+     "dur": {"antic": 0.14, "strike": 0.09, "hold": 0.055, "overshoot": 0.05, "follow": 0.13},
+     "arc": 0.08},
+    {"id": "roundhouse", "do": "roundhouse", "foot": "r", "plant": "l", "step": 0.08, "pivot": 78,
+     "hands": {"l": "guard", "r": "guard"},
+     "dur": {"antic": 0.18, "strike": 0.11, "hold": 0.06, "overshoot": 0.055, "follow": 0.22}}
+  ]
+}

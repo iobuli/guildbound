@@ -50,13 +50,11 @@
     {
       "name": "roundhouse",
       "clip": {
-        "track": "brawler/Roundhouse_Kick",
-        "start": 0.1,
-        "end": 0.92
+        "track": "kev/roundhouse_kick"
       },
-      "windup": 0.28,
+      "windup": 0.32,
       "active": 0.48,
-      "cancel": 0.6,
+      "cancel": 0.62,
       "damage": 16,
       "poise": 35,
       "knockback": 4.0,
@@ -71,13 +69,11 @@
     {
       "name": "spinning back kick",
       "clip": {
-        "track": "brawler/Spinning_Back_Kick",
-        "start": 0.08,
-        "end": 0.96
+        "track": "kev/spinning_back_kick"
       },
-      "windup": 0.34,
-      "active": 0.54,
-      "cancel": 0.66,
+      "windup": 0.3,
+      "active": 0.46,
+      "cancel": 0.6,
       "damage": 18,
       "poise": 40,
       "knockback": 4.5,
@@ -92,13 +88,11 @@
     {
       "name": "axe kick",
       "clip": {
-        "track": "brawler/Axe_Kick",
-        "start": 0.1,
-        "end": 0.95
+        "track": "kev/axe_kick"
       },
       "windup": 0.46,
-      "active": 0.6,
-      "cancel": 0.68,
+      "active": 0.62,
+      "cancel": 0.74,
       "damage": 20,
       "poise": 45,
       "knockback": 2.5,
@@ -113,13 +107,11 @@
     {
       "name": "flying side kick",
       "clip": {
-        "track": "brawler/Flying_Side_Kick",
-        "start": 0.1,
-        "end": 1.0
+        "track": "kev/flying_side_kick"
       },
-      "windup": 0.4,
-      "active": 0.52,
-      "cancel": 0.66,
+      "windup": 0.5,
+      "active": 0.74,
+      "cancel": 0.86,
       "damage": 22,
       "poise": 50,
       "knockback": 6.0,

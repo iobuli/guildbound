@@ -1,0 +1,22 @@
+{
+  "name": "brawler_mage",
+  "model": "ual1.glb",
+  "fps": 60,
+  "notes": "Punches are the ual1 Punch_Jab / Punch_Cross clips. The cast half is the palm-thrust pose sheet (gen_palm_thrust_cast), played twice: one palm, then both hands open.",
+  "moves": [
+    {"id": "brawler_jab", "do": "jab", "clip": "Punch_Jab", "limb": "wrist_l", "plant": "l", "step": 0.14,
+     "hands": {"l": "fist", "r": "guard"},
+     "dur": {"antic": 0.12, "strike": 0.08, "hold": 0.04, "overshoot": 0.045, "follow": 0.12},
+     "arc": 0.04, "ramp": 1.1},
+    {"id": "brawler_cross", "do": "cross", "clip": "Punch_Cross", "limb": "wrist_r", "plant": "l", "step": 0.12, "pivot": 22,
+     "hands": {"l": "guard", "r": "fist"},
+     "dur": {"antic": 0.12, "strike": 0.085, "hold": 0.045, "overshoot": 0.045, "follow": 0.12},
+     "arc": 0.035, "ramp": 1.05},
+    {"id": "palm_thrust_cast", "do": "sheet", "sheet": "palm_thrust_cast", "plant": "l", "step": 0.08,
+     "hands": {"l": "cast", "r": "cast"},
+     "dur": {"antic": 0.16, "strike": 0.14, "hold": 0.08, "overshoot": 0.05, "follow": 0.16}},
+    {"id": "two_hand_cast", "do": "sheet", "sheet": "palm_thrust_cast", "plant": "l", "step": 0.06,
+     "hands": {"l": "open", "r": "open"},
+     "dur": {"antic": 0.18, "strike": 0.16, "hold": 0.1, "overshoot": 0.05, "follow": 0.18}}
+  ]
+}

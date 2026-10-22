@@ -1778,6 +1778,14 @@ fn cancel(sw: &Swing, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option<State> {
         b.action.clear();
         return start_swing(SwingKind::Light(i + 1), cx, b, m);
     }
+    if m.primary.is_some()
+        && let SwingKind::Heavy(i) = sw.kind
+        && i + 1 < set.heavy.len()
+    {
+        m.primary = None;
+        b.action.clear();
+        return start_swing(SwingKind::Heavy(i + 1), cx, b, m);
+    }
     if b.intent.secondary_held && set.guard.is_some() {
         b.action.clear();
         return Some(start_guard(cx, b, m));
@@ -1956,7 +1964,7 @@ fn start_dodge(cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
             };
             (DodgeKind::Step, track, yaw)
         }
-        _ => (DodgeKind::Roll, ROLL, yaw_of(dir).unwrap_or(b.mover.yaw)),
+        _ => (DodgeKind::Roll, if cx.bank.has("kev/backflip_evade") { "kev/backflip_evade" } else { ROLL }, yaw_of(dir).unwrap_or(b.mover.yaw)),
     };
     let (cost, offset, iframes) = match kind {
         DodgeKind::Roll => (ROLL_COST, ROLL_WINDOW.0, ROLL_IFRAMES.1),

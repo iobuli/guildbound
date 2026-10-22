@@ -1,0 +1,11 @@
+{
+ "by": "grok",
+ "created": 1792668743.9919531,
+ "detail": "Side-view sheets give forward and height but no body yaw, so a turning move stays facing the target. Add an optional per-pose pelvis yaw and a chest twist relative to the pelvis. The solver applies them as a pelvis rotation plus a twist shared across the spine, pivoting on the ball of the planted foot. Author the spinning back kick and the roundhouse, and check the axe kick, the flying side kick, and the spin-back jump kick. Steps T008.s1 through T008.s5 under the stepped joint work protocol. Game files only when a step says so.",
+ "done_when": "A front-view recording shows the spinning back kick turn its back before the kick and the roundhouse hip turn, gates still pass (jerk 1700, step 52 deg, slip 1.5 cm), and the result names the commit and the per-frame yaw.",
+ "id": "T008",
+ "owner": "grok",
+ "status": "doing",
+ "title": "Per-pose body yaw for turning moves",
+ "updated": 1792668743.9919531
+}

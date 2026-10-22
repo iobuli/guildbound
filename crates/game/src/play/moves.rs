@@ -50,7 +50,7 @@ const DIVE_TIMEOUT: f32 = 0.7;
 pub const SPIKE_DAMAGE: f32 = 22.0;
 const SPIKE_POISE: f32 = 999.0;
 /// The dive pose of the generated keyframe sheet: tuck and turn (0.34 s in), head-first dive, fist driving down at 0.66 s.
-const DIVE_TRACK: &str = "brawler/Aerial_Dive_Attack";
+const DIVE_TRACK: &str = "kev/aerial_dive_attack";
 const DIVE_FROM: f32 = 0.34;
 
 #[derive(Component, Clone, Debug)]

@@ -5,7 +5,8 @@
  "done_when": "each kick lands on a foe in a recording, hit windows match the foot's fastest moment",
  "id": "T005",
  "owner": "grok",
- "status": "doing",
+ "result": "12da654. Heavy chain on kev/, windows around the foot peak: roundhouse foot_l 0.32/0.48/0.62 (foot 9.4 m/s at 0.41), spinning back foot_r 0.30/0.46/0.60 (5.9 m/s at 0.41), axe foot_l 0.46/0.62/0.74 (22.1 m/s at 0.52), flying side foot_l 0.50/0.74/0.86 (foot 5 m/s at 0.62). GB_CAM=side, spawn 0,-9.7,0, kicks-side.mp4: roundhouse, spinning kick, high kick and flying side kick each extend to the opponent in profile. Flying-side calf is 19 m/s at 0.42, earlier than the foot peak the window uses. The log has no HP line; opponent traits still parry, dodge and guard.",
+ "status": "review",
  "title": "Kick chain in a real fight",
- "updated": 1792662910.4
+ "updated": 1792665652.5532737
 }
