@@ -231,20 +231,24 @@ fn fill(time: Res<Time>, mut hits: MessageReader<Hit>, mut rages: Query<&mut Rag
     }
 }
 
-/// `GB_BERSERK=<s>`: the player's rage fills at that time and berserk follows.
-fn smoke(time: Res<Time>, mut done: Local<bool>, mut players: Query<&mut Rage, With<Player>>) {
-    if *done {
-        return;
-    }
-    let Some(at) = std::env::var("GB_BERSERK").ok().and_then(|v| v.trim().parse::<f32>().ok()) else {
-        *done = true;
-        return;
-    };
-    if time.elapsed_secs() >= at {
-        *done = true;
+/// `GB_BERSERK=<s>`: the player's rage fills at that time and berserk follows. With `GB_REEL=<dir>` it also saves
+/// stills of the aura (`berserk_0.png` ..) a few seconds apart.
+fn smoke(time: Res<Time>, mut commands: Commands, mut filled: Local<Option<f32>>, mut shots: Local<usize>, mut players: Query<&mut Rage, With<Player>>) {
+    const STILLS: [f32; 4] = [1.2, 2.6, 4.0, 5.4];
+    let Some(at) = std::env::var("GB_BERSERK").ok().and_then(|v| v.trim().parse::<f32>().ok()) else { return };
+    let now = time.elapsed_secs();
+    if filled.is_none() && now >= at {
+        *filled = Some(now);
         for mut r in &mut players {
             r.value = 1.0;
         }
+    }
+    if let (Some(since), Some(dir)) = (*filled, super::flipbook::reel_dir())
+        && *shots < STILLS.len()
+        && now - since >= STILLS[*shots]
+    {
+        super::flipbook::shoot(&mut commands, format!("{dir}/berserk_{}.png", *shots));
+        *shots += 1;
     }
 }
 
@@ -275,8 +279,7 @@ fn trigger(
         }
         let feet = tf.translation - Vec3::Y * 0.8;
         commands.write_message(Flip::new(Sheet::Sunburn, feet + Vec3::Y * 1.2, 6.0, 1.1).glow(1.3));
-        commands.write_message(Flip::new(Sheet::FireSpin, feet + Vec3::Y * 1.0, 3.6, 0.9).follow(e, Vec3::Y * 0.2).looped(3));
-        commands.write_message(Flip::new(Sheet::Vortex, feet + Vec3::Y * 0.15, 5.0, 1.2).tinted(Color::srgb(1.0, 0.35, 0.1), 0.65));
+        commands.write_message(Flip::new(Sheet::Vortex, feet + Vec3::Y * 0.1, 6.5, 1.0).flat().spin(4.0).tinted(Color::srgb(1.0, 0.35, 0.1), 0.65));
         commands.write_message(super::fracture::Shatter { at: tf.translation, radius: 4.5, force: 50.0 });
         hitstop.trigger(0.25);
         if player {
@@ -288,26 +291,33 @@ fn trigger(
     }
 }
 
-/// The berserk aura: pixel flames licking up the body, dark smoke above, embers. All ride the fighter.
-fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<(Entity, &Transform), With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, f32, u32)>>) {
+/// The berserk aura: flat pixel-effect planes stacked up the body. Each climbs along Y while its edge shrinks to a point,
+/// so the stack reads as a spinning cone. One plane leaves the feet every `AURA_RISE / AURA_LAYERS` seconds.
+const AURA_RISE: f32 = 1.5;
+const AURA_LAYERS: f32 = 7.0;
+const AURA_HEIGHT: f32 = 2.8;
+const AURA_SIZE: f32 = 3.0;
+/// Sheets taken in turn, with the dark smoke plane every `SMOKE_EVERY` planes.
+const AURA_SHEETS: [Sheet; 3] = [Sheet::Vortex, Sheet::FireSpin, Sheet::Vortex];
+const SMOKE_EVERY: u32 = 3;
+
+fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Entity, With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, u32)>>) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     clocks.retain(|e, _| fighters.contains(*e));
-    for (e, tf) in &fighters {
-        let _ = tf;
-        let c = clocks.entry(e).or_insert((0.0, 0.0, e.to_bits() as u32 | 1));
+    for e in &fighters {
+        let c = clocks.entry(e).or_insert((0.0, 0));
         c.0 += dt;
-        c.1 += dt;
-        while c.0 >= 0.16 {
-            c.0 -= 0.16;
-            let (a, b, h) = (rand01(&mut c.2), rand01(&mut c.2), rand01(&mut c.2));
-            let side = Vec3::new(a - 0.5, 0.0, b - 0.5) * 0.7;
-            let sheet = if h < 0.55 { Sheet::Fire } else { Sheet::BrightFire };
-            out.write(Flip::new(sheet, tf.translation, 1.5 + 0.8 * h, 0.85).follow(e, side + Vec3::Y * (-0.6 + 1.3 * h)).glow(1.15));
-        }
-        if c.1 >= 0.45 {
-            c.1 -= 0.45;
-            let (a, b) = (rand01(&mut c.2), rand01(&mut c.2));
-            out.write(Flip::new(Sheet::Midnight, tf.translation, 2.4, 1.5).smoke().tinted(Color::srgb(0.25, 0.04, 0.02), 0.55).follow(e, Vec3::new((a - 0.5) * 0.6, 0.85 + 0.4 * b, (b - 0.5) * 0.6)));
+        while c.0 >= AURA_RISE / AURA_LAYERS {
+            c.0 -= AURA_RISE / AURA_LAYERS;
+            c.1 += 1;
+            let dir = if c.1 % 2 == 0 { 1.0 } else { -1.0 };
+            let at = Vec3::Y * -0.75;
+            if c.1 % SMOKE_EVERY == 0 {
+                out.write(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).flat().rising(AURA_HEIGHT).spin(dir * 1.5).smoke().tinted(Color::srgb(0.22, 0.03, 0.02), 0.6).follow(e, at));
+            } else {
+                let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
+                out.write(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).flat().rising(AURA_HEIGHT).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.45).glow(1.2).follow(e, at));
+            }
         }
     }
 }

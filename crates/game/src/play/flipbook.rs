@@ -82,11 +82,29 @@ pub struct Flip {
     /// Rides this entity (plus `offset`) while it plays.
     pub follow: Option<Entity>,
     pub offset: Vec3,
+    /// Lies flat (a horizontal plane facing up, seen from both sides) instead of facing the camera.
+    pub flat: bool,
+    /// Climbs this many metres up Y over its life while its edge shrinks to a point (an aura layer).
+    pub rise: Option<f32>,
+    /// Turns about Y at this many radians per second (flat planes).
+    pub spin: f32,
 }
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, spin: 0.0 }
+    }
+    pub fn flat(mut self) -> Self {
+        self.flat = true;
+        self
+    }
+    pub fn rising(mut self, metres: f32) -> Self {
+        self.rise = Some(metres);
+        self
+    }
+    pub fn spin(mut self, rate: f32) -> Self {
+        self.spin = rate;
+        self
     }
     pub fn follow(mut self, e: Entity, offset: Vec3) -> Self {
         self.follow = Some(e);
@@ -154,12 +172,20 @@ struct Playing {
     material: Handle<FlipMaterial>,
     opacity: f32,
     follow: Option<(Entity, Vec3)>,
+    base: Vec3,
+    size: f32,
+    flat: bool,
+    rise: Option<f32>,
+    spin: f32,
+    phase: f32,
 }
 
 #[derive(Resource)]
 struct Sheets {
     images: Vec<Handle<Image>>,
     quad: Handle<Mesh>,
+    /// Two quads back to back, so a flat plane shows from above and below under back-face culling.
+    flat_quad: Handle<Mesh>,
 }
 
 fn load(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Assets<Mesh>>) {
@@ -171,10 +197,14 @@ fn load(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Ass
             })
         })
         .collect();
-    commands.insert_resource(Sheets { images, quad: meshes.add(Rectangle::new(1.0, 1.0)) });
+    let front: Mesh = Rectangle::new(1.0, 1.0).into();
+    let back = front.clone().rotated_by(Quat::from_rotation_y(std::f32::consts::PI));
+    let mut both = front.clone();
+    let _ = both.merge(&back);
+    commands.insert_resource(Sheets { images, quad: meshes.add(front), flat_quad: meshes.add(both) });
 }
 
-fn spawn(mut commands: Commands, mut flips: MessageReader<Flip>, sheets: Option<Res<Sheets>>, mut mats: ResMut<Assets<FlipMaterial>>) {
+fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>, sheets: Option<Res<Sheets>>, mut mats: ResMut<Assets<FlipMaterial>>) {
     let Some(sheets) = sheets else { return };
     for f in flips.read() {
         let i = f.sheet as usize;
@@ -184,17 +214,32 @@ fn spawn(mut commands: Commands, mut flips: MessageReader<Flip>, sheets: Option<
             params: FlipParams {
                 tint: Vec4::new(c.red, c.green, c.blue, 1.0),
                 frame: Vec4::new(n as f32, 0.0, 1.0, 0.0),
-                mode: Vec4::new(if f.additive { 1.0 } else { 0.0 }, f.intensity, f.recolor, 0.0),
+                mode: Vec4::new(if f.additive { 1.0 } else { 0.0 }, f.intensity, f.recolor, if f.flat { 1.0 } else { 0.0 }),
             },
             sheet: sheets.images[i].clone(),
             additive: f.additive,
         });
         info!("[flip] spawn sheet {i}");
         commands.spawn((
-            Mesh3d(sheets.quad.clone()),
+            Mesh3d(if f.flat { sheets.flat_quad.clone() } else { sheets.quad.clone() }),
             MeshMaterial3d(material.clone()),
             Transform::from_translation(f.at).with_scale(Vec3::splat(f.size)),
-            Playing { sheet: i, age: 0.0, life: f.life.max(0.05), loops: f.loops, material, opacity: 1.0, follow: f.follow.map(|e| (e, f.offset)) },
+            Playing {
+                sheet: i,
+                age: 0.0,
+                life: f.life.max(0.05),
+                loops: f.loops,
+                material,
+                opacity: 1.0,
+                follow: f.follow.map(|e| (e, f.offset)),
+                base: f.at,
+                size: f.size,
+                flat: f.flat,
+                rise: f.rise,
+                spin: f.spin,
+                // Golden-angle steps, so planes spawned one after another do not line up their art.
+                phase: time.elapsed_secs() * 2.399,
+            },
             bevy::light::NotShadowCaster,
             Name::new("Flip"),
         ));
@@ -204,19 +249,29 @@ fn spawn(mut commands: Commands, mut flips: MessageReader<Flip>, sheets: Option<
 fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Playing, &mut Transform)>, owners: Query<&Transform, Without<Playing>>, mut mats: ResMut<Assets<FlipMaterial>>) {
     for (e, mut p, mut tf) in &mut q {
         p.age += time.delta_secs();
-        if let Some((owner, off)) = p.follow {
-            match owners.get(owner) {
-                Ok(o) => tf.translation = o.translation + off,
-                Err(_) => {
-                    commands.entity(e).despawn();
-                    continue;
-                }
-            }
-        }
         let total = p.life * p.loops as f32;
         if p.age >= total {
             commands.entity(e).despawn();
             continue;
+        }
+        let base = match p.follow {
+            Some((owner, off)) => match owners.get(owner) {
+                Ok(o) => o.translation + off,
+                Err(_) => {
+                    commands.entity(e).despawn();
+                    continue;
+                }
+            },
+            None => p.base,
+        };
+        let prog = ((p.age % p.life) / p.life).min(1.0);
+        tf.translation = base;
+        if let Some(height) = p.rise {
+            tf.translation.y += height * prog;
+            tf.scale = Vec3::splat((p.size * (1.0 - prog)).max(0.001));
+        }
+        if p.flat {
+            tf.rotation = Quat::from_rotation_y(p.phase + p.spin * p.age) * Quat::from_rotation_x(-std::f32::consts::FRAC_PI_2);
         }
         let (_, n, frames) = SHEETS[p.sheet];
         let _ = n;
@@ -224,12 +279,13 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         let a = t.floor().min(frames as f32 - 1.0);
         let b = if a + 1.0 >= frames as f32 { a } else { a + 1.0 };
         let fade_out = ((total - p.age) / (p.life * 0.18)).clamp(0.0, 1.0);
-        p.opacity = fade_out;
+        let fade_in = if p.rise.is_some() { (prog / 0.15).clamp(0.0, 1.0) } else { 1.0 };
+        p.opacity = fade_out * fade_in;
         if let Some(mut m) = mats.get_mut(&p.material) {
             m.params.frame.y = a;
             m.params.frame.z = b;
             m.params.frame.w = t - a;
-            m.params.tint.w = fade_out;
+            m.params.tint.w = fade_out * fade_in;
         }
     }
 }

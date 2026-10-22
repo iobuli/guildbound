@@ -11,7 +11,7 @@
 struct FlipParams {
     tint: vec4<f32>,  // rgb tint, a opacity
     frame: vec4<f32>, // x grid size, y frame, z next frame, w cross-fade
-    mode: vec4<f32>,  // x 1 additive / 0 alpha, y intensity, z hue shift toward tint (0..1), w unused
+    mode: vec4<f32>,  // x 1 additive / 0 alpha, y intensity, z hue shift toward tint (0..1), w 1 flat plane / 0 camera-facing
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> f: FlipParams;
@@ -27,7 +27,11 @@ fn vertex(vertex_no_morph: Vertex) -> VertexOutput {
     let sy = length(m[1].xyz);
     let right = view.world_from_view[0].xyz;
     let up = view.world_from_view[1].xyz;
-    let wp = centre + right * vertex_no_morph.position.x * sx + up * vertex_no_morph.position.y * sy;
+    var wp = centre + right * vertex_no_morph.position.x * sx + up * vertex_no_morph.position.y * sy;
+    if (f.mode.w > 0.5) {
+        // flat plane: keeps the entity's own rotation (spin about Y, lying down)
+        wp = mesh_functions::mesh_position_local_to_world(m, vec4<f32>(vertex_no_morph.position, 1.0)).xyz;
+    }
     out.world_position = vec4<f32>(wp, 1.0);
     out.position = position_world_to_clip(wp);
     out.world_normal = vec3<f32>(0.0, 1.0, 0.0);
