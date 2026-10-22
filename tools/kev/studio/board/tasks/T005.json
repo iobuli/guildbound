@@ -4,8 +4,8 @@
  "detail": "Heavy attack chain (roundhouse, spinning back kick, axe kick, flying side kick): hit windows, travel, charge times.",
  "done_when": "each kick lands on a foe in a recording, hit windows match the foot's fastest moment",
  "id": "T005",
- "owner": null,
- "status": "todo",
+ "owner": "grok",
+ "status": "doing",
  "title": "Kick chain in a real fight",
- "updated": 1.0
+ "updated": 1792662910.4
 }

@@ -4,8 +4,8 @@
  "detail": "Keep both animation libraries (kev and brawler), pick one kick chain, resolve conflicts in unarmed.json, motion/mod.rs, studio/server.py, catalog.",
  "done_when": "game builds and the three recordings (berserk, dive, kick chain) still play",
  "id": "T001",
- "owner": "claude",
- "status": "todo",
+ "owner": "grok",
+ "status": "doing",
  "title": "Merge grok/kev-integration into ev/kev-categoriser",
- "updated": 1.0
+ "updated": 1792662910.4
 }
