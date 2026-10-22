@@ -20,7 +20,8 @@ hand <l|r> <open|fist|point|relaxed|0..1> | reach <arm_l|arm_r|leg_l|leg_r> x y 
 ref grab <model> <clip> [name] (60 fps, offline) | ref capture [name] (from the playing clip) | ref list |
 check <name> (no-glitch report for a catalogue clip: frame ranges) |
 ref play <name> (bake onto the loaded model, play at 60 fps) | ref bake <name> | ref baked <name> (play an existing bake, e.g. from tools/kev/grid) | ref live <name> [rate] | ref stop | ref status |
-phys on|off|toggle|status|reset (optional ground/balance/momentum pass on /api/control targets).
+phys on|off|toggle|status|reset (optional ground/balance/momentum pass on /api/control targets) |
+combo list | combo show <name> | combo bake <name|file.json> [--model M] | combo play <name|file.json> (chains strikes, bakes, plays once).
 Files are served only from tools/kev/studio/static and assets/anim (GLB). Nothing in them is executed.
 """
 import argparse
@@ -43,6 +44,7 @@ REPO = os.path.dirname(os.path.dirname(KEV))
 ANIM = os.path.join(REPO, "assets", "anim")
 sys.path.insert(0, KEV)
 import bodymap  # noqa: E402
+import combo.console as combo_console  # noqa: E402
 import nodes as kev_nodes  # noqa: E402
 import physics  # noqa: E402
 import quality.core as quality  # noqa: E402
@@ -1272,10 +1274,10 @@ def execute(line):
         if not os.path.exists(path):
             return "reference missing: python3 -I tools/kev/catalog/catalog.py rebuild"
         ref = json.load(open(path))
-        info = model_info(ref["model"])
-        if not info.get("bm"):
+        minfo = model_info(ref["model"])
+        if not minfo.get("bm"):
             return "no body map for " + ref["model"]
-        text = quality.check_text(ref, info["bm"]["body"], quality.lengths_from_body(info["bm"]))
+        text = quality.check_text(ref, minfo["bm"]["body"], quality.lengths_from_body(minfo["bm"]))
         ixp = os.path.join(HERE_TOOLS, "catalog", "index.json")
         if os.path.exists(ixp):
             motion = json.load(open(ixp))["animations"].get(a[0], {}).get("motion")
@@ -1295,6 +1297,8 @@ def execute(line):
         if PHYS["sim"] is None:
             return "physics on (no frame yet)" if PHYS["on"] else "physics off"
         return json.dumps({"on": PHYS["on"], **PHYS["sim"].status()})
+    if c == "combo":
+        return combo_console.handle(a, sys.modules[__name__])
     if c == "hand" and len(a) >= 2:
         if not info or not info["bm"]:
             return "no skinned model streamed"

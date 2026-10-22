@@ -1,0 +1,110 @@
+"""Solve a compiled combo with Kev Studio's landmark IK and write the baked replay the viewer already plays."""
+import json
+import os
+import time
+
+import numpy as np
+
+from .compile import compile_combo, list_combos, load_combo
+from .metrics import measure
+from .render import render_sheet, render_strip
+from .rig import Rig
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+RESULTS = os.path.join(HERE, "results")
+
+
+def studio():
+    import importlib.util
+    path = os.path.join(HERE, "..", "studio", "server.py")
+    spec = importlib.util.spec_from_file_location("kev_studio_server", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def solve(srv, info, samples):
+    """One stateful IK pass. Q and P carry forward so a frame starts from the pose it will barely leave."""
+    Q, P = {}, {}
+    solved = []
+    t0 = time.time()
+    for s in samples:
+        err = srv.apply_frame_into(info, Q, P, s["landmarks"], None)
+        for side in "lr":
+            srv.curl_hand(info, Q, P, side, float(s["hands"][side]))
+        m = srv.kev_read(info, Q, P)
+        solved.append({
+            "landmarks": m["landmarks"],
+            "joints": m["joints"],
+            "balance": m["balance"],
+            "reach": {k: float(v) for k, v in err.items()},
+            "quats": {b: [float(x) for x in q] for b, q in Q.items()},
+            "pelvis": [float(x) for x in P.get("pelvis", np.zeros(3))],
+        })
+    ms = (time.time() - t0) / max(1, len(samples)) * 1000
+    return solved, ms
+
+
+def baked_payload(model, name, fps, samples, solved, ms):
+    frames = []
+    for fr in solved:
+        frames.append({"q": {b: [round(x, 5) for x in q] for b, q in fr["quats"].items()},
+                       "p": [round(x, 5) for x in fr["pelvis"]]})
+    return {"model": model, "ref": name, "fps": fps, "duration": samples[-1]["t"], "frames": frames,
+            "loop": False, "solve_ms_per_frame": round(ms, 2), "source": "combo"}
+
+
+def write_baked(srv, payload):
+    d = os.path.join(srv.REPO, "staging", "kev", "baked")
+    os.makedirs(d, exist_ok=True)
+    model = payload["model"]
+    path = os.path.join(d, f"{model[:-4]}__{payload['ref']}.json")
+    with open(path, "w") as f:
+        json.dump(payload, f)
+    return path
+
+
+def bake_combo(srv, name_or_path, model=None, render=True):
+    combo = load_combo(name_or_path)
+    if model:
+        combo["model"] = model
+    rig = Rig(srv, combo["model"])
+    compiled = compile_combo(rig, combo)
+    solved, ms = solve(srv, rig.info, compiled["samples"])
+    report = measure(rig.info, compiled["samples"], solved, compiled["fps"])
+    report["name"] = compiled["name"]
+    report["model"] = combo["model"]
+    report["clipped_targets"] = compiled["clipped"]
+    report["solve_ms"] = round(ms, 2)
+    payload = baked_payload(combo["model"], compiled["name"], compiled["fps"], compiled["samples"], solved, ms)
+    baked_path = write_baked(srv, payload)
+    strip = None
+    if render:
+        os.makedirs(RESULTS, exist_ok=True)
+        try:
+            strip = render_strip(rig.info, compiled["samples"], solved,
+                                 os.path.join(RESULTS, compiled["name"] + ".png"),
+                                 f"{compiled['name']}  {combo['model']}  {report['duration_s']}s")
+        except ImportError:
+            print("pillow is not installed; skipped the contact strip")
+    return {"report": report, "baked": baked_path, "strip": strip, "payload": payload}
+
+
+def bake_all(srv, render=True):
+    rows = []
+    strips = []
+    for name in list_combos():
+        row = bake_combo(srv, name, render=render)
+        rows.append(row["report"])
+        if row["strip"]:
+            strips.append(row["strip"])
+        flag = "ok" if row["report"]["ok"] else "FAIL " + "; ".join(row["report"]["fails"])
+        print(f"{name:28} {flag}  jerk {row['report']['jerk']:8.1f}  step {row['report']['max_joint_step_deg']:5.1f} deg  "
+              f"slip {row['report']['plant_slip_cm']:5.2f} cm  drift {row['report']['segment_drift_cm']:5.2f} cm  "
+              f"reach {row['report']['reach_mean_cm']:4.2f}/{row['report']['reach_max_cm']:4.1f} cm")
+    if strips:
+        render_sheet(strips, os.path.join(RESULTS, "contact_sheet.png"))
+    os.makedirs(RESULTS, exist_ok=True)
+    with open(os.path.join(RESULTS, "metrics.json"), "w") as f:
+        json.dump(rows, f, indent=1)
+    return rows
