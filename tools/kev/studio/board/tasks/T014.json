@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670644.6,
+ "detail": "skills.json 'modifies', ARTS and MAGIC tabs, resource bars, sounds; the rules in docs/MAGIC_AND_WORLD.md.",
+ "done_when": "the three read as different in the stats page and in play",
+ "id": "T014",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Separate skills, arts and spells in data and HUD",
+ "updated": 1792670644.6
+}

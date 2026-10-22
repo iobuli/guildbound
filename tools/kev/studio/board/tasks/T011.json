@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670644.6,
+ "detail": "Billboard flipbook (100x100 frames), one-shot and loop, for hits, casts and zones.",
+ "done_when": "a spell cast and an art hit each show a sprite effect in a recording",
+ "id": "T011",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Flipbook sprite effects from the pixel sheets",
+ "updated": 1792670644.6
+}

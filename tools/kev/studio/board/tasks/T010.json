@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670644.6,
+ "detail": "energy_beam.gdshader (tube, bend, 9 styles) + flare + impact shock to WGSL; ten presets; fire it from code.",
+ "done_when": "a beam renders in game from a spell, with the preview look (compare to previews/)",
+ "id": "T010",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Port the Godot energy beam to a Bevy material",
+ "updated": 1792670644.6
+}

@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670644.6,
+ "detail": "Pixel pack (public domain) and beam shaders (MIT) go in the repo with credits; the Wallcoeur fire textures stay local and ignored (licence not stated). No Godot or Unity files are run.",
+ "done_when": "assets/vfx/pixel (20 sheets), assets/vfx/CREDITS.md, fire folder in .gitignore",
+ "id": "T009",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Import the three FX packs into assets/vfx with credits",
+ "updated": 1792670644.6
+}
