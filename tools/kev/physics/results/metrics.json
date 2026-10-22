@@ -243,11 +243,11 @@
   "name": "Sword_Attack",
   "slip_mps": [
    0.5727,
-   1.1333
+   0.6083
   ],
   "slip_max_mps": [
    6.9115,
-   6.501
+   6.7027
   ],
   "penetration_mm": [
    25.203,
@@ -255,27 +255,27 @@
   ],
   "balance_violations": [
    8,
-   10
+   8
   ],
   "jerk": [
    1607.3,
-   1598.5
+   1693.7
   ],
   "pelvis_travel_m": [
    0.0,
-   1.8
+   0.1743
   ],
   "mu_required": [
    4.643,
-   4.937
+   4.517
   ],
   "pass": {
    "compression_peak_m": 0.0034,
    "pelvis_shift_peak_m": 0.012,
    "step_peak_m": 0.02,
    "root_offset_m": [
-    -0.0215,
-    1.7998
+    0.0661,
+    -0.1612
    ]
   }
  }

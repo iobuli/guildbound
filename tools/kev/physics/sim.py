@@ -262,19 +262,42 @@ class PhysicsPass:
             # The ankle of the oldest driving plant owns the root. A toe-off stops driving but
             # stays pinned, so the pelvis does not reverse and the sole does not skate away.
             driving = [s for s in held if self.feet[s].get("drive", True)]
-            primary = max(driving or held, key=lambda s: self.feet[s].get("age", 0))
-            ankle = lm.get(f"ankle_{primary}")
-            if ankle is not None and "alock" in self.feet[primary]:
-                desired = self.feet[primary]["alock"] - body.xz(ankle) - self.offset
-            else:
-                desired = self.feet[primary]["lock"] - body.xz(lm[self.feet[primary]["pivot"]]) - self.offset
-            # Ignore drift slower than a stroll. A landing settle should not become travel.
-            if float(np.linalg.norm(desired)) < 0.008:
+            owners = driving or held
+            desires = {}
+            for s in owners:
+                ankle = lm.get(f"ankle_{s}")
+                if ankle is not None and "alock" in self.feet[s]:
+                    desires[s] = self.feet[s]["alock"] - body.xz(ankle) - self.offset
+                elif self.feet[s]["pivot"] in lm:
+                    desires[s] = self.feet[s]["lock"] - body.xz(lm[self.feet[s]["pivot"]]) - self.offset
+            primary = max(owners, key=lambda s: self.feet[s].get("age", 0))
+            raw = desires.get(primary, np.zeros(2))
+            # Two planted feet that want opposite root motion (a sword swing, both soles
+            # skating apart) must not hand either skate to the pelvis. Re-pin them where
+            # they stand. A walk keeps a single driving foot, so it still travels.
+            disagree = False
+            if len(desires) >= 2 and float(np.linalg.norm(raw)) > 0.05:
+                for s, other in desires.items():
+                    if s != primary and float(np.dot(raw, other)) < 0 and float(np.linalg.norm(other)) > 0.05:
+                        disagree = True
+            if disagree:
+                for s in held:
+                    low_key, low = body.lowest_sole(lm, s)
+                    ankle = lm.get(f"ankle_{s}")
+                    if low_key is None or low is None or ankle is None:
+                        continue
+                    self.feet[s]["pivot"] = low_key
+                    self.feet[s]["lock"] = body.xz(low) + self.offset
+                    self.feet[s]["alock"] = body.xz(ankle) + self.offset
+                self.offset_step[:] = 0.0
                 desired = np.zeros(2)
-            if float(np.dot(desired, self.offset_step)) < 0 and float(np.linalg.norm(self.offset_step)) > 0.004:
-                desired = self.offset_step.copy()
             else:
-                desired = self.offset_step + _cap(np.asarray(desired, float) - self.offset_step, 0.004)
+                # Slower than a stroll. A landing settle should not become travel.
+                desired = np.zeros(2) if float(np.linalg.norm(raw)) < 0.008 else np.asarray(raw, float)
+                if float(np.dot(desired, self.offset_step)) < 0 and float(np.linalg.norm(self.offset_step)) > 0.004:
+                    desired = self.offset_step.copy()
+                else:
+                    desired = self.offset_step + _cap(desired - self.offset_step, 0.004)
             self.offset_step = _cap(np.array(desired, float), 0.06)
             self.offset = self.offset + self.offset_step
             _translate(lm, np.array([float(self.offset[0]), 0.0, float(self.offset[1])]))
