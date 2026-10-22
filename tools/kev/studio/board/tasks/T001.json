@@ -5,7 +5,8 @@
  "done_when": "game builds and the three recordings (berserk, dive, kick chain) still play",
  "id": "T001",
  "owner": "grok",
- "status": "doing",
+ "result": "12da654 on grok/kev-anime, rebased onto 12c473a. Both libraries load (bank: kev 19, brawler 19). One kick chain, on kev/. cargo build -p guildbound and cargo test --workspace passed (guildbound 343, sim 93, 0 failed). kev python 84 ok (1 skipped), combo 3 ok. Berserk roar still plays (berserk-side.mp4). Dive and the heavy chain play (dive-side.mp4, kicks-side.mp4). Workroom imports stayed in server.py. GB_CAM left as Claude wrote it; the boom still pulls in on door and fence colliders.",
+ "status": "review",
  "title": "Merge grok/kev-integration into ev/kev-categoriser",
- "updated": 1792662910.4
+ "updated": 1792665652.5532737
 }
