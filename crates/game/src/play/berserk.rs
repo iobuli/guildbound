@@ -312,14 +312,14 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
             c.1 += 1;
             let dir = if c.1 % 2 == 0 { 1.0 } else { -1.0 };
             let at = Vec3::Y * -0.75;
-            // Level cameras see flat planes edge-on, so the default planes face the camera; `GB_AURA=flat` lays them down.
-            let flat = std::env::var("GB_AURA").is_ok_and(|v| v == "flat");
+            // Planes lie flat (`_`) and stack up the body; `GB_AURA=board` turns them to face the camera instead.
+            let flat = !std::env::var("GB_AURA").is_ok_and(|v| v == "board");
             let lay = |f: Flip| if flat { f.flat() } else { f };
             if c.1 % SMOKE_EVERY == 0 {
                 out.write(lay(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).rising(AURA_HEIGHT).spin(dir * 1.5).smoke().tinted(Color::srgb(0.35, 0.05, 0.02), 0.95).follow(e, at)));
             } else {
                 let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
-                out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.45).glow(1.6).follow(e, at)));
+                out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.8).follow(e, at)));
             }
         }
     }
