@@ -1,11 +1,11 @@
 {
  "by": "grok",
  "created": 1792670975.2,
- "detail": "Keep the courtyard and guildhouse as the default hub. Add a larger floor of distinct areas plus a flat move-test yard (GB_MAP). Floor plan in docs/map/. Do not touch animation, camera.rs, berserk, assets/packs, or tools/kev/grid/staging/.",
+ "detail": "Concept art is docs/map/art (no ref/). Keep the courtyard and guildhouse as the default hub. Cross of roads and greybox areas per that layout. Move-test yard uses the art README sizes. GB_MAP selects a spawn. Do not touch animation, camera.rs, berserk, assets/packs, or tools/kev/grid/staging.",
  "done_when": "docs/map/ floor plan is in, GB_MAP=test and one spawn per area work, test dummies take hits and show damage, cargo test --workspace passes, screenshots of the yard and each area exist",
  "id": "T008",
  "owner": "grok",
  "status": "doing",
  "title": "Larger map with areas + move test area",
- "updated": 1792670975.2
+ "updated": 1792671756.8
 }
