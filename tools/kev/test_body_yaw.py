@@ -76,7 +76,7 @@ class BodyYawTests(unittest.TestCase):
             ang = math.degrees(2 * math.acos(min(1.0, abs(float(np.dot(a, b))))))
             self.assertLess(ang, 0.5, bone)
 
-    def test_yaw_steps_twelve_degrees_and_keeps_the_planted_ball(self):
+    def test_yaw_steps_twenty_five_degrees_and_keeps_the_planted_ball(self):
         self._clear()
         lm = self._copy()
         up = np.array(self.info["bm"]["body"]["up"], float)
@@ -85,21 +85,47 @@ class BodyYawTests(unittest.TestCase):
         lm["yaw"] = 90
         self.srv._apply_body_yaw(self.info, lm)
         self.assertLess(float(np.linalg.norm(np.array(lm[plant]) - held)), 1e-6)
-        self.assertAlmostEqual(self.info["_body_yaw"], 12.0, places=3)
+        self.assertAlmostEqual(self.info["_body_yaw"], 25.0, places=3)
         self._clear()
         Q, P = {}, {}
         facing = []
-        for _ in range(8):
+        for _ in range(4):
             frame = self._copy()
             frame["yaw"] = 90
             self.srv.apply_frame_into(self.info, Q, P, frame, None)
             facing.append(self._forward_deg(Q, P))
-        self.assertAlmostEqual(facing[0], 12.0, delta=3.0)
+        self.assertAlmostEqual(facing[0], 25.0, delta=3.0)
         self.assertAlmostEqual(facing[-1], 90.0, delta=6.0)
         # The target ball is the pivot. The solved ball joint sits on the foot bone, which
         # is a few centimetres off that target once the ankle has orbited (ankle reach stays under 1 mm).
         solved = self.srv.kev_read(self.info, Q, P)["landmarks"][plant]
         self.assertLess(float(np.linalg.norm(np.array(solved) - held)), 0.04)
+
+    def test_yaw_zero_does_not_move_a_landmark(self):
+        self._clear()
+        lm = self._copy()
+        before = {k: list(v) for k, v in lm.items()}
+        lm["yaw"] = 0
+        lm["twist"] = 0
+        self.srv._apply_body_yaw(self.info, lm)
+        for key, val in before.items():
+            self.assertLess(float(np.linalg.norm(np.array(lm[key]) - val)), 1e-9, key)
+
+    def test_airborne_yaw_pivots_on_the_pelvis(self):
+        self._clear()
+        lm = self._copy()
+        up = np.array(self.info["bm"]["body"]["up"], float)
+        for key in ("ball_l", "ball_r", "ankle_l", "ankle_r"):
+            p = np.array(lm[key], float)
+            lm[key] = [float(x) for x in (p + up * 0.2)]
+        pelvis = list(lm["pelvis"])
+        ball = list(lm["ball_l"])
+        lm["yaw"] = 25
+        self.srv._apply_body_yaw(self.info, lm)
+        moved = np.array(lm["pelvis"]) - pelvis
+        flat = moved - up * float(np.dot(moved, up))
+        self.assertLess(float(np.linalg.norm(flat)), 1e-6)
+        self.assertGreater(float(np.linalg.norm(np.array(lm["ball_l"]) - ball)), 0.01)
 
     def test_twist_is_shared_up_the_spine(self):
         self._clear()

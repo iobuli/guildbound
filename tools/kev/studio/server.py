@@ -786,9 +786,11 @@ def orient_palm(info, Q, P, side):
     set_world_rot(info, Q, P, hb, quality.rodrigues(forearm, ang) @ rot_of(Wb))
 
 
-# A full turn must not land in one frame. 12 deg at 60 fps is 720 deg/s, enough for the
-# spinning back kick's half turn and under the 52 deg joint-step gate.
-YAW_STEP_DEG = 12.0
+# Pop guard, not the speed of the turn. 25 deg at 60 fps covers a 90 deg key a tenth of a
+# second long (about 15 deg/frame) and stays under the 52 deg joint-step gate.
+YAW_STEP_DEG = 25.0
+# A ball this close to the floor is the pivot. Higher than this, the pose is airborne.
+PLANT_FLOOR_M = 0.03
 TWIST_STEP_DEG = 30.0
 _YAW_UPPER = ("neck", "shoulder_l", "shoulder_r", "elbow_l", "elbow_r", "wrist_l", "wrist_r",
               "crown", "nose", "head_joint")
@@ -804,7 +806,8 @@ def _apply_body_yaw(info, lm):
     `yaw` and `twist` are degrees and are removed from `lm`. Absent keys do nothing.
     `yaw` 0 is a no-op when no turn is in progress. The yaw step is capped at
     `YAW_STEP_DEG` against `info['_body_yaw']`. Positive yaw is a right-hand turn about up.
-    The planted foot is the lower ball, and that ball stays put.
+    A ball within `PLANT_FLOOR_M` of the floor is the pivot and stays put. If neither ball
+    is that low, the pivot is the vertical through the pelvis.
     """
     if "yaw" not in lm and "twist" not in lm:
         return lm
@@ -821,16 +824,22 @@ def _apply_body_yaw(info, lm):
     if abs(applied) < 1e-8 and abs(applied_t) < 1e-8:
         return lm
     up = np.array(info["bm"]["body"]["up"], float) if info.get("bm") else np.array([0.0, 1.0, 0.0])
-    balls = []
+    floor = float(info["bm"]["body"].get("floor", 0.0)) if info.get("bm") else 0.0
+    planted = []
     for side in "lr":
         key = f"ball_{side}"
-        if key in lm:
-            balls.append((float(np.dot(np.asarray(lm[key], float), up)), key))
-    if not balls:
+        if key not in lm:
+            continue
+        height = float(np.dot(np.asarray(lm[key], float), up)) - floor
+        if height <= PLANT_FLOOR_M:
+            planted.append((height, key))
+    plant = min(planted)[1] if planted else None
+    if plant is not None:
+        pivot = np.asarray(lm[plant], float)
+    elif "pelvis" in lm:
+        pivot = np.asarray(lm["pelvis"], float)
+    else:
         return lm
-    balls.sort()
-    plant = balls[0][1]
-    pivot = np.asarray(lm[plant], float)
     if abs(applied) >= 1e-8:
         rot = rot_about(up, math.radians(applied))
         for key, val in list(lm.items()):
