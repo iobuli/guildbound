@@ -278,7 +278,7 @@ fn animate(time: Res<Time>, mut commands: Commands, mut q: Query<(Entity, &mut E
                 let q = &mut m.params;
                 q.shape.w = t;
                 q.swell = Vec4::new(head_swell, tip_swell, p.intensity * lum[l] * energy * flick, 0.0);
-                q.core.w = if l == 0 { p.intensity * 0.25 * energy } else if l == 1 { p.intensity * 1.4 * energy * 0.0 + 1.4 * energy } else { 0.0 };
+                q.core.w = if l == 0 { p.intensity * 0.25 * energy } else if l == 1 { 0.8 * energy } else { 0.0 };
                 q.misc.y = b.seed;
             }
         }

@@ -210,7 +210,7 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let lum = p.swell.z * ends * flick * (1.0 + 1.5 * head_cap + 1.9 * tip_cap);
 
     var col = tint * body * mask * lum;
-    col += hot * core * p.core.a * ends * (0.65 + 0.35 * mask);
+    col += mix(hot, p.color.rgb, 0.45) * core * p.core.a * ends * (0.65 + 0.35 * mask);
     // `AlphaMode::Add` blends as premultiplied alpha, so alpha 0 is a pure add (see wind_aura.wgsl).
     return vec4<f32>(col, 0.0);
 }
