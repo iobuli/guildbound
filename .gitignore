@@ -11,3 +11,6 @@ tools/model/__pycache__/
 # Player save games (play/save.rs)
 saves/
 __pycache__/
+
+# Third-party FX we may not redistribute (Unity package, licence not stated): local only
+/assets/vfx/fire/

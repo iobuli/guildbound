@@ -5,7 +5,8 @@
  "done_when": "assets/vfx/pixel (20 sheets), assets/vfx/CREDITS.md, fire folder in .gitignore",
  "id": "T009",
  "owner": "claude",
- "status": "todo",
+ "result": "assets/vfx: 20 pixel sheets, CREDITS.md, beam licence; fire textures local and ignored.",
+ "status": "done",
  "title": "Import the three FX packs into assets/vfx with credits",
- "updated": 1792670644.6
+ "updated": 1792670763.9
 }
