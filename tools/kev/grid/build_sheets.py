@@ -7,6 +7,12 @@ f5 knee_r is (13.4, 12.8), on the forward side of the hip-ankle line; f6 keeps t
 and the same forward offset. f4 nose is (82.2, 6.7) and f5 nose is (13.56, 16.6), each about a cell off the
 crown-neck line on the same side as the neighbouring keys, so the head basis does not flip.
 `python3 -I build_sheets.py` rewrites every sheet from the data below.
+
+Optional per-pose yaw, degrees about world up. On a sheet, `yaw` is a list of
+[pelvis_deg, chest_twist_deg], one pair per frame. `build` writes `yaw` and `twist`
+onto that pose. `yaw` 0 faces the sheet's forward (the target). `twist` is the chest
+yaw minus the pelvis yaw. A pose with neither key reads as 0, 0 (`pose_yaw`). The
+solver does not apply these yet.
 """
 import json
 import os
@@ -14,6 +20,25 @@ import os
 ORDER = ["crown", "nose", "neck", "shoulder", "hip", "elbow_l", "wrist_l", "elbow_r", "wrist_r",
          "knee_l", "ankle_l", "toe_l", "knee_r", "ankle_r", "toe_r"]
 HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def pose_yaw(pose):
+    """Pelvis yaw and chest twist, degrees. Missing keys are 0."""
+    if not isinstance(pose, dict):
+        return 0.0, 0.0
+    return float(pose.get("yaw", 0.0) or 0.0), float(pose.get("twist", 0.0) or 0.0)
+
+
+def with_yaw(pose, pair):
+    """Copy a [pelvis_deg, chest_twist_deg] pair onto a pose. Zeros are left off."""
+    if not pair:
+        return pose
+    yaw, twist = float(pair[0]), float(pair[1] if len(pair) > 1 else 0.0)
+    if yaw != 0.0:
+        pose["yaw"] = yaw
+    if twist != 0.0:
+        pose["twist"] = twist
+    return pose
 
 SHEETS = {
     "flying_side_kick": {
@@ -149,9 +174,13 @@ def build():
     os.makedirs(os.path.join(HERE, "sheets"), exist_ok=True)
     for name, s in SHEETS.items():
         poses = {}
+        yaws = s.get("yaw") or []
         for i, fr in enumerate(s["frames"]):
             assert len(fr) == 2 * len(ORDER), (name, i, len(fr))
-            poses[f"f{i + 1}"] = {k: [fr[2 * j], fr[2 * j + 1]] for j, k in enumerate(ORDER)}
+            pose = {k: [fr[2 * j], fr[2 * j + 1]] for j, k in enumerate(ORDER)}
+            if i < len(yaws):
+                with_yaw(pose, yaws[i])
+            poses[f"f{i + 1}"] = pose
         seq = [[f"f{a[0] + 1}"] + a[1:] for a in s["sequence"]]
         out = {"image": s["image"], "cell": 10, "zoom": 2, "facing": "right", "floor_row": s["floor_row"], "height_cells": s["height_cells"],
                "row": s["row"], "poses": poses, "sequence": seq}
