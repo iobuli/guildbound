@@ -36,6 +36,7 @@ pub mod berserk;
 pub mod fracture;
 pub mod moves;
 pub mod energy;
+pub mod flipbook;
 pub mod smear;
 pub mod grab;
 pub mod grass;
@@ -142,7 +143,8 @@ pub fn plugin(app: &mut App) {
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, savegame::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin, pause::plugin))
     .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin, repertoire::plugin, appearance::plugin, afterimage::plugin))
     .add_plugins((discipline::plugin, carry::plugin, marks::plugin, spell_aim::plugin, weather::plugin, sky_dome::plugin, goop::plugin, clash::plugin, hurtbox::plugin, regions::plugin, berserk::plugin, moves::plugin, fracture::plugin, smear::plugin))
-    .add_plugins(energy::plugin);
+    .add_plugins(energy::plugin)
+    .add_plugins(flipbook::plugin);
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
