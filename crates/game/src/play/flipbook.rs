@@ -231,7 +231,7 @@ fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Fl
     state.0 = Some(now);
     let idx = if all { state.1 } else { which.parse::<usize>().unwrap_or(0).min(19) };
     state.1 += 1;
-    let mut f = Flip::new(Sheet::ALL[idx], pt.translation + Vec3::Y * 1.3 + *pt.forward() * 1.6, 3.0, 1.6);
+    let mut f = Flip::new(Sheet::ALL[idx], pt.translation + Vec3::Y * 1.4 + *pt.forward() * 2.2, 4.5, 1.6);
     f.additive = mode != "alpha";
     info!("[flip] {:?} at {:?} size {} ({})", f.sheet, f.at, f.size, if f.additive { "add" } else { "alpha" });
     out.write(f);
