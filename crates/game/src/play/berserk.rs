@@ -294,8 +294,8 @@ fn trigger(
 /// The berserk aura: flat pixel-effect planes stacked up the body. Each climbs along Y while its edge shrinks to a point,
 /// so the stack reads as a spinning cylinder with a closed top. One plane leaves the feet every `AURA_RISE / AURA_LAYERS` seconds.
 const AURA_RISE: f32 = 1.5;
-const AURA_LAYERS: f32 = 24.0;
-const AURA_HEIGHT: f32 = 2.4;
+const AURA_LAYERS: f32 = 36.0;
+const AURA_HEIGHT: f32 = 1.9;
 const AURA_SIZE: f32 = 1.9;
 /// Share of the climb at full width; the top closes to a point over the rest (0 would be a cone).
 const AURA_TAPER_FROM: f32 = 0.7;
@@ -321,7 +321,7 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
                 out.write(lay(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).spin(dir * 1.5).smoke().tinted(Color::srgb(0.35, 0.05, 0.02), 0.95).follow(e, at)));
             } else {
                 let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
-                out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.8).follow(e, at)));
+                out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.0).follow(e, at)));
             }
         }
     }
