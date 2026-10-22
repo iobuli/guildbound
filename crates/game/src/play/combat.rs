@@ -1956,7 +1956,7 @@ fn start_dodge(cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
             };
             (DodgeKind::Step, track, yaw)
         }
-        _ => (DodgeKind::Roll, ROLL, yaw_of(dir).unwrap_or(b.mover.yaw)),
+        _ => (DodgeKind::Roll, if cx.bank.has("kev/backflip_evade") { "kev/backflip_evade" } else { ROLL }, yaw_of(dir).unwrap_or(b.mover.yaw)),
     };
     let (cost, offset, iframes) = match kind {
         DodgeKind::Roll => (ROLL_COST, ROLL_WINDOW.0, ROLL_IFRAMES.1),

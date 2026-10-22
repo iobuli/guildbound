@@ -129,9 +129,15 @@ fn evaluate(
                 time,
                 looping,
             } => {
-                let style = layer.style.unwrap_or(feel.style);
                 let time = if time.is_finite() { *time } else { 0.0 };
-                bank.sample(name, time, *looping, &style)
+                // Kev clips are already solved and cleaned. Play the dense keys so a combo
+                // does not get reduced to a few extremes.
+                if name.starts_with("kev/") {
+                    bank.sample_raw(name, time, *looping)
+                } else {
+                    let style = layer.style.unwrap_or(feel.style);
+                    bank.sample(name, time, *looping, &style)
+                }
             }
             Source::Pose(p) => p.clone(),
         };

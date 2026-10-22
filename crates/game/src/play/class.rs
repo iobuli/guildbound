@@ -10,7 +10,8 @@
 //!   guard raised inside the blow is an auto counter that stuns (`discipline`).
 //! The choice also dresses the player for the path (`appearance::dress_class`).
 //! While the panel is open the player's input is held (`input`) and nobody attacks (`ai`).
-//! Smoke runs (any `GB_*` set) skip the panel; `GB_CLASS=blade|arcanist|hunter` picks one.
+//! Smoke runs (any `GB_*` set) skip the panel; `GB_CLASS=blade|arcanist|hunter|monk` picks one.
+//! A smoke run with no `GB_CLASS` starts as Blade, so Q is Flash Step.
 use super::combat::Equip;
 use super::hud::log::{HudLog, LogKind};
 use super::magic::Grimoire;
@@ -50,9 +51,9 @@ impl Class {
                 about: "Katana in hand, aura in the legs: close the gap in a blink and cut.",
                 weapon: "katana",
                 skills: &[("swordsmanship", 5), ("aura_arts", 3)],
-                abilities: &["flash_step"],
+                abilities: &["flash_step", "palm_thrust"],
                 art: Some("flash_step"),
-                spell: None,
+                spell: Some("palm_thrust"),
                 attrs: [Attr::Strength, Attr::Dexterity, Attr::Vigor],
             },
             Class::Arcanist => Kit {
@@ -115,7 +116,7 @@ pub struct ClassChoice {
 pub fn plugin(app: &mut App) {
     // `GB_CLASS_MENU=1` shows the panel even in a smoke run.
     let smoke = std::env::vars().any(|(k, _)| k.starts_with("GB_")) && std::env::var_os("GB_CLASS_MENU").is_none();
-    let picked = std::env::var("GB_CLASS").ok().and_then(|s| Class::from_name(&s));
+    let picked = std::env::var("GB_CLASS").ok().and_then(|s| Class::from_name(&s)).or(smoke.then_some(Class::Blade));
     app.insert_resource(ClassChoice { open: !smoke, picked, applied: false })
         .add_systems(Startup, spawn_panel)
         .add_systems(Update, (choose, apply, show).chain());

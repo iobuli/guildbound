@@ -49,7 +49,7 @@ pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
 pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 6] = [
+pub const LIBRARIES: [(&str, &str); 7] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
@@ -59,6 +59,8 @@ pub const LIBRARIES: [(&str, &str); 6] = [
     ("kev_melee", "anim/kev_melee.glb"),
     // Karate kicks (mae, yoko, ushiro geri) posed on the UAL mannequin by tools/blender/karate.py.
     ("karate", "anim/karate.glb"),
+    // Kev combo strikes and the nine generated sheets, on the UAL skeleton. See tools/kev/combo/export_glb.py.
+    ("kev", "anim/kev.glb"),
 ];
 
 pub fn plugin(app: &mut App) {

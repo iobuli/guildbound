@@ -4,32 +4,31 @@
   "light": [
     {
       "name": "jab",
-      "clip": { "track": "ual1/Punch_Jab", "end": 0.6 },
-      "windup": 0.2, "active": 0.33, "cancel": 0.5,
+      "clip": { "track": "kev/jab" },
+      "windup": 0.22, "active": 0.42, "cancel": 0.62,
       "damage": 6, "poise": 8, "knockback": 0.8, "stamina": 8, "travel": 0.25,
       "hitbox": { "bone": "hand_l", "radius": 0.1 }
     },
     {
       "name": "cross",
-      "clip": { "track": "ual1/Punch_Cross", "end": 0.7 },
-      "windup": 0.21, "active": 0.36, "cancel": 0.5,
+      "clip": { "track": "kev/cross" },
+      "windup": 0.24, "active": 0.44, "cancel": 0.64,
       "damage": 9, "poise": 12, "knockback": 1.2, "stamina": 10, "travel": 0.35,
       "hitbox": { "bone": "hand_r", "radius": 0.1 }
     },
     {
       "name": "hook",
-      "clip": { "track": "ual2/Melee_Hook" },
-      "recover": { "track": "ual2/Melee_Hook_Rec" },
-      "windup": 0.47, "active": 0.6, "cancel": 0.62,
+      "clip": { "track": "kev/hook" },
+      "windup": 0.3, "active": 0.5, "cancel": 0.66,
       "damage": 11, "poise": 16, "knockback": 1.6, "stamina": 12, "travel": 0.3,
-      "hitbox": { "bone": "hand_r", "radius": 0.1 }
+      "hitbox": { "bone": "hand_l", "radius": 0.1 }
     }
   ],
   "heavy": [
     {
       "name": "kick",
-      "clip": { "track": "sekiro/Zombie Kick", "start": 0.2, "end": 1.6 },
-      "windup": 0.21, "active": 0.54, "cancel": 0.7,
+      "clip": { "track": "kev/roundhouse_kick" },
+      "windup": 0.34, "active": 0.55, "cancel": 0.72,
       "damage": 16, "poise": 35, "knockback": 4.0, "stamina": 22, "travel": 0.4, "charge": 0.6,
       "hitbox": { "bone": "foot_r", "radius": 0.12 }
     }
