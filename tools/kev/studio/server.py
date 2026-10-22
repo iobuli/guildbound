@@ -786,6 +786,69 @@ def orient_palm(info, Q, P, side):
     set_world_rot(info, Q, P, hb, quality.rodrigues(forearm, ang) @ rot_of(Wb))
 
 
+# A full turn must not land in one frame. 12 deg at 60 fps is 720 deg/s, enough for the
+# spinning back kick's half turn and under the 52 deg joint-step gate.
+YAW_STEP_DEG = 12.0
+TWIST_STEP_DEG = 30.0
+_YAW_UPPER = ("neck", "shoulder_l", "shoulder_r", "elbow_l", "elbow_r", "wrist_l", "wrist_r",
+              "crown", "nose", "head_joint")
+
+
+def _wrap_deg(d):
+    return (d + 180.0) % 360.0 - 180.0
+
+
+def _apply_body_yaw(info, lm):
+    """Turn landmark targets about the planted ball, then twist the chest about the pelvis.
+
+    `yaw` and `twist` are degrees and are removed from `lm`. Absent keys do nothing.
+    `yaw` 0 is a no-op when no turn is in progress. The yaw step is capped at
+    `YAW_STEP_DEG` against `info['_body_yaw']`. Positive yaw is a right-hand turn about up.
+    The planted foot is the lower ball, and that ball stays put.
+    """
+    if "yaw" not in lm and "twist" not in lm:
+        return lm
+    yaw = float(lm.pop("yaw", 0.0) or 0.0)
+    twist = float(lm.pop("twist", 0.0) or 0.0)
+    prev = float(info.get("_body_yaw", 0.0))
+    delta = max(-YAW_STEP_DEG, min(YAW_STEP_DEG, _wrap_deg(yaw - prev)))
+    applied = prev + delta
+    info["_body_yaw"] = applied
+    prev_t = float(info.get("_body_twist", 0.0))
+    td = max(-TWIST_STEP_DEG, min(TWIST_STEP_DEG, _wrap_deg(twist - prev_t)))
+    applied_t = prev_t + td
+    info["_body_twist"] = applied_t
+    if abs(applied) < 1e-8 and abs(applied_t) < 1e-8:
+        return lm
+    up = np.array(info["bm"]["body"]["up"], float) if info.get("bm") else np.array([0.0, 1.0, 0.0])
+    balls = []
+    for side in "lr":
+        key = f"ball_{side}"
+        if key in lm:
+            balls.append((float(np.dot(np.asarray(lm[key], float), up)), key))
+    if not balls:
+        return lm
+    balls.sort()
+    plant = balls[0][1]
+    pivot = np.asarray(lm[plant], float)
+    if abs(applied) >= 1e-8:
+        rot = rot_about(up, math.radians(applied))
+        for key, val in list(lm.items()):
+            if key == plant or not isinstance(val, (list, tuple)) or len(val) != 3:
+                continue
+            p = np.asarray(val, float)
+            lm[key] = [float(x) for x in (pivot + rot @ (p - pivot))]
+    if abs(applied_t) >= 1e-8 and "pelvis" in lm:
+        rot_t = rot_about(up, math.radians(applied_t))
+        origin = np.asarray(lm["pelvis"], float)
+        for key in _YAW_UPPER:
+            if key not in lm:
+                continue
+            p = np.asarray(lm[key], float)
+            lm[key] = [float(x) for x in (origin + rot_t @ (p - origin))]
+    return lm
+
+
 def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None, cleanup=True):
     """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
 
@@ -795,6 +858,9 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None, cleanup=Tr
     Returns {landmark: error_m} for the reach targets. With `cleanup`, targets pass the no-glitch
     frame pass (lengths, hinges, floor, finger back-bend) before the solve."""
     Q, P = (Qp, Pp) if Qp is not None else (COMMANDED, COMMANDED_POS)
+    if lm:
+        lm = {k: (list(v) if isinstance(v, (list, tuple)) else v) for k, v in lm.items()}
+        _apply_body_yaw(info, lm)
     if cleanup and lm and info.get("bm"):
         lm, hands = quality.clean_targets(lm, hands, info["bm"]["body"], quality.lengths_from_body(info["bm"]))
     need = lambda *ns: all(n in lm for n in ns)  # noqa: E731

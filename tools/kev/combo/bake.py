@@ -57,6 +57,8 @@ MAX_BONE_STEP_DEG = 48.0
 def solve(srv, info, samples):
     """One stateful IK pass. Q and P carry forward so a frame starts from the pose it will barely leave."""
     Q, P = {}, {}
+    info.pop("_body_yaw", None)
+    info.pop("_body_twist", None)
     solved = []
     prev_hand = {}
     prev_q = {}
