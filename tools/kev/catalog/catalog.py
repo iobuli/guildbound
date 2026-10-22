@@ -67,20 +67,29 @@ def ref_from_sheet(srv, sheet_path, model):
     sheet = json.load(open(sheet_path))
     info = srv.model_info(model)
     lms = {n: posesheet.lift(sheet, p, srv, info) for n, p in sheet["poses"].items()}
-    seq, total = sheet["sequence"], sheet["sequence"][-1][1]
-    samples = []
-    for k in range(int(round(total * FPS)) + 1):
-        t = k / FPS
-        i = max(j for j in range(len(seq)) if seq[j][1] <= t) if t < total else len(seq) - 2
-        a, b = seq[i], seq[min(i + 1, len(seq) - 1)]
-        u = 0.0 if b[1] == a[1] else min(1.0, (t - a[1]) / (b[1] - a[1]))
-        u = posesheet.ease(b[2] if len(b) > 2 else "smooth", u)
-        lm = {key: [x + (y - x) * u for x, y in zip(lms[a[0]][key], lms[b[0]][key])] for key in lms[a[0]]}
-        samples.append({"t": round(t, 4), "landmarks": lm, "hands": {}, "com": [0, 0, 0]})
+    samples = [{"t": round(k / FPS, 4), "landmarks": lm, "hands": {}, "com": [0, 0, 0]}
+               for k, lm in enumerate(posesheet.samples(sheet, lms, srv, FPS))]
     bm = info["bm"]
     # sheet landmarks are already in this rig's metres; scale_to() re-bases by pelvis, so store pelvis-relative poses
     return {"model": model, "clip": os.path.basename(sheet_path), "height": bm["body"]["height"], "floor": bm["body"]["floor"],
             "duration": samples[-1]["t"], "samples": samples}
+
+
+def _sole_pad(srv, model):
+    """How far the ball joint sits above the mesh sole at rest. Sheet tracks have no toe landmark, so the
+    ball clamp uses this instead of putting the joint on the floor line."""
+    bm = srv.model_info(model)["bm"]
+    up = np.array(bm["body"]["up"], float)
+    floor = float(bm["body"]["floor"])
+
+    def h(name):
+        d = bm["landmarks"].get(name)
+        if not d:
+            return 0.0
+        return float(np.array(d["rest"]) @ up) - floor
+
+    low = min(h("toe_tip_l"), h("heel_l"))
+    return max(0.0, h("ball_l") - min(low, 0.0))
 
 
 def do_smooth(srv, name, min_cut, beta):
@@ -90,7 +99,12 @@ def do_smooth(srv, name, min_cut, beta):
     names, L = arrays(raw)
     H, floor = raw["height"], raw["floor"]
     before = spatial.metrics(L, names, FPS, floor, H)
-    S, locked = spatial.smooth(L, names, FPS, floor, H, min_cut, beta)
+    S, locked = spatial.smooth(L, names, FPS, floor, H, min_cut, beta, pad=_sole_pad(srv, raw["model"]))
+    sys.path.insert(0, os.path.join(HERE, "..", "grid"))
+    import posesheet
+    capped = posesheet.cap_orientation(L, S, names, srv)
+    if spatial.metrics(capped, names, FPS, floor, H)["jerk"] <= before["jerk"]:
+        S = capped
     after = spatial.metrics(S, names, FPS, floor, H)
     with open(ref_path(srv, name), "w") as f:
         json.dump(with_landmarks(raw, names, S), f)

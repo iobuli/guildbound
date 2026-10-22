@@ -8,7 +8,8 @@ Two passes, all offline so they can look both ways in time:
      motion. The solver already refuses a reach past the bone length, so landmarks are not stretched here.
   2. foot lock: ankle runs that are low and slow are pinned in x/z, and the ball keeps its offset from the ankle so
      the toe does not spin. The pin eases in and out with a smoothstep.
-Feet the filter pulled through the floor are put back on it.
+A foot the filter pulled through the floor is put back on it. The ball is lifted by the sole pad (how far the
+mesh sole and the toe sit below the ball joint) so the joint is not clamped onto the floor line itself.
 """
 import numpy as np
 
@@ -95,8 +96,12 @@ def _track_jerk(x):
     return float(np.linalg.norm(np.diff(x, 3, axis=0), axis=1).mean())
 
 
-def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0):
-    """L: T x N x 3. Returns (smoothed copy, frames locked)."""
+def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0, pad=0.0):
+    """L: T x N x 3. Returns (smoothed copy, frames locked).
+
+    `pad` is how far the mesh sole hangs below the ball joint. Ankles, heels and toe tips clamp to the
+    floor; the ball clamps to the floor plus that pad, so a planted sole is not asked to cross it.
+    """
     out = L.copy()
     for k in range(out.shape[1]):
         y = smooth_track(out[:, k], fps, min_cut, beta)
@@ -104,11 +109,16 @@ def smooth(L, names, fps, floor, height, min_cut=4.0, beta=6.0):
             out[:, k] = y
     locked = foot_lock(out, names, fps, floor, height)
     ix = {n: i for i, n in enumerate(names)}
-    for j in ("ankle_l", "ankle_r", "ball_l", "ball_r"):
+    for j in ("ankle_l", "ankle_r", "heel_l", "heel_r", "toe_tip_l", "toe_tip_r"):
         if j not in ix:
             continue
         y = out[:, ix[j], 1]
         y[y < floor] = floor
+    for j in ("ball_l", "ball_r"):
+        if j not in ix:
+            continue
+        y = out[:, ix[j], 1]
+        y[y < floor + pad] = floor + pad
     return out, locked
 
 

@@ -323,6 +323,35 @@ def slerp_mat(R0, R1, t):
                      [2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)]])
 
 
+def slerp_near(R0, R1, t, rest, near):
+    """Blend two bases, then apply `rest`. A previous pose picks the quaternion sign that stays beside it.
+
+    Shortest-arc slerp flips the neck a half turn when the head and the chest pass through opposite
+    orientations: the two signs are the same rotation of each base, but the halfway point is not.
+    """
+    q0, q1 = mat_to_quat(R0), mat_to_quat(R1)
+    signs = (q1, -q1) if near is not None else ((-q1 if float(q0 @ q1) < 0 else q1),)
+    best, best_a = None, 1e9
+    for qq in signs:
+        d = float(np.clip(float(q0 @ qq), -1.0, 1.0))
+        th = math.acos(d)
+        # Opposite quaternions are the same rotation; slerping them is 0/0.
+        if th < 1e-6 or th > math.pi - 1e-4:
+            q = q0
+        else:
+            q = (math.sin((1.0 - t) * th) * q0 + math.sin(t * th) * qq) / math.sin(th)
+        q = q / np.linalg.norm(q)
+        if not np.isfinite(q).all():
+            continue
+        R = quat_to_mat(q) @ rest
+        if near is None:
+            return R
+        ang = quat_angle(near, R)
+        if ang < best_a:
+            best, best_a = R, ang
+    return best if best is not None else slerp_mat(R0, R1, t) @ rest
+
+
 def set_world_rot(info, Q, P, bone, R):
     """Command bone so its world rotation is R (the parents' current world rotation is read from FK)."""
     i = info["index"][bone]
@@ -537,6 +566,130 @@ def curl_hand(info, Q, P, side, amount, point=False):
     return sgn
 
 
+def sole_locals(info):
+    """Bottom of each foot in that foot bone's rest frame, plus the skinning of the lowest sole vertices."""
+    cached = info.get("sole_local")
+    if cached is not None:
+        return cached
+    bm = info["bm"]
+    z = np.load(os.path.join(REPO, "staging", "kev", "bodymap", bm["rig"] + ".npz"))
+    rest, part = z["rest_position"], z["part"]
+    bind, jidx, wts = z["mesh_position"], z["joints"], z["weights"]
+    jn = bm["joints"]
+    up = np.array(bm["body"]["up"], float)
+    floor = float(bm["body"]["floor"])
+    out, skin = {}, {}
+    for side in "lr":
+        ids = [jn.index(n) for n in (f"foot_{side}", f"ball_{side}") if n in jn]
+        sel = np.where(np.isin(part, ids))[0]
+        h = rest[sel] @ up
+        idx = sel[np.argsort(h)[:16]]
+        bi = info["index"][f"foot_{side}"]
+        R = rot_of(info["rest_world"][bi])
+        origin = info["rest_world"][bi][:3, 3]
+        rows = [(rest[idx] - origin) @ R]
+        for name in (f"ball_{side}", f"toe_tip_{side}", f"heel_{side}"):
+            d = bm["landmarks"].get(name)
+            if d:
+                rows.append(((np.array(d["rest"], float) - origin) @ R)[None, :])
+        out[side] = np.vstack(rows)
+        skin[side] = {"local": bind[idx], "joints": jidx[idx], "weights": wts[idx]}
+    info["sole_local"] = out
+    info["sole_skin"] = skin
+    return out
+
+
+def _skin_matrices(info, Q, P):
+    bm = info["bm"]
+    Wn = world_transforms(info, Q, P)
+    jn = bm["joints"]
+    D = np.zeros((len(jn), 4, 4))
+    for k, name in enumerate(jn):
+        i = info["index"][name]
+        D[k] = Wn[i] @ np.linalg.inv(info["rest_world"][i])
+    return D @ np.array(bm["rest_world"]) @ np.array(bm["inverse_bind"])
+
+
+def skinned_sole(info, Q, P, side):
+    """Posed positions of the lowest sole vertices. A pelvis translation lifts these by the same amount."""
+    sole_locals(info)
+    data = info["sole_skin"][side]
+    skinm = _skin_matrices(info, Q, P)
+    sm = skinm[data["joints"]]
+    M = np.einsum("nk,nkij->nij", data["weights"], sm)
+    return np.einsum("nij,nj->ni", M[:, :3, :3], data["local"]) + M[:, :3, 3]
+
+
+def plant_sole(info, Q, P, side, lm):
+    """Pitch a foot that is down near the floor so the ball, the toe and the mesh sole stay on it.
+
+    The foot bone is longer than the drawn ankle-to-ball, and the toe mesh hangs past the ball joint,
+    so aiming the bone at a ball on the floor line drives the toe through the ground.
+    """
+    fb = f"foot_{side}"
+    if fb not in info["index"] or not info.get("bm"):
+        return
+    floor = float(info["bm"]["body"]["floor"])
+    up = np.array(info["bm"]["body"]["up"], float)
+    ankle_lm = np.asarray(lm.get(f"ankle_{side}", [0.0, 1.0e9, 0.0]), float)
+    origin = chain_world(info, Q, P, info["index"][fb])[:3, 3]
+    if min(float(origin @ up) - floor, float(ankle_lm @ up) - floor) > 0.32:
+        return
+    local = sole_locals(info)[side]
+    for _ in range(4):
+        Rw = bone_world_rot(info, Q, P, fb)
+        origin = chain_world(info, Q, P, info["index"][fb])[:3, 3]
+        h = (local @ Rw.T + origin) @ up
+        i = int(np.argmin(h))
+        pen = floor - float(h[i])
+        if pen <= 1e-4:
+            return
+        lever = (local[i] @ Rw.T + origin) - origin
+        axis = np.cross(up, lever)
+        if np.linalg.norm(axis) < 1e-4:
+            return
+        axis = unit(axis)
+        dy = float(np.cross(axis, lever) @ up)
+        if abs(dy) < 1e-5:
+            return
+        theta = float(np.clip(pen / dy, -0.6, 0.6))
+        set_world_rot(info, Q, P, fb, rot_about(axis, theta) @ Rw)
+
+
+def sole_gap(info, Q, P, side, lm, read=None):
+    """Metres a grounded foot still sticks through the floor: mesh sole, toe tip, heel and ball. 0 if the foot is up."""
+    fb = f"foot_{side}"
+    if fb not in info["index"] or not info.get("bm"):
+        return 0.0
+    floor = float(info["bm"]["body"]["floor"])
+    up = np.array(info["bm"]["body"]["up"], float)
+    ankle_lm = np.asarray(lm.get(f"ankle_{side}", [0.0, 1.0e9, 0.0]), float)
+    origin = chain_world(info, Q, P, info["index"][fb])[:3, 3]
+    if min(float(origin @ up) - floor, float(ankle_lm @ up) - floor) > 0.32:
+        return 0.0
+    Rw = bone_world_rot(info, Q, P, fb)
+    h = (sole_locals(info)[side] @ Rw.T + origin) @ up
+    gap = floor - float(np.min(h))
+    gap = max(gap, floor - float(np.min(skinned_sole(info, Q, P, side) @ up)))
+    if read is not None:
+        for n, src in ((f"ball_{side}", "joints"), (f"toe_tip_{side}", "landmarks"), (f"heel_{side}", "landmarks")):
+            if n in read.get(src, {}):
+                gap = max(gap, floor - float(np.array(read[src][n]) @ up))
+    return max(0.0, gap)
+
+
+def lift_skeleton(info, Q, P, pen):
+    """Raise the whole pose so a sole that cannot pitch clear of the floor (the ankle itself is too low) sits on it."""
+    if pen <= 0.0 or "pelvis" not in info["index"]:
+        return
+    pen += 2e-4  # a fifth of a millimetre, so rounding does not leave the sole on the wrong side of the floor
+    pi = info["index"]["pelvis"]
+    parent = info["parent"][pi]
+    Wp = chain_world(info, Q, P, parent) if parent >= 0 else np.eye(4)
+    world = chain_world(info, Q, P, pi)[:3, 3] + np.array(info["bm"]["body"]["up"], float) * pen
+    P["pelvis"] = rot_of(Wp).T @ (world - Wp[:3, 3])
+
+
 def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
     """One control frame: landmark targets (world, metres, this model's scale) -> commanded rotations and pelvis position.
 
@@ -557,7 +710,7 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
         Wp = chain_world(info, Q, P, p) if p >= 0 else np.eye(4)
         Pw, pp = rot_of(Wp), Wp[:3, 3]
         P["pelvis"] = Pw.T @ (target - pp)
-    prev_rot = {b: bone_world_rot(info, Q, P, b) for b in ("hand_l", "hand_r", "foot_l", "foot_r", "Head")}
+    prev_rot = {b: bone_world_rot(info, Q, P, b) for b in ("hand_l", "hand_r", "foot_l", "foot_r", "Head", "neck_01")}
     if need("hip_l", "hip_r", "neck", "pelvis", "shoulder_l", "shoulder_r"):
         up = np.array(lm["neck"]) - np.array(lm["pelvis"])
         # Linear landmark blends collapse a flip: the neck-pelvis vector whips through 100 degrees on one frame.
@@ -590,7 +743,7 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
                     Rh = slerp_mat(prev_rot["Head"], Rh, min(1.0, 40.0 / ang))
                     Dh = Rh @ rest_rot("Head").T
             if "neck_01" in info["index"]:
-                set_world_rot(info, Q, P, "neck_01", slerp_mat(Dc, Dh, 0.5) @ rest_rot("neck_01"))
+                set_world_rot(info, Q, P, "neck_01", slerp_near(Dc, Dh, 0.5, rest_rot("neck_01"), prev_rot.get("neck_01")))
             set_world_rot(info, Q, P, "Head", Rh)
     err = {}
     flex = None
@@ -627,6 +780,10 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
             fb = f"foot_{side}"
             if prev_rot.get(fb) is not None:
                 set_world_rot(info, Q, P, fb, twist_closest(bone_world_rot(info, Q, P, fb), prev_rot[fb], direction))
+            plant_sole(info, Q, P, side, lm)
+    if info.get("bm") and "pelvis" in info.get("index", {}):
+        read = kev_read(info, Q, P)
+        lift_skeleton(info, Q, P, max(sole_gap(info, Q, P, s, lm, read) for s in "lr"))
     err.update(herr)
     return err
 

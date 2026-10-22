@@ -14,5 +14,5 @@ Studio: `cat list`, `cat info NAME`, `cat play NAME` (bakes the smoothed referen
 `spatial.py` smooths in space, not just time: an adaptive zero-phase One-Euro filter per landmark (fast strikes keep their
 peaks, slow drift and keyframe seams flatten; a landmark the filter would roughen is left raw), then foot lock (low, slow
 ankles pinned in x/z, the ball keeping its offset). Defaults (min-cut 4 Hz, beta 6) cut jerk while wrist reach stays close
-and a planted foot does not slide. Segment lengths are not pulled to a median: stretching a short limb invented motion and
+and a planted foot does not slide. The ball is held up by the sole pad, not clamped onto the floor line. Segment lengths are not pulled to a median: stretching a short limb invented motion and
 made flips and fast kicks rougher. The solver clamps a reach at the bone length.
