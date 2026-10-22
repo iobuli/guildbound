@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1792670644.6,
+ "detail": "Element-themed monsters, each using one spell or art, with spawn tables per region.",
+ "done_when": "each enemy spawns, fights using its ability, drops loot, in a recording",
+ "id": "T015",
+ "owner": "grok",
+ "status": "todo",
+ "title": "New enemies for the wild",
+ "updated": 1792670644.6
+}

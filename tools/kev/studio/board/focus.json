@@ -1,5 +1,5 @@
 {
- "focus": "ANIMATION: make the brawler-mage moves read right in the game: the new kicks, dive, backflip and cast, plus the berserk stance and roar.",
+ "focus": "TWO TRACKS. (A) ANIMATION: the brawler-mage moves read right in the game. (B) MAGIC AND WORLD: separate skills, arts and spells (docs/MAGIC_AND_WORLD.md), use the new FX packs, new spells and arts on the new animations, new enemies, a village and a wild map.",
  "rules": [
   "One hand on the rig at a time: take the lease before driving Kev Studio (the server does it for you on your first write).",
   "Claim a task before starting it; write a note when you change something or find a problem.",
