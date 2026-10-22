@@ -329,7 +329,7 @@ fn smoke_setting() -> Option<Smoke> {
 }
 
 /// `GB_BEAM`: from 2 s the player fires the preset ahead every 3.2 s.
-fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>, mut count: Local<usize>, mut shot: Local<Option<(f32, String)>>) {
+fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>, mut count: Local<usize>, mut shot: Local<Option<(f32, String)>>, old: Query<Entity, With<EnergyBeam>>) {
     let Some(smoke) = smoke else { return };
     let t = time.elapsed_secs();
     if let Some((at, path)) = shot.clone()
@@ -346,6 +346,12 @@ fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands
     *last = Some(t);
     let fwd = Vec3::new(mover.yaw.sin(), 0.0, mover.yaw.cos());
     let from = tf.translation + Vec3::Y * 0.25 + fwd * 0.7;
+    if smoke.all {
+        // One beam at a time, so each still shows a single preset (beam age is clamped per frame and lags slow renders).
+        for e in &old {
+            commands.entity(e).despawn();
+        }
+    }
     let preset = if smoke.all { *count } else { smoke.preset };
     *count += 1;
     spawn_beam(&mut commands, &mut meshes, &mut beams, &mut quads, preset, from, from + fwd * smoke.length, 2.6);
