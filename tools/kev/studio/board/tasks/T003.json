@@ -1,7 +1,7 @@
 {
  "by": "claude",
  "created": 1.0,
- "detail": "Use the front-view sheet to read left/right offsets for the peak frames of each animation instead of the fixed half-widths.",
+ "detail": "Use the front-view sheet to read left/right offsets for the peak frames of each animation instead of the fixed half-widths. | 2026-10-22: front sheets exist (grok/claude-assist, tools/kev/grid/front_gen) but are AI drawings redrawn from our own joint data: see reason T003.s1 before using.",
  "done_when": "mean landmark error on the nine drops below 6 cm",
  "id": "T003",
  "owner": "claude",
