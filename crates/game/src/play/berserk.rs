@@ -294,9 +294,9 @@ fn trigger(
 /// The berserk aura: flat pixel-effect planes stacked up the body. Each climbs along Y while its edge shrinks to a point,
 /// so the stack reads as a spinning cone. One plane leaves the feet every `AURA_RISE / AURA_LAYERS` seconds.
 const AURA_RISE: f32 = 1.5;
-const AURA_LAYERS: f32 = 7.0;
+const AURA_LAYERS: f32 = 14.0;
 const AURA_HEIGHT: f32 = 2.8;
-const AURA_SIZE: f32 = 3.0;
+const AURA_SIZE: f32 = 3.6;
 /// Sheets taken in turn, with the dark smoke plane every `SMOKE_EVERY` planes.
 const AURA_SHEETS: [Sheet; 3] = [Sheet::Vortex, Sheet::FireSpin, Sheet::Vortex];
 const SMOKE_EVERY: u32 = 3;
@@ -316,7 +316,7 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
             let flat = std::env::var("GB_AURA").is_ok_and(|v| v == "flat");
             let lay = |f: Flip| if flat { f.flat() } else { f };
             if c.1 % SMOKE_EVERY == 0 {
-                out.write(lay(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).rising(AURA_HEIGHT).spin(dir * 1.5).smoke().tinted(Color::srgb(0.22, 0.03, 0.02), 0.6).follow(e, at)));
+                out.write(lay(Flip::new(Sheet::Midnight, Vec3::ZERO, AURA_SIZE * 0.8, AURA_RISE * 1.2).rising(AURA_HEIGHT).spin(dir * 1.5).smoke().tinted(Color::srgb(0.35, 0.05, 0.02), 0.95).follow(e, at)));
             } else {
                 let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
                 out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.45).glow(1.6).follow(e, at)));
