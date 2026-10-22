@@ -3,9 +3,13 @@
 Descriptive only, nothing tuned. Outcome z = ln(close / price at mh) / (sigma * sqrt(minutes left)), sigma = std of 1m log returns over the
 prior 1440 minutes. Per mh: Spearman rho, AUC for z > 0, and a permutation band (95th pct |rho| over 100 hour shuffles). States: mean z
 with day-cluster bootstrap and BH q. Writes out/lab/trace.json.
+
+The default window is the published one: discovery up to 2022-01-01, check = 2022. Pass --split and --end (UTC dates, end exclusive)
+to trace a later file without editing this script. Defaults stay put so a plain run reproduces that window.
 """
 from __future__ import annotations
 
+import datetime as dt
 import json
 import sys
 from pathlib import Path
@@ -24,6 +28,32 @@ STATE_MH = (0, 15, 30, 45, 55)
 SPLIT = 1_640_995_200_000  # 2022-01-01 UTC
 END = 1_672_531_200_000  # 2023-01-01 UTC
 PERMS = 100
+
+
+def parse_utc_date(s: str) -> int:
+    """YYYY-MM-DD as UTC midnight, in milliseconds."""
+    d = dt.datetime.strptime(s, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc)
+    return int(d.timestamp() * 1000)
+
+
+def period_masks(hour, first: int, split: int, end: int):
+    """Discovery is [first, split), check is [split, end). end is exclusive."""
+    hour = np.asarray(hour)
+    return (hour >= first) & (hour < split), (hour >= split) & (hour < end)
+
+
+def hours_in_window(hour, end: int) -> int:
+    """Complete hours that start before end. Later bars must not change the permutation stream of a fixed window."""
+    return int(np.sum(np.asarray(hour) < end))
+
+
+def period_bounds(hour, sel):
+    """[first hour ms, last hour's last ms], or None when the mask is empty."""
+    hour = np.asarray(hour)
+    sel = np.asarray(sel, bool)
+    if not np.any(sel):
+        return None
+    return [int(hour[sel].min()), int(hour[sel].max() + 3_599_999)]
 
 
 def r4(x) -> list:
@@ -129,20 +159,32 @@ def verdict(cur: dict, nh: dict) -> str:
     return " ".join(out)
 
 
-def main() -> dict:
+def main(split: int = SPLIT, end: int = END) -> dict:
     m = N.load_m1()
+    # Bars at or after `end` are outside this run. Dropping them keeps a fixed window stable when the file grows,
+    # including the next-hour label of the last included hour (that close would otherwise sit on the following bar).
+    m = {k: v[:int(np.searchsorted(m["t"], end, side="left"))] for k, v in m.items()}
     nu = N.nucleus(m)
     del m
     hz = hours(nu)
     F = {f: nu[f][hz["rows"]].astype(float) for f in FEATS}
+    if not nu["valid"].any():
+        raise ValueError("no valid nucleus minute in this file")
     first = int(nu["t"][np.argmax(nu["valid"])])
-    per = {"discovery": (hz["hour"] >= first) & (hz["hour"] < SPLIT), "check": (hz["hour"] >= SPLIT) & (hz["hour"] < END)}
-    U = np.random.default_rng(7).random((PERMS, hz["hour"].size))
-    res = {"symbol": "SOLUSDT", "periods": {}, "n_hours": {}, "minutes": MH.tolist(), "features": FEATS, "curves": {}, "next_hour": {}, "states": []}
+    disc, check = period_masks(hz["hour"], first, split, end)
+    per = {"discovery": disc, "check": check}
+    U = np.random.default_rng(7).random((PERMS, hours_in_window(hz["hour"], end) or 1))
+    res = {"symbol": "SOLUSDT", "split": split, "end": end, "periods": {}, "n_hours": {}, "minutes": MH.tolist(), "features": FEATS, "curves": {}, "next_hour": {}, "states": []}
     for p, sel in per.items():
         sel = sel & np.isfinite(hz["z"]).any(1)
-        res["periods"][p] = [int(hz["hour"][sel].min()), int(hz["hour"][sel].max() + 3_599_999)]
+        res["periods"][p] = period_bounds(hz["hour"], sel)
         res["n_hours"][p] = int(sel.sum())
+        if res["n_hours"][p] == 0:
+            empty = {f: np.zeros((0, MH.size)) for f in FEATS}
+            z0 = np.zeros((0, MH.size))
+            res["curves"][p] = curves(empty, z0, U)
+            res["next_hour"][p] = curves(empty, z0, U)
+            continue
         Fp = {f: v[sel] for f, v in F.items()}
         res["curves"][p] = curves(Fp, hz["z"][sel], U)
         res["next_hour"][p] = curves(Fp, hz["zn"][sel], U)
@@ -155,8 +197,13 @@ def main() -> dict:
 
 
 if __name__ == "__main__":
+    import argparse
     import time
+    ap = argparse.ArgumentParser(description="Nucleus trace. Defaults are the published 2020-11..2022 window.")
+    ap.add_argument("--split", default="2022-01-01", help="UTC date the check period starts (YYYY-MM-DD)")
+    ap.add_argument("--end", default="2023-01-01", help="UTC date the check period ends, exclusive (YYYY-MM-DD)")
+    args = ap.parse_args()
     t0 = time.time()
-    r = main()
+    r = main(parse_utc_date(args.split), parse_utc_date(args.end))
     print(f"{time.time() - t0:.0f}s", r["n_hours"])
     print(r["verdict"])

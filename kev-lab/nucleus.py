@@ -8,9 +8,13 @@ Per line, at minute m (bar j of the line's timeframe is the one still forming; i
   closed line   the same over the n closed bars j-n .. j-1 (what the line was when bar j opened)
   pos   = (price - mid) / half                 where price sits in the line's own range, -1 .. +1
   slope = sign(mid - closed mid)               the line moved up or down since the bar opened
-  shift = sign(price - closed mid at bar j-n+1)  price against the line as it was n bars ago (Ichimoku's forward shift)
-  lag   = sign(price - close of bar j-n)       Ichimoku's lagging line
-Per timeframe: the order of mid9 / mid26 / mid52, and price against the rebuilt cloud (spans from closed lines at bar j-25, i.e. shifted 26).
+  shift = sign(price - closed mid at bar j-n+1)  price against the line as it was n bars ago (Ichimoku's forward shift).
+        Unknown until that bar's closed mid exists (J >= 2n-1); stored as -9, never as a fake 0.
+  lag   = sign(price - close of bar j-n)       Ichimoku's lagging line. Same -9 until the bar exists.
+  cmid, cpos  the closed line at this minute (the line when bar j opened) and price's position in its range.
+Per timeframe: the order of mid9 / mid26 / mid52. Equal mids are not a strict order (order -2); they are not filed with either stack.
+Price against the rebuilt cloud (spans from closed lines at bar j-25, i.e. shifted 26; -9 until both spans exist).
+A minute is valid only when every line's pos, slope, shift and lag are known and every cloud is known.
 Convergence (counts, no weights): the balance of lines with price above them, per timeframe and over all 18; the balance of slopes (up - down).
 
 Prices are integer ticks (1e-4) so the JS port in web/nucleus-core.js gives identical signs and orders, and positions equal to float32 storage precision. Bars are UTC-aligned; a bar exists only if
@@ -39,12 +43,38 @@ ORDER_LUT = np.full(27, -1)
 for _k, _o in enumerate(ORDERS):
     _r = [NS.index(int(x)) for x in _o.split(">")]
     ORDER_LUT[_r[0] * 9 + _r[1] * 3 + _r[2]] = _k
-WARMUP_DAYS = 106  # 1D n=52 shifted copy needs 2n bars back; span B needs 26 + 52
+MISSING = -9  # not knowable yet. A real tie stays 0. The cloud uses the same sentinel.
+TIE = -2  # two or more of mid9 / mid26 / mid52 are equal
+WARMUP_DAYS = 106  # existing UTC days, not calendar days. 1D n=52 shift needs J >= 103; 106 leaves a short gap margin.
 
 
 def load_m1(sym: str = "SOLUSDT") -> dict:
+    """Prices in ticks. Zero-volume flat minutes stay in the series (flagged as zv by ingest); dropping them would move 2020 highs and lows."""
     z = np.load(data.MARKETS / sym / "raw" / "m1.npz")
     return {"t": z["t"].astype(np.int64), **{k: np.round(z[k] / TICK).astype(np.int64) for k in "hlc"}}
+
+
+def _as_sign(x: np.ndarray) -> np.ndarray:
+    """-1, 0, 1, or MISSING where x is NaN. 0 is a real tie, not a stand-in for 'not yet'."""
+    out = np.full(x.shape, MISSING, np.int8)
+    ok = ~np.isnan(x)
+    out[ok] = x[ok]
+    return out
+
+
+def warmup_index(t: np.ndarray, hour_t: int, days: int = WARMUP_DAYS) -> int:
+    """First minute of the UTC day `days` existing days before hour_t's day.
+
+    An existing day is a UTC day with at least one minute at or before that day.
+    If fewer than `days` such days exist, the first minute of the series.
+    """
+    end = int(np.searchsorted(t, (int(hour_t) // 86_400_000 + 1) * 86_400_000, side="left"))
+    if end <= 0:
+        return 0
+    _, first = np.unique(t[:end] // 86_400_000, return_index=True)
+    if first.size > days:
+        return int(first[-(days + 1)])
+    return int(first[0])
 
 
 def _prev_window(x: np.ndarray, w: int, fn) -> np.ndarray:
@@ -71,16 +101,23 @@ def timeframe(m: dict, size: int) -> dict:
 
 def line(tf: dict, c: np.ndarray, n: int) -> dict:
     J = tf["J"]
-    pmH, pmL = _prev_window(tf["BH"], n - 1, np.max), _prev_window(tf["BL"], n - 1, np.min)
-    HH = np.fmax(pmH[J], tf["runH"]) if n > 1 else tf["runH"].astype(float)
-    LL = np.fmin(pmL[J], tf["runL"]) if n > 1 else tf["runL"].astype(float)
-    ok = ~np.isnan(pmH[J]) if n > 1 else np.ones(J.size, bool)
-    mid, half = (HH + LL) / 2, (HH - LL) / 2
+    if n > 1:
+        pmH, pmL = _prev_window(tf["BH"], n - 1, np.max), _prev_window(tf["BL"], n - 1, np.min)
+        ok = ~np.isnan(pmH[J])
+        HH, LL = np.fmax(pmH[J], tf["runH"]), np.fmin(pmL[J], tf["runL"])
+    else:
+        ok = np.ones(J.size, bool)
+        HH, LL = tf["runH"].astype(float), tf["runL"].astype(float)
+    mid = np.where(ok, (HH + LL) / 2, np.nan)
+    half = np.where(ok, (HH - LL) / 2, np.nan)
     cH, cL = _prev_window(tf["BH"], n, np.max), _prev_window(tf["BL"], n, np.min)
     cmid_bar = (cH + cL) / 2  # closed line when bar j opened
     cmid = cmid_bar[J]
+    chalf = ((cH - cL) / 2)[J]
     pos = np.where(half > 0, (c - mid) / np.where(half > 0, half, 1), 0.0)
     pos[~ok] = np.nan
+    cpos = np.where(chalf > 0, (c - cmid) / np.where(chalf > 0, chalf, 1), 0.0)
+    cpos[np.isnan(cmid)] = np.nan
     slope = np.sign(mid - cmid)
     js = J - n + 1
     shifted = np.where(js >= 0, cmid_bar[np.clip(js, 0, None)], np.nan)
@@ -88,7 +125,7 @@ def line(tf: dict, c: np.ndarray, n: int) -> dict:
     jl = J - n
     lagc = np.where(jl >= 0, tf["BC"][np.clip(jl, 0, None)].astype(float), np.nan)
     lag = np.sign(c - lagc)
-    return {"mid": np.where(ok, mid, np.nan), "pos": pos, "slope": slope, "shift": shift, "lag": lag, "cmid_bar": cmid_bar}
+    return {"mid": mid, "pos": pos, "slope": slope, "shift": shift, "lag": lag, "cmid_bar": cmid_bar, "cmid": cmid, "cpos": cpos}
 
 
 @np.errstate(all="ignore")
@@ -101,38 +138,47 @@ def nucleus(m: dict) -> dict:
         tf = timeframe(m, size)
         L = {n: line(tf, c, n) for n in NS}
         for n in NS:
-            for k in ("pos",):
-                out[f"{name}.{n}.{k}"] = L[n][k].astype(np.float32)
+            out[f"{name}.{n}.pos"] = L[n]["pos"].astype(np.float32)
+            out[f"{name}.{n}.cpos"] = L[n]["cpos"].astype(np.float32)
+            out[f"{name}.{n}.cmid"] = L[n]["cmid"]
             for k in ("slope", "shift", "lag"):
-                out[f"{name}.{n}.{k}"] = np.nan_to_num(L[n][k], nan=0).astype(np.int8)
+                out[f"{name}.{n}.{k}"] = _as_sign(L[n][k])
             signs.append(np.sign(L[n]["pos"]))
             slopes.append(np.where(np.isnan(L[n]["mid"]), np.nan, L[n]["slope"]))
         mids = np.stack([L[n]["mid"] for n in NS], 1)
         valid = ~np.isnan(mids).any(1)
-        rank = np.argsort(-np.nan_to_num(mids, nan=0), axis=1, kind="stable")  # ties: the shorter line first
-        out[f"{name}.order"] = np.where(valid, ORDER_LUT[rank[:, 0] * 9 + rank[:, 1] * 3 + rank[:, 2]], -1).astype(np.int8)
+        rank = np.argsort(-np.nan_to_num(mids, nan=0.0), axis=1, kind="stable")
+        code = ORDER_LUT[rank[:, 0] * 9 + rank[:, 1] * 3 + rank[:, 2]]
+        tied = (mids[:, 0] == mids[:, 1]) | (mids[:, 0] == mids[:, 2]) | (mids[:, 1] == mids[:, 2])
+        out[f"{name}.order"] = np.where(~valid, -1, np.where(tied, TIE, code)).astype(np.int8)
         jc = tf["J"] - 25
         okc = jc >= 0
         jcc = np.clip(jc, 0, None)
         A = (L[9]["cmid_bar"][jcc] + L[26]["cmid_bar"][jcc]) / 2
         B = L[52]["cmid_bar"][jcc]
         cl = np.where(c > np.fmax(A, B), 1, np.where(c < np.fmin(A, B), -1, 0))
-        out[f"{name}.cloud"] = np.where(okc & ~np.isnan(A) & ~np.isnan(B), cl, -9).astype(np.int8)
+        out[f"{name}.cloud"] = np.where(okc & ~np.isnan(A) & ~np.isnan(B), cl, MISSING).astype(np.int8)
         out[f"{name}.bal"] = np.nanmean(np.stack(signs[-3:], 1), 1).astype(np.float32)
     S = np.stack(signs, 1)
     out["bal"] = np.nanmean(S, 1).astype(np.float32)
     out["slope_bal"] = np.nanmean(np.stack(slopes, 1), 1).astype(np.float32)
-    out["valid"] = ~np.isnan(S).any(1) & np.all([out[f"{k}.cloud"] != -9 for k in TFS], 0) & np.all([~np.isnan(out[f"{k}.{n}.pos"]) for k in TFS for n in NS], 0)
+    known = ~np.isnan(S).any(1) & np.all([out[f"{k}.cloud"] != MISSING for k in TFS], 0)
+    known &= np.all([~np.isnan(out[f"{k}.{n}.pos"]) for k in TFS for n in NS], 0)
+    for name in TFS:
+        for n in NS:
+            for k in ("slope", "shift", "lag"):
+                known &= out[f"{name}.{n}.{k}"] != MISSING
+    out["valid"] = known
     return out
 
 
 def frames(m: dict, hour_t: int) -> dict:
-    """The 60 minute-frames of one hour (what the page shows), computed on the minutes from WARMUP_DAYS before that day."""
-    day0 = hour_t // 86_400_000 * 86_400_000 - WARMUP_DAYS * 86_400_000
-    a, b = np.searchsorted(m["t"], [day0, hour_t + 3_600_000])
+    """The minutes of one hour (what the page shows), from WARMUP_DAYS existing days before that day."""
+    a = warmup_index(m["t"], hour_t)
+    b = int(np.searchsorted(m["t"], hour_t + 3_600_000, side="left"))
     sub = {k: v[a:b] for k, v in m.items()}
     nu = nucleus(sub)
-    k0 = np.searchsorted(sub["t"], hour_t)
+    k0 = int(np.searchsorted(sub["t"], hour_t, side="left"))
     return {k: v[k0:] for k, v in nu.items()}
 
 
