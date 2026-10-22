@@ -79,11 +79,23 @@ pub struct Flip {
     pub recolor: f32,
     pub additive: bool,
     pub intensity: f32,
+    /// Rides this entity (plus `offset`) while it plays.
+    pub follow: Option<Entity>,
+    pub offset: Vec3,
 }
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0 }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO }
+    }
+    pub fn follow(mut self, e: Entity, offset: Vec3) -> Self {
+        self.follow = Some(e);
+        self.offset = offset;
+        self
+    }
+    pub fn glow(mut self, k: f32) -> Self {
+        self.intensity = k;
+        self
     }
     pub fn tinted(mut self, c: Color, recolor: f32) -> Self {
         self.tint = c;
@@ -141,6 +153,7 @@ struct Playing {
     loops: u32,
     material: Handle<FlipMaterial>,
     opacity: f32,
+    follow: Option<(Entity, Vec3)>,
 }
 
 #[derive(Resource)]
@@ -181,16 +194,25 @@ fn spawn(mut commands: Commands, mut flips: MessageReader<Flip>, sheets: Option<
             Mesh3d(sheets.quad.clone()),
             MeshMaterial3d(material.clone()),
             Transform::from_translation(f.at).with_scale(Vec3::splat(f.size)),
-            Playing { sheet: i, age: 0.0, life: f.life.max(0.05), loops: f.loops, material, opacity: 1.0 },
+            Playing { sheet: i, age: 0.0, life: f.life.max(0.05), loops: f.loops, material, opacity: 1.0, follow: f.follow.map(|e| (e, f.offset)) },
             bevy::light::NotShadowCaster,
             Name::new("Flip"),
         ));
     }
 }
 
-fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Playing)>, mut mats: ResMut<Assets<FlipMaterial>>) {
-    for (e, mut p) in &mut q {
+fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Playing, &mut Transform)>, owners: Query<&Transform, Without<Playing>>, mut mats: ResMut<Assets<FlipMaterial>>) {
+    for (e, mut p, mut tf) in &mut q {
         p.age += time.delta_secs();
+        if let Some((owner, off)) = p.follow {
+            match owners.get(owner) {
+                Ok(o) => tf.translation = o.translation + off,
+                Err(_) => {
+                    commands.entity(e).despawn();
+                    continue;
+                }
+            }
+        }
         let total = p.life * p.loops as f32;
         if p.age >= total {
             commands.entity(e).despawn();

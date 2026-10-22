@@ -21,10 +21,11 @@
 use super::combat::Hitstop;
 use super::camera::{CameraShake, MainCamera};
 use super::hud::log::{HudLog, LogKind};
+use super::flipbook::{Flip, Sheet};
 use super::vfx::{self, Element, Vfx};
 use super::{Fighter, Hit, Intent, Mover, Npc, Player};
 use bevy::prelude::*;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 pub const RAGE_FILL: f32 = 60.0;
 pub const CHAIN_BONUS: f32 = 0.04;
@@ -186,11 +187,14 @@ struct RageBar;
 #[derive(Component)]
 struct RageFill;
 
+/// The old spring-driven ring aura is retired in favour of the pixel flame billboards (`pixel_aura`).
+const RING_AURA: bool = false;
+
 pub fn plugin(app: &mut App) {
     app.init_resource::<Berserkers>()
         .register_required_components::<Fighter, Rage>()
         .add_systems(Startup, load_kit)
-        .add_systems(Update, (fill, smoke, trigger, tick_berserk, flame, bar).chain());
+        .add_systems(Update, (fill, smoke, trigger, tick_berserk, flame, pixel_aura, bar).chain());
 }
 
 fn load_kit(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
@@ -269,6 +273,10 @@ fn trigger(
             vfx::burst(&mut commands, vfx.burst(Element::Fire), tf.translation + Vec3::Y * 0.6, 1.4);
             vfx::burst(&mut commands, vfx.shock(), tf.translation - Vec3::Y * 0.8, 2.0);
         }
+        let feet = tf.translation - Vec3::Y * 0.8;
+        commands.write_message(Flip::new(Sheet::Sunburn, feet + Vec3::Y * 1.2, 6.0, 1.1).glow(1.3));
+        commands.write_message(Flip::new(Sheet::FireSpin, feet + Vec3::Y * 1.0, 3.6, 0.9).follow(e, Vec3::Y * 0.2).looped(3));
+        commands.write_message(Flip::new(Sheet::Vortex, feet + Vec3::Y * 0.15, 5.0, 1.2).tinted(Color::srgb(1.0, 0.35, 0.1), 0.65));
         commands.write_message(super::fracture::Shatter { at: tf.translation, radius: 4.5, force: 50.0 });
         hitstop.trigger(0.25);
         if player {
@@ -277,6 +285,30 @@ fn trigger(
         let who = name.map_or(if player { "You" } else { "?" }.to_string(), |n| n.to_string());
         info!("[berserk] {who} goes berserk");
         log.write(HudLog::new(LogKind::Warn, format!("{who}: BERSERK!")));
+    }
+}
+
+/// The berserk aura: pixel flames licking up the body, dark smoke above, embers. All ride the fighter.
+fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<(Entity, &Transform), With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, f32, u32)>>) {
+    let dt = time.delta_secs().clamp(0.0, 0.1);
+    clocks.retain(|e, _| fighters.contains(*e));
+    for (e, tf) in &fighters {
+        let _ = tf;
+        let c = clocks.entry(e).or_insert((0.0, 0.0, e.to_bits() as u32 | 1));
+        c.0 += dt;
+        c.1 += dt;
+        while c.0 >= 0.16 {
+            c.0 -= 0.16;
+            let (a, b, h) = (rand01(&mut c.2), rand01(&mut c.2), rand01(&mut c.2));
+            let side = Vec3::new(a - 0.5, 0.0, b - 0.5) * 0.7;
+            let sheet = if h < 0.55 { Sheet::Fire } else { Sheet::BrightFire };
+            out.write(Flip::new(sheet, tf.translation, 1.5 + 0.8 * h, 0.85).follow(e, side + Vec3::Y * (-0.6 + 1.3 * h)).glow(1.15));
+        }
+        if c.1 >= 0.45 {
+            c.1 -= 0.45;
+            let (a, b) = (rand01(&mut c.2), rand01(&mut c.2));
+            out.write(Flip::new(Sheet::Midnight, tf.translation, 2.4, 1.5).smoke().tinted(Color::srgb(0.25, 0.04, 0.02), 0.55).follow(e, Vec3::new((a - 0.5) * 0.6, 0.85 + 0.4 * b, (b - 0.5) * 0.6)));
+        }
     }
 }
 
@@ -315,7 +347,7 @@ fn flame(
     // New auras: a pool of rings spread up the taper so it starts full.
     let lit: HashSet<Entity> = flames.iter().map(|(_, f)| f.owner).collect();
     for (e, tf, _, berserk) in &owners {
-        if berserk && !lit.contains(&e) {
+        if RING_AURA && berserk && !lit.contains(&e) {
             let base = tf.translation - Vec3::Y * 0.8;
             let points = std::array::from_fn(|i| base + rest_offset(i as f32 / (NODES - 1) as f32, Vec3::ZERO));
             let mut seed = (e.to_bits() as u32) | 1;
