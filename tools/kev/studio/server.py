@@ -340,8 +340,77 @@ def aim(info, Q, P, bone, direction, child=None):
     set_world_rot(info, Q, P, bone, arc_mat(cur, direction) @ rot_of(Wb))
 
 
-def reach(info, Q, P, chain, target, pole_pt=None):
-    """Two-bone IK: put the chain's end joint at `target` (world), bending toward `pole_pt`. Returns the reach error (m)."""
+def rot_about(axis, theta):
+    a = unit(np.asarray(axis, float))
+    x, y, z = a
+    c, s = math.cos(theta), math.sin(theta)
+    C = 1.0 - c
+    return np.array([[c + x * x * C, x * y * C - z * s, x * z * C + y * s],
+                     [y * x * C + z * s, c + y * y * C, y * z * C - x * s],
+                     [z * x * C - y * s, z * y * C + x * s, c + z * z * C]])
+
+
+def twist_closest(R, prev, axis):
+    """Spin R around `axis` so a perpendicular bone axis stays as close as possible to `prev`.
+
+    aim() only constrains the bone direction. The twist around it is free, and the 180-degree case of the
+    shortest arc picks an arbitrary roll, which turns a hand or a foot inside out between two frames.
+    """
+    a = unit(np.asarray(axis, float))
+    if np.linalg.norm(a) < 1e-6:
+        return R
+    rc = pc = None
+    for col in range(3):
+        rv = R[:, col] - a * float(a @ R[:, col])
+        pv = prev[:, col] - a * float(a @ prev[:, col])
+        if np.linalg.norm(rv) > 0.25 and np.linalg.norm(pv) > 0.25:
+            rc, pc = unit(rv), unit(pv)
+            break
+    if rc is None:
+        return R
+    theta = math.atan2(float(a @ np.cross(rc, pc)), float(np.clip(rc @ pc, -1.0, 1.0)))
+    if abs(theta) < 1e-4:
+        return R
+    return rot_about(a, theta) @ R
+
+
+def bone_world_rot(info, Q, P, bone):
+    if bone not in info["index"]:
+        return None
+    return rot_of(chain_world(info, Q, P, info["index"][bone]))
+
+
+def pelvis_axis(info, Q, P, rest_world):
+    """Where the rig's rest `rest_world` axis points now that the pelvis has been posed."""
+    bi = info["index"]["pelvis"]
+    local = rot_of(info["rest_world"][bi]).T @ unit(np.asarray(rest_world, float))
+    return unit(bone_world_rot(info, Q, P, "pelvis") @ local)
+
+
+def swing_towards(src, dst, max_deg):
+    """Direction of `dst`, limited to `max_deg` away from `src`."""
+    s, d = unit(src), unit(dst)
+    c = float(np.clip(s @ d, -1.0, 1.0))
+    ang = math.acos(c)
+    cap = math.radians(max_deg)
+    if ang < 1e-4 or ang <= cap:
+        return d
+    t = cap / ang
+    return unit(math.sin((1.0 - t) * ang) / math.sin(ang) * s + math.sin(t * ang) / math.sin(ang) * d)
+
+
+def quat_angle(R0, R1):
+    q0, q1 = mat_to_quat(R0), mat_to_quat(R1)
+    d = min(1.0, abs(float(q0 @ q1)))
+    return math.degrees(2.0 * math.acos(d))
+
+
+def reach(info, Q, P, chain, target, pole_pt=None, flex_dir=None):
+    """Two-bone IK: put the chain's end joint at `target` (world), bending toward `pole_pt`. Returns the reach error (m).
+
+    `flex_dir` is the anatomical bend (knees with the body's forward, elbows against it). A pole on the wrong
+    side of the hip-ankle / shoulder-wrist line is reflected, so a bad sheet reading cannot hyperextend the hinge.
+    """
     root, mid, end = CHAINS[chain][:3]
     pos = lambda n: chain_world(info, Q, P, info["index"][n])[:3, 3]  # noqa: E731
     r, m, e = pos(root), pos(mid), pos(end)
@@ -350,9 +419,15 @@ def reach(info, Q, P, chain, target, pole_pt=None):
     d = float(np.clip(np.linalg.norm(t), 1e-3, (l1 + l2) * 0.999))
     u = unit(t)
     pole = (np.asarray(pole_pt, float) - r) if pole_pt is not None else (m - r)
-    pole = unit(pole - u * (pole @ u))
+    pole = pole - u * float(np.asarray(pole, float) @ u)
     if np.linalg.norm(pole) < 1e-6:
-        pole = unit((m - r) - u * ((m - r) @ u))
+        pole = (m - r) - u * float((m - r) @ u)
+    pole = unit(pole)
+    if flex_dir is not None:
+        f = np.asarray(flex_dir, float)
+        f = f - u * float(f @ u)
+        if np.linalg.norm(f) > 1e-4 and np.linalg.norm(pole) > 1e-6 and float(pole @ unit(f)) < -0.35:
+            pole = -pole
     a_ = (l1 * l1 - l2 * l2 + d * d) / (2 * d)
     h = math.sqrt(max(l1 * l1 - a_ * a_, 0.0))
     mid_new = r + u * a_ + pole * h
@@ -433,28 +508,24 @@ def curl_hand(info, Q, P, side, amount, point=False):
     """Curl a hand from rest: each finger joint bends toward the palm by its share of `amount` (0 open .. 1 fist)."""
     W = world_transforms(info, Q, P)
     Wr = info["rest_world"]
-    hb = f"hand_{side}"
-    palm = None
-    kv = None
     names = hand_names(info, side)
     pt = hand_pts(lambda n: W[info["index"][n]][:3, 3], side)
     F = hand_frame(pt)
     axis = F[:, 1]
-    # sign: the curl must carry the fingertips toward the palm side (the hand's z axis points one way; test it)
-    c = 0.0
+    rpos = lambda n: Wr[info["index"][n]][:3, 3]  # noqa: E731
+    Frest = hand_frame(hand_pts(rpos, side))
+    # Sign from the open hand. Reading it off the fingers already posed flips once they pass straight
+    # and the next frame bends them backward.
+    csgn = 0.0
     for f, ch in names.items():
-        if f == "thumb":
+        if f == "thumb" or len(ch) < 2:
             continue
-        d = W[info["index"][ch[1]]][:3, 3] - W[info["index"][ch[0]]][:3, 3]
-        c += float(np.cross(axis, d) @ F[:, 2])
-    sgn = 1.0 if c < 0 else -1.0
-    if STATE.get("summary") and f"palm_{side}" in STATE["summary"].get("facings", {}):
-        palm = np.array(STATE["summary"]["facings"][f"palm_{side}"]["vector"])
-        sgn = 1.0 if float(np.cross(axis, F[:, 0]) @ palm) < 0 else -1.0
+        d = rpos(ch[1]) - rpos(ch[0])
+        csgn += float(np.cross(Frest[:, 1], d) @ Frest[:, 2])
+    sgn = 1.0 if csgn < 0 else -1.0
     for f, ch in names.items():
         amt = 0.0 if (point and f == "index") else amount
-        d_rest = [Wr[info["index"][c]][:3, 3] - Wr[info["index"][b]][:3, 3] for b, c in zip(ch, ch[1:])]
-        Frest = hand_frame(hand_pts(lambda n: Wr[info["index"][n]][:3, 3], side))
+        d_rest = [rpos(c) - rpos(b) for b, c in zip(ch, ch[1:])]
         ang = 0.0
         for (b, c), dr, deg in zip(zip(ch, ch[1:]), d_rest, CURL[f]):
             ang += math.radians(deg) * amt
@@ -486,8 +557,14 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
         Wp = chain_world(info, Q, P, p) if p >= 0 else np.eye(4)
         Pw, pp = rot_of(Wp), Wp[:3, 3]
         P["pelvis"] = Pw.T @ (target - pp)
+    prev_rot = {b: bone_world_rot(info, Q, P, b) for b in ("hand_l", "hand_r", "foot_l", "foot_r", "Head")}
     if need("hip_l", "hip_r", "neck", "pelvis", "shoulder_l", "shoulder_r"):
         up = np.array(lm["neck"]) - np.array(lm["pelvis"])
+        # Linear landmark blends collapse a flip: the neck-pelvis vector whips through 100 degrees on one frame.
+        # Cap the step. A real strike at 60 fps stays under this; the catch-up lands on the following frames.
+        if "pelvis" in Q and np.linalg.norm(up) > 1e-6:
+            prev_up = pelvis_axis(info, Q, P, info["bm"]["body"]["up"])
+            up = swing_towards(prev_up, up, 48)
         up0 = rest_lm(info, "neck") - rest_lm(info, "pelvis")
         Dp = basis(np.array(lm["hip_l"]) - np.array(lm["hip_r"]), up) @ basis(rest_lm(info, "hip_l") - rest_lm(info, "hip_r"), up0).T
         Dc = basis(np.array(lm["shoulder_l"]) - np.array(lm["shoulder_r"]), up) @ basis(rest_lm(info, "shoulder_l") - rest_lm(info, "shoulder_r"), up0).T
@@ -497,25 +574,59 @@ def apply_frame(info, lm, inplace=True, hands=None, Qp=None, Pp=None):
             set_world_rot(info, Q, P, bone, slerp_mat(Dp, Dc, t) @ rest_rot(bone))
         if need("crown", "nose", "head_joint"):
             hj = np.array(lm["head_joint"])
-            Dh = basis(np.cross(np.array(lm["crown"]) - hj, np.array(lm["nose"]) - hj), np.array(lm["crown"]) - hj) @ \
-                basis(np.cross(rest_lm(info, "crown") - rest_lm(info, "head_joint"), rest_lm(info, "nose") - rest_lm(info, "head_joint")),
-                      rest_lm(info, "crown") - rest_lm(info, "head_joint")).T
+            xraw = np.cross(np.array(lm["crown"]) - hj, np.array(lm["nose"]) - hj)
+            yraw = np.array(lm["crown"]) - hj
+            # Nose read onto the crown-neck line makes this cross a coin flip and the head pops 180 degrees.
+            if np.linalg.norm(xraw) < 0.006 or np.linalg.norm(yraw) < 1e-4:
+                Dh = Dc
+            else:
+                Dh = basis(xraw, yraw) @ \
+                    basis(np.cross(rest_lm(info, "crown") - rest_lm(info, "head_joint"), rest_lm(info, "nose") - rest_lm(info, "head_joint")),
+                          rest_lm(info, "crown") - rest_lm(info, "head_joint")).T
+            Rh = Dh @ rest_rot("Head")
+            if prev_rot.get("Head") is not None:
+                ang = quat_angle(prev_rot["Head"], Rh)
+                if ang > 60.0:
+                    Rh = slerp_mat(prev_rot["Head"], Rh, min(1.0, 40.0 / ang))
+                    Dh = Rh @ rest_rot("Head").T
             if "neck_01" in info["index"]:
                 set_world_rot(info, Q, P, "neck_01", slerp_mat(Dc, Dh, 0.5) @ rest_rot("neck_01"))
-            set_world_rot(info, Q, P, "Head", Dh @ rest_rot("Head"))
+            set_world_rot(info, Q, P, "Head", Rh)
     err = {}
+    flex = None
+    if "pelvis" in info["index"] and info.get("bm"):
+        fwd = pelvis_axis(info, Q, P, info["bm"]["body"]["forward"])
+        flex = {"leg": fwd, "arm": -fwd}
     for chain, (root, mid, end, tgt, pole) in CHAINS.items():
         if need(tgt):
-            err[tgt] = reach(info, Q, P, chain, lm[tgt], lm.get(pole))
+            kind = "leg" if chain.startswith("leg") else "arm"
+            err[tgt] = reach(info, Q, P, chain, lm[tgt], lm.get(pole), None if flex is None else flex[kind])
     herr = {}
+    posed = set()
     for side in "lr":
         if hands:
             e = pose_hand(info, Q, P, side, hands)
             if e is not None:
                 herr[f"fingers_{side}"] = e
+                posed.add(side)
+    for side in "lr":
+        hb = f"hand_{side}"
+        child = f"middle_01_{side}"
+        if side in posed or hb not in info["index"] or prev_rot.get(hb) is None:
+            continue
+        if child in info["index"]:
+            Wb = chain_world(info, Q, P, info["index"][hb])
+            axis = child_pos(info, Q, P, info["index"][hb], info["index"][child], Wb) - Wb[:3, 3]
+        else:
+            axis = bone_world_rot(info, Q, P, hb) @ np.array([0.0, 1.0, 0.0])
+        set_world_rot(info, Q, P, hb, twist_closest(bone_world_rot(info, Q, P, hb), prev_rot[hb], axis))
     for side in "lr":
         if need(f"ball_{side}", f"ankle_{side}"):
-            aim(info, Q, P, f"foot_{side}", np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"]))
+            direction = np.array(lm[f"ball_{side}"]) - np.array(lm[f"ankle_{side}"])
+            aim(info, Q, P, f"foot_{side}", direction)
+            fb = f"foot_{side}"
+            if prev_rot.get(fb) is not None:
+                set_world_rot(info, Q, P, fb, twist_closest(bone_world_rot(info, Q, P, fb), prev_rot[fb], direction))
     err.update(herr)
     return err
 
@@ -676,6 +787,10 @@ def bake(model, name, fps=60):
     for k in range(n):
         lm, hd = solve_ref(info, ref, k / fps)
         err = apply_frame_into(info, Q, P, lm, hd)
+        if not hd:  # sheet figures hold fists; a clip reference brings its own finger tracks
+            for side in "lr":
+                if f"hand_{side}" in info["index"]:
+                    curl_hand(info, Q, P, side, 1.0)
         frames.append({"q": {b: [round(float(x), 5) for x in q] for b, q in Q.items()}, "p": [round(float(x), 5) for x in P["pelvis"]]})
         m = kev_read(info, Q, P)
         errs.append(float(np.mean([np.linalg.norm(np.array(m["landmarks"][kk]) - np.array(lm[kk])) for kk in lm if kk in m["landmarks"]])))
