@@ -235,7 +235,7 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
 }
 
 /// `GB_FLIP=<index|all>[:alpha]` shows that sheet beside the player every 2.4 s (dev smoke test); `all` walks every sheet.
-fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Flip>, player: Query<&Transform, With<super::Player>>, mut state: Local<(Option<f32>, usize, Option<(f32, String)>)>) {
+fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Flip>, player: Query<(Entity, &Transform), With<super::Player>>, mut state: Local<(Option<f32>, usize, Option<(f32, String)>)>) {
     let Ok(v) = std::env::var("GB_FLIP") else { return };
     let (which, mode) = v.split_once(':').unwrap_or((v.as_str(), ""));
     let all = which == "all";
@@ -246,7 +246,7 @@ fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Fl
         state.2 = None;
         shoot(&mut commands, path);
     }
-    let Ok(pt) = player.single() else { return };
+    let Ok((pe, pt)) = player.single() else { return };
     if now < 2.0 || state.0.is_some_and(|l| now - l < REEL_STEP) || (all && state.1 >= Sheet::ALL.len()) {
         return;
     }
@@ -254,6 +254,10 @@ fn flip_smoke(mut commands: Commands, time: Res<Time>, mut out: MessageWriter<Fl
     let idx = if all { state.1 } else { which.parse::<usize>().unwrap_or(0).min(19) };
     state.1 += 1;
     let mut f = Flip::new(Sheet::ALL[idx], pt.translation + Vec3::Y * 1.4 + *pt.forward() * 2.2, 4.5, 1.6);
+    if std::env::var_os("GB_FLIP_BODY").is_some() {
+        // Wrapped around the fighter, like an aura.
+        f = Flip::new(Sheet::ALL[idx], pt.translation, 3.6, 1.6).follow(pe, Vec3::Y * 0.3);
+    }
     f.additive = mode != "alpha";
     info!("[flip] {:?} at {:?} size {} ({})", f.sheet, f.at, f.size, if f.additive { "add" } else { "alpha" });
     out.write(f);
