@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1.0,
+ "detail": "A side-view or orbit-around camera option for recordings (GB_CAM or similar) so kicks are visible.",
+ "done_when": "a recording where an extended kick is readable",
+ "id": "T006",
+ "owner": null,
+ "status": "todo",
+ "title": "Camera for showing moves",
+ "updated": 1.0
+}

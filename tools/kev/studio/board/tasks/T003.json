@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1.0,
+ "detail": "Use the front-view sheet to read left/right offsets for the peak frames of each animation instead of the fixed half-widths.",
+ "done_when": "mean landmark error on the nine drops below 6 cm",
+ "id": "T003",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Front-view depth for the peak poses",
+ "updated": 1.0
+}

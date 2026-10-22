@@ -41,6 +41,8 @@ KEV = os.path.dirname(HERE)
 REPO = os.path.dirname(os.path.dirname(KEV))
 ANIM = os.path.join(REPO, "assets", "anim")
 sys.path.insert(0, KEV)
+sys.path.insert(0, HERE)
+import workroom  # noqa: E402
 import bodymap  # noqa: E402
 import nodes as kev_nodes  # noqa: E402
 import quality.core as quality  # noqa: E402
@@ -48,6 +50,7 @@ import statue  # noqa: E402
 
 MIME = {".html": "text/html", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".glb": "model/gltf-binary",
         ".txt": "text/plain", ".png": "image/png"}
+TOKEN = ""
 LOCK = threading.Lock()
 CLIENTS = []
 STATE = {"model": None, "clip": None, "playing": False, "t": 0.0, "duration": 0.0, "speed": 1.0, "summary": {}, "stamp": 0.0}
@@ -1097,9 +1100,22 @@ class Handler(BaseHTTPRequestHandler):
         with open(p, "rb") as f:
             self.reply(200, f.read(), MIME.get(ext, "application/octet-stream"))
 
+    def allowed(self):
+        """The workroom token, when the server was started with one: every /api call must carry it."""
+        if not TOKEN or not urllib.parse.urlparse(self.path).path.startswith("/api/"):
+            return True
+        q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+        return (self.headers.get("X-Token") or (q.get("token") or [""])[0]) == TOKEN
+
     def do_GET(self):
         u = urllib.parse.urlparse(self.path)
         path = u.path
+        if not self.allowed():
+            return self.reply(401, {"error": "token needed: X-Token header or ?token="})
+        if path == "/api/board":
+            who = workroom.who_of(self)
+            workroom.touch(who, "read board")
+            return self.reply(200, workroom.board())
         if path == "/":
             return self.serve_file(os.path.join(HERE, "static"), "index.html")
         if path.startswith("/static/"):
@@ -1152,8 +1168,20 @@ class Handler(BaseHTTPRequestHandler):
         except ValueError:
             return self.reply(400, {"error": "bad json"})
         path = urllib.parse.urlparse(self.path).path
+        if not self.allowed():
+            return self.reply(401, {"error": "token needed: X-Token header or ?token="})
+        who = workroom.who_of(self, body)
         if path == "/api/telemetry":
             return self.telemetry(body)
+        if path == "/api/board":
+            code, out = workroom.act(who, body)
+            broadcast("board", {"by": who})
+            return self.reply(code, out)
+        if path in ("/api/cmd", "/api/control"):
+            ok, why = workroom.gate(who)
+            workroom.touch(who, path)
+            if not ok:
+                return self.reply(423, {"error": why})
         if path == "/api/cmd":
             return self.reply(200, send_cmd(body))
         if path == "/api/control":
@@ -1169,11 +1197,15 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(200, {"reach_error_m": {k: round(v, 4) for k, v in err.items()},
                                     "landmarks": measured["landmarks"], "balance": measured["balance"]})
         if path == "/api/exec":
+            ok, why = workroom.gate(who, body.get("line", ""))
+            workroom.touch(who, body.get("line", "")[:60])
+            if not ok:
+                return self.reply(423, {"error": why})
             try:
                 out = execute(body.get("line", ""))
             except Exception as e:  # noqa: BLE001
                 out = f"error: {e}"
-            broadcast("log", {"line": body.get("line", ""), "out": out, "from": body.get("from", "api")})
+            broadcast("log", {"line": body.get("line", ""), "out": out, "from": who})
             return self.reply(200, {"out": out})
         self.reply(404, {"error": "not found"})
 
@@ -1200,7 +1232,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8765)
     ap.add_argument("--host", default="127.0.0.1")
+    ap.add_argument("--token", default="", help="require this token on every /api call (set it before exposing the server through a tunnel)")
     a = ap.parse_args()
+    global TOKEN
+    TOKEN = a.token
+    if a.host not in ("127.0.0.1", "localhost") and not TOKEN:
+        raise SystemExit("--host other than localhost needs --token")
     srv = ThreadingHTTPServer((a.host, a.port), Handler)
     srv.daemon_threads = True
     print(f"Kev Studio on http://{a.host}:{a.port}  (assets: {ANIM})", flush=True)

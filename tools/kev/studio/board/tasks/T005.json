@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1.0,
+ "detail": "Heavy attack chain (roundhouse, spinning back kick, axe kick, flying side kick): hit windows, travel, charge times.",
+ "done_when": "each kick lands on a foe in a recording, hit windows match the foot's fastest moment",
+ "id": "T005",
+ "owner": null,
+ "status": "todo",
+ "title": "Kick chain in a real fight",
+ "updated": 1.0
+}

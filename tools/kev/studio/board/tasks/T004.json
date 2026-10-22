@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1.0,
+ "detail": "Check the roar timing against the aura burst, the crouched idle against walking and attacks, and the end of berserk.",
+ "done_when": "a recording where the roar, aura and stance line up and the stance returns cleanly",
+ "id": "T004",
+ "owner": "claude",
+ "status": "todo",
+ "title": "Berserk stance and roar in a real fight",
+ "updated": 1.0
+}

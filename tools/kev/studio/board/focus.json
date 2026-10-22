@@ -1,0 +1,10 @@
+{
+ "focus": "ANIMATION: make the brawler-mage moves read right in the game: the new kicks, dive, backflip and cast, plus the berserk stance and roar.",
+ "rules": [
+  "One hand on the rig at a time: take the lease before driving Kev Studio (the server does it for you on your first write).",
+  "Claim a task before starting it; write a note when you change something or find a problem.",
+  "Work on your own branch (grok/... or claude/...), never push to ev/kev-categoriser directly; say which commit holds your result in the task's `result`.",
+  "A glitch is: inverted hinge, hand or foot flipped, foot sinking or floating in a grounded frame, pelvis or head pop between frames, planted leg changing identity.",
+  "Look before you claim it works: attach a picture or a measured number."
+ ]
+}

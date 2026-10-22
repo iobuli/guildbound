@@ -3,6 +3,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+const TOKEN = new URLSearchParams(location.search).get('token') || '';
+const _fetch = window.fetch.bind(window);
+window.fetch = (url, opt = {}) => (typeof url === 'string' && url.startsWith('/api/'))
+  ? _fetch(url, { ...opt, headers: { 'X-Client': 'user', ...(TOKEN ? { 'X-Token': TOKEN } : {}), ...(opt.headers || {}) } }) : _fetch(url, opt);
+
 
 const $ = (id) => document.getElementById(id);
 const view = $('view');
@@ -200,7 +205,7 @@ async function init() {
       await fetch('/api/exec', { method: 'POST', body: JSON.stringify({ line, from: 'console' }) });
     }
   };
-  const ev = new EventSource('/api/events');
+  const ev = new EventSource('/api/events' + (TOKEN ? '?token=' + encodeURIComponent(TOKEN) : ''));
   ev.addEventListener('cmd', (e) => handle(JSON.parse(e.data)));
   ev.addEventListener('state', (e) => renderKev(JSON.parse(e.data)));
   ev.addEventListener('log', (e) => { const d = JSON.parse(e.data); log(`kev> ${d.line}${d.from !== 'console' ? '   [' + d.from + ']' : ''}\n${d.out}`); });
@@ -229,3 +234,21 @@ window.ksView = (name) => {
   const v = { side: [-4.6, 1.0, 0], front: [0, 1.0, 4.6], back: [0, 1.0, -4.6], three: [2.6, 1.7, 3.2] }[name] || [2.6, 1.7, 3.2];
   camera.position.set(...v); controls.target.set(0, 0.9, 0); controls.update();
 };
+
+// ---- workroom: who is here, who holds the rig, the focus and the tasks (board/ in the repo) ----
+async function board(body) { const r = await fetch('/api/board', { method: 'POST', body: JSON.stringify(body) }); loadBoard(); return r; }
+async function loadBoard() {
+  let b; try { b = await (await fetch('/api/board')).json(); } catch (e) { return; }
+  const esc = (t) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+  $('rfocus').textContent = b.focus.focus || '(no focus set)';
+  $('rpres').innerHTML = Object.entries(b.presence).map(([w, v]) => `<span title="${esc(v.did)}" style="margin-right:8px;color:${v.idle_s < 30 ? 'var(--good)' : 'var(--dim)'}">● ${esc(w)}</span>`).join('') || '<span style="color:var(--dim)">nobody here</span>';
+  const l = b.lease;
+  $('rlease').innerHTML = (l.holder ? `rig held by <b>${esc(l.holder)}</b> (${Math.round(l.left_s)} s) ` : 'rig free ') + '<button id="lt">take</button> <button id="lr">release</button>';
+  $('lt').onclick = () => board({ action: 'take_lease' }); $('lr').onclick = () => board({ action: 'release_lease' });
+  const col = { todo: 'var(--dim)', doing: 'var(--accent)', review: '#e6c15a', done: 'var(--good)', blocked: 'var(--bad)' };
+  $('rtasks').innerHTML = b.tasks.map((t) => `<div style="border-top:1px solid var(--line);padding:4px 0"><span style="color:${col[t.status]}">${esc(t.status)}</span> <b>${esc(t.id)}</b> ${esc(t.title)}<br><span style="color:var(--dim)">${esc(t.owner || 'unclaimed')}</span> ` +
+    ['doing', 'review', 'done'].map((s) => `<button data-t="${esc(t.id)}" data-s="${s}">${s}</button>`).join('') + '</div>').join('');
+  $('rtasks').querySelectorAll('button').forEach((bn) => bn.onclick = () => board({ action: 'status', id: bn.dataset.t, status: bn.dataset.s }));
+  $('rnotes').innerHTML = b.notes.slice(-6).map((n) => `<div>${esc(n.who)}: ${esc(n.text)}</div>`).join('');
+}
+setInterval(loadBoard, 3000); loadBoard();

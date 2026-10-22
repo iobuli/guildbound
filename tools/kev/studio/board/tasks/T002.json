@@ -1,0 +1,11 @@
+{
+ "by": "claude",
+ "created": 1.0,
+ "detail": "Karate, blocky and styles rigs, side and front camera. List frames with a glitch and fix cause (solver, sheet reading or smoothing).",
+ "done_when": "no glitch from the rules list on all three rigs, or the rest are listed with causes",
+ "id": "T002",
+ "owner": "grok",
+ "status": "review",
+ "title": "Hand and foot glitch pass on the nine generated animations",
+ "updated": 1.0
+}

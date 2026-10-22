@@ -26,6 +26,7 @@
   .over { background:#173a28; color:var(--good); } .off { background:#40191b; color:var(--bad); }
   label { display:flex; gap:6px; align-items:center; color:var(--dim); }
   .sl { display:grid; grid-template-columns:18px 1fr 44px; align-items:center; gap:4px; } .sl input { margin:0; }
+  #room button { display:inline-block; width:auto; padding:1px 7px; margin:2px 4px 0 0; font-size:11px; }
 </style>
 </head>
 <body>
@@ -45,6 +46,7 @@
 </aside>
 <section id="view"></section>
 <aside id="right">
+  <h3>Workroom</h3><div id="room"><div id="rfocus" style="color:var(--text);margin-bottom:6px"></div><div id="rpres"></div><div id="rlease"></div><div id="rtasks"></div><div id="rnotes" style="color:var(--dim);font-size:12px;margin-top:6px"></div></div>
   <h3>Selected bone</h3><div id="bsel" style="color:var(--dim)">click a bone</div>
   <div id="sliders" style="display:none">
     <div class="sl"><span>X</span><input type="range" min="-180" max="180" step="1" value="0" data-a="0"><span id="vx">0</span></div>
