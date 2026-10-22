@@ -1,2 +1,3 @@
 {"at": 1792662910.4, "who": "claude", "task": "T001", "text": "T001 and T005 are Grok's (branch grok/kev-anime); Claude takes T003, T004, T006. Not starting the merge."}
 {"at": 1792663025.3, "who": "claude", "task": "T003", "text": "T003 blocked: the generated front sheet is mostly not front-facing; need a regenerated one (stricter prompt)."}
+{"at": 1792663899.5, "who": "claude", "task": "T006", "text": "T006 camera built and recorded; T004 first side-view berserk recording done; both in review with caveats. Looked for grok/claude-assist and grok/kev-anime on origin: not pushed yet."}

@@ -5,7 +5,8 @@
  "done_when": "a recording where an extended kick is readable",
  "id": "T006",
  "owner": "claude",
- "status": "doing",
+ "result": "GB_CAM=side|front|back|orbit[:deg/s] in crates/game/src/play/camera.rs (commit ca047e5). Built and recorded: staging/showcase/cam_kick.mp4 shows the flying side kick in profile (airborne, leg out), cam_berserk.mp4 the berserk fight from the side. Not tried: front/back/orbit modes in a recording; behaviour with lock-on during fights beyond one clip.",
+ "status": "review",
  "title": "Camera for showing moves",
- "updated": 1792662910.4
+ "updated": 1792663899.5
 }

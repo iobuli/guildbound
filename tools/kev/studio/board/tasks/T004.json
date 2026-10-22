@@ -5,7 +5,8 @@
  "done_when": "a recording where the roar, aura and stance line up and the stance returns cleanly",
  "id": "T004",
  "owner": "claude",
- "status": "doing",
+ "result": "Recorded cam_berserk.mp4 (side camera, berserk at 3 s, unarmed fight). Seen in stills: the roar fire burst covers the fighter for a moment, then the aura rings and lightning arcs, and the fighter crouches forward in the feral stance. Not checked: the roar pose itself (hidden by the burst), the stance on walking and attacking, and the return to normal at the end of berserk. Needs a frame-by-frame look or a quieter burst.",
+ "status": "review",
  "title": "Berserk stance and roar in a real fight",
- "updated": 1792662910.4
+ "updated": 1792663899.5
 }
