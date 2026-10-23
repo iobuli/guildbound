@@ -24,11 +24,11 @@ use std::f32::consts::{PI, TAU};
 /// Zoom limits (m).
 pub const MIN_DISTANCE: f32 = 2.5;
 pub const MAX_DISTANCE: f32 = 9.0;
-const DEFAULT_DISTANCE: f32 = 5.0;
+const DEFAULT_DISTANCE: f32 = 5.8;
 /// Pitch limits (rad, + looks down).
 const PITCH_MIN: f32 = -0.7;
 const PITCH_MAX: f32 = 1.2;
-const DEFAULT_PITCH: f32 = 0.3;
+const DEFAULT_PITCH: f32 = 0.22;
 /// The camera frames the chest (≈1.35 m above the soles), not the capsule centre.
 const CHEST_ABOVE_ROOT: f32 = 1.35 - HALF_HEIGHT;
 /// Mouse look (rad per pixel), right stick (rad/s), wheel (m per notch).
@@ -59,14 +59,14 @@ const LOCK_EXTRA_DISTANCE: f32 = 0.25;
 const LOCK_MAX_EXTRA: f32 = 3.0;
 const LOCK_MAX_RANGE: f32 = 30.0;
 /// Collision probe radius (m) and how fast the boom eases back out after a pull-in (1/s).
-const PROBE_RADIUS: f32 = 0.22;
+const PROBE_RADIUS: f32 = 0.3;
 const BOOM_RECOVER_RATE: f32 = 4.0;
 const BOOM_MIN: f32 = 0.35;
 /// Shake: trauma lost per second; maximum angles (rad) and offset (m) at trauma 1.
 const SHAKE_DECAY: f32 = 1.6;
 const SHAKE_YAW: f32 = 0.045;
 const SHAKE_PITCH: f32 = 0.045;
-const SHAKE_ROLL: f32 = 0.06;
+const SHAKE_ROLL: f32 = 0.018;
 const SHAKE_OFFSET: f32 = 0.08;
 
 pub fn plugin(app: &mut App) {
@@ -477,7 +477,7 @@ pub(crate) fn follow(
     }
 
     // Aim (over-shoulder) blend.
-    let aiming = intent.secondary_held && aims_over_shoulder(loadout, movesets.as_deref());
+    let aiming = (intent.secondary_held && aims_over_shoulder(loadout, movesets.as_deref())) || intent.art_held || intent.spell_held;
     let aim_goal = if aiming { 1.0 } else { 0.0 };
     rig.aim_blend += (aim_goal - rig.aim_blend) * blend(AIM_RATE, dt);
 
@@ -493,7 +493,7 @@ pub(crate) fn follow(
         lock_extra = (sep * LOCK_EXTRA_DISTANCE).min(LOCK_MAX_EXTRA) * w;
         // Steer the view behind the player toward the target.
         if target.is_some() && sep > 0.5 && rig.aim_blend < 0.5 {
-            let wanted = to.x.atan2(to.z);
+            let wanted = to.x.atan2(to.z) + 0.32;
             rig.yaw = wrap_angle(rig.yaw + wrap_angle(wanted - rig.yaw) * blend(LOCK_YAW_RATE, dt));
         }
     }
@@ -571,7 +571,7 @@ pub(crate) fn follow(
     let fov = FOV_DEG.lerp(AIM_FOV_DEG, rig.aim_blend).to_radians();
     for (mut transform, mut projection) in &mut cameras {
         let base = Transform::from_translation(eye).looking_to(forward, Vec3::Y);
-        transform.translation = eye + base.rotation * shake_offset;
+        transform.translation = cast(eye, eye + base.rotation * shake_offset);
         transform.rotation = (base.rotation * shake_rot).normalize();
         if let Projection::Perspective(p) = &mut *projection
             && (p.fov - fov).abs() > 1e-4

@@ -51,6 +51,10 @@ use std::f32::consts::{FRAC_PI_2, PI};
 
 /// Half size of the flat training courtyard (y = 0 inside).
 pub const COURTYARD_HALF: f32 = 15.0;
+/// Focused combat build. Set GB_WORLD_FULL=1 to restore the populated sandbox.
+pub fn duel_mode() -> bool {
+    std::env::var("GB_WORLD_FULL").as_deref() != Ok("1")
+}
 /// Half size of the terrain mesh (m).
 pub const TERRAIN_HALF: f32 = 120.0;
 /// Terrain vertex spacing (m).
@@ -132,6 +136,7 @@ fn guests(
     mut leaving: Local<Vec<Guest>>,
     mut started: Local<bool>,
 ) {
+    if duel_mode() { return; }
     let at_start = !*started && time.elapsed_secs() > 0.5;
     if at_start {
         *started = true;
@@ -676,7 +681,7 @@ fn setup(
     spawn_pond(&mut kit);
     super::beam::spawn_tightrope(&mut kit);
     spawn_traversal(&mut kit);
-    spawn_training_ground(&mut kit);
+    if !duel_mode() { spawn_training_ground(&mut kit); }
     spawn_props(&mut kit);
     spawn_interactables(&mut kit, &assets);
     super::doors::spawn_doors(&mut kit);
@@ -1279,12 +1284,16 @@ fn spawn_characters(commands: &mut Commands) {
         Fighter::new(0, 100.0),
         Loadout {
             // Weapons come from the chest (`armory`); fists until then.
-            slots: vec!["unarmed".to_string()],
+            slots: vec![if duel_mode() { "sparking" } else { "unarmed" }.to_string()],
             current: 0,
         },
         None,
     );
-    commands.entity(player).insert(Player);
+    let mut player_sheet = Sheet::default();
+    player_sheet.abilities = super::magic::ABILITIES.iter().map(|a| a.id).collect();
+    commands.entity(player).insert((Player,
+        player_sheet,
+        Grimoire { art: "aura_bullet", spell: "cinder_bolt", ..default() }));
     // The player's look (`GB_HERO`, `GB_LOOK`; `appearance`): replaces the mannequin's ModelRequest.
     super::appearance::dress_player(commands, player);
     let forward = Vec3::new(SPAWN_YAW.sin(), 0.0, SPAWN_YAW.cos());
@@ -1296,7 +1305,7 @@ fn spawn_characters(commands: &mut Commands) {
         SPAWN_YAW + PI,
         Fighter::new(1, 100.0),
         Loadout {
-            slots: vec!["katana".to_string()],
+            slots: vec![if duel_mode() { "sparking" } else { "katana" }.to_string()],
             current: 0,
         },
         Some(Color::srgb(0.80, 0.30, 0.26)),
@@ -1308,6 +1317,7 @@ fn spawn_characters(commands: &mut Commands) {
     sheet.grant("swordsmanship", xp_for_level(20));
     sheet.grant("defence", xp_for_level(12));
     commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
+    if duel_mode() { return; }
 
     // Monks of the hill road (`discipline`): fists and an iron guard, each one looking his own
     // (`looks::monk_look`). Two wander as foes (ranks E and C); the Elder (rank S) sits by the

@@ -114,7 +114,7 @@ pub struct ClassChoice {
 
 pub fn plugin(app: &mut App) {
     // `GB_CLASS_MENU=1` shows the panel even in a smoke run.
-    let smoke = std::env::vars().any(|(k, _)| k.starts_with("GB_")) && std::env::var_os("GB_CLASS_MENU").is_none();
+    let smoke = super::world::duel_mode() || (std::env::vars().any(|(k, _)| k.starts_with("GB_")) && std::env::var_os("GB_CLASS_MENU").is_none());
     let picked = std::env::var("GB_CLASS").ok().and_then(|s| Class::from_name(&s));
     app.insert_resource(ClassChoice { open: !smoke, picked, applied: false })
         .add_systems(Startup, spawn_panel)

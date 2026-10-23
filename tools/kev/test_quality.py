@@ -39,6 +39,15 @@ class MotionStateTests(unittest.TestCase):
 
 
 class CleanupTests(unittest.TestCase):
+    def test_closed_weapon_grip_is_not_a_backward_palm(self):
+        hpts = {
+            "hand_r": np.array([0.0, 0.0, 0.0]),
+            "middle_01_r": np.array([0.0, 0.04, 0.0]),
+            "middle_02_r": np.array([0.0, 0.04, -0.035]),
+            "middle_03_r": np.array([0.0, 0.005, -0.035]),
+        }
+        self.assertTrue(Q.hand_closed("r", hpts))
+
     def test_knee_bent_backward_is_flagged_and_reflected(self):
         names = ["hip_l", "knee_l", "ankle_l"]
         # Knee sits behind the hip-ankle line (forward is +Z).
@@ -86,6 +95,19 @@ class CleanupTests(unittest.TestCase):
         L[:, 1] = [0.1, -0.04, 0.35]
         S, _, _ = Q.clean(L, names, 60, 0.0, 1.8, None, BODY, {}, restyle=False)
         self.assertGreaterEqual(S[:, :, 1].min(), -Q.FLOOR_EPS - 1e-6)
+
+    def test_final_leg_settle_keeps_ankle_inside_limit(self):
+        names = ["hip_l", "knee_l", "ankle_l", "ball_l", "toe_tip_l"]
+        frame = np.array([[0.0, 0.92, 0.0], [0.0, 0.50, 0.12], [0.0, 0.10, 0.0],
+                          [0.0, 0.02, -0.13], [0.0, 0.01, -0.20]], float)
+        L = np.repeat(frame[None], 8, 0)
+        lengths = {("hip_l", "knee_l"): np.linalg.norm(frame[1] - frame[0]),
+                   ("knee_l", "ankle_l"): np.linalg.norm(frame[2] - frame[1]),
+                   ("ankle_l", "ball_l"): np.linalg.norm(frame[3] - frame[2]),
+                   ("ball_l", "toe_tip_l"): np.linalg.norm(frame[4] - frame[3])}
+        S, _, _ = Q.clean(L, names, 60, 0.0, 1.8, None, BODY, lengths, restyle=False)
+        after = Q.validate(S, names, 60, 0.0, 1.8, None, BODY, lengths)
+        self.assertFalse(any(i["kind"] == "ankle_limit" for i in after), after)
 
     def test_planted_foot_stops_sliding(self):
         names = ["ankle_l", "ball_l"]

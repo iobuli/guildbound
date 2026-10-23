@@ -14,3 +14,7 @@ __pycache__/
 
 # Third-party FX we may not redistribute (Unity package, licence not stated): local only
 /assets/vfx/fire/
+
+# Local archive previews and converted third-party motion cache
+/assets/anim/sparking_cache/
+/assets/environment/sparking/

@@ -83,6 +83,7 @@ pub fn plugin(app: &mut App) {
 }
 
 fn spawn(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
+    if super::world::duel_mode() { return; }
     let (feet, yaw) = home();
     let e = spawn_character(
         &mut commands,

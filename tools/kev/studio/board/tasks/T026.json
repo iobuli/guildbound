@@ -1,0 +1,12 @@
+{
+ "by": "codex",
+ "created": 1792689909.0,
+ "detail": "Audit and repair measurable accuracy/glitch problems in the generated catalogue, then author a synchronized battle-shonen sword-vs-fist exchange: rapid engagement, attacks from both fighters, blocks, perfect counters, hit reactions, impact holds, and clean recoveries. Add presentation and timing polish without changing unrelated game files.",
+ "done_when": "Paired 60 fps tracks and a frame/contact manifest exist; every attack, block, counter and hit has matching contact timing; automated quality checks show no critical stretch, pop, hyperextension, floor, or foot-slide issues; front and side contact sheets make every beat readable.",
+ "id": "T026",
+ "owner": "codex",
+ "status": "review",
+ "title": "Polish animation accuracy and build sword-vs-fist shonen duel",
+ "updated": 1792695064.0,
+ "result": "codex/shonen-choreography: assets/anim/shonen_duel.glb contains seven original 60 fps tracks (2 synchronized 2.6 s duel tracks, 4 compact gameplay attacks/counters, and a self-authored bow shot replacing Rokoko). Runtime bank no longer loads Rokoko or CMU; shipped movesets reference only UAL, Sekiro, Kevin, and self-authored libraries. docs/anim/shonen_duel/ has paired proof renders and contacts.json; docs/anim/shonen_bow/ has bow key proofs. New/generated clips report 0 quality issues; 23 quality tests pass. Berserk pixel aura now uses 22% authored alpha plus a hot sprite-contour rim. Rust build could not run because this machine has no installed rustup toolchain."
+}

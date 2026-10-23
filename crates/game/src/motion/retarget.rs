@@ -1,6 +1,6 @@
 //! Donor clip → canonical skeleton.
 //! - Same-skeleton libraries (`ual1`, `ual2`): copy local rotations by bone name.
-//! - Mixamo (`sekiro`, `rokoko`) and CMU mocap (`cmu`, BVH via `bvh`): name map (`MIXAMO_MAP` /
+//! - Mixamo (`sekiro`): name map (`MIXAMO_MAP` /
 //!   `CMU_MAP`), then per mapped bone in model space
 //!   `W_dst(t) = W_src(t) · W_src_bind⁻¹ · W_dst_bind`, converted back to local through the
 //!   destination parent chain. Both binds are T-pose, +Z forward, so this removes axis-convention

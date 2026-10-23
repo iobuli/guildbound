@@ -41,6 +41,24 @@
       }
     },
     {
+      "name": "flash cross",
+      "clip": {
+        "track": "shonen_duel/Brawler_Shonen_Flash_Cross"
+      },
+      "windup": 0.43,
+      "active": 0.62,
+      "cancel": 0.75,
+      "damage": 10,
+      "poise": 14,
+      "knockback": 1.5,
+      "stamina": 11,
+      "travel": 0.65,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.11
+      }
+    },
+    {
       "name": "hook",
       "clip": {
         "track": "ual2/Melee_Hook"
@@ -63,6 +81,25 @@
     }
   ],
   "heavy": [
+    {
+      "name": "perfect counter",
+      "clip": {
+        "track": "shonen_duel/Brawler_Shonen_Perfect_Counter"
+      },
+      "windup": 0.43,
+      "active": 0.62,
+      "cancel": 0.76,
+      "damage": 18,
+      "poise": 38,
+      "knockback": 4.0,
+      "stamina": 20,
+      "travel": 0.75,
+      "charge": 0.25,
+      "hitbox": {
+        "bone": "hand_r",
+        "radius": 0.11
+      }
+    },
     {
       "name": "roundhouse",
       "clip": {

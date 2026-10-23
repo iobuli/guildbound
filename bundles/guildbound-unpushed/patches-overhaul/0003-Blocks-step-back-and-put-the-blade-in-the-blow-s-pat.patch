@@ -1,0 +1,446 @@
+From b869aaa8af390b364d56050127503237c45cdb91 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 03:10:38 +0000
+Subject: [PATCH 3/7] Blocks step back and put the blade in the blow's path;
+ fingers hold weapons
+
+- combat: a blocked blow drives the guard back a real step (root motion
+  over 0.3 s, length 0.18 m + 0.07 m per m/s of knockback, max 0.6 m)
+  instead of only a slide.
+- block.rs: while guarding, the weapon hand moves so the blade crosses
+  the incoming swing between the fighters, at the attacker's blade
+  height and on its side, ramping in before the active frames.
+- combat::arm sets HeldGrip (handle cylinder in the hand frame), which
+  select forwards to the hand rig, so fingers close on the weapon.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017RTuqxaQfwuvFPEJrcXYEk
+---
+ crates/game/src/motion/hand.rs |   6 +-
+ crates/game/src/play/block.rs  | 153 +++++++++++++++++++++++++++++++++
+ crates/game/src/play/combat.rs |  68 +++++++++++++--
+ crates/game/src/play/mod.rs    |   3 +-
+ crates/game/src/play/select.rs |  17 +++-
+ crates/game/src/play/sheath.rs |   6 +-
+ 6 files changed, 239 insertions(+), 14 deletions(-)
+ create mode 100644 crates/game/src/play/block.rs
+
+diff --git a/crates/game/src/motion/hand.rs b/crates/game/src/motion/hand.rs
+index 013fc08..2f7c399 100644
+--- a/crates/game/src/motion/hand.rs
++++ b/crates/game/src/motion/hand.rs
+@@ -54,11 +54,11 @@ impl Shape {
+             Shape::Flat { point, normal } => (p - point).dot(normal.normalize_or(Vec3::Y)),
+         }
+     }
+-    /// The same shape moved by `t` (hand-local → world).
++    /// The same shape moved by `t` (hand-local → world; radii scale with `t`'s uniform scale).
+     pub fn moved(&self, t: &Transform) -> Shape {
+         match *self {
+-            Shape::Cylinder { a, b, radius } => Shape::Cylinder { a: t.transform_point(a), b: t.transform_point(b), radius },
+-            Shape::Sphere { center, radius } => Shape::Sphere { center: t.transform_point(center), radius },
++            Shape::Cylinder { a, b, radius } => Shape::Cylinder { a: t.transform_point(a), b: t.transform_point(b), radius: radius * t.scale.x.abs() },
++            Shape::Sphere { center, radius } => Shape::Sphere { center: t.transform_point(center), radius: radius * t.scale.x.abs() },
+             Shape::Flat { point, normal } => Shape::Flat { point: t.transform_point(point), normal: t.rotation * normal },
+         }
+     }
+diff --git a/crates/game/src/play/block.rs b/crates/game/src/play/block.rs
+new file mode 100644
+index 0000000..daa211e
+--- /dev/null
++++ b/crates/game/src/play/block.rs
+@@ -0,0 +1,153 @@
++//! Blocking with the weapon itself: while a fighter guards, its weapon hand puts the blade in the
++//! path of the blow that is coming.
++//!
++//! For every guarding fighter (`Melee::guarding`) holding a drawn weapon, `place` finds the most
++//! pressing enemy swing in reach (`Melee::tell`, the soonest to land within `THREAT_RANGE`) and
++//! the attacker's blade (its `WeaponSlot`). The interception point lies `GUARD_AHEAD` in front of
++//! the defender's chest toward the attacker, at the height of the attacker's blade tip (clamped to
++//! the body) and shifted toward the side the swing comes from. The weapon hand
++//! (`HandTargets`) moves so that the defender's blade, at `CROSS_AT` of its length, sits on that
++//! point; its weight rises as the blow nears (`READY` s before the active frames) and falls back
++//! to the guard clip's pose afterwards.
++//!
++//! Ownership: the weapon hand's `HandTargets` while guarding, only when no other owner holds one
++//! (`sheath` reaching, `interact`, `traverse`): `BlockHands.owns` remembers whose it is.
++use super::combat::{BLADE_FROM, Melee, Weapon, WeaponSlot};
++use super::moveset::Movesets;
++use super::select::HandTargets;
++use super::sheath::Sheath;
++use super::{Fighter, Loadout, PlaySet};
++use bevy::prelude::*;
++
++/// Enemies farther than this (m, centre to centre) are no threat.
++pub const THREAT_RANGE: f32 = 3.2;
++/// The hand starts moving this long (s) before the blow's active frames.
++pub const READY: f32 = 0.45;
++/// Interception: distance ahead of the chest (m), height range above the centre (m), largest
++/// sideways shift (m), and the share of the defender's blade that crosses there.
++pub const GUARD_AHEAD: f32 = 0.42;
++pub const HEIGHT: (f32, f32) = (-0.15, 0.75);
++pub const SIDE_MAX: f32 = 0.35;
++pub const CROSS_AT: f32 = 0.4;
++/// Chest height above the capsule centre (m).
++const CHEST: f32 = 0.4;
++/// Weight easing rate (1/s).
++const EASE: f32 = 10.0;
++
++/// Per fighter: current hand weight and whether `block` inserted the `HandTargets`.
++#[derive(Component, Default, Debug, Clone, Copy)]
++pub struct BlockHands {
++    w: f32,
++    owns: bool,
++    last: Vec3,
++}
++
++pub fn plugin(app: &mut App) {
++    app.register_required_components::<Fighter, BlockHands>()
++        .add_systems(Update, place.in_set(PlaySet::Act).after(super::sheath::SheathSet));
++}
++
++/// Where the defender's blade should cross the blow: `me` / `foe` are capsule centres, `tip` the
++/// attacker's blade tip (world).
++pub fn intercept(me: Vec3, foe: Vec3, tip: Vec3) -> Vec3 {
++    let to = (foe - me).with_y(0.0);
++    let ahead = to.normalize_or(Vec3::Z);
++    let side = Vec3::Y.cross(ahead);
++    let chest = me + Vec3::Y * CHEST;
++    let height = (tip.y - me.y).clamp(HEIGHT.0, HEIGHT.1);
++    let shift = (tip - me).dot(side).clamp(-SIDE_MAX, SIDE_MAX);
++    (chest + ahead * GUARD_AHEAD + side * shift).with_y(me.y + height)
++}
++
++#[allow(clippy::type_complexity)]
++fn place(
++    time: Res<Time>,
++    mut commands: Commands,
++    movesets: Res<Movesets>,
++    mut fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Loadout, Option<&WeaponSlot>, &Sheath, &mut BlockHands, Option<&HandTargets>)>,
++    globals: Query<&GlobalTransform>,
++    held: Query<&ChildOf, With<Weapon>>,
++) {
++    let dt = time.delta_secs().clamp(0.0, 0.1);
++    // Every swing in progress: (attacker, team, centre, blade tip, seconds until it lands).
++    let swings: Vec<(Entity, u8, Vec3, Vec3, f32)> = fighters
++        .iter()
++        .filter(|(_, _, f, ..)| !f.dead)
++        .filter_map(|(e, tf, f, melee, _, slot, ..)| {
++            let tell = melee.tell()?;
++            let slot = slot?;
++            let g = globals.get(slot.weapon).ok()?;
++            let tip = g.transform_point(Vec3::Y * (BLADE_FROM + slot.length));
++            Some((e, f.team, tf.translation, tip, tell.until_active))
++        })
++        .collect();
++
++    for (entity, tf, fighter, melee, loadout, slot, sheath, mut hands, targets) in &mut fighters {
++        let me = tf.translation;
++        let def = movesets.get(loadout.equipped()).and_then(|m| m.weapon.as_ref());
++        let threat = (melee.guarding() && !fighter.dead && sheath.in_hand() && slot.is_some() && def.is_some())
++            .then(|| {
++                swings
++                    .iter()
++                    .filter(|s| s.0 != entity && s.1 != fighter.team && (s.2 - me).with_y(0.0).length() < THREAT_RANGE)
++                    .min_by(|a, b| a.4.total_cmp(&b.4))
++            })
++            .flatten();
++        let goal = threat.map_or(0.0, |s| if s.4.is_finite() { (1.0 - s.4 / READY).clamp(0.0, 1.0).max(if s.4 <= 0.0 { 1.0 } else { 0.0 }) } else { 0.0 });
++        hands.w += (goal - hands.w) * (EASE * dt).min(1.0);
++
++        let busy = targets.is_some() && !hands.owns;
++        if hands.w < 0.01 || busy {
++            if hands.owns {
++                commands.entity(entity).remove::<HandTargets>();
++                hands.owns = false;
++            }
++            continue;
++        }
++        let (Some(slot), Some(def)) = (slot, def) else { continue };
++        let Ok(weapon) = globals.get(slot.weapon) else { continue };
++        let Some(hand) = held.get(slot.weapon).ok().and_then(|c| globals.get(c.parent()).ok()) else { continue };
++        if let Some(s) = threat {
++            // Move the hand by however far the crossing point is from where it should be.
++            let cross = weapon.transform_point(Vec3::Y * (BLADE_FROM + slot.length * CROSS_AT));
++            hands.last = hand.translation() + (intercept(me, s.2, s.3) - cross);
++        }
++        let side = usize::from(def.hand != "l");
++        let mut out = [None, None];
++        out[side] = Some((hands.last, hands.w));
++        commands.entity(entity).insert(HandTargets { hands: out, ..default() });
++        hands.owns = true;
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn the_blade_meets_the_blow_between_the_fighters_on_its_side() {
++        let me = Vec3::new(0.0, 1.0, 0.0);
++        let foe = Vec3::new(0.0, 1.0, 2.0);
++        // A swing coming in high from the defender's left (+X when facing +Z).
++        let p = intercept(me, foe, Vec3::new(0.6, 2.2, 1.2));
++        assert!((p.z - GUARD_AHEAD).abs() < 1e-4, "ahead toward the foe: {p}");
++        assert!((p.x - SIDE_MAX).abs() < 1e-4, "on the blow's side, clamped: {p}");
++        assert!((p.y - (me.y + HEIGHT.1)).abs() < 1e-4, "no higher than the head: {p}");
++        // A low sweep from the right.
++        let q = intercept(me, foe, Vec3::new(-0.2, 0.6, 1.0));
++        assert!(q.x < 0.0 && q.y < me.y, "low and to the right: {q}");
++    }
++
++    #[test]
++    fn a_block_step_walks_exactly_its_length() {
++        use super::super::combat::{BLOCK_STEP_MAX, BLOCK_STEP_TIME, step_length, step_speed};
++        let length = step_length(3.0);
++        assert!(length > 0.3 && length <= BLOCK_STEP_MAX);
++        assert_eq!(step_length(1000.0), BLOCK_STEP_MAX);
++        let n = 600;
++        let dt = BLOCK_STEP_TIME / n as f32;
++        let walked: f32 = (0..n).map(|i| step_speed((i as f32 + 0.5) * dt, length) * dt).sum();
++        assert!((walked - length).abs() < 1e-3, "walked {walked} of {length}");
++        assert_eq!(step_speed(BLOCK_STEP_TIME, length), 0.0);
++    }
++}
+diff --git a/crates/game/src/play/combat.rs b/crates/game/src/play/combat.rs
+index 8991ed7..2ed4676 100644
+--- a/crates/game/src/play/combat.rs
++++ b/crates/game/src/play/combat.rs
+@@ -14,7 +14,8 @@
+ //!   windup, dives, holds its strike pose down to the ground and lands with a shockwave;
+ //! - guard (secondary held, the set's `guard` clip): blows from the front `arc` are blocked for
+ //!   stamina (`absorb` of the damage stopped); within `parry_window` of raising the guard they
+-//!   are parried, which staggers the attacker; out of stamina the guard breaks;
++//!   are parried, which staggers the attacker; out of stamina the guard breaks; a blocked blow
++//!   drives the guard back a step (`step_length`, walked by root motion while the guard holds);
+ //! - dodge (`dodge_pressed`): a roll toward the stick, or a sidestep / backstep while locked on,
+ //!   with i-frames, for stamina.
+ //!
+@@ -58,6 +59,8 @@ use super::{
+     Owner, PlaySet, Player, StaminaSpend,
+ };
+ use crate::motion::bank::PoseBank;
++use crate::motion::hand::{Grip, Shape};
++use super::select::HeldGrip;
+ use crate::motion::{Mask, MotionLayers, Rig};
+ use bevy::asset::RenderAssetUsages;
+ use bevy::ecs::query::QueryItem;
+@@ -200,8 +203,14 @@ const DEATH_FALL_AT: f32 = 0.95;
+ const KNOCKDOWN_FALL_AT: f32 = 0.3;
+ /// Sparks where a blow meets an Aura Ward.
+ const SPARKS_WARD: u32 = 10;
+-/// Blocked blows: knockback cap (m/s).
+-const BLOCK_PUSH: f32 = 1.0;
++/// Blocked blows: knockback cap (m/s) of the slide left after the step.
++const BLOCK_PUSH: f32 = 0.35;
++/// A blocked blow drives the guard back a step: base length (m), extra per m/s of knockback, cap,
++/// and how long the step takes (s).
++pub const BLOCK_STEP: f32 = 0.18;
++pub const BLOCK_STEP_PER: f32 = 0.07;
++pub const BLOCK_STEP_MAX: f32 = 0.6;
++pub const BLOCK_STEP_TIME: f32 = 0.3;
+ 
+ /// Hitstop: slowest relative speed, share of the duration held there before easing back, and
+ /// multipliers of `Feel.hitstop` per outcome.
+@@ -239,7 +248,7 @@ const PLAYER_REVIVE: f32 = 4.0;
+ /// thickness, the point's share of the blade and its width there.
+ const GRIP_FROM: f32 = -0.11;
+ const GUARD_AT: f32 = 0.085;
+-const BLADE_FROM: f32 = 0.1;
++pub(crate) const BLADE_FROM: f32 = 0.1;
+ const GRIP_RADIUS: f32 = 0.016;
+ const POMMEL_RADIUS: f32 = 0.028;
+ const GUARD_SPAN: f32 = 4.4;
+@@ -327,6 +336,8 @@ pub struct Melee {
+     /// Combat set `Mover.face` (lock-on) / `Mover.move_scale` (exhaustion) while free.
+     facing: bool,
+     slowed: bool,
++    /// A blocked blow's step back: (seconds in, direction, length m).
++    step_back: Option<(f32, Vec3, f32)>,
+ }
+ 
+ impl Default for Melee {
+@@ -344,6 +355,7 @@ impl Default for Melee {
+             exhausted: false,
+             facing: false,
+             slowed: false,
++            step_back: None,
+         }
+     }
+ }
+@@ -904,15 +916,31 @@ fn arm(
+                 if sheath.is_some_and(|s| !s.in_hand()) {
+                     // On its mount: `sheath` places it, and it stays visible.
+                     vis.set_if_neq(Visibility::Inherited);
++                    commands.entity(entity).try_remove::<HeldGrip>();
+                     continue;
+                 }
+                 let scale = globals.get(hand).map_or(1.0, |g| g.compute_transform().scale.abs().max_element());
+-                tf.set_if_neq(grip(def, scale));
++                let placed = grip(def, scale);
++                tf.set_if_neq(placed);
+                 vis.set_if_neq(if holding { Visibility::Hidden } else { Visibility::Inherited });
++                if holding {
++                    commands.entity(entity).try_remove::<HeldGrip>();
++                    continue;
++                }
++                // The fingers close round the handle (in the hand bone's frame).
++                let side = usize::from(def.hand != "l");
++                let handle = Shape::Cylinder {
++                    a: placed.transform_point(Vec3::Y * GRIP_FROM),
++                    b: placed.transform_point(Vec3::Y * GUARD_AT),
++                    radius: GRIP_RADIUS * placed.scale.x,
++                };
++                let mut grips = [None, None];
++                grips[side] = Some(Grip::held(handle, 1.0));
++                commands.entity(entity).try_insert(HeldGrip(grips));
+             }
+             (Some(slot), ..) => {
+                 commands.entity(slot.weapon).try_despawn();
+-                commands.entity(entity).try_remove::<WeaponSlot>();
++                commands.entity(entity).try_remove::<(WeaponSlot, HeldGrip)>();
+             }
+             (None, Some(def), Some(hand)) => {
+                 let weapon = commands
+@@ -1315,6 +1343,18 @@ fn owned(state: &State, action: &Action) -> bool {
+ }
+ 
+ /// Hand the body back to the player / AI.
++/// Speed (m/s) at `t` s into a block step of `length` m: a smooth bell over `BLOCK_STEP_TIME`
++/// whose integral is `length`.
++pub fn step_speed(t: f32, length: f32) -> f32 {
++    let u = (t / BLOCK_STEP_TIME).clamp(0.0, 1.0);
++    6.0 * u * (1.0 - u) * length / BLOCK_STEP_TIME
++}
++
++/// Length (m) of the step back after blocking a blow with `knockback` (m/s).
++pub fn step_length(knockback: f32) -> f32 {
++    (BLOCK_STEP + BLOCK_STEP_PER * finite(knockback, 0.0).max(0.0)).min(BLOCK_STEP_MAX)
++}
++
+ fn release(b: &mut Body) -> State {
+     b.action.clear();
+     b.mover.move_scale = 1.0;
+@@ -1635,7 +1675,18 @@ fn guard(t: f32, cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
+     }
+     b.action.elapsed = t;
+     b.mover.move_scale = GUARD_MOVE;
+-    b.mover.root_motion = Vec3::ZERO;
++    b.mover.root_motion = match m.step_back.as_mut() {
++        Some((s, dir, length)) => {
++            *s += cx.dt;
++            let v = step_speed(*s, *length);
++            let dir = *dir;
++            if *s >= BLOCK_STEP_TIME {
++                m.step_back = None;
++            }
++            dir * v
++        }
++        None => Vec3::ZERO,
++    };
+     let look = flat(b.intent.look - cx.pos);
+     b.mover.face = b
+         .intent
+@@ -2229,6 +2280,9 @@ fn strike(
+         Verdict::Blocked { damage, stamina } => {
+             melee.spend(&mut fighter, stamina);
+             fighter.hp = (fighter.hp - damage).max(0.0);
++            // The guard gives ground: a real step back (the legs walk it), not a slide.
++            let back = flat(hit.direction).normalize_or(-facing);
++            melee.step_back = Some((0.0, back, step_length(knockback)));
+             push(&mut mover, hit.direction, knockback.min(BLOCK_PUSH), 0.0);
+             impulses(layers, hit.direction, knockback * 0.4, false);
+             fx.strike(involved, HITSTOP_BLOCK, SHAKE_BLOCK, SfxKind::Block, hit.point, 0.9);
+diff --git a/crates/game/src/play/mod.rs b/crates/game/src/play/mod.rs
+index 25e426f..846d110 100644
+--- a/crates/game/src/play/mod.rs
++++ b/crates/game/src/play/mod.rs
+@@ -29,6 +29,7 @@ pub mod fx;
+ pub mod grass;
+ pub mod aim;
+ pub mod beam;
++pub mod block;
+ pub mod hall;
+ pub mod hud;
+ pub mod input;
+@@ -104,7 +105,7 @@ pub fn plugin(app: &mut App) {
+         audio::plugin,
+     ))
+     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
+-    .add_plugins((aim::plugin, doors::plugin, sheath::plugin));
++    .add_plugins((aim::plugin, doors::plugin, sheath::plugin, block::plugin));
+ }
+ 
+ #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+diff --git a/crates/game/src/play/select.rs b/crates/game/src/play/select.rs
+index 5fed138..85279a3 100644
+--- a/crates/game/src/play/select.rs
++++ b/crates/game/src/play/select.rs
+@@ -153,6 +153,12 @@ pub struct HandTargets {
+     pub grips: [Option<crate::motion::hand::Grip>; 2],
+ }
+ 
++/// Fingers closed on what a hand carries (`motion::hand::Grip::held`, shape in the hand bone's
++/// frame): the weapon in hand (`combat::arm`). `select` uses it for a hand whose `HandTargets`
++/// brings no grip of its own.
++#[derive(Component, Clone, Debug, Default)]
++pub struct HeldGrip(pub [Option<crate::motion::hand::Grip>; 2]);
++
+ /// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
+ /// `select` forwards them into `ContactRequest.feet` with smoothed weights, like `HandTargets`.
+ /// Written by `traverse`; remove it to release (the feet fade back to the animation).
+@@ -667,7 +673,7 @@ type CharacterQuery<'a> = (
+     Option<&'a Action>,
+     Option<&'a Intent>,
+     Option<&'a Loadout>,
+-    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>),
++    (Option<&'a HandTargets>, Option<&'a FootTargets>, Option<&'a Posture>, Option<&'a HeldGrip>),
+     Option<&'a mut SelectState>,
+     Option<&'a StyleScale>,
+ );
+@@ -693,7 +699,7 @@ fn select(
+         dt: sane(time.delta_secs()).clamp(0.0, MAX_DT),
+         bounce: motion.map_or(1.0, |m| sane(m.bounce).clamp(0.0, 2.0)),
+     };
+-    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture), state, scale) in &mut characters {
++    for (entity, mut mover, mut layers, action, intent, loadout, (hands, feet, posture, held), state, scale) in &mut characters {
+         let frame = Frame {
+             bounce: (frame.bounce * scale.map_or(1.0, |s| sane(s.bounce))).clamp(0.0, 2.5),
+             ..frame
+@@ -751,6 +757,13 @@ fn select(
+                 commands.entity(entity).try_insert(state);
+             }
+         }
++        if let Some(held) = held {
++            for (grip, carried) in layers.contact.grips.iter_mut().zip(held.0) {
++                if grip.is_none() {
++                    *grip = carried;
++                }
++            }
++        }
+     }
+ }
+ 
+diff --git a/crates/game/src/play/sheath.rs b/crates/game/src/play/sheath.rs
+index fe14dae..6d3b9f5 100644
+--- a/crates/game/src/play/sheath.rs
++++ b/crates/game/src/play/sheath.rs
+@@ -66,9 +66,13 @@ impl Sheath {
+     }
+ }
+ 
++/// `sheath`'s systems (after `combat`); order against this.
++#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
++pub struct SheathSet;
++
+ pub fn plugin(app: &mut App) {
+     app.register_required_components::<Fighter, Sheath>()
+-        .add_systems(Update, (decide, mount).chain().in_set(PlaySet::Act).after(super::combat::CombatSet));
++        .add_systems(Update, (decide, mount).chain().in_set(PlaySet::Act).in_set(SheathSet).after(super::combat::CombatSet));
+ }
+ 
+ /// Default mount for a moveset without `carry`.
+-- 
+2.43.0
+

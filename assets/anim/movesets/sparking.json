@@ -1,0 +1,75 @@
+{
+  "name": "sparking",
+  "kind": "unarmed",
+  "stance": {
+    "clip": {"track": "sparking/DBZ_Ground_Stance", "mask": "upper", "style": {"exaggeration": 1.0, "hold": 0.0}},
+    "hold": 0.0, "moving_weight": 0.5,
+    "idle": "sparking/DBZ_Ground_Stance", "walk": "sparking/DBZ_Walk_Loop"
+  },
+  "guard": {
+    "clip": {"track": "sparking/DBZ_Guard", "mask": "upper", "style": {"exaggeration": 1.0, "hold": 0.0}},
+    "hold": 0.2, "parry_window": 0.15, "absorb": 0.7, "arc": 120
+  },
+  "heavy": [{
+    "name": "charged rush kick",
+    "clip": {"track": "sparking/DBZ_Rush_03", "style": {"exaggeration": 1.0, "hold": 0.0}},
+    "windup": 0.1667, "active": 0.5, "cancel": 0.82,
+    "damage": 18, "poise": 34, "knockback": 4.0, "stamina": 20, "charge": 0.9,
+    "hitbox": {"bone": "foot_r", "radius": 0.14}
+  }],
+  "light": [
+    {
+      "name": "rush",
+      "clip": {"track": "sparking/DBZ_Rush_01", "style": {"exaggeration": 1.0, "hold": 0.0, "bias": 0.5, "speed": 1.0}},
+      "windup": 0.1667,
+      "active": 0.5,
+      "cancel": 0.55,
+      "damage": 9,
+      "poise": 12,
+      "knockback": 1.2,
+      "stamina": 10,
+      "travel": 0.0,
+      "hitbox": {"bone": "hand_r", "radius": 0.12}
+    },
+    {
+      "name": "rush follow-up",
+      "clip": {"track": "sparking/DBZ_Rush_02", "style": {"exaggeration": 1.0, "hold": 0.0}},
+      "windup": 0.1667, "active": 0.5, "cancel": 0.55,
+      "damage": 10, "poise": 14, "knockback": 1.0, "stamina": 10,
+      "hitbox": {"bone": "hand_l", "radius": 0.12}
+    },
+    {
+      "name": "rush kick finisher",
+      "clip": {"track": "sparking/DBZ_Rush_03", "style": {"exaggeration": 1.0, "hold": 0.0}},
+      "windup": 0.1667, "active": 0.5, "cancel": 0.8,
+      "damage": 14, "poise": 24, "knockback": 3.0, "stamina": 14,
+      "hitbox": {"bone": "foot_r", "radius": 0.14}
+    }
+  ],
+  "sprint_attack": {
+    "name": "running rush",
+    "clip": {"track": "sparking/DBZ_Rush_01", "style": {"exaggeration": 1.0, "hold": 0.0, "bias": 0.5, "speed": 1.0}},
+    "windup": 0.1667,
+    "active": 0.5,
+    "cancel": 0.8,
+    "damage": 11,
+    "poise": 14,
+    "knockback": 1.4,
+    "stamina": 14,
+    "travel": 0.0,
+    "hitbox": {"bone": "hand_r", "radius": 0.12}
+  },
+  "air_attack": {
+    "name": "air rush",
+    "clip": {"track": "sparking/DBZ_Rush_01", "style": {"exaggeration": 1.0, "hold": 0.0, "bias": 0.5, "speed": 1.0}},
+    "windup": 0.1667,
+    "active": 0.5,
+    "cancel": 0.8,
+    "damage": 9,
+    "poise": 12,
+    "knockback": 1.2,
+    "stamina": 12,
+    "travel": 0.0,
+    "hitbox": {"bone": "hand_r", "radius": 0.12}
+  }
+}

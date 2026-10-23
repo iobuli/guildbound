@@ -19,6 +19,7 @@ use super::world::ground_height;
 use super::{Fighter, Mover, Phys, Player};
 use avian3d::prelude::*;
 use bevy::prelude::*;
+use bevy::world_serialization::WorldAssetRoot;
 
 /// Fighters moving faster than this (m/s) break what they are thrown into.
 pub const FLUNG: f32 = 7.0;
@@ -63,7 +64,28 @@ struct Looks {
 }
 
 pub fn plugin(app: &mut App) {
-    app.add_message::<Shatter>().add_systems(Startup, (looks, yard).chain()).add_systems(Update, (ring_player, check, age_chunks));
+    app.add_message::<Shatter>().add_systems(Startup, (looks, yard, imported_environment).chain()).add_systems(Update, (ring_player, check, age_chunks));
+}
+
+/// Local archive geometry uses matching triangle colliders, not an invisible box across doorways.
+fn imported_environment(mut commands: Commands, assets: Res<AssetServer>) {
+    if !super::world::duel_mode() { return; }
+    #[derive(serde::Deserialize)]
+    struct Module { name: String, file: String, half: [f32; 3], vertices: Vec<[f32; 3]>, indices: Vec<[u32; 3]> }
+    let path = std::path::Path::new(crate::ASSETS).join("environment/sparking/manifest.json");
+    let modules = std::fs::read_to_string(path).ok().and_then(|s| serde_json::from_str::<Vec<Module>>(&s).ok());
+    let Some(modules) = modules else { warn!("[fracture] local Sparking environment pack unavailable"); return; };
+    for (i, module) in modules.into_iter().enumerate() {
+        let half = Vec3::from_array(module.half);
+        let x = -10.0 + i as f32 * 10.0;
+        let z = -18.0;
+        let at = Vec3::new(x, ground_height(x, z) + half.y, z);
+        commands.spawn((Name::new(format!("Archive {}", module.name)),
+            Transform::from_translation(at), Visibility::default(), RigidBody::Static,
+            Collider::trimesh(module.vertices.into_iter().map(Vec3::from_array).collect(), module.indices),
+            super::world::world_layers(), Fracturable { half, strength: 55.0, stuff: Stuff::Stone },
+        )).with_child((WorldAssetRoot(assets.load(format!("{}#Scene0", module.file))), Transform::default()));
+    }
 }
 
 /// Force that reaches a box of half extents `half` at `centre` from a blast: linear falloff from the blast
@@ -157,7 +179,7 @@ fn yard(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, looks: Res<Loo
 
 /// `GB_FRACTURE=1`: a ring of breakables round the player once it stands in the world.
 fn ring_player(mut done: Local<bool>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, looks: Res<Looks>, players: Query<&Transform, With<Player>>, time: Res<Time>) {
-    if *done || std::env::var_os("GB_FRACTURE").is_none() || time.elapsed_secs() < 1.0 {
+    if *done || (!super::world::duel_mode() && std::env::var_os("GB_FRACTURE").is_none()) || time.elapsed_secs() < 1.0 {
         return;
     }
     let Ok(tf) = players.single() else { return };
@@ -165,12 +187,36 @@ fn ring_player(mut done: Local<bool>, mut commands: Commands, mut meshes: ResMut
     let c = tf.translation;
     for i in 0..10 {
         let a = i as f32 / 10.0 * std::f32::consts::TAU;
-        let r = 3.2 + (i % 2) as f32 * 0.8;
+        let r = 7.0 + (i % 2) as f32 * 1.0;
         let (x, z) = (c.x + a.cos() * r, c.z + a.sin() * r);
         let (half, stuff) = if i % 3 == 0 { (Vec3::splat(0.4), Stuff::Wood) } else { (Vec3::new(0.28, 1.0, 0.28), Stuff::Stone) };
         spawn_breakable(&mut commands, &mut meshes, &looks.stone, &looks.wood, Vec3::new(x, ground_height(x, z) + half.y, z), half, stuff, a);
     }
     info!("[fracture] ringed the player with 10 breakables");
+    // Two small modular buildings: separate wall blocks, columns and roof planks can be reused.
+    // Keep the middle lane clear for the duel and the camera boom.
+    for side in [-1.0, 1.0] {
+        let origin = c + Vec3::new(side * 10.0, 0.0, 4.0);
+        for row in 0..3 {
+            for column in 0..5 {
+                let half = Vec3::new(0.48, 0.45, 0.25);
+                let x = origin.x + (column as f32 - 2.0);
+                let z = origin.z + 2.0;
+                spawn_breakable(&mut commands, &mut meshes, &looks.stone, &looks.wood,
+                    Vec3::new(x, ground_height(x, z) + 0.45 + row as f32 * 0.9, z), half, Stuff::Stone, 0.0);
+            }
+        }
+        for xoff in [-2.0, 2.0] {
+            let x = origin.x + xoff;
+            spawn_breakable(&mut commands, &mut meshes, &looks.stone, &looks.wood,
+                Vec3::new(x, ground_height(x, origin.z) + 1.35, origin.z), Vec3::new(0.2, 1.35, 0.2), Stuff::Wood, 0.0);
+        }
+        for strip in 0..5 {
+            let x = origin.x + strip as f32 - 2.0;
+            spawn_breakable(&mut commands, &mut meshes, &looks.stone, &looks.wood,
+                Vec3::new(x, ground_height(x, origin.z) + 2.85, origin.z + 1.0), Vec3::new(0.48, 0.1, 1.3), Stuff::Wood, 0.0);
+        }
+    }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -188,7 +234,10 @@ fn check(
     for (e, tf, mut f) in &mut things {
         let centre = tf.translation;
         // The strongest blast that reaches it, or a body flung into it.
-        let mut hit: Option<(Vec3, f32)> = blasts.iter().map(|b| (b.at, reach(b, centre, f.half))).filter(|h| h.1 > 0.0).max_by(|a, b| a.1.total_cmp(&b.1));
+        let mut hit: Option<(Vec3, f32)> = blasts.iter().map(|b| {
+            let local = Shatter { at: tf.rotation.inverse() * (b.at - centre), ..*b };
+            (b.at, reach(&local, Vec3::ZERO, f.half))
+        }).filter(|h| h.1 > 0.0).max_by(|a, b| a.1.total_cmp(&b.1));
         for (ftf, m) in &fighters {
             let speed = m.velocity.length();
             let local = tf.rotation.inverse() * (ftf.translation - centre);

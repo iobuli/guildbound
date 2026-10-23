@@ -31,17 +31,17 @@
   },
   "aim": {
     "clip": {
-      "track": "rokoko/Hawkeye_Archery",
+      "track": "shonen_duel/Brawler_Shonen_Bow_Shot",
       "mask": "upper"
     },
-    "hold": 8.7,
+    "hold": 0.3,
     "draw": {
-      "track": "rokoko/Hawkeye_Archery",
-      "start": 7.95
+      "track": "shonen_duel/Brawler_Shonen_Bow_Shot",
+      "start": 0.3
     },
     "release": {
-      "track": "rokoko/Hawkeye_Archery",
-      "start": 9.38
+      "track": "shonen_duel/Brawler_Shonen_Bow_Shot",
+      "start": 0.75
     },
     "draw_time": 0.7,
     "body_yaw_deg": -56.0,

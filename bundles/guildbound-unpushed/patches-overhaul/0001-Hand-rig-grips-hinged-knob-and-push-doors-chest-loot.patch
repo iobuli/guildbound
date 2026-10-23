@@ -1,0 +1,1228 @@
+From d8c49a68ab50eb23e57d3053a7d0607f2a16ca0b Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 18 Oct 2026 02:53:30 +0000
+Subject: [PATCH 1/7] Hand rig grips, hinged knob and push doors, chest loot
+ spill
+
+- motion/hand.rs: finger grip solver (cylinder, sphere knob, flat palm,
+  in-hand) wrapped around the arm IK in compose; ContactRequest.grips
+  and HandTargets.grips carry it.
+- play/doors.rs: two hinged doors usable from either face; the knob
+  door is turned and ridden by the right hand, the push door is pushed
+  with both palms; a door block collider while shut.
+- interact::Grasp forwards per-hand grip shapes from interactables.
+- items: ChestLoot spills its items out of an opened chest, refills.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_017RTuqxaQfwuvFPEJrcXYEk
+---
+ crates/game/src/motion/compose.rs |  13 +
+ crates/game/src/motion/contact.rs |   1 +
+ crates/game/src/motion/hand.rs    | 507 ++++++++++++++++++++++++++++++
+ crates/game/src/motion/mod.rs     |   7 +-
+ crates/game/src/play/beam.rs      |   2 +-
+ crates/game/src/play/doors.rs     | 298 ++++++++++++++++++
+ crates/game/src/play/interact.rs  |  17 +-
+ crates/game/src/play/items.rs     |  66 +++-
+ crates/game/src/play/mod.rs       |   3 +-
+ crates/game/src/play/select.rs    |   4 +
+ crates/game/src/play/traverse.rs  |   1 +
+ crates/game/src/play/world.rs     |  11 +-
+ docs/HANDOFF.md                   |   4 +
+ 13 files changed, 927 insertions(+), 7 deletions(-)
+ create mode 100644 crates/game/src/motion/hand.rs
+ create mode 100644 crates/game/src/play/doors.rs
+
+diff --git a/crates/game/src/motion/compose.rs b/crates/game/src/motion/compose.rs
+index 098fc63..152a907 100644
+--- a/crates/game/src/motion/compose.rs
++++ b/crates/game/src/motion/compose.rs
+@@ -3,6 +3,7 @@
+ //! 2. `Springs::step_moving` (secondary motion, arm inertia, impulses, squash),
+ //!    then `body::resolve` (limbs out of the body, padded by the root's `BodyPadding`),
+ //! 3. `contact::apply` (feet/hands/lean/look) using Avian ray casts against `Phys::World`,
++//!    wrapped by `hand`: grips place the wrist before it and close the fingers after it,
+ //! 4. write local rotations (+ pelvis translation) into the bone entities' `Transform`s, and the
+ //!    same pose in model space into `RigPose` (for armour plates riding on the body).
+ //! Runs in `PostUpdate` / `MotionSet::Compose` (after Bevy animation, before propagation).
+@@ -193,10 +194,15 @@ fn compose(
+     mut bone_transforms: Query<&mut Transform, With<RigBone>>,
+     mut gizmos: Gizmos,
+     mut warned: Local<HashSet<String>>,
++    mut hands: Local<Option<(usize, super::hand::HandRig)>>,
+ ) {
+     let Some(bank) = bank else { return };
+     let skeleton = &bank.skeleton;
+     let bones = &bank.bones;
++    if hands.as_ref().is_none_or(|h| h.0 != skeleton.len()) {
++        *hands = Some((skeleton.len(), super::hand::HandRig::new(skeleton, bones)));
++    }
++    let hand_rig = &hands.as_ref().unwrap().1;
+     let n = skeleton.len();
+     let dt = time.delta_secs();
+     let filter = SpatialQueryFilter::from_mask(Phys::World);
+@@ -242,6 +248,12 @@ fn compose(
+                         normal: hit.normal,
+                     })
+             };
++            let (wrists, plan) = hand_rig.wrist_targets(&pose, skeleton, bones, &model_world, &request.grips);
++            for side in 0..2 {
++                if wrists[side].is_some() {
++                    request.hands[side] = wrists[side];
++                }
++            }
+             contact::apply(
+                 &mut pose,
+                 skeleton,
+@@ -253,6 +265,7 @@ fn compose(
+                 &mut state,
+                 dt,
+             );
++            hand_rig.close(&mut pose, skeleton, bones, &model_world, &request.grips, &plan);
+         }
+         layers.impulses.clear();
+         if let Some(mut out) = rig_pose {
+diff --git a/crates/game/src/motion/contact.rs b/crates/game/src/motion/contact.rs
+index 49726f4..b4c7b44 100644
+--- a/crates/game/src/motion/contact.rs
++++ b/crates/game/src/motion/contact.rs
+@@ -1247,6 +1247,7 @@ pub(crate) mod tests {
+             feet: [Some((Vec3::NAN, 1.0)), Some((Vec3::ONE, f32::NAN))],
+             stance: f32::NAN,
+             aim: Some(Vec3::NAN),
++            grips: [None, None],
+         };
+         let mut garbage = |_: Vec3| {
+             Some(Ground {
+diff --git a/crates/game/src/motion/hand.rs b/crates/game/src/motion/hand.rs
+new file mode 100644
+index 0000000..013fc08
+--- /dev/null
++++ b/crates/game/src/motion/hand.rs
+@@ -0,0 +1,507 @@
++//! Hand rig: fingers that close on what the hand holds.
++//!
++//! A `Grip` (on `ContactRequest.grips`) names a world-space shape: a `Cylinder` (weapon grip,
++//! lever, bar, door handle), a `Sphere` (door knob) or a `Flat` surface (pushing a door with an
++//! open hand). `compose` calls this module twice around `contact::apply`:
++//! 1. `wrist_targets` (before the arm IK): turns the palm toward the shape (fingers wrap around a
++//!    cylinder's axis, face a knob's centre, lie flat on a plane, plus the grip's `twist` about the
++//!    palm normal) and places the wrist so the palm surface touches the shape. The result replaces
++//!    that hand's `ContactRequest.hands` target, so the existing arm IK reaches it.
++//! 2. `close` (after the arm IK): sets the hand's world rotation from step 1 and closes every
++//!    finger from open: the curl parameter `c` (0 = open, 1 = full fist, per-joint limits) is
++//!    bisected until a finger point would come within `FINGER_R` of the shape, then squeezed by
++//!    `SQUEEZE`. A flat grip keeps the fingers straight. Everything blends with the grip weight
++//!    against the animated pose.
++//! All geometry (curl axis of each finger joint, palm centre and normal, fingertips) is measured
++//! once from the skeleton's rest pose (`HandRig::new`), so any rig with UAL finger names works.
++use super::{Bones, Pose, Skeleton};
++use bevy::prelude::*;
++
++/// Finger radius used for contact (m).
++pub const FINGER_R: f32 = 0.009;
++/// Palm surface offset from the palm centre along the palm normal (m).
++pub const PALM: f32 = 0.022;
++/// Extra curl after first contact, as a fraction of the full curl.
++pub const SQUEEZE: f32 = 0.04;
++/// Curl of a hand that found nothing to close on (empty grip).
++pub const EMPTY: f32 = 0.85;
++const FINGERS: [&str; 5] = ["thumb", "index", "middle", "ring", "pinky"];
++/// Full-curl angle per joint (rad): knuckle, middle, tip.
++const FINGER_MAX: [f32; 3] = [1.55, 1.75, 1.25];
++const THUMB_MAX: [f32; 3] = [0.55, 0.8, 1.0];
++const BISECT: usize = 12;
++
++#[derive(Clone, Copy, Debug, PartialEq)]
++pub enum Shape {
++    /// A handle: the segment `a`–`b` with `radius`.
++    Cylinder { a: Vec3, b: Vec3, radius: f32 },
++    /// A knob or ball.
++    Sphere { center: Vec3, radius: f32 },
++    /// A surface pressed with an open palm; `normal` points out of the surface toward the hand.
++    Flat { point: Vec3, normal: Vec3 },
++}
++
++impl Shape {
++    /// Signed distance from `p` to the surface (negative inside).
++    pub fn distance(&self, p: Vec3) -> f32 {
++        match *self {
++            Shape::Cylinder { a, b, radius } => {
++                let ab = b - a;
++                let t = ((p - a).dot(ab) / ab.length_squared().max(1e-9)).clamp(0.0, 1.0);
++                p.distance(a + ab * t) - radius
++            }
++            Shape::Sphere { center, radius } => p.distance(center) - radius,
++            Shape::Flat { point, normal } => (p - point).dot(normal.normalize_or(Vec3::Y)),
++        }
++    }
++    /// The same shape moved by `t` (hand-local → world).
++    pub fn moved(&self, t: &Transform) -> Shape {
++        match *self {
++            Shape::Cylinder { a, b, radius } => Shape::Cylinder { a: t.transform_point(a), b: t.transform_point(b), radius },
++            Shape::Sphere { center, radius } => Shape::Sphere { center: t.transform_point(center), radius },
++            Shape::Flat { point, normal } => Shape::Flat { point: t.transform_point(point), normal: t.rotation * normal },
++        }
++    }
++    fn finite(&self) -> bool {
++        match *self {
++            Shape::Cylinder { a, b, radius } => a.is_finite() && b.is_finite() && radius.is_finite(),
++            Shape::Sphere { center, radius } => center.is_finite() && radius.is_finite(),
++            Shape::Flat { point, normal } => point.is_finite() && normal.is_finite(),
++        }
++    }
++}
++
++/// One hand's grip request, world space.
++#[derive(Clone, Copy, Debug, PartialEq)]
++pub struct Grip {
++    pub shape: Shape,
++    /// 0..1 blend against the animated hand.
++    pub weight: f32,
++    /// Wrist roll about the palm normal (rad): turning a knob.
++    pub twist: f32,
++    /// The shape rides in the hand (a held weapon or tool): it is given in the hand bone's frame,
++    /// the wrist is left to the animation and only the fingers close.
++    pub in_hand: bool,
++}
++
++impl Grip {
++    pub fn new(shape: Shape, weight: f32) -> Self {
++        Self { shape, weight, twist: 0.0, in_hand: false }
++    }
++    /// A grip on something carried in the hand; `shape` in the hand bone's local frame.
++    pub fn held(shape: Shape, weight: f32) -> Self {
++        Self { shape, weight, twist: 0.0, in_hand: true }
++    }
++}
++
++#[derive(Clone, Debug)]
++struct Finger {
++    joints: [usize; 3],
++    /// Local curl axis of each joint (unit, in that joint's own frame).
++    axes: [Vec3; 3],
++    /// Fingertip in the last joint's local frame.
++    tip: Vec3,
++    max: [f32; 3],
++}
++
++#[derive(Clone, Debug)]
++struct Side {
++    hand: usize,
++    fingers: Vec<Finger>,
++    /// Palm centre in the hand's local frame.
++    palm: Vec3,
++    /// Palm normal (out of the palm) and finger direction, hand-local, unit.
++    normal: Vec3,
++    along: Vec3,
++}
++
++/// Hand geometry for both sides, measured from a skeleton's rest pose.
++#[derive(Clone, Debug, Default)]
++pub struct HandRig {
++    sides: [Option<Side>; 2],
++}
++
++/// Step-1 output kept for step 2.
++#[derive(Clone, Copy, Debug, Default)]
++pub struct Plan {
++    sides: [Option<(Quat, f32)>; 2],
++}
++
++impl HandRig {
++    pub fn new(skeleton: &Skeleton, bones: &Bones) -> Self {
++        let rest = skeleton.fk(&skeleton.rest_pose(), bones.pelvis);
++        let mut sides: [Option<Side>; 2] = [None, None];
++        for (side, s) in ["l", "r"].into_iter().enumerate() {
++            sides[side] = measure(skeleton, &rest, bones.hand[side], s);
++        }
++        Self { sides }
++    }
++
++    pub fn ready(&self, side: usize) -> bool {
++        self.sides[side].is_some()
++    }
++
++    /// Step 1: per gripping hand, the wrist target (world) and the weight. Also returns the plan
++    /// for `close`.
++    pub fn wrist_targets(
++        &self,
++        pose: &Pose,
++        skeleton: &Skeleton,
++        bones: &Bones,
++        model: &Transform,
++        grips: &[Option<Grip>; 2],
++    ) -> ([Option<(Vec3, f32)>; 2], Plan) {
++        let mut targets = [None, None];
++        let mut plan = Plan::default();
++        if grips.iter().all(Option::is_none) {
++            return (targets, plan);
++        }
++        let world = world_pose(skeleton, pose, bones, model);
++        for side in 0..2 {
++            let (Some(grip), Some(geo)) = (grips[side], &self.sides[side]) else { continue };
++            let weight = grip.weight.clamp(0.0, 1.0);
++            if weight < 1e-3 || !grip.shape.finite() || !grip.twist.is_finite() {
++                continue;
++            }
++            if grip.in_hand {
++                plan.sides[side] = Some((Quat::NAN, weight));
++                continue;
++            }
++            let hand = world[geo.hand];
++            let current = hand.rotation;
++            let palm = hand.transform_point(geo.palm);
++            let (n_cur, f_cur) = (current * geo.normal, current * geo.along);
++            let (n, f, contact) = match grip.shape {
++                Shape::Cylinder { a, b, radius } => {
++                    let d = (b - a).normalize_or(Vec3::Y);
++                    let t = ((palm - a).dot(b - a) / (b - a).length_squared().max(1e-9)).clamp(0.0, 1.0);
++                    let c = a + (b - a) * t;
++                    let to = c - palm;
++                    let n = (to - d * to.dot(d)).normalize_or(n_cur);
++                    let mut f = d.cross(n).normalize_or(f_cur);
++                    if f.dot(f_cur) < 0.0 {
++                        f = -f;
++                    }
++                    (n, f, c - n * (radius + PALM))
++                }
++                Shape::Sphere { center, radius } => {
++                    let n = (center - palm).normalize_or(n_cur);
++                    let f = (f_cur - n * f_cur.dot(n)).normalize_or(n.any_orthonormal_vector());
++                    (n, f, center - n * (radius + PALM))
++                }
++                Shape::Flat { point, normal } => {
++                    let normal = normal.normalize_or(Vec3::Y);
++                    let n = -normal;
++                    let f = (f_cur - n * f_cur.dot(n)).normalize_or(n.any_orthonormal_vector());
++                    (n, f, point + normal * PALM)
++                }
++            };
++            let f = Quat::from_axis_angle(n, grip.twist) * f;
++            let goal = basis(n, f) * basis(geo.normal, geo.along).inverse();
++            let wrist = contact - goal * (geo.palm * hand.scale);
++            if wrist.is_finite() && goal.is_finite() {
++                targets[side] = Some((wrist, weight));
++                plan.sides[side] = Some((goal.normalize(), weight));
++            }
++        }
++        (targets, plan)
++    }
++
++    /// Step 2 (after the arm IK): wrist rotation and finger curl.
++    pub fn close(
++        &self,
++        pose: &mut Pose,
++        skeleton: &Skeleton,
++        bones: &Bones,
++        model: &Transform,
++        grips: &[Option<Grip>; 2],
++        plan: &Plan,
++    ) {
++        for side in 0..2 {
++            let (Some(grip), Some(geo), Some((goal, weight))) = (grips[side], &self.sides[side], plan.sides[side]) else {
++                continue;
++            };
++            let hand = geo.hand;
++            if !grip.in_hand {
++                let world = world_pose(skeleton, pose, bones, model);
++                let parent = skeleton.parent[hand].map(|p| world[p].rotation).unwrap_or(model.rotation);
++                let target = world[hand].rotation.slerp(goal, weight);
++                pose.rot[hand] = (parent.inverse() * target).normalize();
++            }
++
++            let world = world_pose(skeleton, pose, bones, model);
++            let shape = if grip.in_hand { grip.shape.moved(&world[hand]) } else { grip.shape };
++            let flat = matches!(shape, Shape::Flat { .. });
++            for finger in &geo.fingers {
++                let base = world[skeleton.parent[finger.joints[0]].unwrap_or(hand)];
++                let open: [Quat; 3] = finger.joints.map(|j| skeleton.rest[j].rotation);
++                let curl = if flat { 0.0 } else { reach(skeleton, &base, finger, &open, &shape) };
++                for (k, &j) in finger.joints.iter().enumerate() {
++                    let q = open[k] * Quat::from_axis_angle(finger.axes[k], curl * finger.max[k]);
++                    pose.rot[j] = pose.rot[j].slerp(q, weight).normalize();
++                }
++            }
++        }
++    }
++}
++
++/// The largest curl at which the finger stays outside the shape, plus `SQUEEZE`.
++fn reach(skeleton: &Skeleton, base: &Transform, finger: &Finger, open: &[Quat; 3], shape: &Shape) -> f32 {
++    let touches = |c: f32| {
++        let mut parent = *base;
++        for k in 0..3 {
++            let j = finger.joints[k];
++            let local = Transform {
++                rotation: open[k] * Quat::from_axis_angle(finger.axes[k], c * finger.max[k]),
++                ..skeleton.rest[j]
++            };
++            let joint = parent.mul_transform(local);
++            if k > 0 && shape.distance(joint.translation) < FINGER_R {
++                return true;
++            }
++            let next = if k == 2 { joint.transform_point(finger.tip) } else { joint.transform_point(skeleton.rest[finger.joints[k + 1]].translation) };
++            let mid = (joint.translation + next) * 0.5;
++            if shape.distance(mid) < FINGER_R || shape.distance(next) < FINGER_R {
++                return true;
++            }
++            parent = joint;
++        }
++        false
++    };
++    if touches(0.0) {
++        return 0.0;
++    }
++    if !touches(1.0) {
++        return EMPTY;
++    }
++    let (mut lo, mut hi) = (0.0f32, 1.0f32);
++    for _ in 0..BISECT {
++        let mid = 0.5 * (lo + hi);
++        if touches(mid) { hi = mid } else { lo = mid }
++    }
++    (lo + SQUEEZE).min(1.0)
++}
++
++fn world_pose(skeleton: &Skeleton, pose: &Pose, bones: &Bones, model: &Transform) -> Vec<Transform> {
++    skeleton.fk(pose, bones.pelvis).into_iter().map(|t| model.mul_transform(t)).collect()
++}
++
++/// Rotation whose X axis is `n` and Y axis is `f` (made orthogonal).
++fn basis(n: Vec3, f: Vec3) -> Quat {
++    let x = n.normalize();
++    let z = x.cross(f).normalize();
++    let y = z.cross(x);
++    Quat::from_mat3(&Mat3::from_cols(x, y, z))
++}
++
++fn measure(skeleton: &Skeleton, rest: &[Transform], hand: usize, s: &str) -> Option<Side> {
++    let p = |name: &str| skeleton.find(name).map(|i| rest[i].translation);
++    let hand_t = rest[hand];
++    let knuckles: Vec<Vec3> = ["index", "middle", "ring", "pinky"].iter().filter_map(|f| p(&format!("{f}_01_{s}"))).collect();
++    if knuckles.len() < 4 {
++        return None;
++    }
++    let mean = knuckles.iter().sum::<Vec3>() / knuckles.len() as f32;
++    let along_w = (mean - hand_t.translation).normalize();
++    let across = (knuckles[0] - knuckles[3]).normalize();
++    let mut normal_w = across.cross(along_w).normalize();
++    // The thumb hangs to the palm side.
++    let thumb_tip = p(&format!("thumb_04_leaf_{s}")).or_else(|| p(&format!("thumb_03_{s}")))?;
++    if normal_w.dot(thumb_tip - hand_t.translation) < 0.0 {
++        normal_w = -normal_w;
++    }
++    let palm_w = hand_t.translation.lerp(mean, 0.6);
++    let inv = hand_t.compute_affine().inverse();
++    let palm = inv.transform_point3(palm_w);
++    let normal = (hand_t.rotation.inverse() * normal_w).normalize();
++    let along = (hand_t.rotation.inverse() * along_w).normalize();
++    // Point the thumb curls toward: across the palm, just off its surface.
++    let thumb_goal = palm_w + normal_w * 0.03 + across * 0.01;
++
++    let mut fingers = Vec::new();
++    for name in FINGERS {
++        let thumb = name == "thumb";
++        let joints = [1, 2, 3].map(|k| skeleton.find(&format!("{name}_0{k}_{s}")));
++        let [Some(a), Some(b), Some(c)] = joints else { continue };
++        let joints = [a, b, c];
++        let tip_w = p(&format!("{name}_04_leaf_{s}")).unwrap_or_else(|| rest[c].translation + (rest[c].translation - rest[b].translation));
++        let tip = rest[c].compute_affine().inverse().transform_point3(tip_w);
++        let mut axes = [Vec3::X; 3];
++        for (k, &j) in joints.iter().enumerate() {
++            let pivot = rest[j].translation;
++            let lever = tip_w - pivot;
++            let want = if thumb { (thumb_goal - tip_w).normalize_or(normal_w) } else { normal_w };
++            let mut best = (f32::MIN, Vec3::X);
++            for axis in [Vec3::X, Vec3::NEG_X, Vec3::Y, Vec3::NEG_Y, Vec3::Z, Vec3::NEG_Z] {
++                let score = (rest[j].rotation * axis).cross(lever).dot(want);
++                if score > best.0 {
++                    best = (score, axis);
++                }
++            }
++            axes[k] = best.1;
++        }
++        fingers.push(Finger { joints, axes, tip, max: if thumb { THUMB_MAX } else { FINGER_MAX } });
++    }
++    Some(Side { hand, fingers, palm, normal, along })
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use std::collections::HashMap;
++
++    /// A palm-down T-pose left arm with five fingers, positions as measured from `ual2.glb`.
++    fn skeleton() -> (Skeleton, Bones) {
++        let mut joints: Vec<(String, Option<String>, Vec3)> = vec![
++            ("root".into(), None, Vec3::ZERO),
++            ("pelvis".into(), Some("root".into()), Vec3::new(0.0, 0.95, 0.0)),
++            ("spine_01".into(), Some("pelvis".into()), Vec3::new(0.0, 1.05, 0.0)),
++            ("spine_02".into(), Some("spine_01".into()), Vec3::new(0.0, 1.2, 0.0)),
++            ("spine_03".into(), Some("spine_02".into()), Vec3::new(0.0, 1.35, 0.0)),
++            ("neck_01".into(), Some("spine_03".into()), Vec3::new(0.0, 1.48, 0.0)),
++            ("Head".into(), Some("neck_01".into()), Vec3::new(0.0, 1.57, 0.0)),
++        ];
++        for (s, x) in [("l", 1.0f32), ("r", -1.0)] {
++            let v = |a: f32, y: f32, z: f32| Vec3::new(a * x, y, z);
++            joints.push((format!("clavicle_{s}"), Some("spine_03".into()), v(0.05, 1.44, -0.07)));
++            joints.push((format!("upperarm_{s}"), Some(format!("clavicle_{s}")), v(0.17, 1.44, -0.07)));
++            joints.push((format!("lowerarm_{s}"), Some(format!("upperarm_{s}")), v(0.466, 1.441, -0.07)));
++            joints.push((format!("hand_{s}"), Some(format!("lowerarm_{s}")), v(0.739, 1.441, -0.065)));
++            let fingers: [(&str, [[f32; 3]; 4]); 5] = [
++                ("thumb", [[0.766, 1.418, -0.032], [0.8, 1.399, -0.014], [0.839, 1.377, 0.006], [0.872, 1.359, 0.023]]),
++                ("index", [[0.859, 1.439, -0.034], [0.899, 1.439, -0.034], [0.934, 1.439, -0.034], [0.964, 1.439, -0.034]]),
++                ("middle", [[0.86, 1.441, -0.06], [0.903, 1.441, -0.062], [0.937, 1.441, -0.064], [0.971, 1.441, -0.065]]),
++                ("ring", [[0.858, 1.441, -0.082], [0.897, 1.441, -0.084], [0.928, 1.441, -0.085], [0.96, 1.441, -0.086]]),
++                ("pinky", [[0.847, 1.439, -0.106], [0.887, 1.439, -0.109], [0.914, 1.439, -0.111], [0.943, 1.439, -0.113]]),
++            ];
++            for (f, pts) in fingers {
++                let mut parent = format!("hand_{s}");
++                for (k, p) in pts.iter().enumerate() {
++                    let name = if k == 3 { format!("{f}_04_leaf_{s}") } else { format!("{f}_0{}_{s}", k + 1) };
++                    joints.push((name.clone(), Some(parent.clone()), v(p[0], p[1], p[2])));
++                    parent = name;
++                }
++            }
++            for (name, parent, y) in [("thigh", "pelvis", 0.9), ("calf", "thigh", 0.5), ("foot", "calf", 0.08), ("ball", "foot", 0.02)] {
++                let parent = if parent == "pelvis" { parent.to_string() } else { format!("{parent}_{s}") };
++                joints.push((format!("{name}_{s}"), Some(parent), v(0.1, y, 0.0)));
++            }
++        }
++        let index: HashMap<String, usize> = joints.iter().enumerate().map(|(i, j)| (j.0.clone(), i)).collect();
++        let parent: Vec<Option<usize>> = joints.iter().map(|j| j.1.as_ref().map(|p| index[p])).collect();
++        let rest = joints
++            .iter()
++            .enumerate()
++            .map(|(i, j)| Transform::from_translation(j.2 - parent[i].map(|p| joints[p].2).unwrap_or(Vec3::ZERO)))
++            .collect();
++        let skeleton = Skeleton { names: joints.iter().map(|j| j.0.clone()).collect(), parent, rest, base: Transform::IDENTITY, index };
++        let bones = Bones::new(&skeleton).unwrap();
++        (skeleton, bones)
++    }
++
++    fn solve(grip: Grip) -> (Skeleton, Bones, HandRig, Pose, Vec<Transform>) {
++        let (skeleton, bones) = skeleton();
++        let rig = HandRig::new(&skeleton, &bones);
++        let mut pose = skeleton.rest_pose();
++        let grips = [Some(grip), None];
++        let (_, plan) = rig.wrist_targets(&pose, &skeleton, &bones, &Transform::IDENTITY, &grips);
++        rig.close(&mut pose, &skeleton, &bones, &Transform::IDENTITY, &grips, &plan);
++        let world = skeleton.fk(&pose, bones.pelvis);
++        (skeleton, bones, rig, pose, world)
++    }
++
++    #[test]
++    fn measures_both_hands_with_five_fingers() {
++        let (skeleton, bones) = skeleton();
++        let rig = HandRig::new(&skeleton, &bones);
++        for side in 0..2 {
++            let geo = rig.sides[side].as_ref().unwrap();
++            assert_eq!(geo.fingers.len(), 5);
++            // Palm faces down in the T-pose.
++            let n = skeleton.fk(&skeleton.rest_pose(), bones.pelvis)[geo.hand].rotation * geo.normal;
++            assert!(n.y < -0.9, "palm normal {n}");
++        }
++    }
++
++    #[test]
++    fn fingers_wrap_a_bar_under_the_palm_without_entering_it() {
++        // A bar along Z just under the left palm.
++        let shape = Shape::Cylinder { a: Vec3::new(0.82, 1.40, -0.2), b: Vec3::new(0.82, 1.40, 0.1), radius: 0.016 };
++        let (skeleton, _bones, _rig, pose, world) = solve(Grip::new(shape, 1.0));
++        let mut closest = f32::MAX;
++        for f in ["index", "middle", "ring", "pinky"] {
++            for k in 2..=3 {
++                let p = world[skeleton.find(&format!("{f}_0{k}_l")).unwrap()].translation;
++                closest = closest.min(shape.distance(p));
++                assert!(shape.distance(p) > FINGER_R * 0.5, "{f}_0{k} inside: {}", shape.distance(p));
++            }
++            let j = skeleton.find(&format!("{f}_01_l")).unwrap();
++            assert!(pose.rot[j].angle_between(skeleton.rest[j].rotation) > 0.3, "{f} did not curl");
++        }
++        assert!(closest < 0.03, "fingers stopped {closest} m from the bar");
++    }
++
++    #[test]
++    fn flat_push_keeps_fingers_straight_and_palm_on_the_plane() {
++        // A door face in front of the left hand (normal toward the hand, −Z side... hand is at z −0.065).
++        let shape = Shape::Flat { point: Vec3::new(0.85, 1.44, 0.05), normal: Vec3::NEG_Z };
++        let (skeleton, bones, rig, pose, world) = solve(Grip::new(shape, 1.0));
++        for f in ["index", "middle", "ring", "pinky"] {
++            let j = skeleton.find(&format!("{f}_02_l")).unwrap();
++            assert!(pose.rot[j].angle_between(skeleton.rest[j].rotation) < 1e-3);
++        }
++        let geo = rig.sides[0].as_ref().unwrap();
++        let n = world[bones.hand[0]].rotation * geo.normal;
++        assert!(n.dot(Vec3::Z) > 0.99, "palm faces {n}");
++    }
++
++    #[test]
++    fn wrist_target_puts_the_palm_on_a_knob() {
++        let (skeleton, bones) = skeleton();
++        let rig = HandRig::new(&skeleton, &bones);
++        let pose = skeleton.rest_pose();
++        let shape = Shape::Sphere { center: Vec3::new(0.85, 1.30, 0.0), radius: 0.03 };
++        let grips = [Some(Grip::new(shape, 1.0)), None];
++        let (targets, plan) = rig.wrist_targets(&pose, &skeleton, &bones, &Transform::IDENTITY, &grips);
++        let (wrist, w) = targets[0].unwrap();
++        assert_eq!(w, 1.0);
++        let goal = plan.sides[0].unwrap().0;
++        let geo = rig.sides[0].as_ref().unwrap();
++        let palm = wrist + goal * geo.palm;
++        assert!((shape.distance(palm) - PALM).abs() < 1e-3, "palm {} from the knob", shape.distance(palm));
++        assert!(targets[1].is_none());
++    }
++
++    #[test]
++    fn held_grip_closes_fingers_and_leaves_the_wrist() {
++        let (skeleton, bones) = skeleton();
++        let rig = HandRig::new(&skeleton, &bones);
++        let mut pose = skeleton.rest_pose();
++        // A sword grip in the left hand's frame: under the palm, across the fingers.
++        let rest = skeleton.fk(&pose, bones.pelvis);
++        let hand = rest[bones.hand[0]];
++        let world = Shape::Cylinder { a: Vec3::new(0.82, 1.40, -0.2), b: Vec3::new(0.82, 1.40, 0.1), radius: 0.016 };
++        let inv = hand.compute_affine().inverse();
++        let Shape::Cylinder { a, b, radius } = world else { unreachable!() };
++        let local = Shape::Cylinder { a: inv.transform_point3(a), b: inv.transform_point3(b), radius };
++        let grips = [Some(Grip::held(local, 1.0)), None];
++        let (targets, plan) = rig.wrist_targets(&pose, &skeleton, &bones, &Transform::IDENTITY, &grips);
++        assert!(targets[0].is_none(), "a held grip must not pull the wrist");
++        rig.close(&mut pose, &skeleton, &bones, &Transform::IDENTITY, &grips, &plan);
++        assert_eq!(pose.rot[bones.hand[0]], skeleton.rest[bones.hand[0]].rotation);
++        let j = skeleton.find("middle_01_l").unwrap();
++        assert!(pose.rot[j].angle_between(skeleton.rest[j].rotation) > 0.3);
++    }
++
++    #[test]
++    fn no_grip_changes_nothing() {
++        let (skeleton, bones) = skeleton();
++        let rig = HandRig::new(&skeleton, &bones);
++        let mut pose = skeleton.rest_pose();
++        let before = pose.clone();
++        let (targets, plan) = rig.wrist_targets(&pose, &skeleton, &bones, &Transform::IDENTITY, &[None, None]);
++        rig.close(&mut pose, &skeleton, &bones, &Transform::IDENTITY, &[None, None], &plan);
++        assert_eq!(targets, [None, None]);
++        assert_eq!(pose, before);
++    }
++}
+diff --git a/crates/game/src/motion/mod.rs b/crates/game/src/motion/mod.rs
+index 06dae18..94acc7d 100644
+--- a/crates/game/src/motion/mod.rs
++++ b/crates/game/src/motion/mod.rs
+@@ -10,7 +10,7 @@
+ //!                 exaggeration), `assets/anim/poses.json` overrides with hot reload.
+ //! 5. `compose`  – the ONLY system that writes bone `Transform`s. Evaluates each character's
+ //!                 `MotionLayers`, runs `secondary` springs, `body` self-collision and
+-//!                 `contact` IK, writes bones.
++//!                 `contact` IK, `hand` grips (finger curl), writes bones.
+ //!
+ //! Conventions (shared by every module, do not change):
+ //! - Canonical skeleton = the joint list of `assets/anim/ual2.glb` skin 0, in that order.
+@@ -28,6 +28,7 @@ pub mod compose;
+ pub mod contact;
+ pub mod donor;
+ pub mod extract;
++pub mod hand;
+ pub mod retarget;
+ pub mod rig;
+ pub mod secondary;
+@@ -262,6 +263,9 @@ pub struct ContactRequest {
+     /// World direction a held ranged weapon aims along: the spine bends so the chest follows the
+     /// aim's pitch (the clips shoot level). `None` eases back.
+     pub aim: Option<Vec3>,
++    /// Finger grips `[left, right]` (`hand::Grip`): door knobs, levers, weapon handles, flat
++    /// pushes. A world-space grip also places and turns the wrist (it replaces `hands`).
++    pub grips: [Option<hand::Grip>; 2],
+ }
+ 
+ impl Default for ContactRequest {
+@@ -277,6 +281,7 @@ impl Default for ContactRequest {
+             feet: [None, None],
+             stance: f32::INFINITY,
+             aim: None,
++            grips: [None, None],
+         }
+     }
+ }
+diff --git a/crates/game/src/play/beam.rs b/crates/game/src/play/beam.rs
+index 65460bf..6c77726 100644
+--- a/crates/game/src/play/beam.rs
++++ b/crates/game/src/play/beam.rs
+@@ -345,7 +345,7 @@ fn sway(
+         match hands {
+             Some(mut h) => h.hands = targets,
+             None => {
+-                commands.entity(e).insert(HandTargets { hands: targets });
++                commands.entity(e).insert(HandTargets { hands: targets, ..default() });
+             }
+         }
+     }
+diff --git a/crates/game/src/play/doors.rs b/crates/game/src/play/doors.rs
+new file mode 100644
+index 0000000..c5c2494
+--- /dev/null
++++ b/crates/game/src/play/doors.rs
+@@ -0,0 +1,298 @@
++//! Hinged doors you open by hand: one with a knob (the hand closes round the knob, turns it,
++//! and rides it as the leaf swings) and one without (both palms flat on the leaf, pushing).
++//!
++//! Each door is an `Interactable` root with a frame (two posts and a lintel, solid) and a leaf
++//! hung on a hinge: the `Door leaf` child sits at the hinge post and turns about its vertical
++//! axis; the planks (and knobs, on both faces) are its children. A thin `Door block` collider
++//! fills the doorway while the leaf is shut and is switched off (`ColliderDisabled`) as soon as it
++//! starts to open, so the open leaf never shoves anyone.
++//!
++//! Either face works. `aim` (before `Act`) finds the nearest character and which face of the
++//! leaf it is on (from the leaf's current turn, so an open leaf works too), then rewrites the
++//! door's `Interactable` (`stand`, `face_yaw`, `hands`, `prompt`) and its `interact::Grasp` (a
++//! `Sphere` on the knob, or `Flat` on the leaf face) for that face. While anyone is within
++//! `FREEZE` of the doorway it leaves them alone, so the side cannot flip mid-use. `toggle` reacts
++//! to `UseEffect` (the knob has turned / the push has landed): it flips `PropState.on`, and an
++//! opening leaf swings away from whoever opened it. `swing` eases the hinge.
++//!
++//! Ownership: the door kinds' `Interactable` stand / face / hands / prompt and `Grasp`, their
++//! `PropState.on`, the leaf transform and the block's `ColliderDisabled` (all here).
++use super::interact::{Grasp, PropState, UseEffect};
++use super::world::{Kit, UseSpec, place};
++use super::{Interactable, Mover, PlaySet};
++use crate::motion::hand::Shape;
++use avian3d::prelude::*;
++use bevy::prelude::*;
++
++pub const KNOB_DOOR: Vec3 = Vec3::new(-2.0, 0.0, -7.5);
++pub const PUSH_DOOR: Vec3 = Vec3::new(-4.5, 0.0, -7.5);
++/// Leaf width, height, thickness (m).
++const W: f32 = 1.0;
++const H: f32 = 2.1;
++const T: f32 = 0.06;
++/// How far the leaf swings (rad) and how fast `amount` follows (1/s).
++const OPEN: f32 = 1.6;
++const RATE: f32 = 1.4;
++/// Knob: distance from the hinge along the leaf, height, how far it stands off the face, radius.
++const KNOB_X: f32 = W - 0.11;
++const KNOB_Y: f32 = 1.0;
++const KNOB_OUT: f32 = 0.055;
++const KNOB_R: f32 = 0.032;
++/// Wrist roll while the knob turns (rad).
++const KNOB_TURN: f32 = -0.9;
++/// Push door: where the two palms go (along the leaf from the hinge) and their height.
++const PUSH_X: [f32; 2] = [0.42, 0.78];
++const PUSH_Y: f32 = 1.12;
++/// Standing distance back from the contact point (m), and the sideways shift that puts the knob
++/// at the right hand.
++const STAND_BACK: f32 = 0.52;
++const KNOB_SIDE: f32 = 0.18;
++/// Nobody within this distance of the doorway: the door may switch the face it serves (m).
++const FREEZE: f32 = 1.3;
++/// Interaction timing on `ual1/Interact` (2 s): the hands hold over `REACH`, the use lands at `BEAT`.
++const TRACK: &str = "ual1/Interact";
++const REACH: (f32, f32) = (0.45, 1.5);
++const BEAT: f32 = 0.9;
++
++#[derive(Component, Debug, Clone, Copy)]
++pub struct HingedDoor {
++    pub knob: bool,
++    /// Which face the door is serving (+1 = the leaf's +Z face, −1 = its −Z face).
++    side: f32,
++    /// The way the leaf opens (+1 / −1 about +Y), set when it starts to open.
++    open_dir: f32,
++    /// 0 shut .. 1 fully open.
++    amount: f32,
++}
++
++#[derive(Component)]
++struct Leaf;
++
++#[derive(Component)]
++struct Block;
++
++pub fn plugin(app: &mut App) {
++    app.add_systems(Update, aim.before(PlaySet::Act))
++        .add_systems(Update, (toggle, swing).chain().after(super::interact::drive));
++}
++
++/// The face's contact geometry in leaf space: hand points `[left, right]`, grasp shapes, and the
++/// point to stand back from.
++fn contact(knob: bool, side: f32) -> ([Option<Vec3>; 2], [Option<Shape>; 2], Vec3) {
++    if knob {
++        let centre = Vec3::new(KNOB_X, KNOB_Y, side * (T * 0.5 + KNOB_OUT));
++        let shape = Shape::Sphere { center: centre, radius: KNOB_R };
++        ([None, Some(centre)], [None, Some(shape)], centre)
++    } else {
++        // Facing the leaf from its −Z face the body looks along +Z, so its left hand is the one
++        // farther from the hinge; from the +Z face it is the nearer one.
++        let (left, right) = if side < 0.0 { (PUSH_X[1], PUSH_X[0]) } else { (PUSH_X[0], PUSH_X[1]) };
++        let face = side * T * 0.5;
++        let point = |x: f32| Vec3::new(x, PUSH_Y, face);
++        let flat = |x: f32| Shape::Flat { point: point(x), normal: Vec3::Z * side };
++        ([Some(point(left)), Some(point(right))], [Some(flat(left)), Some(flat(right))], Vec3::new(0.5 * (PUSH_X[0] + PUSH_X[1]), PUSH_Y, face))
++    }
++}
++
++/// Where to stand (root space, on the ground) and the yaw to face, for a contact point `c` on a
++/// leaf turned by `leaf` (root space), served from `side`.
++fn stand_for(leaf: &Transform, c: Vec3, side: f32, knob: bool) -> (Vec3, f32) {
++    let normal = leaf.rotation * Vec3::Z * side;
++    let facing = (-normal).with_y(0.0).normalize_or(Vec3::Z);
++    let at = leaf.transform_point(c);
++    let right = facing.cross(Vec3::Y);
++    let shift = if knob { -right * KNOB_SIDE } else { Vec3::ZERO };
++    let stand = (at - facing * STAND_BACK + shift).with_y(0.0);
++    (stand, facing.x.atan2(facing.z))
++}
++
++fn aim(
++    bodies: Query<&GlobalTransform, With<Mover>>,
++    mut doors: Query<(&mut HingedDoor, &Transform, &mut Interactable, &mut Grasp, &PropState, &Children)>,
++    leaves: Query<&Transform, (With<Leaf>, Without<HingedDoor>)>,
++) {
++    for (mut door, root, mut it, mut grasp, prop, children) in &mut doors {
++        let Some(leaf) = children.iter().find_map(|c| leaves.get(c).ok()) else { continue };
++        let leaf_world = root.mul_transform(*leaf);
++        let nearest = bodies
++            .iter()
++            .map(|b| b.translation())
++            .min_by(|a, b| a.distance_squared(root.translation).total_cmp(&b.distance_squared(root.translation)));
++        if let Some(body) = nearest {
++            let flat_dist = (body - root.translation).with_y(0.0).length();
++            if flat_dist > FREEZE {
++                let normal = leaf_world.rotation * Vec3::Z;
++                door.side = if (body - leaf_world.translation).dot(normal) >= 0.0 { 1.0 } else { -1.0 };
++            }
++        }
++        let (hands, shapes, centre) = contact(door.knob, door.side);
++        let (stand, face) = stand_for(leaf, centre, door.side, door.knob);
++        it.stand = stand;
++        it.face_yaw = face;
++        it.hands = hands;
++        grasp.shapes = shapes;
++        grasp.twist = [0.0, if door.knob { KNOB_TURN } else { 0.0 }];
++        let label = if prop.on { "Close door" } else { "Open door" };
++        if it.prompt != label {
++            it.prompt = label.to_string();
++        }
++    }
++}
++
++fn toggle(mut effects: MessageReader<UseEffect>, mut doors: Query<(&mut HingedDoor, &mut PropState)>) {
++    for e in effects.read() {
++        let Ok((mut door, mut prop)) = doors.get_mut(e.target) else { continue };
++        prop.on = !prop.on;
++        if prop.on && door.amount < 0.05 {
++            // Away from the opener: the free edge (+X from the hinge) turns toward −side·Z, and a
++            // turn of +θ about +Y carries +X toward −Z.
++            door.open_dir = door.side;
++        }
++        info!("[door] {} {}", if door.knob { "knob door" } else { "push door" }, if prop.on { "opens" } else { "closes" });
++    }
++}
++
++fn swing(
++    mut commands: Commands,
++    time: Res<Time>,
++    mut doors: Query<(&mut HingedDoor, &PropState, &Children)>,
++    mut leaves: Query<&mut Transform, With<Leaf>>,
++    blocks: Query<(Entity, Has<ColliderDisabled>), With<Block>>,
++) {
++    let dt = time.delta_secs().clamp(0.0, 0.1);
++    for (mut door, prop, children) in &mut doors {
++        let goal = if prop.on { 1.0 } else { 0.0 };
++        door.amount += (goal - door.amount).clamp(-RATE * dt, RATE * dt);
++        let eased = door.amount * door.amount * (3.0 - 2.0 * door.amount);
++        let shut = door.amount < 0.02 && !prop.on;
++        for child in children.iter() {
++            if let Ok(mut tf) = leaves.get_mut(child) {
++                tf.rotation = Quat::from_rotation_y(door.open_dir * OPEN * eased);
++            }
++            if let Ok((e, disabled)) = blocks.get(child) {
++                if shut && disabled {
++                    commands.entity(e).remove::<ColliderDisabled>();
++                } else if !shut && !disabled {
++                    commands.entity(e).insert(ColliderDisabled);
++                }
++            }
++        }
++    }
++}
++
++/// The two doors, free-standing frames facing ±Z west of the noticeboard.
++pub(crate) fn spawn_doors(kit: &mut Kit) {
++    door(kit, "Knob door", KNOB_DOOR, true);
++    door(kit, "Push door", PUSH_DOOR, false);
++}
++
++fn door(kit: &mut Kit, name: &str, at: Vec3, knob: bool) {
++    let (wood, dark, metal, stone) = (kit.pal.wood.clone(), kit.pal.dark_wood.clone(), kit.pal.metal.clone(), kit.pal.stone.clone());
++    let (hands, _, centre) = contact(knob, -1.0);
++    let (stand, face) = stand_for(&Transform::from_xyz(-W * 0.5, 0.0, 0.0), centre, -1.0, knob);
++    let root = place(kit, name, at, UseSpec {
++        kind: if knob { "door_knob" } else { "door_push" },
++        prompt: "Open door",
++        track: TRACK,
++        duration: 2.0,
++        looping: false,
++        stand,
++        face: Some(face),
++        hands,
++        grip: Some("Door leaf"),
++        beat: Some(BEAT),
++        reach: Some(REACH),
++    });
++    kit.commands.entity(root).insert((HingedDoor { knob, side: -1.0, open_dir: -1.0, amount: 0.0 }, Grasp::default()));
++
++    // Frame: posts either side of the opening and a lintel.
++    let post = Vec3::new(0.12, H + 0.15, 0.16);
++    for x in [-(W * 0.5 + 0.06), W * 0.5 + 0.06] {
++        kit.part(root, "Door post", Cuboid::new(post.x, post.y, post.z), &stone, Transform::from_xyz(x, post.y * 0.5, 0.0), Some(Collider::cuboid(post.x, post.y, post.z)));
++    }
++    kit.part(root, "Door lintel", Cuboid::new(W + 0.24, 0.15, 0.16), &stone, Transform::from_xyz(0.0, H + 0.075, 0.0), Some(Collider::cuboid(W + 0.24, 0.15, 0.16)));
++    kit.commands.spawn((
++        Name::new("Door block"),
++        Block,
++        Collider::cuboid(W, H, T),
++        super::world::world_layers(),
++        Transform::from_xyz(0.0, H * 0.5, 0.0),
++        ChildOf(root),
++    ));
++
++    // The leaf, hung at the left post: +X runs from the hinge to the free edge.
++    let leaf = kit
++        .commands
++        .spawn((Name::new("Door leaf"), Leaf, Transform::from_xyz(-W * 0.5, 0.0, 0.0), Visibility::default(), ChildOf(root)))
++        .id();
++    kit.part(leaf, "Door planks", Cuboid::new(W - 0.02, H - 0.02, T), &wood, Transform::from_xyz(W * 0.5, H * 0.5, 0.0), None);
++    for y in [0.45, H - 0.45] {
++        for z in [-1.0f32, 1.0] {
++            kit.part(leaf, "Door rail", Cuboid::new(W - 0.08, 0.1, 0.02), &dark, Transform::from_xyz(W * 0.5, y, z * (T * 0.5 + 0.01)), None);
++        }
++    }
++    for y in [0.3, H - 0.3] {
++        kit.part(leaf, "Door hinge", Cylinder::new(0.025, 0.16), &metal, Transform::from_xyz(0.0, y, 0.0), None);
++    }
++    for z in [-1.0f32, 1.0] {
++        if knob {
++            let stem = T * 0.5 + KNOB_OUT * 0.5;
++            kit.part(leaf, "Knob stem", Cylinder::new(0.012, KNOB_OUT), &metal, Transform::from_xyz(KNOB_X, KNOB_Y, z * stem).with_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2)), None);
++            kit.part(leaf, "Door knob", Sphere::new(KNOB_R), &metal, Transform::from_xyz(KNOB_X, KNOB_Y, z * (T * 0.5 + KNOB_OUT)), None);
++        } else {
++            // Push plates where the palms go.
++            for x in PUSH_X {
++                kit.part(leaf, "Push plate", Cuboid::new(0.14, 0.2, 0.006), &metal, Transform::from_xyz(x, PUSH_Y, z * (T * 0.5 + 0.003)), None);
++            }
++        }
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    #[test]
++    fn knob_sits_at_the_right_hand_on_both_faces() {
++        for side in [-1.0f32, 1.0] {
++            let leaf = Transform::from_xyz(-W * 0.5, 0.0, 0.0);
++            let (hands, shapes, centre) = contact(true, side);
++            assert!(hands[0].is_none() && hands[1].is_some());
++            assert!(matches!(shapes[1], Some(Shape::Sphere { .. })));
++            let (stand, yaw) = stand_for(&leaf, centre, side, true);
++            let facing = Vec3::new(yaw.sin(), 0.0, yaw.cos());
++            let right = facing.cross(Vec3::Y);
++            let knob = leaf.transform_point(centre).with_y(0.0);
++            // On the stander's side of the leaf, ahead of them and to their right.
++            assert!(stand.z * side > 0.0, "side {side}: stand {stand}");
++            assert!((knob - stand).dot(facing) > 0.4);
++            assert!((knob - stand).dot(right) > 0.1);
++        }
++    }
++
++    #[test]
++    fn push_palms_are_left_and_right_of_the_body() {
++        for side in [-1.0f32, 1.0] {
++            let leaf = Transform::from_xyz(-W * 0.5, 0.0, 0.0);
++            let (hands, shapes, centre) = contact(false, side);
++            let (stand, yaw) = stand_for(&leaf, centre, side, false);
++            let right = Vec3::new(yaw.sin(), 0.0, yaw.cos()).cross(Vec3::Y);
++            let l = leaf.transform_point(hands[0].unwrap()) - stand;
++            let r = leaf.transform_point(hands[1].unwrap()) - stand;
++            assert!(r.dot(right) > l.dot(right), "side {side}: right hand must be to the right");
++            let Some(Shape::Flat { normal, .. }) = shapes[0] else { panic!() };
++            assert_eq!(normal, Vec3::Z * side);
++        }
++    }
++
++    #[test]
++    fn an_open_leaf_is_served_from_its_new_face() {
++        // Opened from the −Z face, the leaf swings toward +Z: its −Z face now looks along −X.
++        let leaf = Transform::from_xyz(-W * 0.5, 0.0, 0.0).with_rotation(Quat::from_rotation_y(-OPEN));
++        let (_, _, centre) = contact(true, -1.0);
++        let (stand, _) = stand_for(&leaf, centre, -1.0, true);
++        let knob = leaf.transform_point(centre);
++        assert!(knob.z > 0.5, "the free edge swung away to +Z: {knob}");
++        assert!(stand.distance(knob.with_y(0.0)) < 0.7);
++    }
++}
+diff --git a/crates/game/src/play/interact.rs b/crates/game/src/play/interact.rs
+index b5ba3d0..008a890 100644
+--- a/crates/game/src/play/interact.rs
++++ b/crates/game/src/play/interact.rs
+@@ -25,6 +25,7 @@ use super::{
+     Owner, PlaySet, Player,
+ };
+ use crate::motion::Mask;
++use crate::motion::hand::{Grip, Shape};
+ use crate::motion::bank::PoseBank;
+ use bevy::prelude::*;
+ use std::f32::consts::FRAC_PI_2;
+@@ -215,6 +216,16 @@ pub enum Phase {
+     Refuse,
+ }
+ 
++/// Finger grips for an interactable's hand targets (`motion::hand`): one shape per hand, in the
++/// same frame as `Interactable.hands` (its `grip` part when set), and a wrist roll that grows with
++/// the hand weight (a knob turns as the hand closes on it). Written by the module that spawns the
++/// interactable (`doors`).
++#[derive(Component, Clone, Copy, Debug, Default)]
++pub struct Grasp {
++    pub shapes: [Option<Shape>; 2],
++    pub twist: [f32; 2],
++}
++
+ /// What an interactable remembers between uses.
+ #[derive(Component, Clone, Copy, Debug, Default)]
+ pub struct PropState {
+@@ -362,6 +373,7 @@ pub(crate) fn drive(
+     mut interactables: Query<(&Transform, &mut Interactable, &mut PropState, Option<&Children>), Without<Mover>>,
+     parts: Query<(&Name, &Transform), (Without<Interactable>, Without<Mover>)>,
+     globals: Query<&GlobalTransform>,
++    grasps: Query<&Grasp>,
+ ) {
+     let dt = time.delta_secs().clamp(0.0, 0.1);
+     for (entity, tf, mut mover, intent, mut action, focus, using, holding) in &mut characters {
+@@ -482,7 +494,10 @@ pub(crate) fn drive(
+                     })
+                     .map_or(*itf, |(_, part)| itf.mul_transform(*part));
+                 let hands = it.hands.map(|h| h.map(|p| (grip.transform_point(p), w)));
+-                commands.entity(entity).insert(HandTargets { hands });
++                let grips = grasps.get(using.target).map_or([None, None], |g| {
++                    [0, 1].map(|i| g.shapes[i].map(|s| Grip { twist: g.twist[i] * w, ..Grip::new(s.moved(&grip), w) }))
++                });
++                commands.entity(entity).insert(HandTargets { hands, grips });
+ 
+                 if it.looping {
+                     let beat = it.beat.filter(|b| b.is_finite());
+diff --git a/crates/game/src/play/items.rs b/crates/game/src/play/items.rs
+index 27b3bde..fa3ce4f 100644
+--- a/crates/game/src/play/items.rs
++++ b/crates/game/src/play/items.rs
+@@ -7,7 +7,8 @@
+ //! offered to the bag with `ItemCollected`; `inventory` answers `ItemRejected` if it no longer
+ //! fits, and the item drops back at the player's feet. Sticks, stones and apples lie at rest on
+ //! the hills (`Spot`s, placed static on the slope), each coming back `RESPAWN` seconds after it
+-//! is collected.
++//! is collected. A chest with `ChestLoot` spills its contents as items when it is opened (they
++//! pop up out of the lid toward the opener) and fills again `refill` seconds after it is shut.
+ use super::fx::{Sfx, SfxKind};
+ use super::inventory::Inventory;
+ use super::voxel::hash3;
+@@ -176,7 +177,68 @@ pub fn plugin(app: &mut App) {
+         .add_message::<BagFull>()
+         .init_resource::<HillTrees>()
+         .add_systems(Startup, load)
+-        .add_systems(Update, (scatter, magnet, fly, rejected, settle, respawn).chain());
++        .add_systems(Update, (scatter, magnet, fly, rejected, settle, respawn).chain())
++        .add_systems(Update, (spill, refill).after(super::interact::drive));
++}
++
++/// What a chest holds; it spills on opening and refills `refill` s after it is shut.
++#[derive(Component, Clone, Debug)]
++pub struct ChestLoot {
++    pub items: Vec<ItemKind>,
++    pub full: Vec<ItemKind>,
++    pub refill: f32,
++    timer: f32,
++}
++
++impl ChestLoot {
++    pub fn new(items: Vec<ItemKind>, refill: f32) -> Self {
++        Self { full: items.clone(), items, refill, timer: 0.0 }
++    }
++}
++
++/// Items pop out of an opened chest: up out of the lid, fanned toward the opener.
++fn spill(
++    mut commands: Commands,
++    assets: Option<Res<ItemAssets>>,
++    mut effects: MessageReader<super::interact::UseEffect>,
++    mut chests: Query<(&Transform, &super::interact::PropState, &mut ChestLoot)>,
++    users: Query<&Transform, Without<ChestLoot>>,
++) {
++    let Some(assets) = assets else { return };
++    for e in effects.read() {
++        let Ok((tf, prop, mut loot)) = chests.get_mut(e.target) else { continue };
++        if !prop.on || loot.items.is_empty() {
++            continue;
++        }
++        let toward = users
++            .get(e.user)
++            .map(|u| (u.translation - tf.translation).with_y(0.0).normalize_or(Vec3::NEG_Z))
++            .unwrap_or(Vec3::NEG_Z);
++        let n = loot.items.len();
++        for (i, kind) in loot.items.drain(..).enumerate() {
++            let spread = (i as f32 - (n as f32 - 1.0) * 0.5) * 0.45;
++            let dir = Quat::from_rotation_y(spread) * toward;
++            let at = tf.translation + Vec3::Y * 0.75 + dir * 0.1;
++            let v = dir * 1.6 + Vec3::Y * 2.6;
++            spawn_item(&mut commands, &assets, kind, at, Quat::from_rotation_y(spread * 3.0), v);
++        }
++        loot.timer = loot.refill;
++        info!("[chest] spilled {n} items");
++    }
++}
++
++/// A shut, empty chest fills again once its timer runs out.
++fn refill(time: Res<Time>, mut chests: Query<(&super::interact::PropState, &mut ChestLoot)>) {
++    let dt = time.delta_secs();
++    for (prop, mut loot) in &mut chests {
++        if !loot.items.is_empty() || prop.on {
++            continue;
++        }
++        loot.timer -= dt;
++        if loot.timer <= 0.0 {
++            loot.items = loot.full.clone();
++        }
++    }
+ }
+ 
+ /// Bark sides and ringed pale end caps, by normal.
+diff --git a/crates/game/src/play/mod.rs b/crates/game/src/play/mod.rs
+index 9433833..e293f2a 100644
+--- a/crates/game/src/play/mod.rs
++++ b/crates/game/src/play/mod.rs
+@@ -24,6 +24,7 @@ pub mod combat;
+ pub mod contracts;
+ pub mod controller;
+ pub mod deeds;
++pub mod doors;
+ pub mod fx;
+ pub mod grass;
+ pub mod aim;
+@@ -102,7 +103,7 @@ pub fn plugin(app: &mut App) {
+         audio::plugin,
+     ))
+     .add_plugins((stats::plugin, armory::plugin, vfx::plugin, deeds::plugin, skills::plugin, record::plugin, traits::plugin, insignia::plugin, contracts::plugin, occupations::plugin, sky::plugin, hall::plugin, talk::plugin, guild::plugin, beam::plugin))
+-    .add_plugins(aim::plugin);
++    .add_plugins((aim::plugin, doors::plugin));
+ }
+ 
+ #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+diff --git a/crates/game/src/play/select.rs b/crates/game/src/play/select.rs
+index e654d83..5fed138 100644
+--- a/crates/game/src/play/select.rs
++++ b/crates/game/src/play/select.rs
+@@ -149,6 +149,8 @@ const AIM_CHEST: f32 = 0.45;
+ #[derive(Component, Clone, Debug, Default)]
+ pub struct HandTargets {
+     pub hands: [Option<(Vec3, f32)>; 2],
++    /// Finger grips per hand (`motion::hand`); forwarded as they are into `ContactRequest.grips`.
++    pub grips: [Option<crate::motion::hand::Grip>; 2],
+ }
+ 
+ /// Optional world-space ankle IK targets `[left, right]` as (point, weight 0..1): climb holds.
+@@ -1072,6 +1074,7 @@ fn update_character(
+         feet,
+         stance,
+         aim: input.aim,
++        grips: input.hands.map_or([None, None], |h| h.grips),
+     };
+ }
+ 
+@@ -1627,6 +1630,7 @@ mod tests {
+         }
+         app.world_mut().entity_mut(e).insert(HandTargets {
+             hands: [None, Some((Vec3::new(0.2, 1.2, 0.4), 1.0))],
++            ..default()
+         });
+         for _ in 0..60 {
+             app.update();
+diff --git a/crates/game/src/play/traverse.rs b/crates/game/src/play/traverse.rs
+index d5dbc16..7dc1b62 100644
+--- a/crates/game/src/play/traverse.rs
++++ b/crates/game/src/play/traverse.rs
+@@ -499,6 +499,7 @@ fn climb(
+                 commands.entity(entity).try_insert((
+                     HandTargets {
+                         hands: [Some((hands[0], 1.0)), Some((hands[1], 1.0))],
++                        ..default()
+                     },
+                     FootTargets {
+                         feet: [Some((feet_holds[0], 0.9)), Some((feet_holds[1], 0.9))],
+diff --git a/crates/game/src/play/world.rs b/crates/game/src/play/world.rs
+index cbdcba9..35e433c 100644
+--- a/crates/game/src/play/world.rs
++++ b/crates/game/src/play/world.rs
+@@ -365,7 +365,7 @@ fn build_terrain() -> (Mesh, Collider) {
+     (mesh, collider)
+ }
+ 
+-fn world_layers() -> CollisionLayers {
++pub(crate) fn world_layers() -> CollisionLayers {
+     CollisionLayers::new(Phys::World, LayerMask::ALL)
+ }
+ 
+@@ -600,6 +600,7 @@ fn setup(
+     spawn_training_ground(&mut kit);
+     spawn_props(&mut kit);
+     spawn_interactables(&mut kit, &assets);
++    super::doors::spawn_doors(&mut kit);
+     super::hall::spawn_hall(&mut kit);
+     spawn_characters(&mut commands);
+ }
+@@ -937,6 +938,14 @@ fn spawn_interactables(kit: &mut Kit, assets: &AssetServer) {
+         reach: None,
+     });
+     kit.part(chest, "Chest body", Cuboid::new(1.0, 0.5, 0.6), &wood, Transform::from_xyz(0.0, 0.25, 0.0), Some(Collider::cuboid(1.0, 0.5, 0.6)));
++    kit.commands.entity(chest).insert(super::items::ChestLoot::new(
++        vec![super::items::ItemKind::Apple, super::items::ItemKind::Stone, super::items::ItemKind::Stick, super::items::ItemKind::Apple],
++        90.0,
++    ));
++    {
++        use super::items::{ChestLoot, ItemKind};
++        kit.commands.entity(chest).insert(ChestLoot::new(vec![ItemKind::Apple, ItemKind::Stone, ItemKind::Stick, ItemKind::Apple], 90.0));
++    }
+     let lid = kit.commands.spawn((Name::new("Chest lid"), Transform::from_xyz(0.0, 0.5, 0.3), Visibility::default(), ChildOf(chest))).id();
+     kit.part(lid, "Chest lid board", Cuboid::new(1.02, 0.14, 0.62), &dark, Transform::from_xyz(0.0, 0.07, -0.3), None);
+ 
+diff --git a/docs/HANDOFF.md b/docs/HANDOFF.md
+index a6e7dac..4926321 100644
+--- a/docs/HANDOFF.md
++++ b/docs/HANDOFF.md
+@@ -24,6 +24,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
+ | `motion/secondary.rs` | Per-bone angular springs, arm world inertia + acceleration trail (`Arm swing` knob), chest/neck/head nod against vertical acceleration, impulses, squash | done |
+ | `motion/body.rs` | Body capsules (+ the root's `BodyPadding` for worn armour); swings arms out of torso/head/opposite thigh and thighs apart (after springs, before contact) | done |
+ | `motion/contact.rs` | Foot IK (heel + ball), pelvis drop only as far as a planted foot can't reach by straightening its leg (swing feet ignored), step-bounce dip (`ContactRequest.bob`, fades where the feet stand at different heights), COP lean, look-at, hand IK | done |
++| `motion/hand.rs` | Hand rig: `Grip` (`Cylinder` handle / lever / weapon, `Sphere` knob, `Flat` palm push; `in_hand` for things carried in the hand) on `ContactRequest.grips`. Before the arm IK it turns the palm onto the shape (plus `twist`, e.g. a knob turn) and replaces that hand's IK target with the wrist that puts the palm on it; after the IK it sets the wrist and closes each finger from open by bisection until it touches (`FINGER_R`), then squeezes. Curl axes, palm centre / normal measured from the rest skeleton | new |
+ | `motion/compose.rs` | **Only bone writer**: layers → springs → body → contact → bone `Transform`s; also publishes the pose in model space as `RigPose` | done |
+ | `motion/tweak.rs` | F2 pose tweak: freeze the player on a track key (PgUp/PgDn track, [ ] key), click or , . a bone, arrows swing (camera axes), wheel twists, Shift fine, Backspace reset, Ctrl+S merges into `poses.json` `edits` (hot-reloaded); player input is ignored while it is on | new |
+ | `play/mod.rs` | Shared types: `Intent Mover Action Fighter Loadout Hit StaminaSpend Interactable Climbable Water Feel`, capsule consts, `spawn_character` | done |
+@@ -45,6 +46,7 @@ Read this file first, then the module header (`//!`) of any file before you edit
+ | `play/deeds.rs` | `Deed { who, kind, tag, amount }`: the only input to progression. Producers: combat (hit, block, parry, kill), magic (cast, cast_hit), ranged (shoot, shoot_hit), traverse (swim / climb per metre, mantle), parkour (land Roll / Hard), trees (chop, fell); `skills` turns `ItemCollected` into gather | new |
+ | `play/record.rs` | `GB_RECORD=<dir>`: frame-locked capture (each frame advances 1/`GB_RECORD_FPS` s of game time; frames `GB_RECORD_FROM`..`GB_RECORD_TO` saved as PNGs, then quit) so slow software rendering still makes normal-speed video (`ffmpeg -framerate 30 -i f_%05d.png`) | new |
+ | `play/traits.rs` + `assets/data/traits.json` | The madlib "a [temper] fighter who walks [walk] and fights [fight]": NPCs roll one word per slot (seeded by entity); walk → `motion::compose::StyleScale` (exaggeration, holds, bounce; compose and select apply it per character), temper + fight → `ai::Difficulty` shifts (clamped); the log introduces each NPC | new |
++| `play/doors.rs` | Two hinged doors west of the noticeboard (`KNOB_DOOR`, `PUSH_DOOR`): the leaf turns on its hinge post; the knob door is opened with the right hand closing round the knob, turning it and riding it as the leaf swings; the push door with both palms flat on the leaf. Usable from either face (side chosen from the nearest character, frozen within `FREEZE`); the leaf swings away from the opener; a `Door block` collider fills the doorway while shut (`ColliderDisabled` once it moves). `[door]` log lines | new |
+ | `play/hall.rs` | The Guild Hall complex on the flat terrace east of the courtyard (`world::TERRACE_*`, `terrace_distance`): a gate and path, a stone hall (west door, north door to the yard, pitched roof, plank floor, sconces) with swinging double doors (`Door`: open for anyone near, no collider), the front desk and ledger shelves, an indoor bounty board, the lodging (3 `bed`s, a table, 2 chairs), and the fenced training ground with the duel ring, dummies and a weapon rack | new |
+ | `play/beam.rs` | Balance beams: a grounded player standing on a `Beam` balances (`Balancing`): the stick walks along it (slowly) and its sideways part counters an inverted-pendulum sway (drift grows with speed, shrinks with the Balance skill); `select::Posture` leans the torso and narrows the stance, both arms reach out through `HandTargets`; past the wobble line the arms windmill, past the fall line you topple off. Deeds `balance` (per m), `beam` crossed / fell. `GB_BEAM=steady|drift` | new |
+ | `play/talk.rs` | Talking to `Talkable` NPCs: F (as `Intent.talk_pressed` when one is in focus) → `Talking`; the camera eases into the player's eyes and frames the NPC's face (first person, body hidden, 42° lens); a dialogue panel with numbered options (keys 1–7 / click); `Dialogue` written by `guild`; `GB_TALK=<name>` | new |
+@@ -102,6 +104,8 @@ Read this file first, then the module header (`//!`) of any file before you edit
+ | Grass chunks, `GrassWind` (`gust` for wind magic) | `grass` | |
+ | `MotionLayers.impulses` | `combat` and other play systems (append) | `compose` drains |
+ | `MotionLayers.raw` | `ragdoll` | `compose` |
++| `HandTargets.grips`, `interact::Grasp` | `interact` (from the target's `Grasp`); `Grasp` and the door kinds' stand / face / hands / prompt / `PropState.on` by `doors` | `select` → `ContactRequest.grips` → `compose` (`hand`) |
++| `ChestLoot` (chest contents, refill timer) | `items` (spills as `Item`s on the chest's `UseEffect`, refills 90 s after it is shut) | |
+ | `HandTargets` | the action owner (`interact` now; `ranged`, `traverse` later); `tools` adds the right hand during the pickup hand-over | `select` fades → `ContactRequest.hands` |
+ | `ContactRequest.bob`, `accel.y` | `select` (scaled by `MotionFeel.bounce`) | `contact` (pelvis dip), `secondary` (nod) |
+ | `Holding`, `ToolItem`, tool parent/transform, table `PropState.on` | `tools` | `interact` (`offer`), `trees` (blade point) |
+-- 
+2.43.0
+

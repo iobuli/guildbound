@@ -217,6 +217,8 @@ pub struct Intent {
     /// Q / E still down (the player aims a spell while holding, casts on release: `spell_aim`).
     pub art_held: bool,
     pub spell_held: bool,
+    /// Normalized Q/E charge delivered on release by spell_aim.
+    pub cast_charge: f32,
     /// MB5 / d-pad left: bind the next known spell to the spell slot.
     pub next_spell: bool,
     /// Lock-on target, if any.

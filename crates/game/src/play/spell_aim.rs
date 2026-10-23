@@ -11,7 +11,7 @@
 //! `input` and `magic`: it holds the pressed flags back while aiming.
 //! Ownership: `Aiming` (written here only); it rewrites only the player's two cast presses.
 use super::magic::{Grimoire, Shape, ability};
-use super::{HALF_HEIGHT, Intent, Phys, PlaySet, Player};
+use super::{Action, ActionKind, ActionLayer, Fighter, Mover, Owner, HALF_HEIGHT, Intent, Phys, PlaySet, Player};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_PI_2;
@@ -60,22 +60,36 @@ fn press(intent: &mut Intent, which: Which) {
     }
 }
 
-fn hold(time: Res<Time>, mut commands: Commands, mut players: Query<(Entity, &mut Intent, Option<&mut Aiming>), With<Player>>) {
+fn hold(time: Res<Time>, mut commands: Commands, mut players: Query<(Entity, &mut Intent, Option<&mut Aiming>, &mut Action, &mut Mover, &Fighter, &Transform), With<Player>>) {
     let dt = time.delta_secs();
-    for (entity, mut intent, aiming) in &mut players {
+    for (entity, mut intent, aiming, mut action, mut mover, fighter, tf) in &mut players {
         match aiming {
             Some(mut aim) => {
                 intent.art_pressed = false;
                 intent.spell_pressed = false;
                 aim.t += dt;
-                if intent.dodge_pressed || intent.secondary_pressed {
+                if fighter.dead || action.owner != Owner::Magic || action.kind != ActionKind::Channel || intent.dodge_pressed || intent.secondary_pressed {
                     commands.entity(entity).try_remove::<Aiming>();
+                    if action.owner == Owner::Magic && action.kind == ActionKind::Channel {
+                        action.clear(); mover.move_scale = 1.0; mover.face = None;
+                    }
                 } else if !held(&intent, aim.which) {
                     commands.entity(entity).try_remove::<Aiming>();
+                    intent.cast_charge = (aim.t / 1.5).clamp(0.0, 1.0);
+                    action.clear(); mover.move_scale = 1.0; mover.face = None;
                     press(&mut intent, aim.which);
+                } else {
+                    if let Some(layer) = action.layer.as_mut() { layer.time = aim.t; }
+                    mover.face = super::controller::yaw_of(intent.look - tf.translation);
+                    if (aim.t / 0.15) as u32 != ((aim.t - dt) / 0.15) as u32 {
+                        use super::flipbook::{Flip, Sheet};
+                        commands.write_message(Flip::new(Sheet::Casting, Vec3::ZERO, 0.7 + aim.t.min(1.5) * 0.5, 0.28)
+                            .follow(entity, Vec3::Y * 0.4).tinted(Color::srgb(0.2, 0.7, 1.0), 1.0).glow(0.8));
+                    }
                 }
             }
             None => {
+                if fighter.dead || !action.is_free() { continue; }
                 let which = if intent.art_pressed && intent.art_held {
                     Which::Art
                 } else if intent.spell_pressed && intent.spell_held {
@@ -86,6 +100,11 @@ fn hold(time: Res<Time>, mut commands: Commands, mut players: Query<(Entity, &mu
                 intent.art_pressed = false;
                 intent.spell_pressed = false;
                 commands.entity(entity).try_insert(Aiming { which, t: 0.0 });
+                let mut layer = ActionLayer::new("sparking/DBZ_Ki_Charge_Loop", 0.0, crate::motion::Mask::Full);
+                layer.looping = true;
+                layer.style = Some(crate::motion::timing::Style { exaggeration: 1.0, hold: 0.0, ..default() });
+                action.start(ActionKind::Channel, Owner::Magic, Some(layer));
+                mover.move_scale = 0.15;
             }
         }
     }

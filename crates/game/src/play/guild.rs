@@ -312,6 +312,7 @@ pub fn plugin(app: &mut App) {
 
 /// Mira, Varro and two adventurers.
 fn spawn_people(mut commands: Commands) {
+    if super::world::duel_mode() { return; }
     struct Person {
         name: &'static str,
         title: &'static str,

@@ -79,6 +79,8 @@ pub struct Flip {
     pub recolor: f32,
     pub additive: bool,
     pub intensity: f32,
+    /// Sprite-contour rim strength. Used by translucent auras to keep their shape readable.
+    pub rim: f32,
     /// Rides this entity (plus `offset`) while it plays.
     pub follow: Option<Entity>,
     pub offset: Vec3,
@@ -100,7 +102,7 @@ pub struct Flip {
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, anim: None, head_start: 0.0, spin: 0.0 }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, rim: 0.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, anim: None, head_start: 0.0, spin: 0.0 }
     }
     pub fn flat(mut self) -> Self {
         self.flat = true;
@@ -133,6 +135,10 @@ impl Flip {
     }
     pub fn glow(mut self, k: f32) -> Self {
         self.intensity = k;
+        self
+    }
+    pub fn rim(mut self, k: f32) -> Self {
+        self.rim = k.max(0.0);
         self
     }
     pub fn tinted(mut self, c: Color, recolor: f32) -> Self {
@@ -190,6 +196,8 @@ struct Playing {
     life: f32,
     loops: u32,
     material: Handle<FlipMaterial>,
+    /// Authored tint alpha, kept separate from the lifetime fade.
+    alpha: f32,
     opacity: f32,
     follow: Option<(Entity, Vec3)>,
     base: Vec3,
@@ -234,9 +242,11 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
         let c = f.tint.to_linear();
         let material = mats.add(FlipMaterial {
             params: FlipParams {
-                tint: Vec4::new(c.red, c.green, c.blue, 1.0),
+                tint: Vec4::new(c.red, c.green, c.blue, c.alpha),
                 frame: Vec4::new(n as f32, 0.0, 1.0, 0.0),
-                mode: Vec4::new(if f.additive { 1.0 } else { 0.0 }, f.intensity, f.recolor, if f.flat { 1.0 } else { 0.0 }),
+                // Flat occupies the integer part; its fractional part carries contour-rim strength.
+                mode: Vec4::new(if f.additive { 1.0 } else { 0.0 }, f.intensity, f.recolor,
+                                (if f.flat { 1.0 } else { 0.0 }) + f.rim.min(0.99)),
             },
             sheet: sheets.images[i].clone(),
             additive: f.additive,
@@ -252,7 +262,8 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
                 life: f.life.max(0.05),
                 loops: f.loops,
                 material,
-                opacity: 1.0,
+                alpha: c.alpha,
+                opacity: c.alpha,
                 follow: f.follow.map(|e| (e, f.offset)),
                 base: f.at,
                 size: f.size,
@@ -310,12 +321,12 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         let b = if a + 1.0 < frames { a + 1.0 } else if wrap { 0.0 } else { a };
         let fade_out = ((total - p.age) / (p.life * 0.18)).clamp(0.0, 1.0);
         let fade_in = if p.rise.is_some() { (prog / 0.15).clamp(0.0, 1.0) } else { 1.0 };
-        p.opacity = fade_out * fade_in;
+        p.opacity = p.alpha * fade_out * fade_in;
         if let Some(mut m) = mats.get_mut(&p.material) {
             m.params.frame.y = a;
             m.params.frame.z = b;
             m.params.frame.w = t - a;
-            m.params.tint.w = fade_out * fade_in;
+            m.params.tint.w = p.opacity;
         }
     }
 }

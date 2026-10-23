@@ -411,6 +411,9 @@ pub struct Bind {
 #[derive(Component, Clone, Debug)]
 pub struct Casting {
     ability: &'static Ability,
+    clip_start: f32,
+    clip_span: f32,
+    clip_release: f32,
     t: f32,
     rate: f32,
     released: bool,
@@ -431,7 +434,7 @@ pub struct Casting {
 impl Casting {
     /// The ability being cast and how far through its clip window (0..1), for the HUD.
     pub fn progress(&self) -> (&'static str, f32) {
-        let span = (self.ability.end - self.ability.start).max(0.05);
+        let span = self.clip_span;
         (self.ability.id, (self.t / span).clamp(0.0, 1.0))
     }
 }
@@ -520,7 +523,7 @@ fn pools(
 /// Binding from the stats panel; MB5 cycles the bound spell.
 fn bind(
     mut binds: MessageReader<Bind>,
-    mut q: Query<(Entity, &mut Grimoire, &Sheet, &Intent)>,
+    mut q: Query<(Entity, &mut Grimoire, &mut Sheet, &Intent)>,
     mut log: MessageWriter<HudLog>,
     players: Query<(), With<Player>>,
 ) {
@@ -533,16 +536,21 @@ fn bind(
             g.spell = a.id;
         }
     }
-    for (e, mut g, s, intent) in &mut q {
+    for (e, mut g, mut s, intent) in &mut q {
+        if players.contains(e) {
+            for a in &ABILITIES { if !s.has_ability(a.id) { s.abilities.push(a.id); } }
+        }
         if !intent.next_spell {
             continue;
         }
-        let spells: Vec<_> = known(&s.abilities, false).collect();
+        let arts = intent.sprint;
+        let spells: Vec<_> = known(&s.abilities, arts).collect();
         if spells.is_empty() {
             continue;
         }
-        let i = spells.iter().position(|a| a.id == g.spell).map_or(0, |i| (i + 1) % spells.len());
-        g.spell = spells[i].id;
+        let current = if arts { g.art } else { g.spell };
+        let i = spells.iter().position(|a| a.id == current).map_or(0, |i| (i + 1) % spells.len());
+        if arts { g.art = spells[i].id; } else { g.spell = spells[i].id; }
         if players.contains(e) {
             log.write(HudLog::new(LogKind::System, format!("Spell: {}", spells[i].name)).key(7001));
         }
@@ -599,7 +607,8 @@ fn start_cast(
             continue;
         }
         let mastered = g.is_mastered(a.id);
-        let cost = a.cost * if mastered { MASTERED_COST } else { 1.0 };
+        let charge = intent.cast_charge.clamp(0.0, 1.0);
+        let cost = a.cost * (1.0 + 0.5 * charge) * if mastered { MASTERED_COST } else { 1.0 };
         let pool = match a.pool {
             Pool::Battlewill => &mut energy.battlewill,
             Pool::Magicules => &mut energy.magicules,
@@ -628,7 +637,16 @@ fn start_cast(
             .unwrap_or(intent.look);
         let aim = (aim_point - origin).normalize_or(tf.forward().as_vec3());
         let mask = if a.is_art() { Mask::Full } else { Mask::Upper };
-        action.start(ActionKind::Cast, Owner::Magic, Some(ActionLayer::new(a.track, a.start, mask)));
+        let (track, clip_start, clip_span, clip_release) = match a.shape {
+            Shape::Bolt { .. } | Shape::Crescent { .. } => ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.25),
+            Shape::Lance { .. } | Shape::Orbs { .. } => ("sparking/DBZ_Ki_Release", 0.0, 0.7166666, 0.3),
+            _ => (a.track, a.start, (a.end - a.start).max(0.05), a.release),
+        };
+        let mut layer = ActionLayer::new(track, clip_start, mask);
+        if track.starts_with("sparking/") {
+            layer.style = Some(crate::motion::timing::Style { exaggeration: 1.0, hold: 0.0, ..default() });
+        }
+        action.start(ActionKind::Cast, Owner::Magic, Some(layer));
         let yaw = aim.x.atan2(aim.z);
         mover.face = Some(yaw);
         mover.move_scale = if a.is_art() { 0.0 } else { CAST_MOVE };
@@ -644,11 +662,12 @@ fn start_cast(
         });
         commands.entity(entity).try_insert(Casting {
             ability: a,
+            clip_start, clip_span, clip_release,
             t: 0.0,
             rate,
             released: false,
             mastered,
-            power: scale * if mastered { MASTERED_POWER } else { 1.0 },
+            power: scale * (1.0 + 0.75 * charge) * if mastered { MASTERED_POWER } else { 1.0 },
             aim,
             aim_point,
             target,
@@ -761,11 +780,11 @@ fn drive_cast(
             continue;
         }
         let a = c.ability;
-        let span = (a.end - a.start).max(0.05);
+        let span = c.clip_span;
         c.t += dt * c.rate;
         let u = c.t / span;
         if let Some(layer) = action.layer.as_mut() {
-            layer.time = a.start + c.t.min(span);
+            layer.time = c.clip_start + c.t.min(span);
         }
         action.elapsed += dt;
         let origin = hand(rig, &bank, &globals, tf);
@@ -796,8 +815,10 @@ fn drive_cast(
             continue;
         }
         mover.root_motion = Vec3::ZERO;
-        if !c.released && u >= a.release {
+        if !c.released && u >= c.clip_release {
             c.released = true;
+            commands.write_message(super::flipbook::Flip::new(super::flipbook::Sheet::MagicHit, origin,
+                0.65 * c.power.sqrt(), 0.22).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(1.3));
             if let Some(m) = c.motes.take() {
                 commands.entity(m).try_despawn();
             }
@@ -1097,6 +1118,7 @@ fn release(
         Shape::Quake { radius } => {
             let feet = tf.translation - Vec3::Y * (HALF_HEIGHT - 0.05);
             let r = radius * flair;
+            commands.write_message(super::fracture::Shatter { at: feet, radius: r, force: a.damage * c.power * 3.0 });
             for t in world.targets.iter().filter(|t| foe(t, owner, team)) {
                 let away = Vec3::new(t.center.x - feet.x, 0.0, t.center.z - feet.z);
                 if away.length() <= r + t.radius {
@@ -1432,6 +1454,11 @@ fn fly(
             p.hits_left = 0;
         }
         if let Some(at) = burst_at {
+            commands.write_message(super::fracture::Shatter {
+                at, radius: (1.2 + p.power.sqrt()).min(4.5), force: a.damage * p.power * 2.0,
+            });
+            commands.write_message(super::flipbook::Flip::new(super::flipbook::Sheet::MagicHit, at,
+                1.2 * p.flair, 0.32).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(1.5));
             monitor.write(&format!(
                 "{:.2} - spell_impact_{} - {landed} ({:.1} {:.1} {:.1}) Cast {:.2}",
                 time.elapsed_secs(),

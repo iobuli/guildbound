@@ -10,6 +10,7 @@ key (for checking against the sheets), `--render DIR` the chained motion, `--exp
 """
 import os
 import sys
+import math
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -155,6 +156,134 @@ A("Brawler", "Axe_Kick", [P(pel=(0, 0, -.28), tilt=(20, 0)), fl(pel=(0, -.1, .45
                           P(pel=(0, -.1, -.34), tilt=(26, 0)), P(pel=(0, -.05, -.20), tilt=(18, 0)), ORTHO], fast=(3,))
 A("Brawler", "Landing_Recovery", [P(pel=(0, 0, -.38), tilt=(30, 0)), P(pel=(0, 0, -.28), tilt=(24, 0)),
                                   P(pel=(0, 0, -.16), tilt=(16, 0)), ORTHO], dt=.14)
+
+# --- Original choreography: battle-shonen sword vs fist --------------------------------------------------------
+#
+# These two tracks share the exact same key times and tags.  They are a complete exchange rather than two
+# disconnected attacks: every contact has an answer pose on the other actor.  ``stage`` is world-space travel,
+# supported by karate.origin_for; it lets the paired preview preserve spacing while the four compact clips below
+# remain in-place for ordinary gameplay locomotion/travel.
+
+
+def timed(group, name, rows):
+    """Register explicitly timed choreography rows: (pose, seconds, ease, semantic tag)."""
+    ANIMS[name] = (group, [(crouch(p), dt, ease, tag) for p, dt, ease, tag in rows])
+
+
+def sf(y, **kw):
+    """Fist fighter, facing -Y from the positive side of the stage."""
+    # Once the opening dash closes the gap, keep the grounded exchange on one contact line.
+    # Apparent advance/retreat then comes from hips and torso until the airborne disengage;
+    # planted feet no longer skate between nearby stage offsets.
+    if .30 <= abs(y) <= .60:
+        y = math.copysign(.47, y)
+    return P(ORTHO, stage=(.12 if abs(y) > .1 else 0.0, y, 0), **kw)
+
+
+SWORD_GUARD_L = arm((78, 22, -12), 105, 0, 92)
+SWORD_GUARD_R = arm((70, 18, 12), 92, 0, 92)
+SWORD = {"yaw": 180, "pel": (0, 0, -.08), "tilt": (10, 0), "chest": (0, 0, 8), "head": (8, -8, 0),
+         "l": pl(.16, -.18), "r": pl(-.18, .20), "hl": SWORD_GUARD_L, "hr": SWORD_GUARD_R}
+
+
+def sw(y, **kw):
+    """Sword fighter, facing +Y from the negative side of the stage."""
+    if .30 <= abs(y) <= .60:
+        y = math.copysign(.47, y)
+    return P(SWORD, stage=(-.12 if abs(y) > .1 else 0.0, y, 0), **kw)
+
+
+# Tags are intentionally duplicated across both tracks.  The paired renderer and verifier use them as the
+# contract: attack/block, counter/parry, hit/reaction and the final clash must land on the same frame.
+DUEL_DT = (.14, .20, .12, .08, .13, .09, .08, .12, .12, .08, .13, .09, .10, .15, .10, .08, .14, .10, .18, .24)
+FIST_DUEL = [
+    sf(.96),
+    sf(.76, pel=(.02, -.04, -.18), tilt=(20, 4), l=fk((38, 10, -5), 58, -10), r=fk((72, 8, 5), 98, -16), hl=arm((54, 18, 0), 125), hr=arm((50, 18, 0), 138)),
+    sf(.47, pel=(.06, -.08, -.16), tilt=(18, 14), chest=(4, 8, -12), hl=arm((112, 55, -25), 118), hr=arm((62, 18, 0), 135)),
+    sf(.47, pel=(.08, -.09, -.18), tilt=(20, 17), chest=(6, 12, -16), hl=arm((120, 62, -30), 125), hr=arm((65, 20, 0), 138)),
+    sf(.40, pel=(-.02, -.10, -.14), tilt=(14, -8), chest=(-2, -8, 28), hl=arm((85, 20, 0), 75), hr=arm((42, 35, 0), 120)),
+    sf(.38, pel=(-.04, -.12, -.15), tilt=(16, -10), chest=(0, -10, 34), hl=arm((92, 12, 0), 18), hr=arm((55, 38, 0), 125)),
+    sf(.43, pel=(.03, .02, -.08), tilt=(-4, 8), chest=(-10, 8, -18), head=(-18, -5, 10), hl=arm((45, 55, 0), 80), hr=arm((70, 25, 0), 115)),
+    sf(.58, pel=(.07, .08, -.10), tilt=(-12, 12), chest=(-16, 10, -24), head=(-26, 0, 14), l=pl(.20, -.06), r=pl(-.16, .30), hl=arm((35, 65, 0), 62), hr=arm((48, 50, 0), 92)),
+    sf(.52, pel=(-.02, -.02, -.20), tilt=(26, -8), chest=(12, -8, 18), r=fk((76, 18, -10), 118, -12), hl=arm((72, 26, 0), 110), hr=arm((62, 24, 0), 120)),
+    sf(.50, pel=(-.04, -.04, -.24), tilt=(30, -12), chest=(14, -12, 22), r=fk((104, 25, -16), 132, -18), hl=arm((78, 30, 0), 118), hr=arm((65, 30, 0), 125)),
+    sf(.38, pel=(.04, -.11, -.14), tilt=(16, 8), chest=(4, 8, -30), hl=arm((55, 28, 0), 105), hr=arm((98, 68, 12), 128)),
+    sf(.37, pel=(.06, -.12, -.14), tilt=(16, 12), chest=(2, 12, -36), hl=arm((58, 30, 0), 108), hr=arm((105, 72, 15), 132)),
+    sf(.43, pel=(-.08, .02, -.12), tilt=(8, -18), chest=(-5, -18, 22), head=(2, -20, -12), hl=arm((72, 18, 0), 95), hr=arm((58, 25, 0), 115)),
+    sf(.51, pel=(-.14, .10, -.12), tilt=(4, -26), chest=(-8, -22, 30), head=(-4, -25, -18), l=pl(.30, -.08), r=pl(-.10, .34), hl=arm((82, 15, 0), 80), hr=arm((65, 20, 0), 105)),
+    sf(.37, pel=(.02, -.12, -.15), tilt=(18, 4), chest=(4, 4, -34), l=pl(.18, -.34), hl=arm((52, 22, 0), 112), hr=arm((92, 4, 0), 8)),
+    sf(.36, pel=(.03, -.13, -.16), tilt=(19, 6), chest=(5, 6, -38), l=pl(.18, -.36), hl=arm((55, 24, 0), 115), hr=arm((96, 2, 0), 4)),
+    sf(.43, pel=(-.02, -.02, -.22), tilt=(27, -6), chest=(10, -6, 20), hl=arm((102, 48, -12), 120), hr=arm((74, 24, 0), 105)),
+    sf(.42, pel=(0, -.05, -.20), tilt=(24, 0), chest=(8, 0, 0), hl=arm((112, 58, -18), 130), hr=arm((108, 52, 16), 125)),
+    sf(.66, pel=(0, .02, -.14), tilt=(16, 0), l=fk((46, 8, -5), 72, -12), r=fk((58, 6, 4), 82, -14), hl=G_L, hr=G_R),
+    sf(.92),
+]
+SWORD_DUEL = [
+    sw(-.96),
+    sw(-.73, pel=(-.02, -.03, -.16), tilt=(18, -4), l=fk((66, 8, -5), 90, -14), r=fk((36, 10, 5), 56, -10), hl=arm((125, 35, -18), 95), hr=arm((135, 28, 22), 72)),
+    sw(-.47, pel=(-.04, -.08, -.14), tilt=(16, -10), chest=(4, -8, -42), hl=arm((108, 46, -15), 110), hr=arm((96, 22, 28), 26)),
+    sw(-.47, pel=(-.06, -.09, -.16), tilt=(18, -13), chest=(6, -12, -48), hl=arm((114, 50, -18), 116), hr=arm((102, 20, 30), 22)),
+    sw(-.40, pel=(.03, -.10, -.13), tilt=(14, 8), chest=(0, 8, 26), hl=arm((92, 20, -10), 88), hr=arm((72, 68, 25), 128)),
+    sw(-.38, pel=(.04, -.11, -.14), tilt=(15, 10), chest=(0, 10, 34), l=fk((34, 6, -4), 54, -12), hl=arm((98, 18, -10), 92), hr=arm((80, 75, 28), 136)),
+    sw(-.39, pel=(-.02, -.10, -.12), tilt=(14, -5), chest=(0, -6, -12), hl=arm((70, 25, 0), 100), hr=arm((58, 12, 8), 82)),
+    sw(-.55, pel=(-.06, .05, -.10), tilt=(-8, -10), chest=(-10, -8, -20), head=(-16, 0, -10), l=pl(.16, -.02), r=pl(-.18, .30), hl=arm((55, 45, 0), 80), hr=arm((45, 25, 0), 72)),
+    sw(-.48, pel=(.02, -.05, -.16), tilt=(20, 8), chest=(8, 8, 38), hl=arm((88, 30, -12), 102), hr=arm((108, 18, 24), 32)),
+    sw(-.48, pel=(.04, -.07, -.18), tilt=(22, 12), chest=(10, 12, 44), hl=arm((92, 34, -14), 108), hr=arm((116, 16, 28), 25)),
+    sw(-.37, pel=(-.03, .02, -.10), tilt=(2, -10), chest=(-12, -8, -22), head=(-16, 0, -8), hl=arm((60, 50, 0), 70), hr=arm((48, 40, 0), 78)),
+    sw(-.37, pel=(-.05, .04, -.08), tilt=(-6, -14), chest=(-18, -12, -30), head=(-22, 0, -12), hl=arm((48, 60, 0), 58), hr=arm((42, 50, 0), 65)),
+    sw(-.42, pel=(.02, -.02, -.18), tilt=(22, 5), chest=(8, 4, 44), hl=arm((118, 32, -18), 104), hr=arm((145, 20, 28), 52)),
+    sw(-.48, pel=(.08, -.04, -.20), tilt=(26, 12), chest=(12, 10, 58), head=(12, 20, 5), l=fk((5, 2, 0), 10, 0), hl=arm((130, 28, -22), 96), hr=arm((164, 12, 32), 30)),
+    sw(-.38, pel=(-.02, -.10, -.14), tilt=(14, -6), chest=(0, -6, -30), l=fk((30, 8, -5), 48, -10), hl=arm((100, 34, -14), 105), hr=arm((72, 62, 24), 122)),
+    sw(-.36, pel=(-.03, -.11, -.15), tilt=(16, -8), chest=(2, -8, -34), l=fk((14, 4, -2), 25, -5), hl=arm((104, 38, -16), 110), hr=arm((78, 68, 26), 130)),
+    sw(-.43, pel=(.04, -.04, -.18), tilt=(22, 8), chest=(12, 8, 36), hl=arm((122, 42, -20), 112), hr=arm((138, 34, 30), 86)),
+    sw(-.42, pel=(.06, -.05, -.20), tilt=(24, 10), chest=(14, 10, 44), hl=arm((130, 48, -24), 120), hr=arm((146, 38, 34), 92)),
+    sw(-.66, pel=(0, .02, -.14), tilt=(16, 0), l=fk((58, 6, -4), 82, -14), r=fk((46, 8, 5), 72, -12), hl=SWORD_GUARD_L, hr=SWORD_GUARD_R),
+    sw(-.92),
+]
+DUEL_TAGS = ("ready", "dash", "slash_block", "clash_hold", "fist_counter", "sword_parry", "pommel_hit", "fist_recoil",
+             "low_cut", "shin_check", "elbow_hit", "sword_recoil", "reversal", "perfect_slip", "body_cross", "sword_hit",
+             "final_rush", "mutual_clash", "disengage", "recover")
+timed("Duel", "Shonen_Fist_Duel", [(p, dt, "snap" if tag in {"fist_counter", "elbow_hit", "body_cross", "final_rush"} else "smooth", tag)
+                                           for p, dt, tag in zip(FIST_DUEL, DUEL_DT, DUEL_TAGS)])
+timed("Duel", "Shonen_Sword_Duel", [(p, dt, "snap" if tag in {"slash_block", "pommel_hit", "low_cut", "reversal", "mutual_clash"} else "smooth", tag)
+                                            for p, dt, tag in zip(SWORD_DUEL, DUEL_DT, DUEL_TAGS)])
+
+# Compact, in-place gameplay clips cut from the same visual language.  Their short anticipation, six-to-eight-frame
+# strike and visible impact hold keep high attack speed readable instead of simply accelerating an ordinary clip.
+FLASH_FIST = [sf(0), sf(0, pel=(.02, .03, -.20), tilt=(24, 4), chest=(8, 4, 18), hr=arm((32, 35, 0), 128)),
+              sf(0, pel=(.02, -.10, -.13), tilt=(15, 4), chest=(2, 4, -36), l=pl(.18, -.34), hr=arm((96, 2, 0), 4)),
+              sf(0, pel=(.02, -.10, -.14), tilt=(16, 4), chest=(3, 4, -38), l=pl(.18, -.34), hr=arm((98, 2, 0), 3)), sf(0)]
+FIST_PARRY = [sf(0), sf(0, pel=(.06, 0, -.18), tilt=(22, 15), chest=(8, 12, -12), hl=arm((118, 62, -30), 128)),
+              sf(0, pel=(-.04, -.08, -.14), tilt=(14, -10), chest=(-2, -10, 32), hl=arm((92, 12, 0), 18)),
+              sf(0, pel=(.02, -.10, -.15), tilt=(18, 5), chest=(4, 5, -32), hr=arm((96, 3, 0), 5)), sf(0)]
+FLASH_SWORD = [sw(0), sw(0, pel=(-.02, .02, -.18), tilt=(22, -4), chest=(8, -4, 26), hl=arm((128, 34, -18), 100), hr=arm((150, 22, 28), 58)),
+               sw(0, pel=(-.04, -.09, -.14), tilt=(16, -10), chest=(4, -10, -48), hl=arm((114, 50, -18), 116), hr=arm((102, 20, 30), 22)),
+               sw(0, pel=(-.04, -.09, -.15), tilt=(17, -10), chest=(5, -10, -50), hl=arm((116, 52, -18), 118), hr=arm((104, 18, 30), 20)), sw(0)]
+SWORD_PARRY = [sw(0), sw(0, pel=(.03, -.04, -.17), tilt=(21, 8), chest=(8, 8, 32), hl=arm((88, 26, -10), 94), hr=arm((70, 66, 24), 126)),
+               sw(0, pel=(.05, -.06, -.18), tilt=(23, 12), chest=(10, 12, 42), hl=arm((94, 32, -14), 104), hr=arm((78, 74, 28), 136)),
+               sw(0, pel=(-.02, -.08, -.14), tilt=(15, -6), chest=(2, -6, -30), hl=arm((102, 38, -16), 108), hr=arm((76, 65, 26), 128)), sw(0)]
+for n, poses, impact in (("Shonen_Flash_Cross", FLASH_FIST, 2), ("Shonen_Perfect_Counter", FIST_PARRY, 2),
+                         ("Shonen_Flash_Cut", FLASH_SWORD, 2), ("Shonen_Perfect_Parry", SWORD_PARRY, 2)):
+    A("Duel", n, poses, dt=.11, fast=(impact,), slow=(1,))
+
+# Self-authored bow sequence used in place of the generic archery mocap. The bow hand stays
+# locked downrange while the string hand nocks, pulls to the cheek, releases in two frames and
+# follows through. Timings are exposed directly in bow.json (aim .30, draw .30, release .75).
+BOW_AIM = P(ORTHO, yaw=0, pel=(0, 0, -.10), tilt=(10, 0), chest=(0, 0, 0), head=(2, 0, 0),
+            l=pl(.16, -.18), r=pl(-.18, .20), hl=arm((92, 5, -4), 8, 0, 10), hr=arm((78, 12, 6), 28, 0, 10))
+BOW_DRAW = P(BOW_AIM, chest=(0, 0, -8), head=(1, 4, 0),
+             hl=arm((96, 3, -5), 5, 0, 10), hr=arm((56, 18, 18), 124, 0, 10))
+BOW_RELEASE = P(BOW_AIM, chest=(0, 0, -12), head=(0, 6, 0),
+                hl=arm((98, 2, -5), 4, 0, 10), hr=arm((50, 12, 24), 122, 0, 5))
+timed("Duel", "Shonen_Bow_Shot", [
+    (P(BOW_AIM, hl=arm((82, 8, -2), 22, 0, 10), hr=arm((70, 16, 5), 45, 0, 10)), .15, "smooth", "ready"),
+    (BOW_AIM, .15, "smooth", "aim"),
+    (P(BOW_AIM, hr=arm((90, 4, 2), 12, 0, 10)), .12, "smooth", "nock"),
+    (BOW_DRAW, .28, "smooth", "full_draw"),
+    (BOW_RELEASE, .05, "snap", "release"),
+    (P(BOW_RELEASE, hr=arm((45, 8, 28), 128, 0, 5)), .12, "out", "follow_through"),
+    (BOW_AIM, .18, "smooth", "recover"),
+])
 
 # --- Sheet 1: mage casting --------------------------------------------------------------------------------------
 TH = lambda **k: P(MAGE, **k)  # noqa: E731
@@ -419,6 +548,9 @@ def main():
     names = opt["--only"].split(",") if "--only" in opt else list(ANIMS)
     rig = K.setup()
     sc = bpy.context.scene
+    # K.build keys in K.FPS frames.  Without this, Blender's 24 fps default exports every action
+    # 2.5x too long even though the authored frame spacing and easing are otherwise correct.
+    sc.render.fps = K.FPS
     if "--keys" in opt:
         out = opt["--keys"].rstrip("/")
         camera34(sc)
@@ -454,5 +586,5 @@ def main():
         print("EXPORTED", len(names), "actions")
 
 
-if __name__ == "__main__" or True:
+if __name__ == "__main__":
     main()

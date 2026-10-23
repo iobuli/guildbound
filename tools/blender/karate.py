@@ -320,14 +320,20 @@ def sequence(name):
 
 
 def origin_for(p):
-    """Body origin that keeps the planted left foot's spot fixed in the world whatever the yaw (a pivot on that foot)."""
+    """Body origin that keeps the planted left foot fixed while allowing authored stage travel.
+
+    ``stage`` is a world-space XYZ offset.  It is deliberately separate from ``pel``: stage
+    travel moves the whole fighter (dash, retreat, choreographed spacing), while pelvis offsets
+    shape the pose over the planted feet.
+    """
     B = rot((0, 0, 1), p.get("yaw", 0.0))
     left = p.get("l", {})
     spot = Vector(left["ankle"]) if left.get("planted") and "ankle" in left else Vector(SUPPORT)
-    return spot - B @ spot
+    return spot - B @ spot + Vector(p.get("stage", (0.0, 0.0, 0.0)))
 
 
-DEFAULTS = {"yaw": 0.0, "pel": (0.0, 0.0, 0.0), "tilt": (0.0, 0.0), "chest": (0.0, 0.0, 0.0), "head": (0.0, 0.0, 0.0)}
+DEFAULTS = {"yaw": 0.0, "pel": (0.0, 0.0, 0.0), "stage": (0.0, 0.0, 0.0),
+            "tilt": (0.0, 0.0), "chest": (0.0, 0.0, 0.0), "head": (0.0, 0.0, 0.0)}
 LIMB = {"pole": (0.0, -1.0, 0.0), "foot": 0.0, "toe": 0.0, "twist": 0.0, "turn": 1.0, "planted": False, "fist": 80.0, "roll": 0.0,
         "shoulder": (0.0, 0.0, 0.0), "elbow": 0.0, "wrist": 0.0,
         "thigh": (0.0, 0.0, 0.0), "knee": 0.0, "plant": 0.0, "ik": False, "ankle": (0.0, 0.0, 0.104)}
@@ -376,6 +382,9 @@ def ease(kind, t):
 def build(rig, names, action_name):
     """Every frame: the rig solved on blended pose parameters between the keys, so feet travel sensible paths
     (straight or arcing, never through the body) and the support foot stays planted."""
+    # Blender 4.x exposed Action.fcurves directly; 5.x stores them in layered channel bags.
+    # Asking for linear insertion up front works in both and is exactly what dense 60 fps keys need.
+    bpy.context.preferences.edit.keyframe_new_interpolation_type = "LINEAR"
     act = bpy.data.actions.new(action_name)
     rig.arm.animation_data_create()
     rig.arm.animation_data.action = act
@@ -396,7 +405,7 @@ def build(rig, names, action_name):
         prev_f, prev_p = kf + 1, kp
     for fr in range(prev_f, prev_f + 8):
         key_all(rig, fr)
-    for fc in act.fcurves:
+    for fc in getattr(act, "fcurves", ()):
         for kp in fc.keyframe_points:
             kp.interpolation = "LINEAR"
     act.frame_range = (1, prev_f + 7)

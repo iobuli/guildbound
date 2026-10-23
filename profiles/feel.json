@@ -1,0 +1,41 @@
+{
+  "feel": {
+    "walk_speed": 1.6,
+    "run_speed": 8.775,
+    "sprint_speed": 6.8,
+    "accel": 80.0,
+    "brake": 34.0,
+    "turn_rate": 720.0,
+    "jump_speed": 12.0,
+    "gravity": 20.0,
+    "air_control": 0.35,
+    "coyote_time": 0.12,
+    "hitstop": 0.07,
+    "knockback_scale": 1.0,
+    "ragdoll_threshold": 7.0
+  },
+  "motion": {
+    "style": {
+      "exaggeration": 1.15,
+      "hold": 0.45,
+      "bias": 0.55,
+      "stepped_fps": null,
+      "speed": 1.0
+    },
+    "springs": {
+      "core_hz": 7.0,
+      "limb_hz": 9.0,
+      "damping": 0.6,
+      "arm_swing": 1.0
+    },
+    "contact": {
+      "lean": 1.0,
+      "max_lean": 0.35,
+      "reach_up": 0.45,
+      "reach_down": 0.35,
+      "pelvis_rate": 14.0
+    },
+    "bounce": 1.0,
+    "debug": false
+  }
+}

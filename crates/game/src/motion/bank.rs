@@ -67,9 +67,6 @@ impl PoseBank {
                 .map(|h| h.join().unwrap_or_else(|_| Err("donor loader panicked".into())))
                 .collect::<Result<Vec<_>, String>>()
         })?;
-        // Mocap takes (one small library per file, all named `cmu`).
-        let mut libs = libs;
-        libs.extend(super::bvh::load_dir("cmu", &root.join(super::CMU_DIR)));
         let model_lib = LIBRARIES
             .iter()
             .position(|&(_, rel)| rel == MODEL_GLB)
@@ -86,7 +83,19 @@ impl PoseBank {
                     scope.spawn(move || {
                         retarget::retarget(lib, skeleton, bones)
                             .iter()
-                            .map(|clip| extract::extract(clip, skeleton, bones))
+                            .map(|clip| {
+                                let mut track = extract::extract(clip, skeleton, bones);
+                                // These clips were already retargeted and approved in Kev.
+                                // Keep every sample so short rush sections retain their timing.
+                                if lib.lib == "sparking" {
+                                    track.keys = clip.frames.iter().enumerate().map(|(i, pose)| Key {
+                                        time: frame_time(i, clip.duration),
+                                        pose: pose.clone(),
+                                        tag: extract::Tag::Passing,
+                                    }).collect();
+                                }
+                                track
+                            })
                             .collect::<Vec<_>>()
                     })
                 })
@@ -96,36 +105,6 @@ impl PoseBank {
                 .map(|h| h.join().map_err(|_| "retarget/extract panicked".to_string()))
                 .collect::<Result<Vec<_>, String>>()
         })?;
-
-        // Mocap takes stand on their own floor (the capture stage's height and the retarget's leg
-        // scaling leave them floating or sunk): put each one's planted feet on y = 0.
-        let mut per_lib = per_lib;
-        // The floor the hand-made clips stand on (their planted feet), the target for the mocap.
-        let mut reference: Vec<f32> = libs
-            .iter()
-            .zip(per_lib.iter())
-            .filter(|(lib, _)| lib.lib == "ual1" || lib.lib == "ual2")
-            .flat_map(|(_, ts)| ts.iter().filter(|t| t.looping).take(12))
-            .filter_map(|t| floor_height(&t.dense.frames, &skeleton, &bones))
-            .collect();
-        reference.sort_by(f32::total_cmp);
-        let sole = reference.get(reference.len() / 2).copied().unwrap_or(FOOT_SOLE);
-        let (mut placed, mut shift) = (0usize, 0.0f32);
-        for (lib, lib_tracks) in libs.iter().zip(per_lib.iter_mut()) {
-            if lib.lib != "cmu" {
-                continue;
-            }
-            for t in lib_tracks.iter_mut() {
-                let off = place_on_floor(t, &skeleton, &bones, sole);
-                if off != 0.0 {
-                    placed += 1;
-                    shift += off.abs();
-                }
-            }
-        }
-        if placed > 0 {
-            info!("[bank] floor: {placed} mocap takes placed on the ground at {sole:.3} (mean shift {:.3} m)", shift / placed as f32);
-        }
 
         let mut counts: Vec<(String, usize)> = Vec::new();
         let mut tracks = HashMap::new();
@@ -704,8 +683,10 @@ mod tests {
         assert_eq!(count("ual1"), 44);
         assert_eq!(count("ual2"), 42);
         assert_eq!(count("sekiro"), 56);
-        assert_eq!(count("rokoko"), 28);
-        assert!(b.has("ual1/Punch_Jab") && b.has("sekiro/Inward Slash") && b.has("rokoko/DrStrangeMagic"));
+        assert_eq!(count("shonen_duel"), 7);
+        assert!(b.has("ual1/Punch_Jab") && b.has("sekiro/Inward Slash") && b.has("shonen_duel/Brawler_Shonen_Flash_Cross"));
+        assert_eq!(count("rokoko"), 0);
+        assert_eq!(count("cmu"), 0);
         assert!(!b.has("ual1/A_TPose"));
     }
 

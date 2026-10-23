@@ -29,12 +29,76 @@ const state = { model: null, root: null, mixer: null, clips: [], action: null, b
 const markers = new THREE.Group(); scene.add(markers);
 const sphereGeo = new THREE.SphereGeometry(0.018, 8, 8);
 let comMesh = null, lastKev = null;
+let dbzCatalog = null, dbzLoading = false;
+let modelGeneration = 0;
+
+function disposeModel(root) {
+  const geometries = new Set(), materials = new Set(), textures = new Set();
+  root.traverse((o) => {
+    if (o.geometry) geometries.add(o.geometry);
+    for (const m of (Array.isArray(o.material) ? o.material : [o.material])) {
+      if (!m) continue;
+      materials.add(m);
+      for (const value of Object.values(m)) if (value?.isTexture) textures.add(value);
+    }
+  });
+  geometries.forEach(g => g.dispose()); materials.forEach(m => m.dispose()); textures.forEach(t => t.dispose());
+}
+
+function filterDbz() {
+  if (!dbzCatalog) return;
+  const character = $('dbzCharacter').value, query = $('dbzSearch').value.trim().toLowerCase();
+  const clips = dbzCatalog.clips.filter((c) => (!character || c.character === character) && (!query || c.name.toLowerCase().includes(query)));
+  $('dbzClip').replaceChildren();
+  for (const clip of clips) { const option = document.createElement('option'); option.value = clip.id; option.textContent = clip.name; $('dbzClip').appendChild(option); }
+  $('dbzLoad').disabled = dbzLoading || !clips.length;
+  $('dbzStatus').textContent = `${clips.length} matches / ${dbzCatalog.total} archive clips. First load converts; repeats use cache.`;
+}
+
+async function initDbz() {
+  try {
+    const response = await fetch('/api/sparking'); dbzCatalog = await response.json();
+    if (!response.ok) throw new Error(dbzCatalog.error || 'library unavailable');
+    $('dbzCharacter').replaceChildren();
+    for (const character of dbzCatalog.characters) { const option = document.createElement('option'); option.value = option.textContent = character; $('dbzCharacter').appendChild(option); }
+    $('dbzCharacter').onchange = filterDbz; $('dbzSearch').oninput = filterDbz;
+    $('dbzLoad').onclick = loadDbz; filterDbz();
+    if (new URLSearchParams(location.search).get('dbz') === '1') { $('dbzSearch').value = 'C_ATC_a001_R1_1_HT'; filterDbz(); }
+  } catch (error) { $('dbzStatus').textContent = error.message; $('dbzLoad').disabled = true; }
+}
+
+async function loadDbz() {
+  if (dbzLoading || !$('dbzClip').value) return;
+  const requestedGeneration = modelGeneration;
+  dbzLoading = true; $('dbzLoad').disabled = true; $('dbzStatus').textContent = 'Reading archive and preparing motion...';
+  try {
+    const response = await fetch('/api/sparking/load', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: $('dbzClip').value})});
+    const result = await response.json(); if (!response.ok) throw new Error(result.error || 'archive conversion failed');
+    const motion = await new GLTFLoader().loadAsync(result.url);
+    if (requestedGeneration !== modelGeneration) { $('dbzStatus').textContent = 'Model changed; choose Load again to apply this animation.'; return; }
+    if (!motion.animations.some(c => c.name === result.name)) throw new Error('Converted file has no matching animation');
+    if (state.model !== result.base && !await loadModel(result.base)) return;
+    state.baked = null; state.overrideQ = {}; state.overrideP = {}; state.overrides = {};
+    state.mixer.stopAllAction(); state.mixer.uncacheRoot(state.root);
+    state.clips = motion.animations; fillClips(); play(result.name);
+    $('dbzStatus').textContent = `${result.cached ? 'Cached' : 'Converted'} in ${result.seconds}s — ${(result.bytes / 1024).toFixed(0)} KB`;
+    log('DBZ archive: ' + result.source);
+  } catch (error) { $('dbzStatus').textContent = error.message; log('DBZ: ' + error.message); }
+  finally { dbzLoading = false; $('dbzLoad').disabled = !$('dbzClip').value; }
+}
 
 function log(text) { const l = $('log'); l.textContent += '\n' + text; l.scrollTop = l.scrollHeight; }
 
 async function loadModel(file) {
-  if (state.root) { scene.remove(state.root); if (state.helper) scene.remove(state.helper); }
+  const generation = ++modelGeneration;
   const gltf = await new GLTFLoader().loadAsync('/assets/anim/' + file);
+  if (generation !== modelGeneration) { disposeModel(gltf.scene); return false; }
+  if (state.root) {
+    state.mixer.stopAllAction(); state.mixer.uncacheRoot(state.root);
+    scene.remove(state.root); disposeModel(state.root);
+    if (state.helper) { scene.remove(state.helper); state.helper.dispose(); }
+  }
+  state.baked = null;
   state.model = file; state.root = gltf.scene; scene.add(gltf.scene);
   state.bones = {}; state.rest = {}; state.overrides = {}; state.overrideQ = {}; state.overrideP = {}; state.restP = {};
   gltf.scene.traverse((o) => { if (o.isBone) { state.bones[o.name] = o; state.rest[o.name] = o.quaternion.clone(); state.restP[o.name] = o.position.clone(); } });
@@ -43,6 +107,7 @@ async function loadModel(file) {
   fillClips(); fillBones(); applyShow();
   $('model').value = file;
   sendTelemetry(true);
+  return true;
 }
 
 function fillClips() {
@@ -83,7 +148,7 @@ function inPlace(clip) {
 function play(name) {
   const clip = state.clips.find((c) => c.name === name) || (/^\d+$/.test(String(name)) ? state.clips[+name] : null);
   if (!clip) { log('no such clip: ' + name); return; }
-  if (state.action) state.action.stop();
+  if (state.action) { const previous = state.action.getClip(); state.action.stop(); state.mixer.uncacheAction(previous, state.root); }
   state.action = state.mixer.clipAction(state.inplace === false ? clip : inPlace(clip)); state.action.reset().play(); state.clipName = clip.name;
   state.mixer.timeScale = state.speed; state.playing = true; $('clip').value = clip.name;
 }
@@ -128,6 +193,7 @@ function applyOverrides() {
 
 let lastSent = '', lastSendAt = 0;
 async function sendTelemetry(force) {
+  if (document.hidden) return;
   const now = performance.now();
   if (!force && now - lastSendAt < 80) return;
   const quats = {}; const pos = {}; let h = '';
@@ -145,6 +211,7 @@ async function sendTelemetry(force) {
 }
 
 function renderKev(k) {
+  if (k.model !== state.model || k.clip !== state.clipName) return;
   lastKev = k;
   if (k.balance) {
     const b = $('bal'); b.className = k.balance.over_foot ? 'over' : 'off';
@@ -163,6 +230,12 @@ function renderKev(k) {
 const kv = (a, b) => `<div class="kv"><span>${a}</span><span>${b}</span></div>`;
 
 function drawMarkers(k) {
+  const materials = new Set();
+  for (const marker of markers.children) {
+    if (marker.geometry && marker.geometry !== sphereGeo) marker.geometry.dispose();
+    if (marker.material) materials.add(marker.material);
+  }
+  materials.forEach(material => material.dispose());
   markers.clear();
   if (!$('showLm').checked || !k.landmarks) return;
   const mat = new THREE.MeshBasicMaterial({ color: 0x7cc4ff, depthTest: false });
@@ -182,9 +255,13 @@ function applyShow() {
 
 // ---- UI wiring
 async function init() {
+  $('dbzRush').onclick = async () => {
+    try { if (await loadModel('sparking_combat.glb')) play('DBZ_Rush_01'); }
+    catch (error) { log('Rush preview failed: ' + error.message); }
+  };
   const models = await (await fetch('/api/models')).json();
   for (const m of models) { const o = document.createElement('option'); o.value = o.textContent = m; $('model').appendChild(o); }
-  $('model').onchange = () => loadModel($('model').value);
+  $('model').onchange = () => loadModel($('model').value).catch(error => { $('model').value = state.model; log('Model load failed: ' + error.message); });
   $('clip').onchange = () => play($('clip').value);
   $('play').onclick = () => { if (state.action) handle({ cmd: 'resume' }); else play($('clip').value); };
   $('pause').onclick = () => handle({ cmd: 'pause' });
@@ -212,6 +289,7 @@ async function init() {
   const first = new URLSearchParams(location.search).get('model') || (models.includes('ual2.glb') ? 'ual2.glb' : models[0]);
   await loadModel(first);
   const q = new URLSearchParams(location.search).get('play'); if (q) play(q);
+  initDbz();
 }
 
 function resize() { const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix(); }
@@ -222,13 +300,16 @@ renderer.setAnimationLoop(() => {
   if (state.mixer) state.mixer.update(dt);
   applyOverrides();
   if (state.root) { state.root.updateMatrixWorld(true); sendTelemetry(false); }
+  // Server analysis arrives after the rendered frame. Only overlay a matching stationary pose.
+  markers.visible = !state.playing && !state.baked && lastKev?.model === state.model &&
+    lastKev?.clip === state.clipName && (!state.action || Math.abs(lastKev.t - state.action.time) < 0.02);
   controls.update(); renderer.render(scene, camera);
 });
 init();
 
 // deterministic stepping for offline recording: ksStep(frame) pins the baked track to a frame
 window.ksStep = (f) => { if (state.baked) state.baked.fixed = f; return state.baked ? state.baked.frames.length : 0; };
-window.ksSeek = (t) => { if (state.action) { state.action.paused = false; state.action.time = t; state.mixer.update(0); state.mixer.timeScale = 0; } return state.action ? state.action.getClip().duration : 0; };
+window.ksSeek = (t) => { if (state.action) { state.action.paused = false; state.action.time = t; state.mixer.update(0); state.mixer.timeScale = 0; state.playing = false; } return state.action ? state.action.getClip().duration : 0; };
 // camera presets for filming and checking poses against orthographic-style references
 window.ksView = (name) => {
   const v = { side: [-4.6, 1.0, 0], front: [0, 1.0, 4.6], back: [0, 1.0, -4.6], three: [2.6, 1.7, 3.2] }[name] || [2.6, 1.7, 3.2];

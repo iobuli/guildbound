@@ -219,6 +219,8 @@ pub fn board_from(g: &GuildSave, book: &ContractBook) -> Board {
 /// Where the save lives in this run: an explicit `GB_SAVE` always; otherwise the platform's
 /// per-user data folder, except in a smoke run (nothing).
 pub fn run_path(env: impl Fn(&str) -> Option<String> + Copy) -> Option<PathBuf> {
+    // The focused combat scene does not load or overwrite the populated world's progress.
+    if env("GB_WORLD_FULL").as_deref() != Some("1") && env("GB_SAVE").is_none() { return None; }
     if env("GB_SAVE").is_some_and(|v| !v.trim().is_empty()) || !smoke_run(env) { save_path(env) } else { None }
 }
 

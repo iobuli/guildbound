@@ -1,0 +1,106 @@
+{
+  "fps": 60,
+  "duration_s": 2.5833,
+  "tracks": [
+    "Brawler_Shonen_Fist_Duel",
+    "Brawler_Shonen_Sword_Duel"
+  ],
+  "contacts": [
+    {
+      "tag": "slash_block",
+      "beat": "sword attack / forearm guard",
+      "frame": 28,
+      "time_s": 0.45,
+      "fist_to_sword_target_m": 0.6443,
+      "blade_to_fist_target_m": 0.6098
+    },
+    {
+      "tag": "fist_counter",
+      "beat": "fist counter / sword high cover",
+      "frame": 41,
+      "time_s": 0.6667,
+      "fist_to_sword_target_m": 0.5737,
+      "blade_to_fist_target_m": 0.2984
+    },
+    {
+      "tag": "sword_parry",
+      "beat": "sword parry / checked fist",
+      "frame": 46,
+      "time_s": 0.75,
+      "fist_to_sword_target_m": 0.1381,
+      "blade_to_fist_target_m": 0.2292
+    },
+    {
+      "tag": "pommel_hit",
+      "beat": "pommel hit / head recoil",
+      "frame": 51,
+      "time_s": 0.8333,
+      "fist_to_sword_target_m": 0.8423,
+      "blade_to_fist_target_m": 0.5167
+    },
+    {
+      "tag": "low_cut",
+      "beat": "low sword cut / leg withdrawal",
+      "frame": 65,
+      "time_s": 1.0667,
+      "fist_to_sword_target_m": 0.2443,
+      "blade_to_fist_target_m": 0.1248
+    },
+    {
+      "tag": "shin_check",
+      "beat": "shin check / low-cut stop",
+      "frame": 70,
+      "time_s": 1.15,
+      "fist_to_sword_target_m": 0.2831,
+      "blade_to_fist_target_m": 0.2912
+    },
+    {
+      "tag": "elbow_hit",
+      "beat": "elbow hit / sword recoil",
+      "frame": 78,
+      "time_s": 1.2833,
+      "fist_to_sword_target_m": 0.8183,
+      "blade_to_fist_target_m": 0.1417
+    },
+    {
+      "tag": "reversal",
+      "beat": "sword reversal / body evade",
+      "frame": 89,
+      "time_s": 1.4667,
+      "fist_to_sword_target_m": 0.5783,
+      "blade_to_fist_target_m": 0.5659
+    },
+    {
+      "tag": "perfect_slip",
+      "beat": "perfect slip / whiff",
+      "frame": 98,
+      "time_s": 1.6167,
+      "fist_to_sword_target_m": 0.1857,
+      "blade_to_fist_target_m": 0.2384
+    },
+    {
+      "tag": "body_cross",
+      "beat": "body cross / hit reaction",
+      "frame": 104,
+      "time_s": 1.7167,
+      "fist_to_sword_target_m": 0.2041,
+      "blade_to_fist_target_m": 0.4072
+    },
+    {
+      "tag": "sword_hit",
+      "beat": "sword counter / fist recoil",
+      "frame": 109,
+      "time_s": 1.8,
+      "fist_to_sword_target_m": 0.1869,
+      "blade_to_fist_target_m": 0.3893
+    },
+    {
+      "tag": "mutual_clash",
+      "beat": "simultaneous final clash",
+      "frame": 123,
+      "time_s": 2.0333,
+      "fist_to_sword_target_m": 0.6526,
+      "blade_to_fist_target_m": 0.543
+    }
+  ]
+}

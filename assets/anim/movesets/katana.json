@@ -23,6 +23,12 @@
       "damage": 12, "poise": 15, "knockback": 1.5, "stamina": 12, "travel": 0.4
     },
     {
+      "name": "flash_cut",
+      "clip": { "track": "shonen_duel/Brawler_Shonen_Flash_Cut" },
+      "windup": 0.43, "active": 0.62, "cancel": 0.75,
+      "damage": 14, "poise": 20, "knockback": 2.2, "stamina": 13, "travel": 0.8
+    },
+    {
       "name": "slash_c",
       "clip": { "track": "ual2/Sword_Regular_C", "end": 1.2, "speed": 1.2 },
       "windup": 0.47, "active": 0.6, "cancel": 0.7,
@@ -30,6 +36,12 @@
     }
   ],
   "heavy": [
+    {
+      "name": "perfect_parry",
+      "clip": { "track": "shonen_duel/Brawler_Shonen_Perfect_Parry" },
+      "windup": 0.43, "active": 0.62, "cancel": 0.76,
+      "damage": 23, "poise": 42, "knockback": 4.2, "stamina": 22, "travel": 0.55, "charge": 0.25
+    },
     {
       "name": "overhead",
       "clip": { "track": "ual1/Sword_Attack", "end": 1.1 },

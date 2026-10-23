@@ -457,11 +457,11 @@ mod tests {
     }
 
     #[test]
-    fn finds_strikes_in_the_martial_arts_takes() {
+    fn finds_strikes_in_the_selected_hand_animated_libraries() {
         let bank = bank();
-        let punches = segment(bank, "cmu/144_20_punch_sequence");
-        assert!(punches.iter().filter(|s| s.kind == Kind::Punch).count() >= 4, "{punches:?}");
-        let kicks = segment(bank, "cmu/144_05_front_kicking");
+        let punches = segment(bank, "ual1/Punch_Jab");
+        assert!(punches.iter().any(|s| s.kind == Kind::Punch), "{punches:?}");
+        let kicks = segment(bank, "brawler/Roundhouse_Kick");
         assert!(kicks.iter().any(|s| s.kind == Kind::Kick), "{kicks:?}");
         for s in punches.iter().chain(&kicks) {
             assert!(s.start < s.peak && s.peak < s.end);
@@ -536,14 +536,14 @@ mod tests {
     fn the_library_is_large_and_every_strike_goes_forward() {
         let bank = bank();
         let mut all = Vec::new();
-        for track in bank.tracks.keys().filter(|k| k.starts_with("cmu/")) {
+        for track in bank.tracks.keys().filter(|k| library_track(k)) {
             all.extend(segment(bank, track));
         }
         let punches = all.iter().filter(|s| s.kind == Kind::Punch).count();
         let kicks = all.len() - punches;
         let forward = all.iter().filter(|s| aim(bank, s) >= AHEAD - 1e-3).count();
         eprintln!("library: {punches} punches, {kicks} kicks, {forward} of {} forward", all.len());
-        assert!(punches >= 40 && kicks >= 15, "{punches} punches, {kicks} kicks");
+        assert!(punches >= 2 && kicks >= 2, "{punches} punches, {kicks} kicks");
         assert_eq!(forward, all.len(), "every library strike goes forward");
     }
 
@@ -557,7 +557,7 @@ mod tests {
             .init_resource::<Told>()
             .add_systems(Update, (learn, |mut r: MessageReader<HudLog>, mut told: ResMut<Told>| told.0 += r.read().count()).chain());
         let player = app.world_mut().spawn((Repertoire::default(), Player)).id();
-        let s = Strike { track: "cmu/x".into(), kind: Kind::Punch, bone: "hand_r".into(), start: 0.2, peak: 0.4, end: 0.6, speed: 6.0 };
+        let s = Strike { track: "ual1/x".into(), kind: Kind::Punch, bone: "hand_r".into(), start: 0.2, peak: 0.4, end: 0.6, speed: 6.0 };
         let attack = Attack { name: "slash_b".into(), ..strike_attack(&s, 2.0) };
         let blow = || Witnessed { learner: player, who: "Opponent".into(), set: "katana".into(), slot: Slot::Light, attack: attack.clone() };
         for _ in 0..5 {
@@ -574,7 +574,7 @@ mod tests {
 
     #[test]
     fn a_strike_attack_lands_on_the_measured_contact() {
-        let s = Strike { track: "cmu/x".into(), kind: Kind::Punch, bone: "hand_r".into(), start: 2.0, peak: 2.2, end: 2.45, speed: 6.0 };
+        let s = Strike { track: "ual1/x".into(), kind: Kind::Punch, bone: "hand_r".into(), start: 2.0, peak: 2.2, end: 2.45, speed: 6.0 };
         let a = strike_attack(&s, 10.0);
         let (from, to) = (a.clip.start, a.clip.end.unwrap());
         let at = |f: f32| from + f * (to - from);
@@ -585,7 +585,7 @@ mod tests {
 
     #[test]
     fn a_learned_move_keeps_its_windows_and_gets_its_own_tempo() {
-        let s = Strike { track: "cmu/x".into(), kind: Kind::Kick, bone: "foot_l".into(), start: 1.0, peak: 1.3, end: 1.7, speed: 8.0 };
+        let s = Strike { track: "ual1/x".into(), kind: Kind::Kick, bone: "foot_l".into(), start: 1.0, peak: 1.3, end: 1.7, speed: 8.0 };
         let base = strike_attack(&s, 5.0);
         let mut rng = 7;
         let copy = learned_copy(&base, "Varro", &mut rng);

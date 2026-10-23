@@ -77,10 +77,10 @@ use bevy::world_serialization::WorldAssetRoot;
 
 /// Bank tracks of the reactions and dodges (shared by every moveset).
 mod tracks {
-    pub const FLINCH_BODY: &str = "ual1/Hit_Chest";
-    pub const FLINCH_HEAD: &str = "ual1/Hit_Head";
+    pub const FLINCH_BODY: &str = "sparking/DBZ_Hit_Body";
+    pub const FLINCH_HEAD: &str = "sparking/DBZ_Hit_Head";
     /// Arms flung up and out, a step back: poise broken, guard broken, parried.
-    pub const STAGGER: &str = "ual2/Idle_Shield_Break";
+    pub const STAGGER: &str = "sparking/DBZ_Guard_Break";
     /// Thrown onto the back; `GET_UP` starts from its last pose (and from `DEATH`'s).
     pub const KNOCKDOWN: &str = "ual2/Hit_Knockback";
     pub const GET_UP: &str = "ual2/LayToIdle";
@@ -597,6 +597,7 @@ struct Swing {
     /// Seconds since the attack started; seconds charged (heavy).
     elapsed: f32,
     charged: f32,
+    charge_released: bool,
     /// Attack heading (yaw) and lunge distance covered (m).
     yaw: f32,
     lunged: f32,
@@ -656,11 +657,14 @@ impl Swing {
     }
     fn active(&self) -> bool {
         let u = self.clip.u();
-        self.recover.is_none() && u >= self.attack.windup && u < self.attack.active
+        self.recover.is_none() && !self.charge_pending() && u >= self.attack.windup && u < self.attack.active
+    }
+    fn charge_pending(&self) -> bool {
+        self.heavy() && self.attack.charge > 0.0 && !self.charge_released
     }
     fn tell(&self) -> Tell {
         let span = self.clip.to - self.clip.from;
-        let charging = self.heavy() && self.clip.u() >= self.attack.windup && self.charged < self.attack.charge;
+        let charging = self.charge_pending() && self.clip.u() >= self.attack.windup;
         let windup = phase_seconds(self.clip.u().min(self.attack.windup), self.attack.windup, self.attack.windup, self.attack.active, self.speed, span, self.clip.rate);
         let until = windup + self.anticipate.unwrap_or(if self.speed > ANTICIPATE_FROM { ANTICIPATE } else { 0.0 });
         Tell {
@@ -1633,6 +1637,12 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         }
     }
     let clip = Clip::new(&attack.clip, cx.bank);
+    // Close a small, measured gap during the windup. The capsule controller still owns collision.
+    if set.name == "sparking" {
+        let dir = forward(cx.heading(b));
+        attack.travel = cx.ahead(dir).filter(|d| *d < 2.8)
+            .map_or(0.0, |d| (d - 1.05).clamp(0.0, 1.1));
+    }
     m.spend(b.fighter, attack.stamina);
     m.chain = match kind {
         SwingKind::Light(i) => i + 1,
@@ -1659,6 +1669,7 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         recover: None,
         elapsed: 0.0,
         charged: 0.0,
+        charge_released: false,
         yaw,
         lunged: 0.0,
         reach: reach(set),
@@ -1681,15 +1692,15 @@ fn swing(mut sw: Swing, cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
     }
     let t_before = sw.clip.t;
     let windup_t = sw.clip.at(sw.attack.windup);
-    let charging = sw.heavy()
-        && sw.clip.t >= windup_t
-        && sw.charged < sw.attack.charge
-        && b.intent.primary_held
-        && !m.exhausted;
+    if !b.intent.primary_held || m.exhausted || sw.charged >= sw.attack.charge {
+        sw.charge_released = true;
+    }
+    let charging = sw.charge_pending() && sw.clip.t >= windup_t;
     if charging {
         sw.clip.t = windup_t;
-        sw.charged += cx.dt;
-        m.spend(b.fighter, CHARGE_COST * cx.dt);
+        let dt = cx.dt.min((sw.attack.charge - sw.charged).max(0.0));
+        sw.charged += dt;
+        m.spend(b.fighter, CHARGE_COST * dt);
     } else if !plunge(&mut sw, b) {
         // Attack speed shortens the wind-up most; a quick swing holds its gathered pose a beat
         // at the end of the wind-up, so it still reads as a release, not a fast-forward.
@@ -1702,6 +1713,9 @@ fn swing(mut sw: Swing, cx: &Ctx, b: &mut Body, m: &mut Melee) -> State {
             dt -= held;
         }
         sw.clip.t += dt * sw.clip.rate * phase_speed(u, sw.attack.windup, sw.attack.active, sw.speed);
+        if sw.charge_pending() {
+            sw.clip.t = sw.clip.t.min(windup_t);
+        }
     }
     let u = sw.clip.u();
     if u >= sw.attack.cancel {
@@ -1805,7 +1819,14 @@ fn swing_body(sw: &mut Swing, t_before: f32, cx: &Ctx, b: &mut Body) {
     let room = cx.ahead(dir).map_or(f32::INFINITY, |d| (d - LUNGE_STOP).max(0.0));
     let step = (target - sw.lunged).clamp(0.0, (room - sw.lunged).max(0.0));
     sw.lunged += step;
-    b.mover.root_motion = flat(travel) / dt + dir * (step / dt);
+    let mut motion = flat(travel) + dir * step;
+    // Limit forward root travel too: an animated lunge must not put the bodies through each other.
+    if let Some(distance) = cx.ahead(dir) {
+        let forward_part = motion.dot(dir).max(0.0);
+        let allowed = (distance - 0.75).max(0.0);
+        if forward_part > allowed { motion -= dir * (forward_part - allowed); }
+    }
+    b.mover.root_motion = motion / dt;
 }
 
 /// The recovery clip after the chain stopped: any new input takes over.
@@ -2065,6 +2086,11 @@ fn begin_react(r: &mut React, action: &mut Action, mover: &mut Mover, bank: Opti
         r.duration = ((clip - r.offset) / r.rate).max(0.2);
     }
     action.start(r.action(), Owner::Hit, Some(r.layer()));
+    if r.track.starts_with("sparking/") {
+        if let Some(layer) = action.layer.as_mut() {
+            layer.style = Some(crate::motion::timing::Style { exaggeration: 1.0, hold: 0.0, ..default() });
+        }
+    }
     mover.move_scale = 0.0;
     mover.root_motion = Vec3::ZERO;
     mover.face = r.face;
@@ -2739,7 +2765,7 @@ fn strike(
                     stagger(&mut melee, &mut action, &mut mover, bank, from, hit.direction, knockback);
                 }
                 Reaction::Flinch => {
-                    flinch(&mut melee, &mut action, &mut mover, head);
+                    flinch(&mut melee, &mut action, &mut mover, head, hit.direction);
                     push(&mut mover, hit.direction, knockback.min(FLINCH_PUSH), 0.0);
                 }
             }
@@ -2777,7 +2803,7 @@ fn stagger(melee: &mut Melee, action: &mut Action, mover: &mut Mover, bank: &Pos
 }
 
 /// A short upper-body flinch; it never cuts into a stagger, knockdown or guard.
-fn flinch(melee: &mut Melee, action: &mut Action, mover: &mut Mover, head: bool) {
+fn flinch(melee: &mut Melee, action: &mut Action, mover: &mut Mover, head: bool, direction: Vec3) {
     let busy = match &melee.state {
         State::React(r) => r.kind != ReactKind::Flinch,
         State::Guard { .. } | State::Parry { .. } | State::Dead { .. } => true,
@@ -2786,7 +2812,8 @@ fn flinch(melee: &mut Melee, action: &mut Action, mover: &mut Mover, head: bool)
     if busy {
         return;
     }
-    let track = if head { FLINCH_HEAD } else { FLINCH_BODY };
+    let side = mover.forward().cross(Vec3::Y).dot(direction).abs() > 0.65;
+    let track = if head { FLINCH_HEAD } else if side { "sparking/DBZ_Hit_Side" } else { FLINCH_BODY };
     let mut r = React::new(ReactKind::Flinch, track, 0.0, 1.0, FLINCH_TIME);
     r.mask = Mask::Upper;
     begin_react(&mut r, action, mover, None);

@@ -56,7 +56,7 @@
     "duration_s": 1.117,
     "foot_slip_hs": 0.073,
     "frames": 67,
-    "jerk": 2911.4,
+    "jerk": 2918.0,
     "wrist_reach_h": 0.471,
     "wrist_speed_hs": 14.87
    },
@@ -77,7 +77,6 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 4,
      "knee_limit": 1
     },
     "before": {
@@ -124,7 +123,7 @@
     "duration_s": 1.117,
     "foot_slip_hs": 0.075,
     "frames": 67,
-    "jerk": 3271.2,
+    "jerk": 3347.1,
     "wrist_reach_h": 0.474,
     "wrist_speed_hs": 14.57
    },
@@ -145,7 +144,6 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 7,
      "discontinuity": 5,
      "elbow_hyperextension": 1,
      "finger_backbend": 1,
@@ -196,7 +194,7 @@
     "duration_s": 1.617,
     "foot_slip_hs": 0.038,
     "frames": 97,
-    "jerk": 3790.7,
+    "jerk": 3822.0,
     "wrist_reach_h": 0.448,
     "wrist_speed_hs": 12.41
    },
@@ -217,10 +215,8 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 4,
      "discontinuity": 1,
-     "finger_backbend": 4,
-     "palm_backward": 6
+     "finger_backbend": 4
     },
     "before": {
      "ankle_limit": 2,
@@ -229,7 +225,6 @@
      "knee_hyperextension": 4,
      "limb_pop": 284,
      "limb_stretch": 343,
-     "palm_backward": 33,
      "toe_backbend": 13,
      "toe_limit": 36,
      "wrist_limit": 1
@@ -239,7 +234,6 @@
      "elbow_hyperextension": 58,
      "foot_slide": 56,
      "knee_hyperextension": 4,
-     "palm_backward": 33,
      "toe_backbend": 28,
      "toe_limit": 28
     }
@@ -267,7 +261,7 @@
     "duration_s": 1.383,
     "foot_slip_hs": 0.008,
     "frames": 83,
-    "jerk": 3516.7,
+    "jerk": 3523.6,
     "wrist_reach_h": 0.391,
     "wrist_speed_hs": 11.51
    },
@@ -288,7 +282,6 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 3,
      "elbow_hyperextension": 1,
      "finger_backbend": 1,
      "knee_limit": 3
@@ -337,7 +330,7 @@
     "duration_s": 0.917,
     "foot_slip_hs": 0.121,
     "frames": 55,
-    "jerk": 7210.2,
+    "jerk": 7241.8,
     "wrist_reach_h": 0.457,
     "wrist_speed_hs": 14.47
    },
@@ -358,7 +351,6 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 2,
      "discontinuity": 4
     },
     "before": {
@@ -368,7 +360,6 @@
      "knee_hyperextension": 2,
      "limb_pop": 193,
      "limb_stretch": 230,
-     "palm_backward": 2,
      "toe_backbend": 7,
      "toe_limit": 26,
      "wrist_limit": 1
@@ -378,7 +369,6 @@
      "elbow_hyperextension": 9,
      "foot_slide": 15,
      "knee_hyperextension": 2,
-     "palm_backward": 2,
      "toe_backbend": 16,
      "toe_limit": 22,
      "wrist_limit": 2
@@ -407,7 +397,7 @@
     "duration_s": 10.85,
     "foot_slip_hs": 0.088,
     "frames": 651,
-    "jerk": 336.3,
+    "jerk": 336.9,
     "wrist_reach_h": 0.494,
     "wrist_speed_hs": 17.85
    },
@@ -428,9 +418,7 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 2,
-     "foot_slide": 5,
-     "palm_backward": 34
+     "foot_slide": 5
     },
     "before": {
      "ankle_limit": 15,
@@ -439,8 +427,7 @@
      "foot_floor": 1589,
      "knee_hyperextension": 4,
      "limb_pop": 78,
-     "limb_stretch": 6016,
-     "palm_backward": 149
+     "limb_stretch": 6016
     },
     "raw": {
      "ankle_limit": 16,
@@ -448,8 +435,7 @@
      "finger_backbend": 2734,
      "foot_floor": 1591,
      "foot_slide": 122,
-     "limb_stretch": 5859,
-     "palm_backward": 149
+     "limb_stretch": 5859
     }
    },
    "smoothing": {
@@ -663,23 +649,23 @@
    "motion": {
     "source_rot_deg": 170.93,
     "state": "ok",
-    "travel_m": 1.2838
+    "travel_m": 1.2837
    },
    "quality": {
     "after": {
-     "palm_backward": 2
+     "palm_backward": 1
     },
     "before": {
      "ankle_limit": 6,
      "finger_backbend": 62,
      "limb_pop": 35,
      "limb_stretch": 75,
-     "palm_backward": 34
+     "palm_backward": 18
     },
     "raw": {
      "ankle_limit": 3,
      "finger_backbend": 62,
-     "palm_backward": 33
+     "palm_backward": 17
     }
    },
    "smoothing": {
@@ -706,7 +692,7 @@
     "duration_s": 1.017,
     "foot_slip_hs": 0.01,
     "frames": 61,
-    "jerk": 2310.5,
+    "jerk": 2334.0,
     "wrist_reach_h": 0.308,
     "wrist_speed_hs": 1.24
    },
@@ -715,7 +701,7 @@
     "duration_s": 1.017,
     "foot_slip_hs": 0.481,
     "frames": 61,
-    "jerk": 8876.5,
+    "jerk": 8876.6,
     "wrist_reach_h": 0.306,
     "wrist_speed_hs": 1.35
    },
@@ -727,8 +713,7 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 2,
-     "discontinuity": 3,
+     "discontinuity": 1,
      "knee_limit": 1
     },
     "before": {
@@ -903,12 +888,10 @@
     "before": {
      "limb_pop": 49,
      "limb_stretch": 74,
-     "palm_backward": 81,
      "toe_limit": 10
     },
     "raw": {
      "discontinuity": 18,
-     "palm_backward": 75,
      "toe_backbend": 14,
      "toe_limit": 14
     }
@@ -1014,10 +997,10 @@
    "quality": {
     "after": {},
     "before": {
-     "palm_backward": 29
+     "palm_backward": 3
     },
     "raw": {
-     "palm_backward": 29
+     "palm_backward": 3
     }
    },
    "smoothing": {
@@ -1250,9 +1233,9 @@
    "metrics": {
     "ankle_speed_hs": 3.28,
     "duration_s": 3.95,
-    "foot_slip_hs": 0.074,
+    "foot_slip_hs": 0.073,
     "frames": 237,
-    "jerk": 211.2,
+    "jerk": 224.9,
     "wrist_reach_h": 0.512,
     "wrist_speed_hs": 1.62
    },
@@ -1273,9 +1256,8 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 19,
      "foot_slide": 15,
-     "palm_backward": 32
+     "palm_backward": 20
     },
     "before": {
      "ankle_limit": 205,
@@ -1285,7 +1267,6 @@
      "knee_hyperextension": 10,
      "limb_pop": 110,
      "limb_stretch": 602,
-     "palm_backward": 102,
      "toe_backbend": 12,
      "toe_limit": 23
     },
@@ -1296,14 +1277,13 @@
      "foot_floor": 87,
      "foot_slide": 249,
      "knee_hyperextension": 9,
-     "palm_backward": 102,
      "toe_backbend": 10,
      "toe_limit": 17
     }
    },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1650,
+    "foot_frames_locked": 1651,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -1324,7 +1304,7 @@
     "duration_s": 0.75,
     "foot_slip_hs": 0.278,
     "frames": 45,
-    "jerk": 4203.6,
+    "jerk": 4377.1,
     "wrist_reach_h": 0.281,
     "wrist_speed_hs": 3.44
    },
@@ -1345,8 +1325,8 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 3,
-     "discontinuity": 1,
+     "discontinuity": 3,
+     "foot_slide": 7,
      "knee_limit": 2
     },
     "before": {
@@ -1394,7 +1374,7 @@
     "duration_s": 4.383,
     "foot_slip_hs": 0.077,
     "frames": 263,
-    "jerk": 213.4,
+    "jerk": 216.0,
     "wrist_reach_h": 0.516,
     "wrist_speed_hs": 2.6
    },
@@ -1415,7 +1395,6 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 7,
      "foot_slide": 8,
      "palm_backward": 5
     },
@@ -1463,7 +1442,7 @@
     "duration_s": 4.983,
     "foot_slip_hs": 0.046,
     "frames": 299,
-    "jerk": 218.1,
+    "jerk": 218.9,
     "wrist_reach_h": 0.44,
     "wrist_speed_hs": 2.54
    },
@@ -1484,8 +1463,9 @@
    },
    "quality": {
     "after": {
+     "finger_backbend": 6,
      "foot_slide": 5,
-     "palm_backward": 141
+     "palm_backward": 134
     },
     "before": {
      "ankle_limit": 47,
@@ -1554,7 +1534,7 @@
    "quality": {
     "after": {
      "finger_backbend": 3,
-     "palm_backward": 326
+     "palm_backward": 227
     },
     "before": {
      "limb_stretch": 144,
@@ -1597,7 +1577,7 @@
     "duration_s": 8.917,
     "foot_slip_hs": 0.006,
     "frames": 535,
-    "jerk": 29.8,
+    "jerk": 29.9,
     "wrist_reach_h": 0.363,
     "wrist_speed_hs": 0.35
    },
@@ -1709,9 +1689,7 @@
    "quality": {
     "after": {
      "elbow_hyperextension": 1,
-     "foot_floor": 2,
-     "foot_slide": 42,
-     "palm_backward": 59
+     "foot_slide": 42
     },
     "before": {
      "elbow_hyperextension": 429,
@@ -1719,8 +1697,7 @@
      "foot_floor": 5257,
      "knee_hyperextension": 19,
      "limb_pop": 265,
-     "limb_stretch": 21952,
-     "palm_backward": 313
+     "limb_stretch": 21952
     },
     "raw": {
      "elbow_hyperextension": 433,
@@ -1728,7 +1705,7 @@
      "foot_floor": 5243,
      "foot_slide": 572,
      "limb_stretch": 19422,
-     "palm_backward": 310
+     "palm_backward": 1
     }
    },
    "smoothing": {
@@ -1754,7 +1731,7 @@
     "duration_s": 0.75,
     "foot_slip_hs": 0.0,
     "frames": 45,
-    "jerk": 9.0,
+    "jerk": 8.9,
     "wrist_reach_h": 0.523,
     "wrist_speed_hs": 0.14
    },
@@ -1832,7 +1809,7 @@
    },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 878,
+    "foot_frames_locked": 877,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -1863,7 +1840,7 @@
     "duration_s": 2.783,
     "foot_slip_hs": 0.012,
     "frames": 167,
-    "jerk": 201.1,
+    "jerk": 201.2,
     "wrist_reach_h": 0.36,
     "wrist_speed_hs": 0.96
    },
@@ -1881,7 +1858,7 @@
      "foot_floor": 22,
      "limb_pop": 43,
      "limb_stretch": 208,
-     "palm_backward": 22,
+     "palm_backward": 5,
      "toe_limit": 3
     },
     "raw": {
@@ -1889,7 +1866,7 @@
      "finger_backbend": 26,
      "foot_floor": 23,
      "foot_slide": 57,
-     "palm_backward": 21
+     "palm_backward": 5
     }
    },
    "smoothing": {
@@ -1937,12 +1914,8 @@
    },
    "quality": {
     "after": {},
-    "before": {
-     "palm_backward": 27
-    },
-    "raw": {
-     "palm_backward": 27
-    }
+    "before": {},
+    "raw": {}
    },
    "smoothing": {
     "beta": 6.0,
@@ -1990,8 +1963,7 @@
    "quality": {
     "after": {
      "elbow_hyperextension": 13,
-     "foot_slide": 20,
-     "palm_backward": 52
+     "foot_slide": 20
     },
     "before": {
      "elbow_hyperextension": 654,
@@ -2000,7 +1972,6 @@
      "knee_hyperextension": 169,
      "limb_pop": 237,
      "limb_stretch": 33631,
-     "palm_backward": 728,
      "toe_backbend": 2,
      "toe_limit": 3
     },
@@ -2009,8 +1980,7 @@
      "finger_backbend": 14095,
      "foot_floor": 10659,
      "foot_slide": 1116,
-     "limb_stretch": 28332,
-     "palm_backward": 724
+     "limb_stretch": 28332
     }
    },
    "smoothing": {
@@ -2058,7 +2028,7 @@
    "quality": {
     "after": {
      "foot_slide": 13,
-     "palm_backward": 32
+     "palm_backward": 12
     },
     "before": {
      "elbow_hyperextension": 59,
@@ -2066,14 +2036,14 @@
      "foot_floor": 950,
      "limb_pop": 134,
      "limb_stretch": 334,
-     "palm_backward": 67
+     "palm_backward": 32
     },
     "raw": {
      "elbow_hyperextension": 60,
      "finger_backbend": 23,
      "foot_floor": 949,
      "foot_slide": 301,
-     "palm_backward": 67
+     "palm_backward": 32
     }
    },
    "smoothing": {
@@ -2124,7 +2094,7 @@
    "quality": {
     "after": {
      "foot_slide": 23,
-     "palm_backward": 123
+     "palm_backward": 33
     },
     "before": {
      "ankle_limit": 75,
@@ -2134,7 +2104,7 @@
      "knee_hyperextension": 2,
      "limb_pop": 237,
      "limb_stretch": 21770,
-     "palm_backward": 250,
+     "palm_backward": 170,
      "toe_limit": 1
     },
     "raw": {
@@ -2144,7 +2114,7 @@
      "foot_floor": 8917,
      "foot_slide": 566,
      "limb_stretch": 20169,
-     "palm_backward": 248
+     "palm_backward": 169
     }
    },
    "smoothing": {
@@ -2170,7 +2140,7 @@
     "duration_s": 5.217,
     "foot_slip_hs": 0.006,
     "frames": 313,
-    "jerk": 74.4,
+    "jerk": 74.5,
     "wrist_reach_h": 0.344,
     "wrist_speed_hs": 1.42
    },
@@ -2191,7 +2161,7 @@
    },
    "quality": {
     "after": {
-     "palm_backward": 74
+     "palm_backward": 27
     },
     "before": {
      "ankle_limit": 261,
@@ -2199,19 +2169,19 @@
      "foot_floor": 11,
      "limb_pop": 34,
      "limb_stretch": 87,
-     "palm_backward": 170
+     "palm_backward": 101
     },
     "raw": {
      "ankle_limit": 259,
      "finger_backbend": 73,
      "foot_floor": 14,
      "foot_slide": 13,
-     "palm_backward": 170
+     "palm_backward": 101
     }
    },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1774,
+    "foot_frames_locked": 1765,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2229,13 +2199,13 @@
    "duration_s": 29.9667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 9.46,
+    "ankle_speed_hs": 11.8,
     "duration_s": 29.983,
-    "foot_slip_hs": 0.055,
+    "foot_slip_hs": 0.057,
     "frames": 1799,
-    "jerk": 66.3,
-    "wrist_reach_h": 0.543,
-    "wrist_speed_hs": 12.54
+    "jerk": 145.6,
+    "wrist_reach_h": 0.572,
+    "wrist_speed_hs": 13.94
    },
    "metrics_raw": {
     "ankle_speed_hs": 10.28,
@@ -2247,9 +2217,40 @@
     "wrist_speed_hs": 14.02
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 133.69,
+    "state": "ok",
+    "travel_m": 2.2756
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 19
+    },
+    "before": {
+     "elbow_hyperextension": 101,
+     "finger_backbend": 674,
+     "foot_floor": 7329,
+     "foot_slide": 4,
+     "knee_hyperextension": 6,
+     "limb_pop": 217,
+     "limb_stretch": 17967,
+     "palm_backward": 34,
+     "toe_backbend": 4,
+     "toe_limit": 4
+    },
+    "raw": {
+     "ankle_limit": 23,
+     "elbow_hyperextension": 100,
+     "finger_backbend": 674,
+     "foot_floor": 7322,
+     "foot_slide": 559,
+     "limb_stretch": 16191,
+     "palm_backward": 34
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6774,
+    "foot_frames_locked": 12545,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2266,13 +2267,13 @@
    "duration_s": 0.85,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 13.29,
+    "ankle_speed_hs": 14.85,
     "duration_s": 0.867,
-    "foot_slip_hs": 0.259,
+    "foot_slip_hs": 0.0,
     "frames": 52,
-    "jerk": 4756.1,
-    "wrist_reach_h": 0.749,
-    "wrist_speed_hs": 20.11
+    "jerk": 9101.8,
+    "wrist_reach_h": 0.659,
+    "wrist_speed_hs": 18.82
    },
    "metrics_raw": {
     "ankle_speed_hs": 14.38,
@@ -2284,6 +2285,32 @@
     "wrist_speed_hs": 20.36
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 2.06865
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 33,
+     "elbow_hyperextension": 5,
+     "elbow_limit": 1,
+     "knee_hyperextension": 24,
+     "knee_limit": 4,
+     "limb_pop": 196,
+     "limb_stretch": 455
+    },
+    "raw": {
+     "ankle_limit": 15,
+     "elbow_hyperextension": 8,
+     "elbow_limit": 1,
+     "knee_hyperextension": 25,
+     "knee_limit": 1,
+     "limb_pop": 304,
+     "limb_stretch": 489
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 0,
@@ -2304,13 +2331,13 @@
    "duration_s": 0.9,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 24.92,
+    "ankle_speed_hs": 22.16,
     "duration_s": 0.917,
-    "foot_slip_hs": 0.65,
+    "foot_slip_hs": 0.0,
     "frames": 55,
-    "jerk": 1843.1,
-    "wrist_reach_h": 0.42,
-    "wrist_speed_hs": 7.8
+    "jerk": 2337.7,
+    "wrist_reach_h": 0.387,
+    "wrist_speed_hs": 7.15
    },
    "metrics_raw": {
     "ankle_speed_hs": 20.04,
@@ -2322,6 +2349,27 @@
     "wrist_speed_hs": 7.8
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 2.16978
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 43,
+     "knee_hyperextension": 15,
+     "limb_pop": 86,
+     "limb_stretch": 474
+    },
+    "raw": {
+     "ankle_limit": 29,
+     "foot_slide": 8,
+     "knee_hyperextension": 17,
+     "limb_pop": 243,
+     "limb_stretch": 499
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 34,
@@ -2342,13 +2390,13 @@
    "duration_s": 1.0,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 7.3,
+    "ankle_speed_hs": 8.86,
     "duration_s": 1.017,
-    "foot_slip_hs": 0.214,
+    "foot_slip_hs": 0.2,
     "frames": 61,
-    "jerk": 1723.8,
-    "wrist_reach_h": 0.699,
-    "wrist_speed_hs": 10.2
+    "jerk": 3328.0,
+    "wrist_reach_h": 0.645,
+    "wrist_speed_hs": 11.0
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.54,
@@ -2360,9 +2408,34 @@
     "wrist_speed_hs": 9.29
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 2.17228
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 37,
+     "elbow_hyperextension": 19,
+     "elbow_limit": 1,
+     "foot_slide": 4,
+     "knee_hyperextension": 24,
+     "limb_pop": 170,
+     "limb_stretch": 495
+    },
+    "raw": {
+     "ankle_limit": 40,
+     "elbow_hyperextension": 20,
+     "foot_slide": 7,
+     "knee_hyperextension": 22,
+     "limb_pop": 280,
+     "limb_stretch": 529
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 50,
+    "foot_frames_locked": 87,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2380,13 +2453,13 @@
    "duration_s": 1.05,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 6.71,
+    "ankle_speed_hs": 7.14,
     "duration_s": 1.067,
-    "foot_slip_hs": 0.731,
+    "foot_slip_hs": 1.427,
     "frames": 64,
-    "jerk": 1308.5,
-    "wrist_reach_h": 0.598,
-    "wrist_speed_hs": 8.12
+    "jerk": 1997.3,
+    "wrist_reach_h": 0.564,
+    "wrist_speed_hs": 7.81
    },
    "metrics_raw": {
     "ankle_speed_hs": 6.62,
@@ -2398,6 +2471,31 @@
     "wrist_speed_hs": 6.87
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 2.08751
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 51,
+     "elbow_hyperextension": 5,
+     "foot_floor": 30,
+     "foot_slide": 4,
+     "knee_hyperextension": 6,
+     "limb_pop": 129,
+     "limb_stretch": 593
+    },
+    "raw": {
+     "ankle_limit": 23,
+     "elbow_hyperextension": 4,
+     "foot_slide": 17,
+     "knee_hyperextension": 4,
+     "limb_pop": 282,
+     "limb_stretch": 591
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 69,
@@ -2418,13 +2516,13 @@
    "duration_s": 1.0,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 8.19,
+    "ankle_speed_hs": 7.42,
     "duration_s": 1.017,
-    "foot_slip_hs": 0.66,
+    "foot_slip_hs": 1.102,
     "frames": 61,
-    "jerk": 1087.7,
-    "wrist_reach_h": 0.401,
-    "wrist_speed_hs": 6.93
+    "jerk": 2005.1,
+    "wrist_reach_h": 0.368,
+    "wrist_speed_hs": 6.36
    },
    "metrics_raw": {
     "ankle_speed_hs": 8.39,
@@ -2436,9 +2534,31 @@
     "wrist_speed_hs": 6.84
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 1.49009
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 57,
+     "knee_hyperextension": 21,
+     "limb_pop": 82,
+     "limb_stretch": 544
+    },
+    "raw": {
+     "ankle_limit": 48,
+     "elbow_limit": 14,
+     "foot_slide": 19,
+     "knee_hyperextension": 23,
+     "limb_pop": 196,
+     "limb_stretch": 534
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 43,
+    "foot_frames_locked": 70,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2456,13 +2576,13 @@
    "duration_s": 0.9,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.02,
+    "ankle_speed_hs": 3.32,
     "duration_s": 0.917,
-    "foot_slip_hs": 0.36,
+    "foot_slip_hs": 0.029,
     "frames": 55,
-    "jerk": 736.2,
-    "wrist_reach_h": 0.397,
-    "wrist_speed_hs": 5.83
+    "jerk": 866.2,
+    "wrist_reach_h": 0.37,
+    "wrist_speed_hs": 5.0
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.43,
@@ -2474,9 +2594,30 @@
     "wrist_speed_hs": 4.68
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 0.93806
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 38,
+     "elbow_hyperextension": 4,
+     "limb_pop": 43,
+     "limb_stretch": 462
+    },
+    "raw": {
+     "ankle_limit": 31,
+     "elbow_hyperextension": 4,
+     "foot_slide": 21,
+     "limb_pop": 150,
+     "limb_stretch": 490
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 55,
+    "foot_frames_locked": 78,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2494,13 +2635,13 @@
    "duration_s": 1.0,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.85,
+    "ankle_speed_hs": 0.77,
     "duration_s": 1.017,
-    "foot_slip_hs": 0.187,
+    "foot_slip_hs": 0.0,
     "frames": 61,
-    "jerk": 201.3,
-    "wrist_reach_h": 0.54,
-    "wrist_speed_hs": 3.97
+    "jerk": 264.9,
+    "wrist_reach_h": 0.429,
+    "wrist_speed_hs": 3.37
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.96,
@@ -2512,6 +2653,25 @@
     "wrist_speed_hs": 3.77
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 0.65773
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 24,
+     "limb_pop": 24,
+     "limb_stretch": 539
+    },
+    "raw": {
+     "ankle_limit": 19,
+     "foot_slide": 67,
+     "limb_pop": 158,
+     "limb_stretch": 546
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 150,
@@ -2532,13 +2692,13 @@
    "duration_s": 0.9167,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 10.91,
+    "ankle_speed_hs": 9.83,
     "duration_s": 0.933,
-    "foot_slip_hs": 0.376,
+    "foot_slip_hs": 0.0,
     "frames": 56,
-    "jerk": 810.0,
-    "wrist_reach_h": 0.441,
-    "wrist_speed_hs": 2.58
+    "jerk": 1559.9,
+    "wrist_reach_h": 0.386,
+    "wrist_speed_hs": 2.53
    },
    "metrics_raw": {
     "ankle_speed_hs": 9.21,
@@ -2550,9 +2710,31 @@
     "wrist_speed_hs": 3.52
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 1.54354
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 27,
+     "foot_floor": 7,
+     "knee_hyperextension": 18,
+     "limb_pop": 75,
+     "limb_stretch": 490
+    },
+    "raw": {
+     "ankle_limit": 33,
+     "foot_slide": 27,
+     "knee_hyperextension": 22,
+     "limb_pop": 189,
+     "limb_stretch": 517
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 57,
+    "foot_frames_locked": 71,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2570,13 +2752,13 @@
    "duration_s": 0.9667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 9.32,
+    "ankle_speed_hs": 8.86,
     "duration_s": 0.983,
-    "foot_slip_hs": 0.535,
+    "foot_slip_hs": 0.0,
     "frames": 59,
-    "jerk": 786.9,
-    "wrist_reach_h": 0.56,
-    "wrist_speed_hs": 4.23
+    "jerk": 1133.5,
+    "wrist_reach_h": 0.445,
+    "wrist_speed_hs": 3.98
    },
    "metrics_raw": {
     "ankle_speed_hs": 9.16,
@@ -2588,9 +2770,31 @@
     "wrist_speed_hs": 3.99
    },
    "model": "karate.glb",
+   "motion": {
+    "source_rot_deg": 0.0,
+    "state": "ok",
+    "travel_m": 1.10501
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 37,
+     "elbow_hyperextension": 4,
+     "foot_slide": 4,
+     "limb_pop": 59,
+     "limb_stretch": 484
+    },
+    "raw": {
+     "ankle_limit": 50,
+     "elbow_hyperextension": 7,
+     "foot_slide": 29,
+     "limb_pop": 181,
+     "limb_stretch": 506
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 77,
+    "foot_frames_locked": 100,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2608,13 +2812,13 @@
    "duration_s": 23.1667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 7.96,
+    "ankle_speed_hs": 7.94,
     "duration_s": 23.183,
-    "foot_slip_hs": 0.05,
+    "foot_slip_hs": 0.052,
     "frames": 1391,
-    "jerk": 74.2,
-    "wrist_reach_h": 0.55,
-    "wrist_speed_hs": 11.66
+    "jerk": 147.1,
+    "wrist_reach_h": 0.586,
+    "wrist_speed_hs": 13.07
    },
    "metrics_raw": {
     "ankle_speed_hs": 9.11,
@@ -2626,9 +2830,40 @@
     "wrist_speed_hs": 13.22
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 129.38,
+    "state": "ok",
+    "travel_m": 2.2373
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 3,
+     "foot_slide": 10
+    },
+    "before": {
+     "elbow_hyperextension": 55,
+     "finger_backbend": 1126,
+     "foot_floor": 5728,
+     "knee_hyperextension": 6,
+     "limb_pop": 145,
+     "limb_stretch": 13850,
+     "palm_backward": 85,
+     "toe_backbend": 4,
+     "toe_limit": 4
+    },
+    "raw": {
+     "ankle_limit": 58,
+     "elbow_hyperextension": 53,
+     "finger_backbend": 1126,
+     "foot_floor": 5727,
+     "foot_slide": 393,
+     "limb_stretch": 12519,
+     "palm_backward": 85
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 5320,
+    "foot_frames_locked": 9126,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2645,27 +2880,57 @@
    "duration_s": 23.8,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 10.35,
-    "duration_s": 23.817,
+    "ankle_speed_hs": 9.98,
+    "duration_s": 23.8,
     "foot_slip_hs": 0.074,
-    "frames": 1429,
-    "jerk": 94.5,
-    "wrist_reach_h": 0.524,
-    "wrist_speed_hs": 15.54
+    "frames": 1428,
+    "jerk": 251.5,
+    "wrist_reach_h": 0.56,
+    "wrist_speed_hs": 16.94
    },
    "metrics_raw": {
     "ankle_speed_hs": 11.57,
-    "duration_s": 23.817,
+    "duration_s": 23.8,
     "foot_slip_hs": 0.083,
-    "frames": 1429,
-    "jerk": 232.6,
+    "frames": 1428,
+    "jerk": 232.7,
     "wrist_reach_h": 0.526,
     "wrist_speed_hs": 16.97
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 152.83,
+    "state": "ok",
+    "travel_m": 2.081
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 19
+    },
+    "before": {
+     "ankle_limit": 4,
+     "elbow_hyperextension": 100,
+     "finger_backbend": 4443,
+     "foot_floor": 5942,
+     "knee_hyperextension": 190,
+     "limb_pop": 192,
+     "limb_stretch": 14166,
+     "toe_backbend": 1,
+     "toe_limit": 7
+    },
+    "raw": {
+     "ankle_limit": 3,
+     "elbow_hyperextension": 104,
+     "finger_backbend": 4443,
+     "foot_floor": 5937,
+     "foot_slide": 414,
+     "knee_hyperextension": 182,
+     "limb_stretch": 12852
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 5353,
+    "foot_frames_locked": 10542,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2687,7 +2952,7 @@
     "duration_s": 4.35,
     "foot_slip_hs": 0.62,
     "frames": 261,
-    "jerk": 2404.4,
+    "jerk": 2415.9,
     "wrist_reach_h": 0.584,
     "wrist_speed_hs": 15.27
    },
@@ -2708,9 +2973,8 @@
    },
    "quality": {
     "after": {
-     "ankle_limit": 2,
      "foot_slide": 9,
-     "palm_backward": 33
+     "palm_backward": 2
     },
     "before": {
      "ankle_limit": 24,
@@ -2720,7 +2984,7 @@
      "knee_hyperextension": 93,
      "limb_pop": 315,
      "limb_stretch": 557,
-     "palm_backward": 88,
+     "palm_backward": 9,
      "toe_limit": 3
     },
     "raw": {
@@ -2730,7 +2994,7 @@
      "foot_floor": 27,
      "foot_slide": 145,
      "knee_hyperextension": 90,
-     "palm_backward": 84
+     "palm_backward": 5
     }
    },
    "smoothing": {
@@ -2861,7 +3125,7 @@
     "duration_s": 0.85,
     "foot_slip_hs": 0.389,
     "frames": 51,
-    "jerk": 3038.4,
+    "jerk": 2741.6,
     "wrist_reach_h": 0.48,
     "wrist_speed_hs": 8.57
    },
@@ -2881,9 +3145,7 @@
     "travel_m": 1.7248
    },
    "quality": {
-    "after": {
-     "ankle_limit": 20
-    },
+    "after": {},
     "before": {
      "ankle_limit": 14,
      "elbow_hyperextension": 25,
@@ -2920,13 +3182,13 @@
    "duration_s": 0.8,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 0.05,
     "duration_s": 0.817,
     "foot_slip_hs": 0.0,
     "frames": 49,
-    "jerk": 142.4,
+    "jerk": 163.4,
     "wrist_reach_h": 0.412,
-    "wrist_speed_hs": 2.31
+    "wrist_speed_hs": 2.44
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.62,
@@ -2938,9 +3200,26 @@
     "wrist_speed_hs": 3.03
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 57.38,
+    "state": "ok",
+    "travel_m": 0.5352
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 49,
+     "limb_pop": 9,
+     "limb_stretch": 45
+    },
+    "raw": {
+     "finger_backbend": 49,
+     "foot_slide": 56
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 196,
+    "foot_frames_locked": 294,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -2960,13 +3239,13 @@
    "duration_s": 0.8,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 0.03,
     "duration_s": 0.817,
     "foot_slip_hs": 0.0,
     "frames": 49,
-    "jerk": 90.5,
-    "wrist_reach_h": 0.309,
-    "wrist_speed_hs": 1.49
+    "jerk": 195.6,
+    "wrist_reach_h": 0.31,
+    "wrist_speed_hs": 1.51
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.27,
@@ -2978,9 +3257,25 @@
     "wrist_speed_hs": 1.73
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 58.67,
+    "state": "ok",
+    "travel_m": 0.6232
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 49,
+     "limb_stretch": 70
+    },
+    "raw": {
+     "finger_backbend": 49,
+     "foot_slide": 52
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 196,
+    "foot_frames_locked": 294,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3000,13 +3295,13 @@
    "duration_s": 29.0833,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.89,
+    "ankle_speed_hs": 3.95,
     "duration_s": 29.1,
-    "foot_slip_hs": 0.092,
+    "foot_slip_hs": 0.1,
     "frames": 1746,
-    "jerk": 77.0,
-    "wrist_reach_h": 0.548,
-    "wrist_speed_hs": 8.24
+    "jerk": 206.2,
+    "wrist_reach_h": 0.573,
+    "wrist_speed_hs": 9.91
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.89,
@@ -3018,9 +3313,44 @@
     "wrist_speed_hs": 10.11
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 138.28,
+    "state": "ok",
+    "travel_m": 2.0605
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 2,
+     "finger_backbend": 1,
+     "foot_slide": 45,
+     "palm_backward": 425
+    },
+    "before": {
+     "ankle_limit": 7,
+     "elbow_hyperextension": 42,
+     "finger_backbend": 3561,
+     "foot_floor": 5726,
+     "knee_hyperextension": 27,
+     "limb_pop": 325,
+     "limb_stretch": 16721,
+     "palm_backward": 566,
+     "toe_backbend": 2,
+     "toe_limit": 26
+    },
+    "raw": {
+     "elbow_hyperextension": 49,
+     "finger_backbend": 3561,
+     "foot_floor": 5708,
+     "foot_slide": 846,
+     "knee_hyperextension": 26,
+     "limb_stretch": 15714,
+     "palm_backward": 566,
+     "toe_limit": 3
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 5943,
+    "foot_frames_locked": 11497,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3041,23 +3371,42 @@
     "duration_s": 2.717,
     "foot_slip_hs": 0.0,
     "frames": 163,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 2.2,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.02
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.0,
     "duration_s": 2.717,
     "foot_slip_hs": 0.0,
     "frames": 163,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 1346.3,
+    "wrist_reach_h": 0.179,
+    "wrist_speed_hs": 0.02
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.0,
+    "state": "ok",
+    "travel_m": 0.1698
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "limb_pop": 96,
+     "limb_stretch": 163,
+     "toe_backbend": 20,
+     "toe_limit": 46
+    },
+    "raw": {
+     "discontinuity": 61,
+     "toe_backbend": 42,
+     "toe_limit": 42
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 652,
+    "foot_frames_locked": 810,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3078,7 +3427,7 @@
     "duration_s": 2.017,
     "foot_slip_hs": 0.0,
     "frames": 121,
-    "jerk": 1.0,
+    "jerk": 2.4,
     "wrist_reach_h": 0.211,
     "wrist_speed_hs": 0.03
    },
@@ -3092,9 +3441,19 @@
     "wrist_speed_hs": 0.03
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 8.36,
+    "state": "ok",
+    "travel_m": 0.0376
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 484,
+    "foot_frames_locked": 604,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3168,7 +3527,7 @@
     "duration_s": 8.25,
     "foot_slip_hs": 0.0,
     "frames": 495,
-    "jerk": 0.8,
+    "jerk": 2.0,
     "wrist_reach_h": 0.161,
     "wrist_speed_hs": 0.01
    },
@@ -3182,9 +3541,23 @@
     "wrist_speed_hs": 0.01
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 1.82,
+    "state": "ok",
+    "travel_m": 0.0295
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 990
+    },
+    "raw": {
+     "finger_backbend": 990
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1980,
+    "foot_frames_locked": 2676,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3757,27 +4130,48 @@
    "duration_s": 2.1,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.14,
+    "ankle_speed_hs": 0.16,
     "duration_s": 2.117,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 0.003,
     "frames": 127,
-    "jerk": 168.3,
-    "wrist_reach_h": 0.411,
-    "wrist_speed_hs": 5.88
+    "jerk": 350.5,
+    "wrist_reach_h": 0.414,
+    "wrist_speed_hs": 6.02
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.39,
     "duration_s": 2.117,
     "foot_slip_hs": 0.037,
     "frames": 127,
-    "jerk": 628.0,
+    "jerk": 627.9,
     "wrist_reach_h": 0.42,
     "wrist_speed_hs": 6.3
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 150.77,
+    "state": "ok",
+    "travel_m": 1.3448
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 3
+    },
+    "before": {
+     "elbow_hyperextension": 43,
+     "limb_pop": 2,
+     "limb_stretch": 140,
+     "palm_backward": 18
+    },
+    "raw": {
+     "elbow_hyperextension": 41,
+     "foot_slide": 98,
+     "palm_backward": 18
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 499,
+    "foot_frames_locked": 752,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3795,13 +4189,13 @@
    "duration_s": 43.1667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.46,
+    "ankle_speed_hs": 5.09,
     "duration_s": 43.183,
-    "foot_slip_hs": 0.041,
+    "foot_slip_hs": 0.044,
     "frames": 2591,
-    "jerk": 43.7,
-    "wrist_reach_h": 0.542,
-    "wrist_speed_hs": 11.12
+    "jerk": 120.1,
+    "wrist_reach_h": 0.577,
+    "wrist_speed_hs": 12.7
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.35,
@@ -3813,9 +4207,39 @@
     "wrist_speed_hs": 12.75
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 115.85,
+    "state": "ok",
+    "travel_m": 1.9497
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 72,
+     "palm_backward": 19
+    },
+    "before": {
+     "ankle_limit": 3,
+     "elbow_hyperextension": 260,
+     "finger_backbend": 4951,
+     "foot_floor": 7465,
+     "knee_hyperextension": 6,
+     "limb_pop": 201,
+     "limb_stretch": 24387,
+     "palm_backward": 76
+    },
+    "raw": {
+     "ankle_limit": 10,
+     "elbow_hyperextension": 255,
+     "finger_backbend": 4951,
+     "foot_floor": 7500,
+     "foot_slide": 593,
+     "limb_stretch": 23319,
+     "palm_backward": 76
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 9862,
+    "foot_frames_locked": 17177,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -3884,13 +4308,13 @@
    "duration_s": 0.8333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.93,
+    "ankle_speed_hs": 1.98,
     "duration_s": 0.85,
-    "foot_slip_hs": 1.1,
+    "foot_slip_hs": 1.08,
     "frames": 51,
-    "jerk": 254.9,
-    "wrist_reach_h": 0.226,
-    "wrist_speed_hs": 1.53
+    "jerk": 373.9,
+    "wrist_reach_h": 0.225,
+    "wrist_speed_hs": 1.56
    },
    "metrics_raw": {
     "ankle_speed_hs": 1.91,
@@ -3902,6 +4326,26 @@
     "wrist_speed_hs": 1.57
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 83.97,
+    "state": "ok",
+    "travel_m": 0.8432
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 11
+    },
+    "before": {
+     "ankle_limit": 5,
+     "limb_pop": 2,
+     "limb_stretch": 29,
+     "palm_backward": 43
+    },
+    "raw": {
+     "ankle_limit": 7,
+     "palm_backward": 40
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 0,
@@ -3922,12 +4366,12 @@
    "duration_s": 0.8667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.22,
+    "ankle_speed_hs": 2.29,
     "duration_s": 0.883,
-    "foot_slip_hs": 1.138,
+    "foot_slip_hs": 1.141,
     "frames": 53,
-    "jerk": 235.4,
-    "wrist_reach_h": 0.23,
+    "jerk": 312.9,
+    "wrist_reach_h": 0.231,
     "wrist_speed_hs": 1.74
    },
    "metrics_raw": {
@@ -3940,6 +4384,26 @@
     "wrist_speed_hs": 1.88
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 71.9,
+    "state": "ok",
+    "travel_m": 1.0491
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 1
+    },
+    "before": {
+     "finger_backbend": 9,
+     "limb_pop": 1,
+     "limb_stretch": 17,
+     "palm_backward": 2
+    },
+    "raw": {
+     "finger_backbend": 9,
+     "palm_backward": 2
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 0,
@@ -4016,9 +4480,9 @@
    "metrics": {
     "ankle_speed_hs": 2.3,
     "duration_s": 0.75,
-    "foot_slip_hs": 1.485,
+    "foot_slip_hs": 1.462,
     "frames": 45,
-    "jerk": 230.0,
+    "jerk": 290.7,
     "wrist_reach_h": 0.251,
     "wrist_speed_hs": 1.34
    },
@@ -4032,6 +4496,27 @@
     "wrist_speed_hs": 1.39
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 62.97,
+    "state": "ok",
+    "travel_m": 0.8846
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 1
+    },
+    "before": {
+     "ankle_limit": 3,
+     "finger_backbend": 45,
+     "limb_pop": 2,
+     "palm_backward": 7
+    },
+    "raw": {
+     "ankle_limit": 3,
+     "finger_backbend": 45,
+     "palm_backward": 6
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 0,
@@ -4053,13 +4538,13 @@
    "duration_s": 0.7667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.18,
+    "ankle_speed_hs": 2.19,
     "duration_s": 0.783,
-    "foot_slip_hs": 1.123,
+    "foot_slip_hs": 1.142,
     "frames": 47,
-    "jerk": 219.5,
+    "jerk": 560.7,
     "wrist_reach_h": 0.284,
-    "wrist_speed_hs": 1.9
+    "wrist_speed_hs": 1.94
    },
    "metrics_raw": {
     "ankle_speed_hs": 1.92,
@@ -4071,6 +4556,25 @@
     "wrist_speed_hs": 1.83
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 46.89,
+    "state": "ok",
+    "travel_m": 0.7685
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 1
+    },
+    "before": {
+     "ankle_limit": 5,
+     "elbow_hyperextension": 2,
+     "limb_stretch": 6
+    },
+    "raw": {
+     "ankle_limit": 5,
+     "elbow_hyperextension": 4
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 0,
@@ -4092,13 +4596,13 @@
    "duration_s": 2.2,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.85,
+    "ankle_speed_hs": 2.87,
     "duration_s": 2.217,
     "foot_slip_hs": 0.01,
     "frames": 133,
-    "jerk": 237.9,
+    "jerk": 341.1,
     "wrist_reach_h": 0.5,
-    "wrist_speed_hs": 3.91
+    "wrist_speed_hs": 3.9
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.58,
@@ -4110,9 +4614,34 @@
     "wrist_speed_hs": 3.97
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 125.89,
+    "state": "ok",
+    "travel_m": 1.3569
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 36
+    },
+    "before": {
+     "ankle_limit": 5,
+     "elbow_hyperextension": 7,
+     "finger_backbend": 207,
+     "limb_pop": 34,
+     "limb_stretch": 153,
+     "palm_backward": 77
+    },
+    "raw": {
+     "elbow_hyperextension": 7,
+     "finger_backbend": 207,
+     "foot_floor": 1,
+     "foot_slide": 110,
+     "palm_backward": 77
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 398,
+    "foot_frames_locked": 632,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4428,11 +4957,11 @@
    "duration_s": 0.9,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.09,
+    "ankle_speed_hs": 0.18,
     "duration_s": 0.917,
-    "foot_slip_hs": 0.008,
+    "foot_slip_hs": 0.026,
     "frames": 55,
-    "jerk": 38.1,
+    "jerk": 45.6,
     "wrist_reach_h": 0.121,
     "wrist_speed_hs": 0.43
    },
@@ -4446,9 +4975,38 @@
     "wrist_speed_hs": 0.63
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 111.78,
+    "state": "ok",
+    "travel_m": 0.1911
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 51
+    },
+    "before": {
+     "ankle_limit": 23,
+     "finger_backbend": 110,
+     "limb_pop": 11,
+     "limb_stretch": 91,
+     "palm_backward": 53,
+     "toe_backbend": 60,
+     "toe_limit": 62
+    },
+    "raw": {
+     "ankle_limit": 34,
+     "finger_backbend": 110,
+     "foot_floor": 1,
+     "foot_slide": 80,
+     "knee_limit": 1,
+     "palm_backward": 53,
+     "toe_backbend": 58,
+     "toe_limit": 60
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 165,
+    "foot_frames_locked": 330,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4466,13 +5024,13 @@
    "duration_s": 3.3,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.95,
+    "ankle_speed_hs": 1.69,
     "duration_s": 3.317,
-    "foot_slip_hs": 0.054,
+    "foot_slip_hs": 0.064,
     "frames": 199,
-    "jerk": 22.2,
+    "jerk": 52.4,
     "wrist_reach_h": 0.216,
-    "wrist_speed_hs": 0.53
+    "wrist_speed_hs": 0.54
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.7,
@@ -4484,9 +5042,37 @@
     "wrist_speed_hs": 0.53
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 122.02,
+    "state": "ok",
+    "travel_m": 0.6258
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 4,
+     "palm_backward": 131
+    },
+    "before": {
+     "finger_backbend": 299,
+     "foot_floor": 102,
+     "limb_pop": 37,
+     "limb_stretch": 182,
+     "palm_backward": 252,
+     "toe_backbend": 49,
+     "toe_limit": 72
+    },
+    "raw": {
+     "finger_backbend": 299,
+     "foot_floor": 107,
+     "foot_slide": 89,
+     "palm_backward": 252,
+     "toe_backbend": 53,
+     "toe_limit": 73
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 506,
+    "foot_frames_locked": 1264,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4505,13 +5091,13 @@
    "duration_s": 22.9167,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.51,
+    "ankle_speed_hs": 4.97,
     "duration_s": 22.933,
-    "foot_slip_hs": 0.102,
+    "foot_slip_hs": 0.105,
     "frames": 1376,
-    "jerk": 91.9,
-    "wrist_reach_h": 0.524,
-    "wrist_speed_hs": 9.33
+    "jerk": 342.7,
+    "wrist_reach_h": 0.561,
+    "wrist_speed_hs": 10.92
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.43,
@@ -4523,9 +5109,44 @@
     "wrist_speed_hs": 10.92
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 144.68,
+    "state": "ok",
+    "travel_m": 1.9818
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 5,
+     "foot_slide": 61,
+     "palm_backward": 37
+    },
+    "before": {
+     "ankle_limit": 5,
+     "elbow_hyperextension": 487,
+     "finger_backbend": 5389,
+     "foot_floor": 3223,
+     "foot_slide": 6,
+     "knee_hyperextension": 125,
+     "limb_pop": 594,
+     "limb_stretch": 14177,
+     "palm_backward": 102,
+     "toe_backbend": 18,
+     "toe_limit": 31
+    },
+    "raw": {
+     "ankle_limit": 4,
+     "elbow_hyperextension": 492,
+     "finger_backbend": 5389,
+     "foot_floor": 3240,
+     "foot_slide": 1224,
+     "knee_hyperextension": 110,
+     "limb_stretch": 12384,
+     "palm_backward": 106
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 4938,
+    "foot_frames_locked": 9922,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4542,13 +5163,13 @@
    "duration_s": 20.5333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 19.52,
+    "ankle_speed_hs": 16.8,
     "duration_s": 20.55,
-    "foot_slip_hs": 0.123,
+    "foot_slip_hs": 0.089,
     "frames": 1233,
-    "jerk": 236.2,
-    "wrist_reach_h": 0.463,
-    "wrist_speed_hs": 29.42
+    "jerk": 487.5,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 30.8
    },
    "metrics_raw": {
     "ankle_speed_hs": 21.45,
@@ -4560,9 +5181,51 @@
     "wrist_speed_hs": 31.12
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 172.0,
+    "state": "ok",
+    "travel_m": 2.0188
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 9,
+     "foot_slide": 23,
+     "knee_limit": 37,
+     "palm_backward": 144
+    },
+    "before": {
+     "ankle_limit": 135,
+     "elbow_hyperextension": 682,
+     "finger_backbend": 1329,
+     "foot_floor": 3777,
+     "foot_slide": 4,
+     "hand_intersection": 1,
+     "knee_hyperextension": 1056,
+     "knee_limit": 50,
+     "limb_pop": 475,
+     "limb_stretch": 13252,
+     "palm_backward": 307,
+     "toe_backbend": 23,
+     "toe_limit": 46,
+     "wrist_limit": 25
+    },
+    "raw": {
+     "ankle_limit": 64,
+     "elbow_hyperextension": 690,
+     "finger_backbend": 1329,
+     "foot_floor": 3783,
+     "foot_slide": 897,
+     "hand_intersection": 2,
+     "knee_hyperextension": 1047,
+     "knee_limit": 54,
+     "limb_stretch": 11097,
+     "palm_backward": 307,
+     "wrist_limit": 25
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 4109,
+    "foot_frames_locked": 7900,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4580,13 +5243,13 @@
    "duration_s": 20.0833,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 6.27,
+    "ankle_speed_hs": 6.4,
     "duration_s": 20.1,
-    "foot_slip_hs": 0.085,
+    "foot_slip_hs": 0.089,
     "frames": 1206,
-    "jerk": 92.9,
-    "wrist_reach_h": 0.475,
-    "wrist_speed_hs": 11.37
+    "jerk": 211.9,
+    "wrist_reach_h": 0.506,
+    "wrist_speed_hs": 12.95
    },
    "metrics_raw": {
     "ankle_speed_hs": 7.35,
@@ -4598,9 +5261,39 @@
     "wrist_speed_hs": 13.23
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 121.71,
+    "state": "ok",
+    "travel_m": 1.9428
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 20,
+     "palm_backward": 198
+    },
+    "before": {
+     "elbow_hyperextension": 111,
+     "finger_backbend": 2126,
+     "foot_floor": 3383,
+     "foot_slide": 4,
+     "knee_hyperextension": 5,
+     "limb_pop": 326,
+     "limb_stretch": 12756,
+     "palm_backward": 437,
+     "toe_limit": 3
+    },
+    "raw": {
+     "elbow_hyperextension": 108,
+     "finger_backbend": 2126,
+     "foot_floor": 3340,
+     "foot_slide": 781,
+     "limb_stretch": 10854,
+     "palm_backward": 435
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 4380,
+    "foot_frames_locked": 9299,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4618,13 +5311,13 @@
    "duration_s": 29.3667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 9.38,
+    "ankle_speed_hs": 9.3,
     "duration_s": 29.383,
-    "foot_slip_hs": 0.055,
+    "foot_slip_hs": 0.057,
     "frames": 1763,
-    "jerk": 74.5,
-    "wrist_reach_h": 0.462,
-    "wrist_speed_hs": 12.9
+    "jerk": 141.7,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 13.83
    },
    "metrics_raw": {
     "ankle_speed_hs": 10.79,
@@ -4636,9 +5329,41 @@
     "wrist_speed_hs": 14.28
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 129.06,
+    "state": "ok",
+    "travel_m": 1.7142
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 2,
+     "finger_backbend": 3,
+     "foot_slide": 23,
+     "palm_backward": 320
+    },
+    "before": {
+     "ankle_limit": 13,
+     "elbow_hyperextension": 122,
+     "finger_backbend": 3970,
+     "foot_floor": 1025,
+     "limb_pop": 243,
+     "limb_stretch": 17292,
+     "palm_backward": 514,
+     "toe_limit": 3
+    },
+    "raw": {
+     "ankle_limit": 1,
+     "elbow_hyperextension": 120,
+     "finger_backbend": 3970,
+     "foot_floor": 1035,
+     "foot_slide": 282,
+     "limb_stretch": 15867,
+     "palm_backward": 514
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6653,
+    "foot_frames_locked": 13642,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4778,13 +5503,13 @@
    "duration_s": 2.7333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.69,
+    "ankle_speed_hs": 0.64,
     "duration_s": 2.75,
-    "foot_slip_hs": 0.002,
+    "foot_slip_hs": 0.007,
     "frames": 165,
-    "jerk": 127.6,
+    "jerk": 142.5,
     "wrist_reach_h": 0.546,
-    "wrist_speed_hs": 7.1
+    "wrist_speed_hs": 7.2
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.52,
@@ -4796,9 +5521,30 @@
     "wrist_speed_hs": 6.87
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 100.65,
+    "state": "ok",
+    "travel_m": 1.7597
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 1
+    },
+    "before": {
+     "finger_backbend": 158,
+     "limb_pop": 32,
+     "limb_stretch": 347,
+     "palm_backward": 4
+    },
+    "raw": {
+     "finger_backbend": 158,
+     "foot_slide": 197,
+     "palm_backward": 4
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 557,
+    "foot_frames_locked": 887,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4818,27 +5564,46 @@
    "duration_s": 3.3667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.06,
+    "ankle_speed_hs": 1.09,
     "duration_s": 3.383,
-    "foot_slip_hs": 0.004,
+    "foot_slip_hs": 0.017,
     "frames": 203,
-    "jerk": 87.7,
+    "jerk": 108.4,
     "wrist_reach_h": 0.494,
-    "wrist_speed_hs": 3.82
+    "wrist_speed_hs": 4.0
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.7,
     "duration_s": 3.383,
     "foot_slip_hs": 0.074,
     "frames": 203,
-    "jerk": 465.6,
+    "jerk": 465.5,
     "wrist_reach_h": 0.495,
     "wrist_speed_hs": 3.57
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 113.55,
+    "state": "ok",
+    "travel_m": 1.252
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 315,
+     "limb_pop": 16,
+     "limb_stretch": 381,
+     "palm_backward": 6
+    },
+    "raw": {
+     "finger_backbend": 315,
+     "foot_slide": 203,
+     "palm_backward": 6
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 695,
+    "foot_frames_locked": 1336,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4858,13 +5623,13 @@
    "duration_s": 2.3333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.0,
+    "ankle_speed_hs": 0.92,
     "duration_s": 2.35,
-    "foot_slip_hs": 0.006,
+    "foot_slip_hs": 0.009,
     "frames": 141,
-    "jerk": 118.4,
+    "jerk": 185.3,
     "wrist_reach_h": 0.51,
-    "wrist_speed_hs": 4.3
+    "wrist_speed_hs": 4.45
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.72,
@@ -4876,9 +5641,32 @@
     "wrist_speed_hs": 4.31
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 108.09,
+    "state": "ok",
+    "travel_m": 1.7201
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 3
+    },
+    "before": {
+     "elbow_hyperextension": 9,
+     "finger_backbend": 82,
+     "limb_pop": 8,
+     "limb_stretch": 276,
+     "palm_backward": 22
+    },
+    "raw": {
+     "elbow_hyperextension": 9,
+     "finger_backbend": 82,
+     "foot_slide": 125,
+     "palm_backward": 22
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 500,
+    "foot_frames_locked": 782,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4898,13 +5686,13 @@
    "duration_s": 3.6667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.37,
+    "ankle_speed_hs": 2.32,
     "duration_s": 3.683,
-    "foot_slip_hs": 0.031,
+    "foot_slip_hs": 0.04,
     "frames": 221,
-    "jerk": 125.2,
+    "jerk": 248.5,
     "wrist_reach_h": 0.577,
-    "wrist_speed_hs": 3.13
+    "wrist_speed_hs": 3.12
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.35,
@@ -4916,9 +5704,38 @@
     "wrist_speed_hs": 3.11
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 123.72,
+    "state": "ok",
+    "travel_m": 2.5024
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 7,
+     "palm_backward": 29
+    },
+    "before": {
+     "ankle_limit": 55,
+     "elbow_hyperextension": 99,
+     "finger_backbend": 556,
+     "knee_hyperextension": 35,
+     "limb_pop": 59,
+     "limb_stretch": 376,
+     "palm_backward": 31,
+     "toe_limit": 13
+    },
+    "raw": {
+     "ankle_limit": 49,
+     "elbow_hyperextension": 101,
+     "finger_backbend": 556,
+     "foot_slide": 92,
+     "knee_hyperextension": 35,
+     "palm_backward": 31
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 560,
+    "foot_frames_locked": 956,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4937,27 +5754,62 @@
    "duration_s": 3.7,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.53,
+    "ankle_speed_hs": 2.55,
     "duration_s": 3.717,
-    "foot_slip_hs": 0.004,
+    "foot_slip_hs": 0.023,
     "frames": 223,
-    "jerk": 115.5,
-    "wrist_reach_h": 0.359,
-    "wrist_speed_hs": 1.56
+    "jerk": 303.5,
+    "wrist_reach_h": 0.358,
+    "wrist_speed_hs": 1.57
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.43,
     "duration_s": 3.717,
     "foot_slip_hs": 0.111,
     "frames": 223,
-    "jerk": 618.9,
+    "jerk": 618.8,
     "wrist_reach_h": 0.36,
     "wrist_speed_hs": 1.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 132.12,
+    "state": "ok",
+    "travel_m": 2.3629
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 90,
+     "finger_backbend": 1,
+     "foot_slide": 9,
+     "palm_backward": 49
+    },
+    "before": {
+     "ankle_limit": 228,
+     "elbow_hyperextension": 158,
+     "finger_backbend": 168,
+     "knee_hyperextension": 89,
+     "limb_pop": 108,
+     "limb_stretch": 386,
+     "palm_backward": 83,
+     "toe_backbend": 60,
+     "toe_limit": 99
+    },
+    "raw": {
+     "ankle_limit": 204,
+     "elbow_hyperextension": 158,
+     "finger_backbend": 168,
+     "foot_floor": 2,
+     "foot_slide": 111,
+     "knee_hyperextension": 94,
+     "palm_backward": 83,
+     "toe_backbend": 10,
+     "toe_limit": 18
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 468,
+    "foot_frames_locked": 904,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -4980,7 +5832,7 @@
     "duration_s": 1.917,
     "foot_slip_hs": 0.0,
     "frames": 115,
-    "jerk": 3.8,
+    "jerk": 5.5,
     "wrist_reach_h": 0.412,
     "wrist_speed_hs": 0.29
    },
@@ -4994,9 +5846,27 @@
     "wrist_speed_hs": 0.29
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 88.07,
+    "state": "ok",
+    "travel_m": 0.2817
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 77
+    },
+    "before": {
+     "finger_backbend": 41,
+     "palm_backward": 77
+    },
+    "raw": {
+     "finger_backbend": 41,
+     "palm_backward": 77
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 460,
+    "foot_frames_locked": 685,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5019,7 +5889,7 @@
     "duration_s": 11.65,
     "foot_slip_hs": 0.0,
     "frames": 699,
-    "jerk": 1.0,
+    "jerk": 2.3,
     "wrist_reach_h": 0.19,
     "wrist_speed_hs": 0.05
    },
@@ -5033,9 +5903,19 @@
     "wrist_speed_hs": 0.06
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 23.22,
+    "state": "ok",
+    "travel_m": 0.1847
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 2796,
+    "foot_frames_locked": 3512,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5054,13 +5934,13 @@
    "duration_s": 1.2333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.21,
+    "ankle_speed_hs": 2.77,
     "duration_s": 1.25,
-    "foot_slip_hs": 0.009,
+    "foot_slip_hs": 0.012,
     "frames": 75,
-    "jerk": 100.1,
+    "jerk": 272.1,
     "wrist_reach_h": 0.397,
-    "wrist_speed_hs": 0.96
+    "wrist_speed_hs": 0.95
    },
    "metrics_raw": {
     "ankle_speed_hs": 1.87,
@@ -5072,9 +5952,28 @@
     "wrist_speed_hs": 0.93
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 56.19,
+    "state": "ok",
+    "travel_m": 1.4328
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 1
+    },
+    "before": {
+     "finger_backbend": 49,
+     "limb_pop": 43,
+     "limb_stretch": 74
+    },
+    "raw": {
+     "finger_backbend": 49,
+     "foot_slide": 49
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 162,
+    "foot_frames_locked": 275,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5093,11 +5992,11 @@
    "duration_s": 1.1667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.89,
+    "ankle_speed_hs": 3.38,
     "duration_s": 1.183,
-    "foot_slip_hs": 0.009,
+    "foot_slip_hs": 0.016,
     "frames": 71,
-    "jerk": 160.0,
+    "jerk": 481.1,
     "wrist_reach_h": 0.432,
     "wrist_speed_hs": 1.06
    },
@@ -5111,9 +6010,29 @@
     "wrist_speed_hs": 1.05
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 79.02,
+    "state": "ok",
+    "travel_m": 1.8533
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 30,
+     "foot_floor": 52,
+     "limb_pop": 45,
+     "limb_stretch": 106,
+     "toe_limit": 7
+    },
+    "raw": {
+     "finger_backbend": 30,
+     "foot_floor": 51,
+     "foot_slide": 53
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 329,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5132,11 +6051,11 @@
    "duration_s": 1.2,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.19,
+    "ankle_speed_hs": 2.63,
     "duration_s": 1.217,
-    "foot_slip_hs": 0.026,
+    "foot_slip_hs": 0.005,
     "frames": 73,
-    "jerk": 121.8,
+    "jerk": 329.0,
     "wrist_reach_h": 0.415,
     "wrist_speed_hs": 1.03
    },
@@ -5150,9 +6069,29 @@
     "wrist_speed_hs": 1.04
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 60.24,
+    "state": "ok",
+    "travel_m": 1.5349
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 3
+    },
+    "before": {
+     "ankle_limit": 3,
+     "finger_backbend": 115,
+     "limb_pop": 27,
+     "limb_stretch": 72
+    },
+    "raw": {
+     "finger_backbend": 115,
+     "foot_slide": 62
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 165,
+    "foot_frames_locked": 362,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5171,11 +6110,11 @@
    "duration_s": 1.2333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.44,
+    "ankle_speed_hs": 3.01,
     "duration_s": 1.25,
-    "foot_slip_hs": 0.019,
+    "foot_slip_hs": 0.011,
     "frames": 75,
-    "jerk": 127.0,
+    "jerk": 376.0,
     "wrist_reach_h": 0.4,
     "wrist_speed_hs": 1.09
    },
@@ -5184,14 +6123,36 @@
     "duration_s": 1.25,
     "foot_slip_hs": 0.135,
     "frames": 75,
-    "jerk": 496.3,
+    "jerk": 496.4,
     "wrist_reach_h": 0.401,
     "wrist_speed_hs": 1.09
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 54.2,
+    "state": "ok",
+    "travel_m": 1.6383
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 4
+    },
+    "before": {
+     "finger_backbend": 61,
+     "limb_pop": 26,
+     "limb_stretch": 89,
+     "palm_backward": 8,
+     "toe_limit": 4
+    },
+    "raw": {
+     "finger_backbend": 61,
+     "foot_slide": 63,
+     "palm_backward": 8
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 166,
+    "foot_frames_locked": 315,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5210,27 +6171,60 @@
    "duration_s": 24.7,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 12.37,
-    "duration_s": 24.717,
-    "foot_slip_hs": 0.055,
-    "frames": 1483,
-    "jerk": 108.5,
-    "wrist_reach_h": 0.537,
-    "wrist_speed_hs": 17.43
+    "ankle_speed_hs": 12.06,
+    "duration_s": 24.733,
+    "foot_slip_hs": 0.049,
+    "frames": 1484,
+    "jerk": 176.1,
+    "wrist_reach_h": 0.571,
+    "wrist_speed_hs": 18.43
    },
    "metrics_raw": {
     "ankle_speed_hs": 13.88,
-    "duration_s": 24.717,
+    "duration_s": 24.733,
     "foot_slip_hs": 0.067,
-    "frames": 1483,
-    "jerk": 217.7,
+    "frames": 1484,
+    "jerk": 217.6,
     "wrist_reach_h": 0.537,
     "wrist_speed_hs": 18.75
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 117.37,
+    "state": "ok",
+    "travel_m": 2.5457
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 5,
+     "hand_intersection": 3,
+     "palm_backward": 1
+    },
+    "before": {
+     "ankle_limit": 61,
+     "finger_backbend": 2494,
+     "foot_floor": 6132,
+     "hand_intersection": 5,
+     "knee_hyperextension": 4,
+     "limb_pop": 198,
+     "limb_stretch": 16085,
+     "palm_backward": 1,
+     "toe_backbend": 4,
+     "toe_limit": 6
+    },
+    "raw": {
+     "ankle_limit": 52,
+     "finger_backbend": 2494,
+     "foot_floor": 6128,
+     "foot_slide": 385,
+     "hand_intersection": 7,
+     "limb_stretch": 13356,
+     "palm_backward": 1
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 5653,
+    "foot_frames_locked": 10299,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5247,13 +6241,13 @@
    "duration_s": 27.0333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 6.23,
+    "ankle_speed_hs": 6.45,
     "duration_s": 27.05,
-    "foot_slip_hs": 0.067,
+    "foot_slip_hs": 0.07,
     "frames": 1623,
-    "jerk": 51.2,
-    "wrist_reach_h": 0.534,
-    "wrist_speed_hs": 11.52
+    "jerk": 141.6,
+    "wrist_reach_h": 0.569,
+    "wrist_speed_hs": 12.61
    },
    "metrics_raw": {
     "ankle_speed_hs": 7.94,
@@ -5265,9 +6259,38 @@
     "wrist_speed_hs": 13.1
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 141.66,
+    "state": "ok",
+    "travel_m": 1.9451
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 25,
+     "palm_backward": 28
+    },
+    "before": {
+     "elbow_hyperextension": 390,
+     "finger_backbend": 2827,
+     "foot_floor": 4193,
+     "knee_hyperextension": 274,
+     "limb_pop": 218,
+     "limb_stretch": 15411,
+     "palm_backward": 95
+    },
+    "raw": {
+     "elbow_hyperextension": 392,
+     "finger_backbend": 2827,
+     "foot_floor": 4185,
+     "foot_slide": 462,
+     "knee_hyperextension": 306,
+     "limb_stretch": 14607,
+     "palm_backward": 95
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6079,
+    "foot_frames_locked": 11775,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5284,27 +6307,59 @@
    "duration_s": 30.2,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.58,
-    "duration_s": 30.217,
+    "ankle_speed_hs": 2.31,
+    "duration_s": 30.233,
     "foot_slip_hs": 0.036,
-    "frames": 1813,
-    "jerk": 25.9,
-    "wrist_reach_h": 0.5,
-    "wrist_speed_hs": 7.7
+    "frames": 1814,
+    "jerk": 115.0,
+    "wrist_reach_h": 0.534,
+    "wrist_speed_hs": 9.65
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.17,
-    "duration_s": 30.217,
+    "duration_s": 30.233,
     "foot_slip_hs": 0.045,
-    "frames": 1813,
+    "frames": 1814,
     "jerk": 103.3,
     "wrist_reach_h": 0.501,
     "wrist_speed_hs": 9.34
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 123.02,
+    "state": "ok",
+    "travel_m": 1.9455
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 5,
+     "foot_slide": 5,
+     "palm_backward": 181
+    },
+    "before": {
+     "elbow_hyperextension": 131,
+     "finger_backbend": 2997,
+     "foot_floor": 6274,
+     "knee_hyperextension": 92,
+     "limb_pop": 212,
+     "limb_stretch": 17710,
+     "palm_backward": 303,
+     "toe_backbend": 3,
+     "toe_limit": 7
+    },
+    "raw": {
+     "ankle_limit": 75,
+     "elbow_hyperextension": 135,
+     "finger_backbend": 2997,
+     "foot_floor": 6327,
+     "foot_slide": 403,
+     "limb_stretch": 16326,
+     "palm_backward": 302
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6923,
+    "foot_frames_locked": 12260,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5440,27 +6495,58 @@
    "duration_s": 35.5333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.31,
-    "duration_s": 35.55,
-    "foot_slip_hs": 0.054,
-    "frames": 2133,
-    "jerk": 56.0,
-    "wrist_reach_h": 0.516,
-    "wrist_speed_hs": 8.75
+    "ankle_speed_hs": 4.92,
+    "duration_s": 35.567,
+    "foot_slip_hs": 0.058,
+    "frames": 2134,
+    "jerk": 162.4,
+    "wrist_reach_h": 0.548,
+    "wrist_speed_hs": 10.1
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.29,
-    "duration_s": 35.55,
+    "duration_s": 35.567,
     "foot_slip_hs": 0.073,
-    "frames": 2133,
+    "frames": 2134,
     "jerk": 202.9,
     "wrist_reach_h": 0.517,
     "wrist_speed_hs": 10.43
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 126.88,
+    "state": "ok",
+    "travel_m": 1.8561
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 72,
+     "palm_backward": 53
+    },
+    "before": {
+     "ankle_limit": 12,
+     "elbow_hyperextension": 176,
+     "finger_backbend": 5879,
+     "foot_floor": 6885,
+     "limb_pop": 290,
+     "limb_stretch": 22296,
+     "palm_backward": 127,
+     "toe_backbend": 99,
+     "toe_limit": 118
+    },
+    "raw": {
+     "ankle_limit": 10,
+     "elbow_hyperextension": 175,
+     "finger_backbend": 5879,
+     "foot_floor": 6964,
+     "foot_slide": 953,
+     "limb_stretch": 19206,
+     "palm_backward": 128
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 8004,
+    "foot_frames_locked": 16626,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -5660,7 +6746,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.265,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -5668,11 +6754,21 @@
     "duration_s": 0.35,
     "foot_slip_hs": 0.0,
     "frames": 21,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "jerk": 0.6,
+    "wrist_reach_h": 0.265,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.04,
+    "state": "static",
+    "travel_m": 0.0001
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -5698,7 +6794,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.26,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -5706,11 +6802,21 @@
     "duration_s": 0.35,
     "foot_slip_hs": 0.0,
     "frames": 21,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "jerk": 0.6,
+    "wrist_reach_h": 0.26,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.06,
+    "state": "static",
+    "travel_m": 0.0001
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -5736,7 +6842,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.296,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -5744,11 +6850,21 @@
     "duration_s": 0.35,
     "foot_slip_hs": 0.0,
     "frames": 21,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "jerk": 1.1,
+    "wrist_reach_h": 0.296,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.04,
+    "state": "static",
+    "travel_m": 0.0001
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -5774,7 +6890,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.29,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -5782,11 +6898,21 @@
     "duration_s": 0.35,
     "foot_slip_hs": 0.0,
     "frames": 21,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "jerk": 0.6,
+    "wrist_reach_h": 0.29,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.06,
+    "state": "static",
+    "travel_m": 0.0001
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -5807,13 +6933,13 @@
    "duration_s": 2.5,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.05,
+    "ankle_speed_hs": 0.09,
     "duration_s": 2.517,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 0.003,
     "frames": 151,
-    "jerk": 110.4,
-    "wrist_reach_h": 0.44,
-    "wrist_speed_hs": 4.44
+    "jerk": 230.8,
+    "wrist_reach_h": 0.444,
+    "wrist_speed_hs": 4.68
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.23,
@@ -5825,9 +6951,30 @@
     "wrist_speed_hs": 4.64
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 118.9,
+    "state": "ok",
+    "travel_m": 1.1874
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 2
+    },
+    "before": {
+     "elbow_hyperextension": 64,
+     "limb_pop": 3,
+     "limb_stretch": 204,
+     "palm_backward": 4
+    },
+    "raw": {
+     "elbow_hyperextension": 64,
+     "foot_slide": 175,
+     "palm_backward": 4
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 604,
+    "foot_frames_locked": 1008,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6087,7 +7234,7 @@
    },
    "model": "ual1.glb",
    "motion": {
-    "source_rot_deg": 0.06,
+    "source_rot_deg": 0.04,
     "state": "static",
     "travel_m": 0.0
    },
@@ -6519,7 +7666,7 @@
     "duration_s": 1.483,
     "foot_slip_hs": 0.177,
     "frames": 89,
-    "jerk": 2432.6,
+    "jerk": 2432.7,
     "wrist_reach_h": 0.575,
     "wrist_speed_hs": 11.4
    },
@@ -6584,13 +7731,13 @@
    "duration_s": 11.5,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 35.53,
+    "ankle_speed_hs": 35.56,
     "duration_s": 11.517,
-    "foot_slip_hs": 0.235,
+    "foot_slip_hs": 0.154,
     "frames": 691,
-    "jerk": 709.6,
-    "wrist_reach_h": 0.463,
-    "wrist_speed_hs": 42.29
+    "jerk": 1103.1,
+    "wrist_reach_h": 0.495,
+    "wrist_speed_hs": 43.91
    },
    "metrics_raw": {
     "ankle_speed_hs": 40.76,
@@ -6602,9 +7749,43 @@
     "wrist_speed_hs": 43.55
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 178.14,
+    "state": "ok",
+    "travel_m": 4.4958
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 10,
+     "finger_backbend": 1,
+     "palm_backward": 41
+    },
+    "before": {
+     "ankle_limit": 62,
+     "elbow_hyperextension": 208,
+     "finger_backbend": 1607,
+     "foot_floor": 13,
+     "knee_hyperextension": 856,
+     "limb_pop": 211,
+     "limb_stretch": 7429,
+     "palm_backward": 89,
+     "toe_backbend": 27,
+     "toe_limit": 81
+    },
+    "raw": {
+     "ankle_limit": 64,
+     "elbow_hyperextension": 209,
+     "finger_backbend": 1607,
+     "foot_floor": 13,
+     "foot_slide": 26,
+     "knee_hyperextension": 858,
+     "limb_stretch": 6219,
+     "palm_backward": 87
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 2371,
+    "foot_frames_locked": 2932,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6621,27 +7802,54 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 15.77,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.419,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 10398.0,
+    "wrist_reach_h": 0.292,
+    "wrist_speed_hs": 2.72
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 23.75,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.549,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 26422.8,
+    "wrist_reach_h": 0.294,
+    "wrist_speed_hs": 2.5
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.45,
+    "state": "ok",
+    "travel_m": 1.6704
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 11,
+     "discontinuity": 12,
+     "finger_backbend": 220,
+     "knee_hyperextension": 4,
+     "limb_pop": 138,
+     "limb_stretch": 147,
+     "toe_backbend": 6,
+     "toe_limit": 12
+    },
+    "raw": {
+     "ankle_limit": 10,
+     "discontinuity": 31,
+     "finger_backbend": 220,
+     "foot_floor": 2,
+     "knee_hyperextension": 4,
+     "toe_backbend": 10,
+     "toe_limit": 10
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6659,27 +7867,53 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 15.77,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.419,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 10408.9,
+    "wrist_reach_h": 0.298,
+    "wrist_speed_hs": 2.69
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 23.75,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.549,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 27109.5,
+    "wrist_reach_h": 0.3,
+    "wrist_speed_hs": 2.47
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.45,
+    "state": "ok",
+    "travel_m": 1.6704
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 11,
+     "discontinuity": 11,
+     "finger_backbend": 220,
+     "knee_hyperextension": 4,
+     "limb_pop": 151,
+     "limb_stretch": 159,
+     "toe_backbend": 12,
+     "toe_limit": 21
+    },
+    "raw": {
+     "ankle_limit": 9,
+     "discontinuity": 33,
+     "finger_backbend": 220,
+     "knee_hyperextension": 4,
+     "toe_backbend": 18,
+     "toe_limit": 18
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6697,27 +7931,55 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 15.77,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.419,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 10435.0,
+    "wrist_reach_h": 0.283,
+    "wrist_speed_hs": 2.74
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 23.75,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.549,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 27118.0,
+    "wrist_reach_h": 0.285,
+    "wrist_speed_hs": 2.52
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.45,
+    "state": "ok",
+    "travel_m": 1.6704
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 11,
+     "discontinuity": 11,
+     "finger_backbend": 220,
+     "knee_hyperextension": 4,
+     "limb_pop": 149,
+     "limb_stretch": 158,
+     "palm_backward": 6,
+     "toe_backbend": 11,
+     "toe_limit": 20
+    },
+    "raw": {
+     "ankle_limit": 9,
+     "discontinuity": 32,
+     "finger_backbend": 220,
+     "knee_hyperextension": 4,
+     "palm_backward": 6,
+     "toe_backbend": 16,
+     "toe_limit": 16
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6735,27 +7997,55 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 18.95,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.08,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 9356.6,
+    "wrist_reach_h": 0.323,
+    "wrist_speed_hs": 3.39
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 25.99,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.835,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 28178.9,
+    "wrist_reach_h": 0.324,
+    "wrist_speed_hs": 3.14
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.86,
+    "state": "ok",
+    "travel_m": 1.7028
+   },
+   "quality": {
+    "after": {
+     "discontinuity": 1
+    },
+    "before": {
+     "ankle_limit": 18,
+     "discontinuity": 19,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "limb_pop": 146,
+     "limb_stretch": 166,
+     "toe_backbend": 1,
+     "toe_limit": 4
+    },
+    "raw": {
+     "ankle_limit": 18,
+     "discontinuity": 28,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "toe_backbend": 6,
+     "toe_limit": 6
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6773,27 +8063,56 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 17.69,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.011,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 9289.8,
+    "wrist_reach_h": 0.326,
+    "wrist_speed_hs": 3.39
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 25.99,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.835,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 28297.5,
+    "wrist_reach_h": 0.33,
+    "wrist_speed_hs": 3.15
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.86,
+    "state": "ok",
+    "travel_m": 1.7028
+   },
+   "quality": {
+    "after": {
+     "discontinuity": 2,
+     "knee_limit": 2
+    },
+    "before": {
+     "ankle_limit": 18,
+     "discontinuity": 19,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "limb_pop": 153,
+     "limb_stretch": 175,
+     "toe_backbend": 3,
+     "toe_limit": 5
+    },
+    "raw": {
+     "ankle_limit": 18,
+     "discontinuity": 29,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "toe_backbend": 8,
+     "toe_limit": 8
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6811,27 +8130,56 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 18.94,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.08,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 9106.3,
+    "wrist_reach_h": 0.328,
+    "wrist_speed_hs": 3.39
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 25.99,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.835,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 28479.3,
+    "wrist_reach_h": 0.33,
+    "wrist_speed_hs": 3.11
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.86,
+    "state": "ok",
+    "travel_m": 1.7028
+   },
+   "quality": {
+    "after": {
+     "discontinuity": 2,
+     "knee_limit": 2
+    },
+    "before": {
+     "ankle_limit": 18,
+     "discontinuity": 19,
+     "finger_backbend": 222,
+     "knee_hyperextension": 3,
+     "limb_pop": 150,
+     "limb_stretch": 176,
+     "toe_backbend": 5,
+     "toe_limit": 7
+    },
+    "raw": {
+     "ankle_limit": 18,
+     "discontinuity": 29,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "toe_backbend": 10,
+     "toe_limit": 10
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6849,27 +8197,64 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 17.53,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 1.942,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 16136.0,
+    "wrist_reach_h": 0.33,
+    "wrist_speed_hs": 11.11
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 25.67,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.891,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 64025.4,
+    "wrist_reach_h": 0.334,
+    "wrist_speed_hs": 16.45
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.86,
+    "state": "ok",
+    "travel_m": 1.761
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 1,
+     "discontinuity": 2,
+     "finger_backbend": 10,
+     "knee_limit": 2,
+     "palm_backward": 3
+    },
+    "before": {
+     "ankle_limit": 18,
+     "discontinuity": 38,
+     "elbow_hyperextension": 2,
+     "finger_backbend": 222,
+     "knee_hyperextension": 3,
+     "knee_limit": 1,
+     "limb_pop": 220,
+     "limb_stretch": 243,
+     "palm_backward": 23,
+     "toe_backbend": 3,
+     "toe_limit": 3
+    },
+    "raw": {
+     "ankle_limit": 18,
+     "discontinuity": 93,
+     "elbow_hyperextension": 4,
+     "finger_backbend": 222,
+     "knee_hyperextension": 3,
+     "palm_backward": 23,
+     "toe_backbend": 4,
+     "toe_limit": 4
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6887,27 +8272,62 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 20.63,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 1.912,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 22211.3,
+    "wrist_reach_h": 0.333,
+    "wrist_speed_hs": 11.85
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 25.99,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.539,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 79787.0,
+    "wrist_reach_h": 0.334,
+    "wrist_speed_hs": 16.34
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.86,
+    "state": "ok",
+    "travel_m": 1.7779
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 6,
+     "discontinuity": 2,
+     "finger_backbend": 2,
+     "knee_limit": 1,
+     "palm_backward": 2
+    },
+    "before": {
+     "ankle_limit": 23,
+     "discontinuity": 45,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "limb_pop": 219,
+     "limb_stretch": 226,
+     "palm_backward": 24,
+     "toe_backbend": 5,
+     "toe_limit": 6
+    },
+    "raw": {
+     "ankle_limit": 18,
+     "discontinuity": 157,
+     "elbow_hyperextension": 3,
+     "finger_backbend": 222,
+     "knee_hyperextension": 4,
+     "palm_backward": 24,
+     "toe_backbend": 6,
+     "toe_limit": 6
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6925,27 +8345,46 @@
    "duration_s": 0.7333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.67,
+    "ankle_speed_hs": 4.72,
     "duration_s": 0.75,
-    "foot_slip_hs": 0.445,
+    "foot_slip_hs": 0.312,
     "frames": 45,
-    "jerk": 917.8,
-    "wrist_reach_h": 0.323,
-    "wrist_speed_hs": 5.27
+    "jerk": 1379.9,
+    "wrist_reach_h": 0.324,
+    "wrist_speed_hs": 5.23
    },
    "metrics_raw": {
     "ankle_speed_hs": 4.52,
     "duration_s": 0.75,
     "foot_slip_hs": 0.699,
     "frames": 45,
-    "jerk": 2369.3,
+    "jerk": 2369.2,
     "wrist_reach_h": 0.319,
     "wrist_speed_hs": 5.2
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 115.22,
+    "state": "ok",
+    "travel_m": 3.0738
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 39,
+     "foot_floor": 59,
+     "limb_pop": 37,
+     "limb_stretch": 55
+    },
+    "raw": {
+     "finger_backbend": 39,
+     "foot_floor": 57,
+     "foot_slide": 10
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 24,
+    "foot_frames_locked": 98,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -6963,13 +8402,13 @@
    "duration_s": 0.7333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 5.53,
+    "ankle_speed_hs": 5.56,
     "duration_s": 0.75,
-    "foot_slip_hs": 0.462,
+    "foot_slip_hs": 0.333,
     "frames": 45,
-    "jerk": 1060.5,
-    "wrist_reach_h": 0.292,
-    "wrist_speed_hs": 4.6
+    "jerk": 1846.8,
+    "wrist_reach_h": 0.293,
+    "wrist_speed_hs": 4.58
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.23,
@@ -6981,9 +8420,36 @@
     "wrist_speed_hs": 4.43
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 117.92,
+    "state": "ok",
+    "travel_m": 3.0273
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 10,
+     "finger_backbend": 1,
+     "palm_backward": 22
+    },
+    "before": {
+     "elbow_hyperextension": 10,
+     "finger_backbend": 39,
+     "limb_pop": 44,
+     "limb_stretch": 60,
+     "palm_backward": 33,
+     "toe_limit": 1
+    },
+    "raw": {
+     "elbow_hyperextension": 10,
+     "finger_backbend": 39,
+     "foot_slide": 8,
+     "knee_hyperextension": 1,
+     "palm_backward": 33
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 22,
+    "foot_frames_locked": 91,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -7001,13 +8467,13 @@
    "duration_s": 0.7333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 5.52,
+    "ankle_speed_hs": 5.58,
     "duration_s": 0.75,
-    "foot_slip_hs": 0.438,
+    "foot_slip_hs": 0.321,
     "frames": 45,
-    "jerk": 1052.6,
+    "jerk": 1887.8,
     "wrist_reach_h": 0.293,
-    "wrist_speed_hs": 4.66
+    "wrist_speed_hs": 4.67
    },
    "metrics_raw": {
     "ankle_speed_hs": 5.23,
@@ -7019,9 +8485,36 @@
     "wrist_speed_hs": 4.86
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 108.32,
+    "state": "ok",
+    "travel_m": 3.1236
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 13,
+     "palm_backward": 25
+    },
+    "before": {
+     "elbow_hyperextension": 9,
+     "finger_backbend": 39,
+     "limb_pop": 39,
+     "limb_stretch": 62,
+     "palm_backward": 34,
+     "toe_limit": 2
+    },
+    "raw": {
+     "elbow_hyperextension": 10,
+     "finger_backbend": 39,
+     "foot_slide": 23,
+     "knee_hyperextension": 1,
+     "palm_backward": 33,
+     "toe_limit": 1
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 33,
+    "foot_frames_locked": 98,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -7039,27 +8532,61 @@
    "duration_s": 31.1333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 4.95,
+    "ankle_speed_hs": 4.94,
     "duration_s": 31.15,
-    "foot_slip_hs": 0.1,
+    "foot_slip_hs": 0.118,
     "frames": 1869,
-    "jerk": 99.0,
-    "wrist_reach_h": 0.53,
-    "wrist_speed_hs": 11.95
+    "jerk": 398.2,
+    "wrist_reach_h": 0.571,
+    "wrist_speed_hs": 13.18
    },
    "metrics_raw": {
     "ankle_speed_hs": 6.58,
     "duration_s": 31.15,
     "foot_slip_hs": 0.153,
     "frames": 1869,
-    "jerk": 373.8,
+    "jerk": 373.9,
     "wrist_reach_h": 0.536,
     "wrist_speed_hs": 13.47
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 150.52,
+    "state": "ok",
+    "travel_m": 2.014
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 14,
+     "discontinuity": 2,
+     "foot_slide": 187,
+     "palm_backward": 20
+    },
+    "before": {
+     "ankle_limit": 2,
+     "elbow_hyperextension": 359,
+     "finger_backbend": 7748,
+     "foot_floor": 3113,
+     "knee_hyperextension": 427,
+     "limb_pop": 571,
+     "limb_stretch": 20130,
+     "palm_backward": 110,
+     "toe_backbend": 107,
+     "toe_limit": 234
+    },
+    "raw": {
+     "elbow_hyperextension": 359,
+     "finger_backbend": 7748,
+     "foot_floor": 3138,
+     "foot_slide": 1534,
+     "knee_hyperextension": 427,
+     "limb_stretch": 16821,
+     "palm_backward": 109
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6598,
+    "foot_frames_locked": 14345,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -7430,6 +8957,403 @@
     "ual2"
    ]
   },
+  "shonen_bow_shot": {
+   "duration_s": 1.2,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.217,
+    "foot_slip_hs": 0.0,
+    "frames": 73,
+    "jerk": 44.9,
+    "wrist_reach_h": 0.457,
+    "wrist_speed_hs": 2.13
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 1.217,
+    "foot_slip_hs": 0.0,
+    "frames": 73,
+    "jerk": 115.4,
+    "wrist_reach_h": 0.458,
+    "wrist_speed_hs": 2.1
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 83.0,
+    "state": "ok",
+    "travel_m": 0.589
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "limb_stretch": 2
+    },
+    "raw": {}
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 292,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Bow_Shot",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "bow",
+    "ranged",
+    "self-authored",
+    "shonen"
+   ]
+  },
+  "shonen_fist_duel": {
+   "duration_s": 2.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 7.92,
+    "duration_s": 2.617,
+    "foot_slip_hs": 0.561,
+    "frames": 157,
+    "jerk": 2035.7,
+    "wrist_reach_h": 0.489,
+    "wrist_speed_hs": 8.03
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 5.7,
+    "duration_s": 2.617,
+    "foot_slip_hs": 0.648,
+    "frames": 157,
+    "jerk": 2552.9,
+    "wrist_reach_h": 0.493,
+    "wrist_speed_hs": 9.11
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 136.0,
+    "state": "ok",
+    "travel_m": 1.2764
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "elbow_hyperextension": 95,
+     "foot_floor": 151,
+     "limb_pop": 153,
+     "limb_stretch": 199
+    },
+    "raw": {
+     "elbow_hyperextension": 94,
+     "foot_floor": 159,
+     "foot_slide": 22
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 814,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Fist_Duel",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "duel",
+    "shonen",
+    "fist",
+    "choreography"
+   ]
+  },
+  "shonen_flash_cross": {
+   "duration_s": 0.8167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 2.79,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.277,
+    "frames": 50,
+    "jerk": 1101.9,
+    "wrist_reach_h": 0.458,
+    "wrist_speed_hs": 4.9
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 4.47,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.291,
+    "frames": 50,
+    "jerk": 1524.1,
+    "wrist_reach_h": 0.46,
+    "wrist_speed_hs": 6.7
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 137.0,
+    "state": "ok",
+    "travel_m": 0.6161
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "elbow_hyperextension": 25,
+     "foot_floor": 11,
+     "limb_pop": 39,
+     "limb_stretch": 35
+    },
+    "raw": {
+     "elbow_hyperextension": 25,
+     "foot_floor": 11
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 275,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Flash_Cross",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack",
+    "shonen",
+    "fist",
+    "combo"
+   ]
+  },
+  "shonen_flash_cut": {
+   "duration_s": 0.8167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.3,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.029,
+    "frames": 50,
+    "jerk": 603.9,
+    "wrist_reach_h": 0.553,
+    "wrist_speed_hs": 5.2
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.0,
+    "frames": 50,
+    "jerk": 1290.7,
+    "wrist_reach_h": 0.564,
+    "wrist_speed_hs": 7.61
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 86.64,
+    "state": "ok",
+    "travel_m": 0.587
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 200,
+     "knee_hyperextension": 100,
+     "limb_pop": 12,
+     "limb_stretch": 13
+    },
+    "raw": {
+     "finger_backbend": 200,
+     "knee_hyperextension": 100
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 350,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Flash_Cut",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "attack",
+    "shonen",
+    "sword",
+    "combo"
+   ]
+  },
+  "shonen_perfect_counter": {
+   "duration_s": 0.8167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.02,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.0,
+    "frames": 50,
+    "jerk": 1375.9,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 6.65
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.0,
+    "frames": 50,
+    "jerk": 1876.3,
+    "wrist_reach_h": 0.523,
+    "wrist_speed_hs": 8.76
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 135.0,
+    "state": "ok",
+    "travel_m": 0.7591
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "elbow_hyperextension": 46,
+     "limb_pop": 24,
+     "limb_stretch": 40
+    },
+    "raw": {
+     "elbow_hyperextension": 43
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 300,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Perfect_Counter",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "counter",
+    "shonen",
+    "fist",
+    "perfect"
+   ]
+  },
+  "shonen_perfect_parry": {
+   "duration_s": 0.8167,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 0.26,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.032,
+    "frames": 50,
+    "jerk": 495.5,
+    "wrist_reach_h": 0.48,
+    "wrist_speed_hs": 5.21
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 0.0,
+    "duration_s": 0.833,
+    "foot_slip_hs": 0.0,
+    "frames": 50,
+    "jerk": 844.2,
+    "wrist_reach_h": 0.482,
+    "wrist_speed_hs": 5.36
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 60.18,
+    "state": "ok",
+    "travel_m": 0.6486
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 200,
+     "knee_hyperextension": 100,
+     "limb_pop": 5,
+     "limb_stretch": 6
+    },
+    "raw": {
+     "finger_backbend": 200,
+     "knee_hyperextension": 100
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 349,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Perfect_Parry",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "counter",
+    "shonen",
+    "sword",
+    "perfect"
+   ]
+  },
+  "shonen_sword_duel": {
+   "duration_s": 2.6,
+   "fps": 60,
+   "metrics": {
+    "ankle_speed_hs": 12.4,
+    "duration_s": 2.617,
+    "foot_slip_hs": 0.974,
+    "frames": 157,
+    "jerk": 4891.3,
+    "wrist_reach_h": 0.611,
+    "wrist_speed_hs": 10.59
+   },
+   "metrics_raw": {
+    "ankle_speed_hs": 10.14,
+    "duration_s": 2.617,
+    "foot_slip_hs": 1.198,
+    "frames": 157,
+    "jerk": 10439.4,
+    "wrist_reach_h": 0.606,
+    "wrist_speed_hs": 12.54
+   },
+   "model": "shonen_duel.glb",
+   "motion": {
+    "source_rot_deg": 100.74,
+    "state": "ok",
+    "travel_m": 1.5217
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "finger_backbend": 309,
+     "foot_floor": 603,
+     "knee_hyperextension": 314,
+     "limb_pop": 232,
+     "limb_stretch": 225,
+     "toe_backbend": 1,
+     "toe_limit": 2
+    },
+    "raw": {
+     "finger_backbend": 309,
+     "foot_floor": 566,
+     "foot_slide": 4,
+     "knee_hyperextension": 314
+    }
+   },
+   "smoothing": {
+    "beta": 6.0,
+    "foot_frames_locked": 744,
+    "min_cut_hz": 4.0
+   },
+   "source": {
+    "clip": "Brawler_Shonen_Sword_Duel",
+    "model": "shonen_duel.glb",
+    "type": "clip"
+   },
+   "tags": [
+    "duel",
+    "shonen",
+    "sword",
+    "choreography"
+   ]
+  },
   "sitting_enter": {
    "duration_s": 1.3,
    "fps": 60,
@@ -7553,7 +9477,7 @@
     "duration_s": 10.917,
     "foot_slip_hs": 0.0,
     "frames": 655,
-    "jerk": 0.7,
+    "jerk": 1.7,
     "wrist_reach_h": 0.235,
     "wrist_speed_hs": 0.0
    },
@@ -7567,9 +9491,25 @@
     "wrist_speed_hs": 0.01
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 29.12,
+    "state": "ok",
+    "travel_m": 0.1021
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 1310,
+     "elbow_hyperextension": 655
+    },
+    "raw": {
+     "ankle_limit": 1310,
+     "elbow_hyperextension": 655
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 2620,
+    "foot_frames_locked": 3121,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -7702,7 +9642,7 @@
     "duration_s": 0.517,
     "foot_slip_hs": 0.918,
     "frames": 31,
-    "jerk": 2896.5,
+    "jerk": 2896.6,
     "wrist_reach_h": 0.36,
     "wrist_speed_hs": 3.43
    },
@@ -7881,7 +9821,7 @@
     "duration_s": 0.55,
     "foot_slip_hs": 0.0,
     "frames": 33,
-    "jerk": 191.6,
+    "jerk": 191.7,
     "wrist_reach_h": 0.517,
     "wrist_speed_hs": 1.7
    },
@@ -8134,12 +10074,12 @@
    "duration_s": 6.1,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.69,
+    "ankle_speed_hs": 2.39,
     "duration_s": 6.117,
-    "foot_slip_hs": 0.073,
+    "foot_slip_hs": 0.079,
     "frames": 367,
-    "jerk": 25.9,
-    "wrist_reach_h": 0.304,
+    "jerk": 94.2,
+    "wrist_reach_h": 0.303,
     "wrist_speed_hs": 0.68
    },
    "metrics_raw": {
@@ -8152,9 +10092,36 @@
     "wrist_speed_hs": 0.68
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 142.11,
+    "state": "ok",
+    "travel_m": 1.1106
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 10,
+     "foot_slide": 5,
+     "knee_limit": 2,
+     "palm_backward": 286
+    },
+    "before": {
+     "ankle_limit": 15,
+     "finger_backbend": 545,
+     "knee_limit": 21,
+     "limb_pop": 86,
+     "limb_stretch": 742,
+     "palm_backward": 366
+    },
+    "raw": {
+     "finger_backbend": 545,
+     "foot_slide": 220,
+     "knee_limit": 25,
+     "palm_backward": 366
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1150,
+    "foot_frames_locked": 2014,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8172,27 +10139,56 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 8.5,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.378,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 3090.4,
+    "wrist_reach_h": 0.294,
+    "wrist_speed_hs": 3.24
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 24.25,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.874,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 16151.8,
+    "wrist_reach_h": 0.294,
+    "wrist_speed_hs": 2.99
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.01,
+    "state": "ok",
+    "travel_m": 1.6392
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 11,
+     "discontinuity": 13,
+     "finger_backbend": 222,
+     "knee_hyperextension": 2,
+     "limb_pop": 97,
+     "limb_stretch": 113,
+     "palm_backward": 11,
+     "toe_backbend": 8,
+     "toe_limit": 17
+    },
+    "raw": {
+     "ankle_limit": 14,
+     "discontinuity": 29,
+     "finger_backbend": 222,
+     "foot_floor": 2,
+     "knee_hyperextension": 2,
+     "palm_backward": 11,
+     "toe_backbend": 16,
+     "toe_limit": 16
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8210,27 +10206,58 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 8.42,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.413,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 4761.0,
+    "wrist_reach_h": 0.292,
+    "wrist_speed_hs": 5.32
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 24.49,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 3.606,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 26679.1,
+    "wrist_reach_h": 0.482,
+    "wrist_speed_hs": 13.92
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.02,
+    "state": "ok",
+    "travel_m": 1.612
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 6
+    },
+    "before": {
+     "ankle_limit": 10,
+     "discontinuity": 33,
+     "finger_backbend": 222,
+     "knee_hyperextension": 2,
+     "limb_pop": 132,
+     "limb_stretch": 146,
+     "palm_backward": 13,
+     "toe_backbend": 2,
+     "toe_limit": 10
+    },
+    "raw": {
+     "ankle_limit": 12,
+     "discontinuity": 48,
+     "finger_backbend": 222,
+     "foot_floor": 1,
+     "knee_hyperextension": 2,
+     "palm_backward": 13,
+     "toe_backbend": 10,
+     "toe_limit": 10
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8248,27 +10275,50 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 3.59,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.342,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 709.7,
+    "wrist_reach_h": 0.361,
+    "wrist_speed_hs": 2.71
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.4,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.123,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 3296.8,
+    "wrist_reach_h": 0.365,
+    "wrist_speed_hs": 2.37
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.22,
+    "state": "ok",
+    "travel_m": 0.8524
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 7,
+     "finger_backbend": 222,
+     "limb_pop": 54,
+     "limb_stretch": 65,
+     "toe_backbend": 7,
+     "toe_limit": 13
+    },
+    "raw": {
+     "ankle_limit": 7,
+     "discontinuity": 16,
+     "finger_backbend": 222,
+     "toe_backbend": 14,
+     "toe_limit": 14
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 30,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8286,27 +10336,52 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 4.02,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.498,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 2326.9,
+    "wrist_reach_h": 0.335,
+    "wrist_speed_hs": 6.27
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.57,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.175,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 13260.6,
+    "wrist_reach_h": 0.493,
+    "wrist_speed_hs": 12.15
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.02,
+    "state": "ok",
+    "travel_m": 0.9455
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 14
+    },
+    "before": {
+     "ankle_limit": 6,
+     "discontinuity": 17,
+     "finger_backbend": 222,
+     "limb_pop": 88,
+     "limb_stretch": 101,
+     "toe_limit": 8
+    },
+    "raw": {
+     "ankle_limit": 6,
+     "discontinuity": 34,
+     "finger_backbend": 222,
+     "toe_backbend": 10,
+     "toe_limit": 10
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 23,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8324,27 +10399,52 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.47,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.204,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 649.2,
+    "wrist_reach_h": 0.314,
+    "wrist_speed_hs": 3.23
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.43,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.118,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 3407.7,
+    "wrist_reach_h": 0.316,
+    "wrist_speed_hs": 2.99
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.01,
+    "state": "ok",
+    "travel_m": 0.9359
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "ankle_limit": 6,
+     "finger_backbend": 222,
+     "limb_pop": 47,
+     "limb_stretch": 68,
+     "palm_backward": 7,
+     "toe_backbend": 7,
+     "toe_limit": 15
+    },
+    "raw": {
+     "ankle_limit": 6,
+     "discontinuity": 10,
+     "finger_backbend": 222,
+     "palm_backward": 7,
+     "toe_backbend": 14,
+     "toe_limit": 14
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 4,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8362,27 +10462,55 @@
    "duration_s": 0.6,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.44,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.284,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 2113.3,
+    "wrist_reach_h": 0.305,
+    "wrist_speed_hs": 5.01
    },
    "metrics_raw": {
-    "ankle_speed_hs": 0.0,
+    "ankle_speed_hs": 2.65,
     "duration_s": 0.617,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 2.179,
     "frames": 37,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
-    "wrist_speed_hs": 0.0
+    "jerk": 14466.8,
+    "wrist_reach_h": 0.478,
+    "wrist_speed_hs": 13.02
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 179.02,
+    "state": "ok",
+    "travel_m": 0.9964
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 8
+    },
+    "before": {
+     "ankle_limit": 6,
+     "discontinuity": 19,
+     "finger_backbend": 222,
+     "limb_pop": 75,
+     "limb_stretch": 83,
+     "palm_backward": 6,
+     "toe_backbend": 7,
+     "toe_limit": 15
+    },
+    "raw": {
+     "ankle_limit": 6,
+     "discontinuity": 35,
+     "finger_backbend": 222,
+     "palm_backward": 6,
+     "toe_backbend": 14,
+     "toe_limit": 14
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 148,
+    "foot_frames_locked": 0,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -8680,7 +10808,7 @@
     },
     "before": {
      "elbow_hyperextension": 128,
-     "finger_backbend": 527,
+     "finger_backbend": 526,
      "knee_hyperextension": 220,
      "limb_pop": 160,
      "limb_stretch": 586,
@@ -8690,7 +10818,7 @@
     },
     "raw": {
      "elbow_hyperextension": 124,
-     "finger_backbend": 527,
+     "finger_backbend": 526,
      "foot_slide": 96,
      "knee_hyperextension": 221,
      "palm_backward": 21
@@ -8729,7 +10857,7 @@
     "duration_s": 3.317,
     "foot_slip_hs": 0.0,
     "frames": 199,
-    "jerk": 77.5,
+    "jerk": 77.6,
     "wrist_reach_h": 0.476,
     "wrist_speed_hs": 3.42
    },
@@ -9027,7 +11155,6 @@
      "ankle_limit": 61,
      "discontinuity": 5,
      "elbow_hyperextension": 4,
-     "foot_floor": 1,
      "foot_slide": 41,
      "palm_backward": 16
     },
@@ -9077,13 +11204,13 @@
    "duration_s": 33.1333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 13.44,
+    "ankle_speed_hs": 14.3,
     "duration_s": 33.15,
-    "foot_slip_hs": 0.37,
+    "foot_slip_hs": 0.441,
     "frames": 1989,
-    "jerk": 73.6,
-    "wrist_reach_h": 0.597,
-    "wrist_speed_hs": 12.54
+    "jerk": 158.2,
+    "wrist_reach_h": 0.634,
+    "wrist_speed_hs": 13.45
    },
    "metrics_raw": {
     "ankle_speed_hs": 15.24,
@@ -9095,9 +11222,45 @@
     "wrist_speed_hs": 14.64
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 135.22,
+    "state": "ok",
+    "travel_m": 1.8619
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 115,
+     "foot_slide": 4,
+     "palm_backward": 37
+    },
+    "before": {
+     "ankle_limit": 427,
+     "elbow_hyperextension": 1801,
+     "finger_backbend": 9348,
+     "foot_floor": 84,
+     "foot_slide": 23,
+     "knee_hyperextension": 1575,
+     "limb_pop": 165,
+     "limb_stretch": 18023,
+     "palm_backward": 151,
+     "toe_limit": 1,
+     "wrist_limit": 42
+    },
+    "raw": {
+     "ankle_limit": 422,
+     "elbow_hyperextension": 1801,
+     "finger_backbend": 9348,
+     "foot_floor": 98,
+     "foot_slide": 99,
+     "knee_hyperextension": 1568,
+     "limb_stretch": 17901,
+     "palm_backward": 150,
+     "wrist_limit": 44
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 192,
+    "foot_frames_locked": 481,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -9116,11 +11279,11 @@
    "metrics": {
     "ankle_speed_hs": 8.47,
     "duration_s": 21.933,
-    "foot_slip_hs": 0.06,
+    "foot_slip_hs": 0.066,
     "frames": 1316,
-    "jerk": 95.0,
-    "wrist_reach_h": 0.462,
-    "wrist_speed_hs": 13.28
+    "jerk": 170.6,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 14.37
    },
    "metrics_raw": {
     "ankle_speed_hs": 9.71,
@@ -9132,9 +11295,42 @@
     "wrist_speed_hs": 14.73
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 132.36,
+    "state": "ok",
+    "travel_m": 2.4369
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 20,
+     "palm_backward": 78
+    },
+    "before": {
+     "ankle_limit": 53,
+     "elbow_hyperextension": 23,
+     "finger_backbend": 2485,
+     "foot_floor": 1940,
+     "knee_hyperextension": 12,
+     "limb_pop": 269,
+     "limb_stretch": 13626,
+     "palm_backward": 307,
+     "toe_backbend": 136,
+     "toe_limit": 146
+    },
+    "raw": {
+     "ankle_limit": 56,
+     "elbow_hyperextension": 27,
+     "finger_backbend": 2485,
+     "foot_floor": 1956,
+     "foot_slide": 394,
+     "limb_stretch": 11844,
+     "palm_backward": 307,
+     "toe_limit": 3
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 4633,
+    "foot_frames_locked": 9879,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -9350,7 +11546,7 @@
     "duration_s": 1.55,
     "foot_slip_hs": 0.325,
     "frames": 93,
-    "jerk": 2347.9,
+    "jerk": 2348.0,
     "wrist_reach_h": 0.547,
     "wrist_speed_hs": 20.31
    },
@@ -9777,7 +11973,7 @@
     "duration_s": 0.55,
     "foot_slip_hs": 0.282,
     "frames": 33,
-    "jerk": 3822.5,
+    "jerk": 3822.4,
     "wrist_reach_h": 0.566,
     "wrist_speed_hs": 15.21
    },
@@ -10083,13 +12279,13 @@
    "duration_s": 29.6667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 11.15,
+    "ankle_speed_hs": 11.97,
     "duration_s": 29.683,
-    "foot_slip_hs": 0.107,
+    "foot_slip_hs": 0.112,
     "frames": 1781,
-    "jerk": 94.2,
-    "wrist_reach_h": 0.545,
-    "wrist_speed_hs": 14.9
+    "jerk": 303.8,
+    "wrist_reach_h": 0.57,
+    "wrist_speed_hs": 16.02
    },
    "metrics_raw": {
     "ankle_speed_hs": 11.23,
@@ -10101,9 +12297,43 @@
     "wrist_speed_hs": 16.27
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 141.63,
+    "state": "ok",
+    "travel_m": 2.1835
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 41,
+     "foot_slide": 89,
+     "palm_backward": 178
+    },
+    "before": {
+     "ankle_limit": 3,
+     "elbow_hyperextension": 527,
+     "finger_backbend": 1793,
+     "foot_floor": 3476,
+     "knee_hyperextension": 878,
+     "limb_pop": 482,
+     "limb_stretch": 18328,
+     "palm_backward": 817,
+     "toe_backbend": 2,
+     "toe_limit": 22
+    },
+    "raw": {
+     "ankle_limit": 1,
+     "elbow_hyperextension": 525,
+     "finger_backbend": 1793,
+     "foot_floor": 3462,
+     "foot_slide": 1039,
+     "knee_hyperextension": 887,
+     "limb_stretch": 16029,
+     "palm_backward": 818
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 6346,
+    "foot_frames_locked": 13510,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10120,13 +12350,13 @@
    "duration_s": 64.5833,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.21,
+    "ankle_speed_hs": 1.67,
     "duration_s": 64.6,
     "foot_slip_hs": 0.003,
     "frames": 3876,
-    "jerk": 7.4,
-    "wrist_reach_h": 0.463,
-    "wrist_speed_hs": 7.99
+    "jerk": 23.4,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 9.85
    },
    "metrics_raw": {
     "ankle_speed_hs": 1.85,
@@ -10138,9 +12368,39 @@
     "wrist_speed_hs": 9.63
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 110.68,
+    "state": "ok",
+    "travel_m": 0.9649
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 2,
+     "palm_backward": 1981
+    },
+    "before": {
+     "elbow_hyperextension": 21,
+     "finger_backbend": 3832,
+     "foot_floor": 9145,
+     "foot_slide": 4,
+     "limb_pop": 102,
+     "limb_stretch": 40109,
+     "palm_backward": 2224,
+     "toe_backbend": 1046,
+     "toe_limit": 1077
+    },
+    "raw": {
+     "elbow_hyperextension": 18,
+     "finger_backbend": 3832,
+     "foot_floor": 10496,
+     "foot_slide": 313,
+     "limb_stretch": 34884,
+     "palm_backward": 2224
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 15444,
+    "foot_frames_locked": 23323,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10157,13 +12417,13 @@
    "duration_s": 56.4167,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.8,
+    "ankle_speed_hs": 3.28,
     "duration_s": 56.433,
-    "foot_slip_hs": 0.008,
+    "foot_slip_hs": 0.01,
     "frames": 3386,
-    "jerk": 14.4,
-    "wrist_reach_h": 0.462,
-    "wrist_speed_hs": 8.73
+    "jerk": 36.5,
+    "wrist_reach_h": 0.494,
+    "wrist_speed_hs": 10.58
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.9,
@@ -10175,9 +12435,39 @@
     "wrist_speed_hs": 10.37
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 113.74,
+    "state": "ok",
+    "travel_m": 1.092
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 3,
+     "foot_slide": 14,
+     "palm_backward": 2070
+    },
+    "before": {
+     "elbow_hyperextension": 239,
+     "finger_backbend": 3416,
+     "foot_floor": 5614,
+     "limb_pop": 260,
+     "limb_stretch": 36283,
+     "palm_backward": 3041,
+     "toe_backbend": 44,
+     "toe_limit": 317
+    },
+    "raw": {
+     "elbow_hyperextension": 238,
+     "finger_backbend": 3416,
+     "foot_floor": 5688,
+     "foot_slide": 655,
+     "limb_stretch": 30474,
+     "palm_backward": 3040
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 13395,
+    "foot_frames_locked": 23543,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10212,6 +12502,16 @@
     "wrist_speed_hs": 0.0
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 0.06,
+    "state": "static",
+    "travel_m": 0.0
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 20,
@@ -10232,13 +12532,13 @@
    "duration_s": 52.9167,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 7.84,
+    "ankle_speed_hs": 8.32,
     "duration_s": 52.933,
-    "foot_slip_hs": 0.035,
+    "foot_slip_hs": 0.038,
     "frames": 3176,
-    "jerk": 39.8,
-    "wrist_reach_h": 0.561,
-    "wrist_speed_hs": 13.19
+    "jerk": 95.5,
+    "wrist_reach_h": 0.594,
+    "wrist_speed_hs": 14.64
    },
    "metrics_raw": {
     "ankle_speed_hs": 9.05,
@@ -10250,9 +12550,41 @@
     "wrist_speed_hs": 14.78
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 117.98,
+    "state": "ok",
+    "travel_m": 1.8065
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 64,
+     "palm_backward": 138
+    },
+    "before": {
+     "ankle_limit": 8,
+     "elbow_hyperextension": 406,
+     "finger_backbend": 3210,
+     "foot_floor": 8878,
+     "limb_pop": 238,
+     "limb_stretch": 34318,
+     "palm_backward": 224,
+     "toe_limit": 5,
+     "wrist_limit": 4
+    },
+    "raw": {
+     "ankle_limit": 10,
+     "elbow_hyperextension": 407,
+     "finger_backbend": 3210,
+     "foot_floor": 8990,
+     "foot_slide": 720,
+     "limb_stretch": 28584,
+     "palm_backward": 224,
+     "wrist_limit": 4
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 12207,
+    "foot_frames_locked": 22951,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10269,13 +12601,13 @@
    "duration_s": 3.0333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.55,
+    "ankle_speed_hs": 3.56,
     "duration_s": 3.05,
-    "foot_slip_hs": 0.183,
+    "foot_slip_hs": 0.158,
     "frames": 183,
-    "jerk": 247.5,
-    "wrist_reach_h": 0.527,
-    "wrist_speed_hs": 6.06
+    "jerk": 500.3,
+    "wrist_reach_h": 0.531,
+    "wrist_speed_hs": 6.16
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.41,
@@ -10287,9 +12619,37 @@
     "wrist_speed_hs": 5.92
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 134.2,
+    "state": "ok",
+    "travel_m": 2.2297
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 1,
+     "palm_backward": 4
+    },
+    "before": {
+     "elbow_hyperextension": 21,
+     "finger_backbend": 549,
+     "foot_floor": 134,
+     "limb_pop": 101,
+     "limb_stretch": 355,
+     "palm_backward": 7,
+     "toe_limit": 6
+    },
+    "raw": {
+     "elbow_hyperextension": 19,
+     "finger_backbend": 549,
+     "foot_floor": 136,
+     "foot_slide": 242,
+     "palm_backward": 5,
+     "toe_limit": 1
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 549,
+    "foot_frames_locked": 945,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10363,11 +12723,11 @@
    "duration_s": 1.6667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.09,
+    "ankle_speed_hs": 1.67,
     "duration_s": 1.683,
-    "foot_slip_hs": 0.119,
+    "foot_slip_hs": 0.146,
     "frames": 101,
-    "jerk": 55.2,
+    "jerk": 239.8,
     "wrist_reach_h": 0.182,
     "wrist_speed_hs": 0.92
    },
@@ -10376,14 +12736,39 @@
     "duration_s": 1.683,
     "foot_slip_hs": 0.167,
     "frames": 101,
-    "jerk": 270.0,
+    "jerk": 269.9,
     "wrist_reach_h": 0.185,
     "wrist_speed_hs": 0.9
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 176.14,
+    "state": "ok",
+    "travel_m": 0.7183
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 49
+    },
+    "before": {
+     "elbow_hyperextension": 43,
+     "finger_backbend": 199,
+     "knee_hyperextension": 111,
+     "limb_pop": 45,
+     "limb_stretch": 150,
+     "palm_backward": 61
+    },
+    "raw": {
+     "elbow_hyperextension": 44,
+     "finger_backbend": 199,
+     "foot_slide": 106,
+     "knee_hyperextension": 110,
+     "palm_backward": 61
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 286,
+    "foot_frames_locked": 629,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10402,11 +12787,11 @@
    "duration_s": 0.9333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.96,
+    "ankle_speed_hs": 1.99,
     "duration_s": 0.95,
-    "foot_slip_hs": 0.09,
+    "foot_slip_hs": 0.169,
     "frames": 57,
-    "jerk": 65.7,
+    "jerk": 206.3,
     "wrist_reach_h": 0.212,
     "wrist_speed_hs": 0.83
    },
@@ -10420,9 +12805,32 @@
     "wrist_speed_hs": 0.88
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 89.69,
+    "state": "ok",
+    "travel_m": 0.5232
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 49
+    },
+    "before": {
+     "elbow_hyperextension": 13,
+     "finger_backbend": 113,
+     "limb_pop": 28,
+     "limb_stretch": 39,
+     "palm_backward": 49
+    },
+    "raw": {
+     "elbow_hyperextension": 13,
+     "finger_backbend": 113,
+     "foot_slide": 61,
+     "palm_backward": 49
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 178,
+    "foot_frames_locked": 398,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10441,12 +12849,12 @@
    "duration_s": 1.6667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.27,
+    "ankle_speed_hs": 1.75,
     "duration_s": 1.683,
-    "foot_slip_hs": 0.077,
+    "foot_slip_hs": 0.117,
     "frames": 101,
-    "jerk": 55.3,
-    "wrist_reach_h": 0.179,
+    "jerk": 245.5,
+    "wrist_reach_h": 0.178,
     "wrist_speed_hs": 0.69
    },
    "metrics_raw": {
@@ -10454,14 +12862,39 @@
     "duration_s": 1.683,
     "foot_slip_hs": 0.143,
     "frames": 101,
-    "jerk": 277.6,
+    "jerk": 277.7,
     "wrist_reach_h": 0.18,
     "wrist_speed_hs": 0.72
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 175.07,
+    "state": "ok",
+    "travel_m": 0.7126
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 19
+    },
+    "before": {
+     "elbow_hyperextension": 57,
+     "finger_backbend": 202,
+     "knee_hyperextension": 106,
+     "limb_pop": 51,
+     "limb_stretch": 126,
+     "palm_backward": 40
+    },
+    "raw": {
+     "elbow_hyperextension": 53,
+     "finger_backbend": 202,
+     "foot_slide": 105,
+     "knee_hyperextension": 107,
+     "palm_backward": 40
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 300,
+    "foot_frames_locked": 640,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10480,11 +12913,11 @@
    "duration_s": 0.9667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.15,
+    "ankle_speed_hs": 1.83,
     "duration_s": 0.983,
-    "foot_slip_hs": 0.097,
+    "foot_slip_hs": 0.147,
     "frames": 59,
-    "jerk": 69.3,
+    "jerk": 201.8,
     "wrist_reach_h": 0.199,
     "wrist_speed_hs": 0.82
    },
@@ -10498,9 +12931,33 @@
     "wrist_speed_hs": 0.83
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 102.64,
+    "state": "ok",
+    "travel_m": 0.604
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 36
+    },
+    "before": {
+     "elbow_hyperextension": 5,
+     "finger_backbend": 117,
+     "limb_pop": 30,
+     "limb_stretch": 60,
+     "palm_backward": 36
+    },
+    "raw": {
+     "elbow_hyperextension": 5,
+     "finger_backbend": 117,
+     "foot_slide": 61,
+     "knee_hyperextension": 9,
+     "palm_backward": 36
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 181,
+    "foot_frames_locked": 397,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10519,13 +12976,13 @@
    "duration_s": 2.3667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.28,
+    "ankle_speed_hs": 3.29,
     "duration_s": 2.383,
-    "foot_slip_hs": 0.276,
+    "foot_slip_hs": 0.234,
     "frames": 143,
-    "jerk": 218.1,
+    "jerk": 553.3,
     "wrist_reach_h": 0.526,
-    "wrist_speed_hs": 4.01
+    "wrist_speed_hs": 4.09
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.15,
@@ -10537,9 +12994,35 @@
     "wrist_speed_hs": 3.92
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 150.68,
+    "state": "ok",
+    "travel_m": 2.3891
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 1,
+     "elbow_hyperextension": 2,
+     "foot_slide": 14
+    },
+    "before": {
+     "ankle_limit": 1,
+     "elbow_hyperextension": 16,
+     "foot_floor": 126,
+     "limb_pop": 65,
+     "limb_stretch": 329,
+     "toe_limit": 22
+    },
+    "raw": {
+     "ankle_limit": 2,
+     "elbow_hyperextension": 17,
+     "foot_floor": 122,
+     "foot_slide": 200
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 432,
+    "foot_frames_locked": 965,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10618,13 +13101,13 @@
    "duration_s": 1.2333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.32,
+    "ankle_speed_hs": 2.49,
     "duration_s": 1.25,
-    "foot_slip_hs": 0.362,
+    "foot_slip_hs": 0.379,
     "frames": 75,
-    "jerk": 125.6,
-    "wrist_reach_h": 0.231,
-    "wrist_speed_hs": 1.69
+    "jerk": 336.3,
+    "wrist_reach_h": 0.229,
+    "wrist_speed_hs": 1.68
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.18,
@@ -10636,9 +13119,30 @@
     "wrist_speed_hs": 1.64
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 50.57,
+    "state": "ok",
+    "travel_m": 1.4874
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 24
+    },
+    "before": {
+     "finger_backbend": 8,
+     "limb_pop": 40,
+     "limb_stretch": 113,
+     "palm_backward": 37
+    },
+    "raw": {
+     "finger_backbend": 8,
+     "foot_slide": 56,
+     "palm_backward": 37
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 179,
+    "foot_frames_locked": 345,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10731,7 +13235,7 @@
     "duration_s": 1.35,
     "foot_slip_hs": 0.465,
     "frames": 81,
-    "jerk": 263.8,
+    "jerk": 263.9,
     "wrist_reach_h": 0.179,
     "wrist_speed_hs": 0.23
    },
@@ -10775,13 +13279,13 @@
    "duration_s": 1.0667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.07,
+    "ankle_speed_hs": 3.23,
     "duration_s": 1.083,
-    "foot_slip_hs": 0.081,
+    "foot_slip_hs": 0.067,
     "frames": 65,
-    "jerk": 213.5,
-    "wrist_reach_h": 0.254,
-    "wrist_speed_hs": 2.02
+    "jerk": 641.2,
+    "wrist_reach_h": 0.251,
+    "wrist_speed_hs": 2.03
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.83,
@@ -10793,9 +13297,34 @@
     "wrist_speed_hs": 1.99
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 56.31,
+    "state": "ok",
+    "travel_m": 1.9732
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 4,
+     "palm_backward": 46
+    },
+    "before": {
+     "ankle_limit": 2,
+     "foot_floor": 64,
+     "limb_pop": 38,
+     "limb_stretch": 77,
+     "palm_backward": 61,
+     "toe_limit": 8
+    },
+    "raw": {
+     "foot_floor": 63,
+     "foot_slide": 54,
+     "palm_backward": 61,
+     "toe_limit": 3
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 143,
+    "foot_frames_locked": 325,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10813,13 +13342,13 @@
    "duration_s": 1.0667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.05,
+    "ankle_speed_hs": 3.84,
     "duration_s": 1.083,
-    "foot_slip_hs": 0.389,
+    "foot_slip_hs": 0.392,
     "frames": 65,
-    "jerk": 263.8,
-    "wrist_reach_h": 0.219,
-    "wrist_speed_hs": 1.68
+    "jerk": 692.1,
+    "wrist_reach_h": 0.218,
+    "wrist_speed_hs": 1.67
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.02,
@@ -10831,9 +13360,32 @@
     "wrist_speed_hs": 1.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 53.66,
+    "state": "ok",
+    "travel_m": 1.7651
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 19
+    },
+    "before": {
+     "finger_backbend": 7,
+     "limb_pop": 38,
+     "limb_stretch": 74,
+     "palm_backward": 65,
+     "toe_limit": 5
+    },
+    "raw": {
+     "finger_backbend": 7,
+     "foot_slide": 54,
+     "palm_backward": 65,
+     "toe_limit": 1
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 142,
+    "foot_frames_locked": 252,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10907,11 +13459,11 @@
    "duration_s": 1.0667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.14,
+    "ankle_speed_hs": 3.78,
     "duration_s": 1.083,
-    "foot_slip_hs": 0.182,
+    "foot_slip_hs": 0.309,
     "frames": 65,
-    "jerk": 240.5,
+    "jerk": 637.8,
     "wrist_reach_h": 0.218,
     "wrist_speed_hs": 1.74
    },
@@ -10925,9 +13477,32 @@
     "wrist_speed_hs": 1.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 47.53,
+    "state": "ok",
+    "travel_m": 1.7764
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 18
+    },
+    "before": {
+     "finger_backbend": 9,
+     "limb_pop": 33,
+     "limb_stretch": 78,
+     "palm_backward": 65,
+     "toe_limit": 7
+    },
+    "raw": {
+     "finger_backbend": 9,
+     "foot_slide": 51,
+     "palm_backward": 65,
+     "toe_limit": 1
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 137,
+    "foot_frames_locked": 330,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10945,27 +13520,58 @@
    "duration_s": 32.0833,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 14.76,
+    "ankle_speed_hs": 13.86,
     "duration_s": 32.1,
-    "foot_slip_hs": 0.061,
+    "foot_slip_hs": 0.057,
     "frames": 1926,
-    "jerk": 105.2,
-    "wrist_reach_h": 0.519,
-    "wrist_speed_hs": 18.56
+    "jerk": 253.8,
+    "wrist_reach_h": 0.546,
+    "wrist_speed_hs": 19.82
    },
    "metrics_raw": {
     "ankle_speed_hs": 16.6,
     "duration_s": 32.1,
     "foot_slip_hs": 0.081,
     "frames": 1926,
-    "jerk": 231.0,
+    "jerk": 231.1,
     "wrist_reach_h": 0.52,
     "wrist_speed_hs": 20.04
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 130.5,
+    "state": "ok",
+    "travel_m": 2.354
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 1,
+     "foot_slide": 10,
+     "palm_backward": 55
+    },
+    "before": {
+     "elbow_hyperextension": 308,
+     "finger_backbend": 5648,
+     "foot_floor": 8001,
+     "knee_hyperextension": 9,
+     "limb_pop": 254,
+     "limb_stretch": 19654,
+     "palm_backward": 196,
+     "toe_backbend": 4,
+     "toe_limit": 5
+    },
+    "raw": {
+     "elbow_hyperextension": 302,
+     "finger_backbend": 5648,
+     "foot_floor": 7975,
+     "foot_slide": 845,
+     "limb_stretch": 17334,
+     "palm_backward": 196
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 7307,
+    "foot_frames_locked": 13649,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -10982,13 +13588,13 @@
    "duration_s": 25.8333,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 5.15,
+    "ankle_speed_hs": 5.79,
     "duration_s": 25.85,
-    "foot_slip_hs": 0.036,
+    "foot_slip_hs": 0.035,
     "frames": 1551,
-    "jerk": 45.6,
-    "wrist_reach_h": 0.464,
-    "wrist_speed_hs": 13.88
+    "jerk": 116.1,
+    "wrist_reach_h": 0.495,
+    "wrist_speed_hs": 15.65
    },
    "metrics_raw": {
     "ankle_speed_hs": 6.42,
@@ -11000,9 +13606,37 @@
     "wrist_speed_hs": 15.38
    },
    "model": "rokoko.glb",
+   "motion": {
+    "source_rot_deg": 101.77,
+    "state": "ok",
+    "travel_m": 2.1239
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 14,
+     "palm_backward": 166
+    },
+    "before": {
+     "elbow_hyperextension": 25,
+     "finger_backbend": 1558,
+     "foot_floor": 8588,
+     "limb_pop": 167,
+     "limb_stretch": 14533,
+     "palm_backward": 796,
+     "toe_limit": 5
+    },
+    "raw": {
+     "elbow_hyperextension": 24,
+     "finger_backbend": 1558,
+     "foot_floor": 8591,
+     "foot_slide": 325,
+     "limb_stretch": 13959,
+     "palm_backward": 796
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 5886,
+    "foot_frames_locked": 9818,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11024,7 +13658,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.254,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -11032,11 +13666,25 @@
     "duration_s": 0.35,
     "foot_slip_hs": 0.0,
     "frames": 21,
-    "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "jerk": 0.6,
+    "wrist_reach_h": 0.254,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.04,
+    "state": "static",
+    "travel_m": 0.0001
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "palm_backward": 21
+    },
+    "raw": {
+     "palm_backward": 21
+    }
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -11061,7 +13709,7 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.255,
     "wrist_speed_hs": 0.0
    },
    "metrics_raw": {
@@ -11070,10 +13718,20 @@
     "foot_slip_hs": 0.0,
     "frames": 21,
     "jerk": 0.0,
-    "wrist_reach_h": 0.423,
+    "wrist_reach_h": 0.255,
     "wrist_speed_hs": 0.0
    },
    "model": "kev_melee.glb",
+   "motion": {
+    "source_rot_deg": 0.06,
+    "state": "static",
+    "travel_m": 0.0
+   },
+   "quality": {
+    "after": {},
+    "before": {},
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
     "foot_frames_locked": 84,
@@ -11205,13 +13863,13 @@
    "duration_s": 3.0,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 2.88,
+    "ankle_speed_hs": 3.11,
     "duration_s": 3.017,
-    "foot_slip_hs": 0.061,
+    "foot_slip_hs": 0.08,
     "frames": 181,
-    "jerk": 199.3,
-    "wrist_reach_h": 0.571,
-    "wrist_speed_hs": 4.01
+    "jerk": 406.1,
+    "wrist_reach_h": 0.572,
+    "wrist_speed_hs": 4.04
    },
    "metrics_raw": {
     "ankle_speed_hs": 2.53,
@@ -11223,9 +13881,36 @@
     "wrist_speed_hs": 3.81
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 118.27,
+    "state": "ok",
+    "travel_m": 2.5974
+   },
+   "quality": {
+    "after": {
+     "finger_backbend": 4,
+     "palm_backward": 20
+    },
+    "before": {
+     "ankle_limit": 1,
+     "elbow_hyperextension": 34,
+     "finger_backbend": 643,
+     "knee_hyperextension": 74,
+     "limb_pop": 91,
+     "limb_stretch": 359,
+     "palm_backward": 23
+    },
+    "raw": {
+     "elbow_hyperextension": 33,
+     "finger_backbend": 643,
+     "foot_slide": 132,
+     "knee_hyperextension": 73,
+     "palm_backward": 23
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 522,
+    "foot_frames_locked": 737,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11244,13 +13929,13 @@
    "duration_s": 3.3667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.81,
+    "ankle_speed_hs": 1.67,
     "duration_s": 3.383,
-    "foot_slip_hs": 0.026,
+    "foot_slip_hs": 0.045,
     "frames": 203,
-    "jerk": 127.7,
-    "wrist_reach_h": 0.459,
-    "wrist_speed_hs": 2.13
+    "jerk": 363.3,
+    "wrist_reach_h": 0.461,
+    "wrist_speed_hs": 2.14
    },
    "metrics_raw": {
     "ankle_speed_hs": 1.56,
@@ -11262,9 +13947,44 @@
     "wrist_speed_hs": 2.09
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 113.86,
+    "state": "ok",
+    "travel_m": 2.0879
+   },
+   "quality": {
+    "after": {
+     "elbow_hyperextension": 3,
+     "foot_slide": 14,
+     "palm_backward": 9
+    },
+    "before": {
+     "ankle_limit": 29,
+     "elbow_hyperextension": 79,
+     "finger_backbend": 347,
+     "foot_floor": 51,
+     "knee_hyperextension": 71,
+     "limb_pop": 89,
+     "limb_stretch": 454,
+     "palm_backward": 21,
+     "toe_backbend": 66,
+     "toe_limit": 105
+    },
+    "raw": {
+     "ankle_limit": 13,
+     "elbow_hyperextension": 80,
+     "finger_backbend": 347,
+     "foot_floor": 52,
+     "foot_slide": 198,
+     "knee_hyperextension": 71,
+     "palm_backward": 21,
+     "toe_backbend": 16,
+     "toe_limit": 35
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 624,
+    "foot_frames_locked": 1242,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11287,7 +14007,7 @@
     "duration_s": 4.383,
     "foot_slip_hs": 0.0,
     "frames": 263,
-    "jerk": 1.4,
+    "jerk": 2.9,
     "wrist_reach_h": 0.165,
     "wrist_speed_hs": 0.02
    },
@@ -11301,9 +14021,25 @@
     "wrist_speed_hs": 0.02
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 3.97,
+    "state": "ok",
+    "travel_m": 0.0187
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 263
+    },
+    "before": {
+     "palm_backward": 263
+    },
+    "raw": {
+     "palm_backward": 263
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1052,
+    "foot_frames_locked": 1406,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11325,7 +14061,7 @@
     "duration_s": 6.15,
     "foot_slip_hs": 0.0,
     "frames": 369,
-    "jerk": 2.5,
+    "jerk": 3.8,
     "wrist_reach_h": 0.209,
     "wrist_speed_hs": 0.11
    },
@@ -11339,9 +14075,21 @@
     "wrist_speed_hs": 0.11
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 15.64,
+    "state": "ok",
+    "travel_m": 0.1151
+   },
+   "quality": {
+    "after": {},
+    "before": {
+     "limb_stretch": 35
+    },
+    "raw": {}
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1476,
+    "foot_frames_locked": 2198,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11364,7 +14112,7 @@
     "duration_s": 1.35,
     "foot_slip_hs": 0.0,
     "frames": 81,
-    "jerk": 4.3,
+    "jerk": 4.4,
     "wrist_reach_h": 0.269,
     "wrist_speed_hs": 0.16
    },
@@ -11412,13 +14160,13 @@
    "duration_s": 3.4,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.81,
+    "ankle_speed_hs": 3.98,
     "duration_s": 3.417,
-    "foot_slip_hs": 0.002,
+    "foot_slip_hs": 0.008,
     "frames": 205,
-    "jerk": 102.7,
-    "wrist_reach_h": 0.414,
-    "wrist_speed_hs": 1.97
+    "jerk": 261.5,
+    "wrist_reach_h": 0.416,
+    "wrist_speed_hs": 2.02
    },
    "metrics_raw": {
     "ankle_speed_hs": 4.01,
@@ -11430,9 +14178,36 @@
     "wrist_speed_hs": 2.16
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 88.84,
+    "state": "ok",
+    "travel_m": 1.4347
+   },
+   "quality": {
+    "after": {
+     "ankle_limit": 2,
+     "palm_backward": 74
+    },
+    "before": {
+     "elbow_hyperextension": 15,
+     "finger_backbend": 1083,
+     "knee_hyperextension": 5,
+     "limb_pop": 38,
+     "limb_stretch": 290,
+     "palm_backward": 101
+    },
+    "raw": {
+     "ankle_limit": 2,
+     "elbow_hyperextension": 16,
+     "finger_backbend": 1083,
+     "foot_slide": 191,
+     "knee_hyperextension": 4,
+     "palm_backward": 99
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 675,
+    "foot_frames_locked": 1038,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11511,13 +14286,13 @@
    "duration_s": 3.8667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.5,
+    "ankle_speed_hs": 3.69,
     "duration_s": 3.883,
-    "foot_slip_hs": 0.093,
+    "foot_slip_hs": 0.094,
     "frames": 233,
-    "jerk": 157.5,
-    "wrist_reach_h": 0.528,
-    "wrist_speed_hs": 5.47
+    "jerk": 320.2,
+    "wrist_reach_h": 0.535,
+    "wrist_speed_hs": 5.57
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.33,
@@ -11529,9 +14304,31 @@
     "wrist_speed_hs": 5.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 126.99,
+    "state": "ok",
+    "travel_m": 1.8964
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 11
+    },
+    "before": {
+     "ankle_limit": 3,
+     "elbow_hyperextension": 67,
+     "limb_pop": 71,
+     "limb_stretch": 393,
+     "palm_backward": 19
+    },
+    "raw": {
+     "elbow_hyperextension": 66,
+     "foot_slide": 278,
+     "palm_backward": 19
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 807,
+    "foot_frames_locked": 1408,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11550,27 +14347,49 @@
    "duration_s": 3.8667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 3.5,
+    "ankle_speed_hs": 3.69,
     "duration_s": 3.883,
-    "foot_slip_hs": 0.093,
+    "foot_slip_hs": 0.094,
     "frames": 233,
-    "jerk": 158.0,
-    "wrist_reach_h": 0.528,
-    "wrist_speed_hs": 5.47
+    "jerk": 319.5,
+    "wrist_reach_h": 0.535,
+    "wrist_speed_hs": 5.57
    },
    "metrics_raw": {
     "ankle_speed_hs": 3.33,
     "duration_s": 3.883,
     "foot_slip_hs": 0.155,
     "frames": 233,
-    "jerk": 679.4,
+    "jerk": 679.5,
     "wrist_reach_h": 0.54,
     "wrist_speed_hs": 5.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 126.99,
+    "state": "ok",
+    "travel_m": 1.8899
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 11
+    },
+    "before": {
+     "ankle_limit": 3,
+     "elbow_hyperextension": 67,
+     "limb_pop": 75,
+     "limb_stretch": 338,
+     "palm_backward": 19
+    },
+    "raw": {
+     "elbow_hyperextension": 66,
+     "foot_slide": 278,
+     "palm_backward": 19
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 807,
+    "foot_frames_locked": 1408,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11589,27 +14408,50 @@
    "duration_s": 4.6667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 0.04,
+    "ankle_speed_hs": 0.05,
     "duration_s": 4.683,
-    "foot_slip_hs": 0.0,
+    "foot_slip_hs": 0.001,
     "frames": 281,
-    "jerk": 61.7,
-    "wrist_reach_h": 0.534,
-    "wrist_speed_hs": 3.77
+    "jerk": 180.7,
+    "wrist_reach_h": 0.539,
+    "wrist_speed_hs": 3.87
    },
    "metrics_raw": {
     "ankle_speed_hs": 0.19,
     "duration_s": 4.683,
     "foot_slip_hs": 0.03,
     "frames": 281,
-    "jerk": 295.8,
+    "jerk": 295.9,
     "wrist_reach_h": 0.537,
     "wrist_speed_hs": 3.65
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 145.82,
+    "state": "ok",
+    "travel_m": 1.7524
+   },
+   "quality": {
+    "after": {
+     "palm_backward": 5
+    },
+    "before": {
+     "elbow_hyperextension": 53,
+     "finger_backbend": 1041,
+     "limb_pop": 27,
+     "limb_stretch": 194,
+     "palm_backward": 82
+    },
+    "raw": {
+     "elbow_hyperextension": 58,
+     "finger_backbend": 1041,
+     "foot_slide": 213,
+     "palm_backward": 81
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 1124,
+    "foot_frames_locked": 1686,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11627,12 +14469,12 @@
    "duration_s": 4.0667,
    "fps": 60,
    "metrics": {
-    "ankle_speed_hs": 1.88,
+    "ankle_speed_hs": 2.08,
     "duration_s": 4.083,
-    "foot_slip_hs": 0.159,
+    "foot_slip_hs": 0.142,
     "frames": 245,
-    "jerk": 40.6,
-    "wrist_reach_h": 0.474,
+    "jerk": 133.7,
+    "wrist_reach_h": 0.477,
     "wrist_speed_hs": 0.84
    },
    "metrics_raw": {
@@ -11645,9 +14487,34 @@
     "wrist_speed_hs": 0.84
    },
    "model": "sekiro.glb",
+   "motion": {
+    "source_rot_deg": 54.56,
+    "state": "ok",
+    "travel_m": 1.3803
+   },
+   "quality": {
+    "after": {
+     "foot_slide": 11,
+     "palm_backward": 63
+    },
+    "before": {
+     "finger_backbend": 980,
+     "foot_floor": 321,
+     "limb_pop": 62,
+     "limb_stretch": 292,
+     "palm_backward": 63,
+     "toe_limit": 2
+    },
+    "raw": {
+     "finger_backbend": 980,
+     "foot_floor": 317,
+     "foot_slide": 212,
+     "palm_backward": 63
+    }
+   },
    "smoothing": {
     "beta": 6.0,
-    "foot_frames_locked": 773,
+    "foot_frames_locked": 1606,
     "min_cut_hz": 4.0
    },
    "source": {
@@ -11678,7 +14545,7 @@
     "duration_s": 1.35,
     "foot_slip_hs": 0.497,
     "frames": 81,
-    "jerk": 530.3,
+    "jerk": 530.4,
     "wrist_reach_h": 0.306,
     "wrist_speed_hs": 0.92
    },

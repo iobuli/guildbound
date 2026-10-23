@@ -319,7 +319,17 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
             let flat = !std::env::var("GB_AURA").is_ok_and(|v| v == "board");
             let lay = |f: Flip| if flat { f.flat() } else { f };
             let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
-            out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE).rising(AURA_HEIGHT).tapering_from(AURA_TAPER_FROM).animated(AURA_ANIM).aged(c.0).spin(dir * 3.0).tinted(Color::srgb(1.0, 0.4, 0.12), 0.35).glow(2.0).follow(e, at)));
+            out.write(lay(Flip::new(sheet, Vec3::ZERO, AURA_SIZE, AURA_RISE)
+                .rising(AURA_HEIGHT)
+                .tapering_from(AURA_TAPER_FROM)
+                .animated(AURA_ANIM)
+                .aged(c.0)
+                .spin(dir * 3.0)
+                // Translucent body with a hotter contour: the fighter stays legible inside it.
+                .tinted(Color::srgba(1.0, 0.4, 0.12, 0.22), 0.35)
+                .glow(1.55)
+                .rim(0.72)
+                .follow(e, at)));
         }
     }
 }

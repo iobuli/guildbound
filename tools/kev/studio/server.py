@@ -42,6 +42,8 @@ REPO = os.path.dirname(os.path.dirname(KEV))
 ANIM = os.path.join(REPO, "assets", "anim")
 sys.path.insert(0, KEV)
 sys.path.insert(0, HERE)
+sys.path.insert(0, os.path.join(KEV, "autoanim", "unreal"))
+import sparking_library  # noqa: E402
 import workroom  # noqa: E402
 import bodymap  # noqa: E402
 import nodes as kev_nodes  # noqa: E402
@@ -1124,6 +1126,11 @@ class Handler(BaseHTTPRequestHandler):
             return self.serve_file(ANIM, path[13:])
         if path == "/api/models":
             return self.reply(200, sorted(f for f in os.listdir(ANIM) if f.endswith(".glb")))
+        if path == "/api/sparking":
+            try:
+                return self.reply(200, sparking_library.catalog())
+            except Exception as error:
+                return self.reply(503, {"error": str(error)})
         if path == "/api/clips":
             return self.reply(200, model_info(STATE["model"])["clips"] if STATE["model"] else [])
         if path == "/api/rig":
@@ -1173,6 +1180,11 @@ class Handler(BaseHTTPRequestHandler):
         who = workroom.who_of(self, body)
         if path == "/api/telemetry":
             return self.telemetry(body)
+        if path == "/api/sparking/load":
+            try:
+                return self.reply(200, sparking_library.export(body.get("id", "")))
+            except Exception as error:
+                return self.reply(422, {"error": str(error)})
         if path == "/api/board":
             code, out = workroom.act(who, body)
             broadcast("board", {"by": who})

@@ -18,13 +18,12 @@
 //! - `Pose.rot[i]` is the LOCAL rotation of canonical bone `i` (parent-relative), the same
 //!   value that goes into that bone entity's `Transform::rotation`.
 //! - `Pose.pelvis` is the pelvis LOCAL translation offset from its rest translation.
-//! - Track names are `"{lib}/{clip}"`, lib ∈ {`ual1`, `ual2`, `sekiro`, `rokoko`, `kev_melee`, `karate`, `brawler`, `cmu`}, clip = glTF animation
+//! - Track names are `"{lib}/{clip}"`, lib ∈ {`ual1`, `ual2`, `sekiro`, `kev_melee`, `karate`, `brawler`, `shonen_duel`}, clip = glTF animation
 //!   name verbatim, e.g. `"ual1/Punch_Jab"`, `"sekiro/Inward Slash"`. Times are seconds in the
 //!   original clip.
 
 pub mod bank;
 pub mod body;
-pub mod bvh;
 pub mod carry;
 pub mod posture;
 pub mod compose;
@@ -46,15 +45,11 @@ use std::collections::HashMap;
 pub const SAMPLE_HZ: f32 = 60.0;
 /// The character model and canonical skeleton.
 pub const MODEL_GLB: &str = "anim/ual2.glb";
-/// Mocap takes (`*.bvh`, library `cmu`), relative to `crate::ASSETS`; see `bvh`.
-pub const CMU_DIR: &str = "anim/cmu";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 7] = [
+pub const LIBRARIES: [(&str, &str); 8] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
-    // Rokoko free mocap (Mixamo rig), converted from assets/anim/Rokoko_Free_Mocap_FBX_263.
-    ("rokoko", "anim/rokoko.glb"),
     // Kevin Iglesias, Human Melee Animations FREE (male rig), converted by tools/model/kev_pack.py.
     ("kev_melee", "anim/kev_melee.glb"),
     // Karate kicks (mae, yoko, ushiro geri) posed on the UAL mannequin by tools/blender/karate.py.
@@ -62,6 +57,10 @@ pub const LIBRARIES: [(&str, &str); 7] = [
     // The brawler-mage's berserk poses (tools/blender/brawler.py) and the kicks, dive, backflip and cast read off the
     // generated keyframe sheets (tools/kev/grid, exported by tools/kev/export_glb.py), on the UAL mannequin.
     ("brawler", "anim/brawler.glb"),
+    // Original 60 fps, impact-held sword/fist attacks and their synchronized showcase exchange.
+    ("shonen_duel", "anim/shonen_duel.glb"),
+    // Locally converted Sparking rush, with the corrected anatomical basis.
+    ("sparking", "anim/sparking_combat.glb"),
 ];
 
 pub fn plugin(app: &mut App) {

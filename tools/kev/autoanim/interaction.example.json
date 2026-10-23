@@ -1,0 +1,9 @@
+{
+  "contacts": [
+    {
+      "source": "wrist_r",
+      "target": "chest",
+      "offset": [0.0, 0.0, -0.04]
+    }
+  ]
+}

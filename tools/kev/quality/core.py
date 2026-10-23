@@ -125,6 +125,22 @@ def palm_normal(side, hand, middle, index, pinky):
     return z / n if n > 1e-8 else None
 
 
+def hand_closed(side, hpts):
+    """True when the middle finger is visibly curled into a grip/fist.
+
+    Palm-facing rules apply to an open striking hand.  A closed weapon grip legitimately
+    rotates through every palm direction, so judging it as a backward palm is a false error.
+    """
+    chain = [f"hand_{side}", f"middle_01_{side}", f"middle_02_{side}", f"middle_03_{side}"]
+    if not all(n in hpts for n in chain):
+        return False
+    seg = sum(float(np.linalg.norm(hpts[b] - hpts[a])) for a, b in zip(chain, chain[1:]))
+    direct = float(np.linalg.norm(hpts[chain[-1]] - hpts[chain[0]]))
+    # The sampled landmarks stop at the last phalanx head (not the fingertip), so even a
+    # visibly closed procedural fist only shortens this chord to roughly 0.87--0.92.
+    return seg > 1e-8 and direct / seg < 0.94
+
+
 def palm_delta(forearm, nrm, up, inward, forward):
     """Radians about `forearm` that turns `nrm` toward a down / inward palm. 0 when the palm is already sensible."""
     axis = unit(forearm)
@@ -143,7 +159,10 @@ def palm_delta(forearm, nrm, up, inward, forward):
     if float(n @ d) > math.cos(math.radians(35)):
         return 0.0
     ang = math.atan2(float(np.cross(n, d) @ axis), float(n @ d))
-    return float(np.clip(ang, math.radians(-100), math.radians(100)))
+    # A blade-hand or weapon grip can arrive almost fully pronated.  The old 100-degree cap
+    # stopped short on those poses and left a backward palm even though a clean roll about the
+    # forearm exists.  This rotation only affects the hand/finger chain, so allow the full turn.
+    return float(np.clip(ang, -math.pi, math.pi))
 
 
 def _bone_angle(pa, pb, pc):
@@ -483,8 +502,11 @@ def clean_frame_pts(pts, hpts, body, lengths):
         lift_floor(pts, hpts, up, floor)
         _follow_wrist(pts, hpts)
     clamp_fingers(hpts, pts)
-    push_hands(pts, hpts, up, forward, height)
-    restore_lengths(pts, hpts, lengths)
+    # Moving a wrist out of the torso and restoring the forearm length can pull it part-way back
+    # inside.  Converge the two constraints instead of leaving a one-frame intersection behind.
+    for _ in range(3):
+        push_hands(pts, hpts, up, forward, height)
+        restore_lengths(pts, hpts, lengths)
     lift_floor(pts, hpts, up, floor)
     return pts, hpts
 
@@ -563,8 +585,10 @@ def lock_feet(L, ix, up, floor, height, fps):
         ball_low = _height_of(L[:, ix[ball]], up, floor) < thr if ball in ix else np.zeros(T, bool)
         phases = []
         if ankle in ix:
-            phases.append((ankle, ankle_low & ball_low))          # flat
-            phases.append((ankle, ankle_low & ~ball_low))         # heel-strike
+            # Flat contact and heel-strike are one continuous ankle plant. Splitting them at the
+            # frame where the ball touches created a tiny lock seam (visible as a planted-foot
+            # shuffle) and disagreed with validate(), which correctly checks ankle_low as one run.
+            phases.append((ankle, ankle_low))
         if ball in ix:
             phases.append((ball, ball_low & ~ankle_low))          # toe-off
         for name, low in phases:
@@ -778,6 +802,9 @@ def fix_palms(harr, L, ix, body):
             continue
         inward = left if side == "l" else -left
         for t in range(T):
+            frame = {k: harr[k][t] for k in harr}
+            if hand_closed(side, frame):
+                continue
             nrm = palm_normal(side, harr[f"hand_{side}"][t], harr[f"middle_01_{side}"][t],
                               harr[f"index_01_{side}"][t], harr[f"pinky_01_{side}"][t])
             if nrm is None:
@@ -857,6 +884,10 @@ def clean(L, names, fps, floor, height, hands, body, lengths, restyle=True):
     _snap_lengths(L, ix, lengths, only=_DISTAL)
     for t in range(T):
         pts = {n: L[t, i].copy() for i, n in enumerate(names)}
+        # settle_legs and the final rigid floor lift preserve segment lengths but can leave the
+        # ankle just beyond its angular tolerance.  This last rotation preserves ankle-ball and
+        # toe lengths, then lifts the entire foot rigidly if the correction touched the floor.
+        clamp_distal(pts)
         lift_foot_rigid(pts, up, floor)
         for n, i in ix.items():
             L[t, i] = pts[n]
@@ -1059,6 +1090,9 @@ def validate(L, names, fps, floor, height, hands, body, lengths):
                 continue
             mask = np.zeros(T, bool)
             for t in range(T):
+                frame = {k: harr[k][t] for k in harr}
+                if hand_closed(side, frame):
+                    continue
                 nrm = palm_normal(side, harr[f"hand_{side}"][t], harr[f"middle_01_{side}"][t],
                                   harr[f"index_01_{side}"][t], harr[f"pinky_01_{side}"][t])
                 if nrm is None:

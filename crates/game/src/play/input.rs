@@ -204,7 +204,7 @@ fn player_input(
     let mut spell = keys.just_pressed(KeyCode::KeyE);
     let mut art_held = keys.pressed(KeyCode::KeyQ);
     let mut spell_held = keys.pressed(KeyCode::KeyE);
-    let mut next_spell = mouse.just_pressed(MouseButton::Forward);
+    let mut next_spell = mouse.just_pressed(MouseButton::Forward) || keys.just_pressed(KeyCode::KeyT);
     let mut lock_toggle = keys.just_pressed(KeyCode::Tab);
     let mut reset = keys.just_pressed(KeyCode::KeyR);
     let mut primary_pressed = mouse_live && mouse.just_pressed(MouseButton::Left);
@@ -326,6 +326,7 @@ fn player_input(
         spell_pressed: spell,
         art_held,
         spell_held,
+        cast_charge: 0.0,
         next_spell,
         target,
         sheathe_pressed: sheathe,

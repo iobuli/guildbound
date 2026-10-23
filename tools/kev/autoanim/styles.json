@@ -1,0 +1,42 @@
+{
+  "iron_coast": {
+    "description": "Rooted guard, compact power, low centre.",
+    "tempo": 0.94,
+    "stance_width_m": 0.09,
+    "guard_height_m": 0.05,
+    "forward_lean_m": 0.035,
+    "power_travel_m": 0.16,
+    "lateral_flow_m": 0.015,
+    "contact_phase": 0.58
+  },
+  "reedlands": {
+    "description": "Flowing lateral changes and quick recovery.",
+    "tempo": 1.08,
+    "stance_width_m": 0.035,
+    "guard_height_m": 0.085,
+    "forward_lean_m": 0.01,
+    "power_travel_m": 0.08,
+    "lateral_flow_m": 0.08,
+    "contact_phase": 0.52
+  },
+  "sky_steppe": {
+    "description": "Long measure, upright posture, fast entry.",
+    "tempo": 1.13,
+    "stance_width_m": 0.055,
+    "guard_height_m": 0.035,
+    "forward_lean_m": -0.01,
+    "power_travel_m": 0.2,
+    "lateral_flow_m": 0.035,
+    "contact_phase": 0.48
+  },
+  "ember_court": {
+    "description": "Precise high guard and delayed explosive finish.",
+    "tempo": 0.9,
+    "stance_width_m": 0.045,
+    "guard_height_m": 0.13,
+    "forward_lean_m": 0.02,
+    "power_travel_m": 0.22,
+    "lateral_flow_m": 0.025,
+    "contact_phase": 0.66
+  }
+}

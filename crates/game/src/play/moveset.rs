@@ -278,7 +278,8 @@ impl Movesets {
     /// fights with `unarmed_vs_<target_set>` when one exists (different chain, heavy and guard per
     /// enemy weapon); everyone else, and every unarmed fighter without a match, uses `equipped`.
     pub fn versus<'a>(&'a self, equipped: &'a str, target_set: Option<&str>) -> &'a str {
-        let unarmed = self.get(equipped).is_some_and(|s| s.kind == Kind::Unarmed);
+        // Custom unarmed schools retain their own chains against armed opponents.
+        let unarmed = equipped == "unarmed";
         match target_set {
             Some(t) if unarmed => self.0.get_key_value(format!("{VERSUS_PREFIX}{t}").as_str()).map_or(equipped, |(k, _)| k.as_str()),
             _ => equipped,
@@ -362,6 +363,7 @@ mod tests {
         assert_eq!(sets.versus("unarmed", Some("greatsword")), "unarmed_vs_greatsword");
         assert_eq!(sets.versus("unarmed", Some("no_such_weapon")), "unarmed");
         assert_eq!(sets.versus("unarmed", None), "unarmed");
+        assert_eq!(sets.versus("sparking", Some("katana")), "sparking");
         assert_eq!(sets.versus("katana", Some("axe")), "katana");
         // The versus sets differ by enemy: a short chain against a fast weapon, a longer one against a slow one.
         let fast = sets.get("unarmed_vs_dagger").unwrap().light.len();
@@ -402,5 +404,9 @@ mod tests {
         for (set, track) in sets.tracks() {
             assert!(bank.has(&track), "{set}: unknown track {track}");
         }
+        let rush = &bank.tracks["sparking/DBZ_Rush_01"];
+        assert!((rush.duration - 0.6).abs() < 0.001);
+        assert_eq!(rush.keys.len(), rush.dense.frames.len(), "approved motion must retain every sample");
+        assert!(super::super::armory::weapons(&sets).iter().any(|m| m.name == "sparking"));
     }
 }
