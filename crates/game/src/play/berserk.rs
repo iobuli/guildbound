@@ -278,8 +278,8 @@ fn trigger(
             vfx::burst(&mut commands, vfx.shock(), tf.translation - Vec3::Y * 0.8, 2.0);
         }
         let feet = tf.translation - Vec3::Y * 0.8;
-        commands.write_message(Flip::new(Sheet::Sunburn, feet + Vec3::Y * 1.2, 6.0, 1.1).glow(1.3));
-        commands.write_message(Flip::new(Sheet::Vortex, feet + Vec3::Y * 0.1, 6.5, 1.0).flat().spin(4.0).tinted(Color::srgb(1.0, 0.35, 0.1), 0.65));
+        commands.write_message(Flip::new(Sheet::Ward, feet + Vec3::Y * 0.08, 3.0, 0.4).flat().glow(0.55));
+        commands.write_message(Flip::new(Sheet::Loading, feet + Vec3::Y * 0.1, 3.5, 0.5).flat().spin(4.0).tinted(Color::srgba(1.0, 0.35, 0.1, 0.2), 1.0).glow(0.55));
         commands.write_message(super::fracture::Shatter { at: tf.translation, radius: 4.5, force: 50.0 });
         hitstop.trigger(0.25);
         if player {
@@ -291,16 +291,16 @@ fn trigger(
     }
 }
 
-/// The berserk aura: flat pixel-effect planes stacked up the body. Each climbs along Y while its edge shrinks to a point,
-/// so the stack reads as a spinning cylinder with a closed top. One plane leaves the feet every `AURA_RISE / AURA_LAYERS` seconds.
+/// Sparse ground sigils leave the torso and face clear. A few shallow rising rings provide motion
+/// without the former stack of full-body vortex planes.
 const AURA_RISE: f32 = 1.5;
-const AURA_LAYERS: f32 = 36.0;
-const AURA_HEIGHT: f32 = 1.9;
-const AURA_SIZE: f32 = 1.9;
+const AURA_LAYERS: f32 = 6.0;
+const AURA_HEIGHT: f32 = 0.35;
+const AURA_SIZE: f32 = 2.2;
 /// Share of the climb at full width; the top closes to a point over the rest (0 would be a cone).
 const AURA_TAPER_FROM: f32 = 0.7;
 /// Sheets taken in turn, and how long each plane takes to loop its sheet.
-const AURA_SHEETS: [Sheet; 3] = [Sheet::Vortex, Sheet::FireSpin, Sheet::Vortex];
+const AURA_SHEETS: [Sheet; 3] = [Sheet::Ward, Sheet::Loading, Sheet::Ward];
 const AURA_ANIM: f32 = 0.8;
 
 fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Entity, With<Berserk>>, mut clocks: Local<HashMap<Entity, (f32, u32)>>) {
@@ -315,7 +315,7 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
             c.1 += 1;
             let dir = if c.1 % 2 == 0 { 1.0 } else { -1.0 };
             let at = Vec3::Y * -0.75;
-            // Planes lie flat (`_`) and stack up the body; `GB_AURA=board` turns them to face the camera instead.
+            // Ground sigils lie flat; GB_AURA=board remains available for effect inspection.
             let flat = !std::env::var("GB_AURA").is_ok_and(|v| v == "board");
             let lay = |f: Flip| if flat { f.flat() } else { f };
             let sheet = AURA_SHEETS[c.1 as usize % AURA_SHEETS.len()];
@@ -326,9 +326,9 @@ fn pixel_aura(time: Res<Time>, mut out: MessageWriter<Flip>, fighters: Query<Ent
                 .aged(c.0)
                 .spin(dir * 3.0)
                 // Translucent body with a hotter contour: the fighter stays legible inside it.
-                .tinted(Color::srgba(1.0, 0.4, 0.12, 0.22), 0.35)
-                .glow(1.55)
-                .rim(0.72)
+                .tinted(Color::srgba(1.0, 0.4, 0.12, 0.12), 1.0)
+                .glow(0.65)
+                .rim(0.2)
                 .follow(e, at)));
         }
     }

@@ -1,15 +1,15 @@
 {
   "feel": {
     "walk_speed": 1.6,
-    "run_speed": 8.775,
-    "sprint_speed": 6.8,
+    "run_speed": 6.0,
+    "sprint_speed": 9.5,
     "accel": 80.0,
     "brake": 34.0,
     "turn_rate": 720.0,
-    "jump_speed": 12.0,
-    "gravity": 20.0,
-    "air_control": 0.35,
-    "coyote_time": 0.12,
+    "jump_speed": 9.0,
+    "gravity": 22.0,
+    "air_control": 0.5,
+    "coyote_time": 0.14,
     "hitstop": 0.07,
     "knockback_scale": 1.0,
     "ragdoll_threshold": 7.0

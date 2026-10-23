@@ -34,7 +34,7 @@ use std::f32::consts::{PI, TAU};
 use std::time::Duration;
 
 /// Seconds a jump press stays buffered.
-pub const JUMP_BUFFER: f32 = 0.12;
+pub const JUMP_BUFFER: f32 = 0.18;
 /// Upward velocity is multiplied by this once when the jump button is released early.
 pub const JUMP_CUT: f32 = 0.45;
 /// Steepest walkable slope (deg).
@@ -446,7 +446,9 @@ fn move_characters(
             let air = feel.air_control.clamp(0.0, 1.0);
             (feel.accel * air, feel.brake * air)
         };
-        state.locomotion = approach_velocity(state.locomotion, target_velocity, accel, brake, dt);
+        // Releasing the stick in flight preserves momentum; steering still brakes/reverses.
+        let air_target = if !grounded && magnitude < 0.05 { state.locomotion } else { target_velocity };
+        state.locomotion = approach_velocity(state.locomotion, air_target, accel, brake, dt);
         mover.sprinting = gait == Gait::Sprint && target_velocity.length_squared() > 0.01;
 
         // --- External: vertical part launches, horizontal part decays.
@@ -489,7 +491,9 @@ fn move_characters(
             }
         }
         if !grounded {
-            vy = (vy - feel.gravity.max(0.0) * dt).max(-MAX_FALL_SPEED);
+            // Brief apex float followed by a decisive fall; early release keeps short hops crisp.
+            let gravity_scale = if vy < 0.0 { 1.35 } else if state.jumping && vy < 1.4 && intent.jump_held { 0.65 } else { 1.0 };
+            vy = (vy - feel.gravity.max(0.0) * gravity_scale * dt).max(-MAX_FALL_SPEED);
         }
 
         // --- Move: horizontal on the ground (the support sets the height), ballistic in the air.

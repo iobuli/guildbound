@@ -63,7 +63,9 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
     let streaks = streak_layer(along + height, across, speed, 1.0, t)
         + 0.6 * streak_layer(along * 1.7 + height, across * 1.3, speed, 0.55, t);
 
-    let glow = edge * (0.25 + streaks * 1.4);
+    // Thin broken rim leaves the character visible through the shell.
+    let rim = smoothstep(0.65, 0.97, 1.0 - facing);
+    let glow = edge * rim * (0.08 + streaks * 0.65);
     let colour = aura.color.rgb * glow * aura.color.a;
     // `AlphaMode::Add` blends as premultiplied alpha (result = src + (1 - src.a) * dst), so the
     // alpha must be 0 for a pure add (Bevy's own `premultiply_alpha` does the same). An alpha of 1

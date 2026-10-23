@@ -509,7 +509,7 @@ fn paid(mut paid: MessageReader<Paid>, mut purses: Query<&mut Purse>, mut log: M
 
 /// Talks open menus; picks do their work and rewrite the dialogue.
 #[allow(clippy::too_many_arguments, clippy::type_complexity)]
-fn respond(
+pub(super) fn respond(
     time: Res<Time>,
     data: Res<GuildData>,
     book: Res<ContractBook>,
@@ -552,6 +552,7 @@ fn respond(
     let greet = |guild: &mut Guild, lines: &[String]| lines.get(guild.roll(lines.len())).cloned().unwrap_or_default();
     for s in started.read() {
         let (line, options) = match s.role {
+            Role::Trainer => continue,
             Role::Receptionist => {
                 let mut line = greet(&mut guild, &data.lines.receptionist_greet);
                 if let Exam::Scheduled(to) = guild.exam {
@@ -573,6 +574,7 @@ fn respond(
         *dialogue = Dialogue { line, options };
     }
     for c in chose.read() {
+        if c.role == Role::Trainer { continue; }
         let mut close = false;
         let line = match c.id {
             "turn_in" => {

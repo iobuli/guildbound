@@ -122,7 +122,8 @@ fn land(
             let velocity = mover.velocity.with_y(0.0);
             let speed = if velocity.is_finite() { velocity.length() } else { 0.0 };
             let impact = mover.impact;
-            let g = grade(impact, speed);
+            // A normal jump must not trigger a long forced roll/hard-land at the new jump height.
+            let g = if impact <= feel.jump_speed * 1.18 { Grade::Soft } else { grade(impact, speed) };
             if impact >= LOG_IMPACT {
                 let who = name.map_or("?", |n| n.as_str());
                 let takeoff = mover.takeoff_speed;

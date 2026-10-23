@@ -36,6 +36,7 @@ pub enum Role {
     Receptionist,
     Captain,
     Adventurer,
+    Trainer,
 }
 
 /// Someone you can talk to.

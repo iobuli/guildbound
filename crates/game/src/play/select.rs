@@ -1296,7 +1296,7 @@ fn air_targets(base: &mut Channel, loco: &Loco, bank: &PoseBank, mover: &Mover, 
     } else {
         (JUMP_START, JUMP_START_WINDOW, JUMP_START_OFFSET, JUMP_START_RATE, JUMP_LOOP, FALL_AFTER)
     };
-    let falling = velocity.y < FALL_SPEED || air_time > fall_after;
+    let falling = velocity.y < FALL_SPEED || (air_time > fall_after && velocity.y < -0.1);
     if velocity.y > JUMP_UP_SPEED && air_time < window && bank.has(start) {
         let t = offset + air_time * rate;
         base.want(start, Mask::Full, Clock::Fixed(t), false, None, 1.0, 64);

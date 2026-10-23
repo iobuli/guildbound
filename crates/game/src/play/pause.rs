@@ -64,10 +64,11 @@ impl Settings {
 }
 
 /// The controls, as the pause panel lists them.
-const CONTROLS: [&str; 22] = [
+const CONTROLS: [&str; 23] = [
     "WASD  move   ·   Shift  sprint   ·   Alt  walk",
     "Space  jump   ·   Ctrl  dodge   ·   C  crouch",
     "LMB  attack (hold: heavy)   ·   RMB  guard",
+    "Z  sword / fists   ·   Hold Space for jump height",
     "Q  art   ·   E  spell   (hold to aim, let go to cast)",
     "Mouse 5  next spell   ·   Tab  lock on",
     "F  use / talk   ·   X  draw / sheathe   ·   G  grab",

@@ -84,6 +84,33 @@ pub enum Pool {
     Magicules,
 }
 
+/// Separate art/spell recovery prevents cycling bindings from bypassing recovery.
+#[derive(Component, Default)]
+pub struct Recovery {
+    pub art: f32,
+    pub spell: f32,
+}
+
+impl Recovery {
+    pub fn remaining(&self, pool: Pool) -> f32 {
+        match pool { Pool::Battlewill => self.art, Pool::Magicules => self.spell }
+    }
+}
+
+/// Charging never makes an otherwise affordable cast fail on release.
+pub fn affordable_charge(a: &Ability, energy: &Energy, mastered: bool, requested: f32) -> f32 {
+    let available = match a.pool { Pool::Battlewill => energy.battlewill, Pool::Magicules => energy.magicules };
+    let base = a.cost * if mastered { MASTERED_COST } else { 1.0 };
+    requested.clamp(0.0, 1.0).min(((available / base.max(0.001) - 1.0) * 2.0).clamp(0.0, 1.0))
+}
+
+fn recovery(time: Res<Time>, mut fighters: Query<&mut Recovery>) {
+    for mut r in &mut fighters {
+        r.art = (r.art - time.delta_secs()).max(0.0);
+        r.spell = (r.spell - time.delta_secs()).max(0.0);
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Shape {
     Bolt { speed: f32, gravity: f32, radius: f32, bloom: f32 },
@@ -420,6 +447,7 @@ pub struct Casting {
     mastered: bool,
     power: f32,
     aim: Vec3,
+    charge: f32,
     /// What the caster aimed at (no target): the release re-aims at it from the hand.
     aim_point: Vec3,
     target: Option<Entity>,
@@ -460,12 +488,13 @@ pub struct Projectile {
 
 pub fn plugin(app: &mut App) {
     app.register_required_components::<Fighter, Energy>()
+        .register_required_components::<Fighter, Recovery>()
         .register_required_components::<Fighter, Grimoire>()
         .add_message::<Bind>()
         .add_systems(Update, demo.after(PlaySet::Input).before(PlaySet::Act))
         .add_systems(
             Update,
-            (pools, bind, start_cast, blink, drive_cast, superhero_land, fly, ward, ward_mastery)
+            (recovery, pools, bind, start_cast, blink, drive_cast, superhero_land, fly, ward, ward_mastery)
                 .chain()
                 .in_set(PlaySet::Act)
                 .after(CombatSet),
@@ -523,12 +552,13 @@ fn pools(
 /// Binding from the stats panel; MB5 cycles the bound spell.
 fn bind(
     mut binds: MessageReader<Bind>,
-    mut q: Query<(Entity, &mut Grimoire, &mut Sheet, &Intent)>,
+    mut q: Query<(Entity, &mut Grimoire, &mut Sheet, &Intent, Has<super::spell_aim::Aiming>)>,
     mut log: MessageWriter<HudLog>,
     players: Query<(), With<Player>>,
 ) {
     for b in binds.read() {
-        let Ok((_, mut g, s, _)) = q.get_mut(b.who) else { continue };
+        let Ok((_, mut g, s, intent, aiming)) = q.get_mut(b.who) else { continue };
+        if aiming || intent.art_pressed || intent.spell_pressed { continue; }
         let Some(a) = ability(b.id).filter(|a| s.has_ability(a.id)) else { continue };
         if a.is_art() {
             g.art = a.id;
@@ -536,11 +566,11 @@ fn bind(
             g.spell = a.id;
         }
     }
-    for (e, mut g, mut s, intent) in &mut q {
+    for (e, mut g, mut s, intent, aiming) in &mut q {
         if players.contains(e) {
             for a in &ABILITIES { if !s.has_ability(a.id) { s.abilities.push(a.id); } }
         }
-        if !intent.next_spell {
+        if !intent.next_spell || aiming || intent.art_pressed || intent.spell_pressed {
             continue;
         }
         let arts = intent.sprint;
@@ -552,7 +582,7 @@ fn bind(
         let i = spells.iter().position(|a| a.id == current).map_or(0, |i| (i + 1) % spells.len());
         if arts { g.art = spells[i].id; } else { g.spell = spells[i].id; }
         if players.contains(e) {
-            log.write(HudLog::new(LogKind::System, format!("Spell: {}", spells[i].name)).key(7001));
+            log.write(HudLog::new(LogKind::System, format!("{}: {} | cost {:.0} | hold to charge", if arts { "Q" } else { "E" }, spells[i].name, spells[i].cost)).key(7001));
         }
     }
 }
@@ -588,13 +618,14 @@ fn start_cast(
             Option<&Rig>,
             Has<Holding>,
             Has<Player>,
+            &mut Recovery,
         ),
         Without<Casting>,
     >,
     globals: Query<&GlobalTransform>,
 ) {
     let (Some(bank), Some(vfx)) = (bank, vfx) else { return };
-    for (entity, tf, intent, mut action, mut mover, mut energy, g, sheet, fighter, derived, rig, holding, player) in &mut q {
+    for (entity, tf, intent, mut action, mut mover, mut energy, g, sheet, fighter, derived, rig, holding, player, mut recovery) in &mut q {
         let id = if intent.art_pressed {
             g.art
         } else if intent.spell_pressed {
@@ -607,7 +638,11 @@ fn start_cast(
             continue;
         }
         let mastered = g.is_mastered(a.id);
-        let charge = intent.cast_charge.clamp(0.0, 1.0);
+        if recovery.remaining(a.pool) > 0.0 {
+            if player { log.write(HudLog::new(LogKind::Info, format!("{} recovering ({:.1}s)", a.name, recovery.remaining(a.pool))).key(7002)); }
+            continue;
+        }
+        let charge = affordable_charge(a, &energy, mastered, intent.cast_charge);
         let cost = a.cost * (1.0 + 0.5 * charge) * if mastered { MASTERED_COST } else { 1.0 };
         let pool = match a.pool {
             Pool::Battlewill => &mut energy.battlewill,
@@ -621,6 +656,10 @@ fn start_cast(
             continue;
         }
         *pool -= cost;
+        match a.pool {
+            Pool::Battlewill => recovery.art = 0.45 + charge * 0.35,
+            Pool::Magicules => recovery.spell = 0.85 + charge * 0.65,
+        }
         if !a.is_art() {
             energy.rested = 0.0;
         }
@@ -638,7 +677,7 @@ fn start_cast(
         let aim = (aim_point - origin).normalize_or(tf.forward().as_vec3());
         let mask = if a.is_art() { Mask::Full } else { Mask::Upper };
         let (track, clip_start, clip_span, clip_release) = match a.shape {
-            Shape::Bolt { .. } | Shape::Crescent { .. } => ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.25),
+            Shape::Bolt { .. } => ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.25),
             Shape::Lance { .. } | Shape::Orbs { .. } => ("sparking/DBZ_Ki_Release", 0.0, 0.7166666, 0.3),
             _ => (a.track, a.start, (a.end - a.start).max(0.05), a.release),
         };
@@ -669,6 +708,7 @@ fn start_cast(
             mastered,
             power: scale * (1.0 + 0.75 * charge) * if mastered { MASTERED_POWER } else { 1.0 },
             aim,
+            charge,
             aim_point,
             target,
             motes,
@@ -818,7 +858,7 @@ fn drive_cast(
         if !c.released && u >= c.clip_release {
             c.released = true;
             commands.write_message(super::flipbook::Flip::new(super::flipbook::Sheet::MagicHit, origin,
-                0.65 * c.power.sqrt(), 0.22).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(1.3));
+                0.24 + c.charge * 0.16, 0.16).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(0.65));
             if let Some(m) = c.motes.take() {
                 commands.entity(m).try_despawn();
             }
@@ -850,7 +890,7 @@ fn drive_cast(
                 }
             }
             let team = fighter.team;
-            let flair = if c.mastered { MASTERED_FLAIR } else { 1.0 };
+            let flair = (1.0 + 0.2 * c.charge) * if c.mastered { MASTERED_FLAIR } else { 1.0 };
             let landed = release(
                 &mut commands,
                 &mut meshes,

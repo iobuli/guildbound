@@ -86,6 +86,7 @@ pub mod sky;
 pub mod sky_dome;
 pub mod stats;
 pub mod talk;
+pub mod trainer;
 pub mod guild;
 pub mod surfaces;
 pub mod traverse;
@@ -143,7 +144,7 @@ pub fn plugin(app: &mut App) {
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, savegame::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin, pause::plugin))
     .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin, repertoire::plugin, appearance::plugin, afterimage::plugin))
     .add_plugins((discipline::plugin, carry::plugin, marks::plugin, spell_aim::plugin, weather::plugin, sky_dome::plugin, goop::plugin, clash::plugin, hurtbox::plugin, regions::plugin, berserk::plugin, moves::plugin, fracture::plugin, smear::plugin))
-    .add_plugins(energy::plugin)
+    .add_plugins((energy::plugin, trainer::plugin))
     .add_plugins(flipbook::plugin);
 }
 
@@ -594,9 +595,9 @@ impl Default for Feel {
             accel: 28.0,
             brake: 34.0,
             turn_rate: 720.0,
-            jump_speed: 5.6,
+            jump_speed: 7.2,
             gravity: 20.0,
-            air_control: 0.35,
+            air_control: 0.5,
             coyote_time: 0.12,
             hitstop: 0.07,
             knockback_scale: 1.0,

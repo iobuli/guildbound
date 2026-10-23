@@ -592,6 +592,7 @@ fn think(
     civilians: Query<(), With<Civilian>>,
     peaceful: Res<Peaceful>,
     choosing: Option<Res<super::class::ClassChoice>>,
+    talking: Option<Res<super::talk::Talking>>,
     players: Query<(), With<Player>>,
     mut npcs: Query<
         (
@@ -614,7 +615,7 @@ fn think(
         // The player is a foe only once noticed (`senses`), never in peaceful mode, always in a bout.
         let noticed = sparring || awareness.is_none_or(|a| a.alerted);
         // Nobody attacks while the player is still choosing a class.
-        let spare_player = !sparring && (peaceful.0 || !noticed || choosing.as_deref().is_some_and(|c| c.open));
+        let spare_player = !sparring && (peaceful.0 || !noticed || choosing.as_deref().is_some_and(|c| c.open) || talking.as_deref().is_some_and(|t| t.active()));
         let Ok((_, tf, fighter, melee, mover, loadout, mastery)) = fighters.get(entity) else {
             continue;
         };

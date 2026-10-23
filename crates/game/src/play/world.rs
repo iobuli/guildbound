@@ -1284,7 +1284,7 @@ fn spawn_characters(commands: &mut Commands) {
         Fighter::new(0, 100.0),
         Loadout {
             // Weapons come from the chest (`armory`); fists until then.
-            slots: vec![if duel_mode() { "sparking" } else { "unarmed" }.to_string()],
+            slots: if duel_mode() { vec!["sparking".into(), "katana".into()] } else { vec!["unarmed".into()] },
             current: 0,
         },
         None,
@@ -1317,7 +1317,15 @@ fn spawn_characters(commands: &mut Commands) {
     sheet.grant("swordsmanship", xp_for_level(20));
     sheet.grant("defence", xp_for_level(12));
     commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
-    if duel_mode() { return; }
+    if duel_mode() {
+        let at = SPAWN_FEET + Vec3::new(-4.0, 0.0, -1.0);
+        let trainer = spawn_character(commands, "Rook", at.with_y(ground_height(at.x, at.z)), PI * 0.5,
+            Fighter::new(0, 200.0), Loadout { slots: vec!["katana".into()], current: 0 },
+            Some(Color::srgb(0.30, 0.58, 0.72)));
+        commands.entity(trainer).insert((Civilian, super::combat::Revive { after: 4.0, home: Some((at.with_y(ground_height(at.x, at.z)), PI * 0.5)) },
+            super::talk::Talkable { name: "Rook", role: super::talk::Role::Trainer, title: "Sword and ki instructor" }));
+        return;
+    }
 
     // Monks of the hill road (`discipline`): fists and an iron guard, each one looking his own
     // (`looks::monk_look`). Two wander as foes (ranks E and C); the Elder (rank S) sits by the

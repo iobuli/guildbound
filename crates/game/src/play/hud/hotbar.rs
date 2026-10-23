@@ -14,7 +14,8 @@
 use super::MARGIN;
 use super::stats_page::{StatsTab, ToggleStats};
 use crate::play::inventory::{BagOpen, ToggleBag};
-use crate::play::magic::{Casting, Energy, Grimoire, MASTERED_COST, Pool, ability};
+use crate::play::magic::{Casting, Energy, Grimoire, Recovery, MASTERED_COST, Pool, ability, affordable_charge};
+use crate::play::spell_aim::{Aiming, Which};
 use crate::play::{Loadout, Player};
 use bevy::prelude::*;
 use gbui::prelude::*;
@@ -135,7 +136,7 @@ fn weapon_glyph(name: &str) -> &str {
 #[allow(clippy::type_complexity)]
 fn update(
     player: Query<
-        (&Loadout, Option<&Grimoire>, Option<&Energy>, Option<&crate::play::guild::Purse>, Option<&Casting>),
+        (&Loadout, Option<&Grimoire>, Option<&Energy>, Option<&crate::play::guild::Purse>, Option<&Casting>, Option<&Recovery>, Option<&Aiming>),
         With<Player>,
     >,
     open: Res<BagOpen>,
@@ -146,7 +147,7 @@ fn update(
     mut glyphs: Query<&mut Icon, With<Glyph>>,
     mut last: Local<(String, String, String)>,
 ) {
-    let Ok((loadout, grimoire, energy, purse, casting)) = player.single() else { return };
+    let Ok((loadout, grimoire, energy, purse, casting, recovery, aiming)) = player.single() else { return };
     let cast = casting.map(|c| c.progress());
     let g = grimoire.cloned().unwrap_or_default();
     let e = energy.cloned().unwrap_or_default();
@@ -161,6 +162,9 @@ fn update(
                 let id = if *kind == Kind::Art { g.art } else { g.spell };
                 let Some(a) = ability(id) else { continue };
                 let mastered = g.is_mastered(id);
+                let remaining = recovery.map_or(0.0, |r| r.remaining(a.pool));
+                let charging = aiming.filter(|aim| (*kind == Kind::Art) == (aim.which == Which::Art));
+                let charge = charging.map(|aim| affordable_charge(a, &e, mastered, aim.t / 1.5));
                 let cost = a.cost * if mastered { MASTERED_COST } else { 1.0 };
                 let have = match a.pool {
                     Pool::Battlewill => e.battlewill,
@@ -174,7 +178,7 @@ fn update(
                     g.mastery(id) * 100.0
                 );
                 let changed = if *kind == Kind::Art { last.0 != now.0 } else { last.1 != now.1 };
-                let tint = if have < cost {
+                let tint = if have < cost || remaining > 0.0 {
                     IconTint::Dim
                 } else if mastered {
                     IconTint::Mastered
@@ -188,12 +192,17 @@ fn update(
                 {
                     casting_u = u;
                 }
-                (code(a.name), if mastered { "★".to_string() } else { String::new() }, tip, have < cost, false, changed)
+                if let Some(charge) = charge { casting_u = charge; }
+                let count = if let Some(charge) = charge { format!("{:.0}%", charge * 100.0) }
+                    else if remaining > 0.0 { format!("{remaining:.1}s") }
+                    else if mastered { "★".to_string() } else { String::new() };
+                let tip = format!("{tip} | hold: charge | T: next spell | Shift+T: next art");
+                (code(a.name), count, tip, have < cost || remaining > 0.0, false, changed)
             }
             Kind::Weapon => {
                 let name = loadout.equipped();
                 layer = Some(("bag", weapon_glyph(name).to_string(), IconTint::Full));
-                (code(name), String::new(), format!("{name}  (weapons: the chest)"), false, true, last.2 != now.2)
+                (code(name), String::new(), format!("{name}  | Z: sword / fists | X: draw / sheathe"), false, true, last.2 != now.2)
             }
             Kind::Bag => {
                 let gold = purse.map_or(0, |p| p.gold);
