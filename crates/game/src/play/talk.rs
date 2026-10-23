@@ -37,6 +37,8 @@ pub enum Role {
     Captain,
     Adventurer,
     Trainer,
+    Villager,
+    Guard,
 }
 
 /// Someone you can talk to.
@@ -121,7 +123,7 @@ fn focus(
     talking: Res<Talking>,
     mut focus: ResMut<TalkFocus>,
     players: Query<&Transform, With<Player>>,
-    npcs: Query<(Entity, &Transform), (With<Talkable>, Without<super::ai::Autopilot>)>,
+    npcs: Query<(Entity, &Transform, Option<&super::Fighter>), (With<Talkable>, Without<super::ai::Autopilot>)>,
 ) {
     let want = (!talking.active())
         .then(|| players.single().ok())
@@ -129,7 +131,8 @@ fn focus(
         .and_then(|p| {
             let fwd = p.rotation * Vec3::Z;
             npcs.iter()
-                .filter_map(|(e, t)| {
+                .filter_map(|(e, t, f)| {
+                    if f.is_some_and(|f| f.dead) { return None; }
                     let to = (t.translation - p.translation).with_y(0.0);
                     let d = to.length();
                     (d < REACH && to.normalize_or_zero().dot(fwd.with_y(0.0).normalize_or_zero()) > IN_FRONT).then_some((e, d))

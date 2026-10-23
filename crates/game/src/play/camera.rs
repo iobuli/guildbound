@@ -111,6 +111,8 @@ pub struct CameraRig {
     pub lock_blend: f32,
     /// Unshaken eye position from the last update (`input` aims `Intent.look` from it).
     pub eye: Vec3,
+    /// Over-shoulder side (+1 right, -1 left), toggled with B.
+    pub shoulder: f32,
 }
 
 /// `GB_ZOOM=<m>`: the boom length at start (smoke stills; down to `SMOKE_MIN_DISTANCE` for a face
@@ -174,6 +176,7 @@ impl Default for CameraRig {
             aim_blend: 0.0,
             lock_blend: 0.0,
             eye: Vec3::new(0.0, 2.0, -DEFAULT_DISTANCE),
+            shoulder: 1.0,
         }
     }
 }
@@ -245,6 +248,7 @@ pub(crate) struct FollowState {
     boom: f32,
     zoom: f32,
     shake_time: f32,
+    shoulder: f32,
     /// Last known lock-on target chest (keeps the framing while blending out).
     last_target: Option<Vec3>,
 }
@@ -393,6 +397,7 @@ pub(crate) fn capture_cursor(
 
 fn orbit(
     time: Res<Time<Real>>,
+    keys: Res<ButtonInput<KeyCode>>,
     motion: Res<AccumulatedMouseMotion>,
     scroll: Res<AccumulatedMouseScroll>,
     capture: Res<CursorCapture>,
@@ -405,9 +410,10 @@ fn orbit(
     let mut d_yaw = 0.0;
     let mut d_pitch = 0.0;
     if capture.captured && !capture.just_captured {
+        if keys.just_pressed(KeyCode::KeyB) { rig.shoulder = -rig.shoulder; }
         let d = motion.delta;
         if d.is_finite() {
-            let k = MOUSE_SENSITIVITY * settings.as_ref().map_or(1.0, |s| s.mouse);
+            let k = MOUSE_SENSITIVITY * settings.as_ref().map_or(1.0, |s| s.mouse) * (1.0 - 0.5 * rig.aim_blend);
             d_yaw -= d.x * k;
             d_pitch += d.y * k;
         }
@@ -421,8 +427,9 @@ fn orbit(
     }
     for pad in &gamepads {
         let s = stick_deadzone(pad.right_stick());
-        d_yaw -= s.x * STICK_YAW_SPEED * dt;
-        d_pitch -= s.y * STICK_PITCH_SPEED * dt;
+        let precision = 1.0 - 0.5 * rig.aim_blend;
+        d_yaw -= s.x * STICK_YAW_SPEED * dt * precision;
+        d_pitch -= s.y * STICK_PITCH_SPEED * dt * precision;
     }
     rig.yaw = wrap_angle(rig.yaw + d_yaw);
     rig.pitch = (rig.pitch + d_pitch).clamp(PITCH_MIN, PITCH_MAX);
@@ -538,7 +545,8 @@ pub(crate) fn follow(
             None => to,
         }
     };
-    let shoulder = rig.flat_right() * AIM_SHOULDER_RIGHT * rig.aim_blend
+    state.shoulder += (rig.shoulder - state.shoulder) * blend(AIM_RATE, dt);
+    let shoulder = rig.flat_right() * AIM_SHOULDER_RIGHT * rig.aim_blend * state.shoulder
         + Vec3::Y * AIM_SHOULDER_UP * rig.aim_blend;
     let pivot = cast(rig.focus, rig.focus + shoulder);
     let forward = rig.forward();

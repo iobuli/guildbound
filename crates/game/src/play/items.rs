@@ -415,7 +415,7 @@ pub fn scatter_points(count: u32, salt: u32) -> Vec<Vec3> {
         let (x, z) = (a.cos() * r, a.sin() * r);
         let pond = Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 2.5;
         let yard = x.abs().max(z.abs()) < COURTYARD_HALF + 1.0 || super::world::in_guild_grounds(x, z) || super::world::in_ruins(x, z);
-        if pond || yard || ground_normal(x, z).y < MIN_FLATNESS {
+        if pond || yard || super::village::reserved(x, z) || ground_normal(x, z).y < MIN_FLATNESS {
             continue;
         }
         out.push(Vec3::new(x, ground_height(x, z), z));

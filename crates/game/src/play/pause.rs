@@ -70,7 +70,7 @@ const CONTROLS: [&str; 23] = [
     "LMB  attack (hold: heavy)   ·   RMB  guard",
     "Z  sword / fists   ·   Hold Space for jump height",
     "Q  art   ·   E  spell   (hold to aim, let go to cast)",
-    "Mouse 5  next spell   ·   Tab  lock on",
+    "T / Mouse 5  next spell   ·   Tab  enemy lock   ·   B  aim shoulder",
     "F  use / talk   ·   X  draw / sheathe   ·   G  grab",
     "I  bag   ·   K  stats and map   ·   R  back to spawn",
     "F5  quicksave   ·   Esc  this menu",

@@ -179,7 +179,7 @@ fn yard(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, looks: Res<Loo
 
 /// `GB_FRACTURE=1`: a ring of breakables round the player once it stands in the world.
 fn ring_player(mut done: Local<bool>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, looks: Res<Looks>, players: Query<&Transform, With<Player>>, time: Res<Time>) {
-    if *done || (!super::world::duel_mode() && std::env::var_os("GB_FRACTURE").is_none()) || time.elapsed_secs() < 1.0 {
+    if *done || ((super::village::enabled() || !super::world::duel_mode()) && std::env::var_os("GB_FRACTURE").is_none()) || time.elapsed_secs() < 1.0 {
         return;
     }
     let Ok(tf) = players.single() else { return };

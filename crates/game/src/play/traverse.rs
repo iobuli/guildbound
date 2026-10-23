@@ -204,7 +204,7 @@ pub fn swim_height(surface: f32, floor: f32, diving: bool, clock: f32) -> f32 {
 #[allow(clippy::type_complexity)]
 fn water(
     time: Res<Time>,
-    waters: Query<(&Transform, &Water), Without<Mover>>,
+    waters: Query<(&Transform, &Water, Option<&super::village::RoundWater>), Without<Mover>>,
     mut bodies: Query<(
         Entity,
         &mut Transform,
@@ -228,9 +228,10 @@ fn water(
             continue;
         }
         let p = tf.translation;
-        let surface = waters.iter().find_map(|(wt, w)| {
+        let surface = waters.iter().find_map(|(wt, w, round)| {
             let local = p - wt.translation;
-            (local.x.abs() <= w.half_extents.x && local.z.abs() <= w.half_extents.z)
+            (local.x.abs() <= w.half_extents.x && local.z.abs() <= w.half_extents.z
+                && round.is_none_or(|r| Vec2::new(local.x, local.z).length_squared() <= r.0 * r.0))
                 .then_some(wt.translation.y + w.half_extents.y)
         });
         let floor = ground_height(p.x, p.z);

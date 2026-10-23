@@ -56,9 +56,9 @@ pub fn duel_mode() -> bool {
     std::env::var("GB_WORLD_FULL").as_deref() != Ok("1")
 }
 /// Half size of the terrain mesh (m).
-pub const TERRAIN_HALF: f32 = 120.0;
+pub const TERRAIN_HALF: f32 = 180.0;
 /// Terrain vertex spacing (m).
-pub const GRID: f32 = 0.5;
+pub const GRID: f32 = 0.75;
 /// Hills fade in over this distance outside the courtyard.
 const COURTYARD_BLEND: f32 = 12.0;
 /// World metres → `guildbound_sim::terrain` units (pulls its hills and ridges into the map).
@@ -72,7 +72,7 @@ pub const POND_RADIUS: f32 = 6.0;
 pub const POND_DEPTH: f32 = 2.1;
 pub const WATER_LEVEL: f32 = -0.35;
 /// Player spawn (feet) and facing; the opponent stands 4 m in front.
-pub const SPAWN_FEET: Vec3 = Vec3::new(0.0, 0.0, -12.5);
+pub const SPAWN_FEET: Vec3 = Vec3::new(-58.0, 0.0, -48.0);
 pub const SPAWN_YAW: f32 = 0.0;
 const SCREENSHOT_AT: f32 = 3.0;
 
@@ -316,14 +316,15 @@ pub fn ground_height(x: f32, z: f32) -> f32 {
         return 0.0;
     }
     let p = Vec2::new(x, z);
-    PADS.iter().fold(base_height(x, z), |h, &(c, r)| {
+    let height = PADS.iter().fold(base_height(x, z), |h, &(c, r)| {
         let d = p.distance(c);
         if d >= r + PAD_BLEND {
             return h;
         }
         let w = smoothstep(r, r + PAD_BLEND, d);
         base_height(c.x, c.y) * (1.0 - w) + h * w
-    })
+    });
+    super::village::terrain_height(x, z, height)
 }
 
 fn base_height(x: f32, z: f32) -> f32 {
@@ -653,7 +654,7 @@ impl UseSpec {
     }
 }
 
-fn setup(
+pub(super) fn setup(
     mut commands: Commands,
     assets: Res<AssetServer>,
     mut meshes: ResMut<Assets<Mesh>>,
@@ -958,7 +959,7 @@ fn spawn_props(kit: &mut Kit) {
         // The first 26 ring the guild grounds; the rest scatter over the wider land out to the rim.
         let r = if i < 26 { 21.0 + hash2(i, 1) * 26.0 } else { 55.0 + hash2(i, 1) * (TERRAIN_HALF - RIM_WIDTH - 60.0) };
         let (x, z) = (a.cos() * r, a.sin() * r);
-        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) || in_ruins(x, z) || in_pad(x, z, 6.0) {
+        if Vec2::new(x, z).distance(POND_CENTER) < POND_RADIUS + 4.0 || in_guild_grounds(x, z) || in_ruins(x, z) || in_pad(x, z, 6.0) || super::village::reserved(x, z) {
             continue;
         }
         let y = ground_height(x, z);
@@ -1296,6 +1297,9 @@ fn spawn_characters(commands: &mut Commands) {
         Grimoire { art: "aura_bullet", spell: "cinder_bolt", ..default() }));
     // The player's look (`GB_HERO`, `GB_LOOK`; `appearance`): replaces the mannequin's ModelRequest.
     super::appearance::dress_player(commands, player);
+    // The village has its own wilderness encounters; keep the old sparring opponent in the
+    // legacy scene so he cannot clear the goblin camp while the player is still in town.
+    if !super::village::enabled() {
     let forward = Vec3::new(SPAWN_YAW.sin(), 0.0, SPAWN_YAW.cos());
     let feet = SPAWN_FEET + forward * 4.0;
     let npc = spawn_character(
@@ -1317,11 +1321,13 @@ fn spawn_characters(commands: &mut Commands) {
     sheet.grant("swordsmanship", xp_for_level(20));
     sheet.grant("defence", xp_for_level(12));
     commands.entity(npc).insert((Npc, Stats::preset(4, &build), sheet));
+    }
     if duel_mode() {
         let at = SPAWN_FEET + Vec3::new(-4.0, 0.0, -1.0);
         let trainer = spawn_character(commands, "Rook", at.with_y(ground_height(at.x, at.z)), PI * 0.5,
             Fighter::new(0, 200.0), Loadout { slots: vec!["katana".into()], current: 0 },
             Some(Color::srgb(0.30, 0.58, 0.72)));
+        if super::village::enabled() { super::appearance::dress_villager(commands, trainer, "Rook", false); }
         commands.entity(trainer).insert((Civilian, super::combat::Revive { after: 4.0, home: Some((at.with_y(ground_height(at.x, at.z)), PI * 0.5)) },
             super::talk::Talkable { name: "Rook", role: super::talk::Role::Trainer, title: "Sword and ki instructor" }));
         return;

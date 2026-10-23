@@ -180,7 +180,7 @@ fn update(
     material: Option<Res<MapMaterial>>,
     mut materials: ResMut<Assets<RingMap>>,
     player: Query<(&Transform, &Mover), With<Player>>,
-    npcs: Query<&GlobalTransform, (With<Npc>, Without<Player>)>,
+    npcs: Query<&GlobalTransform, (Or<(With<Npc>, With<crate::play::talk::Talkable>)>, Without<Player>)>,
     dummies: Query<&GlobalTransform, With<TrainingDummy>>,
     items: Query<&GlobalTransform, With<Item>>,
     things: Query<(&GlobalTransform, &Interactable)>,

@@ -552,7 +552,7 @@ pub(super) fn respond(
     let greet = |guild: &mut Guild, lines: &[String]| lines.get(guild.roll(lines.len())).cloned().unwrap_or_default();
     for s in started.read() {
         let (line, options) = match s.role {
-            Role::Trainer => continue,
+            Role::Trainer | Role::Villager | Role::Guard => continue,
             Role::Receptionist => {
                 let mut line = greet(&mut guild, &data.lines.receptionist_greet);
                 if let Exam::Scheduled(to) = guild.exam {
@@ -574,7 +574,7 @@ pub(super) fn respond(
         *dialogue = Dialogue { line, options };
     }
     for c in chose.read() {
-        if c.role == Role::Trainer { continue; }
+        if matches!(c.role, Role::Trainer | Role::Villager | Role::Guard) { continue; }
         let mut close = false;
         let line = match c.id {
             "turn_in" => {

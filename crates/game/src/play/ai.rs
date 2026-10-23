@@ -566,9 +566,9 @@ pub fn cast(v: &CastView, d: &Difficulty, b: &mut Brain, dt: f32) -> (bool, bool
 /// New NPCs: difficulty, revive at home, a per-NPC random seed.
 fn enroll(
     mut commands: Commands,
-    mut npcs: Query<(Entity, &Transform, &Mover, &mut Brain, Option<&Difficulty>), Added<Npc>>,
+    mut npcs: Query<(Entity, &Transform, &Mover, &mut Brain, Option<&Difficulty>, Has<super::creatures::Creature>, Has<super::creatures::Goblin>, Has<super::village::Guard>), Added<Npc>>,
 ) {
-    for (entity, tf, mover, mut brain, difficulty) in &mut npcs {
+    for (entity, tf, mover, mut brain, difficulty, creature, goblin, guard) in &mut npcs {
         let difficulty = difficulty.copied().unwrap_or_default();
         let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
         brain.home = Some((feet, mover.yaw));
@@ -576,7 +576,7 @@ fn enroll(
         commands.entity(entity).try_insert((
             difficulty,
             Revive {
-                after: REVIVE_AFTER,
+                after: if creature { 45.0 } else if goblin { 30.0 } else if guard { 15.0 } else { REVIVE_AFTER },
                 home: Some((feet, mover.yaw)),
             },
         ));
@@ -585,7 +585,7 @@ fn enroll(
 
 /// Read the world for every NPC and write its `Intent`.
 #[allow(clippy::type_complexity)]
-fn think(
+pub(super) fn think(
     time: Res<Time>,
     movesets: Res<Movesets>,
     fighters: Query<(Entity, &Transform, &Fighter, &Melee, &Mover, &Loadout, Option<&Mastery>)>,
@@ -607,7 +607,7 @@ fn think(
             Option<&Species>,
             Option<&Name>,
         ),
-        Or<(With<Npc>, With<Autopilot>)>,
+        (Or<(With<Npc>, With<Autopilot>)>, Without<super::creatures::Creature>),
     >,
 ) {
     let dt = time.delta_secs();

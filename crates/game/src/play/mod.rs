@@ -87,6 +87,8 @@ pub mod sky_dome;
 pub mod stats;
 pub mod talk;
 pub mod trainer;
+pub mod village;
+pub mod creatures;
 pub mod guild;
 pub mod surfaces;
 pub mod traverse;
@@ -144,7 +146,7 @@ pub fn plugin(app: &mut App) {
     .add_plugins((aim::plugin, wind_aura::plugin, debug::plugin, senses::plugin, skin::plugin, looks::plugin, ground::plugin, godmode::plugin, guildhouse::plugin, savegame::plugin, horse::plugin, boss::plugin, waypoint::plugin, class::plugin, pause::plugin))
     .add_plugins((doors::plugin, sheath::plugin, block::plugin, grab::plugin, repertoire::plugin, appearance::plugin, afterimage::plugin))
     .add_plugins((discipline::plugin, carry::plugin, marks::plugin, spell_aim::plugin, weather::plugin, sky_dome::plugin, goop::plugin, clash::plugin, hurtbox::plugin, regions::plugin, berserk::plugin, moves::plugin, fracture::plugin, smear::plugin))
-    .add_plugins((energy::plugin, trainer::plugin))
+    .add_plugins((energy::plugin, trainer::plugin, village::plugin, creatures::plugin))
     .add_plugins(flipbook::plugin);
 }
 

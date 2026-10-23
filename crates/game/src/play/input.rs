@@ -21,7 +21,7 @@ use bevy::prelude::*;
 const LOOK_DISTANCE: f32 = 20.0;
 /// Crosshair ray length (m) and the nearest aim point (m from the camera).
 const AIM_RANGE: f32 = 120.0;
-const LOOK_MIN: f32 = 2.0;
+const LOOK_MIN: f32 = 0.05;
 /// Lock-on acquire range (m) and half-angle of the acquire cone around the view (deg).
 const LOCK_RANGE: f32 = 15.0;
 const LOCK_CONE_DEG: f32 = 75.0;
@@ -165,13 +165,13 @@ fn player_input(
     spawn: Option<Res<PlayerSpawn>>,
     mut latches: ResMut<Latches>,
     mut commands: Commands,
-    mut players: Query<(Entity, &Transform, &mut Intent), With<Player>>,
+    mut players: Query<(Entity, &Transform, &mut Intent, &Fighter), With<Player>>,
     npcs: Query<(Entity, &Transform, Option<&Fighter>), (With<Npc>, Without<Player>)>,
     tweak: Option<Res<crate::motion::tweak::Tweak>>,
     talk: (Option<Res<super::talk::TalkFocus>>, Option<Res<super::talk::Talking>>, Option<Res<super::class::ClassChoice>>),
     spatial: SpatialQuery,
 ) {
-    let Some((entity, transform, mut intent)) = players.iter_mut().next() else {
+    let Some((entity, transform, mut intent, player_fighter)) = players.iter_mut().next() else {
         return;
     };
     // The pose tweak tool (F2) or a conversation has the keyboard.
@@ -269,7 +269,7 @@ fn player_input(
     let root = transform.translation;
     let alive = |e: Entity| {
         npcs.get(e).ok().filter(|(_, t, f)| {
-            !f.is_some_and(|f| f.dead) && t.translation.distance(root) <= LOCK_BREAK_RANGE
+            f.is_some_and(|f| !f.dead && f.team != player_fighter.team) && t.translation.distance(root) <= LOCK_BREAK_RANGE
         })
     };
     let mut target = intent.target.filter(|t| alive(*t).is_some());
@@ -281,7 +281,9 @@ fn player_input(
                 root,
                 rig.flat_forward(),
                 npcs.iter()
-                    .filter(|(_, _, f)| !f.is_some_and(|f| f.dead))
+                    .filter(|(_, t, f)| f.is_some_and(|f| !f.dead && f.team != player_fighter.team)
+                        && Dir3::new(t.translation - root).ok().is_some_and(|dir|
+                            spatial.cast_ray(root, dir, t.translation.distance(root), true, &SpatialQueryFilter::from_mask(Phys::World)).is_none()))
                     .map(|(e, t, _)| (e, t.translation)),
             )
         };
@@ -301,10 +303,16 @@ fn player_input(
     // converge on it at any range; open sky falls back to `AIM_RANGE` out.
     let filter = SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([entity]);
     let forward = rig.forward();
-    let look = Dir3::new(forward)
+    let camera_look = Dir3::new(forward)
         .ok()
         .and_then(|dir| spatial.cast_ray(rig.eye, dir, AIM_RANGE, true, &filter))
         .map_or(rig.eye + forward * AIM_RANGE, |hit| rig.eye + forward * hit.distance.max(LOOK_MIN));
+    // A second ray prevents shoulder shots passing through walls the camera can see around.
+    let muzzle = root + Vec3::Y * 0.45;
+    let to = camera_look - muzzle;
+    let look = Dir3::new(to).ok().and_then(|dir| spatial.cast_ray(muzzle, dir, to.length(), true,
+        &SpatialQueryFilter::from_mask(Phys::World)).map(|hit| muzzle + dir * hit.distance)).unwrap_or(camera_look);
+    if art_held || spell_held { sprint = false; }
     *intent = Intent {
         move_dir: camera_relative(stick, rig.yaw),
         look: if look.is_finite() { look } else { root + Vec3::Z * LOOK_DISTANCE },

@@ -1,5 +1,10 @@
 # Sparking combat build
 
+The current default is the expanded [Brookmere village build](../../../../docs/BROOKMERE.md):
+360m map, village NPCs, neutral gate watch, a swimmable lake, goblins and procedural animals.
+The controls and animation library below remain available. The original single-opponent
+setup is only spawned with `GB_VILLAGE=0`.
+
 The default scene now starts the player and one opponent with the `sparking` moveset.
 Rook, a friendly sword and ki instructor, stands just left of the player's spawn.
 Other NPCs, guests, the boss and training dummies are disabled. `GB_WORLD_FULL=1`

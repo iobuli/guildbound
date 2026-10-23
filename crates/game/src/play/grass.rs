@@ -58,8 +58,8 @@ const GRASS_SHADER: &str = "shaders/grass.wgsl";
 pub const CHUNK_SIZE: f32 = 8.0;
 /// Chunks per terrain side (`CHUNKS × CHUNK_SIZE = 2 × TERRAIN_HALF`).
 const CHUNKS: usize = (2.0 * TERRAIN_HALF / CHUNK_SIZE) as usize;
-/// Placement cells per chunk side: 0.16 m cells, ≈ 39 candidate blades per m².
-const CELLS_PER_CHUNK: usize = 50;
+/// Placement cells per chunk side: ≈ 18 candidate blades per m² on the expanded map.
+const CELLS_PER_CHUNK: usize = 34;
 /// Terrain vertex spacing (m), shared with `world` so roots sit on the mesh.
 const GROUND_GRID: f32 = super::world::GRID;
 
@@ -262,6 +262,7 @@ fn hash(x: i32, z: i32, salt: u32) -> f32 {
 /// How much grass the ground at (x, z) with height `y` and normal `n` supports, 0..1. Mirrors the
 /// grass / dirt / sand / mud / rock rules of `world::ground_color`, with soft borders.
 pub fn grass_cover(x: f32, z: f32, y: f32, n: Vec3) -> f32 {
+    if super::village::reserved(x, z) { return 0.0; }
     // zero on the courtyard and the guild terrace's dirt, full 2.5 m outside them
     let yard = smoothstep(0.0, 2.5, courtyard_distance(x, z).min(crate::play::world::terrace_distance(x, z) + 1.0));
     // bare in the ruins and on the footpaths

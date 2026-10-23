@@ -338,6 +338,24 @@ pub fn dress(commands: &mut Commands, root: Entity, appearance: Appearance) {
     ));
 }
 
+/// Choose village appearances before the first model load, avoiding an unnecessary mannequin
+/// spawn/despawn and giving the new gate watch recognizable equipment.
+pub fn dress_villager(commands: &mut Commands, root: Entity, name: &str, watch: bool) {
+    if std::env::var("GB_HERO").is_ok_and(|m| matches!(m.trim(), "mannequin" | "ual2")) { return; }
+    let result = Wardrobe::load(&wardrobe_path()).and_then(|wardrobe| {
+        let area = wardrobe.areas.get("village").ok_or("missing village wardrobe")?;
+        let generated = Wardrobe::generate(area, name)?;
+        wardrobe.resolve(&format!("brookmere:{name}"), &generated)
+    });
+    match result {
+        Ok(mut look) => {
+            if watch { look.pieces = vec!["helm".into(), "pauldrons".into(), "shield".into()]; }
+            dress(commands, root, look);
+        }
+        Err(error) => warn!("[appearance] {name}: {error}"),
+    }
+}
+
 /// The player's model per `GB_HERO` (`look` by default, `styled`, `mannequin`) and `GB_LOOK`.
 pub fn dress_player(commands: &mut Commands, player: Entity) {
     let mode = std::env::var("GB_HERO").unwrap_or_default();
@@ -378,7 +396,7 @@ struct Worn;
 fn cast(
     mut commands: Commands,
     mut wardrobe: Local<Option<Option<Wardrobe>>>,
-    fighters: Query<(Entity, &Name, &Transform), (Added<super::Fighter>, Without<Appearance>, Without<super::Player>)>,
+    fighters: Query<(Entity, &Name, &Transform), (Added<super::Fighter>, Without<Appearance>, Without<super::Player>, Without<super::creatures::Creature>, Without<super::creatures::Goblin>)>,
 ) {
     if fighters.is_empty() {
         return;

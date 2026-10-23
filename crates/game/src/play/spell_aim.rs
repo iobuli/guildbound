@@ -153,7 +153,6 @@ fn preview(
     spatial: SpatialQuery,
     mut gizmos: Gizmos,
     players: Query<(Entity, &Transform, &Intent, &Aiming, &Grimoire), With<Player>>,
-    globals: Query<&GlobalTransform>,
 ) {
     for (me, tf, intent, aim, grimoire) in &players {
         if aim.t < PREVIEW_AFTER {
@@ -169,7 +168,9 @@ fn preview(
         let color = Color::LinearRgba(LinearRgba::new(core.red / peak, core.green / peak, core.blue / peak, 0.9));
         let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
         let hand = tf.translation + Vec3::Y * HAND_LIFT;
-        let point = intent.target.and_then(|t| globals.get(t).ok()).map_or(intent.look, |g| g.translation() + Vec3::Y * 0.2);
+        // Player casts are skill shots; the preview must use the same obstruction-aware
+        // crosshair point as release, even when melee lock-on is active.
+        let point = intent.look;
         let flat = (point - feet).with_y(0.0).normalize_or(tf.forward().as_vec3());
         match a.shape {
             Shape::Bolt { speed, gravity, bloom, .. } => {

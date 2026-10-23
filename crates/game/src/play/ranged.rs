@@ -527,14 +527,14 @@ fn spawn_crosshair(mut commands: Commands) {
 fn crosshair(
     capture: Option<Res<super::camera::CursorCapture>>,
     spatial: SpatialQuery,
-    players: Query<(Entity, &Action, Has<super::spell_aim::Aiming>), With<Player>>,
+    players: Query<(Entity, &Action, Has<super::spell_aim::Aiming>, &Fighter, &Intent), With<Player>>,
     cameras: Query<&GlobalTransform, With<super::camera::MainCamera>>,
-    fighters: Query<(), With<Fighter>>,
+    fighters: Query<&Fighter>,
     mut root: Query<&mut Visibility, (With<Crosshair>, Without<CrosshairTick>)>,
     mut ticks: Query<&mut Visibility, (With<CrosshairTick>, Without<Crosshair>)>,
     mut inks: Query<&mut BackgroundColor, With<CrosshairInk>>,
 ) {
-    let Ok((player, action, spell_aim)) = players.single() else { return };
+    let Ok((player, action, spell_aim, player_fighter, intent)) = players.single() else { return };
     let aiming = spell_aim || matches!(action.owner, Owner::Ranged | Owner::Magic);
     let shown = aiming || capture.is_none_or(|c| c.captured);
     for mut v in &mut root {
@@ -549,9 +549,14 @@ fn crosshair(
     let filter = SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([player]);
     let foe = cameras.single().ok().is_some_and(|cam| {
         let Ok(dir) = Dir3::new(cam.forward().as_vec3()) else { return false };
-        spatial.cast_ray(cam.translation(), dir, CROSSHAIR_RANGE, true, &filter).is_some_and(|hit| fighters.contains(hit.entity))
+        spatial.cast_ray(cam.translation(), dir, CROSSHAIR_RANGE, true, &filter).is_some_and(|hit| fighters.get(hit.entity).is_ok_and(|f| !f.dead && f.team != player_fighter.team))
     });
-    let color = if foe { CROSSHAIR_FOE } else { CROSSHAIR_COLOR };
+    let obstructed = cameras.single().ok().is_some_and(|cam| {
+        let to = (intent.look - cam.translation()).normalize_or_zero();
+        to.dot(cam.forward().as_vec3()) < 0.9995
+    });
+    let color = if aiming && obstructed { Color::srgb(1.0, 0.65, 0.2) }
+        else if foe { CROSSHAIR_FOE } else { CROSSHAIR_COLOR };
     for mut c in &mut inks {
         if c.0 != color {
             c.0 = color;

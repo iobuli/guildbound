@@ -447,7 +447,7 @@ fn move_characters(
             (feel.accel * air, feel.brake * air)
         };
         // Releasing the stick in flight preserves momentum; steering still brakes/reverses.
-        let air_target = if !grounded && magnitude < 0.05 { state.locomotion } else { target_velocity };
+        let air_target = if !grounded && magnitude < 0.05 && move_scale >= 0.99 { state.locomotion } else { target_velocity };
         state.locomotion = approach_velocity(state.locomotion, air_target, accel, brake, dt);
         mover.sprinting = gait == Gait::Sprint && target_velocity.length_squared() > 0.01;
 
@@ -571,6 +571,10 @@ fn move_characters(
             if into < 0.0 {
                 external -= *n * into;
             }
+            // Discard hidden velocity into walls so corners respond immediately to new input.
+            let flat = n.with_y(0.0).normalize_or_zero();
+            let blocked = state.locomotion.dot(flat);
+            if blocked < 0.0 { state.locomotion -= flat * blocked; }
         }
 
         // --- Write back.
