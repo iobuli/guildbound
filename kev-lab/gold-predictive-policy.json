@@ -1,0 +1,14 @@
+{
+  "selection_end_year": 2018,
+  "selection_validation_years": [
+    2013,
+    2018
+  ],
+  "selected": {
+    "direction": "raw_boost",
+    "large_displacement": "events_boost",
+    "terminal_range_exit": "raw_boost"
+  },
+  "version": 1,
+  "status": "experimental; no structural increment demonstrated"
+}

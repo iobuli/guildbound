@@ -125,13 +125,28 @@ function renderEvents() {
 $('eventTf').addEventListener('change',renderEvents);
 $('eventKind').addEventListener('change',renderEvents);
 $('clearReference').addEventListener('click',()=>{selectedReference=null;$('referenceDetail').textContent='All price references.';renderEvents();history(observation.timeline,observation.price_references.events);});
+async function renderPredictive(cutoff) {
+  $('forecastCards').replaceChildren();$('forecastState').textContent='';
+  $('forecastStatus').textContent='Fitting the locked policy using only earlier-year labels…';
+  try {
+    const response=await fetch('/api/gold/predictive'+(cutoff?'?asof='+encodeURIComponent(cutoff):''));
+    const r=await response.json();if(!response.ok)throw Error(r.error||response.statusText);
+    if(!r.available){$('forecastStatus').textContent=r.reason;return;}
+    const labels={direction:'Close higher',large_displacement:'Large displacement',terminal_range_exit:'Close outside prior range'};
+    for(const [name,f] of Object.entries(r.forecasts)) metric($('forecastCards'),labels[name],fmt(f.probability*100,1)+'%','earlier-window frequency '+fmt(f.historical_frequency*100,1)+'% · '+f.config);
+    const fitted=Object.values(r.forecasts).map(f=>f.fitted_label_through).sort().at(-1);
+    $('forecastStatus').textContent='Observed '+r.asof+' · fitted labels through '+fitted+' · experimental; direction and added-structure skill not demonstrated';
+    $('forecastState').textContent='12 range instances → '+r.state.unique_ranges+' distinct prior ranges. Fresh breach balance '+fmt(r.state.fresh_breach_balance,2)+'; upward/downward expiry fractions '+fmt(r.state.expiry_up,2)+' / '+fmt(r.state.expiry_down,2)+'. Fixed prior range '+fmt(r.reference.prior_low104,3)+'–'+fmt(r.reference.prior_high104,3)+'. Normal-distance exit baseline '+fmt(r.reference.normal_geometry_exit_baseline*100,1)+'%.';
+  } catch(e) {$('forecastStatus').textContent='Forecast unavailable: '+e.message;}
+}
 async function load(cutoff) {
   if(busy)return; busy=true;
   document.querySelectorAll('button').forEach(b=>b.disabled=true); $('scrub').disabled=true;
   $('status').textContent='Computing from closed observations at or before the cutoff…';
-  try {const response=await fetch(endpoint(cutoff));const r=await response.json();if(!response.ok)throw Error(r.error||response.statusText);render(r);}
+  const pendingForecast=renderPredictive(cutoff);
+  try {const response=await fetch(endpoint(cutoff));const r=await response.json();if(!response.ok)throw Error(r.error||response.statusText);render(r);await pendingForecast;}
   catch(e){$('status').textContent='Could not observe: '+e.message;}
-  finally{busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);$('scrub').disabled=false;}
+  finally{await pendingForecast;busy=false;document.querySelectorAll('button').forEach(b=>b.disabled=false);$('scrub').disabled=false;}
 }
 $('controls').addEventListener('submit',e=>{e.preventDefault();load($('asof').value+':00Z');});
 $('latest').addEventListener('click',()=>load());

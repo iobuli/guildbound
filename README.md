@@ -32,6 +32,8 @@ npm run mcp                                         # MCP: kev_levels, kev_evalu
 
 ## Gold Nucleus observatory
 
+[Predictive redesign: event probabilities and honest validation](docs/gold-predictive-redesign.md) · [Visual PDF](docs/visuals/gold-predictive-redesign.pdf)
+
 [Gold research: predictive tests, raw-price patterns and Fibonacci controls](docs/gold-information-study.md) · [Research visual (PDF)](docs/visuals/gold-information-study.pdf)
 
 [Visual explanation (PDF)](docs/visuals/gold-explained.pdf) · [Full-size image](docs/visuals/gold-explained.png)

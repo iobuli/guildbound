@@ -67,6 +67,14 @@ class Handler(SimpleHTTPRequestHandler):
 
     def do_GET(self):
         url = urlsplit(self.path)
+        if url.path == "/api/gold/predictive":
+            from gold_observatory import parse_asof
+            from gold_predictive_api import predictive_report
+            try:
+                cutoff = parse_asof(parse_qs(url.query).get('asof', [None])[0])
+                return self._json(predictive_report(cutoff))
+            except ValueError as e:
+                return self._json({'error': str(e)}, 400)
         if url.path == "/api/gold/nucleus":
             from gold_observatory import gold_report, parse_asof
             try:

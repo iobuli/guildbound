@@ -1,0 +1,4478 @@
+{
+  "source": "data/XAUUSD_m30.json",
+  "source_bars": 200000,
+  "development_years": [
+    2013,
+    2018
+  ],
+  "evaluation_years": [
+    2019,
+    2026
+  ],
+  "refit": "Annual, preceding three calendar years; labels purged at next year boundary.",
+  "horizon_hours": 4,
+  "horizon_bars": 8,
+  "development": {
+    "direction": {
+      "brier": {
+        "prior": 0.25017516502387216,
+        "raw_logistic": 0.2498022386831175,
+        "raw_boost": 0.24938418202469237,
+        "events_boost": 0.24968082491059665,
+        "events_fib_boost": 0.24971154629840187
+      },
+      "folds": [
+        {
+          "year": 2013,
+          "training_n": 4241,
+          "validation_n": 1232
+        },
+        {
+          "year": 2014,
+          "training_n": 3961,
+          "validation_n": 1228
+        },
+        {
+          "year": 2015,
+          "training_n": 3697,
+          "validation_n": 1227
+        },
+        {
+          "year": 2016,
+          "training_n": 3687,
+          "validation_n": 1221
+        },
+        {
+          "year": 2017,
+          "training_n": 3676,
+          "validation_n": 1216
+        },
+        {
+          "year": 2018,
+          "training_n": 3664,
+          "validation_n": 1217
+        }
+      ],
+      "selected": "raw_boost"
+    },
+    "large_displacement": {
+      "brier": {
+        "prior": 0.20124088084613218,
+        "raw_logistic": 0.19005591246999715,
+        "raw_boost": 0.18975383138123325,
+        "events_boost": 0.18967186753518805,
+        "events_fib_boost": 0.18980672164553564
+      },
+      "folds": [
+        {
+          "year": 2013,
+          "training_n": 4241,
+          "validation_n": 1234
+        },
+        {
+          "year": 2014,
+          "training_n": 3963,
+          "validation_n": 1228
+        },
+        {
+          "year": 2015,
+          "training_n": 3699,
+          "validation_n": 1227
+        },
+        {
+          "year": 2016,
+          "training_n": 3689,
+          "validation_n": 1221
+        },
+        {
+          "year": 2017,
+          "training_n": 3676,
+          "validation_n": 1217
+        },
+        {
+          "year": 2018,
+          "training_n": 3665,
+          "validation_n": 1218
+        }
+      ],
+      "selected": "events_boost"
+    },
+    "terminal_range_exit": {
+      "brier": {
+        "prior": 0.12540311390930273,
+        "raw_logistic": 0.12276843086656705,
+        "raw_boost": 0.11329359291965448,
+        "events_boost": 0.11335525017035558,
+        "events_fib_boost": 0.11339606939206798
+      },
+      "folds": [
+        {
+          "year": 2013,
+          "training_n": 4241,
+          "validation_n": 1234
+        },
+        {
+          "year": 2014,
+          "training_n": 3963,
+          "validation_n": 1228
+        },
+        {
+          "year": 2015,
+          "training_n": 3699,
+          "validation_n": 1227
+        },
+        {
+          "year": 2016,
+          "training_n": 3689,
+          "validation_n": 1221
+        },
+        {
+          "year": 2017,
+          "training_n": 3676,
+          "validation_n": 1217
+        },
+        {
+          "year": 2018,
+          "training_n": 3665,
+          "validation_n": 1218
+        }
+      ],
+      "selected": "raw_boost"
+    }
+  },
+  "targets": {
+    "direction": {
+      "selected_config": "raw_boost",
+      "metrics": {
+        "prior": {
+          "n": 9219,
+          "frequency": 0.5115522290920924,
+          "mean_probability": 0.5035434833869895,
+          "brier": 0.2503370787510513,
+          "logloss": 0.6938216038202497,
+          "accuracy": 0.49647467187330513,
+          "calibration": [
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 9219,
+              "mean_forecast": 0.5035434833869895,
+              "observed_frequency": 0.5115522290920924
+            }
+          ]
+        },
+        "raw_logistic": {
+          "n": 9219,
+          "frequency": 0.5115522290920924,
+          "mean_probability": 0.5040599957418901,
+          "brier": 0.2503704500904928,
+          "logloss": 0.6938907089532389,
+          "accuracy": 0.49896951947065843,
+          "calibration": [
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 9210,
+              "mean_forecast": 0.5039586562807653,
+              "observed_frequency": 0.5117263843648209
+            },
+            {
+              "probability_band": [
+                0.6,
+                0.8
+              ],
+              "n": 9,
+              "mean_forecast": 0.6077640442928259,
+              "observed_frequency": 0.3333333333333333
+            }
+          ]
+        },
+        "raw_boost": {
+          "n": 9219,
+          "frequency": 0.5115522290920924,
+          "mean_probability": 0.5034136487847956,
+          "brier": 0.2506148475460855,
+          "logloss": 0.6943811102775738,
+          "accuracy": 0.5021151968760169,
+          "calibration": [
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 9216,
+              "mean_forecast": 0.5033806195078753,
+              "observed_frequency": 0.5116102430555556
+            },
+            {
+              "probability_band": [
+                0.6,
+                0.8
+              ],
+              "n": 3,
+              "mean_forecast": 0.6048795874839997,
+              "observed_frequency": 0.3333333333333333
+            }
+          ]
+        },
+        "selected": {
+          "n": 9219,
+          "frequency": 0.5115522290920924,
+          "mean_probability": 0.5034136487847956,
+          "brier": 0.2506148475460855,
+          "logloss": 0.6943811102775738,
+          "accuracy": 0.5021151968760169,
+          "calibration": [
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 9216,
+              "mean_forecast": 0.5033806195078753,
+              "observed_frequency": 0.5116102430555556
+            },
+            {
+              "probability_band": [
+                0.6,
+                0.8
+              ],
+              "n": 3,
+              "mean_forecast": 0.6048795874839997,
+              "observed_frequency": 0.3333333333333333
+            }
+          ]
+        },
+        "half": {
+          "n": 9219,
+          "frequency": 0.5115522290920924,
+          "mean_probability": 0.5,
+          "brier": 0.25,
+          "logloss": 0.6931471805599453,
+          "accuracy": 0.4884477709079076,
+          "calibration": [
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 9219,
+              "mean_forecast": 0.5,
+              "observed_frequency": 0.5115522290920924
+            }
+          ]
+        }
+      },
+      "folds": [
+        {
+          "year": 2019,
+          "training_n": 3654,
+          "test_n": 1217,
+          "fitted_label_through": "2018-12-31T20:00:00+00:00"
+        },
+        {
+          "year": 2020,
+          "training_n": 3650,
+          "test_n": 1220,
+          "fitted_label_through": "2019-12-31T19:30:00+00:00"
+        },
+        {
+          "year": 2021,
+          "training_n": 3654,
+          "test_n": 1218,
+          "fitted_label_through": "2020-12-31T21:30:00+00:00"
+        },
+        {
+          "year": 2022,
+          "training_n": 3655,
+          "test_n": 1220,
+          "fitted_label_through": "2021-12-31T18:30:00+00:00"
+        },
+        {
+          "year": 2023,
+          "training_n": 3658,
+          "test_n": 1213,
+          "fitted_label_through": "2022-12-30T18:30:00+00:00"
+        },
+        {
+          "year": 2024,
+          "training_n": 3651,
+          "test_n": 1224,
+          "fitted_label_through": "2023-12-29T21:00:00+00:00"
+        },
+        {
+          "year": 2025,
+          "training_n": 3657,
+          "test_n": 1218,
+          "fitted_label_through": "2024-12-31T19:00:00+00:00"
+        },
+        {
+          "year": 2026,
+          "training_n": 3655,
+          "test_n": 689,
+          "fitted_label_through": "2025-12-31T19:00:00+00:00"
+        }
+      ],
+      "per_year": {
+        "2019": {
+          "prior": {
+            "n": 1217,
+            "frequency": 0.5102711585866886,
+            "mean_probability": 0.49452654625068415,
+            "brier": 0.2501423961188981,
+            "logloss": 0.6934319853713777,
+            "accuracy": 0.4897288414133114,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1217,
+                "mean_forecast": 0.49452654625068415,
+                "observed_frequency": 0.5102711585866886
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1217,
+            "frequency": 0.5102711585866886,
+            "mean_probability": 0.4950581812569766,
+            "brier": 0.25072742171374685,
+            "logloss": 0.6946032251326042,
+            "accuracy": 0.49219391947411667,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1217,
+                "mean_forecast": 0.4950581812569766,
+                "observed_frequency": 0.5102711585866886
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1217,
+            "frequency": 0.5102711585866886,
+            "mean_probability": 0.4937838690717646,
+            "brier": 0.251169136599532,
+            "logloss": 0.6954891498051179,
+            "accuracy": 0.4806902218570255,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1217,
+                "mean_forecast": 0.4937838690717646,
+                "observed_frequency": 0.5102711585866886
+              }
+            ]
+          },
+          "selected": {
+            "n": 1217,
+            "frequency": 0.5102711585866886,
+            "mean_probability": 0.4937838690717646,
+            "brier": 0.251169136599532,
+            "logloss": 0.6954891498051179,
+            "accuracy": 0.4806902218570255,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1217,
+                "mean_forecast": 0.4937838690717646,
+                "observed_frequency": 0.5102711585866886
+              }
+            ]
+          },
+          "half": {
+            "n": 1217,
+            "frequency": 0.5102711585866886,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.4897288414133114,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1217,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.5102711585866886
+              }
+            ]
+          }
+        },
+        "2020": {
+          "prior": {
+            "n": 1220,
+            "frequency": 0.5352459016393443,
+            "mean_probability": 0.5013698630136987,
+            "brier": 0.2499053124105959,
+            "logloss": 0.6929578049120072,
+            "accuracy": 0.5352459016393443,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5013698630136987,
+                "observed_frequency": 0.5352459016393443
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1220,
+            "frequency": 0.5352459016393443,
+            "mean_probability": 0.5022893585866397,
+            "brier": 0.2503178496044048,
+            "logloss": 0.6937901736037245,
+            "accuracy": 0.5049180327868853,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1211,
+                "mean_forecast": 0.5015054839612428,
+                "observed_frequency": 0.5367464905037159
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 9,
+                "mean_forecast": 0.6077640442928259,
+                "observed_frequency": 0.3333333333333333
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1220,
+            "frequency": 0.5352459016393443,
+            "mean_probability": 0.4999348151490405,
+            "brier": 0.25036013212782926,
+            "logloss": 0.6938693621014514,
+            "accuracy": 0.5098360655737705,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.4999348151490405,
+                "observed_frequency": 0.5352459016393443
+              }
+            ]
+          },
+          "selected": {
+            "n": 1220,
+            "frequency": 0.5352459016393443,
+            "mean_probability": 0.4999348151490405,
+            "brier": 0.25036013212782926,
+            "logloss": 0.6938693621014514,
+            "accuracy": 0.5098360655737705,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.4999348151490405,
+                "observed_frequency": 0.5352459016393443
+              }
+            ]
+          },
+          "half": {
+            "n": 1220,
+            "frequency": 0.5352459016393443,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.46475409836065573,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.5352459016393443
+              }
+            ]
+          }
+        },
+        "2021": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.4917898193760263,
+            "mean_probability": 0.5093048713738368,
+            "brier": 0.25023936998060764,
+            "logloss": 0.6936259857965026,
+            "accuracy": 0.4917898193760263,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5093048713738368,
+                "observed_frequency": 0.4917898193760263
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.4917898193760263,
+            "mean_probability": 0.5098367348965916,
+            "brier": 0.2498827734558858,
+            "logloss": 0.6929125782402624,
+            "accuracy": 0.5016420361247947,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5098367348965916,
+                "observed_frequency": 0.4917898193760263
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.4917898193760263,
+            "mean_probability": 0.5107006227774236,
+            "brier": 0.25004443014367184,
+            "logloss": 0.6932388450417765,
+            "accuracy": 0.5238095238095238,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5107006227774236,
+                "observed_frequency": 0.4917898193760263
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.4917898193760263,
+            "mean_probability": 0.5107006227774236,
+            "brier": 0.25004443014367184,
+            "logloss": 0.6932388450417765,
+            "accuracy": 0.5238095238095238,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5107006227774236,
+                "observed_frequency": 0.4917898193760263
+              }
+            ]
+          },
+          "half": {
+            "n": 1218,
+            "frequency": 0.4917898193760263,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.5082101806239737,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.4917898193760263
+              }
+            ]
+          }
+        },
+        "2022": {
+          "prior": {
+            "n": 1220,
+            "frequency": 0.4860655737704918,
+            "mean_probability": 0.5124487004103966,
+            "brier": 0.25050190113695164,
+            "logloss": 0.6941512223604135,
+            "accuracy": 0.4860655737704918,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5124487004103966,
+                "observed_frequency": 0.4860655737704918
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1220,
+            "frequency": 0.4860655737704918,
+            "mean_probability": 0.5138160970040863,
+            "brier": 0.2507537644415064,
+            "logloss": 0.6946578969491265,
+            "accuracy": 0.49508196721311476,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5138160970040863,
+                "observed_frequency": 0.4860655737704918
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1220,
+            "frequency": 0.4860655737704918,
+            "mean_probability": 0.5144799198610979,
+            "brier": 0.25101302221153077,
+            "logloss": 0.6951787877927379,
+            "accuracy": 0.49508196721311476,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5144799198610979,
+                "observed_frequency": 0.4860655737704918
+              }
+            ]
+          },
+          "selected": {
+            "n": 1220,
+            "frequency": 0.4860655737704918,
+            "mean_probability": 0.5144799198610979,
+            "brier": 0.25101302221153077,
+            "logloss": 0.6951787877927379,
+            "accuracy": 0.49508196721311476,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5144799198610979,
+                "observed_frequency": 0.4860655737704918
+              }
+            ]
+          },
+          "half": {
+            "n": 1220,
+            "frequency": 0.4860655737704918,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.5139344262295082,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1220,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.4860655737704918
+              }
+            ]
+          }
+        },
+        "2023": {
+          "prior": {
+            "n": 1213,
+            "frequency": 0.482275350370981,
+            "mean_probability": 0.5043739748496446,
+            "brier": 0.2501741859993775,
+            "logloss": 0.6934955619337428,
+            "accuracy": 0.482275350370981,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1213,
+                "mean_forecast": 0.5043739748496446,
+                "observed_frequency": 0.482275350370981
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1213,
+            "frequency": 0.482275350370981,
+            "mean_probability": 0.505402458710974,
+            "brier": 0.24972210177110352,
+            "logloss": 0.6925904341937363,
+            "accuracy": 0.4962901896125309,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1213,
+                "mean_forecast": 0.505402458710974,
+                "observed_frequency": 0.482275350370981
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1213,
+            "frequency": 0.482275350370981,
+            "mean_probability": 0.5050195560540344,
+            "brier": 0.2501310339661154,
+            "logloss": 0.6934101145393758,
+            "accuracy": 0.517724649629019,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1213,
+                "mean_forecast": 0.5050195560540344,
+                "observed_frequency": 0.482275350370981
+              }
+            ]
+          },
+          "selected": {
+            "n": 1213,
+            "frequency": 0.482275350370981,
+            "mean_probability": 0.5050195560540344,
+            "brier": 0.2501310339661154,
+            "logloss": 0.6934101145393758,
+            "accuracy": 0.517724649629019,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1213,
+                "mean_forecast": 0.5050195560540344,
+                "observed_frequency": 0.482275350370981
+              }
+            ]
+          },
+          "half": {
+            "n": 1213,
+            "frequency": 0.482275350370981,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.517724649629019,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1213,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.482275350370981
+              }
+            ]
+          }
+        },
+        "2024": {
+          "prior": {
+            "n": 1224,
+            "frequency": 0.5465686274509803,
+            "mean_probability": 0.48671596822788293,
+            "brier": 0.25141370375340805,
+            "logloss": 0.695975295145379,
+            "accuracy": 0.4534313725490196,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1224,
+                "mean_forecast": 0.48671596822788293,
+                "observed_frequency": 0.5465686274509803
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1224,
+            "frequency": 0.5465686274509803,
+            "mean_probability": 0.48720414908348947,
+            "brier": 0.25111145895344894,
+            "logloss": 0.6953768806816916,
+            "accuracy": 0.5032679738562091,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1224,
+                "mean_forecast": 0.48720414908348947,
+                "observed_frequency": 0.5465686274509803
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1224,
+            "frequency": 0.5465686274509803,
+            "mean_probability": 0.485700200127801,
+            "brier": 0.25176530408156383,
+            "logloss": 0.6966829069689507,
+            "accuracy": 0.4812091503267974,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1224,
+                "mean_forecast": 0.485700200127801,
+                "observed_frequency": 0.5465686274509803
+              }
+            ]
+          },
+          "selected": {
+            "n": 1224,
+            "frequency": 0.5465686274509803,
+            "mean_probability": 0.485700200127801,
+            "brier": 0.25176530408156383,
+            "logloss": 0.6966829069689507,
+            "accuracy": 0.4812091503267974,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1224,
+                "mean_forecast": 0.485700200127801,
+                "observed_frequency": 0.5465686274509803
+              }
+            ]
+          },
+          "half": {
+            "n": 1224,
+            "frequency": 0.5465686274509803,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.4534313725490196,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1224,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.5465686274509803
+              }
+            ]
+          }
+        },
+        "2025": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.5402298850574713,
+            "mean_probability": 0.5050587913590373,
+            "brier": 0.24961856218020667,
+            "logloss": 0.6923842797613452,
+            "accuracy": 0.5402298850574713,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5050587913590373,
+                "observed_frequency": 0.5402298850574713
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.5402298850574713,
+            "mean_probability": 0.504547163721468,
+            "brier": 0.2496160656662505,
+            "logloss": 0.6923797176663505,
+            "accuracy": 0.5098522167487685,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.504547163721468,
+                "observed_frequency": 0.5402298850574713
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.5402298850574713,
+            "mean_probability": 0.5023364720246823,
+            "brier": 0.24957252030817548,
+            "logloss": 0.6922921275251139,
+            "accuracy": 0.5024630541871922,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5023364720246823,
+                "observed_frequency": 0.5402298850574713
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.5402298850574713,
+            "mean_probability": 0.5023364720246823,
+            "brier": 0.24957252030817548,
+            "logloss": 0.6922921275251139,
+            "accuracy": 0.5024630541871922,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5023364720246823,
+                "observed_frequency": 0.5402298850574713
+              }
+            ]
+          },
+          "half": {
+            "n": 1218,
+            "frequency": 0.5402298850574713,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599453,
+            "accuracy": 0.45977011494252873,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1218,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.5402298850574713
+              }
+            ]
+          }
+        },
+        "2026": {
+          "prior": {
+            "n": 689,
+            "frequency": 0.49056603773584906,
+            "mean_probability": 0.5231190150478796,
+            "brier": 0.25097069668787614,
+            "logloss": 0.6950903408077358,
+            "accuracy": 0.49056603773584906,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 689,
+                "mean_forecast": 0.5231190150478796,
+                "observed_frequency": 0.49056603773584906
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 689,
+            "frequency": 0.49056603773584906,
+            "mean_probability": 0.5223279955336119,
+            "brier": 0.2511750606160802,
+            "logloss": 0.6955009575230827,
+            "accuracy": 0.48040638606676345,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 689,
+                "mean_forecast": 0.5223279955336119,
+                "observed_frequency": 0.49056603773584906
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 689,
+            "frequency": 0.49056603773584906,
+            "mean_probability": 0.5246509939845956,
+            "brier": 0.25104074012283084,
+            "logloss": 0.695250139060207,
+            "accuracy": 0.5094339622641509,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 686,
+                "mean_forecast": 0.5243001400771637,
+                "observed_frequency": 0.4912536443148688
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 3,
+                "mean_forecast": 0.6048795874839997,
+                "observed_frequency": 0.3333333333333333
+              }
+            ]
+          },
+          "selected": {
+            "n": 689,
+            "frequency": 0.49056603773584906,
+            "mean_probability": 0.5246509939845956,
+            "brier": 0.25104074012283084,
+            "logloss": 0.695250139060207,
+            "accuracy": 0.5094339622641509,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 686,
+                "mean_forecast": 0.5243001400771637,
+                "observed_frequency": 0.4912536443148688
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 3,
+                "mean_forecast": 0.6048795874839997,
+                "observed_frequency": 0.3333333333333333
+              }
+            ]
+          },
+          "half": {
+            "n": 689,
+            "frequency": 0.49056603773584906,
+            "mean_probability": 0.5,
+            "brier": 0.25,
+            "logloss": 0.6931471805599454,
+            "accuracy": 0.5094339622641509,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 689,
+                "mean_forecast": 0.5,
+                "observed_frequency": 0.49056603773584906
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": [
+        {
+          "n": 9219,
+          "calendar_weeks": 396,
+          "mean": 0.000277768795034186,
+          "ci95": [
+            -3.9098666023806206e-05,
+            0.0006106963536593966
+          ],
+          "p": 0.1038961038961039,
+          "target": "direction",
+          "baseline": "prior",
+          "period_means": {
+            "2019_2022": 0.00044934445324197635,
+            "2023_onward": 8.522014545707323e-05
+          },
+          "improving_years": 3,
+          "q": 0.14842300556586271,
+          "passed": false
+        },
+        {
+          "n": 9219,
+          "calendar_weeks": 396,
+          "mean": 0.00024439745559273556,
+          "ci95": [
+            -9.980212316873303e-05,
+            0.0005904991811740173
+          ],
+          "p": 0.16683316683316685,
+          "target": "direction",
+          "baseline": "raw_logistic",
+          "period_means": {
+            "2019_2022": 0.00022612185020132557,
+            "2023_onward": 0.00026490702656030543
+          },
+          "improving_years": 2,
+          "q": 0.20854145854145856,
+          "passed": false
+        },
+        {
+          "n": 9219,
+          "calendar_weeks": 396,
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "p": 1.0,
+          "target": "direction",
+          "baseline": "raw_boost",
+          "period_means": {
+            "2019_2022": 0.0,
+            "2023_onward": 0.0
+          },
+          "improving_years": 0,
+          "q": 1.0,
+          "passed": false
+        },
+        {
+          "n": 9219,
+          "calendar_weeks": 396,
+          "mean": 0.0006148475460854955,
+          "ci95": [
+            0.00021982567249998071,
+            0.0010574119989009215
+          ],
+          "p": 0.003996003996003996,
+          "target": "direction",
+          "baseline": "half",
+          "period_means": {
+            "2019_2022": 0.0006466058360291053,
+            "2023_onward": 0.0005792071999816513
+          },
+          "improving_years": 1,
+          "q": 0.007992007992007992,
+          "passed": false
+        }
+      ],
+      "structural_increment_supported": false,
+      "status": "experimental_no_structural_increment_demonstrated"
+    },
+    "large_displacement": {
+      "selected_config": "events_boost",
+      "metrics": {
+        "prior": {
+          "n": 9222,
+          "frequency": 0.2807417046193884,
+          "mean_probability": 0.27953048523713614,
+          "brier": 0.20195967854923225,
+          "logloss": 0.5937360633517436,
+          "accuracy": 0.7192582953806116,
+          "calibration": [
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 9222,
+              "mean_forecast": 0.27953048523713614,
+              "observed_frequency": 0.2807417046193884
+            }
+          ]
+        },
+        "raw_logistic": {
+          "n": 9222,
+          "frequency": 0.2807417046193884,
+          "mean_probability": 0.27980541509662354,
+          "brier": 0.19468794633282016,
+          "logloss": 0.5757575424115935,
+          "accuracy": 0.7191498590327478,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 261,
+              "mean_forecast": 0.19424707775537167,
+              "observed_frequency": 0.11877394636015326
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 8822,
+              "mean_forecast": 0.27975734105998307,
+              "observed_frequency": 0.28156880525957834
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 137,
+              "mean_forecast": 0.44107227075099337,
+              "observed_frequency": 0.5328467153284672
+            },
+            {
+              "probability_band": [
+                0.6,
+                0.8
+              ],
+              "n": 2,
+              "mean_forecast": 0.6104434014270873,
+              "observed_frequency": 0.5
+            }
+          ]
+        },
+        "raw_boost": {
+          "n": 9222,
+          "frequency": 0.2807417046193884,
+          "mean_probability": 0.27970038558954674,
+          "brier": 0.19224247616445783,
+          "logloss": 0.5700239491659717,
+          "accuracy": 0.7192582953806116,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 298,
+              "mean_forecast": 0.1932556541350646,
+              "observed_frequency": 0.1040268456375839
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 8659,
+              "mean_forecast": 0.27832274451148525,
+              "observed_frequency": 0.27763021134080146
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 265,
+              "mean_forecast": 0.42192500471547345,
+              "observed_frequency": 0.5811320754716981
+            }
+          ]
+        },
+        "events_boost": {
+          "n": 9222,
+          "frequency": 0.2807417046193884,
+          "mean_probability": 0.279470374179472,
+          "brier": 0.19241319051561587,
+          "logloss": 0.5704356975569411,
+          "accuracy": 0.7192582953806116,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 277,
+              "mean_forecast": 0.19366289047155466,
+              "observed_frequency": 0.08664259927797834
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 8690,
+              "mean_forecast": 0.27805784911491366,
+              "observed_frequency": 0.27779056386651324
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 255,
+              "mean_forecast": 0.42081749495635645,
+              "observed_frequency": 0.592156862745098
+            }
+          ]
+        },
+        "selected": {
+          "n": 9222,
+          "frequency": 0.2807417046193884,
+          "mean_probability": 0.279470374179472,
+          "brier": 0.19241319051561587,
+          "logloss": 0.5704356975569411,
+          "accuracy": 0.7192582953806116,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 277,
+              "mean_forecast": 0.19366289047155466,
+              "observed_frequency": 0.08664259927797834
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 8690,
+              "mean_forecast": 0.27805784911491366,
+              "observed_frequency": 0.27779056386651324
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 255,
+              "mean_forecast": 0.42081749495635645,
+              "observed_frequency": 0.592156862745098
+            }
+          ]
+        }
+      },
+      "folds": [
+        {
+          "year": 2019,
+          "training_n": 3656,
+          "test_n": 1218,
+          "fitted_label_through": "2018-12-31T20:00:00+00:00"
+        },
+        {
+          "year": 2020,
+          "training_n": 3653,
+          "test_n": 1222,
+          "fitted_label_through": "2019-12-31T19:30:00+00:00"
+        },
+        {
+          "year": 2021,
+          "training_n": 3658,
+          "test_n": 1218,
+          "fitted_label_through": "2020-12-31T21:30:00+00:00"
+        },
+        {
+          "year": 2022,
+          "training_n": 3658,
+          "test_n": 1220,
+          "fitted_label_through": "2021-12-31T18:30:00+00:00"
+        },
+        {
+          "year": 2023,
+          "training_n": 3660,
+          "test_n": 1213,
+          "fitted_label_through": "2022-12-30T18:30:00+00:00"
+        },
+        {
+          "year": 2024,
+          "training_n": 3651,
+          "test_n": 1224,
+          "fitted_label_through": "2023-12-29T21:00:00+00:00"
+        },
+        {
+          "year": 2025,
+          "training_n": 3657,
+          "test_n": 1218,
+          "fitted_label_through": "2024-12-31T19:00:00+00:00"
+        },
+        {
+          "year": 2026,
+          "training_n": 3655,
+          "test_n": 689,
+          "fitted_label_through": "2025-12-31T19:00:00+00:00"
+        }
+      ],
+      "per_year": {
+        "2019": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.2857142857142857,
+            "mean_probability": 0.2787199124726477,
+            "brier": 0.20413055391010457,
+            "logloss": 0.5983906471152002,
+            "accuracy": 0.7142857142857143,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1218,
+                "mean_forecast": 0.2787199124726477,
+                "observed_frequency": 0.2857142857142857
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.2857142857142857,
+            "mean_probability": 0.28113749348348255,
+            "brier": 0.19617601297330456,
+            "logloss": 0.5788881269507489,
+            "accuracy": 0.7151067323481116,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 37,
+                "mean_forecast": 0.19224222028207252,
+                "observed_frequency": 0.10810810810810811
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1158,
+                "mean_forecast": 0.28096939598986975,
+                "observed_frequency": 0.2867012089810017
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 23,
+                "mean_forecast": 0.43260627635547566,
+                "observed_frequency": 0.5217391304347826
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.2857142857142857,
+            "mean_probability": 0.28113581668954846,
+            "brier": 0.19488447092447295,
+            "logloss": 0.5758712162554807,
+            "accuracy": 0.7142857142857143,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 44,
+                "mean_forecast": 0.19087022110708263,
+                "observed_frequency": 0.09090909090909091
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1154,
+                "mean_forecast": 0.28230716836996234,
+                "observed_frequency": 0.2850953206239168
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 20,
+                "mean_forecast": 0.4121331350110927,
+                "observed_frequency": 0.75
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1218,
+            "frequency": 0.2857142857142857,
+            "mean_probability": 0.2807842981679434,
+            "brier": 0.1951304646026502,
+            "logloss": 0.576441114362536,
+            "accuracy": 0.7142857142857143,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 42,
+                "mean_forecast": 0.1924840818863808,
+                "observed_frequency": 0.07142857142857142
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1160,
+                "mean_forecast": 0.28212355674998146,
+                "observed_frequency": 0.28793103448275864
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 16,
+                "mean_forecast": 0.41547611870929024,
+                "observed_frequency": 0.6875
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.2857142857142857,
+            "mean_probability": 0.2807842981679434,
+            "brier": 0.1951304646026502,
+            "logloss": 0.576441114362536,
+            "accuracy": 0.7142857142857143,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 42,
+                "mean_forecast": 0.1924840818863808,
+                "observed_frequency": 0.07142857142857142
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1160,
+                "mean_forecast": 0.28212355674998146,
+                "observed_frequency": 0.28793103448275864
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 16,
+                "mean_forecast": 0.41547611870929024,
+                "observed_frequency": 0.6875
+              }
+            ]
+          }
+        },
+        "2020": {
+          "prior": {
+            "n": 1222,
+            "frequency": 0.2741407528641571,
+            "mean_probability": 0.2789488091979196,
+            "brier": 0.19901071788893887,
+            "logloss": 0.5873916415804098,
+            "accuracy": 0.7258592471358429,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1222,
+                "mean_forecast": 0.2789488091979196,
+                "observed_frequency": 0.2741407528641571
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1222,
+            "frequency": 0.2741407528641571,
+            "mean_probability": 0.2735019103891685,
+            "brier": 0.18989803548502984,
+            "logloss": 0.5649145425899099,
+            "accuracy": 0.7258592471358429,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 51,
+                "mean_forecast": 0.1938433448072427,
+                "observed_frequency": 0.13725490196078433
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1156,
+                "mean_forecast": 0.27492157203654977,
+                "observed_frequency": 0.27335640138408307
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 15,
+                "mean_forecast": 0.4349324424095301,
+                "observed_frequency": 0.8
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1222,
+            "frequency": 0.2741407528641571,
+            "mean_probability": 0.27370629211952274,
+            "brier": 0.18859834122922675,
+            "logloss": 0.561628436887743,
+            "accuracy": 0.7258592471358429,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 47,
+                "mean_forecast": 0.19229096946851476,
+                "observed_frequency": 0.1276595744680851
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1166,
+                "mean_forecast": 0.2759276732150873,
+                "observed_frequency": 0.27615780445969124
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 9,
+                "mean_forecast": 0.4110829373605228,
+                "observed_frequency": 0.7777777777777778
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1222,
+            "frequency": 0.2741407528641571,
+            "mean_probability": 0.2738022931265641,
+            "brier": 0.18864941420931938,
+            "logloss": 0.5616460041271903,
+            "accuracy": 0.7258592471358429,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 38,
+                "mean_forecast": 0.19229191661749945,
+                "observed_frequency": 0.10526315789473684
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1175,
+                "mean_forecast": 0.27539044775349675,
+                "observed_frequency": 0.2765957446808511
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 9,
+                "mean_forecast": 0.4106148065375291,
+                "observed_frequency": 0.6666666666666666
+              }
+            ]
+          },
+          "selected": {
+            "n": 1222,
+            "frequency": 0.2741407528641571,
+            "mean_probability": 0.2738022931265641,
+            "brier": 0.18864941420931938,
+            "logloss": 0.5616460041271903,
+            "accuracy": 0.7258592471358429,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 38,
+                "mean_forecast": 0.19229191661749945,
+                "observed_frequency": 0.10526315789473684
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1175,
+                "mean_forecast": 0.27539044775349675,
+                "observed_frequency": 0.2765957446808511
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 9,
+                "mean_forecast": 0.4106148065375291,
+                "observed_frequency": 0.6666666666666666
+              }
+            ]
+          }
+        },
+        "2021": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.27504105090311987,
+            "mean_probability": 0.2840349917987971,
+            "brier": 0.1994743621940622,
+            "logloss": 0.5884087470800796,
+            "accuracy": 0.7249589490968801,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1218,
+                "mean_forecast": 0.2840349917987971,
+                "observed_frequency": 0.27504105090311987
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.27504105090311987,
+            "mean_probability": 0.2882010070487116,
+            "brier": 0.19068987189300612,
+            "logloss": 0.5662197818062903,
+            "accuracy": 0.722495894909688,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 25,
+                "mean_forecast": 0.19544161317241118,
+                "observed_frequency": 0.12
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1147,
+                "mean_forecast": 0.28298128761309815,
+                "observed_frequency": 0.27550130775937226
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 44,
+                "mean_forecast": 0.462326421839607,
+                "observed_frequency": 0.3409090909090909
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 2,
+                "mean_forecast": 0.6104434014270873,
+                "observed_frequency": 0.5
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.27504105090311987,
+            "mean_probability": 0.2854394110558639,
+            "brier": 0.1856198410753637,
+            "logloss": 0.555037373524778,
+            "accuracy": 0.7249589490968801,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 27,
+                "mean_forecast": 0.1947610249578774,
+                "observed_frequency": 0.1111111111111111
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1134,
+                "mean_forecast": 0.28060253085433695,
+                "observed_frequency": 0.25573192239858905
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 57,
+                "mean_forecast": 0.4246207895326563,
+                "observed_frequency": 0.7368421052631579
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1218,
+            "frequency": 0.27504105090311987,
+            "mean_probability": 0.2851871563815669,
+            "brier": 0.18616353575607716,
+            "logloss": 0.5563525530923544,
+            "accuracy": 0.7249589490968801,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 32,
+                "mean_forecast": 0.19474042238720737,
+                "observed_frequency": 0.03125
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1128,
+                "mean_forecast": 0.28077150524758404,
+                "observed_frequency": 0.26063829787234044
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 58,
+                "mean_forecast": 0.42096560408763734,
+                "observed_frequency": 0.6896551724137931
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.27504105090311987,
+            "mean_probability": 0.2851871563815669,
+            "brier": 0.18616353575607716,
+            "logloss": 0.5563525530923544,
+            "accuracy": 0.7249589490968801,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 32,
+                "mean_forecast": 0.19474042238720737,
+                "observed_frequency": 0.03125
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1128,
+                "mean_forecast": 0.28077150524758404,
+                "observed_frequency": 0.26063829787234044
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 58,
+                "mean_forecast": 0.42096560408763734,
+                "observed_frequency": 0.6896551724137931
+              }
+            ]
+          }
+        },
+        "2022": {
+          "prior": {
+            "n": 1220,
+            "frequency": 0.27704918032786885,
+            "mean_probability": 0.2782941498086386,
+            "brier": 0.2002944819565329,
+            "logloss": 0.590148601394141,
+            "accuracy": 0.7229508196721312,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1220,
+                "mean_forecast": 0.2782941498086386,
+                "observed_frequency": 0.27704918032786885
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1220,
+            "frequency": 0.27704918032786885,
+            "mean_probability": 0.27737930740021577,
+            "brier": 0.1920093022594227,
+            "logloss": 0.5695299716188896,
+            "accuracy": 0.7229508196721312,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 44,
+                "mean_forecast": 0.19521413801516116,
+                "observed_frequency": 0.11363636363636363
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1164,
+                "mean_forecast": 0.27888676322451245,
+                "observed_frequency": 0.27835051546391754
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 12,
+                "mean_forecast": 0.4324283801886388,
+                "observed_frequency": 0.75
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1220,
+            "frequency": 0.27704918032786885,
+            "mean_probability": 0.2778206007697552,
+            "brier": 0.19001075865429495,
+            "logloss": 0.5649825767563151,
+            "accuracy": 0.7229508196721312,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 44,
+                "mean_forecast": 0.1933889520620508,
+                "observed_frequency": 0.06818181818181818
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1119,
+                "mean_forecast": 0.2733299656627184,
+                "observed_frequency": 0.2734584450402145
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 57,
+                "mean_forecast": 0.4311541661717389,
+                "observed_frequency": 0.5087719298245614
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1220,
+            "frequency": 0.27704918032786885,
+            "mean_probability": 0.27717107713971384,
+            "brier": 0.19000726956213165,
+            "logloss": 0.5650346414333982,
+            "accuracy": 0.7229508196721312,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 42,
+                "mean_forecast": 0.19344383287867886,
+                "observed_frequency": 0.07142857142857142
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1124,
+                "mean_forecast": 0.2728948740730944,
+                "observed_frequency": 0.2713523131672598
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 54,
+                "mean_forecast": 0.4313006420627463,
+                "observed_frequency": 0.5555555555555556
+              }
+            ]
+          },
+          "selected": {
+            "n": 1220,
+            "frequency": 0.27704918032786885,
+            "mean_probability": 0.27717107713971384,
+            "brier": 0.19000726956213165,
+            "logloss": 0.5650346414333982,
+            "accuracy": 0.7229508196721312,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 42,
+                "mean_forecast": 0.19344383287867886,
+                "observed_frequency": 0.07142857142857142
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1124,
+                "mean_forecast": 0.2728948740730944,
+                "observed_frequency": 0.2713523131672598
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 54,
+                "mean_forecast": 0.4313006420627463,
+                "observed_frequency": 0.5555555555555556
+              }
+            ]
+          }
+        },
+        "2023": {
+          "prior": {
+            "n": 1213,
+            "frequency": 0.27947238252267104,
+            "mean_probability": 0.27540983606557384,
+            "brier": 0.20138407421348897,
+            "logloss": 0.5924955392336282,
+            "accuracy": 0.720527617477329,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1213,
+                "mean_forecast": 0.27540983606557384,
+                "observed_frequency": 0.27947238252267104
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1213,
+            "frequency": 0.27947238252267104,
+            "mean_probability": 0.27647232763251933,
+            "brier": 0.19234683083953377,
+            "logloss": 0.5697850797489296,
+            "accuracy": 0.720527617477329,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 64,
+                "mean_forecast": 0.1934621675634372,
+                "observed_frequency": 0.09375
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1133,
+                "mean_forecast": 0.27912919263145847,
+                "observed_frequency": 0.28596646072374227
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 16,
+                "mean_forecast": 0.42037371517147337,
+                "observed_frequency": 0.5625
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1213,
+            "frequency": 0.27947238252267104,
+            "mean_probability": 0.274193056574878,
+            "brier": 0.19092545445063686,
+            "logloss": 0.5664848765895862,
+            "accuracy": 0.720527617477329,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 57,
+                "mean_forecast": 0.19408255851652936,
+                "observed_frequency": 0.07017543859649122
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1112,
+                "mean_forecast": 0.27240694694347156,
+                "observed_frequency": 0.2814748201438849
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 44,
+                "mean_forecast": 0.4231124270169207,
+                "observed_frequency": 0.5
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1213,
+            "frequency": 0.27947238252267104,
+            "mean_probability": 0.27467197915584424,
+            "brier": 0.1907534877979067,
+            "logloss": 0.5660402512187528,
+            "accuracy": 0.720527617477329,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 60,
+                "mean_forecast": 0.19395361291799768,
+                "observed_frequency": 0.08333333333333333
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1110,
+                "mean_forecast": 0.2732279167240725,
+                "observed_frequency": 0.281981981981982
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 43,
+                "mean_forecast": 0.42457921807532034,
+                "observed_frequency": 0.4883720930232558
+              }
+            ]
+          },
+          "selected": {
+            "n": 1213,
+            "frequency": 0.27947238252267104,
+            "mean_probability": 0.27467197915584424,
+            "brier": 0.1907534877979067,
+            "logloss": 0.5660402512187528,
+            "accuracy": 0.720527617477329,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 60,
+                "mean_forecast": 0.19395361291799768,
+                "observed_frequency": 0.08333333333333333
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1110,
+                "mean_forecast": 0.2732279167240725,
+                "observed_frequency": 0.281981981981982
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 43,
+                "mean_forecast": 0.42457921807532034,
+                "observed_frequency": 0.4883720930232558
+              }
+            ]
+          }
+        },
+        "2024": {
+          "prior": {
+            "n": 1224,
+            "frequency": 0.2826797385620915,
+            "mean_probability": 0.2771843330594358,
+            "brier": 0.20280210345019772,
+            "logloss": 0.5955415144194254,
+            "accuracy": 0.7173202614379085,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1224,
+                "mean_forecast": 0.2771843330594358,
+                "observed_frequency": 0.2826797385620915
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1224,
+            "frequency": 0.2826797385620915,
+            "mean_probability": 0.27875129643707935,
+            "brier": 0.19674888483433334,
+            "logloss": 0.5808042318438729,
+            "accuracy": 0.7181372549019608,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 35,
+                "mean_forecast": 0.19578178910582641,
+                "observed_frequency": 0.17142857142857143
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1179,
+                "mean_forecast": 0.2798913294052352,
+                "observed_frequency": 0.2824427480916031
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 10,
+                "mean_forecast": 0.43473468515089075,
+                "observed_frequency": 0.7
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1224,
+            "frequency": 0.2826797385620915,
+            "mean_probability": 0.28131033623303936,
+            "brier": 0.19484765212863953,
+            "logloss": 0.5761647327767608,
+            "accuracy": 0.7173202614379085,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 46,
+                "mean_forecast": 0.19324238545791725,
+                "observed_frequency": 0.17391304347826086
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1132,
+                "mean_forecast": 0.2794606013296744,
+                "observed_frequency": 0.2756183745583039
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 46,
+                "mean_forecast": 0.41489785028227366,
+                "observed_frequency": 0.5652173913043478
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1224,
+            "frequency": 0.2826797385620915,
+            "mean_probability": 0.28104815883747136,
+            "brier": 0.19535774937950523,
+            "logloss": 0.5774046386615148,
+            "accuracy": 0.7173202614379085,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 34,
+                "mean_forecast": 0.19469798692408388,
+                "observed_frequency": 0.14705882352941177
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1144,
+                "mean_forecast": 0.27833852675711646,
+                "observed_frequency": 0.2727272727272727
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 46,
+                "mean_forecast": 0.4122595706848891,
+                "observed_frequency": 0.6304347826086957
+              }
+            ]
+          },
+          "selected": {
+            "n": 1224,
+            "frequency": 0.2826797385620915,
+            "mean_probability": 0.28104815883747136,
+            "brier": 0.19535774937950523,
+            "logloss": 0.5774046386615148,
+            "accuracy": 0.7173202614379085,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 34,
+                "mean_forecast": 0.19469798692408388,
+                "observed_frequency": 0.14705882352941177
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1144,
+                "mean_forecast": 0.27833852675711646,
+                "observed_frequency": 0.2727272727272727
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 46,
+                "mean_forecast": 0.4122595706848891,
+                "observed_frequency": 0.6304347826086957
+              }
+            ]
+          }
+        },
+        "2025": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.2996715927750411,
+            "mean_probability": 0.2797374897456932,
+            "brier": 0.21026589772229567,
+            "logloss": 0.611558174982718,
+            "accuracy": 0.7003284072249589,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1218,
+                "mean_forecast": 0.2797374897456932,
+                "observed_frequency": 0.2996715927750411
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.2996715927750411,
+            "mean_probability": 0.277973253812921,
+            "brier": 0.20599516596175138,
+            "logloss": 0.6015297684067576,
+            "accuracy": 0.7003284072249589,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 5,
+                "mean_forecast": 0.19802216276093554,
+                "observed_frequency": 0.0
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1208,
+                "mean_forecast": 0.27764797623847715,
+                "observed_frequency": 0.2996688741721854
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 5,
+                "mean_forecast": 0.43651140685053547,
+                "observed_frequency": 0.6
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.2996715927750411,
+            "mean_probability": 0.2795487295325568,
+            "brier": 0.20263936993052922,
+            "logloss": 0.5934368925358767,
+            "accuracy": 0.7003284072249589,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 30,
+                "mean_forecast": 0.19467133654998284,
+                "observed_frequency": 0.1
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1176,
+                "mean_forecast": 0.2803405015798771,
+                "observed_frequency": 0.3010204081632653
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 12,
+                "mean_forecast": 0.41414855135160017,
+                "observed_frequency": 0.6666666666666666
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 1218,
+            "frequency": 0.2996715927750411,
+            "mean_probability": 0.2789261949873902,
+            "brier": 0.2028789185522492,
+            "logloss": 0.5940462547090991,
+            "accuracy": 0.7003284072249589,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 28,
+                "mean_forecast": 0.1943340398255983,
+                "observed_frequency": 0.10714285714285714
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1177,
+                "mean_forecast": 0.2794993850151162,
+                "observed_frequency": 0.29991503823279525
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 13,
+                "mean_forecast": 0.4092289397486797,
+                "observed_frequency": 0.6923076923076923
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.2996715927750411,
+            "mean_probability": 0.2789261949873902,
+            "brier": 0.2028789185522492,
+            "logloss": 0.5940462547090991,
+            "accuracy": 0.7003284072249589,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 28,
+                "mean_forecast": 0.1943340398255983,
+                "observed_frequency": 0.10714285714285714
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 1177,
+                "mean_forecast": 0.2794993850151162,
+                "observed_frequency": 0.29991503823279525
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 13,
+                "mean_forecast": 0.4092289397486797,
+                "observed_frequency": 0.6923076923076923
+              }
+            ]
+          }
+        },
+        "2026": {
+          "prior": {
+            "n": 689,
+            "frequency": 0.2656023222060958,
+            "mean_probability": 0.28727770177838574,
+            "brier": 0.1955275507244279,
+            "logloss": 0.5800009789827241,
+            "accuracy": 0.7343976777939042,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 689,
+                "mean_forecast": 0.28727770177838574,
+                "observed_frequency": 0.2656023222060958
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 689,
+            "frequency": 0.2656023222060958,
+            "mean_probability": 0.289064167558279,
+            "brier": 0.19283511205792034,
+            "logloss": 0.5733317088562311,
+            "accuracy": 0.7343976777939042,
+            "calibration": [
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 677,
+                "mean_forecast": 0.28655779586233177,
+                "observed_frequency": 0.2614475627769572
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 12,
+                "mean_forecast": 0.4304653040713062,
+                "observed_frequency": 0.5
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 689,
+            "frequency": 0.2656023222060958,
+            "mean_probability": 0.28808087787882247,
+            "brier": 0.18900538403920514,
+            "logloss": 0.5639297242468608,
+            "accuracy": 0.7343976777939042,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 3,
+                "mean_forecast": 0.1981874703062179,
+                "observed_frequency": 0.0
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 666,
+                "mean_forecast": 0.2844994719632957,
+                "observed_frequency": 0.2672672672672673
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 20,
+                "mean_forecast": 0.4208257060017534,
+                "observed_frequency": 0.25
+              }
+            ]
+          },
+          "events_boost": {
+            "n": 689,
+            "frequency": 0.2656023222060958,
+            "mean_probability": 0.2877725400623075,
+            "brier": 0.1887830315420548,
+            "logloss": 0.5634879472164859,
+            "accuracy": 0.7343976777939042,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1,
+                "mean_forecast": 0.19856044701705722,
+                "observed_frequency": 0.0
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 672,
+                "mean_forecast": 0.2847596311818097,
+                "observed_frequency": 0.2648809523809524
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 16,
+                "mean_forecast": 0.4198904688585445,
+                "observed_frequency": 0.3125
+              }
+            ]
+          },
+          "selected": {
+            "n": 689,
+            "frequency": 0.2656023222060958,
+            "mean_probability": 0.2877725400623075,
+            "brier": 0.1887830315420548,
+            "logloss": 0.5634879472164859,
+            "accuracy": 0.7343976777939042,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1,
+                "mean_forecast": 0.19856044701705722,
+                "observed_frequency": 0.0
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 672,
+                "mean_forecast": 0.2847596311818097,
+                "observed_frequency": 0.2648809523809524
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 16,
+                "mean_forecast": 0.4198904688585445,
+                "observed_frequency": 0.3125
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": [
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": -0.009546488033616376,
+          "ci95": [
+            -0.010757273776578962,
+            -0.008437371755937367
+          ],
+          "p": 0.000999000999000999,
+          "target": "large_displacement",
+          "baseline": "prior",
+          "period_means": {
+            "2019_2022": -0.010739361950719506,
+            "2023_onward": -0.008206976300736751
+          },
+          "improving_years": 8,
+          "q": 0.0024975024975024975,
+          "passed": true
+        },
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": -0.0022747558172042884,
+          "ci95": [
+            -0.0029729760927346516,
+            -0.0015944504599391712
+          ],
+          "p": 0.000999000999000999,
+          "target": "large_displacement",
+          "baseline": "raw_logistic",
+          "period_means": {
+            "2019_2022": -0.0022047663837330353,
+            "2023_onward": -0.002353348924127119
+          },
+          "improving_years": 8,
+          "q": 0.0024975024975024975,
+          "passed": true
+        },
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": 0.00017071435115801072,
+          "ci95": [
+            -1.1693208572456323e-07,
+            0.0003168359561830335
+          ],
+          "p": 0.03596403596403597,
+          "target": "large_displacement",
+          "baseline": "raw_boost",
+          "period_means": {
+            "2019_2022": 0.00020910104763486058,
+            "2023_onward": 0.0001276088480700564
+          },
+          "improving_years": 3,
+          "q": 0.059940059940059943,
+          "passed": false
+        }
+      ],
+      "structural_increment_supported": false,
+      "status": "experimental_no_structural_increment_demonstrated"
+    },
+    "terminal_range_exit": {
+      "selected_config": "raw_boost",
+      "metrics": {
+        "prior": {
+          "n": 9222,
+          "frequency": 0.16243764909997832,
+          "mean_probability": 0.15998165334350734,
+          "brier": 0.13607577087924555,
+          "logloss": 0.44378377061386365,
+          "accuracy": 0.8375623509000217,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 9222,
+              "mean_forecast": 0.15998165334350734,
+              "observed_frequency": 0.16243764909997832
+            }
+          ]
+        },
+        "raw_logistic": {
+          "n": 9222,
+          "frequency": 0.16243764909997832,
+          "mean_probability": 0.15986391580787515,
+          "brier": 0.13341297184470738,
+          "logloss": 0.43472740847810715,
+          "accuracy": 0.8375623509000217,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 8469,
+              "mean_forecast": 0.1540956670437058,
+              "observed_frequency": 0.147597118904239
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 751,
+              "mean_forecast": 0.2242326434693155,
+              "observed_frequency": 0.3288948069241012
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 2,
+              "mean_forecast": 0.4150560708121482,
+              "observed_frequency": 0.5
+            }
+          ]
+        },
+        "raw_boost": {
+          "n": 9222,
+          "frequency": 0.16243764909997832,
+          "mean_probability": 0.15973494039418085,
+          "brier": 0.12051314497813422,
+          "logloss": 0.3916246070414856,
+          "accuracy": 0.8375623509000217,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 7154,
+              "mean_forecast": 0.12820138407630743,
+              "observed_frequency": 0.09295499021526418
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 2066,
+              "mean_forecast": 0.268676759647355,
+              "observed_frequency": 0.4027105517909003
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 2,
+              "mean_forecast": 0.4183666008984161,
+              "observed_frequency": 0.5
+            }
+          ]
+        },
+        "selected": {
+          "n": 9222,
+          "frequency": 0.16243764909997832,
+          "mean_probability": 0.15973494039418085,
+          "brier": 0.12051314497813422,
+          "logloss": 0.3916246070414856,
+          "accuracy": 0.8375623509000217,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 7154,
+              "mean_forecast": 0.12820138407630743,
+              "observed_frequency": 0.09295499021526418
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 2066,
+              "mean_forecast": 0.268676759647355,
+              "observed_frequency": 0.4027105517909003
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 2,
+              "mean_forecast": 0.4183666008984161,
+              "observed_frequency": 0.5
+            }
+          ]
+        },
+        "normal_geometry": {
+          "n": 9222,
+          "frequency": 0.16243764909997832,
+          "mean_probability": 0.15779590018683026,
+          "brier": 0.11261493082875117,
+          "logloss": 0.37131147973852385,
+          "accuracy": 0.8484059856864021,
+          "calibration": [
+            {
+              "probability_band": [
+                0,
+                0.2
+              ],
+              "n": 6295,
+              "mean_forecast": 0.06491155591465149,
+              "observed_frequency": 0.07688641779189834
+            },
+            {
+              "probability_band": [
+                0.2,
+                0.4
+              ],
+              "n": 2062,
+              "mean_forecast": 0.2882265196282014,
+              "observed_frequency": 0.27449078564500484
+            },
+            {
+              "probability_band": [
+                0.4,
+                0.6
+              ],
+              "n": 686,
+              "mean_forecast": 0.4755590518618589,
+              "observed_frequency": 0.4650145772594752
+            },
+            {
+              "probability_band": [
+                0.6,
+                0.8
+              ],
+              "n": 151,
+              "mean_forecast": 0.6766687432170299,
+              "observed_frequency": 0.695364238410596
+            },
+            {
+              "probability_band": [
+                0.8,
+                1.0
+              ],
+              "n": 28,
+              "mean_forecast": 0.8514990629949869,
+              "observed_frequency": 0.8571428571428571
+            }
+          ]
+        }
+      },
+      "folds": [
+        {
+          "year": 2019,
+          "training_n": 3656,
+          "test_n": 1218,
+          "fitted_label_through": "2018-12-31T20:00:00+00:00"
+        },
+        {
+          "year": 2020,
+          "training_n": 3653,
+          "test_n": 1222,
+          "fitted_label_through": "2019-12-31T19:30:00+00:00"
+        },
+        {
+          "year": 2021,
+          "training_n": 3658,
+          "test_n": 1218,
+          "fitted_label_through": "2020-12-31T21:30:00+00:00"
+        },
+        {
+          "year": 2022,
+          "training_n": 3658,
+          "test_n": 1220,
+          "fitted_label_through": "2021-12-31T18:30:00+00:00"
+        },
+        {
+          "year": 2023,
+          "training_n": 3660,
+          "test_n": 1213,
+          "fitted_label_through": "2022-12-30T18:30:00+00:00"
+        },
+        {
+          "year": 2024,
+          "training_n": 3651,
+          "test_n": 1224,
+          "fitted_label_through": "2023-12-29T21:00:00+00:00"
+        },
+        {
+          "year": 2025,
+          "training_n": 3657,
+          "test_n": 1218,
+          "fitted_label_through": "2024-12-31T19:00:00+00:00"
+        },
+        {
+          "year": 2026,
+          "training_n": 3655,
+          "test_n": 689,
+          "fitted_label_through": "2025-12-31T19:00:00+00:00"
+        }
+      ],
+      "per_year": {
+        "2019": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.14860426929392448,
+            "mean_probability": 0.16083150984682712,
+            "brier": 0.12667054585308177,
+            "logloss": 0.4208460794797691,
+            "accuracy": 0.8513957307060755,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1218,
+                "mean_forecast": 0.16083150984682712,
+                "observed_frequency": 0.14860426929392448
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.14860426929392448,
+            "mean_probability": 0.15942671762274596,
+            "brier": 0.12438426569094771,
+            "logloss": 0.4126600644852088,
+            "accuracy": 0.8513957307060755,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1161,
+                "mean_forecast": 0.15656686328602124,
+                "observed_frequency": 0.13695090439276486
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 57,
+                "mean_forecast": 0.21767743490234925,
+                "observed_frequency": 0.38596491228070173
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.14860426929392448,
+            "mean_probability": 0.16034509399644498,
+            "brier": 0.11269264347297547,
+            "logloss": 0.3737787658397219,
+            "accuracy": 0.8513957307060755,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 956,
+                "mean_forecast": 0.12971000666437385,
+                "observed_frequency": 0.08158995815899582
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 262,
+                "mean_forecast": 0.2721280844142311,
+                "observed_frequency": 0.3931297709923664
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.14860426929392448,
+            "mean_probability": 0.16034509399644498,
+            "brier": 0.11269264347297547,
+            "logloss": 0.3737787658397219,
+            "accuracy": 0.8513957307060755,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 956,
+                "mean_forecast": 0.12971000666437385,
+                "observed_frequency": 0.08158995815899582
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 262,
+                "mean_forecast": 0.2721280844142311,
+                "observed_frequency": 0.3931297709923664
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1218,
+            "frequency": 0.14860426929392448,
+            "mean_probability": 0.15044591712324673,
+            "brier": 0.10676045541927363,
+            "logloss": 0.367573406021564,
+            "accuracy": 0.8628899835796388,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 852,
+                "mean_forecast": 0.06475073317960044,
+                "observed_frequency": 0.07746478873239436
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 263,
+                "mean_forecast": 0.2846599261836745,
+                "observed_frequency": 0.24334600760456274
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 85,
+                "mean_forecast": 0.47545438683567987,
+                "observed_frequency": 0.4235294117647059
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 14,
+                "mean_forecast": 0.6729159032722738,
+                "observed_frequency": 0.7857142857142857
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 4,
+                "mean_forecast": 0.8438740684859849,
+                "observed_frequency": 1.0
+              }
+            ]
+          }
+        },
+        "2020": {
+          "prior": {
+            "n": 1222,
+            "frequency": 0.15711947626841244,
+            "mean_probability": 0.1574048727073638,
+            "brier": 0.1324330278966796,
+            "logloss": 0.4348626015384244,
+            "accuracy": 0.8428805237315876,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1222,
+                "mean_forecast": 0.1574048727073638,
+                "observed_frequency": 0.15711947626841244
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1222,
+            "frequency": 0.15711947626841244,
+            "mean_probability": 0.16108683291430767,
+            "brier": 0.1293633475256087,
+            "logloss": 0.4238999402019389,
+            "accuracy": 0.8428805237315876,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1137,
+                "mean_forecast": 0.15660462791007762,
+                "observed_frequency": 0.13808267370272648
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 85,
+                "mean_forecast": 0.22104291632383197,
+                "observed_frequency": 0.4117647058823529
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1222,
+            "frequency": 0.15711947626841244,
+            "mean_probability": 0.15526795480203012,
+            "brier": 0.11632963301677755,
+            "logloss": 0.38006394866333887,
+            "accuracy": 0.8428805237315876,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 970,
+                "mean_forecast": 0.12478427238645655,
+                "observed_frequency": 0.08556701030927835
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 252,
+                "mean_forecast": 0.27260593870324584,
+                "observed_frequency": 0.43253968253968256
+              }
+            ]
+          },
+          "selected": {
+            "n": 1222,
+            "frequency": 0.15711947626841244,
+            "mean_probability": 0.15526795480203012,
+            "brier": 0.11632963301677755,
+            "logloss": 0.38006394866333887,
+            "accuracy": 0.8428805237315876,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 970,
+                "mean_forecast": 0.12478427238645655,
+                "observed_frequency": 0.08556701030927835
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 252,
+                "mean_forecast": 0.27260593870324584,
+                "observed_frequency": 0.43253968253968256
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1222,
+            "frequency": 0.15711947626841244,
+            "mean_probability": 0.15160719930572422,
+            "brier": 0.10882082155305586,
+            "logloss": 0.3511075193082145,
+            "accuracy": 0.8502454991816694,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 859,
+                "mean_forecast": 0.06396882644608022,
+                "observed_frequency": 0.0710128055878929
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 258,
+                "mean_forecast": 0.2888160154950354,
+                "observed_frequency": 0.29069767441860467
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 79,
+                "mean_forecast": 0.4770277463029389,
+                "observed_frequency": 0.5189873417721519
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 22,
+                "mean_forecast": 0.6649266021790594,
+                "observed_frequency": 0.5909090909090909
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 4,
+                "mean_forecast": 0.8716666077053636,
+                "observed_frequency": 0.5
+              }
+            ]
+          }
+        },
+        "2021": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.1469622331691297,
+            "mean_probability": 0.1544559868780755,
+            "brier": 0.1254204915357224,
+            "logloss": 0.4176212930764265,
+            "accuracy": 0.8530377668308703,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1218,
+                "mean_forecast": 0.1544559868780755,
+                "observed_frequency": 0.1469622331691297
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.1469622331691297,
+            "mean_probability": 0.15361782186074713,
+            "brier": 0.1225552606099319,
+            "logloss": 0.40694753844612924,
+            "accuracy": 0.8530377668308703,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1126,
+                "mean_forecast": 0.14836407805700902,
+                "observed_frequency": 0.13587921847246892
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 92,
+                "mean_forecast": 0.21791907754562875,
+                "observed_frequency": 0.2826086956521739
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.1469622331691297,
+            "mean_probability": 0.1565853513531372,
+            "brier": 0.11124343401085239,
+            "logloss": 0.36791088833742247,
+            "accuracy": 0.8530377668308703,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 946,
+                "mean_forecast": 0.12440482837566123,
+                "observed_frequency": 0.080338266384778
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 272,
+                "mean_forecast": 0.26850731729685884,
+                "observed_frequency": 0.3786764705882353
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.1469622331691297,
+            "mean_probability": 0.1565853513531372,
+            "brier": 0.11124343401085239,
+            "logloss": 0.36791088833742247,
+            "accuracy": 0.8530377668308703,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 946,
+                "mean_forecast": 0.12440482837566123,
+                "observed_frequency": 0.080338266384778
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 272,
+                "mean_forecast": 0.26850731729685884,
+                "observed_frequency": 0.3786764705882353
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1218,
+            "frequency": 0.1469622331691297,
+            "mean_probability": 0.15767608978944536,
+            "brier": 0.10563611128596746,
+            "logloss": 0.34476401940290785,
+            "accuracy": 0.8596059113300493,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 839,
+                "mean_forecast": 0.069307399385235,
+                "observed_frequency": 0.07508939213349225
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 269,
+                "mean_forecast": 0.28919291698410216,
+                "observed_frequency": 0.21933085501858737
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 92,
+                "mean_forecast": 0.4746851011720489,
+                "observed_frequency": 0.4891304347826087
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 15,
+                "mean_forecast": 0.6652525533465211,
+                "observed_frequency": 0.6666666666666666
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 3,
+                "mean_forecast": 0.8192856675275095,
+                "observed_frequency": 0.6666666666666666
+              }
+            ]
+          }
+        },
+        "2022": {
+          "prior": {
+            "n": 1220,
+            "frequency": 0.17540983606557378,
+            "mean_probability": 0.15090213231273922,
+            "brier": 0.14524185302025902,
+            "logloss": 0.466608852201481,
+            "accuracy": 0.8245901639344262,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1220,
+                "mean_forecast": 0.15090213231273922,
+                "observed_frequency": 0.17540983606557378
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1220,
+            "frequency": 0.17540983606557378,
+            "mean_probability": 0.1480561346372098,
+            "brier": 0.14284659333954158,
+            "logloss": 0.45920946760574755,
+            "accuracy": 0.8245901639344262,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1135,
+                "mean_forecast": 0.14192539533202245,
+                "observed_frequency": 0.16387665198237886
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 85,
+                "mean_forecast": 0.22991953594765294,
+                "observed_frequency": 0.32941176470588235
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1220,
+            "frequency": 0.17540983606557378,
+            "mean_probability": 0.15351149817936235,
+            "brier": 0.13015715053620344,
+            "logloss": 0.4145048989294078,
+            "accuracy": 0.8245901639344262,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 956,
+                "mean_forecast": 0.12384139633244572,
+                "observed_frequency": 0.1098326359832636
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 264,
+                "mean_forecast": 0.26095323062501496,
+                "observed_frequency": 0.4128787878787879
+              }
+            ]
+          },
+          "selected": {
+            "n": 1220,
+            "frequency": 0.17540983606557378,
+            "mean_probability": 0.15351149817936235,
+            "brier": 0.13015715053620344,
+            "logloss": 0.4145048989294078,
+            "accuracy": 0.8245901639344262,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 956,
+                "mean_forecast": 0.12384139633244572,
+                "observed_frequency": 0.1098326359832636
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 264,
+                "mean_forecast": 0.26095323062501496,
+                "observed_frequency": 0.4128787878787879
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1220,
+            "frequency": 0.17540983606557378,
+            "mean_probability": 0.16892199067551725,
+            "brier": 0.11995927675354304,
+            "logloss": 0.39871712863105063,
+            "accuracy": 0.8377049180327869,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 787,
+                "mean_forecast": 0.06422632333258944,
+                "observed_frequency": 0.07878017789072427
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 312,
+                "mean_forecast": 0.2932678285177138,
+                "observed_frequency": 0.2916666666666667
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 94,
+                "mean_forecast": 0.4689333605759406,
+                "observed_frequency": 0.40425531914893614
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 20,
+                "mean_forecast": 0.6956452686748795,
+                "observed_frequency": 0.8
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 7,
+                "mean_forecast": 0.8637869137457744,
+                "observed_frequency": 1.0
+              }
+            ]
+          }
+        },
+        "2023": {
+          "prior": {
+            "n": 1213,
+            "frequency": 0.1574608408903545,
+            "mean_probability": 0.15983606557377047,
+            "brier": 0.13267256616875367,
+            "logloss": 0.43545637608445037,
+            "accuracy": 0.8425391591096455,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1213,
+                "mean_forecast": 0.15983606557377047,
+                "observed_frequency": 0.1574608408903545
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1213,
+            "frequency": 0.1574608408903545,
+            "mean_probability": 0.15706187817248116,
+            "brier": 0.12939813803587338,
+            "logloss": 0.4245122371572448,
+            "accuracy": 0.8425391591096455,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1136,
+                "mean_forecast": 0.15223197542068426,
+                "observed_frequency": 0.14084507042253522
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 77,
+                "mean_forecast": 0.22831862526392677,
+                "observed_frequency": 0.4025974025974026
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1213,
+            "frequency": 0.1574608408903545,
+            "mean_probability": 0.15829709620766738,
+            "brier": 0.1188566722528024,
+            "logloss": 0.3894816864289499,
+            "accuracy": 0.8425391591096455,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 927,
+                "mean_forecast": 0.1268772975125353,
+                "observed_frequency": 0.0970873786407767
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 286,
+                "mean_forecast": 0.26013679337685425,
+                "observed_frequency": 0.3531468531468531
+              }
+            ]
+          },
+          "selected": {
+            "n": 1213,
+            "frequency": 0.1574608408903545,
+            "mean_probability": 0.15829709620766738,
+            "brier": 0.1188566722528024,
+            "logloss": 0.3894816864289499,
+            "accuracy": 0.8425391591096455,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 927,
+                "mean_forecast": 0.1268772975125353,
+                "observed_frequency": 0.0970873786407767
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 286,
+                "mean_forecast": 0.26013679337685425,
+                "observed_frequency": 0.3531468531468531
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1213,
+            "frequency": 0.1574608408903545,
+            "mean_probability": 0.16013748937752992,
+            "brier": 0.11470384453883749,
+            "logloss": 0.38553773066192276,
+            "accuracy": 0.854080791426216,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 810,
+                "mean_forecast": 0.06801999393343237,
+                "observed_frequency": 0.07901234567901234
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 294,
+                "mean_forecast": 0.28631954106736235,
+                "observed_frequency": 0.24149659863945577
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 92,
+                "mean_forecast": 0.4689881273791601,
+                "observed_frequency": 0.4673913043478261
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 15,
+                "mean_forecast": 0.6792585446318975,
+                "observed_frequency": 0.7333333333333333
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 2,
+                "mean_forecast": 0.8184242833489463,
+                "observed_frequency": 1.0
+              }
+            ]
+          }
+        },
+        "2024": {
+          "prior": {
+            "n": 1224,
+            "frequency": 0.17647058823529413,
+            "mean_probability": 0.15995617639003012,
+            "brier": 0.1456014455217784,
+            "logloss": 0.4669872495330367,
+            "accuracy": 0.8235294117647058,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1224,
+                "mean_forecast": 0.15995617639003012,
+                "observed_frequency": 0.17647058823529413
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1224,
+            "frequency": 0.17647058823529413,
+            "mean_probability": 0.16044100849237458,
+            "brier": 0.1423176259267424,
+            "logloss": 0.45555666959022345,
+            "accuracy": 0.8235294117647058,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1139,
+                "mean_forecast": 0.15473786957499744,
+                "observed_frequency": 0.16066725197541704
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 84,
+                "mean_forecast": 0.23472093457670246,
+                "observed_frequency": 0.39285714285714285
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1,
+                "mean_forecast": 0.41680244430137015,
+                "observed_frequency": 0.0
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1224,
+            "frequency": 0.17647058823529413,
+            "mean_probability": 0.15829329984696167,
+            "brier": 0.1278691021891588,
+            "logloss": 0.408989685551653,
+            "accuracy": 0.8235294117647058,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 985,
+                "mean_forecast": 0.1304116543594442,
+                "observed_frequency": 0.10558375634517767
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 239,
+                "mean_forecast": 0.27320301032898964,
+                "observed_frequency": 0.4686192468619247
+              }
+            ]
+          },
+          "selected": {
+            "n": 1224,
+            "frequency": 0.17647058823529413,
+            "mean_probability": 0.15829329984696167,
+            "brier": 0.1278691021891588,
+            "logloss": 0.408989685551653,
+            "accuracy": 0.8235294117647058,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 985,
+                "mean_forecast": 0.1304116543594442,
+                "observed_frequency": 0.10558375634517767
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 239,
+                "mean_forecast": 0.27320301032898964,
+                "observed_frequency": 0.4686192468619247
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1224,
+            "frequency": 0.17647058823529413,
+            "mean_probability": 0.15647506981278048,
+            "brier": 0.11861301092378379,
+            "logloss": 0.3853039711548012,
+            "accuracy": 0.8349673202614379,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 843,
+                "mean_forecast": 0.0629828277995553,
+                "observed_frequency": 0.08540925266903915
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 256,
+                "mean_forecast": 0.28367330408035596,
+                "observed_frequency": 0.30859375
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 95,
+                "mean_forecast": 0.47473301662717055,
+                "observed_frequency": 0.47368421052631576
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 28,
+                "mean_forecast": 0.6811872206160166,
+                "observed_frequency": 0.6785714285714286
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 2,
+                "mean_forecast": 0.8188585072087036,
+                "observed_frequency": 0.5
+              }
+            ]
+          }
+        },
+        "2025": {
+          "prior": {
+            "n": 1218,
+            "frequency": 0.18144499178981938,
+            "mean_probability": 0.16981132075471697,
+            "brier": 0.14865804904596472,
+            "logloss": 0.4740491412961195,
+            "accuracy": 0.8185550082101807,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1218,
+                "mean_forecast": 0.16981132075471697,
+                "observed_frequency": 0.18144499178981938
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 1218,
+            "frequency": 0.18144499178981938,
+            "mean_probability": 0.17412090921509055,
+            "brier": 0.14671201154184363,
+            "logloss": 0.46826168232213733,
+            "accuracy": 0.8185550082101807,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 1034,
+                "mean_forecast": 0.16520239790496571,
+                "observed_frequency": 0.16827852998065765
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 183,
+                "mean_forecast": 0.2232058923110535,
+                "observed_frequency": 0.25136612021857924
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 1,
+                "mean_forecast": 0.4133096973229262,
+                "observed_frequency": 1.0
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 1218,
+            "frequency": 0.18144499178981938,
+            "mean_probability": 0.17339449865289278,
+            "brier": 0.13008929034636893,
+            "logloss": 0.4150470959070676,
+            "accuracy": 0.8185550082101807,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 883,
+                "mean_forecast": 0.1358328504006075,
+                "observed_frequency": 0.0928652321630804
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 335,
+                "mean_forecast": 0.2724002759865282,
+                "observed_frequency": 0.41492537313432837
+              }
+            ]
+          },
+          "selected": {
+            "n": 1218,
+            "frequency": 0.18144499178981938,
+            "mean_probability": 0.17339449865289278,
+            "brier": 0.13008929034636893,
+            "logloss": 0.4150470959070676,
+            "accuracy": 0.8185550082101807,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 883,
+                "mean_forecast": 0.1358328504006075,
+                "observed_frequency": 0.0928652321630804
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 335,
+                "mean_forecast": 0.2724002759865282,
+                "observed_frequency": 0.41492537313432837
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 1218,
+            "frequency": 0.18144499178981938,
+            "mean_probability": 0.1677466848960371,
+            "brier": 0.11761373393041673,
+            "logloss": 0.3772842211215932,
+            "accuracy": 0.8374384236453202,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 810,
+                "mean_forecast": 0.06490503318265217,
+                "observed_frequency": 0.07654320987654321
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 264,
+                "mean_forecast": 0.2877698909388682,
+                "observed_frequency": 0.3068181818181818
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 116,
+                "mean_forecast": 0.4854220200940328,
+                "observed_frequency": 0.4827586206896552
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 25,
+                "mean_forecast": 0.6731312328785782,
+                "observed_frequency": 0.76
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 3,
+                "mean_forecast": 0.8779663215638406,
+                "observed_frequency": 1.0
+              }
+            ]
+          }
+        },
+        "2026": {
+          "prior": {
+            "n": 689,
+            "frequency": 0.1509433962264151,
+            "mean_probability": 0.1718194254445964,
+            "brier": 0.12859529595796892,
+            "logloss": 0.42592589600042735,
+            "accuracy": 0.8490566037735849,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 689,
+                "mean_forecast": 0.1718194254445964,
+                "observed_frequency": 0.1509433962264151
+              }
+            ]
+          },
+          "raw_logistic": {
+            "n": 689,
+            "frequency": 0.1509433962264151,
+            "mean_probability": 0.16912201504903274,
+            "brier": 0.12678560687528698,
+            "logloss": 0.4203996906972691,
+            "accuracy": 0.8490566037735849,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 601,
+                "mean_forecast": 0.16149434514596295,
+                "observed_frequency": 0.129783693843594
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 88,
+                "mean_forecast": 0.22121553336431612,
+                "observed_frequency": 0.29545454545454547
+              }
+            ]
+          },
+          "raw_boost": {
+            "n": 689,
+            "frequency": 0.1509433962264151,
+            "mean_probability": 0.16411174638699108,
+            "brier": 0.11398819339379375,
+            "logloss": 0.3766008444412093,
+            "accuracy": 0.8490566037735849,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 531,
+                "mean_forecast": 0.1318619723480158,
+                "observed_frequency": 0.08851224105461393
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 156,
+                "mean_forecast": 0.2706253380900232,
+                "observed_frequency": 0.358974358974359
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 2,
+                "mean_forecast": 0.4183666008984161,
+                "observed_frequency": 0.5
+              }
+            ]
+          },
+          "selected": {
+            "n": 689,
+            "frequency": 0.1509433962264151,
+            "mean_probability": 0.16411174638699108,
+            "brier": 0.11398819339379375,
+            "logloss": 0.3766008444412093,
+            "accuracy": 0.8490566037735849,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 531,
+                "mean_forecast": 0.1318619723480158,
+                "observed_frequency": 0.08851224105461393
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 156,
+                "mean_forecast": 0.2706253380900232,
+                "observed_frequency": 0.358974358974359
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 2,
+                "mean_forecast": 0.4183666008984161,
+                "observed_frequency": 0.5
+              }
+            ]
+          },
+          "normal_geometry": {
+            "n": 689,
+            "frequency": 0.1509433962264151,
+            "mean_probability": 0.14290949007025153,
+            "brier": 0.10585616190861251,
+            "logloss": 0.3516947563783029,
+            "accuracy": 0.8519593613933236,
+            "calibration": [
+              {
+                "probability_band": [
+                  0,
+                  0.2
+                ],
+                "n": 495,
+                "mean_forecast": 0.058671873839424134,
+                "observed_frequency": 0.06868686868686869
+              },
+              {
+                "probability_band": [
+                  0.2,
+                  0.4
+                ],
+                "n": 146,
+                "mean_forecast": 0.2937052849098548,
+                "observed_frequency": 0.3150684931506849
+              },
+              {
+                "probability_band": [
+                  0.4,
+                  0.6
+                ],
+                "n": 33,
+                "mean_forecast": 0.47964942142216693,
+                "observed_frequency": 0.45454545454545453
+              },
+              {
+                "probability_band": [
+                  0.6,
+                  0.8
+                ],
+                "n": 12,
+                "mean_forecast": 0.6788064574694647,
+                "observed_frequency": 0.5
+              },
+              {
+                "probability_band": [
+                  0.8,
+                  1.0
+                ],
+                "n": 3,
+                "mean_forecast": 0.8556603714948224,
+                "observed_frequency": 1.0
+              }
+            ]
+          }
+        }
+      },
+      "comparisons": [
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": -0.015562625901111349,
+          "ci95": [
+            -0.016723713913620576,
+            -0.01436071175328295
+          ],
+          "p": 0.000999000999000999,
+          "target": "terminal_range_exit",
+          "baseline": "prior",
+          "period_means": {
+            "2019_2022": -0.0148369058503586,
+            "2023_onward": -0.016377557394567133
+          },
+          "improving_years": 8,
+          "q": 0.0024975024975024975,
+          "passed": true
+        },
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": -0.012899826866573165,
+          "ci95": [
+            -0.014009934460980296,
+            -0.011827681651551106
+          ],
+          "p": 0.000999000999000999,
+          "target": "terminal_range_exit",
+          "baseline": "raw_logistic",
+          "period_means": {
+            "2019_2022": -0.012182558427436098,
+            "2023_onward": -0.013705267807206361
+          },
+          "improving_years": 8,
+          "q": 0.0024975024975024975,
+          "passed": true
+        },
+        {
+          "n": 9222,
+          "calendar_weeks": 396,
+          "mean": 0.0,
+          "ci95": [
+            0.0,
+            0.0
+          ],
+          "p": 1.0,
+          "target": "terminal_range_exit",
+          "baseline": "raw_boost",
+          "period_means": {
+            "2019_2022": 0.0,
+            "2023_onward": 0.0
+          },
+          "improving_years": 0,
+          "q": 1.0,
+          "passed": false
+        }
+      ],
+      "structural_increment_supported": false,
+      "status": "experimental_no_structural_increment_demonstrated"
+    }
+  },
+  "limitations": [
+    "Retrospective: gold history and previous evaluation results were already viewed.",
+    "One instrument, no independent future/other-market confirmation.",
+    "Annual model adaptation is causal, but prospective performance remains unknown.",
+    "Probability of displacement or terminal exit does not imply directional/profit skill."
+  ]
+}
