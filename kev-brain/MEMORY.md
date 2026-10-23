@@ -59,3 +59,10 @@ Durable facts, decisions and lessons. Keep it short; details live in the linked 
 ## Lessons
 - Check a claim against the data before reporting it (the "harness ignores space" claim was wrong: space only gated GO, not fills).
 - Do not guess another engine's parameters: recover them from its data (One Hour's touch rule was recovered: 3-bar swings within 0.1 ATR, 12+ bars apart).
+
+## Gold observatory information study (2026-10-23)
+- User objective is market observation and emergent organization, not automated profit. Gold observatory uses real M30 input, causal cutoffs and fixed price/Fibonacci references.
+- Retrospective gold test honors the 2018 override split. On 9,219 held-out four-hour observations, Nucleus adds no reliable Brier improvement over a simple price baseline; no predictive/contact comparison passes the five-test corrected rule.
+- Raw 104-M30-window midpoint: 80.65% adjacent persistence; 56.10% of its changes have no new high/low and arise from boundary expiry. Distinguish memory expiry from fresh price impulses.
+- 1,059 Fib and 1,061 ordinary-fraction first contacts; 76.13% of 1,014 matched pairs occur in the same bar. No reliable subsequent Fib displacement advantage (CI -0.0278..0.0349 volatility units).
+- Raw 18/52/104-M30 same-side agreement 62.35% versus quarter-shuffled bar/block medians 65.16%/63.61%; corrected q=.03 against both limited nulls. A descriptive extra-disagreement lead, not proof of emergence or forecast ability. No independent market validation. See docs/gold-information-study.md and the dated experiment plan.
