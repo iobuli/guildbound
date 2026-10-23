@@ -65,7 +65,20 @@ fn fragment(in: VertexOutput) -> @location(0) vec4<f32> {
 
     // Thin broken rim leaves the character visible through the shell.
     let rim = smoothstep(0.65, 0.97, 1.0 - facing);
-    let glow = edge * rim * (0.08 + streaks * 0.65);
+    var glow = edge * rim * (0.08 + streaks * 0.65);
+    if (aura.clock.w > 0.5) {
+        // Binbun3D StatusFXFree aura_sphere (CC0): twisted, scrolling noise with a
+        // vertical band mask. Keep it on the silhouette so the caster remains visible.
+        let uv = in.uv;
+        let charge = clamp(aura.clock.z, 0.0, 1.0);
+        let wave = sin(uv.y * 40.0 - t);
+        let warped = uv + vec2<f32>(wave * 0.02, 0.0);
+        let noise_uv = vec2<f32>(warped.x - warped.y * (1.0 - charge * 0.5), warped.y)
+            * vec2<f32>(3.0, 1.0) + t * vec2<f32>(0.1, 0.4 + charge * 0.3);
+        let band = pow(clamp((1.0 - abs(uv.y * 2.0 - 1.0) - 0.5) / 0.5, 0.0, 1.0), 0.2);
+        let status = smoothstep(0.5, 0.8, value_noise(noise_uv * 4.0) * band);
+        glow = edge * rim * (0.08 + streaks * 0.3 + status * (0.5 + charge * 0.35));
+    }
     let colour = aura.color.rgb * glow * aura.color.a;
     // `AlphaMode::Add` blends as premultiplied alpha (result = src + (1 - src.a) * dst), so the
     // alpha must be 0 for a pure add (Bevy's own `premultiply_alpha` does the same). An alpha of 1

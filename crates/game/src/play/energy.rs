@@ -190,6 +190,49 @@ pub struct EnergyBeam {
     muzzle: (Entity, Handle<QuadMaterial>),
     tip: (Entity, Handle<QuadMaterial>),
     contact: (Entity, Handle<QuadMaterial>),
+    width: f32,
+    body: Entity,
+}
+
+#[derive(Component)]
+struct BeamAnchor { hand: Entity, endpoint: Vec3 }
+
+#[derive(Resource)]
+pub struct BeamGeometry {
+    tubes: [Handle<Mesh>; 4],
+    flare: Handle<Mesh>,
+}
+
+#[derive(Message)]
+pub struct BeamRequest {
+    pub preset: usize,
+    pub from: Vec3,
+    pub to: Vec3,
+    pub life: f32,
+    pub strength: f32,
+    pub hand: Option<Entity>,
+}
+
+fn geometry(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
+    let tubes = std::array::from_fn(|i| {
+        let (rf, rings, segments, power, tip_gain, ..) = LAYERS[i];
+        meshes.add(tube_mesh(rf, rings, segments, power, tip_gain))
+    });
+    commands.insert_resource(BeamGeometry { tubes, flare: meshes.add(Rectangle::new(1.0, 1.0)) });
+}
+
+fn requested(mut commands: Commands, geometry: Res<BeamGeometry>, mut beams: ResMut<Assets<BeamMaterial>>,
+    mut quads: ResMut<Assets<QuadMaterial>>, mut requests: MessageReader<BeamRequest>,
+    live: Query<(), With<EnergyBeam>>, limits: Res<super::vfx::VfxLimits>) {
+    let mut count = live.iter().count();
+    let cap = (limits.emitters / 8).clamp(1, 4);
+    for r in requests.read() {
+        if count >= cap || !r.from.is_finite() || !r.to.is_finite() { continue; }
+        count += 1;
+        info!("[energy] {} length={:.2}m strength={:.2}", PRESETS[r.preset % PRESETS.len()].name, r.from.distance(r.to), r.strength);
+        let beam = spawn_beam(&mut commands, &geometry, &mut beams, &mut quads, r.preset, r.from, r.to, r.life, r.strength);
+        if let Some(hand) = r.hand { commands.entity(beam).insert(BeamAnchor { hand, endpoint: r.to }); }
+    }
 }
 
 fn color4(c: [f32; 3], w: f32) -> Vec4 {
@@ -225,47 +268,65 @@ fn quad_params(p: &Preset, shock: bool) -> QuadParams {
 
 /// Fire a beam of `preset` from `from` toward `to`. It fades in, lives `life` s, fades out and despawns.
 #[allow(clippy::too_many_arguments)]
-pub fn spawn_beam(commands: &mut Commands, meshes: &mut Assets<Mesh>, beams: &mut Assets<BeamMaterial>, quads: &mut Assets<QuadMaterial>, preset: usize, from: Vec3, to: Vec3, life: f32) -> Entity {
+pub fn spawn_beam(commands: &mut Commands, geometry: &BeamGeometry, beams: &mut Assets<BeamMaterial>, quads: &mut Assets<QuadMaterial>, preset: usize, from: Vec3, to: Vec3, life: f32, strength: f32) -> Entity {
     let p = PRESETS[preset % PRESETS.len()];
+    let width = strength.clamp(0.65, 1.6);
     let length = from.distance(to).max(0.5);
     let dir = (to - from).normalize_or(Vec3::NEG_Z);
     let up = if dir.y.abs() > 0.98 { Vec3::X } else { Vec3::Y };
     let seed = (from.x * 7.0 + from.z * 3.0).fract().abs();
     let root_tf = Transform::from_translation(from).looking_to(dir, up);
     let tubes: Vec<Handle<BeamMaterial>> = (0..LAYERS.len()).map(|l| beams.add(BeamMaterial { params: tube_params(&p, l, length, seed) })).collect();
-    let flare_mesh = meshes.add(Rectangle::new(1.0, 1.0));
+    let flare_mesh = geometry.flare.clone();
     let (m_mat, t_mat, c_mat) = (quads.add(QuadMaterial { params: quad_params(&p, false) }), quads.add(QuadMaterial { params: quad_params(&p, false) }), quads.add(QuadMaterial { params: quad_params(&p, true) }));
     let mut muzzle = Entity::PLACEHOLDER;
     let mut tip = Entity::PLACEHOLDER;
     let mut contact = Entity::PLACEHOLDER;
+    let mut body = Entity::PLACEHOLDER;
     let root = commands
         .spawn((root_tf, Visibility::default(), Name::new("EnergyBeam")))
         .with_children(|c| {
-            c.spawn((Transform::from_scale(Vec3::new(1.0, 1.0, length)), Visibility::default())).with_children(|t| {
+            body = c.spawn((Transform::from_scale(Vec3::new(p.radius * width, p.radius * width, length)), Visibility::default())).with_children(|t| {
                 for (l, h) in tubes.iter().enumerate() {
-                    let (rf, rings, segs, power, tip_gain, ..) = LAYERS[l];
-                    t.spawn((Mesh3d(meshes.add(tube_mesh(p.radius * rf, rings, segs, power, tip_gain))), MeshMaterial3d(h.clone()), Transform::default(), bevy::light::NotShadowCaster));
+                    t.spawn((Mesh3d(geometry.tubes[l].clone()), MeshMaterial3d(h.clone()), Transform::default(), bevy::light::NotShadowCaster));
                 }
-            });
+            }).id();
             muzzle = c.spawn((Mesh3d(flare_mesh.clone()), MeshMaterial3d(m_mat.clone()), Transform::from_scale(Vec3::splat(p.radius * 3.0)), bevy::light::NotShadowCaster)).id();
             tip = c.spawn((Mesh3d(flare_mesh.clone()), MeshMaterial3d(t_mat.clone()), Transform::from_translation(Vec3::new(0.0, 0.0, -length)).with_scale(Vec3::splat(p.radius * 2.4)), bevy::light::NotShadowCaster)).id();
             contact = c.spawn((Mesh3d(flare_mesh.clone()), MeshMaterial3d(c_mat.clone()), Transform::from_translation(Vec3::new(0.0, 0.0, -length + 0.03)).with_scale(Vec3::splat(p.radius * 4.2)), bevy::light::NotShadowCaster)).id();
         })
         .id();
-    commands.entity(root).insert(EnergyBeam { preset, length, age: 0.0, life, seed, tubes, muzzle: (muzzle, m_mat), tip: (tip, t_mat), contact: (contact, c_mat) });
+    commands.entity(root).insert(EnergyBeam { preset, length, age: 0.0, life, seed, tubes, muzzle: (muzzle, m_mat), tip: (tip, t_mat), contact: (contact, c_mat), width, body });
     root
 }
 
-fn animate(time: Res<Time>, mut commands: Commands, mut q: Query<(Entity, &mut EnergyBeam)>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, mut tf: Query<&mut Transform, Without<EnergyBeam>>) {
+fn animate(time: Res<Time>, mut commands: Commands,
+    mut q: Query<(Entity, &mut EnergyBeam, &mut Transform, Option<&BeamAnchor>)>,
+    globals: Query<&GlobalTransform>, mut beams: ResMut<Assets<BeamMaterial>>,
+    mut quads: ResMut<Assets<QuadMaterial>>, mut tf: Query<&mut Transform, Without<EnergyBeam>>) {
     let dt = time.delta_secs().min(0.1);
-    for (entity, mut b) in &mut q {
+    for (entity, mut b, mut root, anchor) in &mut q {
         b.age += dt;
         if b.age >= b.life + FADE_OUT {
             commands.entity(entity).despawn();
             continue;
         }
         let p = PRESETS[b.preset % PRESETS.len()];
-        let rise = (b.age / FADE_IN).clamp(0.0, 1.0);
+        if let Some(anchor) = anchor
+            && let Ok(hand) = globals.get(anchor.hand)
+            && hand.translation().is_finite()
+        {
+            let from = hand.translation();
+            let to = anchor.endpoint - from;
+            let dir = to.normalize_or(Vec3::NEG_Z);
+            b.length = to.length().max(0.05);
+            *root = Transform::from_translation(from).looking_to(dir,
+                if dir.y.abs() > 0.98 { Vec3::X } else { Vec3::Y });
+            if let Ok(mut body) = tf.get_mut(b.body) { body.scale.z = b.length; }
+            if let Ok(mut tip) = tf.get_mut(b.tip.0) { tip.translation.z = -b.length; }
+            if let Ok(mut contact) = tf.get_mut(b.contact.0) { contact.translation.z = -b.length + 0.03; }
+        }
+        let rise = (b.age / FADE_IN.min(b.life * 0.3)).clamp(0.0, 1.0);
         let fall = ((b.life + FADE_OUT - b.age) / FADE_OUT).clamp(0.0, 1.0);
         let energy = rise.min(fall);
         let t = b.age;
@@ -276,6 +337,7 @@ fn animate(time: Res<Time>, mut commands: Commands, mut q: Query<(Entity, &mut E
         for (l, h) in b.tubes.iter().enumerate() {
             if let Some(mut m) = beams.get_mut(h) {
                 let q = &mut m.params;
+                q.shape.x = b.length;
                 q.shape.w = t;
                 q.swell = Vec4::new(head_swell, tip_swell, p.intensity * lum[l] * energy * flick, 0.0);
                 q.core.w = if l == 0 { p.intensity * 0.25 * energy } else if l == 1 { 0.8 * energy } else { 0.0 };
@@ -285,14 +347,14 @@ fn animate(time: Res<Time>, mut commands: Commands, mut q: Query<(Entity, &mut E
         let roll = t * p.emitter_spin.to_radians();
         let pop = 1.0 + (1.0 - energy.min(1.0)) * 1.2;
         if let Ok(mut f) = tf.get_mut(b.muzzle.0) {
-            f.scale = Vec3::splat(p.radius * 3.0 * (pop + 0.05 * (t * 26.0).sin()) * head_swell.clamp(0.6, 2.6));
+            f.scale = Vec3::splat(p.radius * b.width * 3.0 * (pop + 0.05 * (t * 26.0).sin()) * head_swell.clamp(0.6, 2.6));
         }
         if let Ok(mut f) = tf.get_mut(b.tip.0) {
-            f.scale = Vec3::splat(p.radius * 2.4 * (1.0 + 0.10 * (t * 31.0 + 1.7).sin()) * tip_swell.clamp(0.6, 3.4));
+            f.scale = Vec3::splat(p.radius * b.width * 2.4 * (1.0 + 0.10 * (t * 31.0 + 1.7).sin()) * tip_swell.clamp(0.6, 3.4));
         }
         let cp = (t % 0.8) / 0.8;
         if let Ok(mut f) = tf.get_mut(b.contact.0) {
-            f.scale = Vec3::splat(p.radius * 4.2 * (0.55 + 0.85 * cp));
+            f.scale = Vec3::splat(p.radius * b.width * 4.2 * (0.55 + 0.85 * cp));
         }
         if let Some(mut m) = quads.get_mut(&b.muzzle.1) {
             m.params.a.z = 1.8 * energy * flick;
@@ -329,7 +391,7 @@ fn smoke_setting() -> Option<Smoke> {
 }
 
 /// `GB_BEAM`: from 2 s the player fires the preset ahead every 3.2 s.
-fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>, mut count: Local<usize>, mut shot: Local<Option<(f32, String)>>, old: Query<Entity, With<EnergyBeam>>) {
+fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands, geometry: Res<BeamGeometry>, mut beams: ResMut<Assets<BeamMaterial>>, mut quads: ResMut<Assets<QuadMaterial>>, players: Query<(&Transform, &super::Mover), With<Player>>, mut last: Local<Option<f32>>, mut count: Local<usize>, mut shot: Local<Option<(f32, String)>>, old: Query<Entity, With<EnergyBeam>>) {
     let Some(smoke) = smoke else { return };
     let t = time.elapsed_secs();
     if let Some((at, path)) = shot.clone()
@@ -354,7 +416,7 @@ fn beam_smoke(time: Res<Time>, smoke: Option<Res<Smoke>>, mut commands: Commands
     }
     let preset = if smoke.all { *count } else { smoke.preset };
     *count += 1;
-    spawn_beam(&mut commands, &mut meshes, &mut beams, &mut quads, preset, from, from + fwd * smoke.length, 2.6);
+    spawn_beam(&mut commands, &geometry, &mut beams, &mut quads, preset, from, from + fwd * smoke.length, 2.6, 1.0);
     info!("[energy] beam {} ({:.1} m)", PRESETS[preset].name, smoke.length);
     if let Some(dir) = super::flipbook::reel_dir() {
         *shot = Some((t + super::flipbook::REEL_SHOT, format!("{dir}/{}.png", PRESETS[preset].name)));
@@ -366,7 +428,9 @@ pub fn plugin(app: &mut App) {
     if let Some(s) = smoke_setting() {
         app.insert_resource(s);
     }
-    app.add_systems(Update, (animate, beam_smoke));
+    app.add_message::<BeamRequest>()
+        .add_systems(Startup, geometry)
+        .add_systems(Update, (animate, beam_smoke, requested).chain());
 }
 
 #[cfg(test)]

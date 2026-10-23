@@ -29,7 +29,7 @@ use super::deeds::Deed;
 use super::skills::Sheet;
 use super::stats::Derived;
 use super::tools::Holding;
-use super::vfx::{self, Element, Expire, Flash, Vfx};
+use super::vfx::{self, Element, Expire, Vfx};
 use super::world::TrainingDummy;
 use super::{
     Action, ActionKind, ActionLayer, Fighter, HALF_HEIGHT, Hit, HitKind, Intent, MoveMode, Mover, Owner, PlaySet,
@@ -523,9 +523,13 @@ pub struct Casting {
     /// What the caster aimed at (no target): the release re-aims at it from the hand.
     aim_point: Vec3,
     target: Option<Entity>,
+    hand: Option<Entity>,
     motes: Option<Entity>,
     /// Flash Step blinked (teleported) instead of dashing.
     blinked: bool,
+    fx_clock: f32,
+    step_last: Vec3,
+    step_struck: Vec<Entity>,
     /// The player's cast: a skill shot, aimed where the crosshair points at the release, never led
     /// or homed onto a target.
     skill: bool,
@@ -659,14 +663,17 @@ fn bind(
     }
 }
 
-/// World position of a fighter's right hand (falls back to the chest).
-fn hand(rig: Option<&Rig>, bank: &PoseBank, globals: &Query<&GlobalTransform>, tf: &Transform) -> Vec3 {
-    rig.and_then(|r| r.bones.get(bank.bones.hand[1]).copied())
-        .filter(|e| *e != Entity::PLACEHOLDER)
-        .and_then(|e| globals.get(e).ok())
-        .map(|g| g.translation())
-        .filter(|p| p.is_finite())
-        .unwrap_or(tf.translation + Vec3::Y * 0.5 + tf.forward() * 0.3)
+/// World-space focus between both palms for magic, or the firing hand for a beam/ki art.
+pub(super) fn cast_origin(a: &Ability, rig: Option<&Rig>, bank: &PoseBank,
+    globals: &Query<&GlobalTransform>, tf: &Transform) -> Vec3 {
+    let palm = |side| rig.and_then(|r| r.bones.get(bank.bones.hand[side]).copied())
+        .filter(|e| *e != Entity::PLACEHOLDER).and_then(|e| globals.get(e).ok())
+        .map(|g| g.translation()).filter(|p| p.is_finite());
+    let right = palm(1);
+    if super::magic_fx::two_handed(a) {
+        if let (Some(left), Some(right)) = (palm(0), right) { return left.lerp(right, 0.5); }
+    }
+    right.unwrap_or(tf.translation + Vec3::Y * 0.5 + tf.forward() * 0.3)
 }
 
 #[allow(clippy::type_complexity, clippy::too_many_arguments)]
@@ -739,7 +746,7 @@ fn start_cast(
         let scale = if a.is_art() { d.map_or(1.0, |d| d.might) } else { d.map_or(1.0, |d| d.spell) };
         let cast_speed = if a.is_art() { 1.0 } else { d.map_or(1.0, |d| d.cast_speed) };
         let rate = a.speed * cast_speed * if mastered { MASTERED_SPEED } else { 1.0 };
-        let origin = hand(rig, &bank, &globals, tf);
+        let origin = cast_origin(a, rig, &bank, &globals, tf);
         // The player aims by hand (the crosshair's point); NPCs aim at their target.
         let target = if player { None } else { intent.target };
         let aim_point = target
@@ -748,13 +755,19 @@ fn start_cast(
             .unwrap_or(intent.look);
         let aim = (aim_point - origin).normalize_or(tf.forward().as_vec3());
         let mask = if a.is_art() { Mask::Full } else { Mask::Upper };
-        let (track, clip_start, clip_span, clip_release) = match a.shape {
-            Shape::Bolt { .. } => ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.25),
-            Shape::Lance { .. } | Shape::Orbs { .. } => ("sparking/DBZ_Ki_Release", 0.0, 0.7166666, 0.3),
+        let new_spell = matches!(a.id, "ember_burst" | "glacier_lance" | "thunder_ring" | "tide_orbs"
+            | "arcane_step" | "sunflare" | "shadow_veil" | "stone_ward" | "cometfall" | "gale_crescent");
+        let (track, clip_start, clip_span, clip_release) = if matches!(a.shape, Shape::Lance { .. }) {
+            ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.35)
+        } else if new_spell {
+            (a.track, a.start, (a.end - a.start).max(0.05), a.release)
+        } else { match a.shape {
+            Shape::Bolt { .. } if a.is_art() => ("sparking/DBZ_Ki_Blast", 0.0, 0.2, 0.25),
+            Shape::Orbs { .. } => ("sparking/DBZ_Ki_Release", 0.0, 0.7166666, 0.3),
             _ => (a.track, a.start, (a.end - a.start).max(0.05), a.release),
-        };
+        }};
         let mut layer = ActionLayer::new(track, clip_start, mask);
-        if track.starts_with("sparking/") {
+        if track.starts_with("sparking/") || track.starts_with("sekiro/Magic") {
             layer.style = Some(crate::motion::timing::Style { exaggeration: 1.0, hold: 0.0, ..default() });
         }
         action.start(ActionKind::Cast, Owner::Magic, Some(layer));
@@ -783,8 +796,13 @@ fn start_cast(
             charge,
             aim_point,
             target,
+            hand: rig.and_then(|r| r.bones.get(bank.bones.hand[1]).copied())
+                .filter(|e| *e != Entity::PLACEHOLDER),
             motes,
             blinked: false,
+            fx_clock: 0.06,
+            step_last: tf.translation,
+            step_struck: Vec::new(),
             skill: player,
         });
         if a.id != "veil" {
@@ -896,16 +914,44 @@ fn drive_cast(
         c.t += dt * c.rate;
         let u = c.t / span;
         if let Some(layer) = action.layer.as_mut() {
-            layer.time = c.clip_start + c.t.min(span);
+            layer.time = if matches!(a.shape, Shape::Lance { .. }) {
+                // Right palm stays extended through the beam; a small source-time movement
+                // keeps the follow-through alive while the muzzle follows the actual bone.
+                c.clip_start + c.t.min(0.1) + if c.t > 0.1 { (c.t * 4.0).sin() * 0.008 } else { 0.0 }
+            } else { c.clip_start + c.t.min(span) };
         }
         action.elapsed += dt;
-        let origin = hand(rig, &bank, &globals, tf);
+        let origin = cast_origin(a, rig, &bank, &globals, tf);
         if let Some(m) = c.motes
             && let Ok(mut mt) = motes.get_mut(m)
         {
             mt.translation = origin;
         }
         if let Shape::Step { distance } = a.shape {
+            if !c.released {
+                c.released = true;
+                super::magic_fx::release(&mut commands, a, origin, tf.translation - Vec3::Y * HALF_HEIGHT, c.charge);
+                deeds.write(Deed::new(entity, "cast", a.id, 1.0));
+            }
+            // Damage follows the actual swept movement, once per foe, rather than a guessed dash endpoint.
+            if a.damage > 0.0 {
+                let mut landed = 0;
+                for target in world.targets.iter().filter(|t| foe(t, entity, fighter.team)) {
+                    if c.step_struck.contains(&target.entity) { continue; }
+                    let (gap, _, _) = segment_distance(c.step_last, tf.translation, target.axis[0], target.axis[1]);
+                    if gap <= target.radius + 0.45 {
+                        hits.write(spell_hit(entity, a, c.power, target.entity, target.center, c.aim, 16.0));
+                        c.step_struck.push(target.entity);
+                        super::magic_fx::impact(&mut commands, a, target.center, 0.6);
+                        landed += 1;
+                    }
+                }
+                if landed > 0 {
+                    gain(&mut grimoire, a.id, landed);
+                    deeds.write(Deed::new(entity, "cast_hit", a.id, landed as f32));
+                }
+            }
+            c.step_last = tf.translation;
             // The dash: aura blows the body along the aim; afterimage sparks trail it.
             let dir = Vec3::new(c.aim.x, 0.0, c.aim.z).normalize_or(tf.forward().as_vec3());
             let elapsed = action.elapsed;
@@ -915,8 +961,12 @@ fn drive_cast(
                     finish(&mut commands, entity, &mut action, &mut mover, &c);
                 }
             } else if elapsed <= STEP_TIME {
-                mover.root_motion = dir * (distance / STEP_TIME);
-                vfx::burst(&mut commands, world.vfx.burst(Element::Aura), tf.translation, 0.5);
+                mover.root_motion = dir * (distance * (1.0 + c.charge * 0.25) / STEP_TIME);
+                c.fx_clock += dt;
+                if c.fx_clock >= 0.06 {
+                    c.fx_clock = 0.0;
+                    vfx::burst(&mut commands, world.vfx.burst(a.element), tf.translation, 0.35);
+                }
             } else {
                 finish(&mut commands, entity, &mut action, &mut mover, &c);
                 // Plant the stop: a quick landing on the spot.
@@ -929,8 +979,7 @@ fn drive_cast(
         mover.root_motion = Vec3::ZERO;
         if !c.released && u >= c.clip_release {
             c.released = true;
-            commands.write_message(super::flipbook::Flip::new(super::flipbook::Sheet::MagicHit, origin,
-                0.24 + c.charge * 0.16, 0.16).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(0.65));
+            super::magic_fx::release(&mut commands, a, origin, tf.translation - Vec3::Y * HALF_HEIGHT, c.charge);
             if let Some(m) = c.motes.take() {
                 commands.entity(m).try_despawn();
             }
@@ -960,6 +1009,8 @@ fn drive_cast(
                 if dir.is_finite() && dir.length_squared() > 0.5 {
                     c.aim = dir.normalize();
                 }
+            } else if c.skill {
+                c.aim = (c.aim_point - origin).normalize_or(c.aim);
             }
             let team = fighter.team;
             let flair = (1.0 + 0.2 * c.charge) * if c.mastered { MASTERED_FLAIR } else { 1.0 };
@@ -986,7 +1037,8 @@ fn drive_cast(
                 deeds.write(Deed::new(entity, "cast_hit", a.id, landed as f32));
             }
         }
-        if u >= 1.0 {
+        let beam_tail = if matches!(a.shape, Shape::Lance { .. }) { (0.9 + c.charge * 0.3) * c.rate } else { 0.0 };
+        if c.t >= span + beam_tail {
             finish(&mut commands, entity, &mut action, &mut mover, &c);
         }
     }
@@ -1086,8 +1138,8 @@ fn blink(
         let Some((feet, yaw)) = dest else { continue };
         c.blinked = true;
         commands.entity(e).try_insert(super::controller::Teleport { feet, yaw });
-        vfx::burst(&mut commands, vfx.burst(Element::Aura), from, 0.7);
-        vfx::burst(&mut commands, vfx.burst(Element::Aura), feet + Vec3::Y * super::HALF_HEIGHT, 0.9);
+        vfx::burst(&mut commands, vfx.burst(c.ability.element), from, 0.5);
+        vfx::burst(&mut commands, vfx.burst(c.ability.element), feet + Vec3::Y * super::HALF_HEIGHT, 0.6);
         if hero {
             commands.entity(e).try_insert(Superhero);
         }
@@ -1200,31 +1252,25 @@ fn release(
             ));
             e.with_child((world.vfx.trail(a.element), Transform::default()));
             if crescent {
-                let color = a.element.core() * 1.4;
                 e.with_child((
-                    Mesh3d(meshes.add(vfx::crescent(0.95 * flair, 2.3, 0.32 * flair))),
-                    MeshMaterial3d(vfx::glow(materials, color)),
-                    Transform::from_translation(-Vec3::Z * 0.6),
+                    Mesh3d(world.vfx.crescent_mesh.clone()),
+                    MeshMaterial3d(world.vfx.charged_material(a.element, c.charge)),
+                    Transform::from_translation(-Vec3::Z * 0.6).with_scale(Vec3::splat(flair)),
                     bevy::light::NotShadowCaster,
                 ));
             } else {
-                let color = a.element.core();
                 e.with_child((
-                    Mesh3d(meshes.add(Sphere::new(0.12 * flair))),
-                    MeshMaterial3d(vfx::glow(materials, color * 1.5)),
-                    Transform::default(),
+                    Mesh3d(world.vfx.ball_mesh.clone()),
+                    MeshMaterial3d(world.vfx.charged_material(a.element, c.charge)),
+                    Transform::from_scale(super::magic_fx::core_scale(a, flair)),
                     bevy::light::NotShadowCaster,
                 ));
-                e.with_child((
-                    PointLight {
-                        color: Color::LinearRgba(color.with_alpha(1.0) * (1.0 / color.red.max(color.green).max(color.blue))),
-                        intensity: 40_000.0,
-                        range: 6.0,
-                        shadow_maps_enabled: false,
-                        ..default()
-                    },
-                    Transform::default(),
-                ));
+                if a.id == "sunflare" {
+                    e.with_child((Mesh3d(world.vfx.ring_mesh.clone()),
+                        MeshMaterial3d(world.vfx.core_material(a.element)),
+                        Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::FRAC_PI_2))
+                            .with_scale(Vec3::splat(0.32 * flair)), bevy::light::NotShadowCaster));
+                }
             }
         }
         Shape::Quake { radius } => {
@@ -1238,28 +1284,17 @@ fn release(
                     landed += 1;
                 }
             }
-            let color = a.element.core() * 1.3;
+            vfx::ring_pulse(commands, materials, world.vfx, a.element, feet, r);
+            super::magic_fx::impact(commands, a, feet, flair);
             commands.spawn((
-                Name::new("Shock ring"),
-                Mesh3d(meshes.add(vfx::ring(0.75, 1.0))),
-                MeshMaterial3d(vfx::glow(materials, color)),
-                Transform::from_translation(feet).with_scale(Vec3::splat(0.6)),
-                Flash {
-                    age: 0.0,
-                    life: 0.45,
-                    grow: 7.0 * flair,
-                    color,
-                },
-                bevy::light::NotShadowCaster,
-            ));
-            commands.spawn((
-                world.vfx.shock(),
+                if a.element == Element::Aura { world.vfx.shock() } else { world.vfx.burst(a.element) },
                 Transform::from_translation(feet).with_scale(Vec3::splat(flair)),
                 Expire { left: 1.6 },
             ));
-            vfx::impact(commands, meshes, materials, world.vfx, Element::Aura, feet + Vec3::Y * 0.3, flair * 1.5);
+            vfx::impact(commands, meshes, materials, world.vfx, a.element, feet + Vec3::Y * 0.3, flair);
         }
         Shape::Lance { range, chains } => {
+            let range = range * (1.0 + c.charge * 0.2);
             // Strike the foe nearest the aim within the cone, then leap to the next ones.
             let mut from = origin;
             let mut dir = c.aim;
@@ -1272,7 +1307,8 @@ fn release(
                     .filter(|t| foe(t, owner, team))
                     .filter(|t| {
                         let to = t.center - from;
-                        to.length() < range && to.normalize_or_zero().dot(dir) > if c.skill { SKILL_LANCE_CONE } else { LANCE_CONE }
+                        to.length() < range && (!c.skill || to.length() <= c.aim_point.distance(from) + t.radius + 0.2)
+                            && to.normalize_or_zero().dot(dir) > if c.skill { SKILL_LANCE_CONE } else { LANCE_CONE }
                     })
                     .min_by(|x, y| (x.center - from).length().total_cmp(&(y.center - from).length()))
                     .cloned()
@@ -1282,16 +1318,21 @@ fn release(
                 let Some(t) = next.take() else {
                     if jump == 0 {
                         // Nothing in reach: the bolt strikes the ground ahead.
-                        let end = from + dir * range * 0.6 - Vec3::Y * 1.0;
-                        vfx::spawn_bolt(commands, meshes, materials, from, end, seed);
-                        vfx::impact(commands, meshes, materials, world.vfx, Element::Lightning, end, flair);
+                        let end = if c.skill { from + (c.aim_point - from).clamp_length_max(range) }
+                            else { from + dir * range };
+                        super::magic_fx::beam(commands, a, from, end, c.charge, c.hand);
+                        if a.element == Element::Lightning { vfx::spawn_ray(commands, meshes, materials, a.element, from, end, seed); }
+                        vfx::impact(commands, meshes, materials, world.vfx, a.element, end, flair);
+                        super::magic_fx::impact(commands, a, end, flair);
                     }
                     break;
                 };
                 let point = t.center + Vec3::Y * 0.3;
                 seed = seed.wrapping_mul(1_664_525).wrapping_add(1_013_904_223);
-                vfx::spawn_bolt(commands, meshes, materials, from, point, seed);
-                vfx::impact(commands, meshes, materials, world.vfx, Element::Lightning, point, flair);
+                super::magic_fx::beam(commands, a, from, point, c.charge, if jump == 0 { c.hand } else { None });
+                if a.element == Element::Lightning { vfx::spawn_ray(commands, meshes, materials, a.element, from, point, seed); }
+                vfx::impact(commands, meshes, materials, world.vfx, a.element, point, flair);
+                super::magic_fx::impact(commands, a, point, flair);
                 dir = (point - from).normalize_or(dir);
                 let falloff = 0.7f32.powi(jump as i32);
                 hits.write(spell_hit(owner, a, c.power * falloff, t.entity, point, dir, 18.0));
@@ -1331,34 +1372,44 @@ fn release(
                 ));
                 e.with_child((world.vfx.trail(a.element), Transform::default()));
                 e.with_child((
-                    Mesh3d(meshes.add(Sphere::new(0.09 * flair))),
-                    MeshMaterial3d(vfx::glow(materials, a.element.core() * 1.6)),
-                    Transform::default(),
+                    Mesh3d(world.vfx.ball_mesh.clone()),
+                    MeshMaterial3d(world.vfx.charged_material(a.element, c.charge)),
+                    Transform::from_scale(super::magic_fx::core_scale(a, flair)),
                     bevy::light::NotShadowCaster,
                 ));
+                let orb = e.id();
+                super::magic_fx::orbit(commands, a, orb, origin);
             }
         }
         Shape::Step { .. } => {}
         Shape::Veil { duration } => {
-            commands.entity(owner).try_insert(super::senses::Veiled(duration * flair));
-            vfx::burst(commands, world.vfx.burst(Element::Arcane), tf.translation, 0.6);
+            commands.entity(owner).try_insert(super::senses::Veiled(duration * (1.0 + c.charge * 0.35)
+                * if c.mastered { MASTERED_FLAIR } else { 1.0 }));
+            vfx::burst(commands, world.vfx.burst(a.element), tf.translation, 0.4);
         }
         Shape::Ward { duration, share } => {
-            // A faint tint and three bright bands spinning on tilted axes (a gyroscope of aura).
-            let tint = vfx::glow(materials, a.element.core() * 0.07);
-            let band = vfx::glow(materials, a.element.core() * 0.9);
-            let ring = meshes.add(vfx::ring(WARD_RADIUS - 0.025, WARD_RADIUS));
+            // Thin bands keep the character visible; stone ward adds six small faceted stones.
+            let band = world.vfx.charged_material(a.element, c.charge);
+            let ring = world.vfx.ring_mesh.clone();
             let shell = commands
                 .spawn((
                     Name::new("Ward shell"),
                     WardShell { owner, age: 0.0 },
-                    Mesh3d(meshes.add(Sphere::new(WARD_RADIUS))),
-                    MeshMaterial3d(tint),
                     Transform::from_xyz(0.0, WARD_LIFT, 0.0),
+                    Visibility::default(),
                     ChildOf(owner),
                     bevy::light::NotShadowCaster,
                 ))
                 .with_children(|sh| {
+                    if a.id == "stone_ward" {
+                        for i in 0..6 {
+                            let angle = i as f32 * std::f32::consts::TAU / 6.0;
+                            sh.spawn((Mesh3d(world.vfx.core_mesh.clone()),
+                                MeshMaterial3d(world.vfx.stone_material.clone()),
+                                Transform::from_xyz(angle.sin() * 0.85, (angle * 2.0).cos() * 0.25, angle.cos() * 0.85)
+                                    .with_scale(Vec3::new(0.09, 0.15, 0.09))));
+                        }
+                    }
                     for (i, tilt) in WARD_TILTS.into_iter().enumerate() {
                         sh.spawn((
                             WardBand {
@@ -1367,18 +1418,18 @@ fn release(
                             },
                             Mesh3d(ring.clone()),
                             MeshMaterial3d(band.clone()),
-                            Transform::default(),
+                            Transform::from_scale(Vec3::splat(WARD_RADIUS)),
                             bevy::light::NotShadowCaster,
                         ));
                     }
                 })
                 .id();
             commands.entity(owner).try_insert(Ward {
-                left: duration * flair,
-                share: (share * if flair > 1.0 { 1.15 } else { 1.0 }).min(0.85),
+                left: duration * (1.0 + c.charge * 0.35) * if c.mastered { MASTERED_FLAIR } else { 1.0 },
+                share: (share * (1.0 + c.charge * 0.2) * if c.mastered { 1.15 } else { 1.0 }).min(0.85),
                 shell,
             });
-            vfx::impact(commands, meshes, materials, world.vfx, Element::Aura, tf.translation + Vec3::Y * WARD_LIFT, 1.4 * flair);
+            vfx::ring_pulse(commands, materials, world.vfx, a.element, tf.translation - Vec3::Y * (HALF_HEIGHT - 0.05), 1.1);
         }
     }
     landed
@@ -1441,6 +1492,7 @@ fn ward(
         let fade = (w.left / 0.4).clamp(0.0, 1.0);
         let breathe = 1.0 + 0.04 * (shell.age * 7.0).sin();
         tf.scale = Vec3::splat((grow * fade * breathe).max(0.01));
+        tf.rotation = Quat::from_rotation_y(shell.age * 0.65);
     }
 }
 
@@ -1569,8 +1621,7 @@ fn fly(
             commands.write_message(super::fracture::Shatter {
                 at, radius: (1.2 + p.power.sqrt()).min(4.5), force: a.damage * p.power * 2.0,
             });
-            commands.write_message(super::flipbook::Flip::new(super::flipbook::Sheet::MagicHit, at,
-                1.2 * p.flair, 0.32).tinted(Color::LinearRgba(a.element.core()), 1.0).glow(1.5));
+            super::magic_fx::impact(&mut commands, a, at, p.flair);
             monitor.write(&format!(
                 "{:.2} - spell_impact_{} - {landed} ({:.1} {:.1} {:.1}) Cast {:.2}",
                 time.elapsed_secs(),
@@ -1616,8 +1667,9 @@ fn demo(
     time: Res<Time>,
     mut commands: Commands,
     opponents: Query<Entity, With<super::Npc>>,
-    mut state: Local<Option<(Vec<&'static Ability>, usize, f32)>>,
-    mut players: Query<(&Transform, &mut Intent, &mut Grimoire, &mut Energy, &mut Sheet), With<Player>>,
+    mut state: Local<Option<(Vec<&'static Ability>, usize, f32, f32)>>,
+    mut cleared: Local<bool>,
+    mut players: Query<(&Transform, &mut Intent, &mut Grimoire, &mut Energy, &mut Sheet, &Action, &Recovery), With<Player>>,
     dummies: Query<(Entity, &Transform), (With<TrainingDummy>, Without<Player>)>,
 ) {
     let st = state.get_or_insert_with(|| {
@@ -1627,22 +1679,23 @@ fn demo(
             .filter_map(|id| ability(id.trim()))
             .collect();
         let every = std::env::var("GB_CAST_EVERY").ok().and_then(|s| s.parse().ok()).unwrap_or(1.6);
-        (list, 0, every)
+        (list, 0, every, 2.0)
     });
     if st.0.is_empty() {
         return;
     }
-    // A clear stage: NPCs (who would interrupt the casts) are kept far off.
-    for npc in &opponents {
-        commands.entity(npc).try_insert(super::controller::Teleport {
-            feet: Vec3::new(40.0, 0.0, 40.0),
-            yaw: 0.0,
-        });
+    // A controlled effects stage. Re-teleporting everyone to one point every frame
+    // made the old demo spend most of its time resolving overlapping capsules.
+    if !*cleared {
+        *cleared = true;
+        for npc in &opponents { commands.entity(npc).try_despawn(); }
     }
     if time.elapsed_secs() < 2.0 {
         return;
     }
-    let Ok((tf, mut intent, mut g, mut e, mut sheet)) = players.single_mut() else { return };
+    let Ok((tf, mut intent, mut g, mut e, mut sheet, action, recovery)) = players.single_mut() else { return };
+    let look = intent.look;
+    *intent = Intent { look, ..default() };
     // GB_AIR_BLINK=1: jump just before each cast and cast with no target (an air blink).
     let air = std::env::var("GB_AIR_BLINK").is_ok_and(|v| v.trim() == "1");
     for a in &st.0 {
@@ -1652,21 +1705,23 @@ fn demo(
     }
     e.battlewill = e.max_battlewill;
     e.magicules = e.max_magicules;
-    let due = ((time.elapsed_secs() - 2.0) / st.2) as usize;
     if air {
         // Jump so the cast comes at the top of the jump.
-        let lead = 2.0 + st.1 as f32 * st.2 - time.elapsed_secs();
+        let lead = st.3 - time.elapsed_secs();
         if lead <= 0.3 && lead > 0.3 - time.delta_secs() {
             intent.jump_pressed = true;
         }
         // Held, so the jump is not cut short.
         intent.jump_held = lead > 0.0 && lead <= 0.3;
     }
-    if due < st.1 {
+    if time.elapsed_secs() < st.3 || !action.is_free() {
         return;
     }
     let a = st.0[st.1 % st.0.len()];
-    st.1 = due + 1;
+    if recovery.remaining(a.pool) > 0.0 { return; }
+    st.1 += 1;
+    st.3 = time.elapsed_secs() + st.2;
+    info!("[magic-showcase] {}", a.id);
     let target = dummies
         .iter()
         .min_by(|x, y| x.1.translation.distance(tf.translation).total_cmp(&y.1.translation.distance(tf.translation)));

@@ -83,6 +83,8 @@ pub struct Flip {
     pub rim: f32,
     /// Rides this entity (plus `offset`) while it plays.
     pub follow: Option<Entity>,
+    /// Optional second attachment: render midway between the two world-space transforms.
+    pub between: Option<Entity>,
     pub offset: Vec3,
     /// Lies flat (a horizontal plane facing up, seen from both sides) instead of facing the camera.
     pub flat: bool,
@@ -102,7 +104,7 @@ pub struct Flip {
 
 impl Flip {
     pub fn new(sheet: Sheet, at: Vec3, size: f32, life: f32) -> Self {
-        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, rim: 0.0, follow: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, anim: None, head_start: 0.0, spin: 0.0 }
+        Self { sheet, at, size, life, loops: 1, tint: Color::WHITE, recolor: 0.0, additive: true, intensity: 1.0, rim: 0.0, follow: None, between: None, offset: Vec3::ZERO, flat: false, rise: None, taper_from: 0.0, anim: None, head_start: 0.0, spin: 0.0 }
     }
     pub fn flat(mut self) -> Self {
         self.flat = true;
@@ -131,6 +133,12 @@ impl Flip {
     pub fn follow(mut self, e: Entity, offset: Vec3) -> Self {
         self.follow = Some(e);
         self.offset = offset;
+        self
+    }
+    pub fn between(mut self, left: Entity, right: Entity) -> Self {
+        self.follow = Some(left);
+        self.between = Some(right);
+        self.offset = Vec3::ZERO;
         self
     }
     pub fn glow(mut self, k: f32) -> Self {
@@ -200,6 +208,7 @@ struct Playing {
     alpha: f32,
     opacity: f32,
     follow: Option<(Entity, Vec3)>,
+    between: Option<Entity>,
     base: Vec3,
     size: f32,
     flat: bool,
@@ -234,9 +243,17 @@ fn load(mut commands: Commands, assets: Res<AssetServer>, mut meshes: ResMut<Ass
     commands.insert_resource(Sheets { images, quad: meshes.add(front), flat_quad: meshes.add(both) });
 }
 
-fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>, sheets: Option<Res<Sheets>>, mut mats: ResMut<Assets<FlipMaterial>>) {
+fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>, sheets: Option<Res<Sheets>>,
+    mut mats: ResMut<Assets<FlipMaterial>>, active: Query<(), With<Playing>>,
+    limits: Res<super::vfx::VfxLimits>, mut load: ResMut<super::vfx::VfxLoad>) {
     let Some(sheets) = sheets else { return };
+    let mut count = active.iter().count();
     for f in flips.read() {
+        if count >= limits.sprites {
+            load.dropped_sprites += 1;
+            continue;
+        }
+        count += 1;
         let i = f.sheet as usize;
         let (_, n, _) = SHEETS[i];
         let c = f.tint.to_linear();
@@ -251,7 +268,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
             sheet: sheets.images[i].clone(),
             additive: f.additive,
         });
-        info!("[flip] spawn sheet {i}");
+        debug!("[flip] spawn sheet {i}");
         commands.spawn((
             Mesh3d(if f.flat { sheets.flat_quad.clone() } else { sheets.quad.clone() }),
             MeshMaterial3d(material.clone()),
@@ -265,6 +282,7 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
                 alpha: c.alpha,
                 opacity: c.alpha,
                 follow: f.follow.map(|e| (e, f.offset)),
+                between: f.between,
                 base: f.at,
                 size: f.size,
                 flat: f.flat,
@@ -279,9 +297,11 @@ fn spawn(mut commands: Commands, time: Res<Time>, mut flips: MessageReader<Flip>
             Name::new("Flip"),
         ));
     }
+    load.sprites = count;
+    load.peak_sprites = load.peak_sprites.max(count);
 }
 
-fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Playing, &mut Transform)>, owners: Query<&Transform, Without<Playing>>, mut mats: ResMut<Assets<FlipMaterial>>) {
+fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Playing, &mut Transform)>, owners: Query<&GlobalTransform>, mut mats: ResMut<Assets<FlipMaterial>>) {
     for (e, mut p, mut tf) in &mut q {
         p.age += time.delta_secs();
         let total = p.life * p.loops as f32;
@@ -291,7 +311,8 @@ fn play(mut commands: Commands, time: Res<Time>, mut q: Query<(Entity, &mut Play
         }
         let base = match p.follow {
             Some((owner, off)) => match owners.get(owner) {
-                Ok(o) => o.translation + off,
+                Ok(o) => p.between.and_then(|other| owners.get(other).ok())
+                    .map_or(o.translation(), |other| o.translation().lerp(other.translation(), 0.5)) + off,
                 Err(_) => {
                     commands.entity(e).despawn();
                     continue;

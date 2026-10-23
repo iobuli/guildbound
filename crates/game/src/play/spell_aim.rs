@@ -12,7 +12,7 @@
 //! Ownership: `Aiming` (written here only); it rewrites only the player's two cast presses.
 use super::magic::{Energy, Grimoire, Recovery, Shape, ability, affordable_charge, MASTERED_COST};
 use super::hud::log::{HudLog, LogKind};
-use super::{Action, ActionKind, ActionLayer, Fighter, Mover, Owner, HALF_HEIGHT, Intent, Phys, PlaySet, Player};
+use super::{Action, ActionKind, Fighter, Mover, Owner, HALF_HEIGHT, Intent, Phys, PlaySet, Player};
 use avian3d::prelude::*;
 use bevy::prelude::*;
 use std::f32::consts::FRAC_PI_2;
@@ -81,22 +81,25 @@ fn hold(time: Res<Time>, mut commands: Commands, mut log: MessageWriter<HudLog>,
                     action.clear(); mover.move_scale = 1.0; mover.face = None;
                     press(&mut intent, aim.which);
                 } else {
-                    if let Some(layer) = action.layer.as_mut() { layer.time = aim.t; }
+                    let id = if aim.which == Which::Art { grimoire.art } else { grimoire.spell };
+                    if let Some(a) = ability(id) { action.layer = Some(super::magic_fx::channel(a, aim.t)); }
                     mover.face = super::controller::yaw_of(intent.look - tf.translation);
                     if (aim.t / 0.15) as u32 != ((aim.t - dt) / 0.15) as u32 {
                         use super::flipbook::{Flip, Sheet};
                         let id = if aim.which == Which::Art { grimoire.art } else { grimoire.spell };
                         if let Some(a) = ability(id) {
                             let charge = affordable_charge(a, energy, grimoire.is_mastered(id), aim.t / 1.5);
-                            let core = a.element.core();
-                            let peak = core.red.max(core.green).max(core.blue).max(0.001);
-                            let tint = Color::srgba(core.red / peak, core.green / peak, core.blue / peak, 0.3);
-                            for side in 0..2 {
-                                let bone = rig.zip(bank.as_ref()).and_then(|(r, b)| r.bones.get(b.bones.hand[side])).copied().filter(|e| *e != Entity::PLACEHOLDER);
-                                let (follow, offset) = bone.map_or((entity, tf.rotation * Vec3::new(if side == 0 { -0.6 } else { 0.6 }, 0.25, 0.2)), |e| (e, Vec3::ZERO));
-                                commands.write_message(Flip::new(Sheet::Magic8, Vec3::ZERO, 0.18 + charge * 0.14, 0.2)
-                                    .follow(follow, offset).tinted(tint, 1.0).glow(0.45));
-                            }
+                            let tint = super::magic_fx::charge_color(a, charge);
+                            let palm = |side| rig.zip(bank.as_ref()).and_then(|(r, b)|
+                                r.bones.get(b.bones.hand[side])).copied().filter(|e| *e != Entity::PLACEHOLDER);
+                            let focus = Flip::new(Sheet::Magic8, Vec3::ZERO, 0.18 + charge * 0.14, 0.2)
+                                .tinted(tint, 1.0).glow(0.45);
+                            let focus = match (palm(0), palm(1)) {
+                                (Some(left), Some(right)) if super::magic_fx::two_handed(a) => focus.between(left, right),
+                                (_, Some(right)) => focus.follow(right, Vec3::ZERO),
+                                _ => focus.follow(entity, tf.rotation * Vec3::new(0.0, 0.5, 0.35)),
+                            };
+                            commands.write_message(focus);
                             commands.write_message(Flip::new(Sheet::Ward, Vec3::ZERO, 1.5 + charge * 0.5, 0.25)
                                 .flat().follow(entity, Vec3::Y * (-HALF_HEIGHT + 0.04)).tinted(tint, 1.0).glow(0.3));
                             if (aim.t / 0.5) as u32 != ((aim.t - dt) / 0.5) as u32 {
@@ -126,9 +129,7 @@ fn hold(time: Res<Time>, mut commands: Commands, mut log: MessageWriter<HudLog>,
                     continue;
                 }
                 commands.entity(entity).try_insert(Aiming { which, t: 0.0 });
-                let mut layer = ActionLayer::new("sparking/DBZ_Ki_Charge_Loop", 0.0, crate::motion::Mask::Full);
-                layer.looping = true;
-                layer.style = Some(crate::motion::timing::Style { exaggeration: 1.0, hold: 0.0, ..default() });
+                let layer = super::magic_fx::channel(a, 0.0);
                 action.start(ActionKind::Channel, Owner::Magic, Some(layer));
                 mover.move_scale = 0.15;
             }
@@ -151,10 +152,12 @@ fn ground(spatial: &SpatialQuery, p: Vec3) -> Vec3 {
 #[allow(clippy::type_complexity)]
 fn preview(
     spatial: SpatialQuery,
+    bank: Option<Res<crate::motion::bank::PoseBank>>,
+    globals: Query<&GlobalTransform>,
     mut gizmos: Gizmos,
-    players: Query<(Entity, &Transform, &Intent, &Aiming, &Grimoire), With<Player>>,
+    players: Query<(Entity, &Transform, &Intent, &Aiming, &Grimoire, Option<&crate::motion::Rig>), With<Player>>,
 ) {
-    for (me, tf, intent, aim, grimoire) in &players {
+    for (me, tf, intent, aim, grimoire, rig) in &players {
         if aim.t < PREVIEW_AFTER {
             continue;
         }
@@ -167,7 +170,8 @@ fn preview(
         let peak = core.red.max(core.green).max(core.blue).max(1e-3);
         let color = Color::LinearRgba(LinearRgba::new(core.red / peak, core.green / peak, core.blue / peak, 0.9));
         let feet = tf.translation - Vec3::Y * HALF_HEIGHT;
-        let hand = tf.translation + Vec3::Y * HAND_LIFT;
+        let hand = bank.as_ref().map_or(tf.translation + Vec3::Y * HAND_LIFT,
+            |b| super::magic::cast_origin(a, rig, b, &globals, tf));
         // Player casts are skill shots; the preview must use the same obstruction-aware
         // crosshair point as release, even when melee lock-on is active.
         let point = intent.look;

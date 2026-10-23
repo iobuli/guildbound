@@ -988,6 +988,9 @@ fn update_character(
             .iter()
             .find(|s| s.track == track)
             .is_none_or(|s| s.looping);
+        let style = if track.starts_with("trunks_sword/") || track.starts_with("tapion_sword/") {
+            Some(Style { exaggeration: 1.0, hold: 0.0, bias: 0.5, ..default() })
+        } else { None };
         out.layers.push(Layer {
             source: Source::Track {
                 name: track,
@@ -996,7 +999,7 @@ fn update_character(
             },
             weight,
             mask: Mask::Full,
-            style: None,
+            style,
         });
     }
     if out.layers.is_empty() {

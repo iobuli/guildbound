@@ -1,0 +1,32 @@
+[
+  {
+    "source": "StatusFXFree/assets/BinbunVFX_Vol2/StatusFX/license.txt",
+    "file": "license.txt",
+    "bytes": 305,
+    "sha256": "3fdc76f2fefb29ce0bde760765069288b58c7a65b3fe514684442f0c6e2af040"
+  },
+  {
+    "source": "StatusFXFree/assets/BinbunVFX_Vol2/StatusFX/shader/aura_sphere.gdshader",
+    "file": "aura_sphere.gdshader",
+    "bytes": 2672,
+    "sha256": "2106b69860c04bbdadd3574bb82402159abe6202a85c293480a2818b2041c9c9"
+  },
+  {
+    "source": "StatusFXFree/assets/BinbunVFX_Vol2/StatusFX/shader/streaks.gdshader",
+    "file": "streaks.gdshader",
+    "bytes": 2660,
+    "sha256": "9204c490da8d00c2c2abdd11ed3b0bd352da3d8a917e3f0b8060d3ad590a45ee"
+  },
+  {
+    "source": "StatusFXFree/assets/BinbunVFX_Vol2/StatusFX/shader/ice_particle.gdshader",
+    "file": "ice_particle.gdshader",
+    "bytes": 2299,
+    "sha256": "9bbddf3c184df0e8f25315dc9a82075f473002733b7ae180d1165e7fc5a3b8e3"
+  },
+  {
+    "source": "StatusFXFree/assets/BinbunVFX_Vol2/StatusFX/effects/status/vfx_status_shatter.tscn",
+    "file": "vfx_status_shatter.tscn",
+    "bytes": 6842,
+    "sha256": "d45d4f816a83d50bdedde36bfb5b42b6f1d78a56a116a02518b455dc41e2ce52"
+  }
+]

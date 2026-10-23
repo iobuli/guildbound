@@ -39,13 +39,33 @@ impl Material for WindAura {
 #[derive(Component)]
 struct TestShell;
 
+#[derive(Resource)]
+struct ShellGeometry(Handle<Mesh>);
+
+#[derive(Component)]
+struct ChargeVisual {
+    shell: Entity,
+    particles: Entity,
+    material: Handle<WindAura>,
+    focus: Option<Entity>,
+}
+
+#[derive(Component)]
+struct ChargeShell;
+
+#[derive(Component)]
+struct ChargeFocus;
+
 pub fn plugin(app: &mut App) {
     app.add_plugins(MaterialPlugin::<WindAura>::default())
         .add_systems(Startup, spawn_test)
         .add_systems(Update, (toggle, advance_clock, dress_wards, ward_gust));
+    app.add_systems(Update, charge_shells.after(super::PlaySet::Think));
 }
 
 fn spawn_test(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<WindAura>>) {
+    let mesh = meshes.add(Sphere::new(1.0).mesh().uv(20, 12));
+    commands.insert_resource(ShellGeometry(mesh.clone()));
     let material = materials.add(WindAura {
         params: WindAuraParams {
             color: Vec4::new(0.45, 0.9, 1.0, 1.0),
@@ -56,9 +76,9 @@ fn spawn_test(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut mate
     });
     commands.spawn((
         TestShell,
-        Mesh3d(meshes.add(Sphere::new(1.2))),
+        Mesh3d(mesh),
         MeshMaterial3d(material),
-        Transform::from_xyz(0.0, 1.0, 0.0),
+        Transform::from_xyz(0.0, 1.0, 0.0).with_scale(Vec3::splat(1.2)),
         Visibility::Hidden,
     ));
 }
@@ -90,7 +110,7 @@ const GUST_BEND: f32 = 0.9;
 fn dress_wards(
     mut commands: Commands,
     wind: Res<GrassWind>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    geometry: Res<ShellGeometry>,
     mut materials: ResMut<Assets<WindAura>>,
     shells: Query<(Entity, &WardShell), Added<WardShell>>,
     players: Query<(), With<Player>>,
@@ -108,12 +128,75 @@ fn dress_wards(
         });
         commands.spawn((
             Name::new("Ward wind"),
-            Mesh3d(meshes.add(Sphere::new(1.0))),
+            Mesh3d(geometry.0.clone()),
             MeshMaterial3d(material),
             Transform::from_scale(Vec3::splat(SHELL_SCALE)),
             ChildOf(shell),
             bevy::light::NotShadowCaster,
         ));
+    }
+}
+
+/// The charge is a thin changing rim with ascending motes, leaving the body and animation visible.
+fn charge_shells(
+    mut commands: Commands, time: Res<Time>, geometry: Res<ShellGeometry>,
+    vfx: Option<Res<super::vfx::Vfx>>, wind: Res<GrassWind>,
+    mut materials: ResMut<Assets<WindAura>>,
+    bank: Option<Res<crate::motion::bank::PoseBank>>, globals: Query<&GlobalTransform>,
+    casters: Query<(Entity, Option<&super::spell_aim::Aiming>, &super::magic::Grimoire,
+        &super::magic::Energy, Option<&ChargeVisual>, &Transform, Option<&crate::motion::Rig>),
+        (With<Player>, Without<ChargeShell>)>,
+    mut shells: Query<&mut Transform, (With<ChargeShell>, Without<Player>, Without<ChargeFocus>)>,
+    mut foci: Query<(&mut Transform, &mut MeshMaterial3d<StandardMaterial>),
+        (With<ChargeFocus>, Without<Player>, Without<ChargeShell>)>,
+) {
+    let Some(vfx) = vfx else { return };
+    for (owner, aim, grimoire, energy, visual, root, rig) in &casters {
+        let Some(aim) = aim else {
+            if let Some(visual) = visual {
+                commands.entity(visual.shell).try_despawn();
+                commands.entity(visual.particles).try_despawn();
+                if let Some(focus) = visual.focus { commands.entity(focus).try_despawn(); }
+                commands.entity(owner).try_remove::<ChargeVisual>();
+            }
+            continue;
+        };
+        let id = if aim.which == super::spell_aim::Which::Art { grimoire.art } else { grimoire.spell };
+        let Some(a) = super::magic::ability(id) else { continue };
+        let charge = super::magic::affordable_charge(a, energy, grimoire.is_mastered(id), aim.t / 1.5);
+        let tint = super::magic_fx::charge_color(a, charge).to_linear();
+        let dir = wind.direction.normalize_or(Vec2::X);
+        let params = WindAuraParams {
+            color: Vec4::new(tint.red * 1.5, tint.green * 1.5, tint.blue * 1.5, 0.2 + charge * 0.7),
+            wind: Vec4::new(dir.x, dir.y, 2.0 + charge * 6.0, 1.4 + charge),
+            clock: Vec4::new(time.elapsed_secs(), 3.5, charge, 1.0),
+        };
+        let scale = Vec3::new(0.65 + charge * 0.12, 0.95 + charge * 0.08, 0.65 + charge * 0.12);
+        let focus_at = bank.as_ref().map_or(root.translation + Vec3::Y * 0.5,
+            |b| super::magic::cast_origin(a, rig, b, &globals, root));
+        let focus_scale = Vec3::splat(0.065 + charge * 0.075);
+        if let Some(visual) = visual {
+            if let Some(mut m) = materials.get_mut(&visual.material) { m.params = params; }
+            if let Ok(mut tf) = shells.get_mut(visual.shell) { tf.scale = scale; }
+            if let Some(focus) = visual.focus
+                && let Ok((mut tf, mut mat)) = foci.get_mut(focus) {
+                tf.translation = focus_at; tf.scale = focus_scale;
+                mat.0 = vfx.charged_material(a.element, charge);
+            }
+        } else {
+            let material = materials.add(WindAura { params });
+            let shell = commands.spawn((Name::new("Charging wind"), ChargeShell,
+                Mesh3d(geometry.0.clone()), MeshMaterial3d(material.clone()),
+                Transform::from_scale(scale), ChildOf(owner), bevy::light::NotShadowCaster)).id();
+            let particles = commands.spawn((Name::new("Rising charge motes"), vfx.rising(a.element),
+                Transform::default(), ChildOf(owner))).id();
+            let focus = super::magic_fx::two_handed(a).then(|| commands.spawn((
+                Name::new("Two-palm spell focus"), ChargeFocus, Mesh3d(vfx.ball_mesh.clone()),
+                MeshMaterial3d(vfx.charged_material(a.element, charge)),
+                Transform::from_translation(focus_at).with_scale(focus_scale),
+                bevy::light::NotShadowCaster)).id());
+            commands.entity(owner).insert(ChargeVisual { shell, particles, material, focus });
+        }
     }
 }
 

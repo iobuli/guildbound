@@ -83,9 +83,13 @@ fn trail(
     children: Query<&Children>,
     meshes: Query<(&Mesh3d, &GlobalTransform)>,
     globals: Query<&GlobalTransform>,
+    active_images: Query<(), With<Afterimage>>,
+    active_flashes: Query<(), With<super::vfx::Flash>>,
+    limits: Res<super::vfx::VfxLimits>,
 ) {
     let (Some(ghosts), Some(bank)) = (ghosts, bank) else { return };
     let dt = time.delta_secs();
+    let mut accents = active_images.iter().count() + active_flashes.iter().count();
     for (melee, mut fx, slot, rig, layers) in &mut fighters {
         let Some((speed, elapsed, active)) = melee.swing_speed() else {
             *fx = StrikeFx::default();
@@ -96,11 +100,11 @@ fn trail(
             *fx = StrikeFx::default();
         }
         fx.last = elapsed;
-        if speed <= ANTICIPATE_FROM || !active {
+        if !active || (slot.is_none() && speed <= ANTICIPATE_FROM) {
             continue;
         }
         // Follow-through: once per swing, at the first strike frame.
-        if !fx.kicked {
+        if !fx.kicked && slot.is_none() {
             fx.kicked = true;
             if let Some(mut layers) = layers {
                 let b = &bank.bones;
@@ -116,7 +120,10 @@ fn trail(
         }
         fx.since = 0.0;
         let mut spawn = |mesh: Handle<Mesh>, at: Transform| {
-            commands.spawn((Afterimage { left: LIFE }, Mesh3d(mesh), MeshMaterial3d(ghosts.shades[0].clone()), at));
+            if accents >= limits.flashes { return; }
+            accents += 1;
+            commands.spawn((Afterimage { left: LIFE }, Mesh3d(mesh), MeshMaterial3d(ghosts.shades[0].clone()), at,
+                bevy::light::NotShadowCaster));
         };
         match slot {
             Some(slot) => {

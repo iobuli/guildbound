@@ -1,1 +1,3 @@
 tools/kev/studio/board/notes.jsonl merge=union
+# Preserve the supplied StatusFX source bytes recorded by the import manifest.
+assets/vfx/statusfx/source/* -text

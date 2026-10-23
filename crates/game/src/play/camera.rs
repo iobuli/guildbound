@@ -454,13 +454,13 @@ pub(crate) fn follow(
     mut state: ResMut<FollowState>,
     movesets: Option<Res<Movesets>>,
     spatial: SpatialQuery,
-    players: Query<(&Transform, &Intent, Option<&Loadout>), (With<Player>, Without<MainCamera>)>,
+    players: Query<(&Transform, &Intent, Option<&Loadout>, Option<&super::Action>), (With<Player>, Without<MainCamera>)>,
     roots: Query<&Transform, Without<MainCamera>>,
     mut cameras: Query<(&mut Transform, &mut Projection), With<MainCamera>>,
 ) {
     let dt = time.delta_secs().clamp(0.0, 0.1);
     let real_dt = real.delta_secs().clamp(0.0, 0.1);
-    let Some((player, intent, loadout)) = players.iter().next() else {
+    let Some((player, intent, loadout, action)) = players.iter().next() else {
         return;
     };
     if !player.translation.is_finite() {
@@ -484,7 +484,12 @@ pub(crate) fn follow(
     }
 
     // Aim (over-shoulder) blend.
-    let aiming = (intent.secondary_held && aims_over_shoulder(loadout, movesets.as_deref())) || intent.art_held || intent.spell_held;
+    // Keep the release framed over the shoulder: dropping straight back behind the head
+    // hid short beams and shifted the crosshair while the casting animation was releasing.
+    let casting = action.is_some_and(|a| a.owner == super::Owner::Magic
+        && matches!(a.kind, super::ActionKind::Channel | super::ActionKind::Cast));
+    let aiming = (intent.secondary_held && aims_over_shoulder(loadout, movesets.as_deref()))
+        || intent.art_held || intent.spell_held || casting;
     let aim_goal = if aiming { 1.0 } else { 0.0 };
     rig.aim_blend += (aim_goal - rig.aim_blend) * blend(AIM_RATE, dt);
 

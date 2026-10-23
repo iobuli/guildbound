@@ -93,6 +93,32 @@ async function loadModel(file) {
   const generation = ++modelGeneration;
   const gltf = await new GLTFLoader().loadAsync('/assets/anim/' + file);
   if (generation !== modelGeneration) { disposeModel(gltf.scene); return false; }
+  // Clip-only libraries share the canonical mannequin. Loading them directly used to show
+  // an empty viewport even though all animation channels were present.
+  let hasMesh = false;
+  gltf.scene.traverse(o => { if (o.isMesh) hasMesh = true; });
+  if (!hasMesh && gltf.animations.length) {
+    const base = await new GLTFLoader().loadAsync('/assets/anim/ual2.glb');
+    disposeModel(gltf.scene);
+    gltf.scene = base.scene;
+    if (generation !== modelGeneration) { disposeModel(gltf.scene); return false; }
+  }
+  if (file === 'trunks_sword.glb' || file === 'tapion_sword.glb') {
+    const weapon = await new GLTFLoader().loadAsync('/assets/weapons/' + file);
+    if (generation !== modelGeneration) { disposeModel(gltf.scene); disposeModel(weapon.scene); return false; }
+    const hand = gltf.scene.getObjectByName('hand_r');
+    if (hand) {
+      gltf.scene.updateMatrixWorld(true);
+      const scale = hand.getWorldScale(new THREE.Vector3());
+      const s = Math.max(Math.abs(scale.x), Math.abs(scale.y), Math.abs(scale.z), 0.001);
+      const grip = new THREE.Group();
+      grip.name = 'Sword grip';
+      grip.position.set(-0.025 / s, 0.075 / s, 0);
+      grip.rotation.set(0, Math.PI / 2, Math.PI / 2, 'XYZ');
+      grip.scale.setScalar(1 / s);
+      grip.add(weapon.scene); hand.add(grip);
+    } else { disposeModel(weapon.scene); }
+  }
   if (state.root) {
     state.mixer.stopAllAction(); state.mixer.uncacheRoot(state.root);
     scene.remove(state.root); disposeModel(state.root);

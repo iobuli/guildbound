@@ -1277,6 +1277,11 @@ fn spawn_interactables(kit: &mut Kit, assets: &AssetServer) {
 }
 
 fn spawn_characters(commands: &mut Commands) {
+    let slots: Vec<String> = if duel_mode() {
+        ["sparking", "trunks_sword", "tapion_sword", "katana"].into_iter().map(String::from).collect()
+    } else { vec!["unarmed".into()] };
+    let selected = std::env::var("GB_STYLE").ok();
+    let current = selected.and_then(|s| slots.iter().position(|v| *v == s)).unwrap_or(0);
     let player = spawn_character(
         commands,
         "Player",
@@ -1285,8 +1290,8 @@ fn spawn_characters(commands: &mut Commands) {
         Fighter::new(0, 100.0),
         Loadout {
             // Weapons come from the chest (`armory`); fists until then.
-            slots: if duel_mode() { vec!["sparking".into(), "katana".into()] } else { vec!["unarmed".into()] },
-            current: 0,
+            slots,
+            current,
         },
         None,
     );

@@ -278,14 +278,17 @@ fn measure(
     mut panel: Query<&mut Text, With<Panel>>,
     mut gizmos: Gizmos,
     mut memory: Local<HashMap<Entity, Memory>>,
+    mut sampled_at: Local<f32>,
 ) {
     let Some(bank) = bank else { return };
+    let now = time.elapsed_secs();
+    if !monitor.on && std::env::var_os("GB_RELATIONS_FULL").is_none() && now - *sampled_at < 0.1 { return; }
+    let dt = (now - *sampled_at).max(1e-4);
+    *sampled_at = now;
     let b = bank.bones;
     let rest = bank.skeleton.fk(&bank.skeleton.rest_pose(), b.pelvis);
     let ankle_rest = [rest[b.foot[0]].translation.y, rest[b.foot[1]].translation.y];
     let ball_rest = [rest[b.ball[0]].translation.y, rest[b.ball[1]].translation.y];
-    let now = time.elapsed_secs();
-    let dt = time.delta_secs().max(1e-4);
     let world = SpatialQueryFilter::from_mask(Phys::World);
     let ground = |p: Vec3| {
         let origin = Vec3::new(p.x, p.y + 0.5, p.z);

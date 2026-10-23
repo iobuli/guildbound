@@ -16,8 +16,9 @@ restores the populated sandbox. The default duel does not load or overwrite the 
 - Hold Space for a higher jump, release early to hop. Air steering preserves momentum when
   movement is released. Buffered takeoff, a brief apex float and stronger falling gravity
   improve jump control. Regular jumps use a soft landing rather than forcing a roll.
-- Z: switch Sparking fists / katana. X: draw / sheathe. The katana chain includes extracted
-  Trunks (Sword) and Tapion attacks alongside the UAL sword clips and authored `shonen_duel` cuts.
+- Z: switch Sparking fists / selected sword school. Shift+Z: Trunks / Tapion.
+  Each school has its own extracted stance, guard, three-cut chain, finisher, advancing cut and
+  falling cut. X draws / sheathes. Rook can equip either school. See [sword details](../../../../docs/SWORD_STYLES.md).
 - F near Rook: talk, equip either style, restore health/stamina/energy or read controls.
   He stays friendly and looks toward the player; the opponent ignores him.
 - Tap primary: right punch → left follow-up → right kick. Buffer taps to chain.
@@ -28,8 +29,10 @@ restores the populated sandbox. The default duel does not load or overwrite the 
   is capped to the current pool so a long hold cannot make an affordable base cast fail.
   Separate Q/E recovery survives changing the equipped ability. The hotbar shows charge
   percentage and remaining recovery. Binding changes wait until charging/release is finished.
+  Holding uses moving ki-blast or Sekiro magic preparations, a changing colour, a thin wind rim
+  and ascending motes. Fireballs stay simple glowing spheres. Lances use the existing beam VFX.
 - T or mouse button 5: next spell. Shift + T / mouse button 5: next art.
-- The full library is available: ten arts and ten spells. This does not make energy unlimited.
+- The full library is available: six arts and fourteen spells. This does not make energy unlimited.
 - Kev: **Preview combat library**, then choose one of the sixteen converted clips.
 
 ## Included
@@ -57,10 +60,14 @@ are not converted. Destruction uses this project's rubble system, not the origin
 
 `cargo build -p guildbound` produces `target/debug/guildbound.exe`.
 The saved feel profile now makes sprint faster than run and tunes jump speed/air steering.
-No test suite or gameplay validation was run for this pass, as requested. Collision handling is wired,
-but absence of all pose/environment clipping is **not verified**. Hit timing, charge balance, camera feel,
-imported mesh orientation and shader rendering need the deferred playtest.
+No broad test suite was run, as requested. The later sword/magic polish pass completed focused
+rendered checks of both sword chains, held charging and the ten added spells. Collision handling is
+wired, but absence of all pose/environment clipping is **not verified**. Hit timing, charge balance,
+camera feel and sustained combat performance still need the deferred playtest.
 
 `build_basics.py` creates `sparking_combat.glb` from the local archive reader. `build_environment.py`
 uses the `ArchiveProbe --mesh` path to produce normalized GLBs and triangle collision data.
 Generated game assets remain local; the environment directory is gitignored.
+
+[Current magic/VFX budgets](../../../../docs/MAGIC_VFX.md) describe shared geometry, effect caps,
+frame pacing and the corrected animation export metadata.

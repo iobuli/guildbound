@@ -87,7 +87,7 @@ impl PoseBank {
                                 let mut track = extract::extract(clip, skeleton, bones);
                                 // These clips were already retargeted and approved in Kev.
                                 // Keep every sample so short rush sections retain their timing.
-                                if lib.lib == "sparking" {
+                                if matches!(lib.lib.as_str(), "sparking" | "trunks_sword" | "tapion_sword") {
                                     track.keys = clip.frames.iter().enumerate().map(|(i, pose)| Key {
                                         time: frame_time(i, clip.duration),
                                         pose: pose.clone(),

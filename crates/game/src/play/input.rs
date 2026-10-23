@@ -303,12 +303,16 @@ fn player_input(
     // converge on it at any range; open sky falls back to `AIM_RANGE` out.
     let filter = SpatialQueryFilter::from_mask([Phys::World, Phys::Character]).with_excluded_entities([entity]);
     let forward = rig.forward();
+    // Start at the caster's depth along the camera ray. A friendly body between camera and
+    // player must not turn a spell backward into the caster's own shoulder.
+    let muzzle = root + Vec3::Y * 0.45;
+    let near = ((muzzle - rig.eye).dot(forward) - super::CAPSULE_RADIUS).max(0.0);
+    let ray_start = rig.eye + forward * near;
     let camera_look = Dir3::new(forward)
         .ok()
-        .and_then(|dir| spatial.cast_ray(rig.eye, dir, AIM_RANGE, true, &filter))
-        .map_or(rig.eye + forward * AIM_RANGE, |hit| rig.eye + forward * hit.distance.max(LOOK_MIN));
+        .and_then(|dir| spatial.cast_ray(ray_start, dir, (AIM_RANGE - near).max(1.0), true, &filter))
+        .map_or(rig.eye + forward * AIM_RANGE, |hit| ray_start + forward * hit.distance.max(LOOK_MIN));
     // A second ray prevents shoulder shots passing through walls the camera can see around.
-    let muzzle = root + Vec3::Y * 0.45;
     let to = camera_look - muzzle;
     let look = Dir3::new(to).ok().and_then(|dir| spatial.cast_ray(muzzle, dir, to.length(), true,
         &SpatialQueryFilter::from_mask(Phys::World)).map(|hit| muzzle + dir * hit.distance)).unwrap_or(camera_look);

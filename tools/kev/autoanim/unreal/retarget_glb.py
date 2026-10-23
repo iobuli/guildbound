@@ -64,10 +64,14 @@ def convert(base, output, sources, sequence=None, animation_only=False):
     js, blob = statue.read_glb(base)
     js["animations"] = []
     if animation_only:
+        # The game donor loader reads skin 0's joint order even when there is no mesh.
+        # Keep that skeleton metadata; inverse-bind accessors refer to buffers discarded below.
+        js["skins"] = [{key: skin[key] for key in ("name", "skeleton", "joints") if key in skin}
+                       for skin in js.get("skins", [])]
         for node in js["nodes"]:
             node.pop("mesh", None)
             node.pop("skin", None)
-        for key in ("meshes", "skins", "materials", "textures", "images", "samplers", "extensionsUsed", "extensionsRequired"):
+        for key in ("meshes", "materials", "textures", "images", "samplers", "extensionsUsed", "extensionsRequired"):
             js.pop(key, None)
         js["accessors"], js["bufferViews"], js["buffers"] = [], [], [{"byteLength": 0}]
         blob = bytearray()
@@ -129,6 +133,10 @@ def convert(base, output, sources, sequence=None, animation_only=False):
                     local[i][:3, :3] = np.linalg.inv(parent[:3, :3]) @ desired
                 if i == dst_index["pelvis"]:
                     delta_p = BASIS @ (sw[source_hip][:3, 3] - src_rest[source_hip][:3, 3]) * 0.01
+                    if data.get("in_place"):
+                        # Rush sections retain accumulated arena travel across combo stages.
+                        # The game controller owns attack steps; keep the body over its capsule.
+                        delta_p[[0, 2]] = 0.0
                     target = dst_world[i][:3, 3] + delta_p
                     local[i][:3, 3] = (np.linalg.inv(parent) @ np.r_[target, 1])[:3]
                 posed[i] = parent @ local[i]

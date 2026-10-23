@@ -21,6 +21,7 @@ breath system. `village_water.wgsl` adds ripple normals, a restrained reflection
 shore foam and small highlights without requiring a refraction or scene-depth pass.
 
 Controls remain WASD/Shift/Space/Ctrl for movement, Z for sword/fists and F to talk.
+Shift+Z selects the Trunks or Tapion sword school.
 B smoothly switches the aiming shoulder; aimed mouse and stick sensitivity are
 reduced. Tab acquires living enemies in sight, excludes friendly NPCs and avoids
 locking through walls. A muzzle obstruction ray prevents aiming through a nearby
@@ -41,9 +42,10 @@ new district and encounters. No broad gameplay suite was run for this pass.
 
 Validation: `cargo build -p guildbound` passed. Short rendered runs captured the
 lake and village; the final village run exited with code 0. No shader validation
-error or panic was observed. Bevy still logged transient slab-allocator
-`Use-after-free: attempted to copy element data for an unallocated key` messages
-during asset loading; their cause is unresolved. The machine's Vulkan loader also
+error or panic was observed. A subsequent magic/sword polish pass keeps zero-vertex meshes
+out of GPU allocation; its rendered runs no longer showed the startup slab-allocator
+use-after-free messages. The machine's Vulkan loader still
 reports missing Epic overlay JSON files. Screenshots and logs stay in the ignored
 `staging/kev/brookmere/` directory. Collision, combat balance and sustained
-performance still need the deferred gameplay pass.
+performance still need the deferred gameplay pass. See [magic/VFX validation](MAGIC_VFX.md)
+and [sword schools](SWORD_STYLES.md) for the later focused checks.

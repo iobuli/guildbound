@@ -1457,6 +1457,12 @@ fn drive(
             State::React(r) => react(r, &cx, &mut b, melee, &mut sfx),
             State::Dead { t } => dead(t + dt, &cx, &mut b, melee, revive, &mut sfx),
         };
+        if let State::Swing(sw) = &melee.state
+            && sw.elapsed == 0.0
+        {
+            monitor.write(&format!("{now:.2} {} swing {} {:?} Attack {:.2}",
+                name.map_or("?", |n| n.as_str()), sw.clip.clip.track, b.mover.mode, sw.speed));
+        }
         if let (Some(revive), State::React(r)) = (revive, &melee.state)
             && r.kind == ReactKind::GetUp
             && r.t == 0.0
@@ -1505,7 +1511,8 @@ fn tick_inputs(melee: &mut Melee, intent: &Intent, dt: f32) {
     }
     if intent.primary_held {
         melee.held += dt;
-    } else if melee.primary.is_some_and(|age| age > BUFFER) {
+    } else if melee.primary.is_some_and(|age| age > BUFFER)
+        && !matches!(&melee.state, State::Swing(sw) if matches!(sw.kind, SwingKind::Light(_)) && sw.recover.is_none()) {
         melee.primary = None;
     }
     if intent.dodge_pressed {
@@ -1642,6 +1649,10 @@ fn start_swing(kind: SwingKind, cx: &Ctx, b: &mut Body, m: &mut Melee) -> Option
         let dir = forward(cx.heading(b));
         attack.travel = cx.ahead(dir).filter(|d| *d < 2.8)
             .map_or(0.0, |d| (d - 1.05).clamp(0.0, 1.1));
+    } else if matches!(set.name.as_str(), "trunks_sword" | "tapion_sword") {
+        let dir = forward(cx.heading(b));
+        attack.travel = cx.ahead(dir).filter(|d| *d < 3.0)
+            .map_or(attack.travel, |d| (d - 1.45).clamp(0.0, 0.6));
     }
     m.spend(b.fighter, attack.stamina);
     m.chain = match kind {

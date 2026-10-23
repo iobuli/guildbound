@@ -69,6 +69,7 @@ pub mod interact;
 pub mod inventory;
 pub mod items;
 pub mod magic;
+pub mod magic_fx;
 pub mod monitor;
 pub mod moveset;
 pub mod occupations;

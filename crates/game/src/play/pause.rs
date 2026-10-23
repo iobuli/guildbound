@@ -68,7 +68,7 @@ const CONTROLS: [&str; 23] = [
     "WASD  move   ·   Shift  sprint   ·   Alt  walk",
     "Space  jump   ·   Ctrl  dodge   ·   C  crouch",
     "LMB  attack (hold: heavy)   ·   RMB  guard",
-    "Z  sword / fists   ·   Hold Space for jump height",
+    "Z  sword / fists   ·   Shift+Z  Trunks / Tapion",
     "Q  art   ·   E  spell   (hold to aim, let go to cast)",
     "T / Mouse 5  next spell   ·   Tab  enemy lock   ·   B  aim shoulder",
     "F  use / talk   ·   X  draw / sheathe   ·   G  grab",

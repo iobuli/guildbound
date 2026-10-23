@@ -1124,6 +1124,8 @@ class Handler(BaseHTTPRequestHandler):
             return self.serve_file(os.path.join(HERE, "static"), path[8:])
         if path.startswith("/assets/anim/") and path.endswith(".glb"):
             return self.serve_file(ANIM, path[13:])
+        if path.startswith("/assets/weapons/") and path.endswith(".glb"):
+            return self.serve_file(os.path.join(REPO, "assets", "weapons"), path[len("/assets/weapons/"):])
         if path == "/api/models":
             return self.reply(200, sorted(f for f in os.listdir(ANIM) if f.endswith(".glb")))
         if path == "/api/sparking":

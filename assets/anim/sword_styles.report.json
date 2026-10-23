@@ -1,0 +1,84 @@
+[
+  {
+    "character": "0080",
+    "style": "trunks_sword",
+    "attacks": [
+      {
+        "track": "trunks_sword/Trunks_Cut_01",
+        "duration": 0.6000000000000001,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a001_R1_1_IN.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a001_R1_1_HT.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a001_R1_1_OT.uasset"
+      },
+      {
+        "track": "trunks_sword/Trunks_Cut_02",
+        "duration": 0.6000000000000001,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a002_R1_2_IN.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a002_R1_2_HT.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a002_R1_2_OT.uasset"
+      },
+      {
+        "track": "trunks_sword/Trunks_Cut_03",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a003_R1_3_IN.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a003_R1_3_HT.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a003_R1_3_OT.uasset"
+      },
+      {
+        "track": "trunks_sword/Trunks_Cut_04",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a004_R1_4_IN.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a004_R1_4_HT.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a004_R1_4_OT.uasset"
+      },
+      {
+        "track": "trunks_sword/Trunks_Cut_05",
+        "duration": 1.4999999700000002,
+        "contact_start": 0.16666667,
+        "contact_end": 0.36666667,
+        "source": "SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a005_R1_5_IN.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a005_R1_5_HT.uasset + SparkingZERO/Content/SS/Characters/0080/Animation/00/A_0080_C_ATC_a005_R1_5_OT.uasset"
+      }
+    ]
+  },
+  {
+    "character": "0660",
+    "style": "tapion_sword",
+    "attacks": [
+      {
+        "track": "tapion_sword/Tapion_Cut_01",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a001_R1_1_IN.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a001_R1_1_HT.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a001_R1_1_OT.uasset"
+      },
+      {
+        "track": "tapion_sword/Tapion_Cut_02",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a002_R1_2_IN.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a002_R1_2_HT.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a002_R1_2_OT.uasset"
+      },
+      {
+        "track": "tapion_sword/Tapion_Cut_03",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a003_R1_3_IN.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a003_R1_3_HT.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a003_R1_3_OT.uasset"
+      },
+      {
+        "track": "tapion_sword/Tapion_Cut_04",
+        "duration": 1.0,
+        "contact_start": 0.1,
+        "contact_end": 0.30000000000000004,
+        "source": "SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a004_R1_4_IN.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a004_R1_4_HT.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a004_R1_4_OT.uasset"
+      },
+      {
+        "track": "tapion_sword/Tapion_Cut_05",
+        "duration": 1.4999999700000002,
+        "contact_start": 0.16666667,
+        "contact_end": 0.36666667,
+        "source": "SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a005_R1_5_IN.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a005_R1_5_HT.uasset + SparkingZERO/Content/SS/Characters/0660/Animation/00/A_0660_C_ATC_a005_R1_5_OT.uasset"
+      }
+    ]
+  }
+]

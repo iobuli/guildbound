@@ -13,10 +13,10 @@
 //!   radial breath, and the orbs themselves (in `magic`) trace Lissajous figures.
 //! - Aura (Battlewill) sparks rise with upward drag; the shockwave debris arcs under gravity.
 //!
-//! Meshes, built on the CPU each time:
+//! Shared meshes for cores, crescents and rings; lightning geometry is built only at spawn:
 //! - `lightning`: fractal midpoint displacement (each halving offsets the midpoint by a shrinking
 //!   random amount perpendicular to the bolt) with stochastic branching, drawn as crossed ribbons
-//!   so it reads from every angle, and re-rolled every `FLICKER` s while it lives;
+//!   so it reads from every angle, with brightness flicker instead of repeated mesh uploads;
 //! - `crescent`: a tapered moon-shaped blade of aura for the thrown slash;
 //! - `ring`: the expanding shockwave annulus.
 //! All of them are additive, unlit, HDR-bright and fade out (`Flash`). The camera has `Bloom`,
@@ -26,8 +26,8 @@ use bevy::mesh::{Indices, PrimitiveTopology};
 use bevy::prelude::*;
 use bevy_hanabi::prelude::*;
 
-/// Lightning re-rolls its shape this often (s), and lasts this long (s).
-const FLICKER: f32 = 0.045;
+/// Lightning brightness changes this often (s), and lasts this long (s).
+const FLICKER: f32 = 0.08;
 pub const BOLT_LIFE: f32 = 0.28;
 /// Golden angle (rad).
 const GOLDEN: f32 = 2.399_963;
@@ -54,6 +54,14 @@ impl Element {
             Element::Arcane => LinearRgba::rgb(4.2, 1.4, 6.0),
         }
     }
+    pub fn charged_core(self, charge: f32) -> LinearRgba {
+        let base = self.core();
+        let peak = base.red.max(base.green).max(base.blue).max(1.0);
+        let rgb = Vec3::new(base.red, base.green, base.blue) / peak;
+        let hot = match self { Element::Fire => Vec3::new(1.0, 0.94, 0.55), _ => Vec3::new(0.95, 0.96, 1.0) };
+        let c = rgb.lerp(hot, charge.clamp(0.0, 1.0).powf(1.4) * 0.85) * (1.8 + charge * 0.8);
+        LinearRgba::rgb(c.x, c.y, c.z)
+    }
     /// Colour particles fade toward.
     fn tail(self) -> Vec4 {
         match self {
@@ -76,11 +84,58 @@ pub struct Vfx {
     trail: [Handle<EffectAsset>; 5],
     burst: [Handle<EffectAsset>; 5],
     cast: [Handle<EffectAsset>; 5],
+    rise: [Handle<EffectAsset>; 5],
     shock: Handle<EffectAsset>,
     sprite: [Handle<Image>; 5],
+    pub core_mesh: Handle<Mesh>,
+    pub ball_mesh: Handle<Mesh>,
+    pub ring_mesh: Handle<Mesh>,
+    pub crescent_mesh: Handle<Mesh>,
+    pub stone_material: Handle<StandardMaterial>,
+    cores: [[Handle<StandardMaterial>; 3]; 5],
 }
 
+/// Decorative effects yield first under load; projectiles and combat remain authoritative.
+#[derive(Resource)]
+pub struct VfxLimits {
+    pub emitters: usize,
+    pub sprites: usize,
+    pub flashes: usize,
+}
+
+impl Default for VfxLimits {
+    fn default() -> Self {
+        match std::env::var("GB_VFX_QUALITY").as_deref() {
+            Ok("low") => Self { emitters: 16, sprites: 24, flashes: 24 },
+            Ok("high") => Self { emitters: 48, sprites: 72, flashes: 64 },
+            _ => Self { emitters: 32, sprites: 48, flashes: 40 },
+        }
+    }
+}
+
+#[derive(Resource, Default)]
+pub struct VfxLoad {
+    pub emitters: usize,
+    pub peak_emitters: usize,
+    pub dropped_emitters: usize,
+    pub sprites: usize,
+    pub peak_sprites: usize,
+    pub dropped_sprites: usize,
+}
+
+#[derive(Component)]
+struct AdmittedEmitter;
+
 impl Vfx {
+    pub fn core_material(&self, e: Element) -> Handle<StandardMaterial> {
+        self.cores[e.index()][0].clone()
+    }
+    pub fn charged_material(&self, e: Element, charge: f32) -> Handle<StandardMaterial> {
+        self.cores[e.index()][if charge > 0.85 { 2 } else if charge > 0.35 { 1 } else { 0 }].clone()
+    }
+    pub fn rising(&self, e: Element) -> (ParticleEffect, EffectMaterial) {
+        self.bundle(&self.rise[e.index()], e)
+    }
     fn bundle(&self, effect: &Handle<EffectAsset>, e: Element) -> (ParticleEffect, EffectMaterial) {
         (
             ParticleEffect::new(effect.clone()),
@@ -109,24 +164,109 @@ impl Vfx {
 
 pub fn plugin(app: &mut App) {
     app.add_plugins(HanabiPlugin)
+        .init_resource::<VfxLimits>()
+        .init_resource::<VfxLoad>()
         .add_systems(Startup, build)
         .add_systems(PostStartup, test_rig)
-        .add_systems(Update, (flash, flicker, expire));
+        .add_systems(Update, (flash, expire))
+        .add_systems(PostUpdate, limit_effects
+            .after(bevy::transform::TransformSystems::Propagate)
+            .before(bevy_hanabi::EffectSystems::CompileEffects)
+            .before(bevy_hanabi::EffectSystems::TickSpawners))
+        .add_systems(Last, (skip_empty_uploads, report_load));
 }
 
-fn build(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut effects: ResMut<Assets<EffectAsset>>) {
+fn build(mut commands: Commands, mut images: ResMut<Assets<Image>>, mut effects: ResMut<Assets<EffectAsset>>,
+    mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>) {
     let trail = Element::ALL.map(|e| effects.add(trail_effect(e)));
     let burst = Element::ALL.map(|e| effects.add(burst_effect(e)));
     let cast = Element::ALL.map(|e| effects.add(cast_effect(e)));
+    let rise = Element::ALL.map(|e| effects.add(rise_effect(e)));
     let shock = effects.add(shock_debris());
     let sprite = Element::ALL.map(|e| images.add(sprite_image(e)));
+    let cores = Element::ALL.map(|e| std::array::from_fn(|i| glow(&mut materials, e.charged_core(i as f32 * 0.5))));
     commands.insert_resource(Vfx {
         trail,
         burst,
         cast,
+        rise,
         shock,
         sprite,
+        core_mesh: meshes.add(Sphere::new(1.0).mesh().ico(1).expect("valid icosphere")),
+        ball_mesh: meshes.add(Sphere::new(1.0).mesh().uv(16, 10)),
+        ring_mesh: meshes.add(ring(0.94, 1.0)),
+        crescent_mesh: meshes.add(crescent(0.95, 2.3, 0.25)),
+        stone_material: materials.add(StandardMaterial { base_color: Color::srgb(0.36, 0.4, 0.43),
+            perceptual_roughness: 0.95, ..default() }),
+        cores,
     });
+}
+
+/// Run before Hanabi compiles/extracts instances, so rejected decoration allocates no GPU buffer.
+fn limit_effects(
+    mut commands: Commands, limits: Res<VfxLimits>, mut load: ResMut<VfxLoad>,
+    admitted: Query<Entity, (With<ParticleEffect>, With<AdmittedEmitter>)>,
+    fresh: Query<(Entity, &GlobalTransform), (With<ParticleEffect>, Without<AdmittedEmitter>)>,
+    player: Query<&GlobalTransform, With<super::Player>>,
+    flashes: Query<(Entity, &Flash)>,
+    ghosts: Query<(), With<super::afterimage::Afterimage>>,
+) {
+    let eye = player.iter().next().map(|t| t.translation());
+    let mut count = admitted.iter().count();
+    let mut candidates: Vec<_> = fresh.iter().map(|(e, tf)|
+        (e, eye.map_or(0.0, |p| p.distance_squared(tf.translation())))).collect();
+    candidates.sort_unstable_by(|a, b| a.1.total_cmp(&b.1).then_with(|| a.0.to_bits().cmp(&b.0.to_bits())));
+    for (e, distance) in candidates {
+        if count >= limits.emitters || distance > 80.0 * 80.0 {
+            commands.entity(e).remove::<(ParticleEffect, EffectMaterial, bevy_hanabi::CompiledParticleEffect)>();
+            load.dropped_emitters += 1;
+        } else {
+            commands.entity(e).insert(AdmittedEmitter);
+            count += 1;
+        }
+    }
+    load.emitters = count;
+    load.peak_emitters = load.peak_emitters.max(count);
+    let mut accents: Vec<_> = flashes.iter().map(|(e, f)| (e, f.age)).collect();
+    accents.sort_unstable_by(|a, b| a.1.total_cmp(&b.1));
+    for (e, _) in accents.into_iter().skip(limits.flashes.saturating_sub(ghosts.iter().count())) {
+        commands.entity(e).try_despawn();
+    }
+}
+
+fn report_load(time: Res<Time<Real>>, load: Res<VfxLoad>, limits: Res<VfxLimits>,
+    meshes: Res<Assets<Mesh>>, materials: Res<Assets<StandardMaterial>>, mut last: Local<f32>) {
+    if time.elapsed_secs() - *last < 5.0 { return; }
+    *last = time.elapsed_secs();
+    info!("[vfx-budget] emitters={}/{} peak={} dropped={} sprites={}/{} peak={} dropped={} meshes={} materials={}",
+        load.emitters, limits.emitters, load.peak_emitters, load.dropped_emitters,
+        load.sprites, limits.sprites, load.peak_sprites, load.dropped_sprites, meshes.len(), materials.len());
+}
+
+/// Bevy's mesh allocator cannot allocate zero-byte vertex/index streams. Keep empty
+/// generated or imported meshes on the CPU, where they can still be filled later.
+fn skip_empty_uploads(mut events: MessageReader<AssetEvent<Mesh>>, mut meshes: ResMut<Assets<Mesh>>,
+    mut deferred: Local<std::collections::HashMap<AssetId<Mesh>, RenderAssetUsages>>) {
+    for event in events.read() {
+        let id = match event {
+            AssetEvent::Added { id } | AssetEvent::Modified { id } => *id,
+            AssetEvent::Removed { id } => { deferred.remove(id); continue; }
+            _ => continue,
+        };
+        if meshes.get(id).is_some_and(|m| m.count_vertices() == 0
+            && m.asset_usage.contains(RenderAssetUsages::RENDER_WORLD)) {
+            if let Some(mut mesh) = meshes.get_mut(id) {
+                deferred.insert(id, mesh.asset_usage);
+                mesh.asset_usage = RenderAssetUsages::MAIN_WORLD;
+            }
+            info!("[render-budget] skipped empty mesh upload {id:?}");
+        } else if meshes.get(id).is_some_and(|m| m.count_vertices() > 0)
+            && let Some(usage) = deferred.remove(&id)
+            && let Some(mut mesh) = meshes.get_mut(id)
+        {
+            mesh.asset_usage = usage;
+        }
+    }
 }
 
 /// `GB_VFX_TEST=1`: permanent effects in front of the spawn camera (a glow sphere, a fire and a
@@ -239,13 +379,13 @@ fn trail_effect(e: Element) -> EffectAsset {
     let accel = AccelModifier::new(field(&w, e));
     let drag = LinearDragModifier::new(w.lit(2.0).expr());
     let size = match e {
-        Element::Fire => sizes(0.3, 0.04),
+        Element::Fire => sizes(0.09, 0.015),
         Element::Frost => sizes(0.14, 0.05),
         Element::Lightning => sizes(0.09, 0.0),
         _ => sizes(0.2, 0.0),
     };
     let (module, sprite) = finish(w);
-    EffectAsset::new(4096, SpawnerSettings::rate(260.0.into()), module)
+    EffectAsset::new(128, SpawnerSettings::rate(90.0.into()), module)
         .with_name("trail")
         .render(sprite)
         .with_simulation_space(SimulationSpace::Global)
@@ -267,9 +407,9 @@ fn trail_effect(e: Element) -> EffectAsset {
 fn burst_effect(e: Element) -> EffectAsset {
     let w = ExprWriter::new();
     let count = match e {
-        Element::Fire => 700.0,
-        Element::Frost => 610.0,
-        _ => 420.0,
+        Element::Fire => 120.0,
+        Element::Frost => 140.0,
+        _ => 88.0,
     };
     let life = match e {
         Element::Lightning => (0.15, 0.4),
@@ -289,8 +429,8 @@ fn burst_effect(e: Element) -> EffectAsset {
         gradient: match e {
             Element::Frost => sizes(0.12, 0.04),
             Element::Lightning => sizes(0.09, 0.0),
-            Element::Fire => sizes(0.5, 0.06),
-            _ => sizes(0.32, 0.0),
+            Element::Fire => sizes(0.24, 0.04),
+            _ => sizes(0.16, 0.0),
         },
         screen_space_size: false,
     };
@@ -323,7 +463,7 @@ fn burst_effect(e: Element) -> EffectAsset {
     };
     let accel = AccelModifier::new(field(&w, e));
     let (module, sprite) = finish(w);
-    let mut asset = EffectAsset::new(2048, SpawnerSettings::once(count.into()), module)
+    let mut asset = EffectAsset::new(256, SpawnerSettings::once(count.into()), module)
         .with_name("burst")
         .render(sprite)
         .with_simulation_space(SimulationSpace::Global)
@@ -334,7 +474,7 @@ fn burst_effect(e: Element) -> EffectAsset {
         .init(init_life)
         .update(accel)
         .update(drag)
-        .render(ColorOverLifetimeModifier::new(gradient(e, 2.2)))
+        .render(ColorOverLifetimeModifier::new(gradient(e, 1.1)))
         .render(size);
     if matches!(e, Element::Frost | Element::Lightning) {
         asset = asset.render(OrientModifier::new(OrientMode::AlongVelocity));
@@ -356,7 +496,7 @@ fn cast_effect(e: Element) -> EffectAsset {
     let init_age = SetAttributeModifier::new(Attribute::AGE, w.lit(0.0).expr());
     let init_life = SetAttributeModifier::new(Attribute::LIFETIME, w.lit(0.2).uniform(w.lit(0.35)).expr());
     let (module, sprite) = finish(w);
-    EffectAsset::new(1024, SpawnerSettings::rate(320.0.into()), module)
+    EffectAsset::new(64, SpawnerSettings::rate(90.0.into()), module)
         .with_name("cast")
         .render(sprite)
         .with_alpha_mode(bevy_hanabi::AlphaMode::Add)
@@ -369,6 +509,27 @@ fn cast_effect(e: Element) -> EffectAsset {
             gradient: sizes(0.05, 0.14),
             screen_space_size: false,
         })
+}
+
+/// Small rising motes around a charging caster. One bounded emitter replaces stacked aura planes.
+fn rise_effect(e: Element) -> EffectAsset {
+    let w = ExprWriter::new();
+    let pos = SetPositionCircleModifier { center: w.lit(Vec3::new(0.0, -0.7, 0.0)).expr(),
+        axis: w.lit(Vec3::Y).expr(), radius: w.lit(0.62).expr(), dimension: ShapeDimension::Surface };
+    let vel = SetAttributeModifier::new(Attribute::VELOCITY, w.lit(Vec3::Y * 1.6).expr());
+    let age = SetAttributeModifier::new(Attribute::AGE, w.lit(0.0).expr());
+    let life = SetAttributeModifier::new(Attribute::LIFETIME, w.lit(0.6).uniform(w.lit(1.05)).expr());
+    let c = e.charged_core(0.35);
+    let mut colors = bevy_hanabi::Gradient::new();
+    colors.add_key(0.0, Vec4::new(c.red, c.green, c.blue, 0.0));
+    colors.add_key(0.2, Vec4::new(c.red, c.green, c.blue, 0.7));
+    colors.add_key(1.0, Vec4::new(c.red, c.green, c.blue, 0.0));
+    let (module, sprite) = finish(w);
+    EffectAsset::new(64, SpawnerSettings::rate(42.0.into()), module).with_name("charge rise")
+        .with_alpha_mode(bevy_hanabi::AlphaMode::Add).render(sprite)
+        .init(pos).init(vel).init(age).init(life)
+        .render(ColorOverLifetimeModifier::new(colors))
+        .render(SizeOverLifetimeModifier { gradient: sizes(0.035, 0.055), screen_space_size: false })
 }
 
 /// Shockwave debris: chunks thrown up and out in a ring, falling back under gravity.
@@ -393,7 +554,7 @@ fn shock_debris() -> EffectAsset {
     g.add_key(0.4, Vec4::new(0.55, 0.5, 0.45, 1.0));
     g.add_key(1.0, Vec4::new(0.3, 0.27, 0.24, 0.0));
     let (module, sprite) = finish(w);
-    EffectAsset::new(1024, SpawnerSettings::once(260.0.into()), module)
+    EffectAsset::new(96, SpawnerSettings::once(64.0.into()), module)
         .with_name("shock")
         .render(sprite)
         .with_simulation_space(SimulationSpace::Global)
@@ -415,6 +576,11 @@ fn shock_debris() -> EffectAsset {
 /// Sprite edge (texels).
 const SPRITE: usize = 64;
 
+fn smoothstep(a: f32, b: f32, value: f32) -> f32 {
+    let t = ((value - a) / (b - a)).clamp(0.0, 1.0);
+    t * t * (3.0 - 2.0 * t)
+}
+
 /// Alpha of an element's particle sprite at (x, y) in -1..1 (0 outside the shape):
 /// - Aura: a Gaussian glow.
 /// - Fire: a flame tongue: a blob stretched upward whose edge is eaten by value noise, so every
@@ -434,27 +600,29 @@ pub fn sprite_alpha(e: Element, x: f32, y: f32) -> f32 {
             ((1.0 - stretch - n + 0.25) * 3.0).clamp(0.0, 1.0) * (-r * r).exp()
         }
         Element::Frost => {
-            let sector = std::f32::consts::PI / 3.0;
-            let mut ang = y.atan2(x).rem_euclid(sector);
-            if ang > sector * 0.5 {
-                ang = sector - ang;
-            }
-            let (px, py) = (r * ang.cos(), r * ang.sin());
-            let arm = (-(py / 0.05).powi(2)).exp() * (1.0 - r).max(0.0);
-            // Side branches leave the arm at 60° from r = 0.35 and 0.6.
-            let branch = |at: f32, len: f32| {
-                let (dx, dy) = (px - at, py);
-                let along = dx * 0.5 + dy * 0.866;
-                let across = -dx * 0.866 + dy * 0.5;
-                if along < 0.0 || along > len { 0.0 } else { (-(across / 0.04).powi(2)).exp() }
-            };
-            (arm + branch(0.35, 0.3) + branch(0.6, 0.2)).min(1.0) + (-r * r * 30.0).exp()
+            // Binbun3D StatusFXFree ice_particle (CC0), baked once into the particle sprite.
+            let circle = (1.0 - r).max(0.0);
+            let branches = ((r * std::f32::consts::PI * 5.0).sin() * 0.5 + 0.5).powi(10) * circle;
+            let streaks = (y.atan2(x) * 6.0).cos() + circle.powi(4) * 4.0 + branches * 3.0;
+            smoothstep(0.85, 1.2, streaks)
         }
         Element::Lightning => {
             let streak = |u: f32, v: f32| (-u.abs() * 3.0).exp() * (-v.abs() * 40.0).exp();
             (streak(x, y) + streak(y, x) + (-r * r * 25.0).exp()).min(1.0)
         }
-        Element::Arcane => (-((r - 0.62) / 0.12).powi(2)).exp() + 0.35 * (-r * r * 12.0).exp(),
+        Element::Arcane => {
+            // StatusFXFree streaks.gdshader overlay/radial mask, with a faint ring under it.
+            let angle = x.atan2(y);
+            let a = (angle * 5.0 + 0.4).sin();
+            let b = (angle * 11.0 - 0.4).sin();
+            let overlay = if a < 0.5 { 2.0 * a * b } else { 1.0 - 2.0 * (1.0 - a) * (1.0 - b) };
+            let mask = (1.0 - r).max(0.0);
+            let mut value = overlay - (1.0 - r) * 0.4;
+            value *= 1.0 - (r - value * 0.5);
+            value = (value * mask).min(mask);
+            let hole = ((r - 0.1) / 0.3).clamp(0.0, 1.0).powi(4);
+            smoothstep(0.1, 1.0, value) * hole + 0.35 * (-((r - 0.62) / 0.12).powi(2)).exp()
+        },
     };
     // Fade to nothing at the sprite edge so no quad corner ever shows.
     (a * (1.0 - r).clamp(0.0, 1.0).sqrt()).clamp(0.0, 1.0)
@@ -511,14 +679,15 @@ pub fn burst(commands: &mut Commands, effect: (ParticleEffect, EffectMaterial), 
         Name::new("Burst"),
         effect,
         Transform::from_translation(at).with_scale(Vec3::splat(scale.max(0.1))),
-        Expire { left: 1.6 },
+        Expire { left: 1.3 },
     ));
 }
 
-/// An impact: the element's burst, an expanding glow shell and a short light flash.
+/// An impact: shaped particles and a compact shared-mesh core. Bloom supplies the glow;
+/// transient point lights on every mote/impact added clustered-light work without useful detail.
 pub fn impact(
     commands: &mut Commands,
-    meshes: &mut Assets<Mesh>,
+    _meshes: &mut Assets<Mesh>,
     materials: &mut Assets<StandardMaterial>,
     vfx: &Vfx,
     e: Element,
@@ -531,29 +700,16 @@ pub fn impact(
     let color = e.core();
     commands.spawn((
         Name::new("Impact glow"),
-        Mesh3d(meshes.add(Sphere::new(0.25 * scale))),
+        Mesh3d(vfx.core_mesh.clone()),
         MeshMaterial3d(glow(materials, color)),
-        Transform::from_translation(at),
+        Transform::from_translation(at).with_scale(Vec3::splat(0.12 * scale)),
         Flash {
             age: 0.0,
-            life: 0.22,
-            grow: 9.0,
+            life: 0.16,
+            grow: 5.0,
             color: color * 1.2,
         },
         bevy::light::NotShadowCaster,
-    ));
-    let peak = color.red.max(color.green).max(color.blue).max(1e-3);
-    commands.spawn((
-        Name::new("Impact light"),
-        PointLight {
-            color: Color::LinearRgba(LinearRgba::rgb(color.red / peak, color.green / peak, color.blue / peak)),
-            intensity: 400_000.0 * scale,
-            range: 9.0,
-            shadow_maps_enabled: false,
-            ..default()
-        },
-        Transform::from_translation(at + Vec3::Y * 0.3),
-        Expire { left: 0.12 },
     ));
 }
 
@@ -579,6 +735,24 @@ pub struct Flash {
     pub color: LinearRgba,
 }
 
+#[derive(Component)]
+pub struct RingPulse {
+    pub radius: f32,
+}
+
+pub fn ring_pulse(commands: &mut Commands, materials: &mut Assets<StandardMaterial>, vfx: &Vfx,
+    element: Element, at: Vec3, radius: f32) {
+    let color = element.core() * 0.45;
+    commands.spawn((
+        Name::new("Spell ripple"), Mesh3d(vfx.ring_mesh.clone()),
+        MeshMaterial3d(glow(materials, color)),
+        Transform::from_translation(at).with_scale(Vec3::splat(radius * 0.15)),
+        RingPulse { radius },
+        Flash { age: 0.0, life: 0.38, grow: 0.0, color },
+        bevy::light::NotShadowCaster,
+    ));
+}
+
 /// Unlit additive HDR material.
 pub fn glow(materials: &mut Assets<StandardMaterial>, color: LinearRgba) -> Handle<StandardMaterial> {
     // Unlit materials output their base colour (emissive is ignored), so the HDR colour goes there.
@@ -596,19 +770,24 @@ fn flash(
     time: Res<Time>,
     mut commands: Commands,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut q: Query<(Entity, &mut Flash, &mut Transform, &MeshMaterial3d<StandardMaterial>)>,
+    mut q: Query<(Entity, &mut Flash, &mut Transform, &MeshMaterial3d<StandardMaterial>, Option<&Bolt>, Option<&RingPulse>)>,
 ) {
     let dt = time.delta_secs();
-    for (e, mut f, mut tf, mat) in &mut q {
+    for (e, mut f, mut tf, mat, bolt, pulse) in &mut q {
         f.age += dt;
         if f.age >= f.life {
             commands.entity(e).try_despawn();
             continue;
         }
         let u = f.age / f.life;
-        tf.scale *= 1.0 + f.grow * dt;
+        if let Some(pulse) = pulse {
+            tf.scale = Vec3::splat(pulse.radius * (0.15 + 0.85 * (1.0 - (1.0 - u).powi(2))));
+        } else {
+            tf.scale *= 1.0 + f.grow * dt;
+        }
         if let Some(mut m) = materials.get_mut(&mat.0) {
-            let k = (1.0 - u) * (1.0 - u);
+            let flicker = bolt.map_or(1.0, |b| 0.72 + 0.28 * ((f.age / FLICKER).floor() + b.phase).sin().abs());
+            let k = (1.0 - u) * (1.0 - u) * flicker;
             m.base_color = Color::LinearRgba(f.color * k);
         }
     }
@@ -675,29 +854,10 @@ pub fn ribbons(segments: &[(Vec3, Vec3, f32)], width: f32) -> Mesh {
         .with_inserted_indices(Indices::U32(idx))
 }
 
-/// A live lightning bolt: re-rolled every `FLICKER` s between its ends.
+/// Brightness flickers without replacing and re-uploading the ribbon mesh each frame.
 #[derive(Component)]
 pub struct Bolt {
-    pub from: Vec3,
-    pub to: Vec3,
-    pub seed: u32,
-    pub clock: f32,
-}
-
-fn flicker(time: Res<Time>, mut meshes: ResMut<Assets<Mesh>>, mut q: Query<(&mut Bolt, &Mesh3d)>) {
-    let dt = time.delta_secs();
-    for (mut bolt, mesh) in &mut q {
-        bolt.clock += dt;
-        if bolt.clock < FLICKER {
-            continue;
-        }
-        bolt.clock = 0.0;
-        bolt.seed = bolt.seed.wrapping_mul(747_796_405).wrapping_add(2_891_336_453);
-        let path = lightning_path(bolt.from, bolt.to, 6, 0.22, 0.35, bolt.seed);
-        if let Some(mut m) = meshes.get_mut(&mesh.0) {
-            *m = ribbons(&path, 0.07);
-        }
-    }
+    phase: f32,
 }
 
 /// Spawn a flickering bolt from `a` to `b`.
@@ -709,25 +869,38 @@ pub fn spawn_bolt(
     b: Vec3,
     seed: u32,
 ) {
-    let path = lightning_path(a, b, 6, 0.22, 0.35, seed);
-    let color = Element::Lightning.core() * 1.6;
+    let path = lightning_path(a, b, 4, 0.18, 0.15, seed);
+    let color = Element::Lightning.core() * 0.9;
     commands.spawn((
         Name::new("Bolt"),
         Mesh3d(meshes.add(ribbons(&path, 0.07))),
         MeshMaterial3d(glow(materials, color)),
         Transform::default(),
-        Bolt {
-            from: a,
-            to: b,
-            seed,
-            clock: 0.0,
-        },
+        Bolt { phase: (seed % 1024) as f32 },
         Flash {
             age: 0.0,
             life: BOLT_LIFE,
             grow: 0.0,
             color,
         },
+        bevy::light::NotShadowCaster,
+    ));
+}
+
+/// Frost/arcane lances use a straight narrow ray, while lightning keeps its branching silhouette.
+pub fn spawn_ray(commands: &mut Commands, meshes: &mut Assets<Mesh>, materials: &mut Assets<StandardMaterial>,
+    e: Element, a: Vec3, b: Vec3, seed: u32) {
+    if e == Element::Lightning {
+        spawn_bolt(commands, meshes, materials, a, b, seed);
+        return;
+    }
+    let color = e.core() * 0.9;
+    commands.spawn((
+        Name::new("Element lance"),
+        Mesh3d(meshes.add(ribbons(&[(a, b, 1.0)], 0.08))),
+        MeshMaterial3d(glow(materials, color)),
+        Transform::default(),
+        Flash { age: 0.0, life: 0.24, grow: 0.0, color },
         bevy::light::NotShadowCaster,
     ));
 }
