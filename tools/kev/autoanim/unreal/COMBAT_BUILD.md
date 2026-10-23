@@ -16,9 +16,8 @@ restores the populated sandbox. The default duel does not load or overwrite the 
 - Hold Space for a higher jump, release early to hop. Air steering preserves momentum when
   movement is released. Buffered takeoff, a brief apex float and stronger falling gravity
   improve jump control. Regular jumps use a soft landing rather than forcing a roll.
-- Z: switch Sparking fists / katana. X: draw / sheathe. Sword attacks use the existing
-  katana library (UAL sword clips and authored `shonen_duel` cuts); no new game sword sequence
-  has been extracted in this polish pass.
+- Z: switch Sparking fists / katana. X: draw / sheathe. The katana chain includes extracted
+  Trunks (Sword) and Tapion attacks alongside the UAL sword clips and authored `shonen_duel` cuts.
 - F near Rook: talk, equip either style, restore health/stamina/energy or read controls.
   He stays friendly and looks toward the player; the opponent ignores him.
 - Tap primary: right punch → left follow-up → right kick. Buffer taps to chain.
@@ -30,7 +29,7 @@ restores the populated sandbox. The default duel does not load or overwrite the 
   Separate Q/E recovery survives changing the equipped ability. The hotbar shows charge
   percentage and remaining recovery. Binding changes wait until charging/release is finished.
 - T or mouse button 5: next spell. Shift + T / mouse button 5: next art.
-- All ten existing arts/spells are unlocked. This does not make energy unlimited.
+- The full library is available: ten arts and ten spells. This does not make energy unlimited.
 - Kev: **Preview combat library**, then choose one of the sixteen converted clips.
 
 ## Included

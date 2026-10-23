@@ -153,7 +153,7 @@ impl Ability {
     }
 }
 
-pub static ABILITIES: [Ability; 10] = [
+pub static ABILITIES: [Ability; 20] = [
     // --- Arts (Battlewill, Q).
     Ability {
         id: "crescent_edge",
@@ -325,6 +325,78 @@ pub static ABILITIES: [Ability; 10] = [
         knockback: 1.5,
         shape: Shape::Orbs { count: 3, speed: 12.0 },
         about: "Three motes trace Lissajous orbits around you, then hunt your target.",
+    },
+    // --- Additional spells. These reuse the existing projectile, area, chain and defensive
+    // resolvers, so every one works with aiming, charge, mastery, hit reactions and VFX.
+    Ability {
+        id: "ember_burst", name: "Ember Burst", pool: Pool::Magicules, element: Element::Fire,
+        cost: 24.0, track: "sekiro/Magic Action Big Projectile", start: 0.25, end: 1.35,
+        speed: 1.25, release: 0.54, damage: 20.0, poise: 28.0, knockback: 2.5,
+        shape: Shape::Bolt { speed: 18.0, gravity: 1.2, radius: 0.42, bloom: 1.35 },
+        about: "A heavy cinder breaks into a close-range burst on impact.",
+    },
+    Ability {
+        id: "glacier_lance", name: "Glacier Lance", pool: Pool::Magicules, element: Element::Frost,
+        cost: 32.0, track: "sekiro/Magic Action Energy Beam", start: 0.5, end: 1.55,
+        speed: 1.1, release: 0.4, damage: 23.0, poise: 32.0, knockback: 2.0,
+        shape: Shape::Lance { range: 22.0, chains: 1 },
+        about: "A narrow frost ray that pierces the target and chills a nearby foe.",
+    },
+    Ability {
+        id: "thunder_ring", name: "Thunder Ring", pool: Pool::Magicules, element: Element::Lightning,
+        cost: 36.0, track: "ual1/Spell_Simple_Enter", start: 0.0, end: 0.6,
+        speed: 1.0, release: 0.58, damage: 18.0, poise: 26.0, knockback: 4.0,
+        shape: Shape::Quake { radius: 5.0 },
+        about: "Lightning rolls outward in a ring, knocking back nearby enemies.",
+    },
+    Ability {
+        id: "tide_orbs", name: "Tide Orbs", pool: Pool::Magicules, element: Element::Frost,
+        cost: 30.0, track: "sekiro/Magic Action Big Projectile", start: 0.3, end: 1.4,
+        speed: 1.15, release: 0.55, damage: 11.0, poise: 14.0, knockback: 1.5,
+        shape: Shape::Orbs { count: 4, speed: 10.0 },
+        about: "Four cold motes circle once, then seek nearby foes.",
+    },
+    Ability {
+        id: "arcane_step", name: "Arcane Step", pool: Pool::Magicules, element: Element::Arcane,
+        cost: 22.0, track: "sekiro/Run-Forwards", start: 0.0, end: 0.28,
+        speed: 1.5, release: 0.0, damage: 8.0, poise: 8.0, knockback: 1.0,
+        shape: Shape::Step { distance: 8.0 },
+        about: "Blink through eight metres, clipping foes along the way.",
+    },
+    Ability {
+        id: "sunflare", name: "Sunflare", pool: Pool::Magicules, element: Element::Fire,
+        cost: 38.0, track: "sekiro/Magic Action Big Projectile", start: 0.35, end: 1.5,
+        speed: 1.0, release: 0.6, damage: 26.0, poise: 30.0, knockback: 3.2,
+        shape: Shape::Bolt { speed: 16.0, gravity: 0.0, radius: 0.32, bloom: 2.4 },
+        about: "A bright fire seed blooms into a wide flare at its target.",
+    },
+    Ability {
+        id: "shadow_veil", name: "Shadow Veil", pool: Pool::Magicules, element: Element::Arcane,
+        cost: 28.0, track: "ual1/Spell_Simple_Enter", start: 0.0, end: 0.55,
+        speed: 1.1, release: 0.62, damage: 0.0, poise: 0.0, knockback: 0.0,
+        shape: Shape::Veil { duration: 8.0 },
+        about: "Muffle your presence for eight seconds; attacking breaks the veil.",
+    },
+    Ability {
+        id: "stone_ward", name: "Stone Ward", pool: Pool::Magicules, element: Element::Arcane,
+        cost: 34.0, track: "ual1/Spell_Simple_Enter", start: 0.0, end: 0.65,
+        speed: 0.95, release: 0.65, damage: 0.0, poise: 0.0, knockback: 0.0,
+        shape: Shape::Ward { duration: 7.0, share: 0.48 },
+        about: "Raise a seven-second ward that absorbs nearly half of incoming blows.",
+    },
+    Ability {
+        id: "cometfall", name: "Cometfall", pool: Pool::Magicules, element: Element::Fire,
+        cost: 42.0, track: "sekiro/Magic Action Big Projectile", start: 0.5, end: 1.75,
+        speed: 0.9, release: 0.58, damage: 32.0, poise: 38.0, knockback: 5.0,
+        shape: Shape::Bolt { speed: 13.0, gravity: 5.5, radius: 0.3, bloom: 1.7 },
+        about: "Call a falling ember that arcs down into a hard impact.",
+    },
+    Ability {
+        id: "gale_crescent", name: "Gale Crescent", pool: Pool::Magicules, element: Element::Aura,
+        cost: 30.0, track: "ual2/Sword_Regular_A", start: 0.0, end: 0.48,
+        speed: 1.15, release: 0.52, damage: 20.0, poise: 20.0, knockback: 2.0,
+        shape: Shape::Crescent { speed: 20.0, radius: 0.55 },
+        about: "Send a fast cutting arc straight through a line of foes.",
     },
 ];
 

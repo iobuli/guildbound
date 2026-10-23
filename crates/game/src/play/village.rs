@@ -244,37 +244,44 @@ fn spawn(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut water: ResMut<Assets<VillageWater>>,
+    surfaces: Res<super::surfaces::Surfaces>,
 ) {
     if !enabled() {
         return;
     }
     let stone = materials.add(StandardMaterial {
         base_color: Color::srgb(0.43, 0.46, 0.43),
+        base_color_texture: Some(surfaces.stone.detail.clone()),
         perceptual_roughness: 0.95,
         ..default()
     });
     let timber = materials.add(StandardMaterial {
         base_color: Color::srgb(0.26, 0.15, 0.08),
+        base_color_texture: Some(surfaces.wood.detail.clone()),
         perceptual_roughness: 0.85,
         ..default()
     });
     let plaster = materials.add(StandardMaterial {
         base_color: Color::srgb(0.82, 0.73, 0.54),
+        base_color_texture: Some(surfaces.ground.detail.clone()),
         perceptual_roughness: 0.9,
         ..default()
     });
     let roof = materials.add(StandardMaterial {
         base_color: Color::srgb(0.38, 0.16, 0.11),
+        base_color_texture: Some(surfaces.rock.detail.clone()),
         perceptual_roughness: 0.85,
         ..default()
     });
     let cloth = materials.add(StandardMaterial {
         base_color: Color::srgb(0.19, 0.4, 0.46),
+        base_color_texture: Some(surfaces.cloth.detail.clone()),
         perceptual_roughness: 0.9,
         ..default()
     });
     let road = materials.add(StandardMaterial {
         base_color: Color::srgb(0.5, 0.43, 0.3),
+        base_color_texture: Some(surfaces.sand.detail.clone()),
         perceptual_roughness: 1.0,
         ..default()
     });

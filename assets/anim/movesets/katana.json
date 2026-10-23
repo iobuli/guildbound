@@ -29,10 +29,22 @@
       "damage": 14, "poise": 20, "knockback": 2.2, "stamina": 13, "travel": 0.8
     },
     {
+      "name": "Trunks rising cut",
+      "clip": { "track": "trunks_sword/Trunks_Sword_Combo" },
+      "windup": 0.1, "active": 0.32, "cancel": 0.62,
+      "damage": 15, "poise": 19, "knockback": 2.0, "stamina": 13, "travel": 0.55
+    },
+    {
       "name": "slash_c",
       "clip": { "track": "ual2/Sword_Regular_C", "end": 1.2, "speed": 1.2 },
       "windup": 0.47, "active": 0.6, "cancel": 0.7,
       "damage": 16, "poise": 22, "knockback": 2.5, "stamina": 14, "travel": 0.6
+    },
+    {
+      "name": "Tapion cross cut",
+      "clip": { "track": "tapion_sword/Tapion_Sword_Combo" },
+      "windup": 0.1, "active": 0.32, "cancel": 0.6,
+      "damage": 17, "poise": 22, "knockback": 2.7, "stamina": 15, "travel": 0.7
     }
   ],
   "heavy": [

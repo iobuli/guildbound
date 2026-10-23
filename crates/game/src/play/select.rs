@@ -59,7 +59,9 @@ mod tracks {
     pub const IDLE: &str = "ual1/Idle_Loop";
     pub const WALK: &str = "ual1/Walk_Loop";
     pub const JOG: &str = "ual1/Jog_Fwd_Loop";
-    pub const RUN: &str = "sekiro/Run-Forwards";
+    // Kev's full forward stride pairs cleanly with the UAL sprint; Sekiro's clip reads
+    // like a guarded combat crouch when used as the default run.
+    pub const RUN: &str = "kev_melee/Run01_Forward";
     pub const SPRINT: &str = "ual1/Sprint_Loop";
     pub const CROUCH_IDLE: &str = "ual1/Crouch_Idle_Loop";
     pub const CROUCH_MOVE: &str = "ual1/Crouch_Fwd_Loop";

@@ -46,7 +46,7 @@ pub const SAMPLE_HZ: f32 = 60.0;
 /// The character model and canonical skeleton.
 pub const MODEL_GLB: &str = "anim/ual2.glb";
 /// Donor libraries: (lib name, path relative to `crate::ASSETS`).
-pub const LIBRARIES: [(&str, &str); 8] = [
+pub const LIBRARIES: [(&str, &str); 10] = [
     ("ual1", "anim/ual1.glb"),
     ("ual2", "anim/ual2.glb"),
     ("sekiro", "anim/sekiro.glb"),
@@ -61,6 +61,10 @@ pub const LIBRARIES: [(&str, &str); 8] = [
     ("shonen_duel", "anim/shonen_duel.glb"),
     // Locally converted Sparking rush, with the corrected anatomical basis.
     ("sparking", "anim/sparking_combat.glb"),
+    // Character-specific sword combo sections from Trunks (Sword) and Tapion, retargeted
+    // from the local Sparking archive to Kev's canonical UAL2 skeleton.
+    ("trunks_sword", "anim/trunks_sword.glb"),
+    ("tapion_sword", "anim/tapion_sword.glb"),
 ];
 
 pub fn plugin(app: &mut App) {
