@@ -30,6 +30,31 @@ npm run mcp                                         # MCP: kev_levels, kev_evalu
 - **kev-brain/** is the memory (KEV.md rules, USER.md, MEMORY.md, daily log, sources incl. the levels-webinar transcript, experiments, findings). A SessionStart hook in `.claude/settings.json` loads it. Drop new files into `kev-brain/inbox/` and run `brain process`.
 - Old one-off runners are in `legacy/` (not compiled).
 
+## Gold Nucleus observatory
+
+[Visual explanation (PDF)](docs/visuals/gold-explained.pdf) · [Full-size image](docs/visuals/gold-explained.png)
+
+![Gold Nucleus: observations, fixed references and temporal events](docs/visuals/gold-explained.png)
+
+Use the bundled 200,000 gold M30 observations to inspect what Nucleus receives,
+retains and changes through time. Run `python3 kev-lab/server.py --port 8766` and
+open `/gold.html` on that server. Twelve lines span 30m/1h/4h/UTC 1D. Select an
+observation cutoff to see input counts, retained extrema, midpoint ages and
+historical state organization using only bars closed by that time.
+
+See [Gold observatory](docs/gold-observatory.md) for timing semantics, JSON export,
+information limits and causal tests. This is an observation workflow, not a trading signal.
+
+## Local validation
+
+Run `npm ci`, `npm run typecheck`, and `npm test` from the repository root.
+The ETH M30/M15 consistency check needs the ignored broker intrabar files referenced
+by `markets/ETHUSD/profile.json`. When these files are absent, the selftests report
+that integration check as skipped and continue running the remaining checks.
+Use `npm test -- --require-market-data` to require those files and fail when missing.
+Backtests still require any intrabar data they request; this test option does not
+change production data loading or substitute generated prices.
+
 ## The order it runs in
 The graph evaluates, and `kev_evaluate` reports, in the trader's order of operations, and names the first step that blocks the trade:
 

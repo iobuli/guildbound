@@ -129,12 +129,13 @@ def line(tf: dict, c: np.ndarray, n: int) -> dict:
 
 
 @np.errstate(all="ignore")
-def nucleus(m: dict) -> dict:
+def nucleus(m: dict, tfs: dict | None = None) -> dict:
     """Every reading at every minute. Returns float32/int8 arrays keyed '<tf>.<n>.<reading>', '<tf>.order', '<tf>.cloud', 'bal', ..."""
+    tfs = TFS if tfs is None else tfs
     c = m["c"].astype(float)
     out: dict[str, np.ndarray] = {"t": m["t"], "c": m["c"]}
     signs, slopes = [], []
-    for name, size in TFS.items():
+    for name, size in tfs.items():
         tf = timeframe(m, size)
         L = {n: line(tf, c, n) for n in NS}
         for n in NS:
@@ -162,9 +163,9 @@ def nucleus(m: dict) -> dict:
     S = np.stack(signs, 1)
     out["bal"] = np.nanmean(S, 1).astype(np.float32)
     out["slope_bal"] = np.nanmean(np.stack(slopes, 1), 1).astype(np.float32)
-    known = ~np.isnan(S).any(1) & np.all([out[f"{k}.cloud"] != MISSING for k in TFS], 0)
-    known &= np.all([~np.isnan(out[f"{k}.{n}.pos"]) for k in TFS for n in NS], 0)
-    for name in TFS:
+    known = ~np.isnan(S).any(1) & np.all([out[f"{k}.cloud"] != MISSING for k in tfs], 0)
+    known &= np.all([~np.isnan(out[f"{k}.{n}.pos"]) for k in tfs for n in NS], 0)
+    for name in tfs:
         for n in NS:
             for k in ("slope", "shift", "lag"):
                 known &= out[f"{name}.{n}.{k}"] != MISSING

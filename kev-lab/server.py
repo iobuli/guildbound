@@ -12,6 +12,7 @@ import threading
 import time
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.parse import parse_qs, urlsplit
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import data  # noqa: E402
@@ -65,6 +66,14 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def do_GET(self):
+        url = urlsplit(self.path)
+        if url.path == "/api/gold/nucleus":
+            from gold_observatory import gold_report, parse_asof
+            try:
+                cutoff = parse_asof(parse_qs(url.query).get('asof', [None])[0])
+                return self._json(gold_report(cutoff))
+            except ValueError as e:
+                return self._json({'error': str(e)}, 400)
         if self.path == "/api/results":
             return self._json(json.loads(RESULTS.read_text()) if RESULTS.exists() else {"error": "no results yet; POST /api/recompute"})
         if self.path == "/api/status":

@@ -38,7 +38,8 @@ import { interpret } from './interpret.js';
 import { fate, mergeLevels, type LevelId } from './study/atlas.js';
 import { writeFileSync, existsSync, rmSync } from 'node:fs';
 
-let fails = 0, passes = 0;
+let fails = 0, passes = 0, skips = 0;
+const requireMarketData = process.argv.includes('--require-market-data');
 const ok = (name: string, cond: boolean, detail = '') => { cond ? passes++ : fails++; console.log(`${cond ? 'PASS' : 'FAIL'}  ${name}${detail ? '  ' + detail : ''}`); };
 
 // ---------- helpers ----------
@@ -309,11 +310,19 @@ ok(`lookahead audit 2: tampering with the forming bar's H/L/C changes no node th
     ok('session: gold on NY-close days has no Sunday daily bars and under 1% of days shorter than 6 hours (was 16.5% Sunday stubs on UTC days)', sundays === 0 && short / per.size < 0.01, `${per.size} days, ${short} short, ${sundays} Sunday bars`);
   }
   if (listMarkets().includes('ETHUSD')) {
-    const em = openMarket('ETHUSD'), lt = em.ltf(), m30 = lt.find((x) => x.tf === 30 * 60_000), m15 = lt.find((x) => x.tf === 15 * 60_000);
-    if (m30 && m15) {
-      const a = bucket(m30.c, H), b = bucket(m15.c, H); let cmp = 0, bad = 0;
-      for (const [k, x] of a) { const y = b.get(k); if (!y || x.n !== 2 || y.n !== 4) continue; cmp++; if (Math.max(Math.abs(x.o - y.o), Math.abs(x.h - y.h), Math.abs(x.l - y.l), Math.abs(x.c - y.c)) > 1e-9) bad++; }
-      ok('ingest: ETH H1 built from M30 equals H1 built from M15 wherever both are complete', cmp > 40_000 && bad === 0, `${cmp} hours compared, ${bad} differ`);
+    const em = openMarket('ETHUSD');
+    const missing = em.profile.data.ltf.filter((x) => !existsSync(new URL(`../markets/ETHUSD/${x.file}`, import.meta.url))).map((x) => x.file);
+    if (missing.length) {
+      const detail = `missing optional broker data: ${missing.join(', ')}`;
+      if (requireMarketData) ok('ingest: ETH intrabar data is available', false, detail);
+      else { skips++; console.log(`SKIP  ingest: ETH M30/M15 consistency (${detail}; use --require-market-data to require it)`); }
+    } else {
+      const lt = em.ltf(), m30 = lt.find((x) => x.tf === 30 * 60_000), m15 = lt.find((x) => x.tf === 15 * 60_000);
+      if (m30 && m15) {
+        const a = bucket(m30.c, H), b = bucket(m15.c, H); let cmp = 0, bad = 0;
+        for (const [k, x] of a) { const y = b.get(k); if (!y || x.n !== 2 || y.n !== 4) continue; cmp++; if (Math.max(Math.abs(x.o - y.o), Math.abs(x.h - y.h), Math.abs(x.l - y.l), Math.abs(x.c - y.c)) > 1e-9) bad++; }
+        ok('ingest: ETH H1 built from M30 equals H1 built from M15 wherever both are complete', cmp > 40_000 && bad === 0, `${cmp} hours compared, ${bad} differ`);
+      }
     }
     const stubDays = [...em.session.merged].filter((l) => new Date(l).getUTCFullYear() <= 2019).length;
     ok('session: ETH Sunday reopenings in its weekend-closed years (2018-2019) are merged into Monday', stubDays > 80, `${stubDays} merged`);
@@ -391,5 +400,5 @@ ok(`knowledge base: ${rules.length} rules across ${nodes.length} nodes, all with
   ok('atlas: a level is tested, holds, then dies on a close through it, counting only bars after first sight', L.tests === 1 && L.held === 1 && L.diedAt === 4 * H && L.firstTestAfterBars === 2, JSON.stringify(L));
 }
 void lastClosed;
-console.log(`\n${passes} passed, ${fails} failed`);
+console.log(`\n${passes} passed, ${fails} failed, ${skips} skipped`);
 process.exit(fails ? 1 : 0);
