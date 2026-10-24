@@ -1,6 +1,6 @@
 //! Athorina Stage 1: a model and motion laboratory with a physical impact wall.
 use super::*;
-use crate::motion::{bank::PoseBank, Layer, Mask, ModelRequest, MotionLayers, Rig, Source};
+use crate::motion::{bank::PoseBank, timing::Style, Layer, Mask, ModelRequest, MotionLayers, Rig, Source};
 use avian3d::prelude::*;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::mesh::Indices;
@@ -52,6 +52,10 @@ struct Studio {
     wall: Handle<Mesh>,
     wall_entity: Entity,
     impacts: Vec<Impact>,
+    locked: bool,
+    lock_offset: f32,
+    hitstop: f32,
+    queued_attack: Option<bool>,
 }
 
 #[derive(Component)] struct StudioCamera;
@@ -60,14 +64,16 @@ struct Studio {
 #[derive(Component)] struct ModelText;
 #[derive(Component)] struct PageText;
 #[derive(Component)] struct Chip { life: f32 }
+#[derive(Component)] struct LockRing;
+#[derive(Component)] struct SparringTarget { time: f32, clip: String, recoil: Vec3, hits: u32 }
 #[derive(Component, Clone, Copy)] enum UiAction { Model(i8), Tint(i8), Page(i8), Clip(usize), Step(i8), Play }
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, setup)
         .add_systems(Update, (browse, input).chain().in_set(PlaySet::Input))
-        .add_systems(Update, (attack, select_motion, update_ui, chips).chain().in_set(PlaySet::Select))
-        .add_systems(FixedUpdate, climb.after(PlaySet::Move))
-        .add_systems(PostUpdate, camera_follow.before(bevy::transform::TransformSystems::Propagate));
+        .add_systems(Update, (attack, select_motion, select_target_motion, update_ui, chips).chain().in_set(PlaySet::Select))
+        .add_systems(FixedUpdate, (climb, target_recoil).chain().after(PlaySet::Move))
+        .add_systems(PostUpdate, (camera_follow, lock_marker).before(bevy::transform::TransformSystems::Propagate));
 }
 
 fn panel_button(parent: &mut ChildSpawnerCommands, label: &str, action: UiAction, font: Handle<Font>) {
@@ -97,10 +103,20 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
         Transform::from_xyz(0.0, H * 0.5, WALL_Z + 0.19)));
     commands.spawn((Name::new("Athorina"), Player, RigidBody::Kinematic,
         Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
-        CollisionLayers::new(Phys::Character, [Phys::World]),
+        CollisionLayers::new(Phys::Character, [Phys::World, Phys::Character]),
         Transform::from_xyz(0.0, HALF_HEIGHT, 0.0), Visibility::default(),
         Mover::default(), Intent::default(),
         ModelRequest { path: MODELS[0].1.into(), offset: Vec3::new(0.0, -HALF_HEIGHT, 0.0), tint: Some(TINTS[0]) }));
+    commands.spawn((Name::new("Sparring target"), SparringTarget { time: 0.0, clip: String::new(), recoil: Vec3::ZERO, hits: 0 },
+        RigidBody::Kinematic, Collider::capsule(CAPSULE_RADIUS, CAPSULE_LENGTH),
+        CollisionLayers::new(Phys::Character, [Phys::World, Phys::Character]),
+        Transform::from_xyz(1.25, HALF_HEIGHT, 1.45).with_rotation(Quat::from_rotation_y(std::f32::consts::PI)),
+        Visibility::default(),
+        ModelRequest { path: "anim/ual1.glb".into(), offset: Vec3::new(0.0, -HALF_HEIGHT, 0.0), tint: Some(Color::srgb(0.68, 0.74, 0.77)) }));
+    commands.spawn((Name::new("Lock-on ring"), LockRing, Mesh3d(meshes.add(lock_ring_mesh())),
+        MeshMaterial3d(materials.add(StandardMaterial { base_color: Color::srgb(1.0, 0.58, 0.24),
+            unlit: true, double_sided: true, cull_mode: None, ..default() })),
+        Transform::from_xyz(1.25, 0.025, 1.45), Visibility::Hidden));
     commands.spawn((StudioCamera, Camera3d::default(), Transform::from_xyz(0.0, 2.5, -5.5).looking_at(Vec3::Y, Vec3::Y)));
     let font = assets.load("fonts/rajdhani/Rajdhani-Medium.ttf");
     let bold = assets.load("fonts/rajdhani/Rajdhani-Bold.ttf");
@@ -126,15 +142,16 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
             panel_button(p, "NEXT PAGE", UiAction::Page(1), font.clone());
             panel_button(p, "PLAY / STOP", UiAction::Play, font.clone());
             p.spawn((StatusText, Text::new("Loading motion bank..."), TextFont { font: font.clone().into(), font_size: bevy::text::FontSize::Px(16.0), ..default() }, TextColor(Color::srgb(0.94, 0.82, 0.65))));
-            p.spawn((Text::new("WASD move  /  Shift sprint  /  Space jump & climb\nLMB punch  /  K kick  /  RMB drag camera  /  wheel zoom\nMB4 / MB5 previous / next clip  /  P preview"),
+            p.spawn((Text::new("WASD move  /  Shift sprint  /  Space jump & climb\nLMB punch  /  K kick  /  Tab lock target\nRMB drag orbit  /  wheel zoom  /  MB4/5 clips"),
                 TextFont { font: font.into(), font_size: bevy::text::FontSize::Px(14.0), ..default() }, TextColor(Color::srgb(0.72, 0.75, 0.76))));
         });
     commands.insert_resource(Studio { model: 0, tint: 0, clip: String::new(), clip_time: 0.0,
         preview: false, attack_time: 0.0, attack_clip: String::new(), attack_hit: false,
-        combo: 0, yaw: 0.0, pitch: 0.2, distance: 5.0, clips: Vec::new(), page: 0, wall, wall_entity, impacts: Vec::new() });
+        combo: 0, yaw: 0.0, pitch: 0.2, distance: 5.0, clips: Vec::new(), page: 0, wall, wall_entity, impacts: Vec::new(), locked: false, lock_offset: 0.0, hitstop: 0.0, queued_attack: None });
 }
 
 fn allowed(name: &str) -> bool {
+    if name.starts_with("kevin_spell/") { return true; } // animation preview only; no magic gameplay
     let n = name.to_ascii_lowercase();
     !["cast", "magic", "spell", "ki_", "blast", "beam", "charge", "pistol", "bow", "rifle", "gun", "staff", "fireball"].iter().any(|s| n.contains(s))
 }
@@ -183,14 +200,26 @@ fn browse(mut studio: ResMut<Studio>, bank: Option<Res<PoseBank>>, keys: Res<But
 
 fn input(keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, motion: Res<AccumulatedMouseMotion>,
     scroll: Res<AccumulatedMouseScroll>, windows: Query<&Window, With<PrimaryWindow>>,
-    mut studio: ResMut<Studio>, mut player: Query<&mut Intent, With<Player>>) {
+    mut studio: ResMut<Studio>, mut player: Query<(&mut Intent, &mut Mover, &Transform), With<Player>>,
+    target: Query<&Transform, With<SparringTarget>>) {
+    if keys.just_pressed(KeyCode::Tab) || mouse.just_pressed(MouseButton::Middle) {
+        studio.locked = !studio.locked;
+        studio.lock_offset = 0.0;
+    }
     if mouse.pressed(MouseButton::Right) {
-        studio.yaw -= motion.delta.x * 0.004;
+        if studio.locked { studio.lock_offset = (studio.lock_offset - motion.delta.x * 0.004).clamp(-0.55, 0.55); }
+        else { studio.yaw -= motion.delta.x * 0.004; }
         studio.pitch = (studio.pitch + motion.delta.y * 0.003).clamp(-0.6, 1.15);
     }
     let wheel = if scroll.unit == MouseScrollUnit::Line { scroll.delta.y } else { scroll.delta.y / 40.0 };
     studio.distance = (studio.distance - wheel * 0.5).clamp(2.1, 8.0);
-    let Ok(mut intent) = player.single_mut() else { return; };
+    let Ok((mut intent, mut mover, transform)) = player.single_mut() else { return; };
+    mover.face = if studio.locked {
+        target.single().ok().map(|t| {
+            let d = t.translation - transform.translation;
+            d.x.atan2(d.z)
+        })
+    } else { None };
     // This camera looks along +Z; screen-right is world -X at zero yaw.
     let x = (keys.pressed(KeyCode::KeyA) as i32 - keys.pressed(KeyCode::KeyD) as i32) as f32;
     let z = (keys.pressed(KeyCode::KeyW) as i32 - keys.pressed(KeyCode::KeyS) as i32) as f32;
@@ -206,22 +235,42 @@ fn input(keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, 
     intent.secondary_pressed = keys.just_pressed(KeyCode::KeyK);
 }
 
+fn begin_attack(studio: &mut Studio, kick: bool, bank: Option<&PoseBank>, mover: &mut Mover) {
+    studio.attack_clip = if kick { "sekiro/Zombie Kick".into() }
+        else {
+            let clips = ["ual1/Punch_Jab", "sparking_combo/A_0000_C_ATC_a001_R1_1",
+                "ual1/Punch_Cross", "sparking_combo/A_0660_C_ATC_a002_R1_2"];
+            let chosen = clips[studio.combo % clips.len()];
+            studio.combo += 1;
+            if bank.is_some_and(|b| b.has(chosen)) { chosen.into() } else { "sparking_v2/DBZ_Rush_01".into() }
+        };
+    studio.attack_time = 0.0;
+    studio.attack_hit = false;
+    studio.preview = false;
+    if !studio.locked { mover.face = Some(mover.yaw); }
+}
+
 fn attack(time: Res<Time>, mut studio: ResMut<Studio>, mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands, mut materials: ResMut<Assets<StandardMaterial>>,
     bank: Option<Res<PoseBank>>, rigs: Query<&Rig, With<Player>>, bones: Query<&GlobalTransform>,
+    mut targets: Query<(&Transform, &mut SparringTarget)>,
     mut player: Query<(&Transform, &Intent, &mut Mover), With<Player>>) {
     let Ok((transform, intent, mut mover)) = player.single_mut() else { return; };
+    studio.hitstop = (studio.hitstop - time.delta_secs()).max(0.0);
+    mover.move_scale = if studio.hitstop > 0.0 { 0.2 } else if !studio.attack_clip.is_empty() { 0.78 } else { 1.0 };
+    mover.root_motion = Vec3::ZERO;
     if intent.primary_pressed || intent.secondary_pressed {
-        studio.attack_clip = if intent.secondary_pressed { "brawler/Roundhouse_Kick".into() }
-            else { let clips = ["ual1/Punch_Jab", "ual1/Punch_Cross", "sparking/DBZ_Rush_01"];
-                let n = clips[studio.combo % clips.len()]; studio.combo += 1; n.into() };
-        studio.attack_time = 0.0;
-        studio.attack_hit = false;
-        studio.preview = false;
-        mover.face = Some(mover.yaw);
+        if studio.attack_clip.is_empty() {
+            begin_attack(&mut studio, intent.secondary_pressed, bank.as_deref(), &mut mover);
+        } else {
+            studio.queued_attack = Some(intent.secondary_pressed);
+        }
     }
     if !studio.attack_clip.is_empty() {
-        studio.attack_time += time.delta_secs();
+        if studio.hitstop <= 0.0 { studio.attack_time += time.delta_secs(); }
+        mover.root_motion = if mover.grounded && studio.attack_time > 0.08 && studio.attack_time < 0.32 {
+            mover.forward() * 0.65
+        } else { Vec3::ZERO };
         if studio.attack_time > 0.12 && studio.attack_time < 0.62 && !studio.attack_hit {
             let striking = studio.attack_clip.contains("Kick");
             let left = studio.attack_clip.contains("Jab");
@@ -230,6 +279,25 @@ fn attack(time: Res<Time>, mut studio: ResMut<Studio>, mut meshes: ResMut<Assets
                 rig.bones.get(index).and_then(|e| bones.get(*e).ok()).map(GlobalTransform::translation)
             }));
             if let Some(point) = contact {
+                let mut hit_target = false;
+                if let Ok((target_transform, mut target)) = targets.single_mut() {
+                    let delta = point - target_transform.translation;
+                    if delta.with_y(0.0).length() < 0.53 && delta.y.abs() < 0.8 {
+                        studio.attack_hit = true;
+                        studio.hitstop = 0.045;
+                        target.time = 0.0;
+                        target.hits += 1;
+                        target.clip = if point.y > target_transform.translation.y + 0.35 { "sparking/DBZ_Hit_Head".into() }
+                            else if delta.x.abs() > 0.28 { "sparking/DBZ_Hit_Side".into() }
+                            else { "sparking/DBZ_Hit_Body".into() };
+                        let forward = mover.forward();
+                        let away = (target_transform.translation - transform.translation).with_y(0.0).normalize_or_zero();
+                        target.recoil = if away.length_squared() > 0.0 { away } else { forward } * if striking { 2.6 } else { 1.6 };
+                        mover.external -= forward * 0.5;
+                        hit_target = true;
+                    }
+                }
+                if !hit_target {
                 let x = point.x;
                 let y = point.y;
                 let wall_z = FRONT + surface_sample(Vec2::new(x, y), &studio.impacts).0;
@@ -255,29 +323,69 @@ fn attack(time: Res<Time>, mut studio: ResMut<Studio>, mut meshes: ResMut<Assets
                             CollisionLayers::new(Phys::World, [Phys::World]), LinearVelocity(scatter)));
                     }
                 }
+                }
             }
         }
-        if studio.attack_time > 0.8 { studio.attack_clip.clear(); mover.face = None; }
+        let duration = bank.as_ref().map_or(0.8, |b| b.duration(&studio.attack_clip)).clamp(0.4, 1.5);
+        if studio.attack_time > duration + 0.08 || (studio.queued_attack.is_some() && studio.attack_time > duration * 0.68) {
+            if let Some(kick) = studio.queued_attack.take() {
+                begin_attack(&mut studio, kick, bank.as_deref(), &mut mover);
+            } else {
+                studio.attack_clip.clear();
+                if !studio.locked { mover.face = None; }
+            }
+        }
     }
+}
+
+fn lock_gait(mover: &Mover, direction: Vec3) -> &'static str {
+    let forward = mover.forward();
+    let left = Vec3::new(forward.z, 0.0, -forward.x);
+    let f = direction.dot(forward);
+    let l = direction.dot(left);
+    if f > 0.35 {
+        if l > 0.35 { "kev_melee/StrafeRun01_ForwardLeft" }
+        else if l < -0.35 { "kev_melee/StrafeRun01_ForwardRight" }
+        else { "kev_melee/Run01_Forward" }
+    } else if f < -0.35 {
+        if l > 0.35 { "kev_melee/StrafeRun01_BackwardLeft" }
+        else if l < -0.35 { "kev_melee/StrafeRun01_BackwardRight" }
+        else { "kev_melee/Run01_Backward" }
+    } else if l > 0.0 { "kev_melee/StrafeRun01_Left" }
+    else { "kev_melee/StrafeRun01_Right" }
+}
+
+fn source_style(name: &str) -> Option<Style> {
+    name.starts_with("sparking").then_some(Style {
+        exaggeration: 1.0, hold: 0.0, bias: 0.5, stepped_fps: None, speed: 1.0,
+    })
 }
 
 fn select_motion(time: Res<Time>, bank: Option<Res<PoseBank>>, mut studio: ResMut<Studio>,
     mut player: Query<(&Transform, &Mover, &Intent, &mut MotionLayers), With<Player>>) {
     let Some(bank) = bank else { return; };
     let Ok((transform, mover, intent, mut layers)) = player.single_mut() else { return; };
-    studio.clip_time += time.delta_secs();
+    if studio.hitstop <= 0.0 {
+        let rate = if !studio.preview && mover.grounded && intent.move_dir.length_squared() > 0.01 {
+            (mover.velocity.with_y(0.0).length() / 4.2).clamp(0.55, 1.6)
+        } else { 1.0 };
+        studio.clip_time += time.delta_secs() * rate;
+    }
     let base = if studio.preview { studio.clip.as_str() }
         else if mover.mode == MoveMode::Climb { "ual2/ClimbUp_1m" }
         else if !mover.grounded { if mover.velocity.y > 0.0 { "ual1/Jump_Loop" } else { "ual1/Jump_Land" } }
         else if mover.crouch { "ual1/Crouch_Idle_Loop" }
-        else if intent.move_dir.length_squared() > 0.01 { if mover.sprinting { "ual1/Sprint_Loop" } else { "ual1/Jog_Fwd_Loop" } }
+        else if intent.move_dir.length_squared() > 0.01 {
+            if studio.locked { lock_gait(mover, intent.move_dir) }
+            else if mover.sprinting { "ual1/Sprint_Loop" } else { "ual1/Jog_Fwd_Loop" }
+        }
         else { "ual1/Idle_Loop" };
     let base = if bank.has(base) { base } else { "ual2/Idle_Loop" };
     layers.layers.clear();
-    layers.layers.push(Layer { source: Source::Track { name: base.into(), time: studio.clip_time, looping: true }, weight: 1.0, mask: Mask::Full, style: None });
+    layers.layers.push(Layer { source: Source::Track { name: base.into(), time: studio.clip_time, looping: true }, weight: 1.0, mask: Mask::Full, style: source_style(base) });
     if !studio.attack_clip.is_empty() && bank.has(&studio.attack_clip) {
         layers.layers.push(Layer { source: Source::Track { name: studio.attack_clip.clone(), time: studio.attack_time,
-            looping: false }, weight: 1.0, mask: Mask::Full, style: None });
+            looping: false }, weight: 1.0, mask: Mask::Full, style: source_style(&studio.attack_clip) });
     }
     layers.contact.foot_ik = if mover.mode == MoveMode::Climb { 0.0 } else { 1.0 };
     layers.contact.accel = mover.accel;
@@ -296,6 +404,43 @@ fn select_motion(time: Res<Time>, bank: Option<Res<PoseBank>>, mut studio: ResMu
             if studio.attack_clip.contains("Kick") { layers.contact.feet[1] = Some((target - Vec3::Y * 0.55, 0.75)); }
             else { layers.contact.hands[if studio.attack_clip.contains("Jab") { 0 } else { 1 }] = Some((target, 0.7)); }
         }
+    }
+}
+
+fn select_target_motion(time: Res<Time>, studio: Res<Studio>, bank: Option<Res<PoseBank>>,
+    mut targets: Query<(&mut SparringTarget, &mut MotionLayers)>) {
+    let Some(bank) = bank else { return; };
+    for (mut target, mut layers) in &mut targets {
+        if studio.hitstop <= 0.0 { target.time += time.delta_secs(); }
+        let idle = if bank.has("sparking/DBZ_Ground_Stance") { "sparking/DBZ_Ground_Stance" } else { "kev_melee/CombatIdle01" };
+        layers.layers.clear();
+        layers.layers.push(Layer { source: Source::Track { name: idle.into(), time: target.time, looping: true },
+            weight: 1.0, mask: Mask::Full, style: source_style(idle) });
+        if !target.clip.is_empty() && bank.has(&target.clip) {
+            layers.layers.push(Layer { source: Source::Track { name: target.clip.clone(), time: target.time, looping: false },
+                weight: 1.0, mask: Mask::Full, style: source_style(&target.clip) });
+            if target.time > bank.duration(&target.clip).max(0.35) { target.clip.clear(); target.time = 0.0; }
+        }
+        layers.contact.foot_ik = 1.0;
+    }
+}
+
+fn target_recoil(time: Res<Time<Fixed>>, studio: Res<Studio>, player: Query<&Transform, With<Player>>,
+    mut targets: Query<(&mut Transform, &mut SparringTarget), Without<Player>>) {
+    if studio.hitstop > 0.0 { return; }
+    for (mut transform, mut target) in &mut targets {
+        let dt = time.delta_secs();
+        let next = transform.translation + target.recoil * dt;
+        transform.translation.x = next.x.clamp(-W * 0.5 + 0.4, W * 0.5 - 0.4);
+        transform.translation.z = next.z.clamp(-3.0, FRONT - CAPSULE_RADIUS - 0.06);
+        if let Ok(player) = player.single() {
+            let toward = (player.translation - transform.translation).with_y(0.0);
+            if toward.length_squared() > 1e-4 {
+                let yaw = toward.x.atan2(toward.z);
+                transform.rotation = transform.rotation.slerp(Quat::from_rotation_y(yaw), 1.0 - (-7.0 * dt).exp());
+            }
+        }
+        target.recoil *= (-9.0 * dt).exp();
     }
 }
 
@@ -323,12 +468,25 @@ fn climb(time: Res<Time<Fixed>>, mut player: Query<(&mut Transform, &mut Mover, 
     }
 }
 
-fn camera_follow(time: Res<Time>, studio: Res<Studio>, spatial: SpatialQuery, player: Query<&Transform, With<Player>>,
-    mut camera: Query<&mut Transform, (With<StudioCamera>, Without<Player>)>) {
-    let (Ok(target), Ok(mut camera)) = (player.single(), camera.single_mut()) else { return; };
-    let focus = target.translation + Vec3::Y * 0.45;
+fn camera_follow(time: Res<Time>, mut studio: ResMut<Studio>, spatial: SpatialQuery, player: Query<&Transform, With<Player>>,
+    opponents: Query<&Transform, With<SparringTarget>>,
+    mut camera: Query<&mut Transform, (With<StudioCamera>, Without<Player>, Without<SparringTarget>)>) {
+    let (Ok(avatar), Ok(mut camera)) = (player.single(), camera.single_mut()) else { return; };
+    let mut focus = avatar.translation + Vec3::Y * 0.45;
+    let mut distance = studio.distance;
+    if studio.locked {
+        if let Ok(opponent) = opponents.single() {
+            let to = (opponent.translation - avatar.translation).with_y(0.0);
+            let desired_yaw = to.x.atan2(to.z) + studio.lock_offset;
+            let delta = crate::play::controller::wrap_angle(desired_yaw - studio.yaw);
+            studio.yaw = crate::play::controller::wrap_angle(studio.yaw + delta * (1.0 - (-8.0 * time.delta_secs()).exp()));
+            studio.lock_offset *= (-1.3 * time.delta_secs()).exp();
+            focus = focus.lerp(opponent.translation + Vec3::Y * 0.45, 0.32);
+            distance = (distance + to.length() * 0.33).clamp(3.0, 8.0);
+        }
+    }
     let rot = Quat::from_rotation_y(studio.yaw) * Quat::from_rotation_x(studio.pitch);
-    let mut desired = focus + rot * Vec3::new(0.0, 0.0, -studio.distance);
+    let mut desired = focus + rot * Vec3::new(0.0, 0.0, -distance);
     let boom = desired - focus;
     if let Ok(dir) = Dir3::new(boom) {
         if let Some(hit) = spatial.cast_ray(focus, dir, boom.length(), true, &SpatialQueryFilter::from_mask([Phys::World])) {
@@ -341,21 +499,53 @@ fn camera_follow(time: Res<Time>, studio: Res<Studio>, spatial: SpatialQuery, pl
 
 fn update_ui(studio: Res<Studio>, mut model: Query<&mut Text, (With<ModelText>, Without<ClipText>, Without<StatusText>, Without<PageText>)>,
     mut clips: Query<(&ClipText, &mut Text)>, mut page: Query<&mut Text, (With<PageText>, Without<ClipText>, Without<ModelText>, Without<StatusText>)>,
-    mut status: Query<&mut Text, (With<StatusText>, Without<ClipText>, Without<ModelText>, Without<PageText>)>) {
+    mut status: Query<&mut Text, (With<StatusText>, Without<ClipText>, Without<ModelText>, Without<PageText>)>,
+    target: Query<&SparringTarget>) {
     if let Ok(mut t) = model.single_mut() { **t = format!("{}  /  palette {}", MODELS[studio.model].0, studio.tint + 1); }
     if let Ok(mut t) = page.single_mut() { **t = format!("{} clips  •  page {}/{}", studio.clips.len(), studio.page + 1, studio.clips.len().div_ceil(8).max(1)); }
     for (index, mut t) in &mut clips {
         **t = studio.clips.get(studio.page * 8 + index.0).map(|n| {
-            format!("{} {}", if n == &studio.clip { "▶" } else { " " }, n)
+            let label = n.strip_prefix("kev_melee/").map(|s| format!("Kevin / {s}"))
+                .or_else(|| n.strip_prefix("kevin_spell/").map(|s| format!("Kevin pose / {s}")))
+                .or_else(|| n.strip_prefix("sparking_combo/").map(|s| format!("Sparking rush / {s}")))
+                .unwrap_or_else(|| n.clone());
+            format!("{} {}", if n == &studio.clip { "▶" } else { " " }, label)
         }).unwrap_or_default();
     }
     if let Ok(mut t) = status.single_mut() { **t = if studio.preview { format!("PLAYING  {}", studio.clip) }
         else if !studio.attack_clip.is_empty() { format!("ATTACK  {}", studio.attack_clip) }
-        else { "READY  /  hit the wall".into() }; }
+        else { format!("{}  /  target hits {}", if studio.locked { "LOCKED" } else { "FREE CAMERA" }, target.single().map_or(0, |t| t.hits)) }; }
 }
 
 fn chips(time: Res<Time>, mut commands: Commands, mut chips: Query<(Entity, &mut Chip)>) {
     for (e, mut c) in &mut chips { c.life -= time.delta_secs(); if c.life <= 0.0 { commands.entity(e).despawn(); } }
+}
+
+fn lock_marker(studio: Res<Studio>, target: Query<&Transform, With<SparringTarget>>,
+    mut marker: Query<(&mut Transform, &mut Visibility), (With<LockRing>, Without<SparringTarget>)>) {
+    let (Ok(target), Ok((mut ring, mut visible))) = (target.single(), marker.single_mut()) else { return; };
+    ring.translation = target.translation - Vec3::Y * (HALF_HEIGHT - 0.025);
+    *visible = if studio.locked { Visibility::Visible } else { Visibility::Hidden };
+}
+
+fn lock_ring_mesh() -> Mesh {
+    let mut positions = Vec::new();
+    let mut indices = Vec::new();
+    for i in 0..32 {
+        let angle = i as f32 * std::f32::consts::TAU / 32.0;
+        for radius in [0.39, 0.43] {
+            positions.push([radius * angle.cos(), 0.0, radius * angle.sin()]);
+        }
+        let a = (i * 2) as u32;
+        let b = ((i + 1) % 32 * 2) as u32;
+        indices.extend_from_slice(&[a, a + 1, b, a + 1, b + 1, b]);
+    }
+    let normals = vec![[0.0, 1.0, 0.0]; positions.len()];
+    let mut mesh = Mesh::new(PrimitiveTopology::TriangleList, RenderAssetUsages::default());
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
+    mesh.insert_indices(Indices::U32(indices));
+    mesh
 }
 
 fn segment_distance(point: Vec2, a: Vec2, b: Vec2) -> f32 {

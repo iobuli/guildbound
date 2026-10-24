@@ -217,11 +217,16 @@ pub fn load(lib: &str, path: &Path) -> Result<DonorLib, String> {
         })
         .collect();
 
-    let joints: Vec<usize> = gltf
+    let mut joints: Vec<usize> = gltf
         .skins()
         .next()
         .map(|skin| skin.joints().map(|j| j.index()).collect())
         .unwrap_or_default();
+    // Local Sparking cache clips are animation-only GLBs with the named canonical hierarchy.
+    if joints.is_empty() && nodes.iter().any(|n| n.name == "pelvis")
+        && nodes.iter().any(|n| n.name == "hand_l") {
+        joints = (0..nodes.len()).collect();
+    }
     if joints.is_empty() {
         return Err(format!("{}: no skin 0 joints", path.display()));
     }

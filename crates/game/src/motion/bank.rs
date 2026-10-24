@@ -40,6 +40,44 @@ pub struct PoseBank {
     pub masks: HashMap<Mask, Vec<f32>>,
 }
 
+/// Join only complete source rushes. Their IN/HT/OT sections were exported separately by the
+/// archive, but together they form the uninterrupted 60 Hz move that combat can play.
+fn stitch_sparking_rushes(tracks: &mut HashMap<String, Track>) -> usize {
+    let bases: Vec<String> = tracks.keys()
+        .filter_map(|name| name.strip_prefix("sparking_archive/")?.strip_suffix("_IN").map(str::to_string))
+        .collect();
+    let mut count = 0;
+    for base in bases {
+        let names = ["IN", "HT", "OT"].map(|part| format!("sparking_archive/{base}_{part}"));
+        let Some(parts) = names.iter().map(|name| tracks.get(name)).collect::<Option<Vec<_>>>() else { continue; };
+        let mut merged = (*parts[0]).clone();
+        merged.name = format!("sparking_combo/{base}");
+        merged.duration = 0.0;
+        merged.looping = false;
+        merged.keys.clear();
+        merged.left_contact = None;
+        merged.stride = 0.0;
+        merged.dense.track = merged.name.clone();
+        merged.dense.duration = 0.0;
+        merged.dense.looping = false;
+        merged.dense.frames.clear();
+        merged.dense.travel.clear();
+        for (part_index, part) in parts.iter().enumerate() {
+            let offset = merged.duration;
+            merged.keys.extend(part.keys.iter().skip(usize::from(part_index > 0)).map(|key| {
+                let mut key = key.clone(); key.time += offset; key
+            }));
+            merged.dense.frames.extend(part.dense.frames.iter().skip(usize::from(part_index > 0)).cloned());
+            merged.duration += part.duration;
+        }
+        merged.dense.duration = merged.duration;
+        merged.dense.travel.resize(merged.dense.frames.len(), Vec3::ZERO);
+        tracks.insert(merged.name.clone(), merged);
+        count += 1;
+    }
+    count
+}
+
 /// `assets/anim/poses.json`.
 pub fn poses_path() -> PathBuf {
     Path::new(crate::ASSETS).join("anim/poses.json")
@@ -57,7 +95,7 @@ impl PoseBank {
         let started = std::time::Instant::now();
         let root = Path::new(crate::ASSETS);
         // Parse the GLBs in parallel; they are independent and dominate start-up.
-        let libs: Vec<DonorLib> = std::thread::scope(|scope| {
+        let mut libs: Vec<DonorLib> = std::thread::scope(|scope| {
             let handles: Vec<_> = LIBRARIES
                 .iter()
                 .map(|&(lib, rel)| scope.spawn(move || donor::load(lib, &root.join(rel))))
@@ -67,6 +105,22 @@ impl PoseBank {
                 .map(|h| h.join().unwrap_or_else(|_| Err("donor loader panicked".into())))
                 .collect::<Result<Vec<_>, String>>()
         })?;
+        // Machine-local Sparking archive cache. Keep source extracts out of Git while making
+        // every successfully converted animation available in the controller browser.
+        for (folder, library) in [("sparking_cache", "sparking_archive"), ("kevin_spell_cache", "kevin_spell")] {
+            let cache_dir = root.join("anim").join(folder);
+            if let Ok(entries) = std::fs::read_dir(&cache_dir) {
+                let mut paths: Vec<_> = entries.filter_map(Result::ok).map(|e| e.path())
+                    .filter(|p| p.extension().is_some_and(|e| e.eq_ignore_ascii_case("glb"))).collect();
+                paths.sort();
+                for path in paths {
+                    match donor::load(library, &path) {
+                        Ok(lib) => libs.push(lib),
+                        Err(error) => warn!("[bank] skipping local {library} clip: {error}"),
+                    }
+                }
+            }
+        }
         let model_lib = LIBRARIES
             .iter()
             .position(|&(_, rel)| rel == MODEL_GLB)
@@ -75,36 +129,18 @@ impl PoseBank {
         let bones = Bones::new(&skeleton)
             .ok_or("canonical skeleton is missing a named bone (pelvis, spine_01, ...)")?;
 
-        let per_lib: Vec<Vec<Track>> = std::thread::scope(|scope| {
-            let handles: Vec<_> = libs
-                .iter()
-                .map(|lib| {
-                    let (skeleton, bones) = (&skeleton, &bones);
-                    scope.spawn(move || {
-                        retarget::retarget(lib, skeleton, bones)
-                            .iter()
-                            .map(|clip| {
-                                let mut track = extract::extract(clip, skeleton, bones);
-                                // These clips were already retargeted and approved in Kev.
-                                // Keep every sample so short rush sections retain their timing.
-                                if matches!(lib.lib.as_str(), "sparking" | "trunks_sword" | "tapion_sword") {
-                                    track.keys = clip.frames.iter().enumerate().map(|(i, pose)| Key {
-                                        time: frame_time(i, clip.duration),
-                                        pose: pose.clone(),
-                                        tag: extract::Tag::Passing,
-                                    }).collect();
-                                }
-                                track
-                            })
-                            .collect::<Vec<_>>()
-                    })
-                })
-                .collect();
-            handles
-                .into_iter()
-                .map(|h| h.join().map_err(|_| "retarget/extract panicked".to_string()))
-                .collect::<Result<Vec<_>, String>>()
-        })?;
+        let per_lib: Vec<Vec<Track>> = libs.iter().map(|lib| {
+            retarget::retarget(lib, &skeleton, &bones).iter().map(|clip| {
+                let mut track = extract::extract(clip, &skeleton, &bones);
+                // The imported game sections are short: keep all 60 Hz samples.
+                if lib.lib.starts_with("sparking") || matches!(lib.lib.as_str(), "trunks_sword" | "tapion_sword") {
+                    track.keys = clip.frames.iter().enumerate().map(|(i, pose)| Key {
+                        time: frame_time(i, clip.duration), pose: pose.clone(), tag: extract::Tag::Passing,
+                    }).collect();
+                }
+                track
+            }).collect()
+        }).collect();
 
         let mut counts: Vec<(String, usize)> = Vec::new();
         let mut tracks = HashMap::new();
@@ -117,6 +153,8 @@ impl PoseBank {
                 tracks.insert(t.name.clone(), t);
             }
         }
+        let stitched = stitch_sparking_rushes(&mut tracks);
+        if stitched > 0 { counts.push(("sparking_combo".into(), stitched)); }
         let masks = build_masks(&skeleton, &bones);
         let mut bank = PoseBank {
             rest: skeleton.rest_pose(),

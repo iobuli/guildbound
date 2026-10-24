@@ -17,4 +17,5 @@ __pycache__/
 
 # Local archive previews and converted third-party motion cache
 /assets/anim/sparking_cache/
+/assets/anim/kevin_spell_cache/
 /assets/environment/sparking/
