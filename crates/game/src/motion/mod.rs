@@ -35,7 +35,6 @@ pub mod retarget;
 pub mod rig;
 pub mod secondary;
 pub mod timing;
-pub mod tweak;
 
 use bevy::prelude::*;
 use std::collections::HashMap;
@@ -74,7 +73,7 @@ pub fn plugin(app: &mut App) {
             .after(bevy::app::AnimationSystems)
             .before(bevy::transform::TransformSystems::Propagate),
     )
-    .add_plugins((bank::plugin, rig::plugin, compose::plugin, tweak::plugin));
+    .add_plugins((bank::plugin, rig::plugin, compose::plugin));
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
