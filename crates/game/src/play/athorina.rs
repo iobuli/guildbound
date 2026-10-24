@@ -1,12 +1,13 @@
 //! Athorina Stage 1: a model and motion laboratory with a physical impact wall.
 use super::*;
-use crate::motion::{bank::PoseBank, Layer, Mask, ModelRequest, MotionLayers, Source};
+use crate::motion::{bank::PoseBank, Layer, Mask, ModelRequest, MotionLayers, Rig, Source};
 use avian3d::prelude::*;
 use bevy::input::mouse::{AccumulatedMouseMotion, AccumulatedMouseScroll, MouseScrollUnit};
 use bevy::mesh::Indices;
 use bevy::prelude::*;
 use bevy::render::render_resource::PrimitiveTopology;
 use bevy::asset::RenderAssetUsages;
+use bevy::window::PrimaryWindow;
 
 const MODELS: [(&str, &str); 4] = [
     ("Mannequin", "anim/ual2.glb"),
@@ -23,8 +24,14 @@ const W: f32 = 5.0;
 const H: f32 = 2.6;
 const WALL_Z: f32 = 3.0;
 const FRONT: f32 = WALL_Z - 0.18;
-const NX: usize = 40;
-const NY: usize = 24;
+const NX: usize = 96;
+const NY: usize = 64;
+
+#[derive(Clone)]
+struct Crack { a: Vec2, b: Vec2, width: f32 }
+
+#[derive(Clone)]
+struct Impact { point: Vec2, depth: f32, radius: f32, cracks: Vec<Crack> }
 
 #[derive(Resource)]
 struct Studio {
@@ -43,7 +50,8 @@ struct Studio {
     clips: Vec<String>,
     page: usize,
     wall: Handle<Mesh>,
-    dents: Vec<(Vec2, f32, f32)>,
+    wall_entity: Entity,
+    impacts: Vec<Impact>,
 }
 
 #[derive(Component)] struct StudioCamera;
@@ -52,7 +60,7 @@ struct Studio {
 #[derive(Component)] struct ModelText;
 #[derive(Component)] struct PageText;
 #[derive(Component)] struct Chip { life: f32 }
-#[derive(Component, Clone, Copy)] enum UiAction { Model(i8), Tint(i8), Page(i8), Clip(usize), Play }
+#[derive(Component, Clone, Copy)] enum UiAction { Model(i8), Tint(i8), Page(i8), Clip(usize), Step(i8), Play }
 
 pub fn plugin(app: &mut App) {
     app.add_systems(Startup, setup)
@@ -71,19 +79,20 @@ fn panel_button(parent: &mut ChildSpawnerCommands, label: &str, action: UiAction
 }
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials: ResMut<Assets<StandardMaterial>>, assets: Res<AssetServer>) {
-    let floor = materials.add(StandardMaterial { base_color: Color::srgb(0.42, 0.44, 0.46), metallic: 0.1,
-        perceptual_roughness: 0.85, ..default() });
+    let floor = materials.add(StandardMaterial { base_color: Color::srgb(0.42, 0.44, 0.46), unlit: true, ..default() });
     let wall_mat = materials.add(StandardMaterial { base_color: Color::srgb(0.57, 0.58, 0.59),
-        perceptual_roughness: 0.88, double_sided: true, cull_mode: None, ..default() });
+        unlit: true, double_sided: true, cull_mode: None, ..default() });
     commands.spawn((Name::new("Plane"), Mesh3d(meshes.add(Cuboid::new(40.0, 0.12, 40.0))),
         MeshMaterial3d(floor), Transform::from_xyz(0.0, -0.06, 0.0),
         RigidBody::Static, Collider::cuboid(40.0, 0.12, 40.0), CollisionLayers::new(Phys::World, [Phys::Character])));
-    commands.spawn((Name::new("Solid impact wall"), RigidBody::Static,
-        Collider::cuboid(W, H, 0.36), CollisionLayers::new(Phys::World, [Phys::Character]),
-        Transform::from_xyz(0.0, H * 0.5, WALL_Z)));
-    let wall = meshes.add(wall_mesh(&[]));
-    commands.spawn((Name::new("Dentable wall face"), Mesh3d(wall.clone()), MeshMaterial3d(wall_mat.clone()),
-        Transform::IDENTITY));
+    let front_mesh = wall_mesh(&[]);
+    let front_collider = Collider::trimesh_from_mesh(&front_mesh).expect("wall grid has triangles");
+    let wall = meshes.add(front_mesh);
+    let wall_entity = commands.spawn((Name::new("Fracture wall"), Mesh3d(wall.clone()), MeshMaterial3d(wall_mat.clone()),
+        Transform::IDENTITY, RigidBody::Static, front_collider,
+        CollisionLayers::new(Phys::World, [Phys::Character]))).id();
+    commands.spawn((Name::new("Wall backing"), RigidBody::Static, Collider::cuboid(W, H, 0.06),
+        CollisionLayers::new(Phys::World, [Phys::Character]), Transform::from_xyz(0.0, H * 0.5, WALL_Z + 0.15)));
     commands.spawn((Mesh3d(meshes.add(Cuboid::new(W, H, 0.02))), MeshMaterial3d(wall_mat),
         Transform::from_xyz(0.0, H * 0.5, WALL_Z + 0.19)));
     commands.spawn((Name::new("Athorina"), Player, RigidBody::Kinematic,
@@ -93,9 +102,6 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
         Mover::default(), Intent::default(),
         ModelRequest { path: MODELS[0].1.into(), offset: Vec3::new(0.0, -HALF_HEIGHT, 0.0), tint: Some(TINTS[0]) }));
     commands.spawn((StudioCamera, Camera3d::default(), Transform::from_xyz(0.0, 2.5, -5.5).looking_at(Vec3::Y, Vec3::Y)));
-    commands.spawn((DirectionalLight { illuminance: 17000.0, shadow_maps_enabled: true, ..default() },
-        Transform::from_xyz(-5.0, 9.0, -4.0).looking_at(Vec3::ZERO, Vec3::Y)));
-    commands.spawn((PointLight { intensity: 350000.0, range: 20.0, ..default() }, Transform::from_xyz(5.0, 6.0, 2.0)));
     let font = assets.load("fonts/rajdhani/Rajdhani-Medium.ttf");
     let bold = assets.load("fonts/rajdhani/Rajdhani-Bold.ttf");
     commands.spawn((Node { position_type: PositionType::Absolute, left: Val::Px(18.0), top: Val::Px(18.0),
@@ -120,12 +126,12 @@ fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>, mut materials
             panel_button(p, "NEXT PAGE", UiAction::Page(1), font.clone());
             panel_button(p, "PLAY / STOP", UiAction::Play, font.clone());
             p.spawn((StatusText, Text::new("Loading motion bank..."), TextFont { font: font.clone().into(), font_size: bevy::text::FontSize::Px(16.0), ..default() }, TextColor(Color::srgb(0.94, 0.82, 0.65))));
-            p.spawn((Text::new("WASD move  /  Shift sprint  /  Space jump & climb\nLMB punch  /  K kick  /  RMB drag camera  /  wheel zoom\nM model  /  N colour  /  P preview"),
+            p.spawn((Text::new("WASD move  /  Shift sprint  /  Space jump & climb\nLMB punch  /  K kick  /  RMB drag camera  /  wheel zoom\nMB4 / MB5 previous / next clip  /  P preview"),
                 TextFont { font: font.into(), font_size: bevy::text::FontSize::Px(14.0), ..default() }, TextColor(Color::srgb(0.72, 0.75, 0.76))));
         });
     commands.insert_resource(Studio { model: 0, tint: 0, clip: String::new(), clip_time: 0.0,
         preview: false, attack_time: 0.0, attack_clip: String::new(), attack_hit: false,
-        combo: 0, yaw: 0.0, pitch: 0.2, distance: 5.0, clips: Vec::new(), page: 0, wall, dents: Vec::new() });
+        combo: 0, yaw: 0.0, pitch: 0.2, distance: 5.0, clips: Vec::new(), page: 0, wall, wall_entity, impacts: Vec::new() });
 }
 
 fn allowed(name: &str) -> bool {
@@ -133,7 +139,7 @@ fn allowed(name: &str) -> bool {
     !["cast", "magic", "spell", "ki_", "blast", "beam", "charge", "pistol", "bow", "rifle", "gun", "staff", "fireball"].iter().any(|s| n.contains(s))
 }
 
-fn browse(mut studio: ResMut<Studio>, bank: Option<Res<PoseBank>>, keys: Res<ButtonInput<KeyCode>>,
+fn browse(mut studio: ResMut<Studio>, bank: Option<Res<PoseBank>>, keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>,
     mut req: Query<&mut ModelRequest, With<Player>>, mut buttons: Query<(&Interaction, &UiAction, &mut BackgroundColor), Changed<Interaction>>) {
     if studio.clips.is_empty() {
         if let Some(bank) = bank {
@@ -152,11 +158,21 @@ fn browse(mut studio: ResMut<Studio>, bank: Option<Res<PoseBank>>, keys: Res<But
     if keys.just_pressed(KeyCode::KeyP) { action = Some(UiAction::Play); }
     if keys.just_pressed(KeyCode::PageDown) { action = Some(UiAction::Page(1)); }
     if keys.just_pressed(KeyCode::PageUp) { action = Some(UiAction::Page(-1)); }
+    if mouse.just_pressed(MouseButton::Back) { action = Some(UiAction::Step(-1)); }
+    if mouse.just_pressed(MouseButton::Forward) { action = Some(UiAction::Step(1)); }
     match action {
         Some(UiAction::Model(d)) => { studio.model = (studio.model as i32 + d as i32).rem_euclid(MODELS.len() as i32) as usize; }
         Some(UiAction::Tint(d)) => { studio.tint = (studio.tint as i32 + d as i32).rem_euclid(TINTS.len() as i32) as usize; }
         Some(UiAction::Page(d)) => { let pages = studio.clips.len().div_ceil(8).max(1); studio.page = (studio.page as i32 + d as i32).rem_euclid(pages as i32) as usize; }
         Some(UiAction::Clip(i)) => { if let Some(n) = studio.clips.get(studio.page * 8 + i).cloned() { studio.clip = n; studio.clip_time = 0.0; studio.preview = true; } }
+        Some(UiAction::Step(d)) => {
+            if !studio.clips.is_empty() {
+                let current = studio.clips.iter().position(|n| n == &studio.clip).unwrap_or(0);
+                let next = (current as i32 + d as i32).rem_euclid(studio.clips.len() as i32) as usize;
+                studio.clip = studio.clips[next].clone(); studio.page = next / 8;
+                studio.clip_time = 0.0; studio.preview = true;
+            }
+        }
         Some(UiAction::Play) => { studio.preview = !studio.preview; studio.clip_time = 0.0; }
         None => {}
     }
@@ -166,7 +182,8 @@ fn browse(mut studio: ResMut<Studio>, bank: Option<Res<PoseBank>>, keys: Res<But
 }
 
 fn input(keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, motion: Res<AccumulatedMouseMotion>,
-    scroll: Res<AccumulatedMouseScroll>, mut studio: ResMut<Studio>, mut player: Query<&mut Intent, With<Player>>) {
+    scroll: Res<AccumulatedMouseScroll>, windows: Query<&Window, With<PrimaryWindow>>,
+    mut studio: ResMut<Studio>, mut player: Query<&mut Intent, With<Player>>) {
     if mouse.pressed(MouseButton::Right) {
         studio.yaw -= motion.delta.x * 0.004;
         studio.pitch = (studio.pitch + motion.delta.y * 0.003).clamp(-0.6, 1.15);
@@ -174,7 +191,8 @@ fn input(keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, 
     let wheel = if scroll.unit == MouseScrollUnit::Line { scroll.delta.y } else { scroll.delta.y / 40.0 };
     studio.distance = (studio.distance - wheel * 0.5).clamp(2.1, 8.0);
     let Ok(mut intent) = player.single_mut() else { return; };
-    let x = (keys.pressed(KeyCode::KeyD) as i32 - keys.pressed(KeyCode::KeyA) as i32) as f32;
+    // This camera looks along +Z; screen-right is world -X at zero yaw.
+    let x = (keys.pressed(KeyCode::KeyA) as i32 - keys.pressed(KeyCode::KeyD) as i32) as f32;
     let z = (keys.pressed(KeyCode::KeyW) as i32 - keys.pressed(KeyCode::KeyS) as i32) as f32;
     intent.move_dir = (Quat::from_rotation_y(studio.yaw) * Vec3::new(x, 0.0, z)).normalize_or_zero();
     intent.sprint = keys.pressed(KeyCode::ShiftLeft);
@@ -182,12 +200,15 @@ fn input(keys: Res<ButtonInput<KeyCode>>, mouse: Res<ButtonInput<MouseButton>>, 
     intent.crouch = keys.pressed(KeyCode::ControlLeft);
     intent.jump_pressed = keys.just_pressed(KeyCode::Space);
     intent.jump_held = keys.pressed(KeyCode::Space);
-    intent.primary_pressed = mouse.just_pressed(MouseButton::Left);
+    let pointer_in_panel = windows.single().ok().and_then(Window::cursor_position)
+        .is_some_and(|p| p.x < 330.0 && p.y < 680.0);
+    intent.primary_pressed = mouse.just_pressed(MouseButton::Left) && !pointer_in_panel;
     intent.secondary_pressed = keys.just_pressed(KeyCode::KeyK);
 }
 
 fn attack(time: Res<Time>, mut studio: ResMut<Studio>, mut meshes: ResMut<Assets<Mesh>>,
     mut commands: Commands, mut materials: ResMut<Assets<StandardMaterial>>,
+    bank: Option<Res<PoseBank>>, rigs: Query<&Rig, With<Player>>, bones: Query<&GlobalTransform>,
     mut player: Query<(&Transform, &Intent, &mut Mover), With<Player>>) {
     let Ok((transform, intent, mut mover)) = player.single_mut() else { return; };
     if intent.primary_pressed || intent.secondary_pressed {
@@ -201,26 +222,35 @@ fn attack(time: Res<Time>, mut studio: ResMut<Studio>, mut meshes: ResMut<Assets
     }
     if !studio.attack_clip.is_empty() {
         studio.attack_time += time.delta_secs();
-        let threshold = if studio.attack_clip.contains("Kick") { 0.31 } else { 0.22 };
-        if studio.attack_time >= threshold && !studio.attack_hit {
-            studio.attack_hit = true;
-            let from = transform.translation + Vec3::Y * 0.45;
-            let forward = mover.forward();
-            let reach = if studio.attack_clip.contains("Kick") { 1.65 } else { 1.25 };
-            let dz = FRONT - from.z;
-            if forward.z > 0.35 && dz > -0.05 && dz / forward.z < reach {
-                let x = from.x + forward.x * dz / forward.z;
-                let y = from.y + if studio.attack_clip.contains("Kick") { -0.1 } else { 0.25 };
-                if x.abs() < W * 0.5 - 0.2 && y > 0.2 && y < H - 0.1 {
-                    studio.dents.push((Vec2::new(x, y), 0.12, 0.42));
-                    if studio.dents.len() > 60 { studio.dents.remove(0); }
-                    if let Some(mut mesh) = meshes.get_mut(&studio.wall) { *mesh = wall_mesh(&studio.dents); }
+        if studio.attack_time > 0.12 && studio.attack_time < 0.62 && !studio.attack_hit {
+            let striking = studio.attack_clip.contains("Kick");
+            let left = studio.attack_clip.contains("Jab");
+            let contact = bank.as_ref().and_then(|bank| rigs.single().ok().and_then(|rig| {
+                let index = if striking { bank.bones.foot[1] } else { bank.bones.hand[if left { 0 } else { 1 }] };
+                rig.bones.get(index).and_then(|e| bones.get(*e).ok()).map(GlobalTransform::translation)
+            }));
+            if let Some(point) = contact {
+                let x = point.x;
+                let y = point.y;
+                let wall_z = FRONT + surface_sample(Vec2::new(x, y), &studio.impacts).0;
+                if mover.forward().z > 0.3 && point.z >= wall_z - 0.27 && point.z <= wall_z + 0.18
+                    && (point - transform.translation).length() < 2.0
+                    && x.abs() < W * 0.5 - 0.1 && y > 0.15 && y < H - 0.1 {
+                    studio.attack_hit = true;
+                    let hit = Impact { point: Vec2::new(x, y), depth: if striking { 0.16 } else { 0.11 },
+                        radius: if striking { 0.37 } else { 0.30 }, cracks: make_cracks(Vec2::new(x, y), studio.impacts.len()) };
+                    studio.impacts.push(hit);
+                    if studio.impacts.len() > 24 { studio.impacts.remove(0); }
+                    let new_mesh = wall_mesh(&studio.impacts);
+                    let new_collider = Collider::trimesh_from_mesh(&new_mesh).expect("fracture mesh has triangles");
+                    commands.entity(studio.wall_entity).insert(new_collider);
+                    if let Some(mut mesh) = meshes.get_mut(&studio.wall) { *mesh = new_mesh; }
                     let chip_mesh = meshes.add(Cuboid::new(0.045, 0.055, 0.035));
-                    let chip_mat = materials.add(Color::srgb(0.54, 0.55, 0.56));
+                    let chip_mat = materials.add(StandardMaterial { base_color: Color::srgb(0.54, 0.55, 0.56), unlit: true, ..default() });
                     for i in 0..4 {
                         let scatter = Vec3::new((i as f32 - 1.5) * 0.36, 0.5 + i as f32 * 0.19, -1.5 - i as f32 * 0.17);
                         commands.spawn((Name::new("Wall chip"), Chip { life: 2.0 }, Mesh3d(chip_mesh.clone()),
-                            MeshMaterial3d(chip_mat.clone()), Transform::from_xyz(x, y, FRONT - 0.06),
+                            MeshMaterial3d(chip_mat.clone()), Transform::from_xyz(x, y, wall_z - 0.06),
                             RigidBody::Dynamic, Collider::cuboid(0.045, 0.055, 0.035),
                             CollisionLayers::new(Phys::World, [Phys::World]), LinearVelocity(scatter)));
                     }
@@ -261,7 +291,8 @@ fn select_motion(time: Res<Time>, bank: Option<Res<PoseBank>>, mut studio: ResMu
     } else if !studio.attack_clip.is_empty() && studio.attack_time > 0.12 && studio.attack_time < 0.42 {
         let at = mover.forward();
         if at.z > 0.35 && FRONT - transform.translation.z < 1.4 {
-            let target = Vec3::new(transform.translation.x, transform.translation.y + 0.28, FRONT - 0.06);
+            let xy = Vec2::new(transform.translation.x, transform.translation.y + 0.28);
+            let target = Vec3::new(xy.x, xy.y, FRONT + surface_sample(xy, &studio.impacts).0 - 0.05);
             if studio.attack_clip.contains("Kick") { layers.contact.feet[1] = Some((target - Vec3::Y * 0.55, 0.75)); }
             else { layers.contact.hands[if studio.attack_clip.contains("Jab") { 0 } else { 1 }] = Some((target, 0.7)); }
         }
@@ -327,26 +358,74 @@ fn chips(time: Res<Time>, mut commands: Commands, mut chips: Query<(Entity, &mut
     for (e, mut c) in &mut chips { c.life -= time.delta_secs(); if c.life <= 0.0 { commands.entity(e).despawn(); } }
 }
 
-fn wall_mesh(dents: &[(Vec2, f32, f32)]) -> Mesh {
+fn segment_distance(point: Vec2, a: Vec2, b: Vec2) -> f32 {
+    let v = b - a;
+    let t = ((point - a).dot(v) / v.length_squared().max(1e-6)).clamp(0.0, 1.0);
+    point.distance(a + v * t)
+}
+
+fn make_cracks(point: Vec2, seed: usize) -> Vec<Crack> {
+    let mut cracks = Vec::with_capacity(27);
+    for arm in 0..7 {
+        let angle = arm as f32 * std::f32::consts::TAU / 7.0 + seed as f32 * 0.37;
+        let mut start = point + Vec2::from_angle(angle) * 0.08;
+        for step in 0..3 {
+            let bend = ((seed * 17 + arm * 23 + step * 11) as f32 * 1.73).sin() * 0.28;
+            let direction = Vec2::from_angle(angle + bend + step as f32 * 0.13);
+            let end = start + direction * (0.18 + 0.06 * step as f32);
+            cracks.push(Crack { a: start, b: end, width: 0.055 - step as f32 * 0.007 });
+            if step == 1 {
+                let twig = start + Vec2::from_angle(angle + bend + 0.85) * 0.17;
+                cracks.push(Crack { a: start, b: twig, width: 0.038 });
+            }
+            start = end;
+        }
+    }
+    cracks
+}
+
+// Sample the wall's 2D voxel damage field. The same field drives visible geometry and collider.
+fn surface_sample(point: Vec2, impacts: &[Impact]) -> (f32, f32) {
+    let mut depth: f32 = 0.0;
+    let mut darkness: f32 = 0.0;
+    for impact in impacts {
+        let radial = point.distance(impact.point) / impact.radius;
+        let crater = (1.0 - radial * radial).max(0.0).powi(2);
+        let rough = 0.9 + 0.1 * (point.x * 71.0 + point.y * 43.0).sin();
+        depth += impact.depth * crater * rough;
+        darkness = darkness.max(crater * 0.28);
+        for crack in &impact.cracks {
+            let d = segment_distance(point, crack.a, crack.b);
+            let channel = (1.0 - d / crack.width).max(0.0);
+            depth += 0.045 * channel * channel;
+            darkness = darkness.max(channel * 0.72);
+        }
+    }
+    (depth.min(0.27), darkness)
+}
+
+fn wall_mesh(impacts: &[Impact]) -> Mesh {
     let mut positions = Vec::with_capacity((NX + 1) * (NY + 1));
     let mut normals = Vec::with_capacity(positions.capacity());
     let mut uvs = Vec::with_capacity(positions.capacity());
+    let mut colors = Vec::with_capacity(positions.capacity());
+    let step_x = W / NX as f32;
+    let step_y = H / NY as f32;
     for y in 0..=NY { for x in 0..=NX {
         let px = -W * 0.5 + W * x as f32 / NX as f32;
         let py = H * y as f32 / NY as f32;
-        let mut depth = 0.0;
-        let mut dx = 0.0; let mut dy = 0.0;
-        for (center, amount, radius) in dents {
-            let a = (px - center.x) / radius; let b = (py - center.y) / radius;
-            let g = (-3.5 * (a * a + b * b)).exp();
-            depth += amount * g;
-            dx += amount * g * -7.0 * a / radius;
-            dy += amount * g * -7.0 * b / radius;
-        }
+        let point = Vec2::new(px, py);
+        let (depth, dark) = surface_sample(point, impacts);
+        let dx = (surface_sample(point + Vec2::X * step_x, impacts).0
+            - surface_sample(point - Vec2::X * step_x, impacts).0) / (2.0 * step_x);
+        let dy = (surface_sample(point + Vec2::Y * step_y, impacts).0
+            - surface_sample(point - Vec2::Y * step_y, impacts).0) / (2.0 * step_y);
         positions.push([px, py, FRONT + depth]);
         let n = Vec3::new(dx, dy, -1.0).normalize();
         normals.push(n.to_array());
         uvs.push([x as f32 / NX as f32, y as f32 / NY as f32]);
+        let value = 1.0 - dark;
+        colors.push([value, value, value, 1.0]);
     }}
     let mut indices = Vec::with_capacity(NX * NY * 6);
     for y in 0..NY { for x in 0..NX {
@@ -357,6 +436,7 @@ fn wall_mesh(dents: &[(Vec2, f32, f32)]) -> Mesh {
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_COLOR, colors);
     mesh.insert_indices(Indices::U32(indices));
     mesh
 }

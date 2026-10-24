@@ -253,6 +253,7 @@ fn tint_materials(
             tint.blue * ratio,
             base.alpha * tint.alpha,
         ));
+        material.unlit = true;
         copies.insert(id, materials.add(material));
     }
     for (entity, id) in users {

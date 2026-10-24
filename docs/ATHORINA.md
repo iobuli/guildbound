@@ -17,11 +17,12 @@ The left panel is the new character and animation workspace. Select among four m
 | Space | Variable jump; hold toward wall to climb and mantle |
 | Left mouse / K | Punch combo / kick |
 | Right mouse drag / wheel | Orbit camera / zoom |
+| MB4 / MB5 | Previous / next motion and play it |
 | M / N | Next model / next palette colour |
 | P | Play or stop selected animation |
 | Page Up / Page Down | Previous or next animation page |
 
-The wall has a static collider. Strikes within reach add a dent to its rendered front surface and knock loose a few short-lived physical chips. The capsule controller, climb route, and camera collision keep the body and view outside the wall. The wall collider stays solid while the visual mesh dents; this stage is a controller and hit-feedback prototype, not destructible structural physics.
+The wall face is a sampled damage field. Strikes from the animated hand or foot bones carve craters and branching cracks, and rebuild a static triangle collider from the same vertices. A thin backing collider keeps the wall solid. The capsule controller, climb route, and camera collision keep the body and view outside the wall. The stage uses flat unlit materials without custom shading. This remains a controller and hit-feedback prototype, not full structural physics or a per-triangle animated character collider.
 
 ## Implementation
 
